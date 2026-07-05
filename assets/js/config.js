@@ -11,10 +11,5 @@ window.MIDIAI_CONFIG = {
   paypalClientId: "PASTE_PAYPAL_CLIENT_ID",
   currency: "KRW",
   priceValue: "90000",
-  licenseCheckEndpoint: "",
-  paymentCaptureEndpoint: "",
-  licenseSource: "firestore",
-  supportDiscordUrl: "",
-  // 관리자 이메일을 여기에 추가하면 홈페이지에서 관리자 포털이 보입니다.
-  adminEmails: ["kantzz111@gmail.com"]
+  supportDiscordUrl: ""
 };
