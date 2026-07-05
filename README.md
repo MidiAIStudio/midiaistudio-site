@@ -1,15 +1,51 @@
-# MidiAI Studio Homepage V13 Realtime Admin
+# MidiAI Studio Homepage V14
 
-관리자 페이지에서 공지사항/패치노트/FAQ를 작성하면 Firestore에 저장되고, 공개 페이지가 `onSnapshot` 기반으로 즉시 갱신되는 버전입니다.
+## 패치 내용
 
-## 핵심 변경
-- `notices.html`: announcements 실시간 구독
-- `notice.html`: 공지 상세 실시간 구독
-- `patch-notes.html`: patchNotes 실시간 구독
-- `faq.html`: FAQ 실시간 구독
-- `downloads.html/index.html`: downloads/latest 실시간 구독
-- `admin.html`: 저장 완료 후 바로 확인 링크 표시
+- 언어 전환 안정화
+  - 한국어 / English / 日本語 버튼 전환 즉시 반영
+  - `localStorage`에 선택 언어 저장
+  - 페이지 이동/새로고침 후에도 언어 유지
 
-## 필수 Firestore Rules
-`announcements`, `patchNotes`, `faq`, `downloads`는 공개 read, admin write가 필요합니다.
-`users/{UID}`에 `role: admin`이 있어야 관리자 저장이 됩니다.
+- Firestore 실시간 갱신 보강
+  - 공지사항 `announcements` 실시간 반영
+  - 패치노트 `patchNotes` 실시간 반영
+  - FAQ `faq` 실시간 반영
+  - 다운로드 `downloads/latest` 실시간 반영
+
+- 1:1 문의 보강
+  - 문의 등록 `supportTickets` 생성
+  - 나의 문의 실시간 목록
+  - 문의 상세 실시간 표시
+  - replies 서브컬렉션 실시간 답변
+  - 관리자 문의 목록/답변 실시간 반영
+
+## 중요: Firestore Rules 적용 필요
+
+`firebase/firestore-rules.example.txt` 내용을 Firebase Console > Firestore > 규칙에 적용해야 합니다.
+
+권한 오류가 보이면 대부분 아래 원인입니다.
+
+1. Firestore Rules 미적용
+2. users/{UID} 문서에 `role: "admin"` 누락
+3. Firebase Authentication 승인 도메인 누락
+4. API Key HTTP referrer 제한에 현재 도메인 누락
+
+## 필요한 컬렉션
+
+- users
+- licenses
+- announcements
+- patchNotes
+- faq
+- downloads
+- supportTickets
+- supportTickets/{ticketId}/replies
+
+## 관리자 권한
+
+관리자 계정의 users/{UID} 문서에 아래 필드를 추가하세요.
+
+```text
+role string admin
+```
