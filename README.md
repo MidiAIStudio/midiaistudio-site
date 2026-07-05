@@ -1,47 +1,23 @@
-# MidiAI Studio Homepage V10 Firestore Portal
+# MidiAI Studio Homepage V11 Community Layout
 
-V7 구조를 유지하면서 Firestore 포털 기능을 추가한 버전입니다.
+메인 화면에 모든 기능을 넣지 않고 커뮤니티/포털 형태로 페이지를 분리한 버전입니다.
 
-## 추가 기능
-- Google 로그인
-- 내 계정 / 라이선스 상태 확인
-- Firestore 공지사항 `announcements`
-- Firestore 패치노트 `patchNotes`
-- Firestore FAQ `faq`
-- Firestore 다운로드 정보 `downloads/latest`
-- 비공개 1:1 문의 `supportTickets`
-- 나의 문의 / 관리자 답변 `supportTickets/{ticketId}/replies`
-- 관리자 페이지: 공지 작성, 패치노트 작성, FAQ 작성, 라이선스 지급/수정, 문의 답변
+## 주요 페이지
+- `index.html` 메인 홈
+- `downloads.html` 다운로드
+- `purchase.html` 구매
+- `notices.html` 공지사항 목록
+- `notice.html?id=문서ID` 공지 상세
+- `patch-notes.html` 패치노트
+- `faq.html` FAQ
+- `support.html` 1:1 문의 작성
+- `my-tickets.html` 나의 문의
+- `ticket.html?id=문서ID` 문의 상세/추가 답변
+- `account.html` 내 계정/라이선스
+- `admin.html` 관리자
 
-## 필수 Firestore 컬렉션
-- users
-- licenses
-- orders
-- announcements
-- patchNotes
-- supportTickets
-- faq
-- downloads
+## 적용
+현재 GitHub 프로젝트 폴더에 압축을 풀어 덮어쓴 뒤 GitHub Desktop에서 Commit → Push 하세요.
 
-## 관리자 권한
-`users/{내 UID}` 문서에 아래 필드를 추가하세요.
-
-```text
-role string admin
-```
-
-## Rules
-`firebase/firestore-rules.example.txt`를 참고해서 Firestore 규칙에 반영하세요.
-
-## GitHub Desktop 적용
-1. 이 zip 압축 해제
-2. 안의 파일 전체를 로컬 `midiaistudio-site` 폴더에 덮어쓰기
-3. GitHub Desktop에서 변경 확인
-4. Commit to main
-5. Push origin
-
-
-## V10.1 Firebase Config Fix
-- Fixed Firebase Web API Key in `assets/js/config.js`.
-- Test login via `http://localhost` or deployed domain, not `file://`.
-- Add your deployed domain to Firebase Authentication > Settings > Authorized domains.
+## Firebase
+`assets/js/config.js`에 Firebase 설정이 포함되어 있습니다.
