@@ -1,23 +1,15 @@
-# MidiAI Studio Homepage V11 Community Layout
+# MidiAI Studio Homepage V13 Realtime Admin
 
-메인 화면에 모든 기능을 넣지 않고 커뮤니티/포털 형태로 페이지를 분리한 버전입니다.
+관리자 페이지에서 공지사항/패치노트/FAQ를 작성하면 Firestore에 저장되고, 공개 페이지가 `onSnapshot` 기반으로 즉시 갱신되는 버전입니다.
 
-## 주요 페이지
-- `index.html` 메인 홈
-- `downloads.html` 다운로드
-- `purchase.html` 구매
-- `notices.html` 공지사항 목록
-- `notice.html?id=문서ID` 공지 상세
-- `patch-notes.html` 패치노트
-- `faq.html` FAQ
-- `support.html` 1:1 문의 작성
-- `my-tickets.html` 나의 문의
-- `ticket.html?id=문서ID` 문의 상세/추가 답변
-- `account.html` 내 계정/라이선스
-- `admin.html` 관리자
+## 핵심 변경
+- `notices.html`: announcements 실시간 구독
+- `notice.html`: 공지 상세 실시간 구독
+- `patch-notes.html`: patchNotes 실시간 구독
+- `faq.html`: FAQ 실시간 구독
+- `downloads.html/index.html`: downloads/latest 실시간 구독
+- `admin.html`: 저장 완료 후 바로 확인 링크 표시
 
-## 적용
-현재 GitHub 프로젝트 폴더에 압축을 풀어 덮어쓴 뒤 GitHub Desktop에서 Commit → Push 하세요.
-
-## Firebase
-`assets/js/config.js`에 Firebase 설정이 포함되어 있습니다.
+## 필수 Firestore Rules
+`announcements`, `patchNotes`, `faq`, `downloads`는 공개 read, admin write가 필요합니다.
+`users/{UID}`에 `role: admin`이 있어야 관리자 저장이 됩니다.
