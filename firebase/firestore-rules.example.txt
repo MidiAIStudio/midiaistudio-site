@@ -1,17 +1,62 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{uid} {
-      allow read, create, update: if request.auth != null && request.auth.uid == uid;
+    function signedIn() {
+      return request.auth != null;
     }
 
-    match /licenses/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return signedIn() && (
+        request.auth.token.email in ['kantzz111@gmail.com'] ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 사용자 프로필: 본인만 읽기/쓰기
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // 라이선스: 사용자는 본인 문서 읽기만 가능, 수정은 관리자 콘솔/서버에서만
+    match /licenses/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
       allow write: if false;
     }
 
-    match /payments/{paymentId} {
-      allow read, write: if false;
+    // 관리자 권한 표시용. 관리자 본인 문서만 읽기 가능.
+    match /admins/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
+    // 공지사항: 모두 읽기, 관리자만 작성/수정/삭제
+    match /announcements/{noticeId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 패치노트: 모두 읽기, 관리자만 작성/수정/삭제
+    match /patch_notes/{patchId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 1:1 문의: 본인과 관리자만 읽기. 사용자는 생성 가능. 답변/상태 변경은 관리자만.
+    match /support_tickets/{ticketId} {
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'open';
+
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
   }
 }

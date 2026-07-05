@@ -11,13 +11,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
 </head>
 <body>
   <div class="orb orb-a"></div><div class="orb orb-b"></div>
   <header class="topbar">
     <a class="brand" href="#top"><span class="logo">M</span><b>MidiAI Studio</b></a>
-    <nav><a href="#features" data-i18n="nav_features">기능</a><a href="#license" data-i18n="nav_license">라이선스</a><a href="#purchase" data-i18n="nav_purchase">구매</a><a href="#install" data-i18n="nav_install">설치</a></nav>
+    <nav><a href="#features" data-i18n="nav_features">기능</a><a href="#license" data-i18n="nav_license">라이선스</a><a href="#purchase" data-i18n="nav_purchase">구매</a><a href="#install" data-i18n="nav_install">설치</a><a href="#notices" data-i18n="nav_notices">공지사항</a><a href="#patchnotes" data-i18n="nav_patchnotes">패치노트</a><a href="#support" data-i18n="nav_support">1:1문의</a></nav>
     <div class="actions"><button id="langBtn" class="ghost">EN</button><button id="loginBtn" class="login"><span>G</span><em data-i18n="login">Google 로그인</em></button><button id="logoutBtn" class="ghost hidden" data-i18n="logout">로그아웃</button></div>
   </header>
 
@@ -27,7 +27,7 @@
         <p class="pill" data-i18n="sale">7월 31일까지 할인 진행중</p>
         <h1 data-i18n="hero_title">피아노 커버를<br>MIDI로 바꾸는<br>가장 쉬운 방법</h1>
         <p class="lead" data-i18n="hero_desc">YouTube 영상이나 오디오 파일을 넣고 MidiAI Studio로 연주 데이터를 빠르게 변환하세요. Google 로그인으로 내 라이선스 상태도 확인할 수 있습니다.</p>
-        <div class="cta"><a class="primary" href="#purchase" data-i18n="buy">라이선스 구매하기</a><a class="secondary" href="#install" data-i18n="guide">설치 방법 보기</a></div>
+        <div class="cta"><a class="primary" href="#purchase" data-i18n="buy">라이선스 구매하기</a><a class="secondary" href="#install" data-i18n="guide">설치 방법 보기</a><a class="secondary" href="#support" data-i18n="support_cta">1:1 문의하기</a></div>
         <div class="trust"><span data-i18n="trust1">Windows 지원</span><span data-i18n="trust2">Google 계정 연동</span><span data-i18n="trust3">HWID 기반 인증</span></div>
       </div>
       <aside class="visual" aria-label="conversion preview"><div class="window"><div class="dots"><i></i><i></i><i></i></div><div class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="mini"><small data-i18n="input">입력</small><b>piano_cover.mp4</b><div class="progress"><i></i></div><small data-i18n="output">출력</small><b>converted_song.mid</b></div></div></aside>
@@ -42,11 +42,90 @@
 
     <section class="wrap section split" id="license"><div><p class="eyebrow">License Flow</p><h2 data-i18n="license_title">고객은 키를 입력하지 않습니다</h2><p data-i18n="license_desc">고객은 Google 로그인 후 HWID를 복사해 문의 채팅에 보내면 됩니다. 관리자가 승인하면 프로그램이 계정과 PC 인증 상태를 확인합니다.</p></div><ol class="flow"><li><b>01</b><span data-i18n="flow1">Google 로그인</span></li><li><b>02</b><span data-i18n="flow2">PayPal 또는 계좌 결제</span></li><li><b>03</b><span data-i18n="flow3">설치 마법사에서 HWID 복사</span></li><li><b>04</b><span data-i18n="flow4">관리자 승인 후 자동 인증</span></li></ol></section>
 
-    <section class="wrap section split" id="purchase"><div class="price-card"><p class="eyebrow">Limited Sale</p><h2>MidiAI Studio License</h2><div class="price"><strong data-i18n="price">90,000원</strong><small data-i18n="until">7월 31일까지</small></div><ul><li data-i18n="p1">Google 계정 라이선스 연결</li><li data-i18n="p2">등록된 PC에서 사용 가능</li><li data-i18n="p3">설치 마법사 지원</li></ul><div id="paypalButtons" class="paypal"><p data-i18n="paypal_ready">PayPal Client ID 입력 후 결제 버튼이 표시됩니다.</p></div><a class="discord" href="https://discord.gg/zyPJFGydS" target="_blank" rel="noopener" data-i18n="discord">디스코드 문의하기</a></div><div class="notice"><h3 data-i18n="bank_title">계좌 입금 안내</h3><p data-i18n="bank">카카오뱅크 3333-02-9669468 최정환</p><p data-i18n="bank_after">입금 후 설치 마법사에서 HWID 버튼 클릭 → 복사 → 문의 채팅창에 붙여넣기 해주세요.</p><hr><h3 data-i18n="auto_title">자동 라이선스 지급</h3><p data-i18n="auto_desc">완전 자동 지급은 Firebase Functions/서버에서 PayPal 결제 검증 후 처리해야 안전합니다. 프론트 단독 지급은 조작 위험이 있어 막아두었습니다.</p></div></section>
+    <section class="wrap section split" id="purchase"><div class="price-card"><p class="eyebrow">Limited Sale</p><h2>MidiAI Studio License</h2><div class="price"><strong data-i18n="price">90,000원</strong><small data-i18n="until">7월 31일까지</small></div><ul><li data-i18n="p1">Google 계정 라이선스 연결</li><li data-i18n="p2">등록된 PC에서 사용 가능</li><li data-i18n="p3">설치 마법사 지원</li></ul><div id="paypalButtons" class="paypal"><p data-i18n="paypal_ready">PayPal Client ID 입력 후 결제 버튼이 표시됩니다.</p></div><a class="discord" href="#support" data-i18n="support_center">1:1 문의하기</a></div><div class="notice"><h3 data-i18n="bank_title">계좌 입금 안내</h3><p data-i18n="bank">카카오뱅크 3333-02-9669468 최정환</p><p data-i18n="bank_after">입금 후 설치 마법사에서 HWID 버튼 클릭 → 복사 → 문의 채팅창에 붙여넣기 해주세요.</p><hr><h3 data-i18n="auto_title">자동 라이선스 지급</h3><p data-i18n="auto_desc">완전 자동 지급은 Firebase Functions/서버에서 PayPal 결제 검증 후 처리해야 안전합니다. 프론트 단독 지급은 조작 위험이 있어 막아두었습니다.</p></div></section>
 
     <section class="wrap section" id="install"><div class="title"><p class="eyebrow">Install Guide</p><h2 data-i18n="install_title">설치 및 인증 방법</h2></div><div class="grid four"><article><b>1</b><h3 data-i18n="s1t">설치 마법사 실행</h3><p data-i18n="s1d">다운로드한 설치 파일을 실행합니다.</p></article><article><b>2</b><h3 data-i18n="s2t">HWID 복사</h3><p data-i18n="s2d">설치 마법사에서 HWID 버튼을 누릅니다.</p></article><article><b>3</b><h3 data-i18n="s3t">문의 채팅 전달</h3><p data-i18n="s3d">입금자명/Google 계정/HWID를 남깁니다.</p></article><article><b>4</b><h3 data-i18n="s4t">자동 인증 확인</h3><p data-i18n="s4d">등록 후 프로그램 실행 시 라이선스를 확인합니다.</p></article></div></section>
+
+    <section class="wrap section" id="notices">
+      <div class="title"><p class="eyebrow">Notice</p><h2 data-i18n="notices_title">공지사항</h2><p data-i18n="notices_desc">구매, 설치, 라이선스 관련 중요한 안내를 이곳에서 확인할 수 있습니다.</p></div>
+      <div id="noticeList" class="grid three notice-grid"><article><span class="tag">공지</span><h3>공지사항을 불러오는 중...</h3><p>Firestore 연결 전에는 기본 안내가 표시됩니다.</p></article></div>
+    </section>
+
+    <section class="wrap section" id="patchnotes">
+      <div class="title"><p class="eyebrow">Patch Notes</p><h2 data-i18n="patch_title">패치노트</h2><p data-i18n="patch_desc">프로그램과 홈페이지 업데이트 내역을 확인하세요.</p></div>
+      <div id="patchList" class="timeline"><article><b>V10</b><div><h3>홈페이지 포털 기능 추가</h3><p>공지사항, 패치노트, 비공개 1:1 문의와 나의 문의 기능을 추가했습니다.</p></div></article></div>
+    </section>
+
+    <section class="wrap section" id="support">
+      <div class="title"><p class="eyebrow">Private Support</p><h2>1:1 비공개 문의</h2><p>문의는 로그인한 본인과 관리자만 볼 수 있습니다. 답변이 달리면 아래 <b>나의 문의</b>에서 확인할 수 있어요.</p></div>
+      <div class="support-layout">
+        <form id="ticketForm" class="support-card portal-form">
+          <h3>문의 작성</h3>
+          <label>문의 유형
+            <select id="ticketCategory">
+              <option value="license">라이선스/구매</option>
+              <option value="install">설치 문제</option>
+              <option value="convert">변환 오류</option>
+              <option value="account">계정/HWID</option>
+              <option value="etc">기타</option>
+            </select>
+          </label>
+          <label>제목 <input id="ticketTitle" type="text" placeholder="예: 입금 확인 부탁드립니다" maxlength="80" required></label>
+          <label>내용 <textarea id="ticketContent" rows="7" placeholder="상황을 자세히 적어주세요. 오류가 있다면 화면 캡처 내용도 함께 설명해주세요." required></textarea></label>
+          <button class="primary" type="submit">비공개 문의 등록</button>
+          <p id="ticketStatus" class="form-status">Google 로그인 후 문의를 남길 수 있습니다.</p>
+        </form>
+        <div class="support-card">
+          <h3>문의 시 있으면 좋은 정보</h3>
+          <ul>
+            <li>Google 로그인 이메일</li>
+            <li>입금자명 또는 PayPal 결제 이메일</li>
+            <li>프로그램의 “계정정보 복사” 내용</li>
+            <li>오류 화면 캡처 또는 증상 설명</li>
+          </ul>
+          <div class="support-actions"><button id="copySupportBtn" class="secondary" type="button">문의 양식 복사</button></div>
+          <pre id="supportTemplate" class="support-template">[MidiAI Studio 1:1 문의]
+Google 이메일:
+입금자명/결제 이메일:
+UID:
+HWID:
+문의 내용:</pre>
+        </div>
+      </div>
+
+      <div class="portal-panel" id="myTicketsPanel">
+        <div class="panel-head"><h3>나의 문의</h3><button id="refreshTicketsBtn" class="ghost" type="button">새로고침</button></div>
+        <div id="myTicketsList" class="portal-list"><p class="muted">로그인 후 내가 작성한 문의를 확인할 수 있습니다.</p></div>
+      </div>
+    </section>
+
+    <section class="wrap section admin-only hidden" id="admin">
+      <div class="title"><p class="eyebrow">Admin</p><h2>관리자 포털</h2><p>공지사항, 패치노트, 1:1 문의 답변을 홈페이지에서 처리합니다.</p></div>
+      <div class="admin-grid">
+        <form id="noticeForm" class="support-card portal-form">
+          <h3>공지사항 작성</h3>
+          <label>제목 <input id="noticeTitle" type="text" maxlength="80" required></label>
+          <label>내용 <textarea id="noticeContent" rows="5" required></textarea></label>
+          <label class="check"><input id="noticePinned" type="checkbox"> 상단 고정</label>
+          <button class="primary" type="submit">공지 등록</button>
+          <p id="noticeStatus" class="form-status"></p>
+        </form>
+        <form id="patchForm" class="support-card portal-form">
+          <h3>패치노트 작성</h3>
+          <label>버전 <input id="patchVersion" type="text" placeholder="예: 1.5.7" maxlength="30" required></label>
+          <label>제목 <input id="patchTitle" type="text" maxlength="80" required></label>
+          <label>내용 <textarea id="patchContent" rows="5" required></textarea></label>
+          <button class="primary" type="submit">패치노트 등록</button>
+          <p id="patchStatus" class="form-status"></p>
+        </form>
+      </div>
+      <div class="portal-panel">
+        <div class="panel-head"><h3>문의 답변</h3><button id="refreshAdminTicketsBtn" class="ghost" type="button">새로고침</button></div>
+        <div id="adminTicketsList" class="portal-list"><p class="muted">관리자 확인 중...</p></div>
+      </div>
+    </section>
   </main>
-  <footer><span>© <span id="year"></span> MidiAI Studio</span><span data-i18n="footer">Google 로그인/PayPal 연동 준비형 V6</span></footer>
+  <footer><span>© <span id="year"></span> MidiAI Studio</span><span data-i18n="footer">공식 포털 V10</span></footer>
   <script type="module" src="../assets/js/config.js"></script>
   <script type="module" src="../assets/js/app.js"></script>
 </body>

@@ -14,5 +14,7 @@ window.MIDIAI_CONFIG = {
   licenseCheckEndpoint: "",
   paymentCaptureEndpoint: "",
   licenseSource: "firestore",
-  supportDiscordUrl: "https://discord.gg/zyPJFGydS"
+  supportDiscordUrl: "",
+  // 관리자 이메일을 여기에 추가하면 홈페이지에서 관리자 포털이 보입니다.
+  adminEmails: ["kantzz111@gmail.com"]
 };
