@@ -1,6 +1,6 @@
 window.MIDIAI_CONFIG = {
   firebase: {
-    apiKey: "AIzaSyAAS0FFhGk9zHz0eb3XtNob42g30vYdDiA",
+    apiKey: "AIzaSyAAS0fFhGk9zHz0eb3XtNob42g3OvYdDiA",
     authDomain: "midiaistudio.firebaseapp.com",
     projectId: "midiaistudio",
     storageBucket: "midiaistudio.firebasestorage.app",

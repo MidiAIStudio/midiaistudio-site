@@ -39,3 +39,9 @@ role string admin
 3. GitHub Desktop에서 변경 확인
 4. Commit to main
 5. Push origin
+
+
+## V10.1 Firebase Config Fix
+- Fixed Firebase Web API Key in `assets/js/config.js`.
+- Test login via `http://localhost` or deployed domain, not `file://`.
+- Add your deployed domain to Firebase Authentication > Settings > Authorized domains.
