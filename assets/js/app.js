@@ -10,8 +10,39 @@ const T = {
 function setText(){ const d=T[lang]||T.ko; document.documentElement.lang=lang; document.querySelectorAll('[data-i18n]').forEach(el=>{ const k=el.dataset.i18n; if(d[k]) el.innerHTML=d[k]; }); $('langBtn').textContent = lang==='ko'?'EN':lang==='en'?'日本語':'한국어'; localStorage.setItem('midiai_lang',lang); }
 function configuredFirebase(){ const f=CONFIG.firebase||{}; return f.apiKey && !String(f.apiKey).startsWith('PASTE_') && f.projectId && !String(f.projectId).startsWith('PASTE_'); }
 function signedOut(){ $('avatar').textContent='?'; $('userName').textContent=T[lang].guest; $('userEmail').textContent=T[lang].guest_desc; $('licenseBadge').className='badge pending'; $('licenseBadge').textContent=T[lang].license_wait; $('loginBtn').classList.remove('hidden'); $('logoutBtn').classList.add('hidden'); }
-async function checkLicense(user){ $('licenseBadge').className='badge pending'; $('licenseBadge').textContent=T[lang].checking; if(!CONFIG.licenseCheckEndpoint){ $('licenseBadge').className='badge none'; $('licenseBadge').textContent=T[lang].none; return; } try{ const token=await user.getIdToken(); const res=await fetch(CONFIG.licenseCheckEndpoint,{headers:{Authorization:`Bearer ${token}`}}); const data=await res.json(); $('licenseBadge').className='badge '+(data.active?'active':'none'); $('licenseBadge').textContent=data.active?T[lang].active:T[lang].none; }catch(e){ $('licenseBadge').className='badge none'; $('licenseBadge').textContent='Check failed'; } }
+async function checkLicense(user){
+  $('licenseBadge').className='badge pending';
+  $('licenseBadge').textContent=T[lang].checking;
+  try{
+    if(CONFIG.licenseCheckEndpoint){
+      const token=await user.getIdToken();
+      const res=await fetch(CONFIG.licenseCheckEndpoint,{headers:{Authorization:`Bearer ${token}`}});
+      const data=await res.json();
+      $('licenseBadge').className='badge '+(data.active?'active':'none');
+      $('licenseBadge').textContent=data.active?T[lang].active:T[lang].none;
+      return;
+    }
+    if(CONFIG.licenseSource==='firestore'){
+      const {getFirestore,doc,getDoc,setDoc,serverTimestamp}=await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
+      const db=getFirestore(window.__midiaiFirebaseApp);
+      const userRef=doc(db,'users',user.uid);
+      await setDoc(userRef,{email:user.email||'',displayName:user.displayName||'',lastLoginAt:serverTimestamp()},{merge:true});
+      const snap=await getDoc(doc(db,'licenses',user.uid));
+      const data=snap.exists()?snap.data():null;
+      const active=!!(data && data.active===true);
+      $('licenseBadge').className='badge '+(active?'active':'none');
+      $('licenseBadge').textContent=active?T[lang].active:T[lang].none;
+      return;
+    }
+    $('licenseBadge').className='badge none';
+    $('licenseBadge').textContent=T[lang].none;
+  }catch(e){
+    console.error(e);
+    $('licenseBadge').className='badge none';
+    $('licenseBadge').textContent='Check failed';
+  }
+}
 function signedIn(user){ const name=user.displayName||user.email||'User'; $('avatar').textContent=name.slice(0,1).toUpperCase(); $('userName').textContent=name; $('userEmail').textContent=user.email||''; $('loginBtn').classList.add('hidden'); $('logoutBtn').classList.remove('hidden'); checkLicense(user); }
-async function initAuth(){ if(!configuredFirebase()){ $('loginBtn').onclick=()=>alert(lang==='ko'?'assets/js/config.js에 Firebase 설정값을 먼저 넣어줘.':'Add Firebase config in assets/js/config.js first.'); return; } const [{initializeApp},{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}] = await Promise.all([import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')]); const app=initializeApp(CONFIG.firebase); const auth=getAuth(app); const provider=new GoogleAuthProvider(); $('loginBtn').onclick=()=>signInWithPopup(auth,provider); $('logoutBtn').onclick=()=>signOut(auth); onAuthStateChanged(auth,u=>u?signedIn(u):signedOut()); }
+async function initAuth(){ if(!configuredFirebase()){ $('loginBtn').onclick=()=>alert(lang==='ko'?'assets/js/config.js에 Firebase 설정값을 먼저 넣어줘.':'Add Firebase config in assets/js/config.js first.'); return; } const [{initializeApp},{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged}] = await Promise.all([import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')]); const app=initializeApp(CONFIG.firebase); window.__midiaiFirebaseApp=app; const auth=getAuth(app); const provider=new GoogleAuthProvider(); $('loginBtn').onclick=()=>signInWithPopup(auth,provider); $('logoutBtn').onclick=()=>signOut(auth); onAuthStateChanged(auth,u=>u?signedIn(u):signedOut()); }
 function initPayPal(){ if(!CONFIG.paypalClientId || String(CONFIG.paypalClientId).startsWith('PASTE_')) return; const s=document.createElement('script'); s.src=`https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(CONFIG.paypalClientId)}&currency=${CONFIG.currency||'KRW'}`; s.onload=()=>{ if(!window.paypal)return; $('paypalButtons').innerHTML=''; window.paypal.Buttons({ createOrder:(data,actions)=>actions.order.create({purchase_units:[{amount:{value:CONFIG.priceValue||'90000',currency_code:CONFIG.currency||'KRW'},description:'MidiAI Studio License'}]}), onApprove:async(data,actions)=>{ const details=await actions.order.capture(); if(CONFIG.paymentCaptureEndpoint){ await fetch(CONFIG.paymentCaptureEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderID:data.orderID,details})}); } alert(lang==='ko'?'결제가 확인되었습니다. Google 계정과 HWID를 문의 채팅에 남겨주세요.':'Payment captured. Send your Google account and HWID to support.'); } }).render('#paypalButtons'); }; document.body.appendChild(s); }
 $('year').textContent=new Date().getFullYear(); $('langBtn').onclick=()=>{ lang = lang==='ko'?'en':lang==='en'?'ja':'ko'; setText(); signedOut(); }; setText(); signedOut(); initAuth(); initPayPal();

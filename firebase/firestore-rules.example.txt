@@ -1,10 +1,15 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, create, update: if request.auth != null && request.auth.uid == uid;
+    }
+
     match /licenses/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;
     }
+
     match /payments/{paymentId} {
       allow read, write: if false;
     }
