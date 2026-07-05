@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MidiAI Studio | AI MP3 → MIDI 변환기</title>
+  <meta name="description" content="MP3 음악을 AI로 분석해 게임 연주용 MIDI로 변환하는 Windows 프로그램." />
+  <meta name="theme-color" content="#050816" />
+  <meta property="og:title" content="MidiAI Studio | AI MP3 → MIDI 변환기" />
+  <meta property="og:description" content="MP3 음악을 AI로 분석해 게임 연주용 MIDI로 변환하는 Windows 프로그램." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="../assets/og.svg" />
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
+  <link rel="alternate" hreflang="ko" href="https://midiaistudio.com/ko/" />
+  <link rel="alternate" hreflang="en" href="https://midiaistudio.com/en/" />
+  <link rel="alternate" hreflang="ja" href="https://midiaistudio.com/ja/" />
+  <link rel="stylesheet" href="../assets/styles.css" />
+</head>
+<body>
+  <div class="noise"></div><div class="cursor-glow"></div>
+  <header class="header">
+    <a class="logo" href="../ko/index.html"><span class="logo-mark">M</span><span>MidiAI Studio</span></a>
+    <nav class="nav"><a href="#demo">데모</a><a href="#compare">비교</a><a href="#features">기능</a><a href="#download">다운로드</a><a href="#license">라이선스</a><a href="#faq">FAQ</a></nav>
+    <div class="langs"><a class="active" href="../ko/index.html">한국어</a><a class="" href="../en/index.html">English</a><a class="" href="../ja/index.html">日本語</a></div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="orb orb-a"></div><div class="orb orb-b"></div>
+      <div class="hero-copy reveal">
+        <p class="badge">AI MP3 → MIDI 변환기</p>
+        <h1>음악을<br><span>게임 연주용 MIDI로.</span></h1>
+        <p class="lead">피아노 커버와 음악 파일을 AI로 분석해 Piano, Lyre, Lute 같은 게임 악기용 MIDI로 변환합니다.</p>
+        <div class="actions"><a class="btn primary" href="#download">Windows 다운로드</a><a class="btn secondary" href="#license">라이선스 보기</a></div>
+        <div class="trust"><span>AI 기반 변환</span><span>Windows 10/11</span><span>무료 체험</span><span>지속 업데이트</span></div>
+      </div>
+      <div class="device reveal" id="demo">
+        <div class="device-top"></div>
+        <div class="screen"><video src="../assets/demo.mp4" autoplay muted loop playsinline></video><div class="shine"></div></div>
+        <div class="device-base"></div>
+      </div>
+    </section>
+    <section class="section"><div class="section-head reveal"><p class="badge">LIVE DEMO</p><h2>변환 과정을 한눈에 보여주세요.</h2><p>나중에 더 좋은 영상이 준비되면 assets/demo.mp4만 같은 이름으로 교체하면 됩니다.</p></div></section>
+    <section id="compare" class="section">
+      <div class="section-head reveal"><p class="badge">HEAR THE DIFFERENCE</p><h2>설명보다 강한 건 직접 듣는 것.</h2><p>원본 오디오와 생성된 MIDI 렌더를 나란히 비교하는 영역입니다. sample-original.mp3와 sample-midi.mp3를 넣으면 바로 재생됩니다.</p></div>
+      <div class="compare-grid reveal">
+        <article class="audio-card"><span>원본 오디오</span><small>Piano audio</small><button class="play" data-audio="../assets/sample-original.mp3">▶</button><div class="fake-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><audio preload="none"></audio></article>
+        <article class="audio-card hot"><span>생성된 MIDI</span><small>AI conversion</small><button class="play" data-audio="../assets/sample-midi.mp3">▶</button><div class="fake-wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><audio preload="none"></audio></article>
+      </div>
+    </section>
+    <section id="features" class="section"><div class="section-head reveal"><p class="badge">WHY MIDIAI STUDIO</p><h2>플레이 가능한 MIDI가 필요한 사람들을 위해.</h2></div><div class="feature-grid"><article class="feature-card reveal"><b>🤖</b><h3>AI Melody Analysis</h3><p>실제 음악에서 멜로디와 연주 흐름을 분석해 MIDI 변환에 활용합니다.</p></article><article class="feature-card reveal"><b>🎹</b><h3>Game Instrument Workflow</h3><p>Piano, Lyre, Lute 등 게임 악기 흐름을 고려한 결과물을 목표로 합니다.</p></article><article class="feature-card reveal"><b>🎮</b><h3>Simple Conversion</h3><p>드래그, 분석, 변환, 저장까지 빠르고 단순한 흐름으로 설계했습니다.</p></article><article class="feature-card reveal"><b>⚡</b><h3>Creator Focused</h3><p>게임 연주, 커버 제작, MIDI 편집 전 단계에 활용할 수 있습니다.</p></article></div></section>
+    <section class="section"><div class="section-head reveal"><p class="badge">HOW IT WORKS</p><h2>MP3에서 MIDI까지 4단계.</h2></div><div class="process reveal"><div><strong>01</strong><span>MP3 가져오기</span></div><div><strong>02</strong><span>AI 분석</span></div><div><strong>03</strong><span>MIDI 생성</span></div><div><strong>04</strong><span>게임에서 연주</span></div></div></section>
+    <section class="section"><div class="section-head reveal"><p class="badge">SUPPORTED</p><h2>지원 워크플로우</h2></div><div class="pills reveal"><span>Hatopia</span><span>Lost Ark</span><span>Piano</span><span>Lyre</span><span>Lute</span><span>More coming</span></div></section>
+    <section id="download" class="section"><div class="download-box reveal"><div><p class="badge">DOWNLOAD</p><h2>무료 체험으로 먼저 확인하세요.</h2><p>최신 설치 파일 링크를 연결하면 다운로드 센터로 사용할 수 있습니다.</p></div><div class="download-panel"><span>Latest version</span><strong>Windows Installer</strong><a class="btn primary" href="#" onclick="alert('설치 파일 링크를 여기에 연결하면 됩니다.');return false;">Download Now</a><small>Windows 10 / 11 · Free Trial available</small></div></div></section>
+    <section id="license" class="section"><div class="section-head reveal"><p class="badge">LICENSE</p><h2>먼저 써보고, 필요할 때 잠금 해제하세요.</h2></div><div class="license-grid"><article class="price-card reveal"><h3>Free Trial</h3><p class="price">₩0</p><ul><li>✓ 변환 품질 확인</li><li>✓ 제한된 MIDI 저장</li><li>✓ 기본 워크플로우 테스트</li></ul></article><article class="price-card pro reveal"><h3>Pro License</h3><p class="price">문의</p><ul><li>✓ 전체 MIDI 저장</li><li>✓ 지원 악기 전체 사용</li><li>✓ 업데이트 및 지원</li></ul><a class="btn primary" href="https://discord.gg/zyPJFGydS">Discord 문의</a></article></div></section>
+    <section id="faq" class="section faq"><div class="section-head reveal"><p class="badge">FAQ</p><h2>자주 묻는 질문</h2></div><details class="reveal"><summary>유튜브 피아노 커버도 가능한가요?</summary><p>음원을 MP3로 준비하면 변환할 수 있습니다. 결과 품질은 원본 음질과 편곡에 따라 달라집니다.</p></details><details class="reveal"><summary>체험판 제한은 무엇인가요?</summary><p>체험판은 변환 품질 확인용입니다. 정식 라이선스에서 전체 저장 기능을 사용할 수 있습니다.</p></details><details class="reveal"><summary>구매 후 사용자가 직접 키를 입력하나요?</summary><p>아니요. 운영자가 등록해주는 방식으로 구성할 수 있어 사용자는 별도 키 입력 없이 사용할 수 있습니다.</p></details><details class="reveal"><summary>지원 악기는 계속 추가되나요?</summary><p>Piano, Lyre, Lute를 중심으로 확장할 수 있습니다.</p></details></section>
+  </main>
+  <footer class="footer"><div><a class="logo" href="../ko/index.html"><span class="logo-mark">M</span><span>MidiAI Studio</span></a><p>AI MP3 → MIDI Converter</p></div><div class="footer-links"><a href="https://discord.gg/zyPJFGydS">Discord</a><a href="https://youtube.com/shorts/fZIVO7SppAM?si=TQvrguM93IMGEsFV">YouTube</a><a href="mailto:support@midiaistudio.com">Contact</a></div></footer>
+  <script src="../assets/script.js"></script>
+</body>
+</html>
