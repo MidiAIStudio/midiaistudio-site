@@ -15,6 +15,9 @@ let adminNoticeRows = [];
 let adminPatchRows = [];
 let adminFaqRows = [];
 let adminTicketRows = [];
+let adminUserRows = [];
+let adminLicenseRows = [];
+let adminOrderRows = [];
 
 const textOriginals = new WeakMap();
 const attrOriginals = new WeakMap();
@@ -157,7 +160,7 @@ async function setAuthUiSignedIn(user){
   if (page==='my-tickets.html') listenMyTickets();
   if (page==='ticket.html') listenTicketDetail();
   if (page==='admin.html') {
-    if (isAdminUser) { $('admin')?.classList.remove('admin-locked'); listenAdminTickets(); listenAdminPostManager(); }
+    if (isAdminUser) { $('admin')?.classList.remove('admin-locked'); listenAdminDashboard(); listenAdminUsers(); listenAdminTickets(); listenAdminPostManager(); loadAdminDownloadSettings(); }
     else { $('admin') && ($('admin').innerHTML = `<div class="empty-card">${tr('admin_required')}</div>`); }
   }
 }
@@ -478,6 +481,91 @@ function listenAdminPostManager(){
   if($('adminNoticeList')) addUnsub(onSnapshot(query(collection(db,'announcements'),orderBy('createdAt','desc')), snap=>{ adminNoticeRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('notices'); }));
   if($('adminPatchList')) addUnsub(onSnapshot(query(collection(db,'patchNotes'),orderBy('createdAt','desc')), snap=>{ adminPatchRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('patches'); }));
   if($('adminFaqList')) addUnsub(onSnapshot(query(collection(db,'faq'),orderBy('order','asc')), snap=>{ adminFaqRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('faq'); }));
+}
+
+
+function adminStat(id, value){ const el=$(id); if(el) el.textContent = String(value ?? 0); }
+function countVisible(rows){ return rows.filter(x=>x.visible !== false).length; }
+function listenAdminDashboard(){
+  if(!isAdminUser || !$('dashUsers')) return;
+  const {collection,onSnapshot}=firestoreApi;
+  const watch = (name, cb) => addUnsub(onSnapshot(collection(db,name), snap => cb(snap.docs.map(d=>({id:d.id,...d.data()}))), err => console.error(name, err)));
+  watch('users', rows => { adminStat('dashUsers', rows.length); adminUserRows = rows; renderAdminUserTable(); });
+  watch('licenses', rows => { adminLicenseRows = rows; adminStat('dashLicenses', rows.filter(x=>x.licensed===true && String(x.status||'').toLowerCase()==='active').length); renderAdminUserTable(); });
+  watch('supportTickets', rows => { adminStat('dashOpenTickets', rows.filter(x=>String(x.status||'open')==='open').length); });
+  watch('announcements', rows => { adminStat('dashNotices', countVisible(rows)); });
+  watch('patchNotes', rows => { adminStat('dashPatches', countVisible(rows)); });
+  watch('orders', rows => { adminOrderRows = rows; adminStat('dashOrders', rows.length); });
+}
+function licenseForUid(uid){ return adminLicenseRows.find(x=>x.id===uid || x.uid===uid) || null; }
+function renderAdminUserTable(){
+  const box=$('adminUserList'); if(!box || !isAdminUser) return;
+  const q=($('adminUserSearch')?.value||'').trim().toLowerCase();
+  const st=$('adminUserLicenseStatus')?.value || 'all';
+  let rows = adminUserRows.map(u=>({ ...u, license: licenseForUid(u.id || u.uid) })).filter(u=>{
+    const lic=u.license; const status=String(lic?.status||'none').toLowerCase();
+    const active=lic && lic.licensed===true && status==='active';
+    if(st==='active' && !active) return false;
+    if(st==='none' && lic) return false;
+    if(st==='banned' && status!=='banned') return false;
+    const hay=[u.email,u.displayName,u.uid,u.id,u.hwid,lic?.plan,lic?.status].join(' ').toLowerCase();
+    return !q || hay.includes(q);
+  }).sort((a,b)=>(b.lastLogin?.seconds||b.lastSeenAt?.seconds||0)-(a.lastLogin?.seconds||a.lastSeenAt?.seconds||0));
+  $('adminUserCount') && ($('adminUserCount').textContent=`${rows.length} / ${adminUserRows.length}`);
+  if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  box.innerHTML=`<table class="admin-table user-admin-table"><thead><tr><th>회원</th><th>라이선스</th><th>HWID</th><th>최근 로그인</th><th>관리</th></tr></thead><tbody>${rows.map(u=>{
+    const uid=u.uid||u.id; const lic=u.license; const active=lic && lic.licensed===true && String(lic.status||'').toLowerCase()==='active';
+    return `<tr><td><b>${esc(u.displayName||'-')}</b><small>${esc(u.email||'')}<br><span class="mono">${esc(uid||'')}</span></small></td><td>${lic?`<span class="badge ${active?'active':'none'}">${esc(lic.plan||'-')} · ${esc(lic.status||'-')}</span>`:`<span class="badge none">none</span>`}</td><td><span class="mono">${esc(u.hwid||lic?.hwid||'-')}</span></td><td>${esc(fmtDate(u.lastLogin||u.lastSeenAt))}</td><td><div class="table-actions"><button class="secondary mini-btn" data-user-license="${esc(uid)}:lifetime:active">Lifetime</button><button class="secondary mini-btn" data-user-license="${esc(uid)}:trial:active">Trial</button><button class="secondary mini-btn danger-btn" data-user-license="${esc(uid)}:${esc(lic?.plan||'lifetime')}:banned">정지</button><button class="secondary mini-btn" data-user-hwid-reset="${esc(uid)}">HWID 초기화</button></div></td></tr>`;
+  }).join('')}</tbody></table>`;
+  bindAdminUserActions(box);
+}
+function bindAdminUserFilters(){
+  ['adminUserSearch','adminUserLicenseStatus'].forEach(id=>{ const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1'; el.addEventListener('input',renderAdminUserTable); el.addEventListener('change',renderAdminUserTable); });
+}
+function bindAdminUserActions(root=document){
+  root.querySelectorAll('[data-user-license]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',()=>adminQuickLicense(btn.dataset.userLicense)); });
+  root.querySelectorAll('[data-user-hwid-reset]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',()=>adminResetHwid(btn.dataset.userHwidReset)); });
+}
+async function adminQuickLicense(raw){
+  if(!isAdminUser)return alert(tr('no_permission'));
+  const [uid,plan,status]=String(raw).split(':');
+  if(!uid)return;
+  try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'licenses',uid),{licensed:status==='active',plan,status,method:'admin',updatedAt:serverTimestamp(),createdAt:serverTimestamp()},{merge:true}); adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(plan)} / ${esc(status)}`); }catch(e){ alert(e.message); }
+}
+async function adminResetHwid(uid){
+  if(!isAdminUser)return alert(tr('no_permission'));
+  if(!confirm('이 사용자의 HWID를 초기화할까요?'))return;
+  try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'users',uid),{hwid:'',updatedAt:serverTimestamp()},{merge:true}); await setDoc(doc(db,'licenses',uid),{hwid:'',updatedAt:serverTimestamp()},{merge:true}); adminFlash(`HWID 초기화 완료 · ${esc(uid)}`); }catch(e){ alert(e.message); }
+}
+function listenAdminUsers(){
+  if(!isAdminUser || !$('adminUserList')) return;
+  bindAdminUserFilters();
+  // Dashboard watcher already fills rows. If dashboard is hidden in a future page, start a local watcher too.
+  if(!$('dashUsers')){
+    const {collection,onSnapshot}=firestoreApi;
+    addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); }));
+    addUnsub(onSnapshot(collection(db,'licenses'), snap=>{ adminLicenseRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); }));
+  }
+}
+async function loadAdminDownloadSettings(){
+  if(!isAdminUser || !$('adminDownloadSave')) return;
+  try{
+    const {doc,getDoc}=firestoreApi; const snap=await getDoc(doc(db,'downloads','latest')); const d=snap.exists()?snap.data():{};
+    if($('adminDownloadVersion')) $('adminDownloadVersion').value=d.version||'';
+    if($('adminDownloadFilename')) $('adminDownloadFilename').value=d.filename||'';
+    if($('adminDownloadUrl')) $('adminDownloadUrl').value=d.url||'';
+    if($('adminDownloadNotes')) $('adminDownloadNotes').value=d.notes||d.description||'';
+    if($('adminDownloadMandatory')) $('adminDownloadMandatory').checked=!!d.mandatory;
+  }catch(e){ console.error(e); }
+  const btn=$('adminDownloadSave'); if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',saveAdminDownloadSettings);
+}
+async function saveAdminDownloadSettings(){
+  if(!isAdminUser)return alert(tr('no_permission'));
+  try{
+    const {doc,setDoc,serverTimestamp}=firestoreApi;
+    await setDoc(doc(db,'downloads','latest'),{version:$('adminDownloadVersion').value.trim(),filename:$('adminDownloadFilename').value.trim(),url:$('adminDownloadUrl').value.trim(),notes:$('adminDownloadNotes').value.trim(),mandatory:$('adminDownloadMandatory').checked,releaseDate:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
+    adminFlash(`${tr('saved')} · downloads/latest`);
+  }catch(e){ alert(e.message); }
 }
 
 async function adminAdd(collectionName,data){
