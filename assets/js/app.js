@@ -11,6 +11,10 @@ let currentUserDoc = null;
 let isAdminUser = false;
 let firestoreApi = {};
 const unsubscribers = [];
+let adminNoticeRows = [];
+let adminPatchRows = [];
+let adminFaqRows = [];
+let adminTicketRows = [];
 
 const textOriginals = new WeakMap();
 const attrOriginals = new WeakMap();
@@ -381,25 +385,60 @@ async function ticketReply(e){
     input.value='';
   }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
 }
-function listenAdminTickets(){
-  const list=$('adminTicketList'); if(!list||!isAdminUser)return;
-  const {collection,onSnapshot}=firestoreApi;
-  addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
-    if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-    list.innerHTML=rows.map(t=>ticketShell(t,true,true)).join('');
-    list.querySelectorAll('[data-replies]').forEach(el=>listenReplies(el.dataset.replies,el));
-    bindReplyForms(list);
-  }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
+function filterRows(rows, searchId, statusId, fields){
+  const q = normalize($(searchId)?.value || '').toLowerCase();
+  const status = $(statusId)?.value || 'all';
+  return (rows || []).filter(x => {
+    const visible = x.visible !== false;
+    const statusOk = status === 'all'
+      || (status === 'visible' && visible)
+      || (status === 'hidden' && !visible)
+      || (status === 'pinned' && !!x.pinned)
+      || (status === 'open' && (x.status || 'open') === 'open')
+      || (status === 'answered' && x.status === 'answered')
+      || (status === 'closed' && x.status === 'closed');
+    const hay = fields.map(f => x[f] || '').join(' ').toLowerCase();
+    return statusOk && (!q || hay.includes(q));
+  });
 }
-
-
+function statusPill(row){
+  if ('status' in row) return `<span class="badge ${esc(row.status || 'open')}">${esc(row.status || 'open')}</span>`;
+  const visible = row.visible !== false;
+  return `<span class="badge ${visible ? 'active' : 'closed'}">${visible ? '공개' : '비공개'}</span>${row.pinned ? ' <span class="badge pending">고정</span>' : ''}`;
+}
 function adminActions(collectionName, id){
-  return `<div class="admin-row"><button class="secondary mini-btn" data-admin-edit="${collectionName}:${esc(id)}">${tr('edit')}</button><button class="secondary mini-btn danger-btn" data-admin-delete="${collectionName}:${esc(id)}">${tr('del')}</button></div>`;
+  return `<div class="table-actions"><button class="secondary mini-btn" data-admin-edit="${collectionName}:${esc(id)}">${tr('edit')}</button><button class="secondary mini-btn danger-btn" data-admin-delete="${collectionName}:${esc(id)}">${tr('del')}</button></div>`;
+}
+function renderAdminPostTable(kind){
+  const cfg = {
+    notices: {box:'adminNoticeList', count:'adminNoticeCount', rows:adminNoticeRows, search:'adminNoticeSearch', status:'adminNoticeStatus', collection:'announcements', fields:['title','content'], title:x=>esc(x.title||'-'), sub:x=>x.pinned?'상단 고정':'', date:x=>fmtDate(x.createdAt)},
+    patches: {box:'adminPatchList', count:'adminPatchCount', rows:adminPatchRows, search:'adminPatchSearch', status:'adminPatchStatus', collection:'patchNotes', fields:['version','title','content'], title:x=>`${x.version?`v${esc(x.version)} · `:''}${esc(x.title||'-')}`, sub:x=>'', date:x=>fmtDate(x.createdAt)},
+    faq: {box:'adminFaqList', count:'adminFaqCount', rows:adminFaqRows, search:'adminFaqSearch', status:'adminFaqStatus', collection:'faq', fields:['question','answer'], title:x=>esc(x.question||'-'), sub:x=>`#${esc(x.order||'')}`, date:x=>String(x.order||'')}
+  }[kind];
+  const box=$(cfg.box); if(!box)return;
+  const rows=filterRows(cfg.rows,cfg.search,cfg.status,cfg.fields);
+  $(cfg.count) && ($(cfg.count).textContent = `${rows.length} / ${cfg.rows.length}`);
+  if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  box.innerHTML = `<table class="admin-table"><thead><tr><th>제목</th><th>상태</th><th>작성일</th><th>관리</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${cfg.title(x)}</b>${cfg.sub(x)?`<small>${cfg.sub(x)}</small>`:''}</td><td>${statusPill(x)}</td><td>${esc(cfg.date(x))}</td><td>${adminActions(cfg.collection,x.id)}</td></tr>`).join('')}</tbody></table>`;
+  bindAdminPostActions(box);
+}
+function renderAdminTicketTable(){
+  const box=$('adminTicketList'); if(!box||!isAdminUser)return;
+  const rows=filterRows(adminTicketRows,'adminTicketSearch','adminTicketStatus',['title','content','email','uid']).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
+  $('adminTicketCount') && ($('adminTicketCount').textContent = `${rows.length} / ${adminTicketRows.length}`);
+  if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  box.innerHTML = `<table class="admin-table"><thead><tr><th>제목</th><th>사용자</th><th>상태</th><th>수정일</th><th>관리</th></tr></thead><tbody>${rows.map(t=>`<tr><td><b>${esc(t.title||'-')}</b><small>${esc((t.content||'').slice(0,80))}${(t.content||'').length>80?'...':''}</small></td><td><span class="mono">${esc(t.email||t.uid||'')}</span></td><td>${statusPill(t)}</td><td>${esc(fmtDate(t.updatedAt||t.createdAt))}</td><td><div class="table-actions"><a class="secondary mini-btn" href="./ticket.html?id=${encodeURIComponent(t.id)}">상세/답변</a><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div></td></tr>`).join('')}</tbody></table>`;
+  bindTicketActions(box);
 }
 function bindAdminPostActions(root=document){
   root.querySelectorAll('[data-admin-edit]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',()=>editAdminPost(btn.dataset.adminEdit)); });
   root.querySelectorAll('[data-admin-delete]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',()=>deleteAdminPost(btn.dataset.adminDelete)); });
+}
+function bindAdminFilters(){
+  [['adminNoticeSearch','notices'],['adminNoticeStatus','notices'],['adminPatchSearch','patches'],['adminPatchStatus','patches'],['adminFaqSearch','faq'],['adminFaqStatus','faq']].forEach(([id,kind])=>{
+    const el=$(id); if(!el || el.dataset.bound)return; el.dataset.bound='1'; el.addEventListener('input',()=>renderAdminPostTable(kind)); el.addEventListener('change',()=>renderAdminPostTable(kind));
+  });
+  [['adminTicketSearch'],['adminTicketStatus']].forEach(([id])=>{ const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1'; el.addEventListener('input',renderAdminTicketTable); el.addEventListener('change',renderAdminTicketTable); });
 }
 async function editAdminPost(raw){
   if(!isAdminUser)return alert(tr('no_permission'));
@@ -408,11 +447,11 @@ async function editAdminPost(raw){
     const {doc,getDoc,updateDoc,serverTimestamp}=firestoreApi; const ref=doc(db,collectionName,id); const snap=await getDoc(ref); if(!snap.exists())return;
     const d=snap.data(); const data={updatedAt:serverTimestamp()};
     if(collectionName==='announcements'){
-      const title=prompt('Title',d.title||''); if(title===null)return; const content=prompt('Content',d.content||''); if(content===null)return; data.title=title.trim(); data.content=content.trim(); data.pinned=confirm('Pinned? OK=true / Cancel=false');
+      const title=prompt('Title',d.title||''); if(title===null)return; const content=prompt('Content',d.content||''); if(content===null)return; data.title=title.trim(); data.content=content.trim(); data.pinned=confirm('Pinned? OK=true / Cancel=false'); data.visible=confirm('Visible? OK=true / Cancel=false');
     } else if(collectionName==='patchNotes'){
-      const version=prompt('Version',d.version||''); if(version===null)return; const title=prompt('Title',d.title||''); if(title===null)return; const content=prompt('Content',d.content||''); if(content===null)return; data.version=version.trim(); data.title=title.trim(); data.content=content.trim();
+      const version=prompt('Version',d.version||''); if(version===null)return; const title=prompt('Title',d.title||''); if(title===null)return; const content=prompt('Content',d.content||''); if(content===null)return; data.version=version.trim(); data.title=title.trim(); data.content=content.trim(); data.visible=confirm('Visible? OK=true / Cancel=false');
     } else if(collectionName==='faq'){
-      const question=prompt('Question',d.question||''); if(question===null)return; const answer=prompt('Answer',d.answer||''); if(answer===null)return; const order=prompt('Order',d.order||1); if(order===null)return; data.question=question.trim(); data.answer=answer.trim(); data.order=Number(order||1);
+      const question=prompt('Question',d.question||''); if(question===null)return; const answer=prompt('Answer',d.answer||''); if(answer===null)return; const order=prompt('Order',d.order||1); if(order===null)return; data.question=question.trim(); data.answer=answer.trim(); data.order=Number(order||1); data.visible=confirm('Visible? OK=true / Cancel=false');
     }
     await updateDoc(ref,data); adminFlash(tr('updated'));
   }catch(e){ alert(e.message); }
@@ -423,27 +462,22 @@ async function deleteAdminPost(raw){
   const [collectionName,id]=String(raw).split(':');
   try{ const {doc,deleteDoc}=firestoreApi; await deleteDoc(doc(db,collectionName,id)); adminFlash(tr('deleted')); }catch(e){ alert(e.message); }
 }
+function listenAdminTickets(){
+  const list=$('adminTicketList'); if(!list||!isAdminUser)return;
+  bindAdminFilters();
+  const {collection,onSnapshot}=firestoreApi;
+  addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{
+    adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAdminTicketTable();
+  }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
+}
 function listenAdminPostManager(){
   if(!isAdminUser)return;
+  bindAdminFilters();
   const {collection,onSnapshot,query,orderBy}=firestoreApi;
-  const noticeBox=$('adminNoticeList');
-  if(noticeBox) addUnsub(onSnapshot(query(collection(db,'announcements'),orderBy('createdAt','desc')), snap=>{
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    noticeBox.innerHTML=rows.length?rows.map(x=>`<article class="list-item"><div class="date">${fmtDate(x.createdAt)}</div><h3>${esc(x.title)}</h3><p class="muted">${x.visible===false?'hidden':'visible'} ${x.pinned?'· pinned':''}</p>${adminActions('announcements',x.id)}</article>`).join(''):`<div class="empty-card">${tr('empty')}</div>`;
-    bindAdminPostActions(noticeBox);
-  }));
-  const patchBox=$('adminPatchList');
-  if(patchBox) addUnsub(onSnapshot(query(collection(db,'patchNotes'),orderBy('createdAt','desc')), snap=>{
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    patchBox.innerHTML=rows.length?rows.map(x=>`<article class="list-item"><div class="date">${fmtDate(x.createdAt)}</div><h3>${x.version?`v${esc(x.version)} · `:''}${esc(x.title)}</h3><p class="muted">${x.visible===false?'hidden':'visible'}</p>${adminActions('patchNotes',x.id)}</article>`).join(''):`<div class="empty-card">${tr('empty')}</div>`;
-    bindAdminPostActions(patchBox);
-  }));
-  const faqBox=$('adminFaqList');
-  if(faqBox) addUnsub(onSnapshot(query(collection(db,'faq'),orderBy('order','asc')), snap=>{
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    faqBox.innerHTML=rows.length?rows.map(x=>`<article class="list-item"><div class="date">#${esc(x.order||'')}</div><h3>${esc(x.question)}</h3><p class="muted">${x.visible===false?'hidden':'visible'}</p>${adminActions('faq',x.id)}</article>`).join(''):`<div class="empty-card">${tr('empty')}</div>`;
-    bindAdminPostActions(faqBox);
-  }));
+  if($('adminNoticeList')) addUnsub(onSnapshot(query(collection(db,'announcements'),orderBy('createdAt','desc')), snap=>{ adminNoticeRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('notices'); }));
+  if($('adminPatchList')) addUnsub(onSnapshot(query(collection(db,'patchNotes'),orderBy('createdAt','desc')), snap=>{ adminPatchRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('patches'); }));
+  if($('adminFaqList')) addUnsub(onSnapshot(query(collection(db,'faq'),orderBy('order','asc')), snap=>{ adminFaqRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('faq'); }));
 }
 
 async function adminAdd(collectionName,data){
