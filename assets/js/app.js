@@ -137,6 +137,26 @@ function configuredFirebase(){ const f = CONFIG.firebase || {}; return f.apiKey 
 function addUnsub(fn){ if (typeof fn === 'function') unsubscribers.push(fn); return fn; }
 function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}catch{} } }
 
+
+function updatePurchaseAccountBox(){
+  const box = $('purchaseAccountBox');
+  const text = $('purchaseAccountText');
+  if(!box || !text) return;
+  if(currentUser){
+    box.classList.add('is-signed-in');
+    text.innerHTML = `결제 완료 시 <b>${esc(currentUser.email || currentUser.uid)}</b> 계정에 Lifetime 라이선스가 자동 지급됩니다.`;
+  } else {
+    box.classList.remove('is-signed-in');
+    text.textContent = '먼저 Google 로그인 후 결제해주세요. 로그인된 계정의 UID에 라이선스가 지급됩니다.';
+  }
+}
+function paypalStatus(msg, type=''){
+  const el = $('paypalStatus');
+  if(!el) return;
+  el.className = 'muted small paypal-status ' + type;
+  el.textContent = msg || '';
+}
+
 function setAuthUiSignedOut(){
   currentUser = null; currentUserDoc = null; isAdminUser = false;
   $('adminNav')?.classList.add('hidden');
@@ -150,7 +170,9 @@ function setAuthUiSignedOut(){
   if (page==='my-tickets.html' && $('myTicketList')) $('myTicketList').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='admin.html' && $('admin')) $('admin').classList.add('admin-locked');
+  updatePurchaseAccountBox();
 }
+
 function metaCard(k,v){ return `<div class="stat-card"><b>${esc(k)}</b><span>${esc(v || '-')}</span></div>`; }
 async function setAuthUiSignedIn(user){
   currentUser=user;
@@ -169,7 +191,9 @@ async function setAuthUiSignedIn(user){
     if (isAdminUser) { $('admin')?.classList.remove('admin-locked'); listenAdminDashboard(); listenAdminUsers(); listenAdminTickets(); listenAdminPostManager(); bindAdminBoardFilters(); loadAdminDownloadSettings(); }
     else { $('admin') && ($('admin').innerHTML = `<div class="empty-card">${tr('admin_required')}</div>`); }
   }
+  updatePurchaseAccountBox();
 }
+
 async function upsertUser(user){
   try {
     const {doc,getDoc,setDoc,serverTimestamp}=firestoreApi;
@@ -952,18 +976,70 @@ function initForms(){
     }catch(err){ alert(err.message); }
   });
 }
+async function callFunctionJson(name, payload){
+  const base = String(CONFIG.functionsBaseUrl || '').replace(/\/$/, '');
+  if(!base || base.includes('PASTE_')) throw new Error('Functions URL이 설정되지 않았습니다. assets/js/config.js의 functionsBaseUrl을 확인하세요.');
+  if(!currentUser) throw new Error('Google 로그인 후 결제할 수 있습니다.');
+  const token = await currentUser.getIdToken(true);
+  const res = await fetch(`${base}/${name}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(payload || {})
+  });
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : {}; } catch(_) { data = {raw:text}; }
+  if(!res.ok) throw new Error(data && data.message ? data.message : `Function ${name} failed (${res.status})`);
+  return data || {};
+}
 function initPayPal(){
-  if(!CONFIG.paypalClientId||String(CONFIG.paypalClientId).startsWith('PASTE_')||!$('paypalButtons')) return;
+  if(!$('paypalButtons')) return;
+  updatePurchaseAccountBox();
+  if(!CONFIG.paypalClientId || String(CONFIG.paypalClientId).startsWith('PASTE_')) {
+    $('paypalButtons').innerHTML = '<p>PayPal Client ID가 아직 설정되지 않았습니다.</p>';
+    return;
+  }
   const s=document.createElement('script');
-  s.src=`https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(CONFIG.paypalClientId)}&currency=${CONFIG.currency||'KRW'}`;
+  const currency = CONFIG.currency || 'USD';
+  s.src=`https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(CONFIG.paypalClientId)}&currency=${encodeURIComponent(currency)}&intent=capture`;
   s.onload=()=>{
     if(!window.paypal)return;
     $('paypalButtons').innerHTML='';
     window.paypal.Buttons({
-      createOrder:(data,actions)=>actions.order.create({purchase_units:[{amount:{value:CONFIG.priceValue||'90000',currency_code:CONFIG.currency||'KRW'},description:'MidiAI Studio License'}]}),
-      onApprove:async(data,actions)=>{ await actions.order.capture(); alert('결제가 확인되었습니다. 1:1 문의에 Google 계정/HWID를 남겨주세요.'); }
+      onClick:()=>{
+        if(!currentUser){ alert('Google 로그인 후 결제해주세요.'); return false; }
+        paypalStatus(`결제 계정: ${currentUser.email || currentUser.uid}`);
+        return true;
+      },
+      createOrder: async()=>{
+        paypalStatus('PayPal 주문을 생성하는 중입니다...');
+        const result = await callFunctionJson('createPayPalOrder', {
+          plan: CONFIG.plan || 'lifetime',
+          amount: CONFIG.priceValue || '90000',
+          currency: currency
+        });
+        if(!result.id) throw new Error('PayPal 주문 ID를 받지 못했습니다.');
+        paypalStatus('PayPal 결제창을 여는 중입니다...');
+        return result.id;
+      },
+      onApprove: async(data)=>{
+        paypalStatus('결제를 검증하고 라이선스를 지급하는 중입니다...');
+        const result = await callFunctionJson('capturePayPalOrder', {
+          orderId: data.orderID,
+          plan: CONFIG.plan || 'lifetime'
+        });
+        paypalStatus('결제가 완료되었습니다. Lifetime 라이선스가 자동 지급되었습니다.', 'ok');
+        alert('결제가 완료되었습니다. 라이선스가 자동 지급되었습니다.');
+        await loadLicense(currentUser.uid);
+      },
+      onCancel:()=> paypalStatus('결제가 취소되었습니다.'),
+      onError:(err)=>{ console.error('PayPal error',err); paypalStatus('PayPal 결제 오류: '+(err?.message || err), 'err'); alert('PayPal 결제 오류가 발생했습니다. 콘솔을 확인해주세요.'); }
     }).render('#paypalButtons');
   };
+  s.onerror=()=>paypalStatus('PayPal SDK 로딩 실패. Client ID와 도메인 설정을 확인하세요.', 'err');
   document.body.appendChild(s);
 }
 

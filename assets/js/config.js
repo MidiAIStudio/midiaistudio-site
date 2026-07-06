@@ -8,8 +8,11 @@ window.MIDIAI_CONFIG = {
     appId: "1:885790552640:web:19c818b18a18b9d0a965a5",
     measurementId: "G-L1YHRBLDN9"
   },
-  paypalClientId: "PASTE_PAYPAL_CLIENT_ID",
+  paypalClientId: "AafmcwWdMmC_lPmBJ1U0cnMqVml00HjXv0PO6MrE_Ev2PyeqhMTpRxCpbmYIlijp1w3DTbJHIXW8x7rA",
+  functionsBaseUrl: "https://us-central1-midiaistudio.cloudfunctions.net",
   currency: "KRW",
   priceValue: "90000",
+  priceDisplay: "90,000원",
+  plan: "lifetime",
   supportDiscordUrl: ""
 };
