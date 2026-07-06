@@ -6,7 +6,7 @@ V17 adds an operations-oriented admin dashboard on top of V16.
 
 - Admin dashboard counters: users, active licenses, open tickets, notices, patch notes, orders
 - User/license management table
-  - Search by email/name/UID/HWID
+  - Search by email/name/UID/HWID 
   - Filter by license status
   - Quick grant: Lifetime / Trial / Ban
   - HWID reset action
