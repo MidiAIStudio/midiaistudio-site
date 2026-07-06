@@ -1,14 +1,3 @@
-# MidiAI Studio Homepage V20 Community Redesign
+# MidiAI Studio
 
-자유게시판 UX를 커뮤니티형 구조로 재설계한 버전입니다.
-
-## 변경 사항
-- 자유게시판 목록을 테이블형 커뮤니티 레이아웃으로 재설계
-- 게시글 상세 페이지 좌측 중복 메뉴 제거
-- 게시글 상세를 전체 폭 카드형으로 변경
-- 댓글/답글 UI 개선
-- 상단 심볼 이미지 유지 및 캐시 방지 버전 갱신
-
-## 적용 방법
-압축을 풀고 GitHub 로컬 저장소 루트에 덮어쓴 뒤 Commit/Push 하세요.
-브라우저에서 Ctrl+F5로 강력 새로고침하세요.
+Official Website
