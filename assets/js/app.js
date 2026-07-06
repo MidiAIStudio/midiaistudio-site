@@ -18,21 +18,21 @@ const attrOriginals = new WeakMap();
 const I18N = {
   en: {
     '홈':'Home','다운로드':'Downloads','구매':'Purchase','공지사항':'Notices','공지 목록':'Notice list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','FAQ':'FAQ','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout',
-    '7월 31일까지 할인 진행중':'Discount available until July 31','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'The easiest way to turn piano covers into MIDI','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio official portal. The home page focuses on product, purchase, and downloads; notices, patch notes, and private support are separated into board-style pages.',
+    '7월 31일까지 할인 진행중':'Discount available until July 31','피아노 커버를':'Piano covers','MIDI로 바꾸는':'into MIDI','가장 쉬운 방법':'made easy','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'The easiest way to turn piano covers into MIDI','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio official portal. The home page focuses on product, purchase, and downloads; notices, patch notes, and private support are separated into board-style pages.',
     '라이선스 구매하기':'Buy license','1:1 문의하기':'Contact support','Windows 지원':'Windows support','Google 계정 연동':'Google account linked','비공개 문의':'Private support','업데이트, 이벤트, 운영 안내를 확인합니다.':'Check updates, events, and service notices.','버전별 변경 사항을 확인합니다.':'Check changes by version.','비공개 문의를 작성하고 답변을 확인합니다.':'Create private tickets and check replies.','라이선스 상태와 로그인 정보를 확인합니다.':'Check license status and login details.','바로가기':'Open','문의하기':'Contact','확인하기':'View','최신 설치 파일':'Latest installer','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Shows the latest version from Firestore downloads/latest.','불러오는 중...':'Loading...',
     'Google 로그인':'Sign in with Google','로그인 전':'Not signed in','Google 로그인으로 라이선스 확인 준비':'Sign in with Google to check your license','라이선스 확인 전':'License not checked',
     '공지 상세':'Notice detail','자주 묻는 질문':'FAQ','비공개 1:1 문의':'Private support','문의 등록':'Submit ticket','문의 상세':'Ticket detail','라이선스 구매':'Buy license','MidiAI Studio License':'MidiAI Studio License','패치노트 등록':'Add patch note','공지 등록':'Add notice','FAQ 등록':'Add FAQ','라이선스 저장':'Save license','문의 답변':'Ticket replies','공지 작성':'Write notice','패치노트 작성':'Write patch note','FAQ 작성':'Write FAQ','라이선스 지급/수정':'Grant/edit license',
     '제목':'Title','내용':'Content','검색':'Search','버전':'Version','질문':'Question','답변':'Answer','순서':'Order','상단 고정':'Pin to top','플랜':'Plan','상태':'Status','메모':'Memo','사용자 UID':'User UID','등록':'Submit','저장':'Save','문의 내용을 자세히 적어주세요.':'Please describe your issue in detail.','로그인 오류 / 라이선스 문의':'Login issue / license question','로그인이 필요합니다.':'Sign-in required.','내가 작성한 비공개 문의와 답변을 확인합니다.':'View your private tickets and replies.','문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.':'Only you and the admin can view this ticket. Please sign in first.','role=admin 계정만 사용할 수 있습니다.':'Only role=admin accounts can use this page.',
-    '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','문의가 등록되었습니다.':'Ticket created.'
+    '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.'
   },
   ja: {
     '홈':'ホーム','다운로드':'ダウンロード','구매':'購入','공지사항':'お知らせ','공지 목록':'お知らせ一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト',
-    '7월 31일까지 할인 진행중':'7月31日まで割引中','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'ピアノカバーをMIDIに変える一番簡単な方法','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio公式ポータルです。ホームは紹介・購入・ダウンロードを中心にし、お知らせ・パッチノート・非公開問い合わせは別ページに分けました。',
+    '7월 31일까지 할인 진행중':'7月31日まで割引中','피아노 커버를':'ピアノカバーを','MIDI로 바꾸는':'MIDIに変える','가장 쉬운 방법':'一番簡単な方法','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'ピアノカバーをMIDIに変える一番簡単な方法','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio公式ポータルです。ホームは紹介・購入・ダウンロードを中心にし、お知らせ・パッチノート・非公開問い合わせは別ページに分けました。',
     '라이선스 구매하기':'ライセンス購入','1:1 문의하기':'問い合わせる','Windows 지원':'Windows対応','Google 계정 연동':'Googleアカウント連携','비공개 문의':'非公開問い合わせ','업데이트, 이벤트, 운영 안내를 확인합니다.':'アップデート、イベント、運営案内を確認できます。','버전별 변경 사항을 확인합니다.':'バージョン別の変更内容を確認できます。','비공개 문의를 작성하고 답변을 확인합니다.':'非公開問い合わせを作成し、返信を確認できます。','라이선스 상태와 로그인 정보를 확인합니다.':'ライセンス状態とログイン情報を確認できます。','바로가기':'開く','문의하기':'問い合わせ','확인하기':'確認','최신 설치 파일':'最新インストーラー','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Firestore downloads/latest を基準に最新バージョンを表示します。','불러오는 중...':'読み込み中...',
     'Google 로그인':'Googleログイン','로그인 전':'未ログイン','Google 로그인으로 라이선스 확인 준비':'Googleログインでライセンス確認','라이선스 확인 전':'ライセンス未確認',
     '공지 상세':'お知らせ詳細','자주 묻는 질문':'よくある質問','비공개 1:1 문의':'非公開お問い合わせ','문의 등록':'送信','문의 상세':'問い合わせ詳細','라이선스 구매':'ライセンス購入','MidiAI Studio License':'MidiAI Studio License','패치노트 등록':'パッチノート登録','공지 등록':'お知らせ登録','FAQ 등록':'FAQ登録','라이선스 저장':'ライセンス保存','문의 답변':'問い合わせ返信','공지 작성':'お知らせ作成','패치노트 작성':'パッチノート作成','FAQ 작성':'FAQ作成','라이선스 지급/수정':'ライセンス付与/修正',
     '제목':'タイトル','내용':'内容','검색':'検索','버전':'バージョン','질문':'質問','답변':'回答','순서':'順序','상단 고정':'上部固定','플랜':'プラン','상태':'状態','메모':'メモ','사용자 UID':'ユーザーUID','등록':'登録','저장':'保存','문의 내용을 자세히 적어주세요.':'お問い合わせ内容を詳しく入力してください。','로그인 오류 / 라이선스 문의':'ログインエラー / ライセンス問い合わせ','로그인이 필요합니다.':'ログインが必要です。','내가 작성한 비공개 문의와 답변을 확인합니다.':'自分の非公開問い合わせと返信を確認します。','문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.':'問い合わせ内容は作成者と管理者のみ閲覧できます。ログイン後に作成してください。','role=admin 계정만 사용할 수 있습니다.':'role=adminアカウントのみ使用できます。',
-    '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','문의가 등록되었습니다.':'問い合わせを登録しました。'
+    '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','수정':'編集','삭제':'削除','종료 처리':'終了にする','관리':'管理','상세 보기':'詳細を見る','공지 관리':'お知らせ管理','패치노트 관리':'パッチノート管理','FAQ 관리':'FAQ管理','정말 삭제할까요?':'本当に削除しますか？','수정 완료':'更新しました','삭제 완료':'削除しました','문의가 등록되었습니다.':'問い合わせを登録しました。'
   }
 };
 
@@ -96,7 +96,7 @@ function tr(k){
     check_failed:'확인 실패', empty:'표시할 내용이 없습니다.', saved:'저장 완료', ticket_created:'문의가 등록되었습니다.',
     need_login:'로그인이 필요합니다.', download:'다운로드', admin_required:'관리자 로그인이 필요합니다.',
     no_permission:'권한이 없습니다.', answered:'답변 완료', closed:'종료', open:'접수', reply_placeholder:'답변 또는 추가 내용 입력',
-    submit:'등록'
+    submit:'등록', edit:'수정', del:'삭제', close:'종료 처리', updated:'수정 완료', deleted:'삭제 완료', manage:'관리', confirm_delete:'정말 삭제할까요?'
   };
   const EN = {
     login:'Sign in with Google', logout:'Logout', guest:'Not signed in', guest_desc:'Sign in with Google to check license',
@@ -104,7 +104,7 @@ function tr(k){
     check_failed:'Check failed', empty:'Nothing to show.', saved:'Saved', ticket_created:'Ticket created.',
     need_login:'Sign-in required.', download:'Download', admin_required:'Admin sign-in required.',
     no_permission:'You do not have permission.', answered:'Answered', closed:'Closed', open:'Open', reply_placeholder:'Reply or add more details',
-    submit:'Submit'
+    submit:'Submit', edit:'Edit', del:'Delete', close:'Close', updated:'Updated', deleted:'Deleted', manage:'Manage', confirm_delete:'Delete this item?'
   };
   const JA = {
     login:'Googleログイン', logout:'ログアウト', guest:'未ログイン', guest_desc:'Googleログインでライセンス確認',
@@ -112,7 +112,7 @@ function tr(k){
     check_failed:'確認失敗', empty:'表示する内容がありません。', saved:'保存完了', ticket_created:'問い合わせを登録しました。',
     need_login:'ログインが必要です。', download:'ダウンロード', admin_required:'管理者ログインが必要です。',
     no_permission:'権限がありません。', answered:'回答済み', closed:'終了', open:'受付', reply_placeholder:'返信または追加内容を入力',
-    submit:'登録'
+    submit:'登録', edit:'編集', del:'削除', close:'終了にする', updated:'更新しました', deleted:'削除しました', manage:'管理', confirm_delete:'本当に削除しますか？'
   };
   const T = lang === 'en' ? EN : lang === 'ja' ? JA : KO;
   return T[k] || KO[k] || k;
@@ -153,7 +153,7 @@ async function setAuthUiSignedIn(user){
   if (page==='my-tickets.html') listenMyTickets();
   if (page==='ticket.html') listenTicketDetail();
   if (page==='admin.html') {
-    if (isAdminUser) { $('admin')?.classList.remove('admin-locked'); listenAdminTickets(); }
+    if (isAdminUser) { $('admin')?.classList.remove('admin-locked'); listenAdminTickets(); listenAdminPostManager(); }
     else { $('admin') && ($('admin').innerHTML = `<div class="empty-card">${tr('admin_required')}</div>`); }
   }
 }
@@ -291,8 +291,10 @@ function showFormMsg(key,ok=true){ const el=$('ticketFormMsg'); if(el){ el.textC
 function statusBadge(st){ const key=st==='answered'?'answered':st==='closed'?'closed':'open'; return `<span class="badge ${esc(st||'open')}">${tr(key)}</span>`; }
 function ticketShell(t, detail=false, admin=false){
   const href=detail?'#':`./ticket.html?id=${encodeURIComponent(t.id)}`;
+  const canManage = admin || detail;
   const form=(admin||detail)?`<form class="reply-form" data-ticket="${esc(t.id)}"><input placeholder="${esc(tr('reply_placeholder'))}" required><button class="primary" type="submit">${tr('submit')}</button></form>`:'';
-  return `<article class="list-item"><div class="ticket-head"><div class="date">${fmtDate(t.createdAt)}</div>${statusBadge(t.status)}</div><h3>${detail?esc(t.title):`<a href="${href}">${esc(t.title)}</a>`}</h3><div class="content">${nl2br(t.content)}</div><div class="ticket-replies" data-replies="${esc(t.id)}"></div>${form}</article>`;
+  const actions=canManage?`<div class="admin-row"><button class="secondary mini-btn" data-ticket-edit="${esc(t.id)}">${tr('edit')}</button><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div>`:'';
+  return `<article class="list-item"><div class="ticket-head"><div class="date">${fmtDate(t.createdAt)}</div>${statusBadge(t.status)}</div><h3>${detail?esc(t.title):`<a href="${href}">${esc(t.title)}</a>`}</h3><div class="content">${nl2br(t.content)}</div>${actions}<div class="ticket-replies" data-replies="${esc(t.id)}"></div>${form}</article>`;
 }
 function listenReplies(ticketId, container){
   const {collection,query,orderBy,onSnapshot}=firestoreApi;
@@ -302,7 +304,42 @@ function listenReplies(ticketId, container){
     container.innerHTML=rows.map(r=>`<div class="reply"><b>${esc(r.role||'user')} · ${fmtDate(r.createdAt)}</b><p>${nl2br(r.content)}</p></div>`).join('');
   }, err => { console.error('replies',err); container.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
-function bindReplyForms(root=document){ root.querySelectorAll('.reply-form').forEach(f=>{ if(f.dataset.bound) return; f.dataset.bound='1'; f.addEventListener('submit',ticketReply); }); }
+function bindReplyForms(root=document){ root.querySelectorAll('.reply-form').forEach(f=>{ if(f.dataset.bound) return; f.dataset.bound='1'; f.addEventListener('submit',ticketReply); }); bindTicketActions(root); }
+function bindTicketActions(root=document){
+  root.querySelectorAll('[data-ticket-edit]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>editTicket(btn.dataset.ticketEdit)); });
+  root.querySelectorAll('[data-ticket-delete]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>deleteTicket(btn.dataset.ticketDelete)); });
+  root.querySelectorAll('[data-ticket-close]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>closeTicket(btn.dataset.ticketClose)); });
+}
+async function editTicket(ticketId){
+  if(!currentUser)return;
+  try{
+    const {doc,getDoc,updateDoc,serverTimestamp}=firestoreApi;
+    const ref=doc(db,'supportTickets',ticketId); const snap=await getDoc(ref); if(!snap.exists())return;
+    const t=snap.data(); if(!isAdminUser && t.uid!==currentUser.uid){ alert(tr('no_permission')); return; }
+    const title=prompt('Title',t.title||''); if(title===null)return;
+    const content=prompt('Content',t.content||''); if(content===null)return;
+    await updateDoc(ref,{title:title.trim(),content:content.trim(),updatedAt:serverTimestamp()});
+    alert(tr('updated'));
+  }catch(e){ alert(e.message); }
+}
+async function deleteTicket(ticketId){
+  if(!currentUser || !confirm(tr('confirm_delete')))return;
+  try{
+    const {doc,getDoc,deleteDoc}=firestoreApi;
+    const ref=doc(db,'supportTickets',ticketId); const snap=await getDoc(ref); if(!snap.exists())return;
+    const t=snap.data(); if(!isAdminUser && t.uid!==currentUser.uid){ alert(tr('no_permission')); return; }
+    await deleteDoc(ref); alert(tr('deleted')); if(page==='ticket.html') location.href='./my-tickets.html';
+  }catch(e){ alert(e.message); }
+}
+async function closeTicket(ticketId){
+  if(!currentUser)return;
+  try{
+    const {doc,getDoc,updateDoc,serverTimestamp}=firestoreApi;
+    const ref=doc(db,'supportTickets',ticketId); const snap=await getDoc(ref); if(!snap.exists())return;
+    const t=snap.data(); if(!isAdminUser && t.uid!==currentUser.uid){ alert(tr('no_permission')); return; }
+    await updateDoc(ref,{status:'closed',updatedAt:serverTimestamp()});
+  }catch(e){ alert(e.message); }
+}
 function listenMyTickets(){
   const list=$('myTicketList'); if(!list)return;
   if(!currentUser){ list.innerHTML=`<div class="empty-card">${tr('need_login')}</div>`; return; }
@@ -312,6 +349,7 @@ function listenMyTickets(){
     const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
     if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
     list.innerHTML=rows.map(t=>ticketShell(t,false,false)).join('');
+    bindTicketActions(list);
   }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
 function listenTicketDetail(){
@@ -353,6 +391,59 @@ function listenAdminTickets(){
     list.querySelectorAll('[data-replies]').forEach(el=>listenReplies(el.dataset.replies,el));
     bindReplyForms(list);
   }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
+}
+
+
+function adminActions(collectionName, id){
+  return `<div class="admin-row"><button class="secondary mini-btn" data-admin-edit="${collectionName}:${esc(id)}">${tr('edit')}</button><button class="secondary mini-btn danger-btn" data-admin-delete="${collectionName}:${esc(id)}">${tr('del')}</button></div>`;
+}
+function bindAdminPostActions(root=document){
+  root.querySelectorAll('[data-admin-edit]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',()=>editAdminPost(btn.dataset.adminEdit)); });
+  root.querySelectorAll('[data-admin-delete]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',()=>deleteAdminPost(btn.dataset.adminDelete)); });
+}
+async function editAdminPost(raw){
+  if(!isAdminUser)return alert(tr('no_permission'));
+  const [collectionName,id]=String(raw).split(':');
+  try{
+    const {doc,getDoc,updateDoc,serverTimestamp}=firestoreApi; const ref=doc(db,collectionName,id); const snap=await getDoc(ref); if(!snap.exists())return;
+    const d=snap.data(); const data={updatedAt:serverTimestamp()};
+    if(collectionName==='announcements'){
+      const title=prompt('Title',d.title||''); if(title===null)return; const content=prompt('Content',d.content||''); if(content===null)return; data.title=title.trim(); data.content=content.trim(); data.pinned=confirm('Pinned? OK=true / Cancel=false');
+    } else if(collectionName==='patchNotes'){
+      const version=prompt('Version',d.version||''); if(version===null)return; const title=prompt('Title',d.title||''); if(title===null)return; const content=prompt('Content',d.content||''); if(content===null)return; data.version=version.trim(); data.title=title.trim(); data.content=content.trim();
+    } else if(collectionName==='faq'){
+      const question=prompt('Question',d.question||''); if(question===null)return; const answer=prompt('Answer',d.answer||''); if(answer===null)return; const order=prompt('Order',d.order||1); if(order===null)return; data.question=question.trim(); data.answer=answer.trim(); data.order=Number(order||1);
+    }
+    await updateDoc(ref,data); adminFlash(tr('updated'));
+  }catch(e){ alert(e.message); }
+}
+async function deleteAdminPost(raw){
+  if(!isAdminUser)return alert(tr('no_permission'));
+  if(!confirm(tr('confirm_delete')))return;
+  const [collectionName,id]=String(raw).split(':');
+  try{ const {doc,deleteDoc}=firestoreApi; await deleteDoc(doc(db,collectionName,id)); adminFlash(tr('deleted')); }catch(e){ alert(e.message); }
+}
+function listenAdminPostManager(){
+  if(!isAdminUser)return;
+  const {collection,onSnapshot,query,orderBy}=firestoreApi;
+  const noticeBox=$('adminNoticeList');
+  if(noticeBox) addUnsub(onSnapshot(query(collection(db,'announcements'),orderBy('createdAt','desc')), snap=>{
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    noticeBox.innerHTML=rows.length?rows.map(x=>`<article class="list-item"><div class="date">${fmtDate(x.createdAt)}</div><h3>${esc(x.title)}</h3><p class="muted">${x.visible===false?'hidden':'visible'} ${x.pinned?'· pinned':''}</p>${adminActions('announcements',x.id)}</article>`).join(''):`<div class="empty-card">${tr('empty')}</div>`;
+    bindAdminPostActions(noticeBox);
+  }));
+  const patchBox=$('adminPatchList');
+  if(patchBox) addUnsub(onSnapshot(query(collection(db,'patchNotes'),orderBy('createdAt','desc')), snap=>{
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    patchBox.innerHTML=rows.length?rows.map(x=>`<article class="list-item"><div class="date">${fmtDate(x.createdAt)}</div><h3>${x.version?`v${esc(x.version)} · `:''}${esc(x.title)}</h3><p class="muted">${x.visible===false?'hidden':'visible'}</p>${adminActions('patchNotes',x.id)}</article>`).join(''):`<div class="empty-card">${tr('empty')}</div>`;
+    bindAdminPostActions(patchBox);
+  }));
+  const faqBox=$('adminFaqList');
+  if(faqBox) addUnsub(onSnapshot(query(collection(db,'faq'),orderBy('order','asc')), snap=>{
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    faqBox.innerHTML=rows.length?rows.map(x=>`<article class="list-item"><div class="date">#${esc(x.order||'')}</div><h3>${esc(x.question)}</h3><p class="muted">${x.visible===false?'hidden':'visible'}</p>${adminActions('faq',x.id)}</article>`).join(''):`<div class="empty-card">${tr('empty')}</div>`;
+    bindAdminPostActions(faqBox);
+  }));
 }
 
 async function adminAdd(collectionName,data){

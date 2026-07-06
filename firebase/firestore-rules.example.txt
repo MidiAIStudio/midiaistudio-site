@@ -60,7 +60,8 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
 
-      allow delete: if isAdmin();
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
 
       match /replies/{replyId} {
         allow read: if isAdmin()
