@@ -742,7 +742,7 @@ function renderBoardPosts(rows, err){
   if(err){ box.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   const list=boardFilteredSorted(rows||[]);
   if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  box.innerHTML=`<table class="board-table"><thead><tr><th>제목</th><th>작성자</th><th>조회</th><th>추천</th><th>댓글</th><th>작성일</th></tr></thead><tbody>${list.map(x=>`<tr><td><a class="board-title" href="${boardPostUrl(x.id)}">${x.pinned?'📌 ':''}${esc(x.title||'(제목 없음)')}</a><span class="board-meta">${esc(String(x.content||'').slice(0,90))}</span></td><td>${esc(x.displayName||x.email||'-')}</td><td>${Number(x.viewCount||0)}</td><td>${Number(x.likeCount||0)}</td><td>${Number(x.commentCount||0)}</td><td>${esc(fmtDate(x.createdAt))}</td></tr>`).join('')}</tbody></table>`;
+  box.innerHTML=`<div class="community-list-head"><span>제목</span><span>작성자</span><span>조회</span><span>추천</span><span>댓글</span><span>작성일</span></div><div class="community-list-body">${list.map(x=>`<a class="community-post-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}"><div class="community-post-title"><b>${x.pinned?'📌 ':''}${esc(x.title||'(제목 없음)')}</b><small>${esc(String(x.content||'').slice(0,100))}</small></div><div class="community-post-author">${esc(x.displayName||x.email||'-')}</div><div>${Number(x.viewCount||0)}</div><div>${Number(x.likeCount||0)}</div><div>${Number(x.commentCount||0)}</div><div>${esc(fmtDate(x.createdAt))}</div></a>`).join('')}</div>`;
 }
 function listenBoardPosts(){
   const box=$('boardPostList'); if(!box)return;
@@ -796,7 +796,7 @@ function renderBoardPost(d,err){
   if(!d || d.visible===false || d.deleted===true){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
   activeBoardPost=d;
   const manage=canManageRecord(d);
-  box.innerHTML=`<div class="date">${d.pinned?'📌 ':''}${esc(fmtDate(d.createdAt))} · ${esc(d.displayName||d.email||'-')} · 조회 ${Number(d.viewCount||0)} · 추천 <span id="postLikeCount">${Number(d.likeCount||0)}</span> · 댓글 ${Number(d.commentCount||0)}</div><h2>${esc(d.title||'')}</h2><div class="content">${nl2br(d.content||'')}</div><div class="post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 추천</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">수정</a><button id="postDeleteBtn" class="secondary danger-btn">삭제</button>`:''}</div>`;
+  box.innerHTML=`<div class="post-card-head"><div class="post-kicker">${d.pinned?'📌 고정 게시글':'자유게시판'}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid"><span>작성자 <b>${esc(d.displayName||d.email||'-')}</b></span><span>작성일 <b>${esc(fmtDate(d.createdAt))}</b></span><span>조회 <b>${Number(d.viewCount||0)}</b></span><span>추천 <b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span>댓글 <b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div><div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 추천</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">수정</a><button id="postDeleteBtn" class="secondary danger-btn">삭제</button>`:''}</div>`;
   refreshBoardPostActions();
 }
 async function incrementViewOnce(postId){
@@ -859,7 +859,7 @@ function renderBoardComments(postId){
 }
 function renderCommentCard(postId,c,isReply){
   const manage=canManageRecord(c);
-  return `<div class="comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(c.displayName||c.email||'-')}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button class="secondary mini-btn" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button class="secondary mini-btn" data-comment-edit="${esc(c.id)}">수정</button><button class="secondary mini-btn danger-btn" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div>`;
+  return `<div class="comment-card community-comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}"><div class="comment-avatar">${esc(String(c.displayName||c.email||'U').slice(0,1).toUpperCase())}</div><div class="comment-main"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(c.displayName||c.email||'-')}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button class="secondary mini-btn" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button class="secondary mini-btn" data-comment-edit="${esc(c.id)}">수정</button><button class="secondary mini-btn danger-btn" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div></div>`;
 }
 function bindCommentActions(postId,root){
   root.querySelectorAll('[data-comment-reply]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.onclick=()=>openReplyBox(postId,btn.dataset.commentReply,btn.closest('.comment-card')); });

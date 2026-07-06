@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=19.2">
+  <link rel="stylesheet" href="./assets/css/style.css?v=20.0">
 </head>
 <body>
   <div class="orb orb-a"></div>
@@ -16,7 +16,7 @@
 
   <header class="topbar">
     <a class="brand" href="./index.html">
-      <img class="brand-symbol" src="./assets/images/symbol.png?v=19.2" alt="MidiAI Studio">
+      <img class="brand-symbol" src="./assets/images/symbol.png?v=20.0" alt="MidiAI Studio">
       <b>MidiAI Studio</b>
     </a>
     <button id="menuBtn" class="menu-btn" aria-label="menu">☰</button>
@@ -40,47 +40,49 @@
     </div>
   </header>
 
-  <main>
-    <section class="page-hero wrap board-hero-clean">
-      <p class="eyebrow">Community</p>
-      <h1>자유게시판</h1>
-      <p>회원끼리 자유롭게 글을 쓰고 댓글·답글을 남길 수 있는 공간입니다.</p>
+  <main class="community-main">
+    <section class="wrap community-hero">
+      <div class="community-title-row">
+        <img class="community-symbol" src="./assets/images/symbol.png?v=20.0" alt="MidiAI Studio">
+        <div>
+          <p class="eyebrow">Community</p>
+          <h1>자유게시판</h1>
+          <p>회원들이 자유롭게 소통하는 공간입니다. 질문, 후기, 정보 공유를 남겨보세요.</p>
+        </div>
+      </div>
     </section>
 
-    <section class="wrap board-layout-clean">
-      <div class="content-card board-main-card board-wide-card">
-        <div class="toolbar board-toolbar-clean">
-          <div>
-            <h2>게시글 목록</h2>
-            <p class="muted small-copy">공지사항, 패치노트, 1:1 문의는 상단 메뉴에서 이동하세요.</p>
-          </div>
-
-          <div class="board-tools board-tools-clean">
-            <input id="boardPostSearch" class="search-input" placeholder="제목, 내용, 작성자 검색">
-            <select id="boardSort">
-              <option value="latest">최신순</option>
-              <option value="views">조회순</option>
-              <option value="likes">추천순</option>
-              <option value="comments">댓글순</option>
-            </select>
-            <a class="primary write-btn" href="./board-write.html">글쓰기</a>
-          </div>
+    <section class="wrap community-board-shell">
+      <div class="community-board-head">
+        <div>
+          <h2>게시글 목록</h2>
+          <p class="muted small-copy">공지사항·패치노트·1:1 문의는 상단 메뉴에서 이동하세요.</p>
         </div>
-
-        <div id="boardPostList" class="board-table-wrap">
-          <p class="muted">불러오는 중...</p>
+        <div class="community-board-tools">
+          <input id="boardPostSearch" class="search-input" placeholder="제목, 내용, 작성자 검색">
+          <select id="boardSort">
+            <option value="latest">최신순</option>
+            <option value="views">조회순</option>
+            <option value="likes">추천순</option>
+            <option value="comments">댓글순</option>
+          </select>
+          <a class="primary write-btn" href="./board-write.html">글쓰기</a>
         </div>
+      </div>
+
+      <div id="boardPostList" class="community-post-list">
+        <p class="muted">불러오는 중...</p>
       </div>
     </section>
   </main>
 
   <footer>
     <span>© <span id="year"></span> MidiAI Studio</span>
-    <span>Firestore Portal V19.2</span>
+    <span>Community V20</span>
   </footer>
 
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=19.2"></script>
-  <script type="module" src="./assets/js/app.js?v=19.2"></script>
+  <script type="module" src="./assets/js/config.js?v=20.0"></script>
+  <script type="module" src="./assets/js/app.js?v=20.0"></script>
 </body>
 </html>
