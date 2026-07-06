@@ -18,13 +18,17 @@ let adminTicketRows = [];
 let adminUserRows = [];
 let adminLicenseRows = [];
 let adminOrderRows = [];
+let adminBoardRows = [];
+let activeBoardPost = null;
+let activeBoardComments = [];
+let likedActivePost = false;
 
 const textOriginals = new WeakMap();
 const attrOriginals = new WeakMap();
 
 const I18N = {
   en: {
-    '홈':'Home','다운로드':'Downloads','구매':'Purchase','공지사항':'Notices','공지 목록':'Notice list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','FAQ':'FAQ','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout',
+    '홈':'Home','다운로드':'Downloads','구매':'Purchase','공지사항':'Notices','공지 목록':'Notice list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','FAQ':'FAQ','자유게시판':'Free board','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout',
     '7월 31일까지 할인 진행중':'Discount available until July 31','피아노 커버를':'Piano covers','MIDI로 바꾸는':'into MIDI','가장 쉬운 방법':'made easy','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'The easiest way to turn piano covers into MIDI','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio official portal. The home page focuses on product, purchase, and downloads; notices, patch notes, and private support are separated into board-style pages.',
     '라이선스 구매하기':'Buy license','1:1 문의하기':'Contact support','Windows 지원':'Windows support','Google 계정 연동':'Google account linked','비공개 문의':'Private support','업데이트, 이벤트, 운영 안내를 확인합니다.':'Check updates, events, and service notices.','버전별 변경 사항을 확인합니다.':'Check changes by version.','비공개 문의를 작성하고 답변을 확인합니다.':'Create private tickets and check replies.','라이선스 상태와 로그인 정보를 확인합니다.':'Check license status and login details.','바로가기':'Open','문의하기':'Contact','확인하기':'View','최신 설치 파일':'Latest installer','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Shows the latest version from Firestore downloads/latest.','불러오는 중...':'Loading...',
     'Google 로그인':'Sign in with Google','로그인 전':'Not signed in','Google 로그인으로 라이선스 확인 준비':'Sign in with Google to check your license','라이선스 확인 전':'License not checked',
@@ -33,7 +37,7 @@ const I18N = {
     '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.'
   },
   ja: {
-    '홈':'ホーム','다운로드':'ダウンロード','구매':'購入','공지사항':'お知らせ','공지 목록':'お知らせ一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト',
+    '홈':'ホーム','다운로드':'ダウンロード','구매':'購入','공지사항':'お知らせ','공지 목록':'お知らせ一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト',
     '7월 31일까지 할인 진행중':'7月31日まで割引中','피아노 커버를':'ピアノカバーを','MIDI로 바꾸는':'MIDIに変える','가장 쉬운 방법':'一番簡単な方法','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'ピアノカバーをMIDIに変える一番簡単な方法','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio公式ポータルです。ホームは紹介・購入・ダウンロードを中心にし、お知らせ・パッチノート・非公開問い合わせは別ページに分けました。',
     '라이선스 구매하기':'ライセンス購入','1:1 문의하기':'問い合わせる','Windows 지원':'Windows対応','Google 계정 연동':'Googleアカウント連携','비공개 문의':'非公開問い合わせ','업데이트, 이벤트, 운영 안내를 확인합니다.':'アップデート、イベント、運営案内を確認できます。','버전별 변경 사항을 확인합니다.':'バージョン別の変更内容を確認できます。','비공개 문의를 작성하고 답변을 확인합니다.':'非公開問い合わせを作成し、返信を確認できます。','라이선스 상태와 로그인 정보를 확인합니다.':'ライセンス状態とログイン情報を確認できます。','바로가기':'開く','문의하기':'問い合わせ','확인하기':'確認','최신 설치 파일':'最新インストーラー','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Firestore downloads/latest を基準に最新バージョンを表示します。','불러오는 중...':'読み込み中...',
     'Google 로그인':'Googleログイン','로그인 전':'未ログイン','Google 로그인으로 라이선스 확인 준비':'Googleログインでライセンス確認','라이선스 확인 전':'ライセンス未確認',
@@ -159,8 +163,10 @@ async function setAuthUiSignedIn(user){
   await loadLicense(user.uid);
   if (page==='my-tickets.html') listenMyTickets();
   if (page==='ticket.html') listenTicketDetail();
+  if (page==='board-write.html') initBoardPostEditor();
+  if (page==='board-post.html') refreshBoardPostActions();
   if (page==='admin.html') {
-    if (isAdminUser) { $('admin')?.classList.remove('admin-locked'); listenAdminDashboard(); listenAdminUsers(); listenAdminTickets(); listenAdminPostManager(); loadAdminDownloadSettings(); }
+    if (isAdminUser) { $('admin')?.classList.remove('admin-locked'); listenAdminDashboard(); listenAdminUsers(); listenAdminTickets(); listenAdminPostManager(); bindAdminBoardFilters(); loadAdminDownloadSettings(); }
     else { $('admin') && ($('admin').innerHTML = `<div class="empty-card">${tr('admin_required')}</div>`); }
   }
 }
@@ -273,6 +279,9 @@ function routeLoadPublic(){
   if(page==='notice.html') listenNoticeDetail();
   if(page==='patch-notes.html') listenPatchNotes();
   if(page==='faq.html') listenFaq();
+  if(page==='board.html') listenBoardPosts();
+  if(page==='board-post.html') listenBoardPostDetail();
+  if(page==='board-write.html') initBoardPostEditor();
 }
 function renderDownload(d){
   const box=$('downloadBox'); if(!box)return;
@@ -632,6 +641,7 @@ function listenAdminDashboard(){
   watch('announcements', rows => { adminStat('dashNotices', countVisible(rows)); });
   watch('patchNotes', rows => { adminStat('dashPatches', countVisible(rows)); });
   watch('orders', rows => { adminOrderRows = rows; adminStat('dashOrders', rows.length); });
+  if($('adminBoardList')) addUnsub(onSnapshot(collection(db,'boardPosts'), snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminBoardTable(); }));
 }
 function licenseForUid(uid){ return adminLicenseRows.find(x=>x.id===uid || x.uid===uid) || null; }
 function renderAdminUserTable(){
@@ -703,6 +713,200 @@ async function saveAdminDownloadSettings(){
     adminFlash(`${tr('saved')} · downloads/latest`);
   }catch(e){ alert(e.message); }
 }
+
+
+function isOwnerRecord(x){ return !!(currentUser && x && (x.uid === currentUser.uid || x.authorUid === currentUser.uid)); }
+function canManageRecord(x){ return isAdminUser || isOwnerRecord(x); }
+function boardDisplayName(){ return currentUser?.displayName || currentUser?.email || 'Google User'; }
+function boardEmail(){ return currentUser?.email || ''; }
+function boardPostUrl(id){ return `./board-post.html?id=${encodeURIComponent(id)}`; }
+function boardEditUrl(id){ return `./board-write.html?id=${encodeURIComponent(id)}`; }
+function boardFilteredSorted(rows){
+  const q=($('boardPostSearch')?.value||'').trim().toLowerCase();
+  const sort=$('boardSort')?.value||'latest';
+  let out=rows.filter(x=>x.visible!==false && x.deleted!==true).filter(x=>{
+    const hay=[x.title,x.content,x.displayName,x.email].join(' ').toLowerCase();
+    return !q || hay.includes(q);
+  });
+  const time=x=>x.createdAt?.seconds||0;
+  out.sort((a,b)=> (b.pinned===true)-(a.pinned===true) || (
+    sort==='views' ? ((b.viewCount||0)-(a.viewCount||0)) :
+    sort==='likes' ? ((b.likeCount||0)-(a.likeCount||0)) :
+    sort==='comments' ? ((b.commentCount||0)-(a.commentCount||0)) :
+    (time(b)-time(a))
+  ));
+  return out;
+}
+function renderBoardPosts(rows, err){
+  const box=$('boardPostList'); if(!box)return;
+  if(err){ box.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
+  const list=boardFilteredSorted(rows||[]);
+  if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  box.innerHTML=`<table class="board-table"><thead><tr><th>제목</th><th>작성자</th><th>조회</th><th>추천</th><th>댓글</th><th>작성일</th></tr></thead><tbody>${list.map(x=>`<tr><td><a class="board-title" href="${boardPostUrl(x.id)}">${x.pinned?'📌 ':''}${esc(x.title||'(제목 없음)')}</a><span class="board-meta">${esc(String(x.content||'').slice(0,90))}</span></td><td>${esc(x.displayName||x.email||'-')}</td><td>${Number(x.viewCount||0)}</td><td>${Number(x.likeCount||0)}</td><td>${Number(x.commentCount||0)}</td><td>${esc(fmtDate(x.createdAt))}</td></tr>`).join('')}</tbody></table>`;
+}
+function listenBoardPosts(){
+  const box=$('boardPostList'); if(!box)return;
+  const {collection,onSnapshot,query,where,getDocs}=firestoreApi;
+  const render=(rows,err)=>renderBoardPosts(rows,err);
+  const q=query(collection(db,'boardPosts'), where('visible','==',true));
+  addUnsub(onSnapshot(q, snap=>render(snap.docs.map(d=>({id:d.id,...d.data()}))), async err=>{
+    console.warn('board realtime failed',err);
+    try{ const s=await getDocs(q); render(s.docs.map(d=>({id:d.id,...d.data()}))); }catch(e){ render([],e); }
+  }));
+  ['boardPostSearch','boardSort'].forEach(id=>{ const el=$(id); if(el&&!el.dataset.bound){ el.dataset.bound='1'; el.addEventListener('input',()=>renderBoardPosts(window.__boardRows||[])); el.addEventListener('change',()=>renderBoardPosts(window.__boardRows||[])); }});
+  const old=renderBoardPosts;
+  window.__boardRows=[];
+  // small wrapper to keep rows for client-side filters
+  clearUnsubs();
+  if(['index.html','downloads.html','purchase.html',''].includes(page)) listenDownload();
+  const q2=query(collection(db,'boardPosts'), where('visible','==',true));
+  addUnsub(onSnapshot(q2, snap=>{ window.__boardRows=snap.docs.map(d=>({id:d.id,...d.data()})); old(window.__boardRows); }, err=>old([],err)));
+}
+async function initBoardPostEditor(){
+  const form=$('boardPostForm'); if(!form||form.dataset.bound)return;
+  const id=getParam('id');
+  const {doc,getDoc,setDoc,addDoc,collection,serverTimestamp}=firestoreApi;
+  if($('boardPinnedWrap')) $('boardPinnedWrap').style.display=isAdminUser?'flex':'none';
+  if(id){
+    try{
+      const snap=await getDoc(doc(db,'boardPosts',id));
+      const d=snap.exists()?{id:snap.id,...snap.data()}:null;
+      if(!d){ $('boardPostMsg').textContent=tr('empty'); }
+      else if(!canManageRecord(d)){ $('boardPostMsg').textContent=tr('no_permission'); form.querySelector('button[type="submit"]').disabled=true; }
+      else { $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정'); $('boardPostTitle').value=d.title||''; $('boardPostContent').value=d.content||''; if($('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned; }
+    }catch(e){ $('boardPostMsg').textContent=e.message; }
+  }
+  form.dataset.bound='1';
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
+    const data={uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),title:$('boardPostTitle').value.trim(),content:$('boardPostContent').value.trim(),visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
+    if(isAdminUser && $('boardPostPinned')) data.pinned=$('boardPostPinned').checked;
+    try{
+      let postId=id;
+      if(id){ await setDoc(doc(db,'boardPosts',id),data,{merge:true}); }
+      else { const ref=await addDoc(collection(db,'boardPosts'),{...data,pinned:isAdminUser&&$('boardPostPinned')?.checked || false,commentCount:0,viewCount:0,likeCount:0,createdAt:serverTimestamp()}); postId=ref.id; }
+      location.href=boardPostUrl(postId);
+    }catch(err){ $('boardPostMsg').textContent=err.message; }
+  });
+}
+function renderBoardPost(d,err){
+  const box=$('boardPostDetail'); if(!box)return;
+  if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
+  if(!d || d.visible===false || d.deleted===true){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  activeBoardPost=d;
+  const manage=canManageRecord(d);
+  box.innerHTML=`<div class="date">${d.pinned?'📌 ':''}${esc(fmtDate(d.createdAt))} · ${esc(d.displayName||d.email||'-')} · 조회 ${Number(d.viewCount||0)} · 추천 <span id="postLikeCount">${Number(d.likeCount||0)}</span> · 댓글 ${Number(d.commentCount||0)}</div><h2>${esc(d.title||'')}</h2><div class="content">${nl2br(d.content||'')}</div><div class="post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 추천</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">수정</a><button id="postDeleteBtn" class="secondary danger-btn">삭제</button>`:''}</div>`;
+  refreshBoardPostActions();
+}
+async function incrementViewOnce(postId){
+  const key='midiai_view_'+postId;
+  if(sessionStorage.getItem(key))return;
+  sessionStorage.setItem(key,'1');
+  try{ const {doc,updateDoc,increment}=firestoreApi; await updateDoc(doc(db,'boardPosts',postId),{viewCount:increment(1)}); }catch(e){ console.warn('view increment failed',e); }
+}
+function listenBoardPostDetail(){
+  const id=getParam('id'); const box=$('boardPostDetail'); if(!box)return;
+  if(!id){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  incrementViewOnce(id);
+  listenDoc('boardPosts',id,renderBoardPost);
+  listenBoardComments(id);
+  const form=$('commentForm');
+  if(form&&!form.dataset.bound){ form.dataset.bound='1'; form.addEventListener('submit',e=>createBoardComment(e,id,null)); }
+}
+async function refreshBoardPostActions(){
+  const d=activeBoardPost; if(!d)return;
+  const id=d.id;
+  const likeBtn=$('postLikeBtn');
+  if(likeBtn){
+    likeBtn.onclick=()=>toggleBoardLike(id);
+    if(currentUser){
+      try{ const {doc,getDoc}=firestoreApi; const s=await getDoc(doc(db,'boardPosts',id,'likes',currentUser.uid)); likedActivePost=s.exists(); likeBtn.classList.toggle('liked',likedActivePost); likeBtn.textContent=likedActivePost?'👍 추천됨':'👍 추천'; }catch{}
+    }
+  }
+  const del=$('postDeleteBtn'); if(del&&!del.dataset.bound){ del.dataset.bound='1'; del.onclick=()=>deleteBoardPost(id); }
+}
+async function toggleBoardLike(postId){
+  if(!currentUser)return alert(tr('need_login'));
+  const {doc,getDoc,setDoc,deleteDoc,updateDoc,increment,serverTimestamp}=firestoreApi;
+  const likeRef=doc(db,'boardPosts',postId,'likes',currentUser.uid);
+  const postRef=doc(db,'boardPosts',postId);
+  try{
+    const snap=await getDoc(likeRef);
+    if(snap.exists()){ await deleteDoc(likeRef); await updateDoc(postRef,{likeCount:increment(-1)}); }
+    else { await setDoc(likeRef,{uid:currentUser.uid,email:boardEmail(),createdAt:serverTimestamp()}); await updateDoc(postRef,{likeCount:increment(1)}); }
+    refreshBoardPostActions();
+  }catch(e){ alert(e.message); }
+}
+async function deleteBoardPost(postId){
+  if(!confirm(tr('confirm_delete')))return;
+  try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',postId),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true}); location.href='./board.html'; }catch(e){ alert(e.message); }
+}
+function listenBoardComments(postId){
+  const {collection,onSnapshot,query,where}=firestoreApi;
+  const q=query(collection(db,'boardPosts',postId,'comments'),where('visible','==',true));
+  addUnsub(onSnapshot(q, snap=>{ activeBoardComments=snap.docs.map(d=>({id:d.id,...d.data()})); renderBoardComments(postId); }, err=>{ $('commentList') && ($('commentList').innerHTML=`<div class="empty-card">${esc(err.message)}</div>`); }));
+}
+function renderBoardComments(postId){
+  const box=$('commentList'); if(!box)return;
+  const rows=(activeBoardComments||[]).filter(x=>x.deleted!==true).sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+  const tops=rows.filter(x=>!x.parentId);
+  const repliesBy={}; rows.filter(x=>x.parentId).forEach(x=>{ (repliesBy[x.parentId] ||= []).push(x); });
+  $('commentTitle') && ($('commentTitle').textContent=`댓글 ${rows.length}`);
+  if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  box.innerHTML=tops.map(c=>renderCommentCard(postId,c,false)+(repliesBy[c.id]||[]).map(r=>renderCommentCard(postId,r,true)).join('')).join('');
+  bindCommentActions(postId,box);
+}
+function renderCommentCard(postId,c,isReply){
+  const manage=canManageRecord(c);
+  return `<div class="comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(c.displayName||c.email||'-')}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button class="secondary mini-btn" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button class="secondary mini-btn" data-comment-edit="${esc(c.id)}">수정</button><button class="secondary mini-btn danger-btn" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div>`;
+}
+function bindCommentActions(postId,root){
+  root.querySelectorAll('[data-comment-reply]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.onclick=()=>openReplyBox(postId,btn.dataset.commentReply,btn.closest('.comment-card')); });
+  root.querySelectorAll('[data-comment-edit]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.onclick=()=>editBoardComment(postId,btn.dataset.commentEdit); });
+  root.querySelectorAll('[data-comment-delete]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.onclick=()=>deleteBoardComment(postId,btn.dataset.commentDelete); });
+}
+function openReplyBox(postId,parentId,host){
+  if(!currentUser)return alert(tr('need_login'));
+  host.querySelector('.inline-reply')?.remove();
+  const form=document.createElement('form'); form.className='inline-reply'; form.innerHTML=`<textarea rows="2" placeholder="답글을 입력하세요"></textarea><button class="primary" type="submit">답글 등록</button>`;
+  form.onsubmit=e=>createBoardComment(e,postId,parentId,form.querySelector('textarea'));
+  host.appendChild(form);
+}
+async function createBoardComment(e,postId,parentId,customTextarea){
+  e.preventDefault();
+  if(!currentUser)return alert(tr('need_login'));
+  const textarea=customTextarea||$('commentContent');
+  const content=textarea.value.trim(); if(!content)return;
+  const {collection,addDoc,doc,updateDoc,increment,serverTimestamp}=firestoreApi;
+  try{
+    await addDoc(collection(db,'boardPosts',postId,'comments'),{uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),content,parentId:parentId||'',visible:true,deleted:false,edited:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    await updateDoc(doc(db,'boardPosts',postId),{commentCount:increment(1),updatedAt:serverTimestamp()});
+    textarea.value=''; customTextarea?.closest('form')?.remove();
+  }catch(err){ alert(err.message); }
+}
+async function editBoardComment(postId,commentId){
+  const c=(activeBoardComments||[]).find(x=>x.id===commentId); if(!c)return;
+  const content=prompt('댓글 수정',c.content||''); if(content===null)return;
+  try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',postId,'comments',commentId),{content:content.trim(),edited:true,updatedAt:serverTimestamp()},{merge:true}); }catch(e){ alert(e.message); }
+}
+async function deleteBoardComment(postId,commentId){
+  if(!confirm(tr('confirm_delete')))return;
+  try{ const {doc,setDoc,updateDoc,increment,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',postId,'comments',commentId),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true}); await updateDoc(doc(db,'boardPosts',postId),{commentCount:increment(-1),updatedAt:serverTimestamp()}); }catch(e){ alert(e.message); }
+}
+function renderAdminBoardTable(){
+  const box=$('adminBoardList'); if(!box||!isAdminUser)return;
+  const q=($('adminBoardSearch')?.value||'').trim().toLowerCase(); const st=$('adminBoardStatus')?.value||'all';
+  let rows=(adminBoardRows||[]).filter(x=>{ if(st==='visible'&&x.visible===false)return false; if(st==='hidden'&&x.visible!==false)return false; if(st==='pinned'&&x.pinned!==true)return false; const hay=[x.title,x.content,x.displayName,x.email,x.uid].join(' ').toLowerCase(); return !q||hay.includes(q); }).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  $('adminBoardCount') && ($('adminBoardCount').textContent=`${rows.length} / ${(adminBoardRows||[]).length}`);
+  if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  box.innerHTML=`<table class="admin-table"><thead><tr><th>제목</th><th>상태</th><th>작성자</th><th>통계</th><th>관리</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.visible===false?'board-admin-hidden':''}"><td><b>${x.pinned?'📌 ':''}${esc(x.title||'-')}</b><small>${esc(String(x.content||'').slice(0,80))}</small></td><td>${x.visible===false?'<span class="badge none">숨김</span>':'<span class="badge active">공개</span>'}</td><td>${esc(x.displayName||x.email||'-')}</td><td>조회 ${Number(x.viewCount||0)} · 추천 ${Number(x.likeCount||0)} · 댓글 ${Number(x.commentCount||0)}</td><td><div class="table-actions"><a class="secondary mini-btn" href="${boardPostUrl(x.id)}">보기</a><a class="secondary mini-btn" href="${boardEditUrl(x.id)}">수정</a><button class="secondary mini-btn" data-admin-board-pin="${esc(x.id)}:${x.pinned?'0':'1'}">${x.pinned?'고정해제':'고정'}</button><button class="secondary mini-btn danger-btn" data-admin-board-delete="${esc(x.id)}">숨김</button></div></td></tr>`).join('')}</tbody></table>`;
+  box.querySelectorAll('[data-admin-board-delete]').forEach(b=>{ if(b.dataset.bound)return; b.dataset.bound='1'; b.onclick=()=>adminHideBoardPost(b.dataset.adminBoardDelete); });
+  box.querySelectorAll('[data-admin-board-pin]').forEach(b=>{ if(b.dataset.bound)return; b.dataset.bound='1'; b.onclick=()=>{ const [id,val]=b.dataset.adminBoardPin.split(':'); adminPinBoardPost(id,val==='1'); }; });
+}
+async function adminHideBoardPost(id){ if(!confirm(tr('confirm_delete')))return; try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',id),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true}); }catch(e){ alert(e.message); } }
+async function adminPinBoardPost(id,pinned){ try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',id),{pinned,updatedAt:serverTimestamp()},{merge:true}); }catch(e){ alert(e.message); } }
+function bindAdminBoardFilters(){ ['adminBoardSearch','adminBoardStatus'].forEach(id=>{ const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1'; el.addEventListener('input',renderAdminBoardTable); el.addEventListener('change',renderAdminBoardTable); }); }
 
 async function adminAdd(collectionName,data){
   if(!isAdminUser){ alert('admin only'); return null; }
