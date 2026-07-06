@@ -129,7 +129,7 @@ function fmtDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : 
 function esc(s){ return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
 function getParam(k){ return new URLSearchParams(location.search).get(k); }
-function configuredFirebase(){ const f = CONFIG.firebase || {}; return f.apiKey && f.projectId && !String(f.apiKey).startsWith('PASTE_') && !String(f.projectId).startsWith('PASTE_'); }
+function configuredFirebase(){ const f = CONFIG.firebase || {}; return f.apiKey && f.authDomain && f.projectId && !String(f.apiKey).startsWith('PASTE_') && !String(f.projectId).startsWith('PASTE_'); }
 function addUnsub(fn){ if (typeof fn === 'function') unsubscribers.push(fn); return fn; }
 function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}catch{} } }
 
@@ -208,7 +208,40 @@ async function initAuth(){
   db=fs.getFirestore(app);
   firestoreApi=fs;
   const provider=new GoogleAuthProvider();
-  $('loginBtn') && ($('loginBtn').onclick=()=>signInWithPopup(auth,provider).catch(e=>alert(e.message)));
+  provider.setCustomParameters({ prompt: 'select_account' });
+  provider.addScope('email');
+  provider.addScope('profile');
+
+  async function loginWithGoogle(){
+    try{
+      await signInWithPopup(auth, provider);
+    }catch(e){
+      console.error('Google login failed', {
+        code:e.code,
+        message:e.message,
+        origin:location.origin,
+        authDomain:CONFIG.firebase && CONFIG.firebase.authDomain,
+        apiKeyHead:CONFIG.firebase && CONFIG.firebase.apiKey ? CONFIG.firebase.apiKey.slice(0,10) : ''
+      });
+      const msg = [
+        'Google 로그인 실패',
+        '',
+        'code: ' + (e.code || 'unknown'),
+        'message: ' + (e.message || ''),
+        '',
+        '확인할 것:',
+        '1) Firebase Authentication > 승인된 도메인에 현재 도메인 추가',
+        '2) Google Cloud API Key 웹사이트 제한사항에 현재 도메인과 firebaseapp.com 추가',
+        '3) assets/js/config.js의 Firebase Web API Key가 실제 Firebase Web App 설정과 일치하는지 확인',
+        '',
+        'origin: ' + location.origin,
+        'authDomain: ' + (CONFIG.firebase && CONFIG.firebase.authDomain || '')
+      ].join('\n');
+      alert(msg);
+    }
+  }
+
+  $('loginBtn') && ($('loginBtn').onclick=loginWithGoogle);
   $('logoutBtn') && ($('logoutBtn').onclick=()=>signOut(auth));
   onAuthStateChanged(auth,u=>u?setAuthUiSignedIn(u):setAuthUiSignedOut());
   routeLoadPublic();
