@@ -350,15 +350,94 @@ function bindTicketActions(root=document){
   root.querySelectorAll('[data-ticket-delete]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>deleteTicket(btn.dataset.ticketDelete)); });
   root.querySelectorAll('[data-ticket-close]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>closeTicket(btn.dataset.ticketClose)); });
 }
+
+function modalEscapeClose(root, handler){
+  const onKey = (e) => { if (e.key === 'Escape') handler(null); };
+  document.addEventListener('keydown', onKey, {once:false});
+  root._cleanup = () => document.removeEventListener('keydown', onKey);
+}
+function openEditModal(title, fields){
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'edit-modal-backdrop';
+    const form = document.createElement('form');
+    form.className = 'edit-modal';
+    form.innerHTML = `<div class="edit-modal-head"><h3>${esc(title)}</h3><button type="button" class="edit-modal-x" aria-label="close">×</button></div><div class="edit-modal-body"></div><div class="edit-modal-actions"><button type="button" class="secondary" data-cancel>취소</button><button type="submit" class="primary">저장</button></div>`;
+    const body = form.querySelector('.edit-modal-body');
+    fields.forEach(f => {
+      const row = document.createElement('label');
+      row.className = 'edit-field';
+      row.innerHTML = `<span>${esc(f.label || f.name)}</span>`;
+      let input;
+      if (f.type === 'textarea') {
+        input = document.createElement('textarea');
+        input.rows = f.rows || 7;
+        input.value = f.value || '';
+      } else if (f.type === 'checkbox') {
+        row.classList.add('edit-field-check');
+        input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = !!f.value;
+      } else if (f.type === 'select') {
+        input = document.createElement('select');
+        (f.options || []).forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.value;
+          o.textContent = opt.label || opt.value;
+          if (String(opt.value) === String(f.value)) o.selected = true;
+          input.appendChild(o);
+        });
+      } else {
+        input = document.createElement('input');
+        input.type = f.type || 'text';
+        input.value = f.value ?? '';
+      }
+      input.name = f.name;
+      if (f.required) input.required = true;
+      row.appendChild(input);
+      body.appendChild(row);
+    });
+    const close = (value) => {
+      overlay._cleanup && overlay._cleanup();
+      overlay.remove();
+      resolve(value);
+    };
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = {};
+      fields.forEach(f => {
+        const input = form.elements[f.name];
+        if (!input) return;
+        if (f.type === 'checkbox') data[f.name] = !!input.checked;
+        else if (f.type === 'number') data[f.name] = Number(input.value || 0);
+        else data[f.name] = String(input.value || '').trim();
+      });
+      close(data);
+    });
+    form.querySelector('[data-cancel]').addEventListener('click', () => close(null));
+    form.querySelector('.edit-modal-x').addEventListener('click', () => close(null));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    overlay.appendChild(form);
+    document.body.appendChild(overlay);
+    modalEscapeClose(overlay, close);
+    const first = form.querySelector('input,textarea,select');
+    if (first) setTimeout(() => first.focus(), 40);
+  });
+}
+
 async function editTicket(ticketId){
   if(!currentUser)return;
   try{
     const {doc,getDoc,updateDoc,serverTimestamp}=firestoreApi;
     const ref=doc(db,'supportTickets',ticketId); const snap=await getDoc(ref); if(!snap.exists())return;
     const t=snap.data(); if(!isAdminUser && t.uid!==currentUser.uid){ alert(tr('no_permission')); return; }
-    const title=prompt('Title',t.title||''); if(title===null)return;
-    const content=prompt('Content',t.content||''); if(content===null)return;
-    await updateDoc(ref,{title:title.trim(),content:content.trim(),updatedAt:serverTimestamp()});
+    const data = await openEditModal('문의 수정', [
+      {name:'title', label:'제목', value:t.title||'', required:true},
+      {name:'content', label:'내용', type:'textarea', value:t.content||'', required:true},
+      {name:'status', label:'상태', type:'select', value:t.status||'open', options:[{value:'open',label:'접수'},{value:'answered',label:'답변 완료'},{value:'closed',label:'종료'}]}
+    ]);
+    if(!data)return;
+    await updateDoc(ref,{title:data.title,content:data.content,status:data.status,updatedAt:serverTimestamp()});
     alert(tr('updated'));
   }catch(e){ alert(e.message); }
 }
@@ -481,14 +560,38 @@ async function editAdminPost(raw){
   const [collectionName,id]=String(raw).split(':');
   try{
     const {doc,getDoc,updateDoc,serverTimestamp}=firestoreApi; const ref=doc(db,collectionName,id); const snap=await getDoc(ref); if(!snap.exists())return;
-    const d=snap.data(); const data={updatedAt:serverTimestamp()};
+    const d=snap.data();
+    let data=null;
     if(collectionName==='announcements'){
-      const title=prompt('Title',d.title||''); if(title===null)return; const content=prompt('Content',d.content||''); if(content===null)return; data.title=title.trim(); data.content=content.trim(); data.pinned=confirm('Pinned? OK=true / Cancel=false'); data.visible=confirm('Visible? OK=true / Cancel=false');
+      data = await openEditModal('공지 수정', [
+        {name:'title', label:'제목', value:d.title||'', required:true},
+        {name:'content', label:'내용', type:'textarea', rows:9, value:d.content||'', required:true},
+        {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false},
+        {name:'pinned', label:'상단 고정', type:'checkbox', value:!!d.pinned}
+      ]);
+      if(!data)return;
+      data.updatedAt=serverTimestamp();
     } else if(collectionName==='patchNotes'){
-      const version=prompt('Version',d.version||''); if(version===null)return; const title=prompt('Title',d.title||''); if(title===null)return; const content=prompt('Content',d.content||''); if(content===null)return; data.version=version.trim(); data.title=title.trim(); data.content=content.trim(); data.visible=confirm('Visible? OK=true / Cancel=false');
+      data = await openEditModal('패치노트 수정', [
+        {name:'version', label:'버전', value:d.version||'', required:true},
+        {name:'title', label:'제목', value:d.title||'', required:true},
+        {name:'content', label:'내용', type:'textarea', rows:9, value:d.content||'', required:true},
+        {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
+      ]);
+      if(!data)return;
+      data.updatedAt=serverTimestamp();
     } else if(collectionName==='faq'){
-      const question=prompt('Question',d.question||''); if(question===null)return; const answer=prompt('Answer',d.answer||''); if(answer===null)return; const order=prompt('Order',d.order||1); if(order===null)return; data.question=question.trim(); data.answer=answer.trim(); data.order=Number(order||1); data.visible=confirm('Visible? OK=true / Cancel=false');
+      data = await openEditModal('FAQ 수정', [
+        {name:'question', label:'질문', value:d.question||'', required:true},
+        {name:'answer', label:'답변', type:'textarea', rows:8, value:d.answer||'', required:true},
+        {name:'order', label:'순서', type:'number', value:d.order||1},
+        {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
+      ]);
+      if(!data)return;
+      data.order=Number(data.order||1);
+      data.updatedAt=serverTimestamp();
     }
+    if(!data)return;
     await updateDoc(ref,data); adminFlash(tr('updated'));
   }catch(e){ alert(e.message); }
 }

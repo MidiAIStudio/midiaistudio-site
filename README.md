@@ -6,7 +6,7 @@ V17 adds an operations-oriented admin dashboard on top of V16.
 
 - Admin dashboard counters: users, active licenses, open tickets, notices, patch notes, orders
 - User/license management table
-  - Search by email/name/UID/HWID 
+  - Search by email/name/UID/HWID
   - Filter by license status
   - Quick grant: Lifetime / Trial / Ban
   - HWID reset action
@@ -38,25 +38,8 @@ users/{YOUR_UID}/role = "admin"
 Copy all files into the GitHub Pages repository root, then commit and push with GitHub Desktop.
 
 
-## V18 Google Login Debug Patch
-
-Google 로그인 팝업이 `The requested action is invalid.` 로 닫히는 경우를 추적하기 위해 로그인 오류 메시지를 상세화했습니다.
-
-필수 확인:
-1. Firebase Authentication > 승인된 도메인
-   - midiaistudio.com
-   - www.midiaistudio.com
-   - midiaistudio.firebaseapp.com
-   - midiaistudio.web.app
-   - localhost
-   - 127.0.0.1
-
-2. Google Cloud > API 및 서비스 > 사용자 인증 정보 > Browser key 웹사이트 제한사항
-   - https://midiaistudio.com/*
-   - https://www.midiaistudio.com/*
-   - https://midiaistudio.firebaseapp.com/*
-   - https://midiaistudio.web.app/*
-   - http://localhost:5500/*
-   - http://127.0.0.1:5500/*
-
-3. `assets/js/config.js`의 `apiKey`는 Firebase Console > 프로젝트 설정 > 내 앱 > 웹 앱 구성에 표시되는 Web API Key와 정확히 일치해야 합니다.
+## V18.1 Modal Edit Patch
+- 관리자 공지/패치노트/FAQ 수정 시 브라우저 prompt 제거
+- 제목/내용/공개여부/상단고정/버전/순서를 한 번에 수정하는 모달 추가
+- 문의 수정도 제목/내용/상태를 모달에서 변경
+- 기존 Firestore 실시간 갱신 구조 유지
