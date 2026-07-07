@@ -15,19 +15,33 @@ function paypalBaseUrl() {
 }
 
 function cors(req, res) {
-  const allowed = cfg('APP_ORIGIN', 'https://midiaistudio.com');
+  const allowedOrigins = [
+    cfg('APP_ORIGIN', 'https://midiaistudio.web.app'),
+    'https://midiaistudio.web.app',
+    'https://midiaistudio.firebaseapp.com',
+    'https://midiaistudio.com',
+    'https://www.midiaistudio.com'
+  ];
+
   const origin = req.headers.origin || '';
-  const allowOrigin = origin && (origin === allowed || origin === 'https://www.midiaistudio.com' || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:'))
-    ? origin
-    : allowed;
+
+  const allowOrigin =
+    allowedOrigins.includes(origin) ||
+    origin.startsWith('http://localhost:') ||
+    origin.startsWith('http://127.0.0.1:')
+      ? origin
+      : allowedOrigins[0];
+
   res.set('Access-Control-Allow-Origin', allowOrigin);
   res.set('Vary', 'Origin');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
   if (req.method === 'OPTIONS') {
     res.status(204).send('');
     return true;
   }
+
   return false;
 }
 
