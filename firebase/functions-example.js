@@ -59,8 +59,8 @@ async function paypalAccessToken() {
 function serverProduct() {
   return {
     plan: cfg('PAYPAL_PLAN', 'lifetime'),
-    amount: cfg('PAYPAL_PRICE_VALUE', '90000'),
-    currency: cfg('PAYPAL_CURRENCY', 'KRW')
+    amount: cfg('PAYPAL_PRICE_VALUE', '65.00'),
+    currency: cfg('PAYPAL_CURRENCY', 'USD')
   };
 }
 
