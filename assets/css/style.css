@@ -184,34 +184,200 @@ nav a.active{color:var(--text)}
 .board-lightbox button{position:fixed;top:18px;right:18px;width:46px;height:46px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.12);color:#fff;font-size:30px;cursor:pointer}
 @media(max-width:720px){.board-attachments{grid-template-columns:1fr}.board-file-chip{flex-wrap:wrap}.board-file-chip small{margin-left:0}.board-attachment-item img,.board-attachment-item video{max-height:420px}}
 
-/* V22.2 Purchase USD + Korean-only bank transfer + compact media */
-.price-card .price strong{font-size:clamp(36px,4vw,50px)}
-.bank-transfer-notice p{line-height:1.75}
 
-.post-shell{width:min(860px,calc(100% - 36px))!important;margin:22px auto 44px!important}
-.community-post-detail{padding:18px 22px!important;border-radius:22px!important}
-.post-card-head{padding-bottom:12px!important;margin-bottom:14px!important}
-.post-card-head h1{font-size:clamp(23px,2.5vw,32px)!important;line-height:1.14!important;margin-bottom:10px!important}
-.post-meta-grid{gap:6px!important;font-size:11px!important}
-.post-meta-grid span{padding:5px 9px!important}
-.post-body-content{font-size:14px!important;line-height:1.62!important;min-height:44px!important;padding:2px 0!important}
-.board-attachments{grid-template-columns:repeat(auto-fit,minmax(180px,260px))!important;gap:12px!important;margin-top:14px!important}
-.board-attachment-item{border-radius:18px!important;max-width:260px!important}
-.board-attachment-item img,.board-attachment-item video{max-height:260px!important}
-.board-attachment-item figcaption{padding:8px 10px!important;font-size:11px!important}
-.community-post-actions{padding-top:12px!important;margin-top:14px!important}
-.community-post-actions .ghost,.community-post-actions .secondary,.community-post-actions .danger-btn{padding:8px 11px!important;border-radius:12px!important;font-size:12px!important}
-.community-comments-panel{padding:16px 18px!important;margin-top:16px!important}
-.comment-toolbar h2{font-size:22px!important}
-.community-comment-form textarea{min-height:64px!important}
+/* V22.3 Board detail refined compact UI */
+.post-shell{
+  width:min(860px,calc(100% - 32px))!important;
+  margin:22px auto 44px!important;
+}
+.post-nav-row{
+  margin-bottom:10px!important;
+}
+.post-nav-row .secondary{
+  padding:8px 12px!important;
+  border-radius:12px!important;
+  font-size:13px!important;
+}
+.community-post-detail{
+  padding:18px 20px!important;
+  border-radius:22px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.095),rgba(255,255,255,.052))!important;
+}
+.post-card-head{
+  padding-bottom:12px!important;
+  margin-bottom:12px!important;
+}
+.post-kicker{
+  padding:4px 9px!important;
+  margin-bottom:8px!important;
+  font-size:11px!important;
+  line-height:1.1!important;
+}
+.post-card-head h1{
+  font-size:clamp(22px,2.45vw,31px)!important;
+  line-height:1.16!important;
+  letter-spacing:-.035em!important;
+  margin:0 0 10px!important;
+}
+.post-meta-grid{
+  display:flex!important;
+  gap:6px!important;
+  flex-wrap:wrap!important;
+  align-items:center!important;
+  color:var(--muted)!important;
+  font-size:11.5px!important;
+  font-weight:800!important;
+}
+.post-meta-grid span{
+  display:inline-flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  padding:5px 8px!important;
+  border-radius:999px!important;
+  line-height:1.1!important;
+  background:rgba(0,0,0,.15)!important;
+}
+.post-meta-grid b{
+  font-size:13px!important;
+  line-height:1.1!important;
+  margin-left:0!important;
+  color:#f4f6ff!important;
+  letter-spacing:-.015em!important;
+}
+.post-body-content{
+  min-height:42px!important;
+  padding:3px 0 2px!important;
+  font-size:14px!important;
+  line-height:1.62!important;
+  color:#e9ecff!important;
+}
+.community-post-actions{
+  padding-top:11px!important;
+  margin-top:12px!important;
+  gap:7px!important;
+}
+.community-post-actions .ghost,
+.community-post-actions .secondary,
+.community-post-actions button,
+.community-post-actions a{
+  padding:7px 10px!important;
+  border-radius:11px!important;
+  font-size:12px!important;
+  line-height:1.15!important;
+  min-height:34px!important;
+}
+.community-comments-panel{
+  margin-top:16px!important;
+  padding:16px 18px!important;
+  border-radius:22px!important;
+}
+.comment-toolbar{
+  margin-bottom:10px!important;
+}
+.comment-toolbar h2{
+  font-size:20px!important;
+  line-height:1.15!important;
+}
+.community-comment-form{
+  margin:8px 0 12px!important;
+  gap:8px!important;
+}
+.community-comment-form textarea,
+.comment-form textarea{
+  min-height:58px!important;
+  font-size:13px!important;
+  padding:10px 12px!important;
+  border-radius:13px!important;
+}
+.community-comment-form .primary{
+  min-width:100px!important;
+  padding:10px 13px!important;
+  border-radius:13px!important;
+  font-size:13px!important;
+}
+.comment-list{
+  gap:8px!important;
+  margin-top:10px!important;
+}
+.empty-card{
+  padding:20px!important;
+  border-radius:18px!important;
+  font-size:13px!important;
+}
+.community-comment-card,
+.comment-card{
+  padding:12px!important;
+  border-radius:16px!important;
+}
+.comment-avatar{
+  width:34px!important;
+  height:34px!important;
+  border-radius:11px!important;
+  font-size:13px!important;
+}
+.comment-head{
+  font-size:11.5px!important;
+}
+.comment-body{
+  margin:7px 0!important;
+  font-size:13.5px!important;
+  line-height:1.55!important;
+}
+.board-attachments{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:10px!important;
+  margin:12px 0 0!important;
+}
+.board-attachment-item{
+  width:min(230px,100%)!important;
+  border-radius:16px!important;
+  background:rgba(0,0,0,.20)!important;
+}
+.board-attachment-item img,
+.board-attachment-item video{
+  width:100%!important;
+  height:190px!important;
+  max-height:190px!important;
+  object-fit:cover!important;
+}
+.board-attachment-item video{
+  object-fit:contain!important;
+}
+.board-attachment-item figcaption{
+  padding:8px 10px!important;
+  font-size:11.5px!important;
+  gap:6px!important;
+}
+.board-attachment-item figcaption b{
+  font-size:12px!important;
+}
+.board-attachment-item figcaption .danger-btn{
+  padding:5px 8px!important;
+  font-size:11px!important;
+  min-height:28px!important;
+}
+.board-lightbox img{
+  max-width:min(100%,980px)!important;
+  max-height:84vh!important;
+}
 
 @media(max-width:720px){
-  .post-shell{width:calc(100% - 20px)!important;margin:14px auto 32px!important}
-  .community-post-detail{padding:14px!important;border-radius:18px!important}
+  .post-shell{width:calc(100% - 22px)!important;margin:14px auto 32px!important}
+  .community-post-detail,.community-comments-panel{padding:14px!important;border-radius:18px!important}
   .post-card-head h1{font-size:24px!important}
   .post-meta-grid{gap:5px!important}
-  .post-meta-grid span{font-size:11px!important;padding:5px 8px!important}
-  .board-attachments{grid-template-columns:minmax(0,1fr)!important}
-  .board-attachment-item{max-width:100%!important}
-  .board-attachment-item img,.board-attachment-item video{max-height:320px!important}
+  .post-meta-grid span{padding:5px 7px!important;width:auto!important}
+  .post-meta-grid b{font-size:12.5px!important}
+  .post-body-content{font-size:13.5px!important;min-height:36px!important}
+  .community-comment-form{display:grid!important}
+  .community-comment-form .primary{width:100%!important;min-height:42px!important}
+  .board-attachments{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .board-attachment-item{width:100%!important}
+  .board-attachment-item img,.board-attachment-item video{height:145px!important;max-height:145px!important}
+}
+
+@media(max-width:420px){
+  .board-attachments{grid-template-columns:1fr!important}
+  .board-attachment-item img,.board-attachment-item video{height:180px!important;max-height:180px!important}
 }
