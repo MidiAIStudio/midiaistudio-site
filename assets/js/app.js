@@ -36,7 +36,15 @@ const I18N = {
     'Google 로그인':'Sign in with Google','로그인 전':'Not signed in','Google 로그인으로 라이선스 확인 준비':'Sign in with Google to check your license','라이선스 확인 전':'License not checked',
     '공지 상세':'Notice detail','자주 묻는 질문':'FAQ','비공개 1:1 문의':'Private support','문의 등록':'Submit ticket','문의 상세':'Ticket detail','라이선스 구매':'Buy license','MidiAI Studio License':'MidiAI Studio License','패치노트 등록':'Add patch note','공지 등록':'Add notice','FAQ 등록':'Add FAQ','라이선스 저장':'Save license','문의 답변':'Ticket replies','공지 작성':'Write notice','패치노트 작성':'Write patch note','FAQ 작성':'Write FAQ','라이선스 지급/수정':'Grant/edit license',
     '제목':'Title','내용':'Content','검색':'Search','버전':'Version','질문':'Question','답변':'Answer','순서':'Order','상단 고정':'Pin to top','플랜':'Plan','상태':'Status','메모':'Memo','사용자 UID':'User UID','등록':'Submit','저장':'Save','문의 내용을 자세히 적어주세요.':'Please describe your issue in detail.','로그인 오류 / 라이선스 문의':'Login issue / license question','로그인이 필요합니다.':'Sign-in required.','내가 작성한 비공개 문의와 답변을 확인합니다.':'View your private tickets and replies.','문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.':'Only you and the admin can view this ticket. Please sign in first.','role=admin 계정만 사용할 수 있습니다.':'Only role=admin accounts can use this page.',
-    '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.'
+    '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.',
+    'Google 계정에 라이선스를 연결하는 방식입니다.':'Your license will be linked to your Google account.',
+    '7월 31일까지':'Until July 31',
+    'Google 계정 라이선스 연결':'Linked to your Google account',
+    '등록된 PC에서 사용 가능':'Available on your registered PC',
+    '홈페이지 1:1 문의 지원':'1:1 support on the website',
+    'Google 로그인 후 결제할 수 있습니다.':'Please sign in with Google before purchasing.',
+    '결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.':'After purchase, a Lifetime license will be automatically assigned to your Google account.',
+    'PayPal 결제 버튼을 불러오는 중입니다.':'Loading PayPal buttons...'
   },
   ja: {
     '홈':'ホーム','다운로드':'ダウンロード','구매':'購入','공지사항':'お知らせ','공지 목록':'お知らせ一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト',
@@ -45,7 +53,15 @@ const I18N = {
     'Google 로그인':'Googleログイン','로그인 전':'未ログイン','Google 로그인으로 라이선스 확인 준비':'Googleログインでライセンス確認','라이선스 확인 전':'ライセンス未確認',
     '공지 상세':'お知らせ詳細','자주 묻는 질문':'よくある質問','비공개 1:1 문의':'非公開お問い合わせ','문의 등록':'送信','문의 상세':'問い合わせ詳細','라이선스 구매':'ライセンス購入','MidiAI Studio License':'MidiAI Studio License','패치노트 등록':'パッチノート登録','공지 등록':'お知らせ登録','FAQ 등록':'FAQ登録','라이선스 저장':'ライセンス保存','문의 답변':'問い合わせ返信','공지 작성':'お知らせ作成','패치노트 작성':'パッチノート作成','FAQ 작성':'FAQ作成','라이선스 지급/수정':'ライセンス付与/修正',
     '제목':'タイトル','내용':'内容','검색':'検索','버전':'バージョン','질문':'質問','답변':'回答','순서':'順序','상단 고정':'上部固定','플랜':'プラン','상태':'状態','메모':'メモ','사용자 UID':'ユーザーUID','등록':'登録','저장':'保存','문의 내용을 자세히 적어주세요.':'お問い合わせ内容を詳しく入力してください。','로그인 오류 / 라이선스 문의':'ログインエラー / ライセンス問い合わせ','로그인이 필요합니다.':'ログインが必要です。','내가 작성한 비공개 문의와 답변을 확인합니다.':'自分の非公開問い合わせと返信を確認します。','문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.':'問い合わせ内容は作成者と管理者のみ閲覧できます。ログイン後に作成してください。','role=admin 계정만 사용할 수 있습니다.':'role=adminアカウントのみ使用できます。',
-    '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','수정':'編集','삭제':'削除','종료 처리':'終了にする','관리':'管理','상세 보기':'詳細を見る','공지 관리':'お知らせ管理','패치노트 관리':'パッチノート管理','FAQ 관리':'FAQ管理','정말 삭제할까요?':'本当に削除しますか？','수정 완료':'更新しました','삭제 완료':'削除しました','문의가 등록되었습니다.':'問い合わせを登録しました。'
+    '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','수정':'編集','삭제':'削除','종료 처리':'終了にする','관리':'管理','상세 보기':'詳細を見る','공지 관리':'お知らせ管理','패치노트 관리':'パッチノート管理','FAQ 관리':'FAQ管理','정말 삭제할까요?':'本当に削除しますか？','수정 완료':'更新しました','삭제 완료':'削除しました','문의가 등록되었습니다.':'問い合わせを登録しました。',
+    'Google 계정에 라이선스를 연결하는 방식입니다.':'Googleアカウントにライセンスを連携する方式です。',
+    '7월 31일까지':'7月31日まで',
+    'Google 계정 라이선스 연결':'Googleアカウントにライセンス連携',
+    '등록된 PC에서 사용 가능':'登録されたPCで利用可能',
+    '홈페이지 1:1 문의 지원':'サイト内1:1お問い合わせ対応',
+    'Google 로그인 후 결제할 수 있습니다.':'Googleログイン後にご購入いただけます。',
+    '결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.':'購入後、LifetimeライセンスがGoogleアカウントに自動付与されます。',
+    'PayPal 결제 버튼을 불러오는 중입니다.':'PayPalボタンを読み込み中です。'
   }
 };
 
@@ -132,7 +148,85 @@ function applyStaticI18n(){
 
   const b = $('langBtn');
   if (b) b.textContent = lang === 'ko' ? 'EN' : lang === 'en' ? '日本語' : '한국어';
+  updatePurchasePageText();
 }
+
+function purchaseText(key){
+  const data = {
+    ko: {
+      loginTitle:'Google 로그인 후 결제할 수 있습니다.',
+      guest:'결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.',
+      signed:'결제 완료 시 <b>{account}</b> 계정에 Lifetime 라이선스가 자동 지급됩니다.',
+      needLogin:'먼저 Google 로그인 후 결제해주세요. 로그인된 계정의 UID에 라이선스가 지급됩니다.',
+      sale:'7월 31일까지',
+      creating:'PayPal 주문을 생성하는 중입니다...',
+      opening:'PayPal 결제창을 여는 중입니다...',
+      verifying:'결제를 검증하고 라이선스를 지급하는 중입니다...',
+      done:'결제가 완료되었습니다. Lifetime 라이선스가 자동 지급되었습니다.',
+      cancel:'결제가 취소되었습니다.',
+      loginAlert:'Google 로그인 후 결제해주세요.',
+      loadFail:'PayPal SDK 로딩 실패. Client ID와 도메인 설정을 확인하세요.',
+      clientMissing:'PayPal Client ID가 아직 설정되지 않았습니다.',
+      orderMissing:'PayPal 주문 ID를 받지 못했습니다.',
+      error:'PayPal 결제 오류',
+      errorAlert:'PayPal 결제 오류가 발생했습니다. 콘솔을 확인해주세요.',
+      account:'결제 계정: {account}'
+    },
+    en: {
+      loginTitle:'Please sign in with Google before purchasing.',
+      guest:'After purchase, a Lifetime license will be automatically assigned to your Google account.',
+      signed:'After purchase, a Lifetime license will be automatically assigned to <b>{account}</b>.',
+      needLogin:'Please sign in with Google before purchasing. The license will be assigned to the signed-in account.',
+      sale:'Until July 31',
+      creating:'Creating PayPal order...',
+      opening:'Opening PayPal checkout...',
+      verifying:'Verifying payment and issuing your license...',
+      done:'Payment completed. Your Lifetime license has been issued automatically.',
+      cancel:'Payment cancelled.',
+      loginAlert:'Please sign in with Google before purchasing.',
+      loadFail:'Failed to load PayPal SDK. Please check the Client ID and domain settings.',
+      clientMissing:'PayPal Client ID is not configured yet.',
+      orderMissing:'PayPal order ID was not received.',
+      error:'PayPal payment error',
+      errorAlert:'A PayPal payment error occurred. Please check the console.',
+      account:'Payment account: {account}'
+    },
+    ja: {
+      loginTitle:'Googleログイン後にご購入いただけます。',
+      guest:'購入後、LifetimeライセンスがGoogleアカウントに自動付与されます。',
+      signed:'決済完了後、<b>{account}</b> アカウントにLifetimeライセンスが自動付与されます。',
+      needLogin:'先にGoogleログインしてからご購入ください。ログイン中のアカウントにライセンスが付与されます。',
+      sale:'7月31日まで',
+      creating:'PayPal注文を作成中です...',
+      opening:'PayPal決済画面を開いています...',
+      verifying:'決済を確認し、ライセンスを付与しています...',
+      done:'決済が完了しました。Lifetimeライセンスが自動付与されました。',
+      cancel:'決済がキャンセルされました。',
+      loginAlert:'Googleログイン後にご購入ください。',
+      loadFail:'PayPal SDKの読み込みに失敗しました。Client IDとドメイン設定を確認してください。',
+      clientMissing:'PayPal Client IDがまだ設定されていません。',
+      orderMissing:'PayPal注文IDを受け取れませんでした。',
+      error:'PayPal決済エラー',
+      errorAlert:'PayPal決済エラーが発生しました。コンソールを確認してください。',
+      account:'決済アカウント: {account}'
+    }
+  };
+  return (data[lang] || data.ko)[key] || data.ko[key] || key;
+}
+
+function updatePurchasePageText(){
+  if(page !== 'purchase.html') return;
+  const priceEl = $('licensePrice');
+  if(priceEl) priceEl.textContent = CONFIG.priceDisplay || '$69 USD';
+  const saleEl = $('licenseSaleText');
+  if(saleEl) saleEl.textContent = purchaseText('sale');
+  const titleEl = $('purchaseLoginTitle');
+  if(titleEl) titleEl.textContent = purchaseText('loginTitle');
+  const bank = $('bankTransferNotice');
+  if(bank) bank.classList.toggle('hidden', lang !== 'ko');
+  updatePurchaseAccountBox();
+}
+
 function tr(k){
   const KO = {
     login:'Google 로그인', logout:'로그아웃', guest:'로그인 전', guest_desc:'Google 로그인으로 라이선스 확인 준비',
@@ -177,10 +271,10 @@ function updatePurchaseAccountBox(){
   if(!box || !text) return;
   if(currentUser){
     box.classList.add('is-signed-in');
-    text.innerHTML = `결제 완료 시 <b>${esc(currentUser.email || currentUser.uid)}</b> 계정에 Lifetime 라이선스가 자동 지급됩니다.`;
+    text.innerHTML = purchaseText('signed').replace('{account}', esc(currentUser.email || currentUser.uid));
   } else {
     box.classList.remove('is-signed-in');
-    text.textContent = '먼저 Google 로그인 후 결제해주세요. 로그인된 계정의 UID에 라이선스가 지급됩니다.';
+    text.textContent = purchaseText('needLogin');
   }
 }
 function paypalStatus(msg, type=''){
@@ -1159,7 +1253,7 @@ function initPayPal(){
   if(!$('paypalButtons')) return;
   updatePurchaseAccountBox();
   if(!CONFIG.paypalClientId || String(CONFIG.paypalClientId).startsWith('PASTE_')) {
-    $('paypalButtons').innerHTML = '<p>PayPal Client ID가 아직 설정되지 않았습니다.</p>';
+    $('paypalButtons').innerHTML = `<p>${purchaseText('clientMissing')}</p>`;
     return;
   }
   const s=document.createElement('script');
@@ -1170,36 +1264,36 @@ function initPayPal(){
     $('paypalButtons').innerHTML='';
     window.paypal.Buttons({
       onClick:()=>{
-        if(!currentUser){ alert('Google 로그인 후 결제해주세요.'); return false; }
-        paypalStatus(`결제 계정: ${currentUser.email || currentUser.uid}`);
+        if(!currentUser){ alert(purchaseText('loginAlert')); return false; }
+        paypalStatus(purchaseText('account').replace('{account}', currentUser.email || currentUser.uid));
         return true;
       },
       createOrder: async()=>{
-        paypalStatus('PayPal 주문을 생성하는 중입니다...');
+        paypalStatus(purchaseText('creating'));
         const result = await callFunctionJson('createPayPalOrder', {
           plan: CONFIG.plan || 'lifetime',
-          amount: CONFIG.priceValue || '90000',
+          amount: CONFIG.priceValue || '69.00',
           currency: currency
         });
-        if(!result.id) throw new Error('PayPal 주문 ID를 받지 못했습니다.');
-        paypalStatus('PayPal 결제창을 여는 중입니다...');
+        if(!result.id) throw new Error(purchaseText('orderMissing'));
+        paypalStatus(purchaseText('opening'));
         return result.id;
       },
       onApprove: async(data)=>{
-        paypalStatus('결제를 검증하고 라이선스를 지급하는 중입니다...');
+        paypalStatus(purchaseText('verifying'));
         const result = await callFunctionJson('capturePayPalOrder', {
           orderId: data.orderID,
           plan: CONFIG.plan || 'lifetime'
         });
-        paypalStatus('결제가 완료되었습니다. Lifetime 라이선스가 자동 지급되었습니다.', 'ok');
-        alert('결제가 완료되었습니다. 라이선스가 자동 지급되었습니다.');
+        paypalStatus(purchaseText('done'), 'ok');
+        alert(purchaseText('done'));
         await loadLicense(currentUser.uid);
       },
-      onCancel:()=> paypalStatus('결제가 취소되었습니다.'),
-      onError:(err)=>{ console.error('PayPal error',err); paypalStatus('PayPal 결제 오류: '+(err?.message || err), 'err'); alert('PayPal 결제 오류가 발생했습니다. 콘솔을 확인해주세요.'); }
+      onCancel:()=> paypalStatus(purchaseText('cancel')),
+      onError:(err)=>{ console.error('PayPal error',err); paypalStatus(purchaseText('error')+': '+(err?.message || err), 'err'); alert(purchaseText('errorAlert')); }
     }).render('#paypalButtons');
   };
-  s.onerror=()=>paypalStatus('PayPal SDK 로딩 실패. Client ID와 도메인 설정을 확인하세요.', 'err');
+  s.onerror=()=>paypalStatus(purchaseText('loadFail'), 'err');
   document.body.appendChild(s);
 }
 
