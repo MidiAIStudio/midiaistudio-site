@@ -132,6 +132,7 @@ function applyStaticI18n(){
 
   const b = $('langBtn');
   if (b) b.textContent = lang === 'ko' ? 'EN' : lang === 'en' ? '日本語' : '한국어';
+  updatePurchaseI18n();
 }
 function tr(k){
   const KO = {
@@ -171,18 +172,86 @@ function addUnsub(fn){ if (typeof fn === 'function') unsubscribers.push(fn); ret
 function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}catch{} } }
 
 
+
+function purchaseLocaleText(){
+  if(lang === 'en') return {
+    saleUntil:'Until July 31',
+    benefits:['Linked to your Google account','Available on your registered PC','Support via 1:1 Support'],
+    accountTitle:'Sign in with Google before purchasing.',
+    signedOut:'After signing in, the Lifetime license will be assigned automatically to your Google account after payment.',
+    signedIn:(id)=>`After payment, a Lifetime license will be assigned automatically to <b>${id}</b>.`,
+    paypalReady:'PayPal buttons will appear after the Client ID and Functions URL are configured.',
+    loginAlert:'Please sign in with Google before purchasing.',
+    paypalAccount:(id)=>`Payment account: ${id}`,
+    creating:'Creating PayPal order...',
+    opening:'Opening PayPal checkout...',
+    verifying:'Verifying payment and assigning your license...',
+    complete:'Payment complete. Your Lifetime license has been assigned automatically.',
+    cancel:'Payment canceled.',
+    error:'PayPal payment error: '
+  };
+  if(lang === 'ja') return {
+    saleUntil:'7月31日まで',
+    benefits:['Googleアカウントにライセンス連携','登録済みPCで利用可能','サイト内お問い合わせサポート'],
+    accountTitle:'Googleアカウントでログイン後、ご購入いただけます。',
+    signedOut:'ログイン後に決済すると、LifetimeライセンスがGoogleアカウントへ自動付与されます。',
+    signedIn:(id)=>`決済完了後、<b>${id}</b> にLifetimeライセンスが自動付与されます。`,
+    paypalReady:'PayPal Client IDとFunctions URLの設定後、決済ボタンが表示されます。',
+    loginAlert:'Googleログイン後に決済してください。',
+    paypalAccount:(id)=>`決済アカウント: ${id}`,
+    creating:'PayPal注文を作成しています...',
+    opening:'PayPal決済画面を開いています...',
+    verifying:'決済を確認し、ライセンスを付与しています...',
+    complete:'決済が完了しました。Lifetimeライセンスが自動付与されました。',
+    cancel:'決済がキャンセルされました。',
+    error:'PayPal決済エラー: '
+  };
+  return {
+    saleUntil:'7월 31일까지',
+    benefits:['Google 계정 라이선스 연결','등록된 PC에서 사용 가능','홈페이지 1:1 문의 지원'],
+    accountTitle:'Google 로그인 후 결제할 수 있습니다.',
+    signedOut:'결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.',
+    signedIn:(id)=>`결제 완료 시 <b>${id}</b> 계정에 Lifetime 라이선스가 자동 지급됩니다.`,
+    paypalReady:'PayPal Client ID와 Functions URL 설정 후 결제 버튼이 표시됩니다.',
+    loginAlert:'Google 로그인 후 결제해주세요.',
+    paypalAccount:(id)=>`결제 계정: ${id}`,
+    creating:'PayPal 주문을 생성하는 중입니다...',
+    opening:'PayPal 결제창을 여는 중입니다...',
+    verifying:'결제를 검증하고 라이선스를 지급하는 중입니다...',
+    complete:'결제가 완료되었습니다. Lifetime 라이선스가 자동 지급되었습니다.',
+    cancel:'결제가 취소되었습니다.',
+    error:'PayPal 결제 오류: '
+  };
+}
+function updatePurchaseI18n(){
+  if(!document.body) return;
+  const t = purchaseLocaleText();
+  if($('purchasePrice')) $('purchasePrice').textContent = CONFIG.priceDisplay || '$69 USD';
+  if($('purchaseSaleUntil')) $('purchaseSaleUntil').textContent = t.saleUntil;
+  if($('purchaseBenefitList')) $('purchaseBenefitList').innerHTML = t.benefits.map(x=>`<li>${esc(x)}</li>`).join('');
+  if($('purchaseAccountTitle')) $('purchaseAccountTitle').textContent = t.accountTitle;
+  const bank = $('bankTransferNotice');
+  if(bank) bank.classList.toggle('hidden', lang !== 'ko');
+  const paypal = $('paypalButtons');
+  if(paypal && paypal.textContent.includes('Client ID')) paypal.innerHTML = `<p>${esc(t.paypalReady)}</p>`;
+  updatePurchaseAccountBox();
+}
+
 function updatePurchaseAccountBox(){
   const box = $('purchaseAccountBox');
   const text = $('purchaseAccountText');
   if(!box || !text) return;
+  const t = purchaseLocaleText();
+  if($('purchaseAccountTitle')) $('purchaseAccountTitle').textContent = t.accountTitle;
   if(currentUser){
     box.classList.add('is-signed-in');
-    text.innerHTML = `결제 완료 시 <b>${esc(currentUser.email || currentUser.uid)}</b> 계정에 Lifetime 라이선스가 자동 지급됩니다.`;
+    text.innerHTML = t.signedIn(esc(currentUser.email || currentUser.uid));
   } else {
     box.classList.remove('is-signed-in');
-    text.textContent = '먼저 Google 로그인 후 결제해주세요. 로그인된 계정의 UID에 라이선스가 지급됩니다.';
+    text.textContent = t.signedOut;
   }
 }
+
 function paypalStatus(msg, type=''){
   const el = $('paypalStatus');
   if(!el) return;
@@ -980,7 +1049,7 @@ function renderBoardPost(d,err){
   if(!d || d.visible===false || d.deleted===true){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
   activeBoardPost=d;
   const manage=canManageRecord(d);
-  box.innerHTML=`<div class="post-card-head"><div class="post-kicker">${d.pinned?'📌 고정 게시글':'자유게시판'}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid"><span>작성자 <b>${esc(d.displayName||d.email||'-')}</b></span><span>작성일 <b>${esc(fmtDate(d.createdAt))}</b></span><span>조회 <b>${Number(d.viewCount||0)}</b></span><span>추천 <b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span>댓글 <b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 추천</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">수정</a><button id="postDeleteBtn" class="secondary danger-btn">삭제</button>`:''}</div>`;
+  box.innerHTML=`<div class="post-card-head"><div class="post-kicker">${d.pinned?'📌 고정 게시글':'자유게시판'}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid"><span>${esc(lang==='en'?'Author':lang==='ja'?'投稿者':'작성자')} <b>${esc(d.displayName||d.email||'-')}</b></span><span>${esc(lang==='en'?'Date':lang==='ja'?'作成日':'작성일')} <b>${esc(fmtDate(d.createdAt))}</b></span><span>${esc(lang==='en'?'Views':lang==='ja'?'閲覧':'조회')} <b>${Number(d.viewCount||0)}</b></span><span>${esc(lang==='en'?'Likes':lang==='ja'?'いいね':'추천')} <b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span>${esc(lang==='en'?'Comments':lang==='ja'?'コメント':'댓글')} <b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 ${esc(lang==='en'?'Like':lang==='ja'?'いいね':'추천')}</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">${esc(lang==='en'?'Edit':lang==='ja'?'編集':'수정')}</a><button id="postDeleteBtn" class="secondary danger-btn">${esc(lang==='en'?'Delete':lang==='ja'?'削除':'삭제')}</button>`:''}</div>`;
   refreshBoardPostActions();
 }
 async function incrementViewOnce(postId){
@@ -1159,7 +1228,7 @@ function initPayPal(){
   if(!$('paypalButtons')) return;
   updatePurchaseAccountBox();
   if(!CONFIG.paypalClientId || String(CONFIG.paypalClientId).startsWith('PASTE_')) {
-    $('paypalButtons').innerHTML = '<p>PayPal Client ID가 아직 설정되지 않았습니다.</p>';
+    $('paypalButtons').innerHTML = `<p>${esc(purchaseLocaleText().paypalReady)}</p>`;
     return;
   }
   const s=document.createElement('script');
@@ -1170,36 +1239,36 @@ function initPayPal(){
     $('paypalButtons').innerHTML='';
     window.paypal.Buttons({
       onClick:()=>{
-        if(!currentUser){ alert('Google 로그인 후 결제해주세요.'); return false; }
-        paypalStatus(`결제 계정: ${currentUser.email || currentUser.uid}`);
+        if(!currentUser){ alert(purchaseLocaleText().loginAlert); return false; }
+        paypalStatus(purchaseLocaleText().paypalAccount(currentUser.email || currentUser.uid));
         return true;
       },
       createOrder: async()=>{
-        paypalStatus('PayPal 주문을 생성하는 중입니다...');
+        paypalStatus(purchaseLocaleText().creating);
         const result = await callFunctionJson('createPayPalOrder', {
           plan: CONFIG.plan || 'lifetime',
-          amount: CONFIG.priceValue || '90000',
+          amount: CONFIG.priceValue || '69.00',
           currency: currency
         });
         if(!result.id) throw new Error('PayPal 주문 ID를 받지 못했습니다.');
-        paypalStatus('PayPal 결제창을 여는 중입니다...');
+        paypalStatus(purchaseLocaleText().opening);
         return result.id;
       },
       onApprove: async(data)=>{
-        paypalStatus('결제를 검증하고 라이선스를 지급하는 중입니다...');
+        paypalStatus(purchaseLocaleText().verifying);
         const result = await callFunctionJson('capturePayPalOrder', {
           orderId: data.orderID,
           plan: CONFIG.plan || 'lifetime'
         });
-        paypalStatus('결제가 완료되었습니다. Lifetime 라이선스가 자동 지급되었습니다.', 'ok');
-        alert('결제가 완료되었습니다. 라이선스가 자동 지급되었습니다.');
+        paypalStatus(purchaseLocaleText().complete, 'ok');
+        alert(purchaseLocaleText().complete);
         await loadLicense(currentUser.uid);
       },
-      onCancel:()=> paypalStatus('결제가 취소되었습니다.'),
-      onError:(err)=>{ console.error('PayPal error',err); paypalStatus('PayPal 결제 오류: '+(err?.message || err), 'err'); alert('PayPal 결제 오류가 발생했습니다. 콘솔을 확인해주세요.'); }
+      onCancel:()=> paypalStatus(purchaseLocaleText().cancel),
+      onError:(err)=>{ console.error('PayPal error',err); paypalStatus(purchaseLocaleText().error+(err?.message || err), 'err'); alert(purchaseLocaleText().error+(err?.message || err)); }
     }).render('#paypalButtons');
   };
-  s.onerror=()=>paypalStatus('PayPal SDK 로딩 실패. Client ID와 도메인 설정을 확인하세요.', 'err');
+  s.onerror=()=>paypalStatus(purchaseLocaleText().error+'SDK loading failed. Check Client ID and domain settings.', 'err');
   document.body.appendChild(s);
 }
 
