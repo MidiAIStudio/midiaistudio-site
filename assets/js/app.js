@@ -10,6 +10,8 @@ let currentUser = null;
 let currentUserDoc = null;
 let isAdminUser = false;
 let firestoreApi = {};
+let storage = null;
+let storageApi = {};
 const unsubscribers = [];
 let adminNoticeRows = [];
 let adminPatchRows = [];
@@ -46,6 +48,37 @@ const I18N = {
     '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','수정':'編集','삭제':'削除','종료 처리':'終了にする','관리':'管理','상세 보기':'詳細を見る','공지 관리':'お知らせ管理','패치노트 관리':'パッチノート管理','FAQ 관리':'FAQ管理','정말 삭제할까요?':'本当に削除しますか？','수정 완료':'更新しました','삭제 완료':'削除しました','문의가 등록되었습니다.':'問い合わせを登録しました。'
   }
 };
+
+
+
+function isInAppBrowser(){
+  const ua = navigator.userAgent || '';
+  return /KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|Line\/|NAVER|DaumApps|wv\)|; wv|WebView/i.test(ua);
+}
+
+function showOAuthBrowserNotice(){
+  if(!isInAppBrowser() || document.querySelector('.oauth-browser-notice')) return;
+  const notice = document.createElement('div');
+  notice.className = 'oauth-browser-notice';
+  notice.innerHTML = `
+    <div>
+      <b>Google 로그인 안내</b>
+      <span>카카오톡·디스코드·인스타 내부 브라우저에서는 Google 로그인이 차단될 수 있어요. Chrome/Safari/삼성 인터넷으로 열어주세요.</span>
+    </div>
+    <button type="button" class="ghost oauth-copy-url">주소 복사</button>
+  `;
+  const header = document.querySelector('.topbar');
+  if(header && header.parentNode) header.parentNode.insertBefore(notice, header.nextSibling);
+  else document.body.prepend(notice);
+  notice.querySelector('.oauth-copy-url')?.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(location.href);
+      alert('주소를 복사했어요. Chrome/Safari/삼성 인터넷 주소창에 붙여넣어 주세요.');
+    }catch(e){
+      prompt('아래 주소를 복사해서 Chrome/Safari/삼성 인터넷에서 열어주세요.', location.href);
+    }
+  });
+}
 
 function dict(){ return I18N[lang] || {}; }
 function normalize(s){ return String(s || '').replace(/\s+/g, ' ').trim(); }
@@ -228,24 +261,38 @@ async function loadLicense(uid){
 
 async function initAuth(){
   if(!configuredFirebase()){ console.error('Firebase config missing or invalid',CONFIG.firebase); return; }
-  const [{initializeApp},{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged},fs]=await Promise.all([
+  const [{initializeApp},{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged},fs,st]=await Promise.all([
     import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'),
-    import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
+    import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+    import('https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js')
   ]);
   const app=initializeApp(CONFIG.firebase);
   auth=getAuth(app);
   db=fs.getFirestore(app);
+  storage=st.getStorage(app);
   firestoreApi=fs;
+  storageApi=st;
   const provider=new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   provider.addScope('email');
   provider.addScope('profile');
 
   async function loginWithGoogle(){
+    if(isInAppBrowser()){
+      showOAuthBrowserNotice();
+bindBoardLightbox();
+      alert('현재 브라우저에서는 Google 로그인이 제한될 수 있습니다.\n\n카카오톡·디스코드·인스타 내부 브라우저가 아닌 Chrome, Safari 또는 삼성 인터넷에서 다시 열어주세요.');
+      return;
+    }
     try{
       await signInWithPopup(auth, provider);
     }catch(e){
+      if(e.code==='auth/web-storage-unsupported'||e.code==='auth/popup-blocked'||/disallowed_useragent/i.test(String(e.message||''))){
+        showOAuthBrowserNotice();
+        alert('현재 브라우저에서는 Google 로그인이 제한됩니다.\n\nChrome, Safari 또는 삼성 인터넷에서 다시 열어주세요.');
+        return;
+      }
       console.error('Google login failed', {
         code:e.code,
         message:e.message,
@@ -786,6 +833,110 @@ function listenBoardPosts(){
   const q2=query(collection(db,'boardPosts'), where('visible','==',true));
   addUnsub(onSnapshot(q2, snap=>{ window.__boardRows=snap.docs.map(d=>({id:d.id,...d.data()})); old(window.__boardRows); }, err=>old([],err)));
 }
+
+const BOARD_MAX_ATTACHMENTS = 5;
+const BOARD_MAX_FILE_SIZE = 50 * 1024 * 1024;
+const BOARD_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm))$/i;
+let selectedBoardFiles = [];
+let existingBoardAttachments = [];
+
+function boardFileType(fileOrAttachment){
+  const mime = String(fileOrAttachment?.type || fileOrAttachment?.mime || '');
+  if(mime.startsWith('video/')) return 'video';
+  return 'image';
+}
+function boardSafeFilename(name){
+  const raw = String(name || 'attachment').normalize('NFKC');
+  return raw.replace(/[\\/#?%*:|"<>]/g, '_').replace(/\s+/g, '_').slice(-90);
+}
+function boardAttachmentItemHtml(a, idx, editable=false){
+  const type = boardFileType(a);
+  const name = esc(a.name || a.fileName || 'attachment');
+  const url = esc(a.url || '');
+  const badge = type === 'video' ? '🎥 영상' : '🖼️ 사진';
+  const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-existing-attachment="${idx}">삭제</button>` : '';
+  const media = type === 'video'
+    ? `<video controls preload="metadata" src="${url}"></video>`
+    : `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`;
+  return `<figure class="board-attachment-item board-attachment-${type}">${media}<figcaption><span>${badge}</span><b>${name}</b>${remove}</figcaption></figure>`;
+}
+function boardAttachmentsHtml(list){
+  const arr = Array.isArray(list) ? list.filter(x=>x && x.url) : [];
+  if(!arr.length) return '';
+  return `<div class="board-attachments">${arr.map((a,i)=>boardAttachmentItemHtml(a,i,false)).join('')}</div>`;
+}
+function renderBoardAttachmentPreview(){
+  const box = $('boardAttachmentPreview');
+  if(!box) return;
+  const existing = existingBoardAttachments.map((a,i)=>boardAttachmentItemHtml(a,i,true)).join('');
+  const fresh = selectedBoardFiles.map((file,i)=>{
+    const type = boardFileType(file);
+    const icon = type === 'video' ? '🎥' : '🖼️';
+    return `<div class="board-file-chip"><span>${icon}</span><b>${esc(file.name)}</b><small>${Math.ceil(file.size/1024/1024)}MB</small><button type="button" class="secondary mini-btn danger-btn" data-remove-new-attachment="${i}">삭제</button></div>`;
+  }).join('');
+  box.innerHTML = existing || fresh ? `${existing}<div class="board-file-chip-list">${fresh}</div>` : '<p class="muted">첨부한 사진/영상이 없습니다.</p>';
+  box.querySelectorAll('[data-remove-existing-attachment]').forEach(btn=>btn.onclick=()=>{ existingBoardAttachments.splice(Number(btn.dataset.removeExistingAttachment),1); renderBoardAttachmentPreview(); });
+  box.querySelectorAll('[data-remove-new-attachment]').forEach(btn=>btn.onclick=()=>{ selectedBoardFiles.splice(Number(btn.dataset.removeNewAttachment),1); const input=$('boardAttachments'); if(input) input.value=''; renderBoardAttachmentPreview(); });
+}
+function addBoardFiles(files){
+  const msg = $('boardPostMsg');
+  const incoming = Array.from(files || []);
+  for(const file of incoming){
+    if(!BOARD_ALLOWED_MIME.test(file.type || '')){ if(msg) msg.textContent = '지원하지 않는 파일 형식입니다. JPG/PNG/WEBP/GIF/MP4/WEBM만 업로드할 수 있어요.'; continue; }
+    if(file.size > BOARD_MAX_FILE_SIZE){ if(msg) msg.textContent = '파일당 최대 50MB까지 업로드할 수 있어요.'; continue; }
+    if(existingBoardAttachments.length + selectedBoardFiles.length >= BOARD_MAX_ATTACHMENTS){ if(msg) msg.textContent = '게시글당 첨부는 최대 5개까지 가능합니다.'; break; }
+    selectedBoardFiles.push(file);
+  }
+  renderBoardAttachmentPreview();
+}
+function bindBoardAttachmentPicker(){
+  const input = $('boardAttachments');
+  const drop = qs('.board-upload-box');
+  if(input && !input.dataset.bound){
+    input.dataset.bound='1';
+    input.addEventListener('change',()=>addBoardFiles(input.files));
+  }
+  if(drop && !drop.dataset.bound){
+    drop.dataset.bound='1';
+    ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('dragover'); }));
+    drop.addEventListener('drop',e=>addBoardFiles(e.dataTransfer?.files));
+  }
+  renderBoardAttachmentPreview();
+}
+async function uploadBoardAttachments(postId){
+  if(!selectedBoardFiles.length) return [];
+  if(!storage || !storageApi?.ref) throw new Error('Firebase Storage 초기화에 실패했습니다.');
+  const {ref, uploadBytes, getDownloadURL} = storageApi;
+  const uploaded = [];
+  const msg = $('boardPostMsg');
+  for(let i=0;i<selectedBoardFiles.length;i++){
+    const file = selectedBoardFiles[i];
+    if(msg) msg.textContent = `첨부파일 업로드 중... ${i+1}/${selectedBoardFiles.length}`;
+    const safeName = boardSafeFilename(file.name);
+    const path = `board/${currentUser.uid}/${postId}/${Date.now()}_${i}_${safeName}`;
+    const fileRef = ref(storage, path);
+    await uploadBytes(fileRef, file, { contentType: file.type });
+    const url = await getDownloadURL(fileRef);
+    uploaded.push({ type: boardFileType(file), mime: file.type, name: file.name, size: file.size, path, url });
+  }
+  return uploaded;
+}
+function bindBoardLightbox(){
+  if(document.body.dataset.boardLightboxBound) return;
+  document.body.dataset.boardLightboxBound='1';
+  document.addEventListener('click',e=>{
+    const img=e.target.closest && e.target.closest('[data-lightbox-src]');
+    if(!img) return;
+    const src=img.getAttribute('data-lightbox-src');
+    const overlay=document.createElement('div');
+    overlay.className='board-lightbox';
+    overlay.innerHTML=`<button type="button" aria-label="close">×</button><img src="${esc(src)}" alt="preview">`;
+    overlay.addEventListener('click',()=>overlay.remove());
+    document.body.appendChild(overlay);
+  }, {once:false});
+}
+
 async function initBoardPostEditor(){
   const form=$('boardPostForm'); if(!form||form.dataset.bound)return;
   const id=getParam('id');
@@ -797,9 +948,10 @@ async function initBoardPostEditor(){
       const d=snap.exists()?{id:snap.id,...snap.data()}:null;
       if(!d){ $('boardPostMsg').textContent=tr('empty'); }
       else if(!canManageRecord(d)){ $('boardPostMsg').textContent=tr('no_permission'); form.querySelector('button[type="submit"]').disabled=true; }
-      else { $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정'); $('boardPostTitle').value=d.title||''; $('boardPostContent').value=d.content||''; if($('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned; }
+      else { $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정'); $('boardPostTitle').value=d.title||''; $('boardPostContent').value=d.content||''; existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : []; renderBoardAttachmentPreview(); if($('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned; }
     }catch(e){ $('boardPostMsg').textContent=e.message; }
   }
+  bindBoardAttachmentPicker();
   form.dataset.bound='1';
   form.addEventListener('submit',async e=>{
     e.preventDefault();
@@ -808,8 +960,16 @@ async function initBoardPostEditor(){
     if(isAdminUser && $('boardPostPinned')) data.pinned=$('boardPostPinned').checked;
     try{
       let postId=id;
-      if(id){ await setDoc(doc(db,'boardPosts',id),data,{merge:true}); }
-      else { const ref=await addDoc(collection(db,'boardPosts'),{...data,pinned:isAdminUser&&$('boardPostPinned')?.checked || false,commentCount:0,viewCount:0,likeCount:0,createdAt:serverTimestamp()}); postId=ref.id; }
+      if(id){
+        const uploaded = await uploadBoardAttachments(id);
+        await setDoc(doc(db,'boardPosts',id),{...data,attachments:[...existingBoardAttachments,...uploaded]},{merge:true});
+        postId=id;
+      } else {
+        const ref=await addDoc(collection(db,'boardPosts'),{...data,pinned:isAdminUser&&$('boardPostPinned')?.checked || false,commentCount:0,viewCount:0,likeCount:0,attachments:[],createdAt:serverTimestamp()});
+        postId=ref.id;
+        const uploaded = await uploadBoardAttachments(postId);
+        if(uploaded.length) await setDoc(doc(db,'boardPosts',postId),{attachments:uploaded,updatedAt:serverTimestamp()},{merge:true});
+      }
       location.href=boardPostUrl(postId);
     }catch(err){ $('boardPostMsg').textContent=err.message; }
   });
@@ -820,7 +980,7 @@ function renderBoardPost(d,err){
   if(!d || d.visible===false || d.deleted===true){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
   activeBoardPost=d;
   const manage=canManageRecord(d);
-  box.innerHTML=`<div class="post-card-head"><div class="post-kicker">${d.pinned?'📌 고정 게시글':'자유게시판'}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid"><span>작성자 <b>${esc(d.displayName||d.email||'-')}</b></span><span>작성일 <b>${esc(fmtDate(d.createdAt))}</b></span><span>조회 <b>${Number(d.viewCount||0)}</b></span><span>추천 <b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span>댓글 <b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div><div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 추천</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">수정</a><button id="postDeleteBtn" class="secondary danger-btn">삭제</button>`:''}</div>`;
+  box.innerHTML=`<div class="post-card-head"><div class="post-kicker">${d.pinned?'📌 고정 게시글':'자유게시판'}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid"><span>작성자 <b>${esc(d.displayName||d.email||'-')}</b></span><span>작성일 <b>${esc(fmtDate(d.createdAt))}</b></span><span>조회 <b>${Number(d.viewCount||0)}</b></span><span>추천 <b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span>댓글 <b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 추천</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">수정</a><button id="postDeleteBtn" class="secondary danger-btn">삭제</button>`:''}</div>`;
   refreshBoardPostActions();
 }
 async function incrementViewOnce(postId){
@@ -1046,6 +1206,8 @@ function initPayPal(){
 $('year') && ($('year').textContent=new Date().getFullYear());
 $('langBtn') && ($('langBtn').onclick=()=>{ lang = lang==='ko' ? 'en' : lang==='en' ? 'ja' : 'ko'; applyStaticI18n(); });
 $('menuBtn')?.addEventListener('click',()=>$('mainNav')?.classList.toggle('open'));
+showOAuthBrowserNotice();
+bindBoardLightbox();
 applyStaticI18n();
 setAuthUiSignedOut();
 initForms();
