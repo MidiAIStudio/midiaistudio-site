@@ -164,6 +164,7 @@ function tr(k){
 }
 
 function fmtDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); return d ? d.toLocaleString(lang==='ja'?'ja-JP':lang==='en'?'en-US':'ko-KR') : ''; } catch { return ''; } }
+function fmtShortDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); if(!d)return ''; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; } catch { return fmtDate(v); } }
 function esc(s){ return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
 function getParam(k){ return new URLSearchParams(location.search).get(k); }
@@ -176,6 +177,8 @@ function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}
 function purchaseLocaleText(){
   if(lang === 'en') return {
     saleUntil:'Until July 31',
+    noteTitle:'What you get',
+    noteText:'Your Lifetime license is linked to your Google account immediately after payment.',
     benefits:['Linked to your Google account','Available on your registered PC','Support via 1:1 Support'],
     accountTitle:'Sign in with Google before purchasing.',
     signedOut:'After signing in, the Lifetime license will be assigned automatically to your Google account after payment.',
@@ -192,6 +195,8 @@ function purchaseLocaleText(){
   };
   if(lang === 'ja') return {
     saleUntil:'7月31日まで',
+    noteTitle:'ライセンス内容',
+    noteText:'決済完了後、LifetimeライセンスがGoogleアカウントに連携されます。',
     benefits:['Googleアカウントにライセンス連携','登録済みPCで利用可能','サイト内お問い合わせサポート'],
     accountTitle:'Googleアカウントでログイン後、ご購入いただけます。',
     signedOut:'ログイン後に決済すると、LifetimeライセンスがGoogleアカウントへ自動付与されます。',
@@ -208,6 +213,8 @@ function purchaseLocaleText(){
   };
   return {
     saleUntil:'7월 31일까지',
+    noteTitle:'라이선스 안내',
+    noteText:'결제 완료 후 Google 계정에 Lifetime 라이선스가 연결됩니다.',
     benefits:['Google 계정 라이선스 연결','등록된 PC에서 사용 가능','홈페이지 1:1 문의 지원'],
     accountTitle:'Google 로그인 후 결제할 수 있습니다.',
     signedOut:'결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.',
@@ -232,6 +239,9 @@ function updatePurchaseI18n(){
   if($('purchaseAccountTitle')) $('purchaseAccountTitle').textContent = t.accountTitle;
   const bank = $('bankTransferNotice');
   if(bank) bank.classList.toggle('hidden', lang !== 'ko');
+  const note = document.querySelector('.purchase-final-note');
+  if(note) note.innerHTML = `<h3>${esc(t.noteTitle || 'What you get')}</h3><p>${esc(t.noteText || '')}</p>`;
+  if($('purchaseHeroLead')) $('purchaseHeroLead').textContent = lang==='en' ? 'A Lifetime license for faster and more reliable AI-powered MIDI conversion.' : lang==='ja' ? 'AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。' : 'AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.';
   const paypal = $('paypalButtons');
   if(paypal && paypal.textContent.includes('Client ID')) paypal.innerHTML = `<p>${esc(t.paypalReady)}</p>`;
   updatePurchaseAccountBox();
@@ -1049,7 +1059,13 @@ function renderBoardPost(d,err){
   if(!d || d.visible===false || d.deleted===true){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
   activeBoardPost=d;
   const manage=canManageRecord(d);
-  box.innerHTML=`<div class="post-card-head"><div class="post-kicker">${d.pinned?'📌 고정 게시글':'자유게시판'}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid"><span>${esc(lang==='en'?'Author':lang==='ja'?'投稿者':'작성자')} <b>${esc(d.displayName||d.email||'-')}</b></span><span>${esc(lang==='en'?'Date':lang==='ja'?'作成日':'작성일')} <b>${esc(fmtDate(d.createdAt))}</b></span><span>${esc(lang==='en'?'Views':lang==='ja'?'閲覧':'조회')} <b>${Number(d.viewCount||0)}</b></span><span>${esc(lang==='en'?'Likes':lang==='ja'?'いいね':'추천')} <b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span>${esc(lang==='en'?'Comments':lang==='ja'?'コメント':'댓글')} <b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 ${esc(lang==='en'?'Like':lang==='ja'?'いいね':'추천')}</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">${esc(lang==='en'?'Edit':lang==='ja'?'編集':'수정')}</a><button id="postDeleteBtn" class="secondary danger-btn">${esc(lang==='en'?'Delete':lang==='ja'?'削除':'삭제')}</button>`:''}</div>`;
+  const labels = lang==='en'
+    ? {board:'Community', pinned:'Pinned post', author:'Author', date:'Date', views:'Views', likes:'Likes', comments:'Comments', like:'Like', edit:'Edit', del:'Delete'}
+    : lang==='ja'
+    ? {board:'コミュニティ', pinned:'固定投稿', author:'投稿者', date:'作成日', views:'閲覧', likes:'いいね', comments:'コメント', like:'いいね', edit:'編集', del:'削除'}
+    : {board:'자유게시판', pinned:'고정 게시글', author:'작성자', date:'작성일', views:'조회', likes:'추천', comments:'댓글', like:'추천', edit:'수정', del:'삭제'};
+  const author = d.displayName || d.email || '-';
+  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author"><i>👤</i><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 ${esc(labels.like)}</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">${esc(labels.edit)}</a><button id="postDeleteBtn" class="secondary danger-btn">${esc(labels.del)}</button>`:''}</div>`;
   refreshBoardPostActions();
 }
 async function incrementViewOnce(postId){

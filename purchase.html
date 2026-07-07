@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=24.0">
+  <link rel="stylesheet" href="./assets/css/style.css?v=final">
 </head>
 <body>
   <div class="orb orb-a"></div>
@@ -34,27 +34,22 @@
   </header>
 
   <main>
-    <section class="page-hero wrap">
-      <p class="eyebrow">Purchase</p>
-      <h1>라이선스 구매</h1>
-      <p>Google 계정에 라이선스를 연결하는 방식입니다.</p>
+    <section class="purchase-final-hero wrap">
+      <p class="eyebrow">Lifetime License</p>
+      <h1 id="purchaseHeroTitle">MidiAI Studio</h1>
+      <p id="purchaseHeroLead">AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.</p>
     </section>
 
-    <section class="wrap page-grid">
-      <aside class="side-card">
-        <a href="./notices.html">공지사항</a>
-        <a href="./patch-notes.html">패치노트</a>
-        <a href="./support.html">1:1 문의 작성</a>
-        <a href="./my-tickets.html">나의 문의</a>
-        <a href="./account.html">내 계정</a>
-      </aside>
-
-      <div class="content-card">
-        <div class="price-card purchase-v23-card">
-          <p class="eyebrow">Limited Sale</p>
-          <h2>MidiAI Studio License</h2>
-          <div class="price"><strong id="purchasePrice">$69 USD</strong><small id="purchaseSaleUntil">7월 31일까지</small></div>
-          <ul id="purchaseBenefitList">
+    <section class="wrap purchase-final-layout">
+      <div class="purchase-final-main">
+        <div class="price-card purchase-final-card purchase-v23-card">
+          <div class="purchase-final-topline">
+            <span class="eyebrow">Final Sale</span>
+            <span id="purchaseSaleUntil" class="purchase-sale-pill">7월 31일까지</span>
+          </div>
+          <h2>Lifetime License</h2>
+          <div class="price purchase-final-price"><strong id="purchasePrice">$69 USD</strong></div>
+          <ul id="purchaseBenefitList" class="purchase-final-benefits">
             <li>Google 계정 라이선스 연결</li>
             <li>등록된 PC에서 사용 가능</li>
             <li>홈페이지 1:1 문의 지원</li>
@@ -63,23 +58,29 @@
             <strong id="purchaseAccountTitle">Google 로그인 후 결제할 수 있습니다.</strong>
             <p id="purchaseAccountText">결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.</p>
           </div>
-          <div id="paypalButtons" class="paypal"><p>PayPal Client ID와 Functions URL 설정 후 결제 버튼이 표시됩니다.</p></div>
+          <div id="paypalButtons" class="paypal purchase-paypal-box"><p>PayPal Client ID와 Functions URL 설정 후 결제 버튼이 표시됩니다.</p></div>
           <p id="paypalStatus" class="muted small"></p>
         </div>
+      </div>
 
-        <div id="bankTransferNotice" class="notice bank-transfer-notice">
+      <aside class="purchase-final-side">
+        <div class="notice purchase-final-note">
+          <h3>What you get</h3>
+          <p>결제 완료 후 Google 계정에 Lifetime 라이선스가 연결됩니다.</p>
+        </div>
+        <div id="bankTransferNotice" class="notice bank-transfer-notice purchase-final-bank">
           <h3>계좌 입금 안내</h3>
-          <p>카카오뱅크 3333-37-8700109</p>
-          <p>예금주 : 미디에이아이스튜디오</p>
+          <p><b>카카오뱅크</b><br>3333-37-8700109</p>
+          <p><b>예금주</b><br>미디에이아이스튜디오</p>
           <p>계좌이체 후 1:1 문의에 입금자명을 남겨주세요.<br>입금 확인 후 라이선스를 지급해드립니다.</p>
         </div>
-      </div>
+      </aside>
     </section>
   </main>
 
-  <footer><span>© <span id="year"></span> MidiAI Studio</span><span>Portal V23</span></footer>
+  <footer><span>© <span id="year"></span> MidiAI Studio</span><span>Final Edition</span></footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=23.0"></script>
-  <script type="module" src="./assets/js/app.js?v=23.0"></script>
+  <script type="module" src="./assets/js/config.js?v=final"></script>
+  <script type="module" src="./assets/js/app.js?v=final"></script>
 </body>
 </html>
