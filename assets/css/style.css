@@ -391,3 +391,16 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .footer-main{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,.09);padding-bottom:16px;margin-bottom:14px}.footer-main strong{display:block;color:#fff;font-size:16px;margin-bottom:4px}.footer-main p{margin:0;color:var(--muted)}.footer-links{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}.footer-links a{color:#dfe7ff;text-decoration:none;padding:6px 9px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09)}.business-box{display:flex;flex-wrap:wrap;gap:6px 14px}.business-box span{white-space:normal}.footer-copy{margin-top:12px;color:rgba(255,255,255,.55)}
 .legal-hero{max-width:900px}.legal-page{max-width:900px;margin-bottom:60px}.legal-card{padding:28px!important;border-radius:26px!important}.legal-card h2{margin:26px 0 9px;font-size:20px;letter-spacing:-.03em}.legal-card p{color:#d7dcf5;line-height:1.82;margin:0 0 10px}.legal-updated{display:inline-flex!important;padding:7px 10px;border-radius:999px;background:rgba(34,211,238,.10);border:1px solid rgba(34,211,238,.22);color:#b8f6ff!important;font-size:12px}.legal-card hr{border:0;border-top:1px solid rgba(255,255,255,.1);margin:28px 0}.business-table{display:grid;gap:8px}.business-table div{display:grid;grid-template-columns:190px 1fr;gap:12px;padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.09)}.business-table b{color:#fff}.business-table span{color:#dbe1ff}
 @media(max-width:720px){.legal-footer{width:calc(100% - 22px);padding:16px!important}.footer-main{display:block}.footer-links{justify-content:flex-start;margin-top:12px}.business-table div{grid-template-columns:1fr;gap:4px}.legal-card{padding:18px!important}}
+
+/* Business info compact patch */
+.business-info-hero{padding:30px 0 12px!important}
+.business-info-hero h1{font-size:clamp(28px,3.4vw,42px)!important;margin:8px 0!important}
+.business-info-hero p{line-height:1.5!important}
+.business-info-page{max-width:760px!important;margin-bottom:44px!important}
+.business-info-page .legal-card{padding:20px!important;border-radius:22px!important}
+.business-table-compact{gap:7px!important}
+.business-table-compact div{grid-template-columns:150px 1fr!important;gap:10px!important;padding:10px 13px!important;border-radius:13px!important}
+.business-table-compact b{font-size:13px!important}
+.business-table-compact span{font-size:15px!important;font-weight:700!important;line-height:1.45!important}
+.business-info-note{margin-top:14px!important;font-size:13px!important}
+@media(max-width:720px){.business-info-hero{padding:22px 0 8px!important}.business-table-compact div{grid-template-columns:1fr!important;gap:4px!important}.business-table-compact span{font-size:14px!important}.business-info-page .legal-card{padding:16px!important}}
