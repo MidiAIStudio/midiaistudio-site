@@ -233,7 +233,7 @@ function purchaseLocaleText(){
 function updatePurchaseI18n(){
   if(!document.body) return;
   const t = purchaseLocaleText();
-  if($('purchasePrice')) $('purchasePrice').textContent = CONFIG.priceDisplay || '$69 USD';
+  if($('purchasePrice')) $('purchasePrice').textContent = CONFIG.priceDisplay || '$65 USD';
   if($('purchaseSaleUntil')) $('purchaseSaleUntil').textContent = t.saleUntil;
   if($('purchaseBenefitList')) $('purchaseBenefitList').innerHTML = t.benefits.map(x=>`<li>${esc(x)}</li>`).join('');
   if($('purchaseAccountTitle')) $('purchaseAccountTitle').textContent = t.accountTitle;
