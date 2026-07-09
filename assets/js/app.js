@@ -2,12 +2,15 @@ const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
 const qs = (s, root = document) => root.querySelector(s);
 const page = location.pathname.split('/').pop() || 'index.html';
-const urlLang = new URLSearchParams(location.search).get('lang');
-const pathLang = location.pathname.includes('/en/') ? 'en' : location.pathname.includes('/ja/') ? 'ja' : location.pathname.includes('/ko/') ? 'ko' : '';
+const pathLower = location.pathname.toLowerCase();
+const isPurchasePath = page === 'purchase.html' || page === 'purchase' || pathLower.endsWith('/purchase') || pathLower.endsWith('/purchase/');
+const isRootKoreanPurchasePage = isPurchasePath && !pathLower.includes('/en/') && !pathLower.includes('/ja/');
 
-let lang = (['ko','en','ja'].includes(urlLang) ? urlLang : '') || pathLang || localStorage.getItem('midiai_lang') || document.documentElement.lang || 'ko';
-if(!['ko','en','ja'].includes(lang)) lang = 'ko';
-const checkoutLang = page === 'purchase.html' ? lang : (pathLang || lang);
+let lang = localStorage.getItem('midiai_lang') || document.documentElement.lang || 'ko';
+if (isRootKoreanPurchasePage) {
+  lang = 'ko';
+  try { localStorage.setItem('midiai_lang', 'ko'); } catch (_) {}
+}
 let auth = null;
 let db = null;
 let currentUser = null;
@@ -180,7 +183,9 @@ function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}
 
 
 function isKoreanCheckout(){
-  return checkoutLang === 'ko';
+  const p = location.pathname.toLowerCase();
+  if ((p.endsWith('/purchase.html') || p.endsWith('/purchase') || p.endsWith('/purchase/')) && !p.includes('/en/') && !p.includes('/ja/')) return true;
+  return lang === 'ko' || p.includes('/ko/') || navigator.language?.toLowerCase().startsWith('ko');
 }
 function purchaseDisplayPrice(){
   if(isKoreanCheckout()) return CONFIG.priceDisplayKr || '90,000원';
@@ -198,7 +203,8 @@ function paymentId(prefix='midiai'){
 }
 
 function purchaseLocaleText(){
-  if(lang === 'en') return {
+  const checkoutLang = isKoreanCheckout() ? 'ko' : lang;
+  if(checkoutLang === 'en') return {
     saleUntil:'Until July 31',
     noteTitle:'What you get',
     noteText:'Your Lifetime license is linked to your Google account immediately after payment.',
@@ -220,7 +226,7 @@ function purchaseLocaleText(){
     cancel:'Payment canceled.',
     error:'PayPal payment error: '
   };
-  if(lang === 'ja') return {
+  if(checkoutLang === 'ja') return {
     saleUntil:'7月31日まで',
     noteTitle:'ライセンス内容',
     noteText:'決済完了後、LifetimeライセンスがGoogleアカウントに連携されます。',
@@ -269,17 +275,15 @@ function updatePurchaseI18n(){
   if(!document.body) return;
   const t = purchaseLocaleText();
   if($('purchasePrice')) $('purchasePrice').textContent = purchaseDisplayPrice();
-  const h2 = document.querySelector('.purchase-v23-card h2');
-  if(h2) h2.textContent = lang === 'ja' ? 'Lifetime ライセンス' : 'Lifetime License';
   updatePurchaseReviewPanel();
   if($('purchaseSaleUntil')) $('purchaseSaleUntil').textContent = t.saleUntil;
   if($('purchaseBenefitList')) $('purchaseBenefitList').innerHTML = t.benefits.map(x=>`<li>${esc(x)}</li>`).join('');
   if($('purchaseAccountTitle')) $('purchaseAccountTitle').textContent = t.accountTitle;
   const bank = $('bankTransferNotice');
-  if(bank) bank.classList.toggle('hidden', lang !== 'ko');
+  if(bank) bank.classList.toggle('hidden', !isKoreanCheckout());
   const note = document.querySelector('.purchase-final-note');
   if(note) note.innerHTML = `<h3>${esc(t.noteTitle || 'What you get')}</h3><p>${esc(t.noteText || '')}</p>`;
-  if($('purchaseHeroLead')) $('purchaseHeroLead').textContent = lang==='en' ? 'A Lifetime license for faster and more reliable AI-powered MIDI conversion.' : lang==='ja' ? 'AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。' : 'AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.';
+  if($('purchaseHeroLead')) $('purchaseHeroLead').textContent = isKoreanCheckout() ? 'AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.' : (lang==='en' ? 'A Lifetime license for faster and more reliable AI-powered MIDI conversion.' : lang==='ja' ? 'AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。' : 'AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.');
   const paypal = $('paypalButtons');
   if(paypal && paypal.textContent.includes('Client ID')) paypal.innerHTML = `<p>${esc(t.paypalReady)}</p>`;
   updatePurchaseAccountBox();
@@ -1403,17 +1407,7 @@ function initPayPal(){
 }
 
 $('year') && ($('year').textContent=new Date().getFullYear());
-$('langBtn') && ($('langBtn').onclick=()=>{
-  lang = lang==='ko' ? 'en' : lang==='en' ? 'ja' : 'ko';
-  localStorage.setItem('midiai_lang', lang);
-  if(page === 'purchase.html'){
-    const url = new URL(location.href);
-    url.searchParams.set('lang', lang);
-    location.href = url.toString();
-    return;
-  }
-  applyStaticI18n();
-});
+$('langBtn') && ($('langBtn').onclick=()=>{ lang = lang==='ko' ? 'en' : lang==='en' ? 'ja' : 'ko'; applyStaticI18n(); });
 $('menuBtn')?.addEventListener('click',()=>$('mainNav')?.classList.toggle('open'));
 showOAuthBrowserNotice();
 bindBoardLightbox();
