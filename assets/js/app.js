@@ -2,8 +2,10 @@ const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
 const qs = (s, root = document) => root.querySelector(s);
 const page = location.pathname.split('/').pop() || 'index.html';
+const isRootKoreanPurchasePage = page === 'purchase.html' && !location.pathname.includes('/en/') && !location.pathname.includes('/ja/');
 
 let lang = localStorage.getItem('midiai_lang') || document.documentElement.lang || 'ko';
+if (isRootKoreanPurchasePage) lang = 'ko';
 let auth = null;
 let db = null;
 let currentUser = null;
@@ -176,7 +178,7 @@ function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}
 
 
 function isKoreanCheckout(){
-  return lang === 'ko' || location.pathname.includes('/ko/') || navigator.language?.toLowerCase().startsWith('ko');
+  return isRootKoreanPurchasePage || lang === 'ko' || location.pathname.includes('/ko/') || navigator.language?.toLowerCase().startsWith('ko');
 }
 function purchaseDisplayPrice(){
   if(isKoreanCheckout()) return CONFIG.priceDisplayKr || '90,000원';
