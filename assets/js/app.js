@@ -1308,12 +1308,17 @@ async function callFunctionJson(name, payload){
 }
 async function loadPortOneSdk(){
   if(window.PortOne) return window.PortOne;
-  const mod = await import('https://cdn.jsdelivr.net/npm/@portone/browser-sdk@latest/+esm');
+  const mod = await import('https://cdn.portone.io/v2/browser-sdk.esm.js');
   window.PortOne = mod;
   return mod;
 }
 async function requestKakaoPayPayment(){
-  if(!currentUser){ alert(purchaseLocaleText().loginAlert); return; }
+  if(!currentUser){
+    const msg = purchaseLocaleText().loginAlert || 'Google 로그인 후 결제할 수 있습니다.';
+    paypalStatus(msg, 'err');
+    alert(msg);
+    return;
+  }
   if(!CONFIG.portoneStoreId || String(CONFIG.portoneStoreId).startsWith('PASTE_')){
     paypalStatus('PortOne Store ID를 config.js에 입력해야 합니다.', 'err');
     alert('PortOne Store ID를 config.js에 입력해야 합니다.');
@@ -1358,12 +1363,12 @@ async function requestKakaoPayPayment(){
     alert('카카오페이 결제 오류: ' + (err?.message || err));
   }
 }
+window.midiaiKakaoPay = requestKakaoPayPayment;
 function renderKakaoPayButton(){
   const box = $('paypalButtons');
   if(!box) return;
   const t = purchaseLocaleText();
-  box.innerHTML = `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button">${esc(t.kakaoButton || '카카오페이로 구매')}</button><p class="muted small">상품 선택 → 구매하기 → 카카오페이 결제창으로 이동합니다.</p>`;
-  $('kakaoPayBtn')?.addEventListener('click', requestKakaoPayPayment);
+  box.innerHTML = `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" onclick="window.midiaiKakaoPay && window.midiaiKakaoPay()">${esc(t.kakaoButton || '카카오페이로 구매')}</button><p class="muted small">상품 선택 → 구매하기 → 카카오페이 결제창으로 이동합니다.</p>`;
 }
 function initPayPal(){
   if(!$('paypalButtons')) return;
