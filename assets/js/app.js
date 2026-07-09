@@ -217,17 +217,17 @@ function paymentId(prefix='midiai'){
 function purchaseLocaleText(){
   if(lang === 'en') return {
     saleUntil:'Until July 31',
-    noteTitle:'What you get',
+    noteTitle:'License Benefits',
     noteText:'Your Lifetime license is linked to your Google account immediately after payment.',
     benefits:['Linked to your Google account','Available on your registered PC','Support via 1:1 Support'],
     accountTitle:'Sign in with Google before purchasing.',
     signedOut:'After signing in, the Lifetime license will be assigned automatically to your Google account after payment.',
     signedIn:(id)=>`After payment, a Lifetime license will be assigned automatically to <b>${id}</b>.`,
     paypalReady:'PayPal buttons will appear after the Client ID and Functions URL are configured.',
-    kakaoReady:'KakaoPay test payment is available for Korean checkout.',
+    kakaoReady:'KakaoPay checkout is available for Korean checkout.',
     kakaoButton:'Pay with KakaoPay',
-    kakaoPreparing:'Opening KakaoPay test checkout...',
-    kakaoComplete:'KakaoPay test payment completed.',
+    kakaoPreparing:'Opening KakaoPay checkout...',
+    kakaoComplete:'KakaoPay payment completed.',
     loginAlert:'Please sign in with Google before purchasing.',
     paypalAccount:(id)=>`Payment account: ${id}`,
     creating:'Creating PayPal order...',
@@ -239,17 +239,17 @@ function purchaseLocaleText(){
   };
   if(lang === 'ja') return {
     saleUntil:'7月31日まで',
-    noteTitle:'ライセンス内容',
+    noteTitle:'ライセンス特典',
     noteText:'決済完了後、LifetimeライセンスがGoogleアカウントに連携されます。',
     benefits:['Googleアカウントにライセンス連携','登録済みPCで利用可能','サイト内お問い合わせサポート'],
     accountTitle:'Googleアカウントでログイン後、ご購入いただけます。',
     signedOut:'ログイン後に決済すると、LifetimeライセンスがGoogleアカウントへ自動付与されます。',
     signedIn:(id)=>`決済完了後、<b>${id}</b> にLifetimeライセンスが自動付与されます。`,
     paypalReady:'PayPal Client IDとFunctions URLの設定後、決済ボタンが表示されます。',
-    kakaoReady:'韓国語ページではKakaoPayテスト決済が利用できます。',
+    kakaoReady:'KakaoPay決済が利用できます。',
     kakaoButton:'KakaoPayで決済',
-    kakaoPreparing:'KakaoPayテスト決済画面を開いています...',
-    kakaoComplete:'KakaoPayテスト決済が完了しました。',
+    kakaoPreparing:'KakaoPay決済画面を開いています...',
+    kakaoComplete:'KakaoPay決済が完了しました。',
     loginAlert:'Googleログイン後に決済してください。',
     paypalAccount:(id)=>`決済アカウント: ${id}`,
     creating:'PayPal注文を作成しています...',
@@ -261,17 +261,17 @@ function purchaseLocaleText(){
   };
   return {
     saleUntil:'7월 31일까지',
-    noteTitle:'라이선스 안내',
-    noteText:'결제 완료 후 Google 계정에 Lifetime 라이선스가 연결됩니다.',
+    noteTitle:'라이선스 혜택',
+    noteText:'결제 즉시 Google 계정에 Lifetime 라이선스가 등록됩니다.',
     benefits:['Google 계정 라이선스 연결','등록된 PC에서 사용 가능','홈페이지 1:1 문의 지원'],
     accountTitle:'Google 로그인 후 결제할 수 있습니다.',
     signedOut:'결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.',
     signedIn:(id)=>`결제 완료 시 <b>${id}</b> 계정에 Lifetime 라이선스가 자동 지급됩니다.`,
     paypalReady:'PayPal Client ID와 Functions URL 설정 후 결제 버튼이 표시됩니다.',
-    kakaoReady:'카카오페이 테스트 결제를 사용할 수 있습니다.',
+    kakaoReady:'카카오페이 결제를 사용할 수 있습니다.',
     kakaoButton:'카카오페이로 구매',
-    kakaoPreparing:'카카오페이 테스트 결제창을 여는 중입니다...',
-    kakaoComplete:'카카오페이 테스트 결제가 완료되었습니다.',
+    kakaoPreparing:'카카오페이 결제창을 여는 중입니다...',
+    kakaoComplete:'카카오페이 결제가 완료되었습니다.',
     loginAlert:'Google 로그인 후 결제해주세요.',
     paypalAccount:(id)=>`결제 계정: ${id}`,
     creating:'PayPal 주문을 생성하는 중입니다...',
@@ -293,7 +293,22 @@ function updatePurchaseI18n(){
   const bank = $('bankTransferNotice');
   if(bank) bank.classList.toggle('hidden', lang !== 'ko');
   const note = document.querySelector('.purchase-final-note');
-  if(note) note.innerHTML = `<h3>${esc(t.noteTitle || 'What you get')}</h3><p>${esc(t.noteText || '')}</p>`;
+  if(note){
+    if(isKoreanCheckout()){
+      note.innerHTML = `<h3>라이선스 혜택</h3>
+        <ul class="license-benefit-list">
+          <li><b>즉시 적용</b><span>결제 완료 즉시 Google 계정에 Lifetime 라이선스가 등록됩니다.</span></li>
+          <li><b>계정 연동</b><span>프로그램에서 같은 Google 계정으로 로그인하면 바로 사용할 수 있습니다.</span></li>
+          <li><b>서비스 제공기간</b><span>디지털 라이선스 특성상 구매 즉시 서비스 제공이 완료됩니다.</span></li>
+        </ul>`;
+    } else {
+      note.innerHTML = `<h3>${esc(t.noteTitle || 'What you get')}</h3>
+        <ul class="license-benefit-list">
+          <li><b>${lang==='ja'?'即時適用':'Instant activation'}</b><span>${esc(t.noteText || '')}</span></li>
+          <li><b>${lang==='ja'?'アカウント連携':'Account linked'}</b><span>${lang==='ja'?'同じGoogleアカウントでログインすると利用できます。':'Sign in with the same Google account to use your license.'}</span></li>
+        </ul>`;
+    }
+  }
   if($('purchaseHeroLead')) $('purchaseHeroLead').textContent = lang==='en' ? 'A Lifetime license for faster and more reliable AI-powered MIDI conversion.' : lang==='ja' ? 'AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。' : 'AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.';
   const paypal = $('paypalButtons');
   if(paypal && paypal.textContent.includes('Client ID')) paypal.innerHTML = `<p>${esc(t.paypalReady)}</p>`;
@@ -1368,7 +1383,7 @@ function renderKakaoPayButton(){
   const box = $('paypalButtons');
   if(!box) return;
   const t = purchaseLocaleText();
-  box.innerHTML = `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" onclick="window.midiaiKakaoPay && window.midiaiKakaoPay()">${esc(t.kakaoButton || '카카오페이로 구매')}</button><p class="muted small">상품 선택 → 구매하기 → 카카오페이 결제창으로 이동합니다.</p>`;
+  box.innerHTML = `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" onclick="window.midiaiKakaoPay && window.midiaiKakaoPay()"><span class="kakao-mark">pay</span><strong>${esc(t.kakaoButton || '카카오페이로 구매')}</strong></button>`;
 }
 function initPayPal(){
   if(!$('paypalButtons')) return;
