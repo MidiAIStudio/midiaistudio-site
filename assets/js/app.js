@@ -174,6 +174,25 @@ function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}
 
 
 
+
+function isKoreanCheckout(){
+  return lang === 'ko' || location.pathname.includes('/ko/') || navigator.language?.toLowerCase().startsWith('ko');
+}
+function purchaseDisplayPrice(){
+  if(isKoreanCheckout()) return CONFIG.priceDisplayKr || '90,000원';
+  return CONFIG.priceDisplayGlobal || CONFIG.priceDisplay || '$65 USD';
+}
+function purchaseAmountValue(){
+  return isKoreanCheckout() ? Number(CONFIG.priceValueKr || CONFIG.priceValue || 90000) : String(CONFIG.priceValueGlobal || CONFIG.priceValue || '65.00');
+}
+function purchaseCurrency(){
+  return isKoreanCheckout() ? 'KRW' : (CONFIG.currencyGlobal || CONFIG.currency || 'USD');
+}
+function paymentId(prefix='midiai'){
+  const rand = (window.crypto?.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2)));
+  return `${prefix}-${rand}`.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+}
+
 function purchaseLocaleText(){
   if(lang === 'en') return {
     saleUntil:'Until July 31',
@@ -184,6 +203,10 @@ function purchaseLocaleText(){
     signedOut:'After signing in, the Lifetime license will be assigned automatically to your Google account after payment.',
     signedIn:(id)=>`After payment, a Lifetime license will be assigned automatically to <b>${id}</b>.`,
     paypalReady:'PayPal buttons will appear after the Client ID and Functions URL are configured.',
+    kakaoReady:'KakaoPay test payment is available for Korean checkout.',
+    kakaoButton:'Pay with KakaoPay',
+    kakaoPreparing:'Opening KakaoPay test checkout...',
+    kakaoComplete:'KakaoPay test payment completed.',
     loginAlert:'Please sign in with Google before purchasing.',
     paypalAccount:(id)=>`Payment account: ${id}`,
     creating:'Creating PayPal order...',
@@ -202,6 +225,10 @@ function purchaseLocaleText(){
     signedOut:'ログイン後に決済すると、LifetimeライセンスがGoogleアカウントへ自動付与されます。',
     signedIn:(id)=>`決済完了後、<b>${id}</b> にLifetimeライセンスが自動付与されます。`,
     paypalReady:'PayPal Client IDとFunctions URLの設定後、決済ボタンが表示されます。',
+    kakaoReady:'韓国語ページではKakaoPayテスト決済が利用できます。',
+    kakaoButton:'KakaoPayで決済',
+    kakaoPreparing:'KakaoPayテスト決済画面を開いています...',
+    kakaoComplete:'KakaoPayテスト決済が完了しました。',
     loginAlert:'Googleログイン後に決済してください。',
     paypalAccount:(id)=>`決済アカウント: ${id}`,
     creating:'PayPal注文を作成しています...',
@@ -220,6 +247,10 @@ function purchaseLocaleText(){
     signedOut:'결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.',
     signedIn:(id)=>`결제 완료 시 <b>${id}</b> 계정에 Lifetime 라이선스가 자동 지급됩니다.`,
     paypalReady:'PayPal Client ID와 Functions URL 설정 후 결제 버튼이 표시됩니다.',
+    kakaoReady:'카카오페이 테스트 결제를 사용할 수 있습니다.',
+    kakaoButton:'카카오페이로 구매',
+    kakaoPreparing:'카카오페이 테스트 결제창을 여는 중입니다...',
+    kakaoComplete:'카카오페이 테스트 결제가 완료되었습니다.',
     loginAlert:'Google 로그인 후 결제해주세요.',
     paypalAccount:(id)=>`결제 계정: ${id}`,
     creating:'PayPal 주문을 생성하는 중입니다...',
@@ -233,7 +264,8 @@ function purchaseLocaleText(){
 function updatePurchaseI18n(){
   if(!document.body) return;
   const t = purchaseLocaleText();
-  if($('purchasePrice')) $('purchasePrice').textContent = CONFIG.priceDisplay || '$65 USD';
+  if($('purchasePrice')) $('purchasePrice').textContent = purchaseDisplayPrice();
+  updatePurchaseReviewPanel();
   if($('purchaseSaleUntil')) $('purchaseSaleUntil').textContent = t.saleUntil;
   if($('purchaseBenefitList')) $('purchaseBenefitList').innerHTML = t.benefits.map(x=>`<li>${esc(x)}</li>`).join('');
   if($('purchaseAccountTitle')) $('purchaseAccountTitle').textContent = t.accountTitle;
@@ -259,6 +291,19 @@ function updatePurchaseAccountBox(){
   } else {
     box.classList.remove('is-signed-in');
     text.textContent = t.signedOut;
+  }
+  updatePurchaseReviewPanel();
+}
+
+function updatePurchaseReviewPanel(){
+  if($('purchaseReviewPrice')) $('purchaseReviewPrice').textContent = purchaseDisplayPrice();
+  if($('purchasePaymentMethod')) $('purchasePaymentMethod').textContent = isKoreanCheckout() ? '카카오페이' : 'PayPal';
+  if($('purchaseBuyerInfo')){
+    if(currentUser){
+      $('purchaseBuyerInfo').textContent = currentUser.email || currentUser.displayName || currentUser.uid;
+    } else {
+      $('purchaseBuyerInfo').textContent = isKoreanCheckout() ? 'Google 로그인 후 자동 입력' : 'Filled after Google sign-in';
+    }
   }
 }
 
@@ -1240,15 +1285,78 @@ async function callFunctionJson(name, payload){
   if(!res.ok) throw new Error(data && data.message ? data.message : `Function ${name} failed (${res.status})`);
   return data || {};
 }
+async function loadPortOneSdk(){
+  if(window.PortOne) return window.PortOne;
+  const mod = await import('https://cdn.jsdelivr.net/npm/@portone/browser-sdk@latest/+esm');
+  window.PortOne = mod;
+  return mod;
+}
+async function requestKakaoPayPayment(){
+  if(!currentUser){ alert(purchaseLocaleText().loginAlert); return; }
+  if(!CONFIG.portoneStoreId || String(CONFIG.portoneStoreId).startsWith('PASTE_')){
+    paypalStatus('PortOne Store ID를 config.js에 입력해야 합니다.', 'err');
+    alert('PortOne Store ID를 config.js에 입력해야 합니다.');
+    return;
+  }
+  if(!CONFIG.portoneKakaoPayChannelKey){
+    paypalStatus('PortOne 카카오페이 채널키가 없습니다.', 'err');
+    return;
+  }
+  const t = purchaseLocaleText();
+  try{
+    paypalStatus(t.kakaoPreparing || 'Opening KakaoPay checkout...');
+    const PortOne = await loadPortOneSdk();
+    const result = await PortOne.requestPayment({
+      storeId: CONFIG.portoneStoreId,
+      channelKey: CONFIG.portoneKakaoPayChannelKey,
+      paymentId: paymentId('midiai-kakao-test'),
+      orderName: 'MidiAI Studio Lifetime 디지털 라이선스',
+      totalAmount: Number(CONFIG.priceValueKr || 90000),
+      currency: 'CURRENCY_KRW',
+      payMethod: 'EASY_PAY',
+      customer: {
+        customerId: currentUser.uid,
+        fullName: currentUser.displayName || currentUser.email || 'MidiAI User',
+        email: currentUser.email || undefined,
+      },
+      customData: {
+        uid: currentUser.uid,
+        plan: CONFIG.plan || 'lifetime',
+        mode: CONFIG.portoneMode || 'test'
+      }
+    });
+    if(result?.code){
+      paypalStatus(`${result.message || result.code}`, 'err');
+      return;
+    }
+    paypalStatus(t.kakaoComplete || 'KakaoPay payment complete.', 'ok');
+    alert(t.kakaoComplete || 'KakaoPay payment complete.');
+  }catch(err){
+    console.error('PortOne KakaoPay error', err);
+    paypalStatus('카카오페이 결제 오류: ' + (err?.message || err), 'err');
+    alert('카카오페이 결제 오류: ' + (err?.message || err));
+  }
+}
+function renderKakaoPayButton(){
+  const box = $('paypalButtons');
+  if(!box) return;
+  const t = purchaseLocaleText();
+  box.innerHTML = `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button">${esc(t.kakaoButton || '카카오페이로 구매')}</button><p class="muted small">상품 선택 → 구매하기 → 카카오페이 결제창으로 이동합니다.</p>`;
+  $('kakaoPayBtn')?.addEventListener('click', requestKakaoPayPayment);
+}
 function initPayPal(){
   if(!$('paypalButtons')) return;
   updatePurchaseAccountBox();
+  if(isKoreanCheckout() && CONFIG.portoneKakaoPayChannelKey){
+    renderKakaoPayButton();
+    return;
+  }
   if(!CONFIG.paypalClientId || String(CONFIG.paypalClientId).startsWith('PASTE_')) {
     $('paypalButtons').innerHTML = `<p>${esc(purchaseLocaleText().paypalReady)}</p>`;
     return;
   }
   const s=document.createElement('script');
-  const currency = CONFIG.currency || 'USD';
+  const currency = purchaseCurrency();
   s.src=`https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(CONFIG.paypalClientId)}&currency=${encodeURIComponent(currency)}&intent=capture`;
   s.onload=()=>{
     if(!window.paypal)return;
@@ -1263,7 +1371,7 @@ function initPayPal(){
         paypalStatus(purchaseLocaleText().creating);
         const result = await callFunctionJson('createPayPalOrder', {
           plan: CONFIG.plan || 'lifetime',
-          amount: CONFIG.priceValue || '69.00',
+          amount: purchaseAmountValue(),
           currency: currency
         });
         if(!result.id) throw new Error('PayPal 주문 ID를 받지 못했습니다.');
@@ -1272,7 +1380,7 @@ function initPayPal(){
       },
       onApprove: async(data)=>{
         paypalStatus(purchaseLocaleText().verifying);
-        const result = await callFunctionJson('capturePayPalOrder', {
+        await callFunctionJson('capturePayPalOrder', {
           orderId: data.orderID,
           plan: CONFIG.plan || 'lifetime'
         });

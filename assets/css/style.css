@@ -404,3 +404,9 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .business-table-compact span{font-size:15px!important;font-weight:700!important;line-height:1.45!important}
 .business-info-note{margin-top:14px!important;font-size:13px!important}
 @media(max-width:720px){.business-info-hero{padding:22px 0 8px!important}.business-table-compact div{grid-template-columns:1fr!important;gap:4px!important}.business-table-compact span{font-size:14px!important}.business-info-page .legal-card{padding:16px!important}}
+
+
+.purchase-review-panel{margin:14px 0;padding:14px;border-radius:18px;border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.045)}
+.review-row{display:grid;grid-template-columns:132px minmax(0,1fr);gap:14px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.review-row:last-of-type{border-bottom:0}.review-row span{color:var(--muted);font-size:13px;font-weight:800}.review-row strong{color:#eef2ff;font-size:16px;line-height:1.45}.review-help{margin:10px 0 0;color:var(--muted);font-size:13px;line-height:1.6}.payment-review-panel{background:rgba(34,211,238,.055);border-color:rgba(34,211,238,.16)}.purchase-service-period{line-height:1.65!important}
+@media(max-width:720px){.review-row{grid-template-columns:1fr;gap:4px}.review-row strong{font-size:15px}}
