@@ -2,10 +2,12 @@ const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
 const qs = (s, root = document) => root.querySelector(s);
 const page = location.pathname.split('/').pop() || 'index.html';
-const isRootKoreanPurchasePage = page === 'purchase.html' && !location.pathname.includes('/en/') && !location.pathname.includes('/ja/');
+const urlLang = new URLSearchParams(location.search).get('lang');
+const pathLang = location.pathname.includes('/en/') ? 'en' : location.pathname.includes('/ja/') ? 'ja' : location.pathname.includes('/ko/') ? 'ko' : '';
 
-let lang = localStorage.getItem('midiai_lang') || document.documentElement.lang || 'ko';
-if (isRootKoreanPurchasePage) lang = 'ko';
+let lang = (['ko','en','ja'].includes(urlLang) ? urlLang : '') || pathLang || localStorage.getItem('midiai_lang') || document.documentElement.lang || 'ko';
+if(!['ko','en','ja'].includes(lang)) lang = 'ko';
+const checkoutLang = page === 'purchase.html' ? lang : (pathLang || lang);
 let auth = null;
 let db = null;
 let currentUser = null;
@@ -178,7 +180,7 @@ function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}
 
 
 function isKoreanCheckout(){
-  return isRootKoreanPurchasePage || lang === 'ko' || location.pathname.includes('/ko/') || navigator.language?.toLowerCase().startsWith('ko');
+  return checkoutLang === 'ko';
 }
 function purchaseDisplayPrice(){
   if(isKoreanCheckout()) return CONFIG.priceDisplayKr || '90,000원';
@@ -267,6 +269,8 @@ function updatePurchaseI18n(){
   if(!document.body) return;
   const t = purchaseLocaleText();
   if($('purchasePrice')) $('purchasePrice').textContent = purchaseDisplayPrice();
+  const h2 = document.querySelector('.purchase-v23-card h2');
+  if(h2) h2.textContent = lang === 'ja' ? 'Lifetime ライセンス' : 'Lifetime License';
   updatePurchaseReviewPanel();
   if($('purchaseSaleUntil')) $('purchaseSaleUntil').textContent = t.saleUntil;
   if($('purchaseBenefitList')) $('purchaseBenefitList').innerHTML = t.benefits.map(x=>`<li>${esc(x)}</li>`).join('');
@@ -1399,7 +1403,17 @@ function initPayPal(){
 }
 
 $('year') && ($('year').textContent=new Date().getFullYear());
-$('langBtn') && ($('langBtn').onclick=()=>{ lang = lang==='ko' ? 'en' : lang==='en' ? 'ja' : 'ko'; applyStaticI18n(); });
+$('langBtn') && ($('langBtn').onclick=()=>{
+  lang = lang==='ko' ? 'en' : lang==='en' ? 'ja' : 'ko';
+  localStorage.setItem('midiai_lang', lang);
+  if(page === 'purchase.html'){
+    const url = new URL(location.href);
+    url.searchParams.set('lang', lang);
+    location.href = url.toString();
+    return;
+  }
+  applyStaticI18n();
+});
 $('menuBtn')?.addEventListener('click',()=>$('mainNav')?.classList.toggle('open'));
 showOAuthBrowserNotice();
 bindBoardLightbox();
