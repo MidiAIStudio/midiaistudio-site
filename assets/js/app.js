@@ -350,6 +350,17 @@ function paypalStatus(msg, type=''){
   el.textContent = msg || '';
 }
 
+function setAdminGate(html){
+  const gate=$('adminGate');
+  const admin=$('admin');
+  if(!gate||!admin) return;
+  gate.innerHTML=html;
+  admin.classList.add('admin-locked');
+}
+function unlockAdminPanel(){
+  $('admin')?.classList.remove('admin-locked');
+}
+
 function setAuthUiSignedOut(){
   currentUser = null; currentUserDoc = null; isAdminUser = false;
   $('adminNav')?.classList.add('hidden');
@@ -362,7 +373,7 @@ function setAuthUiSignedOut(){
   if ($('accountMeta')) $('accountMeta').innerHTML='';
   if (page==='my-tickets.html' && $('myTicketList')) $('myTicketList').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
-  if (page==='admin.html' && $('admin')) $('admin').classList.add('admin-locked');
+  if (page==='admin.html') setAdminGate(`<p>${tr('need_login')}</p><p class="muted">Google 로그인 후 role=admin 계정만 접근할 수 있습니다.</p>`);
   updatePurchaseAccountBox();
 }
 
@@ -381,8 +392,12 @@ async function setAuthUiSignedIn(user){
   if (page==='board-write.html') initBoardPostEditor();
   if (page==='board-post.html') refreshBoardPostActions();
   if (page==='admin.html') {
-    if (isAdminUser) { $('admin')?.classList.remove('admin-locked'); listenAdminDashboard(); listenAdminUsers(); listenAdminTickets(); listenAdminPostManager(); bindAdminBoardFilters(); loadAdminDownloadSettings(); }
-    else { $('admin') && ($('admin').innerHTML = `<div class="empty-card">${tr('admin_required')}</div>`); }
+    if (isAdminUser) {
+      unlockAdminPanel();
+      listenAdminDashboard(); listenAdminUsers(); listenAdminTickets(); listenAdminPostManager(); bindAdminBoardFilters(); loadAdminDownloadSettings();
+    } else {
+      setAdminGate(`<p>${tr('no_permission')}</p><p class="muted">${tr('admin_required')}</p>`);
+    }
   }
   updatePurchaseAccountBox();
 }
@@ -1264,7 +1279,7 @@ async function adminAdd(collectionName,data){
   const ref=await addDoc(collection(db,collectionName),{...data,visible:true,authorUid:currentUser.uid,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
   return ref.id;
 }
-function adminFlash(html){ let box=$('adminSaveMsg'); if(!box){ box=document.createElement('div'); box.id='adminSaveMsg'; box.className='empty-card'; $('admin')?.prepend(box); } box.innerHTML=html; }
+function adminFlash(html){ let box=$('adminSaveMsg'); if(!box){ box=document.createElement('div'); box.id='adminSaveMsg'; box.className='admin-flash'; $('admin')?.querySelector('.admin-panel')?.prepend(box); } box.innerHTML=html; box.classList.remove('hidden'); }
 function initForms(){
   $('ticketForm')?.addEventListener('submit',createTicket);
   $('adminNoticeForm')?.addEventListener('submit',async e=>{
