@@ -1,70 +1,221 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="MidiAI Studio 공식 포털"><title>관리자 - MidiAI Studio</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet"><link rel="stylesheet" href="./assets/css/style.css?v=v32-1"></head><body><div class="orb orb-a"></div><div class="orb orb-b"></div><header class="topbar">
-  <a class="brand" href="./index.html"><img class="brand-symbol" src="./assets/images/symbol.png" alt="MidiAI Studio"><b>MidiAI Studio</b></a>
-  <button id="menuBtn" class="menu-btn" aria-label="menu">☰</button>
-  <nav id="mainNav">
-    <a href="./index.html">홈</a>
-    <a href="./downloads.html">다운로드</a>
-    <a href="./purchase.html">구매</a>
-    <a href="./notices.html">공지사항</a>
-    <a href="./patch-notes.html">패치노트</a>
-    <a href="./faq.html">FAQ</a>
-    <a href="./board.html">자유게시판</a>
-    <a href="./support.html">1:1 문의</a>
-    <a href="./my-tickets.html">나의 문의</a>
-    <a href="./account.html">내 계정</a>
-    <a id="adminNav" class="hidden" href="./admin.html">관리자</a>
-  </nav>
-  <div class="actions"><button id="langBtn" class="ghost">EN</button><button id="loginBtn" class="login"><span>G</span><em>Google 로그인</em></button><button id="logoutBtn" class="ghost hidden">로그아웃</button></div>
-</header><main><section class="page-hero wrap"><p class="eyebrow">Admin</p><h1>관리자</h1><p>role=admin 계정만 사용할 수 있습니다.</p></section><section class="wrap page-grid"><aside class="side-card"><a href="./notices.html">공지사항</a><a href="./patch-notes.html">패치노트</a><a href="./support.html">1:1 문의 작성</a><a href="./my-tickets.html">나의 문의</a><a href="./account.html">내 계정</a></aside><div id="admin" class="content-card admin-locked"><div id="adminGate" class="empty-card admin-gate">관리자 권한 확인 중...</div><div class="admin-panel"><div id="adminSaveMsg" class="admin-flash hidden"></div>
-<div class="admin-dashboard">
-  <div class="dash-card"><span>👥</span><b id="dashUsers">-</b><small>전체 회원</small></div>
-  <div class="dash-card"><span>🔑</span><b id="dashLicenses">-</b><small>활성 라이선스</small></div>
-  <div class="dash-card"><span>🎫</span><b id="dashOpenTickets">-</b><small>답변 대기 문의</small></div>
-  <div class="dash-card"><span>📢</span><b id="dashNotices">-</b><small>공개 공지</small></div>
-  <div class="dash-card"><span>📝</span><b id="dashPatches">-</b><small>패치노트</small></div>
-  <div class="dash-card"><span>💳</span><b id="dashOrders">-</b><small>주문 기록</small></div>
-</div>
-<div class="form-card admin-table-card" style="margin-top:16px">
-  <div class="admin-section-head"><h3>회원 / 라이선스 관리</h3><span id="adminUserCount" class="muted"></span></div>
-  <div class="admin-list-toolbar">
-    <input id="adminUserSearch" class="search-input compact" placeholder="이메일, 이름, UID 검색">
-    <select id="adminUserLicenseStatus"><option value="all">전체</option><option value="active">활성</option><option value="none">라이선스 없음</option><option value="banned">정지</option></select>
-  </div>
-  <div id="adminUserList" class="admin-table-wrap"><p class="muted">회원 불러오는 중...</p></div>
-</div>
-<div class="form-card" style="margin-top:16px">
-  <h3>다운로드 / 최신 버전 설정</h3>
-  <div class="form-split">
-    <input id="adminDownloadVersion" placeholder="최신 버전 예: 1.5.7">
-    <input id="adminDownloadFilename" placeholder="파일명 예: MidiAIStudio_Setup.exe">
-  </div>
-  <input id="adminDownloadUrl" placeholder="다운로드 URL 또는 Dropbox 직접 링크">
-  <textarea id="adminDownloadNotes" rows="3" placeholder="업데이트 설명"></textarea>
-  <label class="check"><input id="adminDownloadMandatory" type="checkbox"> 필수 업데이트</label>
-  <button id="adminDownloadSave" class="primary" type="button">다운로드 설정 저장</button>
-</div><div class="admin-actions"><form id="adminNoticeForm" class="form-card"><h3>공지 작성</h3><input id="adminNoticeTitle" placeholder="제목" required><textarea id="adminNoticeContent" rows="5" placeholder="내용" required></textarea><label class="check"><input id="adminNoticePinned" type="checkbox"> 상단 고정</label><button class="primary" type="submit">공지 등록</button></form><form id="adminPatchForm" class="form-card"><h3>패치노트 작성</h3><input id="adminPatchVersion" placeholder="버전 예: 1.5.7" required><input id="adminPatchTitle" placeholder="제목" required><textarea id="adminPatchContent" rows="5" placeholder="패치 내용" required></textarea><button class="primary" type="submit">패치노트 등록</button></form><form id="adminFaqForm" class="form-card"><h3>FAQ 작성</h3><input id="adminFaqQuestion" placeholder="질문" required><textarea id="adminFaqAnswer" rows="5" placeholder="답변" required></textarea><input id="adminFaqOrder" type="number" value="1" min="1"><button class="primary" type="submit">FAQ 등록</button></form><form id="adminLicenseForm" class="form-card"><h3>라이선스 지급/수정</h3><input id="adminLicenseUid" placeholder="사용자 UID" required><select id="adminLicensePlan"><option value="lifetime">lifetime</option><option value="monthly">monthly</option><option value="trial">trial</option></select><select id="adminLicenseStatus"><option value="active">active</option><option value="banned">banned</option><option value="expired">expired</option></select><textarea id="adminLicenseMemo" rows="3" placeholder="메모"></textarea><button class="primary" type="submit">라이선스 저장</button></form></div><div class="form-card admin-manage admin-table-card" style="margin-top:16px"><div class="admin-section-head"><h3>공지 관리</h3><span id="adminNoticeCount" class="muted"></span></div><div class="admin-list-toolbar"><input id="adminNoticeSearch" class="search-input compact" placeholder="공지 검색"><select id="adminNoticeStatus"><option value="all">전체</option><option value="visible">공개</option><option value="hidden">비공개</option><option value="pinned">상단 고정</option></select></div><div id="adminNoticeList" class="admin-table-wrap"><p class="muted">불러오는 중...</p></div></div><div class="form-card admin-manage admin-table-card" style="margin-top:16px"><div class="admin-section-head"><h3>패치노트 관리</h3><span id="adminPatchCount" class="muted"></span></div><div class="admin-list-toolbar"><input id="adminPatchSearch" class="search-input compact" placeholder="패치노트 검색"><select id="adminPatchStatus"><option value="all">전체</option><option value="visible">공개</option><option value="hidden">비공개</option></select></div><div id="adminPatchList" class="admin-table-wrap"><p class="muted">불러오는 중...</p></div></div><div class="form-card admin-manage admin-table-card" style="margin-top:16px"><div class="admin-section-head"><h3>FAQ 관리</h3><span id="adminFaqCount" class="muted"></span></div><div class="admin-list-toolbar"><input id="adminFaqSearch" class="search-input compact" placeholder="FAQ 검색"><select id="adminFaqStatus"><option value="all">전체</option><option value="visible">공개</option><option value="hidden">비공개</option></select></div><div id="adminFaqList" class="admin-table-wrap"><p class="muted">불러오는 중...</p></div></div><div class="form-card admin-manage admin-table-card" style="margin-top:16px"><div class="admin-section-head"><h3>자유게시판 관리</h3><span id="adminBoardCount" class="muted"></span></div><div class="admin-list-toolbar"><input id="adminBoardSearch" class="search-input compact" placeholder="게시글 검색"><select id="adminBoardStatus"><option value="all">전체</option><option value="visible">공개</option><option value="hidden">숨김</option><option value="pinned">상단 고정</option></select></div><div id="adminBoardList" class="admin-table-wrap"><p class="muted">게시글 불러오는 중...</p></div></div><div class="form-card admin-tickets admin-table-card" style="margin-top:16px"><div class="admin-section-head"><h3>문의 답변</h3><span id="adminTicketCount" class="muted"></span></div><div class="admin-list-toolbar"><input id="adminTicketSearch" class="search-input compact" placeholder="문의 검색"><select id="adminTicketStatus"><option value="all">전체</option><option value="open">접수</option><option value="answered">답변 완료</option><option value="closed">종료</option></select></div><div id="adminTicketList" class="admin-table-wrap"><p class="muted">문의 불러오는 중...</p></div></div></div></div></section></main><footer class="site-footer legal-footer">
-  <div class="footer-main">
-    <div>
-      <strong>MidiAI Studio</strong>
-      <p>AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품</p>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="MidiAI Studio 공식 포털">
+  <title>관리자 - MidiAI Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v32-2">
+</head>
+<body class="admin-page">
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <header class="topbar">
+    <a class="brand" href="./index.html"><img class="brand-symbol" src="./assets/images/symbol.png" alt="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" aria-label="menu">☰</button>
+    <nav id="mainNav">
+      <a href="./index.html">홈</a>
+      <a href="./downloads.html">다운로드</a>
+      <a href="./purchase.html">구매</a>
+      <a href="./notices.html">공지사항</a>
+      <a href="./patch-notes.html">패치노트</a>
+      <a href="./faq.html">FAQ</a>
+      <a href="./board.html">자유게시판</a>
+      <a href="./support.html">1:1 문의</a>
+      <a href="./my-tickets.html">나의 문의</a>
+      <a href="./account.html">내 계정</a>
+      <a id="adminNav" class="hidden" href="./admin.html">관리자</a>
+    </nav>
+    <div class="actions">
+      <button id="langBtn" class="ghost">EN</button>
+      <button id="loginBtn" class="login"><span>G</span><em>Google 로그인</em></button>
+      <button id="logoutBtn" class="ghost hidden">로그아웃</button>
     </div>
-    <div class="footer-links">
-      <a href="./terms.html">이용약관</a>
-      <a href="./privacy.html">개인정보처리방침</a>
-      <a href="./refund.html">환불정책</a>
-      <a href="./business-info.html">사업자정보</a>
-      <a href="./support.html">고객센터</a>
+  </header>
+  <main>
+    <section class="wrap admin-shell">
+      <div class="admin-topline">
+        <div>
+          <p class="eyebrow">Admin</p>
+          <h1>관리자</h1>
+        </div>
+        <p class="admin-topline-note">role=admin 계정만 사용할 수 있습니다.</p>
+      </div>
+      <div id="admin" class="content-card admin-locked">
+        <div id="adminGate" class="empty-card admin-gate">관리자 권한 확인 중...</div>
+        <div class="admin-panel">
+          <div id="adminSaveMsg" class="admin-flash hidden"></div>
+          <nav class="admin-tabs" aria-label="관리자 메뉴">
+            <button type="button" class="admin-tab is-active" data-admin-tab="overview">요약</button>
+            <button type="button" class="admin-tab" data-admin-tab="users">회원</button>
+            <button type="button" class="admin-tab" data-admin-tab="create">작성</button>
+            <button type="button" class="admin-tab" data-admin-tab="content">콘텐츠</button>
+            <button type="button" class="admin-tab" data-admin-tab="tickets">문의</button>
+          </nav>
+
+          <section class="admin-tab-panel is-active" data-admin-panel="overview">
+            <div class="admin-dashboard">
+              <div class="dash-card"><span>👥</span><b id="dashUsers">-</b><small>전체 회원</small></div>
+              <div class="dash-card"><span>🔑</span><b id="dashLicenses">-</b><small>활성 라이선스</small></div>
+              <div class="dash-card"><span>🎫</span><b id="dashOpenTickets">-</b><small>답변 대기</small></div>
+              <div class="dash-card"><span>📢</span><b id="dashNotices">-</b><small>공개 공지</small></div>
+              <div class="dash-card"><span>📝</span><b id="dashPatches">-</b><small>패치노트</small></div>
+              <div class="dash-card"><span>💳</span><b id="dashOrders">-</b><small>주문 기록</small></div>
+            </div>
+            <div class="admin-quick-grid">
+              <button type="button" class="admin-quick-card" data-admin-tab-jump="users"><b>회원 / 라이선스</b><small>회원 검색 · 라이선스 지급</small></button>
+              <button type="button" class="admin-quick-card" data-admin-tab-jump="create"><b>콘텐츠 작성</b><small>공지 · 패치 · FAQ · 라이선스</small></button>
+              <button type="button" class="admin-quick-card" data-admin-tab-jump="content"><b>콘텐츠 관리</b><small>공지 · 패치 · FAQ · 게시판</small></button>
+              <button type="button" class="admin-quick-card" data-admin-tab-jump="tickets"><b>문의 답변</b><small>1:1 문의 처리</small></button>
+            </div>
+          </section>
+
+          <section class="admin-tab-panel" data-admin-panel="users">
+            <div class="admin-split-grid">
+              <div class="form-card admin-table-card admin-block">
+                <div class="admin-section-head"><h3>회원 / 라이선스</h3><span id="adminUserCount" class="muted"></span></div>
+                <div class="admin-list-toolbar">
+                  <input id="adminUserSearch" class="search-input compact" placeholder="이메일, 이름, UID 검색">
+                  <select id="adminUserLicenseStatus"><option value="all">전체</option><option value="active">활성</option><option value="none">라이선스 없음</option><option value="banned">정지</option></select>
+                </div>
+                <div id="adminUserList" class="admin-table-wrap"><p class="muted">회원 불러오는 중...</p></div>
+              </div>
+              <div class="admin-side-stack">
+                <form id="adminLicenseForm" class="form-card admin-block">
+                  <h3>라이선스 지급/수정</h3>
+                  <input id="adminLicenseUid" placeholder="사용자 UID" required>
+                  <div class="form-split">
+                    <select id="adminLicensePlan"><option value="lifetime">lifetime</option><option value="monthly">monthly</option><option value="trial">trial</option></select>
+                    <select id="adminLicenseStatus"><option value="active">active</option><option value="banned">banned</option><option value="expired">expired</option></select>
+                  </div>
+                  <textarea id="adminLicenseMemo" rows="2" placeholder="메모"></textarea>
+                  <button class="primary" type="submit">라이선스 저장</button>
+                </form>
+                <div class="form-card admin-block">
+                  <h3>다운로드 설정</h3>
+                  <div class="form-split">
+                    <input id="adminDownloadVersion" placeholder="버전 예: 1.5.7">
+                    <input id="adminDownloadFilename" placeholder="파일명">
+                  </div>
+                  <input id="adminDownloadUrl" placeholder="다운로드 URL">
+                  <textarea id="adminDownloadNotes" rows="2" placeholder="업데이트 설명"></textarea>
+                  <label class="check"><input id="adminDownloadMandatory" type="checkbox"> 필수 업데이트</label>
+                  <button id="adminDownloadSave" class="primary" type="button">저장</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-tab-panel" data-admin-panel="create">
+            <div class="admin-actions">
+              <form id="adminNoticeForm" class="form-card admin-block">
+                <h3>공지 작성</h3>
+                <input id="adminNoticeTitle" placeholder="제목" required>
+                <textarea id="adminNoticeContent" rows="3" placeholder="내용" required></textarea>
+                <label class="check"><input id="adminNoticePinned" type="checkbox"> 상단 고정</label>
+                <button class="primary" type="submit">공지 등록</button>
+              </form>
+              <form id="adminPatchForm" class="form-card admin-block">
+                <h3>패치노트 작성</h3>
+                <div class="form-split">
+                  <input id="adminPatchVersion" placeholder="버전" required>
+                  <input id="adminPatchTitle" placeholder="제목" required>
+                </div>
+                <textarea id="adminPatchContent" rows="3" placeholder="패치 내용" required></textarea>
+                <button class="primary" type="submit">패치노트 등록</button>
+              </form>
+              <form id="adminFaqForm" class="form-card admin-block">
+                <h3>FAQ 작성</h3>
+                <input id="adminFaqQuestion" placeholder="질문" required>
+                <textarea id="adminFaqAnswer" rows="3" placeholder="답변" required></textarea>
+                <input id="adminFaqOrder" type="number" value="1" min="1">
+                <button class="primary" type="submit">FAQ 등록</button>
+              </form>
+            </div>
+          </section>
+
+          <section class="admin-tab-panel" data-admin-panel="content">
+            <div class="admin-content-grid">
+              <div class="form-card admin-manage admin-table-card admin-block">
+                <div class="admin-section-head"><h3>공지</h3><span id="adminNoticeCount" class="muted"></span></div>
+                <div class="admin-list-toolbar">
+                  <input id="adminNoticeSearch" class="search-input compact" placeholder="검색">
+                  <select id="adminNoticeStatus"><option value="all">전체</option><option value="visible">공개</option><option value="hidden">비공개</option><option value="pinned">고정</option></select>
+                </div>
+                <div id="adminNoticeList" class="admin-table-wrap"><p class="muted">불러오는 중...</p></div>
+              </div>
+              <div class="form-card admin-manage admin-table-card admin-block">
+                <div class="admin-section-head"><h3>패치노트</h3><span id="adminPatchCount" class="muted"></span></div>
+                <div class="admin-list-toolbar">
+                  <input id="adminPatchSearch" class="search-input compact" placeholder="검색">
+                  <select id="adminPatchStatus"><option value="all">전체</option><option value="visible">공개</option><option value="hidden">비공개</option></select>
+                </div>
+                <div id="adminPatchList" class="admin-table-wrap"><p class="muted">불러오는 중...</p></div>
+              </div>
+              <div class="form-card admin-manage admin-table-card admin-block">
+                <div class="admin-section-head"><h3>FAQ</h3><span id="adminFaqCount" class="muted"></span></div>
+                <div class="admin-list-toolbar">
+                  <input id="adminFaqSearch" class="search-input compact" placeholder="검색">
+                  <select id="adminFaqStatus"><option value="all">전체</option><option value="visible">공개</option><option value="hidden">비공개</option></select>
+                </div>
+                <div id="adminFaqList" class="admin-table-wrap"><p class="muted">불러오는 중...</p></div>
+              </div>
+              <div class="form-card admin-manage admin-table-card admin-block">
+                <div class="admin-section-head"><h3>자유게시판</h3><span id="adminBoardCount" class="muted"></span></div>
+                <div class="admin-list-toolbar">
+                  <input id="adminBoardSearch" class="search-input compact" placeholder="검색">
+                  <select id="adminBoardStatus"><option value="all">전체</option><option value="visible">공개</option><option value="hidden">숨김</option><option value="pinned">고정</option></select>
+                </div>
+                <div id="adminBoardList" class="admin-table-wrap"><p class="muted">게시글 불러오는 중...</p></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="admin-tab-panel" data-admin-panel="tickets">
+            <div class="form-card admin-tickets admin-table-card admin-block">
+              <div class="admin-section-head"><h3>문의 답변</h3><span id="adminTicketCount" class="muted"></span></div>
+              <div class="admin-list-toolbar">
+                <input id="adminTicketSearch" class="search-input compact" placeholder="문의 검색">
+                <select id="adminTicketStatus"><option value="all">전체</option><option value="open">접수</option><option value="answered">답변 완료</option><option value="closed">종료</option></select>
+              </div>
+              <div id="adminTicketList" class="admin-table-wrap"><p class="muted">문의 불러오는 중...</p></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div>
+        <strong>MidiAI Studio</strong>
+        <p>AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품</p>
+      </div>
+      <div class="footer-links">
+        <a href="./terms.html">이용약관</a>
+        <a href="./privacy.html">개인정보처리방침</a>
+        <a href="./refund.html">환불정책</a>
+        <a href="./business-info.html">사업자정보</a>
+        <a href="./support.html">고객센터</a>
+      </div>
     </div>
-  </div>
-  <div class="business-box">
-    <span>상호: 미디에이아이스튜디오</span>
-    <span>대표자: 최정환</span>
-    <span>사업자등록번호: 332-22-02381</span>
-    <span>사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호(외동, 외동대동아파트)</span>
-    <span>대표전화번호: 010-2166-5563</span>
-    <span>통신판매업 신고번호: 제2026-창원성산-0312호</span>
-    <span>고객센터: 1:1 문의 게시판</span>
-    <span>이메일: midiaistudio@gmail.com</span>
-  </div>
-  <div class="footer-copy">© <span id="year"></span> MidiAI Studio. All rights reserved.</div>
-</footer><script>window.MIDIAI_BASE_PATH='./';</script><script type="module" src="./assets/js/config.js?v=v32-1"></script><script type="module" src="./assets/js/app.js?v=v32-1"></script></body></html>
+    <div class="business-box">
+      <span>상호: 미디에이아이스튜디오</span>
+      <span>대표자: 최정환</span>
+      <span>사업자등록번호: 332-22-02381</span>
+      <span>사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호(외동, 외동대동아파트)</span>
+      <span>대표전화번호: 010-2166-5563</span>
+      <span>통신판매업 신고번호: 제2026-창원성산-0312호</span>
+      <span>고객센터: 1:1 문의 게시판</span>
+      <span>이메일: midiaistudio@gmail.com</span>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio. All rights reserved.</div>
+  </footer>
+  <script>window.MIDIAI_BASE_PATH='./';</script>
+  <script type="module" src="./assets/js/config.js?v=v32-2"></script>
+  <script type="module" src="./assets/js/app.js?v=v32-2"></script>
+</body>
+</html>

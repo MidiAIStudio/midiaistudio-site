@@ -359,6 +359,24 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
+  bindAdminTabs();
+}
+function bindAdminTabs(){
+  const root=$('admin');
+  if(!root || root.dataset.tabsBound) return;
+  root.dataset.tabsBound='1';
+  const tabs=root.querySelectorAll('[data-admin-tab]');
+  const panels=root.querySelectorAll('[data-admin-panel]');
+  const activate=(name)=>{
+    tabs.forEach(t=>t.classList.toggle('is-active', t.dataset.adminTab===name));
+    panels.forEach(p=>p.classList.toggle('is-active', p.dataset.adminPanel===name));
+  };
+  tabs.forEach(tab=>{
+    tab.addEventListener('click',()=>activate(tab.dataset.adminTab));
+  });
+  root.querySelectorAll('[data-admin-tab-jump]').forEach(btn=>{
+    btn.addEventListener('click',()=>activate(btn.dataset.adminTabJump));
+  });
 }
 
 function setAuthUiSignedOut(){
@@ -540,7 +558,7 @@ function renderAnnouncements(rows, err){
   if(err){ list.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>(b.pinned===true)-(a.pinned===true)||((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
-  list.innerHTML=rows.map(x=>`<a class="list-item ticket-link" href="./notice.html?id=${encodeURIComponent(x.id)}"><div class="date">${x.pinned?'📌 ':''}${fmtDate(x.createdAt)}</div><h3>${esc(x.title)}</h3><div class="content">${nl2br(String(x.content||'').slice(0,220))}</div></a>`).join('');
+  list.innerHTML=`<div class="hub-list-head hub-notice-head"><span>날짜</span><span>제목</span><span>미리보기</span></div><div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./notice.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-date">${x.pinned?'📌 ':''}${fmtDate(x.createdAt)}</div><div class="hub-col-title"><b>${esc(x.title)}</b></div><div class="hub-col-preview">${nl2br(String(x.content||'').slice(0,120))}</div></a>`).join('')}</div>`;
   bindSearch(list);
 }
 function listenAnnouncements(){ if($('announcementList')) listenVisibleDocs('announcements',renderAnnouncements); }
@@ -548,7 +566,7 @@ function renderNoticeDetail(d,err){
   const box=$('noticeDetail'); if(!box)return;
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-  box.innerHTML=`<div class="date">${fmtDate(d.createdAt)}</div><h2>${esc(d.title)}</h2><div class="content">${nl2br(d.content)}</div>`;
+  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">← 목록</a></div><div class="post-card-head"><div class="post-kicker">공지사항</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>작성일</em><b>${fmtDate(d.createdAt)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div></article>`;
 }
 function listenNoticeDetail(){ const box=$('noticeDetail'); if(!box)return; const id=getParam('id'); if(!id){box.innerHTML=`<p class="muted">${tr('empty')}</p>`;return} listenDoc('announcements',id,renderNoticeDetail); }
 function renderPatchNotes(rows,err){
@@ -567,7 +585,7 @@ function renderFaq(rows,err){
   list.innerHTML=rows.map(x=>`<details class="faq-item"><summary><h3>${esc(x.question)}</h3></summary><div class="content">${nl2br(x.answer)}</div></details>`).join('');
 }
 function listenFaq(){ if($('faqList')) listenVisibleDocs('faq',renderFaq,'order','asc'); }
-function bindSearch(list){ const input=$('boardSearch'); if(!input || input.dataset.bound) return; input.dataset.bound='1'; input.addEventListener('input',()=>{ const q=input.value.trim().toLowerCase(); list.querySelectorAll('.list-item').forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q)?'block':'none'}); }); }
+function bindSearch(list){ const input=$('boardSearch'); if(!input || input.dataset.bound) return; input.dataset.bound='1'; input.addEventListener('input',()=>{ const q=input.value.trim().toLowerCase(); list.querySelectorAll('.hub-list-row, .list-item').forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q)?'':'none'}); }); }
 
 async function createTicket(e){
   e.preventDefault();
@@ -585,11 +603,14 @@ async function createTicket(e){
 function showFormMsg(key,ok=true){ const el=$('ticketFormMsg'); if(el){ el.textContent=tr(key)===key?key:tr(key); el.style.color=ok?'#8ff3c5':'#ff9aac'; } }
 function statusBadge(st){ const key=st==='answered'?'answered':st==='closed'?'closed':'open'; return `<span class="badge ${esc(st||'open')}">${tr(key)}</span>`; }
 function ticketShell(t, detail=false, admin=false){
-  const href=detail?'#':`./ticket.html?id=${encodeURIComponent(t.id)}`;
   const canManage = admin || detail;
-  const form=(admin||detail)?`<form class="reply-form" data-ticket="${esc(t.id)}"><input placeholder="${esc(tr('reply_placeholder'))}" required><button class="primary" type="submit">${tr('submit')}</button></form>`:'';
-  const actions=canManage?`<div class="admin-row"><button class="secondary mini-btn" data-ticket-edit="${esc(t.id)}">${tr('edit')}</button><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div>`:'';
-  return `<article class="list-item"><div class="ticket-head"><div class="date">${fmtDate(t.createdAt)}</div>${statusBadge(t.status)}</div><h3>${detail?esc(t.title):`<a href="${href}">${esc(t.title)}</a>`}</h3><div class="content">${nl2br(t.content)}</div>${actions}<div class="ticket-replies" data-replies="${esc(t.id)}"></div>${form}</article>`;
+  if(detail){
+    const form=(admin||detail)?`<form class="reply-form hub-reply-form" data-ticket="${esc(t.id)}"><input placeholder="${esc(tr('reply_placeholder'))}" required><button class="primary" type="submit">${tr('submit')}</button></form>`:'';
+    const actions=canManage?`<div class="post-actions hub-post-actions"><button class="secondary mini-btn" data-ticket-edit="${esc(t.id)}">${tr('edit')}</button><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div>`:'';
+    return `<article class="hub-post-detail"><div class="post-card-head"><div class="post-kicker">1:1 문의</div><h1>${esc(t.title||'')}</h1><div class="post-meta-grid"><span>${statusBadge(t.status)}</span><span><em>작성일</em><b>${esc(fmtShortDate(t.createdAt))}</b></span></div></div><div class="post-body-content hub-post-body">${nl2br(t.content||'')}</div>${actions}<section class="hub-replies-panel"><h3>답변</h3><div class="ticket-replies hub-reply-list" data-replies="${esc(t.id)}"></div>${form}</section></article>`;
+  }
+  const href=`./ticket.html?id=${encodeURIComponent(t.id)}`;
+  return `<a class="hub-list-row hub-ticket-row" href="${href}"><div class="hub-col-title"><b>${esc(t.title||'(제목 없음)')}</b><small>${esc(String(t.content||'').slice(0,90))}</small></div><div class="hub-col-badge">${statusBadge(t.status)}</div><div class="hub-col-date">${esc(fmtShortDate(t.createdAt))}</div></a>`;
 }
 function listenReplies(ticketId, container){
   const {collection,query,orderBy,onSnapshot}=firestoreApi;
@@ -722,7 +743,7 @@ function listenMyTickets(){
   addUnsub(onSnapshot(q, snap=>{
     const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
     if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-    list.innerHTML=rows.map(t=>ticketShell(t,false,false)).join('');
+    list.innerHTML=`<div class="hub-list-head hub-ticket-head"><span>제목</span><span>상태</span><span>작성일</span></div><div class="hub-list-body">${rows.map(t=>ticketShell(t,false,false)).join('')}</div>`;
     bindTicketActions(list);
   }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
@@ -988,7 +1009,7 @@ function renderBoardPosts(rows, err){
   if(err){ box.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   const list=boardFilteredSorted(rows||[]);
   if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  box.innerHTML=`<div class="community-list-head"><span>제목</span><span>작성자</span><span>조회</span><span>추천</span><span>댓글</span><span>작성일</span></div><div class="community-list-body">${list.map(x=>`<a class="community-post-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}"><div class="community-post-title"><b>${x.pinned?'📌 ':''}${esc(x.title||'(제목 없음)')}</b><small>${esc(String(x.content||'').slice(0,100))}</small></div><div class="community-post-author">${esc(x.displayName||x.email||'-')}</div><div>${Number(x.viewCount||0)}</div><div>${Number(x.likeCount||0)}</div><div>${Number(x.commentCount||0)}</div><div>${esc(fmtDate(x.createdAt))}</div></a>`).join('')}</div>`;
+  box.innerHTML=`<div class="hub-list-head"><span>제목</span><span>작성자</span><span>조회</span><span>추천</span><span>댓글</span><span>작성일</span></div><div class="hub-list-body">${list.map(x=>`<a class="hub-list-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}"><div class="hub-col-title"><b>${x.pinned?'📌 ':''}${esc(x.title||'(제목 없음)')}</b><small>${esc(String(x.content||'').slice(0,80))}</small></div><div class="hub-col-author">${esc(x.displayName||x.email||'-')}</div><div>${Number(x.viewCount||0)}</div><div>${Number(x.likeCount||0)}</div><div>${Number(x.commentCount||0)}</div><div class="hub-col-date">${esc(fmtDate(x.createdAt))}</div></a>`).join('')}</div>`;
 }
 function listenBoardPosts(){
   const box=$('boardPostList'); if(!box)return;
@@ -1468,7 +1489,14 @@ $('menuBtn')?.addEventListener('click',()=>$('mainNav')?.classList.toggle('open'
 showOAuthBrowserNotice();
 bindBoardLightbox();
 applyStaticI18n();
+initHubSubnav();
 setAuthUiSignedOut();
+function initHubSubnav(){
+  const map={'notices.html':'notices','notice.html':'notices','patch-notes.html':'patches','faq.html':'faq','board.html':'board','board-write.html':'board','board-post.html':'board','support.html':'support','my-tickets.html':'tickets','ticket.html':'tickets'};
+  const active=map[page];
+  document.querySelectorAll('.hub-subnav a[data-hub]').forEach(a=>a.classList.toggle('active', a.dataset.hub===active));
+}
+
 initForms();
 initAuth();
 initPayPal();

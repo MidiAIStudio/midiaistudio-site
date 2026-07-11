@@ -423,3 +423,130 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .purchase-paypal-box{padding:12px!important;border-style:solid!important}
 .payment-review-panel .review-row:last-of-type{border-bottom:0}
 .review-help,.purchase-service-period{display:none!important}
+
+/* V32.2 Admin compact layout */
+.admin-page .admin-shell{width:min(1280px,calc(100% - 28px));padding:18px 0 36px}
+.admin-page .admin-topline{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+.admin-page .admin-topline h1{margin:6px 0 0;font-size:clamp(26px,3.2vw,36px);letter-spacing:-.04em;line-height:1}
+.admin-page .admin-topline .eyebrow{padding:6px 10px;font-size:11px}
+.admin-page .admin-topline-note{margin:0;color:var(--muted);font-size:13px;line-height:1.5;max-width:360px;text-align:right}
+.admin-page #admin.content-card{padding:14px;border-radius:22px}
+.admin-page .admin-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:6px;border:1px solid var(--line);border-radius:16px;background:rgba(0,0,0,.18);position:sticky;top:72px;z-index:4}
+.admin-page .admin-tab{border:1px solid transparent;border-radius:12px;background:transparent;color:#b8bdd8;padding:8px 14px;font:inherit;font-size:13px;font-weight:900;cursor:pointer}
+.admin-page .admin-tab:hover{color:#fff;background:rgba(255,255,255,.06)}
+.admin-page .admin-tab.is-active{color:#fff;border-color:rgba(139,92,246,.45);background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(34,211,238,.14))}
+.admin-page .admin-tab-panel{display:none}
+.admin-page .admin-tab-panel.is-active{display:block}
+.admin-page .admin-dashboard{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 12px}
+.admin-page .dash-card{min-height:78px;padding:10px 12px;border-radius:16px}
+.admin-page .dash-card span{font-size:18px}
+.admin-page .dash-card b{font-size:22px}
+.admin-page .dash-card small{font-size:11px}
+.admin-page .admin-quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.admin-page .admin-quick-card{display:grid;gap:4px;text-align:left;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.05);padding:12px 14px;color:inherit;cursor:pointer;font:inherit}
+.admin-page .admin-quick-card b{font-size:14px;color:#fff}
+.admin-page .admin-quick-card small{color:var(--muted);font-size:12px;line-height:1.45}
+.admin-page .admin-quick-card:hover{background:rgba(255,255,255,.09);border-color:rgba(139,92,246,.35)}
+.admin-page .admin-split-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.72fr);gap:10px;align-items:start}
+.admin-page .admin-side-stack{display:grid;gap:10px}
+.admin-page .admin-content-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.admin-page .admin-block{padding:14px!important;border-radius:18px!important;gap:8px!important;box-shadow:none!important;margin:0!important}
+.admin-page .admin-block h3{margin:0 0 2px;font-size:15px}
+.admin-page .admin-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.admin-page .form-card input,.admin-page .form-card textarea,.admin-page .form-card select{padding:9px 11px;border-radius:12px;font-size:13px}
+.admin-page .form-card textarea{min-height:72px}
+.admin-page .primary,.admin-page .secondary{padding:10px 14px;border-radius:12px;font-size:13px}
+.admin-page .admin-section-head{margin-bottom:8px}
+.admin-page .admin-section-head h3{font-size:15px}
+.admin-page .admin-list-toolbar{gap:8px;margin-bottom:8px}
+.admin-page .search-input.compact{min-width:0;padding:9px 11px;border-radius:12px;font-size:13px}
+.admin-page .admin-list-toolbar select{padding:9px 11px;border-radius:12px;font-size:13px;min-width:96px}
+.admin-page .admin-table-wrap{max-height:340px;border-radius:14px}
+.admin-page .admin-table{min-width:560px}
+.admin-page .admin-table th,.admin-page .admin-table td{padding:9px 11px;font-size:12px}
+.admin-page .admin-table th{font-size:11px}
+.admin-page .admin-table td b{font-size:13px;line-height:1.3}
+.admin-page .admin-table td small{margin-top:2px;font-size:11px;line-height:1.35}
+.admin-page .mini-btn{padding:6px 9px!important;font-size:11px!important;border-radius:9px!important}
+.admin-page .admin-flash{padding:10px 12px;margin-bottom:10px;border-radius:14px;font-size:13px}
+.admin-page .form-split{gap:8px}
+.admin-page .check{font-size:12px!important}
+@media(max-width:1100px){.admin-page .admin-split-grid{grid-template-columns:1fr}.admin-page .admin-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.admin-page .admin-dashboard{grid-template-columns:repeat(3,minmax(0,1fr))}.admin-page .admin-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-page .admin-content-grid{grid-template-columns:1fr}}
+@media(max-width:680px){.admin-page .admin-topline{align-items:flex-start}.admin-page .admin-topline-note{text-align:left}.admin-page .admin-tabs{top:64px}.admin-page .admin-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-page .admin-actions{grid-template-columns:1fr}.admin-page .admin-tabs{overflow:auto;flex-wrap:nowrap}.admin-page .admin-tab{white-space:nowrap}}
+
+/* V33 Hub board unified layout */
+.hub-page .hub-main{padding-bottom:48px}
+.hub-page .hub-shell{width:min(1180px,calc(100% - 28px));padding:20px 0 0}
+.hub-page .hub-topline{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:12px;flex-wrap:wrap}
+.hub-page .hub-topline h1{margin:6px 0 0;font-size:clamp(26px,3.4vw,38px);letter-spacing:-.04em;line-height:1.05}
+.hub-page .hub-topline .eyebrow{padding:6px 10px;font-size:11px}
+.hub-page .hub-desc{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.55;max-width:640px}
+.hub-page .hub-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hub-page .hub-subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:6px;border:1px solid var(--line);border-radius:16px;background:rgba(0,0,0,.18);position:sticky;top:72px;z-index:4}
+.hub-page .hub-subnav a{display:inline-flex;align-items:center;padding:8px 13px;border-radius:12px;color:#b8bdd8;font-size:13px;font-weight:900;white-space:nowrap}
+.hub-page .hub-subnav a:hover{color:#fff;background:rgba(255,255,255,.06)}
+.hub-page .hub-subnav a.active{color:#fff;border:1px solid rgba(139,92,246,.42);background:linear-gradient(135deg,rgba(139,92,246,.26),rgba(34,211,238,.12))}
+.hub-page .hub-card{border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.095),rgba(255,255,255,.045));border-radius:22px;padding:16px;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.hub-page .hub-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.hub-page .hub-toolbar h2{margin:0;font-size:18px;letter-spacing:-.02em}
+.hub-page .hub-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hub-page .hub-tools .search-input{min-width:220px;padding:9px 11px;border-radius:12px;font-size:13px}
+.hub-page .hub-tools select{padding:9px 11px;border-radius:12px;font-size:13px;border:1px solid var(--line);background:rgba(0,0,0,.28);color:var(--text);font:inherit}
+.hub-page .hub-tools .primary,.hub-page .hub-tools .secondary,.hub-page .hub-actions .primary,.hub-page .hub-actions .secondary{padding:9px 13px;border-radius:12px;font-size:13px}
+.hub-page .hub-list-head,.hub-page .hub-list-row{display:grid;align-items:center;gap:10px}
+.hub-page .hub-list-head{padding:10px 14px;border-bottom:1px solid var(--line);color:#b8bdd8;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;background:rgba(0,0,0,.16);border-radius:14px 14px 0 0}
+.hub-page .hub-list-body{border:1px solid var(--line);border-radius:0 0 14px 14px;overflow:hidden;background:rgba(0,0,0,.1)}
+.hub-page .hub-list-row{padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.06);color:inherit;transition:background .15s}
+.hub-page .hub-list-row:last-child{border-bottom:0}
+.hub-page .hub-list-row:hover{background:rgba(255,255,255,.05)}
+.hub-page .hub-list-row.is-pinned{background:rgba(139,92,246,.08)}
+.hub-page .hub-col-title b{display:block;font-size:14px;line-height:1.35;color:#fff}
+.hub-page .hub-col-title small{display:block;margin-top:3px;color:var(--muted);font-size:12px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hub-page .hub-col-author,.hub-page .hub-col-date,.hub-page .hub-col-preview{color:#c7cbe4;font-size:12px}
+.hub-page .hub-col-preview{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hub-page .hub-col-badge .badge{margin-top:0}
+.hub-page .hub-list-head,.hub-page .hub-list-row{grid-template-columns:minmax(220px,1fr) 120px 56px 56px 56px 130px}
+.hub-page .hub-notice-head,.hub-page .hub-notice-row{grid-template-columns:110px minmax(180px,.9fr) minmax(0,1.2fr)}
+.hub-page .hub-ticket-head,.hub-page .hub-ticket-row{grid-template-columns:minmax(220px,1fr) 110px 150px}
+.hub-page .hub-post-shell{width:min(860px,calc(100% - 24px));margin:0 auto}
+.hub-page .post-nav-row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:10px}
+.hub-page .hub-post-detail,.hub-page .hub-comments-panel{border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.095),rgba(255,255,255,.045));border-radius:20px;padding:16px 18px}
+.hub-page .hub-comments-panel{margin-top:12px}
+.hub-page .post-card-head{padding-bottom:12px;margin-bottom:12px;border-bottom:1px solid rgba(255,255,255,.1)}
+.hub-page .post-kicker{display:inline-flex;padding:4px 9px;border-radius:999px;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.28);color:#dcd7ff;font-size:11px;font-weight:900;margin-bottom:8px}
+.hub-page .post-card-head h1{margin:0 0 10px;font-size:clamp(22px,2.8vw,30px);line-height:1.2;letter-spacing:-.03em}
+.hub-page .post-meta-grid{display:flex;gap:6px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.hub-page .post-meta-grid span{display:inline-flex;gap:5px;align-items:center;padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.hub-page .post-meta-grid em{font-style:normal;color:#9aa0bf}
+.hub-page .post-meta-grid b{color:#eef0ff;font-weight:900}
+.hub-page .post-body-content,.hub-page .hub-post-body{white-space:pre-wrap;line-height:1.75;color:#e3e6f8;font-size:14px}
+.hub-page .hub-post-actions,.hub-page .post-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+.hub-page .hub-form-card{display:grid;gap:10px}
+.hub-page .hub-form-card label{font-size:13px;font-weight:900;color:#dcdff7}
+.hub-page .hub-form-card input,.hub-page .hub-form-card textarea,.hub-page .hub-form-card select{padding:10px 12px;border-radius:12px;font-size:13px;border:1px solid var(--line);background:rgba(0,0,0,.26);color:var(--text);font:inherit}
+.hub-page .hub-form-card textarea{min-height:120px;resize:vertical}
+.hub-page .hub-form-card .primary{padding:10px 14px;border-radius:12px;font-size:13px;justify-self:start}
+.hub-page .hub-replies-panel{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
+.hub-page .hub-replies-panel h3{margin:0 0 10px;font-size:15px}
+.hub-page .hub-reply-list{display:grid;gap:8px;margin-bottom:10px}
+.hub-page .hub-reply-list .reply{padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.18);border:1px solid var(--line)}
+.hub-page .hub-reply-form{display:flex;gap:8px;margin-top:8px}
+.hub-page .hub-reply-form input{flex:1;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.24);color:var(--text);font:inherit}
+.hub-page .timeline{display:grid;gap:10px}
+.hub-page .timeline-item{padding:14px 16px;border-radius:16px}
+.hub-page .timeline-item h3{margin:6px 0 8px;font-size:16px}
+.hub-page .timeline-item .content{font-size:14px;line-height:1.65}
+.hub-page .faq-list{display:grid;gap:8px}
+.hub-page .faq-item{padding:12px 14px;border-radius:16px}
+.hub-page .faq-item summary{cursor:pointer;list-style:none}
+.hub-page .faq-item summary h3{margin:0;font-size:15px;display:inline}
+.hub-page .faq-item .content{margin-top:10px;font-size:14px;line-height:1.65}
+.hub-page .community-comment-form,.hub-page .comment-form{display:flex;gap:8px;margin:8px 0 12px}
+.hub-page .community-comment-form textarea,.hub-page .comment-form textarea{flex:1;min-height:58px;padding:10px 12px;border-radius:12px;font-size:13px}
+.hub-page .community-comment-form .primary{padding:10px 13px;border-radius:12px;font-size:12px;min-width:100px}
+.hub-page .comment-card,.hub-page .community-comment-card{padding:10px 12px;border-radius:14px}
+.hub-page .comment-toolbar h2{margin:0;font-size:16px}
+.hub-page .empty-card{padding:20px;border-radius:16px;font-size:14px}
+@media(max-width:900px){.hub-page .hub-list-head{display:none}.hub-page .hub-list-row{grid-template-columns:1fr!important;gap:6px;padding:12px 14px}.hub-page .hub-list-row:not(.hub-notice-row):not(.hub-ticket-row)>div:not(.hub-col-title):before{color:var(--muted);font-weight:900;margin-right:6px;font-size:11px}.hub-page .hub-list-row:not(.hub-notice-row):not(.hub-ticket-row)>div:nth-child(2):before{content:'작성자'}.hub-page .hub-list-row:not(.hub-notice-row):not(.hub-ticket-row)>div:nth-child(3):before{content:'조회'}.hub-page .hub-list-row:not(.hub-notice-row):not(.hub-ticket-row)>div:nth-child(4):before{content:'추천'}.hub-page .hub-list-row:not(.hub-notice-row):not(.hub-ticket-row)>div:nth-child(5):before{content:'댓글'}.hub-page .hub-list-row:not(.hub-notice-row):not(.hub-ticket-row)>div:nth-child(6):before{content:'작성일'}.hub-page .hub-notice-row .hub-col-date:before{content:'날짜 ';color:var(--muted);font-weight:900;margin-right:6px;font-size:11px}.hub-page .hub-notice-row .hub-col-preview:before{content:'미리보기 ';color:var(--muted);font-weight:900;margin-right:6px;font-size:11px}.hub-page .hub-ticket-row .hub-col-badge:before{content:'상태 ';color:var(--muted);font-weight:900;margin-right:6px;font-size:11px}.hub-page .hub-ticket-row .hub-col-date:before{content:'작성일 ';color:var(--muted);font-weight:900;margin-right:6px;font-size:11px}.hub-page .hub-toolbar{display:grid}.hub-page .hub-tools{justify-content:stretch}.hub-page .hub-tools .search-input,.hub-page .hub-tools select,.hub-page .hub-tools .primary{width:100%;min-width:0}.hub-page .hub-subnav{overflow:auto;flex-wrap:nowrap}.hub-page .hub-subnav a{white-space:nowrap}}
+@media(max-width:720px){.hub-page .hub-shell{width:calc(100% - 20px)}.hub-page .hub-topline{align-items:flex-start}.hub-page .community-comment-form,.hub-page .comment-form,.hub-page .hub-reply-form{display:grid}.hub-page .community-comment-form .primary,.hub-page .hub-reply-form .primary{width:100%}}
