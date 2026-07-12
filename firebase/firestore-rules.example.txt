@@ -99,7 +99,8 @@ service cloud.firestore {
 
       match /likes/{userId} {
         allow read: if signedIn() && request.auth.uid == userId;
-        allow create, delete: if signedIn() && request.auth.uid == userId;
+        allow create: if signedIn() && request.auth.uid == userId;
+        allow delete: if isAdmin() || (signedIn() && request.auth.uid == userId);
         allow update: if false;
       }
     }

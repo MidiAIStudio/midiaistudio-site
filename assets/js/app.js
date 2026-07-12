@@ -1678,8 +1678,9 @@ async function deleteBoardComment(postId,commentId){
 function renderAdminBoardTable(){
   const box=$('adminBoardList'); if(!box||!isAdminUser)return;
   const q=($('adminBoardSearch')?.value||'').trim().toLowerCase(); const st=$('adminBoardStatus')?.value||'all';
-  let rows=(adminBoardRows||[]).filter(x=>{ if(st==='visible'&&x.visible===false)return false; if(st==='hidden'&&x.visible!==false)return false; if(st==='pinned'&&x.pinned!==true)return false; const hay=[x.title,x.content,x.displayName,x.email,x.uid].join(' ').toLowerCase(); return !q||hay.includes(q); }).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-  $('adminBoardCount') && ($('adminBoardCount').textContent=`${rows.length} / ${(adminBoardRows||[]).length}`);
+  let rows=(adminBoardRows||[]).filter(x=>x.deleted!==true).filter(x=>{ if(st==='visible'&&x.visible===false)return false; if(st==='hidden'&&x.visible!==false)return false; if(st==='pinned'&&x.pinned!==true)return false; const hay=[x.title,x.content,x.displayName,x.email,x.uid].join(' ').toLowerCase(); return !q||hay.includes(q); }).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  const activeCount=(adminBoardRows||[]).filter(x=>x.deleted!==true).length;
+  $('adminBoardCount') && ($('adminBoardCount').textContent=`${rows.length} / ${activeCount}`);
   if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   box.innerHTML=`<table class="admin-table"><thead><tr><th>제목</th><th>상태</th><th>작성자</th><th>통계</th><th>관리</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.visible===false?'board-admin-hidden':''}"><td><b>${x.pinned?'📌 ':''}${esc(x.title||'-')}</b><small>${esc(String(x.content||'').slice(0,80))}</small></td><td>${x.visible===false?'<span class="badge none">숨김</span>':'<span class="badge active">공개</span>'}</td><td>${esc(x.displayName||x.email||'-')}</td><td>조회 ${Number(x.viewCount||0)} · 추천 ${Number(x.likeCount||0)} · 댓글 ${Number(x.commentCount||0)}</td><td><div class="table-actions"><a class="secondary mini-btn" href="${boardPostUrl(x.id)}">보기</a><a class="secondary mini-btn" href="${boardEditUrl(x.id)}">수정</a><button class="secondary mini-btn" data-admin-board-pin="${esc(x.id)}:${x.pinned?'0':'1'}">${x.pinned?'고정해제':'고정'}</button><button class="secondary mini-btn danger-btn" data-admin-board-delete="${esc(x.id)}">${tr('del')}</button></div></td></tr>`).join('')}</tbody></table>`;
   box.querySelectorAll('[data-admin-board-delete]').forEach(b=>{ if(b.dataset.bound)return; b.dataset.bound='1'; b.onclick=()=>adminDeleteBoardPost(b.dataset.adminBoardDelete); });
@@ -1689,12 +1690,10 @@ async function adminDeleteBoardPost(id){
   if(!isAdminUser) return alert(tr('no_permission'));
   if(!confirm(tr('confirm_delete'))) return;
   try{
-    const {doc,deleteDoc,collection,getDocs}=firestoreApi;
-    for(const sub of ['comments','likes']){
-      const snap=await getDocs(collection(db,'boardPosts',id,sub));
-      await Promise.all(snap.docs.map(d=>deleteDoc(d.ref)));
-    }
-    await deleteDoc(doc(db,'boardPosts',id));
+    const {doc,setDoc,collection,getDocs,serverTimestamp}=firestoreApi;
+    const commentsSnap=await getDocs(collection(db,'boardPosts',id,'comments'));
+    await Promise.all(commentsSnap.docs.map(d=>setDoc(d.ref,{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true})));
+    await setDoc(doc(db,'boardPosts',id),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true});
     adminFlash(tr('deleted'));
   }catch(e){ alert(e.message); }
 }
