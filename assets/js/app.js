@@ -15,6 +15,7 @@ let db = null;
 let currentUser = null;
 let currentUserDoc = null;
 let isAdminUser = false;
+const BRAND_AUTHOR = 'MidiAI Studio';
 let firestoreApi = {};
 let storage = null;
 let storageApi = {};
@@ -187,7 +188,16 @@ function tr(k){
 function fmtDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); return d ? d.toLocaleString(lang==='ja'?'ja-JP':lang==='en'?'en-US':'ko-KR') : ''; } catch { return ''; } }
 function fmtListDate(v){ try{ const d=v?.toDate?v.toDate():(v?new Date(v):null); if(!d)return '-'; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`; }catch{return '';} }
 function fmtShortDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); if(!d)return ''; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; } catch { return fmtDate(v); } }
-function noticeAuthor(x){ return x.displayName||x.email?.split('@')[0]||'MidiAI Studio'; }
+function isAdminAuthor(x){ return !!(x && (x.authorRole === 'admin' || x.role === 'admin')); }
+function contentAuthor(x){
+  if(isAdminAuthor(x)) return BRAND_AUTHOR;
+  return x?.displayName || x?.email?.split('@')[0] || BRAND_AUTHOR;
+}
+function authorAvatarInitial(x){
+  const name = contentAuthor(x);
+  return name === BRAND_AUTHOR ? 'M' : String(x?.displayName || x?.email || 'U').slice(0, 1).toUpperCase();
+}
+function noticeAuthor(){ return BRAND_AUTHOR; }
 function esc(s){ return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
 function patchChangeType(text){
@@ -1020,7 +1030,7 @@ function listenReplies(ticketId, container){
   const q=query(collection(db,'supportTickets',ticketId,'replies'),orderBy('createdAt','asc'));
   return addUnsub(onSnapshot(q, snap => {
     const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    container.innerHTML=rows.map(r=>`<div class="reply"><b>${esc(r.role||'user')} · ${fmtDate(r.createdAt)}</b><p>${nl2br(r.content)}</p></div>`).join('');
+    container.innerHTML=rows.map(r=>`<div class="reply"><b>${esc(r.role==='admin'?BRAND_AUTHOR:(r.displayName||r.email||'user'))} · ${fmtDate(r.createdAt)}</b><p>${nl2br(r.content)}</p></div>`).join('');
   }, err => { console.error('replies',err); container.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
 function bindReplyForms(root=document){ root.querySelectorAll('.reply-form').forEach(f=>{ if(f.dataset.bound) return; f.dataset.bound='1'; f.addEventListener('submit',ticketReply); }); bindTicketActions(root); }
@@ -1174,7 +1184,7 @@ async function ticketReply(e){
   if(!content)return;
   try{
     const {collection,addDoc,doc,updateDoc,serverTimestamp}=firestoreApi;
-    await addDoc(collection(db,'supportTickets',ticketId,'replies'),{uid:currentUser.uid,role:isAdminUser?'admin':'user',content,createdAt:serverTimestamp()});
+    await addDoc(collection(db,'supportTickets',ticketId,'replies'),{uid:currentUser.uid,role:isAdminUser?'admin':'user',displayName:isAdminUser?BRAND_AUTHOR:(currentUser.displayName||''),content,createdAt:serverTimestamp()});
     await updateDoc(doc(db,'supportTickets',ticketId),{status:isAdminUser?'answered':'open',updatedAt:serverTimestamp()});
     input.value='';
   }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
@@ -1387,7 +1397,7 @@ async function saveAdminDownloadSettings(){
 
 function isOwnerRecord(x){ return !!(currentUser && x && (x.uid === currentUser.uid || x.authorUid === currentUser.uid)); }
 function canManageRecord(x){ return isAdminUser || isOwnerRecord(x); }
-function boardDisplayName(){ return currentUser?.displayName || currentUser?.email || 'Google User'; }
+function boardDisplayName(){ return isAdminUser ? BRAND_AUTHOR : (currentUser?.displayName || currentUser?.email || 'Google User'); }
 function boardEmail(){ return currentUser?.email || ''; }
 function boardPostUrl(id){ return `./board-post.html?id=${encodeURIComponent(id)}`; }
 function boardEditUrl(id){ return `./board-write.html?id=${encodeURIComponent(id)}`; }
@@ -1407,7 +1417,7 @@ function renderBoardPosts(rows, err){
   const list=boardFilteredSorted(rows||[]);
   if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   let normalNo=list.filter(x=>!x.pinned).length;
-  box.innerHTML=`<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div><div class="hub-list-body">${list.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">공지</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||'(제목 없음)')}</span></b></div><div class="hub-col-author">${esc(x.displayName||x.email||'-')}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
+  box.innerHTML=`<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div><div class="hub-list-body">${list.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">공지</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||'(제목 없음)')}</span></b></div><div class="hub-col-author">${esc(contentAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
   bindSearch(box);
 }
 function listenBoardPosts(){
@@ -1548,7 +1558,7 @@ async function initBoardPostEditor(){
     e.preventDefault();
     if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
     const data={uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),title:$('boardPostTitle').value.trim(),content:$('boardPostContent').value.trim(),visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
-    if(isAdminUser && $('boardPostPinned')) data.pinned=$('boardPostPinned').checked;
+    if(isAdminUser){ data.authorRole='admin'; if($('boardPostPinned')) data.pinned=$('boardPostPinned').checked; }
     try{
       let postId=id;
       if(id){
@@ -1576,7 +1586,7 @@ function renderBoardPost(d,err){
     : lang==='ja'
     ? {board:'コミュニティ', pinned:'固定投稿', author:'投稿者', date:'作成日', views:'閲覧', likes:'いいね', comments:'コメント', like:'いいね', edit:'編集', del:'削除'}
     : {board:'자유게시판', pinned:'고정 게시글', author:'작성자', date:'작성일', views:'조회', likes:'추천', comments:'댓글', like:'추천', edit:'수정', del:'삭제'};
-  const author = d.displayName || d.email || '-';
+  const author = contentAuthor(d);
   box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author"><i>👤</i><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 ${esc(labels.like)}</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">${esc(labels.edit)}</a><button id="postDeleteBtn" class="secondary danger-btn">${esc(labels.del)}</button>`:''}</div>`;
   refreshBoardPostActions();
 }
@@ -1640,7 +1650,7 @@ function renderBoardComments(postId){
 }
 function renderCommentCard(postId,c,isReply){
   const manage=canManageRecord(c);
-  return `<div class="comment-card community-comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}"><div class="comment-avatar">${esc(String(c.displayName||c.email||'U').slice(0,1).toUpperCase())}</div><div class="comment-main"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(c.displayName||c.email||'-')}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button class="secondary mini-btn" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button class="secondary mini-btn" data-comment-edit="${esc(c.id)}">수정</button><button class="secondary mini-btn danger-btn" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div></div>`;
+  return `<div class="comment-card community-comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}"><div class="comment-avatar">${esc(authorAvatarInitial(c))}</div><div class="comment-main"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(contentAuthor(c))}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button class="secondary mini-btn" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button class="secondary mini-btn" data-comment-edit="${esc(c.id)}">수정</button><button class="secondary mini-btn danger-btn" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div></div>`;
 }
 function bindCommentActions(postId,root){
   root.querySelectorAll('[data-comment-reply]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.onclick=()=>openReplyBox(postId,btn.dataset.commentReply,btn.closest('.comment-card')); });
@@ -1661,7 +1671,7 @@ async function createBoardComment(e,postId,parentId,customTextarea){
   const content=textarea.value.trim(); if(!content)return;
   const {collection,addDoc,doc,updateDoc,increment,serverTimestamp}=firestoreApi;
   try{
-    await addDoc(collection(db,'boardPosts',postId,'comments'),{uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),content,parentId:parentId||'',visible:true,deleted:false,edited:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    await addDoc(collection(db,'boardPosts',postId,'comments'),{uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),content,parentId:parentId||'',visible:true,deleted:false,edited:false,...(isAdminUser?{authorRole:'admin'}:{}),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
     await updateDoc(doc(db,'boardPosts',postId),{commentCount:increment(1),updatedAt:serverTimestamp()});
     textarea.value=''; customTextarea?.closest('form')?.remove();
   }catch(err){ alert(err.message); }
@@ -1682,7 +1692,7 @@ function renderAdminBoardTable(){
   const activeCount=(adminBoardRows||[]).filter(x=>x.deleted!==true).length;
   $('adminBoardCount') && ($('adminBoardCount').textContent=`${rows.length} / ${activeCount}`);
   if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  box.innerHTML=`<table class="admin-table"><thead><tr><th>제목</th><th>상태</th><th>작성자</th><th>통계</th><th>관리</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.visible===false?'board-admin-hidden':''}"><td><b>${x.pinned?'📌 ':''}${esc(x.title||'-')}</b><small>${esc(String(x.content||'').slice(0,80))}</small></td><td>${x.visible===false?'<span class="badge none">숨김</span>':'<span class="badge active">공개</span>'}</td><td>${esc(x.displayName||x.email||'-')}</td><td>조회 ${Number(x.viewCount||0)} · 추천 ${Number(x.likeCount||0)} · 댓글 ${Number(x.commentCount||0)}</td><td><div class="table-actions"><a class="secondary mini-btn" href="${boardPostUrl(x.id)}">보기</a><a class="secondary mini-btn" href="${boardEditUrl(x.id)}">수정</a><button class="secondary mini-btn" data-admin-board-pin="${esc(x.id)}:${x.pinned?'0':'1'}">${x.pinned?'고정해제':'고정'}</button><button class="secondary mini-btn danger-btn" data-admin-board-delete="${esc(x.id)}">${tr('del')}</button></div></td></tr>`).join('')}</tbody></table>`;
+  box.innerHTML=`<table class="admin-table"><thead><tr><th>제목</th><th>상태</th><th>작성자</th><th>통계</th><th>관리</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.visible===false?'board-admin-hidden':''}"><td><b>${x.pinned?'📌 ':''}${esc(x.title||'-')}</b><small>${esc(String(x.content||'').slice(0,80))}</small></td><td>${x.visible===false?'<span class="badge none">숨김</span>':'<span class="badge active">공개</span>'}</td><td>${esc(contentAuthor(x))}</td><td>조회 ${Number(x.viewCount||0)} · 추천 ${Number(x.likeCount||0)} · 댓글 ${Number(x.commentCount||0)}</td><td><div class="table-actions"><a class="secondary mini-btn" href="${boardPostUrl(x.id)}">보기</a><a class="secondary mini-btn" href="${boardEditUrl(x.id)}">수정</a><button class="secondary mini-btn" data-admin-board-pin="${esc(x.id)}:${x.pinned?'0':'1'}">${x.pinned?'고정해제':'고정'}</button><button class="secondary mini-btn danger-btn" data-admin-board-delete="${esc(x.id)}">${tr('del')}</button></div></td></tr>`).join('')}</tbody></table>`;
   box.querySelectorAll('[data-admin-board-delete]').forEach(b=>{ if(b.dataset.bound)return; b.dataset.bound='1'; b.onclick=()=>adminDeleteBoardPost(b.dataset.adminBoardDelete); });
   box.querySelectorAll('[data-admin-board-pin]').forEach(b=>{ if(b.dataset.bound)return; b.dataset.bound='1'; b.onclick=()=>{ const [id,val]=b.dataset.adminBoardPin.split(':'); adminPinBoardPost(id,val==='1'); }; });
 }
@@ -1703,7 +1713,7 @@ function bindAdminBoardFilters(){ ['adminBoardSearch','adminBoardStatus'].forEac
 async function adminAdd(collectionName,data){
   if(!isAdminUser){ alert('admin only'); return null; }
   const {collection,addDoc,serverTimestamp}=firestoreApi;
-  const ref=await addDoc(collection(db,collectionName),{...data,visible:true,authorUid:currentUser.uid,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  const ref=await addDoc(collection(db,collectionName),{...data,visible:true,authorUid:currentUser.uid,authorRole:'admin',displayName:BRAND_AUTHOR,uid:currentUser.uid,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
   return ref.id;
 }
 function adminFlash(html){ let box=$('adminSaveMsg'); if(!box){ box=document.createElement('div'); box.id='adminSaveMsg'; box.className='admin-flash'; $('admin')?.querySelector('.admin-panel')?.prepend(box); } box.innerHTML=html; box.classList.remove('hidden'); }
@@ -1712,7 +1722,7 @@ function initForms(){
   $('adminNoticeForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     try{
-      const id=await adminAdd('announcements',{title:$('adminNoticeTitle').value.trim(),content:$('adminNoticeContent').value.trim(),pinned:$('adminNoticePinned').checked,viewCount:0,displayName:currentUser?.displayName||'MidiAI Studio',email:currentUser?.email||''});
+      const id=await adminAdd('announcements',{title:$('adminNoticeTitle').value.trim(),content:$('adminNoticeContent').value.trim(),pinned:$('adminNoticePinned').checked,viewCount:0,email:currentUser?.email||''});
       e.target.reset();
       if(id) adminFlash(`${tr('saved')} · <a href="./notice.html?id=${encodeURIComponent(id)}">상세 보기</a> · <a href="./notices.html">공지사항 목록</a>`);
     }catch(err){ alert(err.message); }
@@ -1720,7 +1730,7 @@ function initForms(){
   $('adminPatchForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     try{
-      const id=await adminAdd('patchNotes',{version:$('adminPatchVersion').value.trim(),title:$('adminPatchTitle').value.trim(),content:$('adminPatchContent').value.trim(),viewCount:0,displayName:currentUser?.displayName||'MidiAI Studio',email:currentUser?.email||''});
+      const id=await adminAdd('patchNotes',{version:$('adminPatchVersion').value.trim(),title:$('adminPatchTitle').value.trim(),content:$('adminPatchContent').value.trim(),viewCount:0,email:currentUser?.email||''});
       e.target.reset();
       if(id) adminFlash(`${tr('saved')} · <a href="./patch-note.html?id=${encodeURIComponent(id)}">상세 보기</a> · <a href="./patch-notes.html">패치노트 목록</a>`);
     }catch(err){ alert(err.message); }

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v36-3">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v36-4">
 </head>
 <body class="admin-page portal-page">
   <div class="orb orb-a"></div>
@@ -68,7 +68,7 @@
             <div class="admin-quick-grid">
               <button type="button" class="admin-quick-card" data-admin-tab-jump="users"><b>회원 / 라이선스</b><small>회원 검색 · 라이선스 지급</small></button>
               <button type="button" class="admin-quick-card" data-admin-tab-jump="create"><b>콘텐츠 작성</b><small>공지 · 패치 · FAQ · 라이선스</small></button>
-              <button type="button" class="admin-quick-card" data-admin-tab-jump="content"><b>콘텐츠 관리</b><small>공지 · 패치 · FAQ · 게시판</small></button>
+              <button type="button" class="admin-quick-card" data-admin-tab-jump="content"><b>콘텐츠 관리</b><small>다운로드 · 공지 · 패치 · FAQ · 게시판</small></button>
               <button type="button" class="admin-quick-card" data-admin-tab-jump="tickets"><b>문의 답변</b><small>1:1 문의 처리</small></button>
             </div>
           </section>
@@ -94,17 +94,6 @@
                   <textarea id="adminLicenseMemo" rows="2" placeholder="메모"></textarea>
                   <button class="primary" type="submit">라이선스 저장</button>
                 </form>
-                <div class="form-card admin-block">
-                  <h3>다운로드 설정</h3>
-                  <div class="form-split">
-                    <input id="adminDownloadVersion" placeholder="버전 예: 1.5.7">
-                    <input id="adminDownloadFilename" placeholder="파일명">
-                  </div>
-                  <input id="adminDownloadUrl" placeholder="다운로드 URL">
-                  <textarea id="adminDownloadNotes" rows="2" placeholder="업데이트 설명"></textarea>
-                  <label class="check"><input id="adminDownloadMandatory" type="checkbox"> 필수 업데이트</label>
-                  <button id="adminDownloadSave" class="primary" type="button">저장</button>
-                </div>
               </div>
             </div>
           </section>
@@ -138,6 +127,19 @@
           </section>
 
           <section class="admin-tab-panel" data-admin-panel="content">
+            <div class="form-card admin-block admin-download-card">
+              <div class="admin-section-head"><h3>다운로드 설정</h3><small class="muted">Firestore downloads/latest · 다운로드 페이지에 반영</small></div>
+              <div class="form-split">
+                <input id="adminDownloadVersion" placeholder="버전 예: 1.5.7">
+                <input id="adminDownloadFilename" placeholder="파일명">
+              </div>
+              <input id="adminDownloadUrl" placeholder="다운로드 URL">
+              <textarea id="adminDownloadNotes" rows="2" placeholder="업데이트 설명"></textarea>
+              <div class="admin-download-actions">
+                <label class="check"><input id="adminDownloadMandatory" type="checkbox"> 필수 업데이트</label>
+                <button id="adminDownloadSave" class="primary" type="button">저장</button>
+              </div>
+            </div>
             <div class="admin-content-grid">
               <div class="form-card admin-manage admin-table-card admin-block">
                 <div class="admin-section-head"><h3>공지</h3><span id="adminNoticeCount" class="muted"></span></div>
@@ -216,6 +218,6 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=v36-2"></script>
-  <script type="module" src="./assets/js/app.js?v=v36-18"></script>
+  <script type="module" src="./assets/js/app.js?v=v36-20"></script>
 </body>
 </html>

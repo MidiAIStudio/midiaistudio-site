@@ -449,7 +449,9 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-quick-card:hover{background:rgba(255,255,255,.09);border-color:rgba(139,92,246,.35)}
 .admin-page .admin-split-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.72fr);gap:10px;align-items:start}
 .admin-page .admin-side-stack{display:grid;gap:10px}
-.admin-page .admin-content-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.admin-page .admin-content-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.admin-page .admin-download-card{margin-bottom:0}
+.admin-page .admin-download-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .admin-page .admin-block{padding:14px!important;border-radius:18px!important;gap:8px!important;box-shadow:none!important;margin:0!important}
 .admin-page .admin-block h3{margin:0 0 2px;font-size:15px}
 .admin-page .admin-actions{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
