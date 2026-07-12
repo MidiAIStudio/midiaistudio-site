@@ -36,7 +36,7 @@ const attrOriginals = new WeakMap();
 
 const I18N = {
   en: {
-    '홈':'Home','다운로드':'Downloads','구매':'Purchase','공지사항':'Notices','공지 목록':'Notice list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','FAQ':'FAQ','자유게시판':'Free board','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout',
+    '번호':'No.','글쓴이':'Author','작성일':'Date','포털':'Portal','커뮤니티':'Community','지원':'Support','계정':'Account','홈':'Home','다운로드':'Downloads','구매':'Purchase','공지사항':'Notices','패치노트 목록':'Patch notes list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','FAQ':'FAQ','자유게시판':'Free board','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout',
     '7월 31일까지 할인 진행중':'Discount available until July 31','피아노 커버를':'Piano covers','MIDI로 바꾸는':'into MIDI','가장 쉬운 방법':'made easy','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'The easiest way to turn piano covers into MIDI','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio official portal. The home page focuses on product, purchase, and downloads; notices, patch notes, and private support are separated into board-style pages.',
     '라이선스 구매하기':'Buy license','1:1 문의하기':'Contact support','Windows 지원':'Windows support','Google 계정 연동':'Google account linked','비공개 문의':'Private support','업데이트, 이벤트, 운영 안내를 확인합니다.':'Check updates, events, and service notices.','버전별 변경 사항을 확인합니다.':'Check changes by version.','비공개 문의를 작성하고 답변을 확인합니다.':'Create private tickets and check replies.','라이선스 상태와 로그인 정보를 확인합니다.':'Check license status and login details.','바로가기':'Open','문의하기':'Contact','확인하기':'View','최신 설치 파일':'Latest installer','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Shows the latest version from Firestore downloads/latest.','불러오는 중...':'Loading...',
     'Google 로그인':'Sign in with Google','로그인 전':'Not signed in','Google 로그인으로 라이선스 확인 준비':'Sign in with Google to check your license','라이선스 확인 전':'License not checked',
@@ -45,7 +45,7 @@ const I18N = {
     '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.'
   },
   ja: {
-    '홈':'ホーム','다운로드':'ダウンロード','구매':'購入','공지사항':'お知らせ','공지 목록':'お知らせ一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト',
+    '번호':'番号','글쓴이':'投稿者','작성일':'作成日','포털':'ポータル','커뮤니티':'コミュニティ','지원':'サポート','계정':'アカウント','홈':'ホーム','다운로드':'ダウンロード','구매':'購入','공지사항':'お知らせ','패치노트 목록':'パッチノート一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト',
     '7월 31일까지 할인 진행중':'7月31日まで割引中','피아노 커버를':'ピアノカバーを','MIDI로 바꾸는':'MIDIに変える','가장 쉬운 방법':'一番簡単な方法','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'ピアノカバーをMIDIに変える一番簡単な方法','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio公式ポータルです。ホームは紹介・購入・ダウンロードを中心にし、お知らせ・パッチノート・非公開問い合わせは別ページに分けました。',
     '라이선스 구매하기':'ライセンス購入','1:1 문의하기':'問い合わせる','Windows 지원':'Windows対応','Google 계정 연동':'Googleアカウント連携','비공개 문의':'非公開問い合わせ','업데이트, 이벤트, 운영 안내를 확인합니다.':'アップデート、イベント、運営案内を確認できます。','버전별 변경 사항을 확인합니다.':'バージョン別の変更内容を確認できます。','비공개 문의를 작성하고 답변을 확인합니다.':'非公開問い合わせを作成し、返信を確認できます。','라이선스 상태와 로그인 정보를 확인합니다.':'ライセンス状態とログイン情報を確認できます。','바로가기':'開く','문의하기':'問い合わせ','확인하기':'確認','최신 설치 파일':'最新インストーラー','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Firestore downloads/latest を基準に最新バージョンを表示します。','불러오는 중...':'読み込み中...',
     'Google 로그인':'Googleログイン','로그인 전':'未ログイン','Google 로그인으로 라이선스 확인 준비':'Googleログインでライセンス確認','라이선스 확인 전':'ライセンス未確認',
@@ -159,7 +159,7 @@ function tr(k){
   const KO = {
     login:'Google 로그인', logout:'로그아웃', guest:'로그인 전', guest_desc:'Google 로그인으로 라이선스 확인 준비',
     license_wait:'라이선스 확인 전', active:'라이선스 활성화됨', none:'라이선스 없음', checking:'라이선스 확인 중',
-    check_failed:'확인 실패', empty:'표시할 내용이 없습니다.', saved:'저장 완료', ticket_created:'문의가 등록되었습니다.',
+    check_failed:'확인 실패', empty:'표시할 내용이 없습니다.', saved:'저장 완료', ticket_created:'문의가 등록되었습니다.', privacy_required:'개인정보 수집·이용에 동의해주세요.',
     need_login:'로그인이 필요합니다.', download:'다운로드', admin_required:'관리자 로그인이 필요합니다.',
     no_permission:'권한이 없습니다.', answered:'답변 완료', closed:'종료', open:'접수', reply_placeholder:'답변 또는 추가 내용 입력',
     submit:'등록', edit:'수정', del:'삭제', close:'종료 처리', updated:'수정 완료', deleted:'삭제 완료', manage:'관리', confirm_delete:'정말 삭제할까요?'
@@ -167,7 +167,7 @@ function tr(k){
   const EN = {
     login:'Sign in with Google', logout:'Logout', guest:'Not signed in', guest_desc:'Sign in with Google to check license',
     license_wait:'Not checked yet', active:'License active', none:'No license', checking:'Checking license',
-    check_failed:'Check failed', empty:'Nothing to show.', saved:'Saved', ticket_created:'Ticket created.',
+    check_failed:'Check failed', empty:'Nothing to show.', saved:'Saved', ticket_created:'Ticket created.', privacy_required:'Please agree to the privacy policy.',
     need_login:'Sign-in required.', download:'Download', admin_required:'Admin sign-in required.',
     no_permission:'You do not have permission.', answered:'Answered', closed:'Closed', open:'Open', reply_placeholder:'Reply or add more details',
     submit:'Submit', edit:'Edit', del:'Delete', close:'Close', updated:'Updated', deleted:'Deleted', manage:'Manage', confirm_delete:'Delete this item?'
@@ -175,7 +175,7 @@ function tr(k){
   const JA = {
     login:'Googleログイン', logout:'ログアウト', guest:'未ログイン', guest_desc:'Googleログインでライセンス確認',
     license_wait:'未確認', active:'ライセンス有効', none:'ライセンスなし', checking:'確認中',
-    check_failed:'確認失敗', empty:'表示する内容がありません。', saved:'保存完了', ticket_created:'問い合わせを登録しました。',
+    check_failed:'確認失敗', empty:'表示する内容がありません。', saved:'保存完了', ticket_created:'問い合わせを登録しました。', privacy_required:'個人情報の収集・利用に同意してください。',
     need_login:'ログインが必要です。', download:'ダウンロード', admin_required:'管理者ログインが必要です。',
     no_permission:'権限がありません。', answered:'回答済み', closed:'終了', open:'受付', reply_placeholder:'返信または追加内容を入力',
     submit:'登録', edit:'編集', del:'削除', close:'終了にする', updated:'更新しました', deleted:'削除しました', manage:'管理', confirm_delete:'本当に削除しますか？'
@@ -185,9 +185,114 @@ function tr(k){
 }
 
 function fmtDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); return d ? d.toLocaleString(lang==='ja'?'ja-JP':lang==='en'?'en-US':'ko-KR') : ''; } catch { return ''; } }
+function fmtListDate(v){ try{ const d=v?.toDate?v.toDate():(v?new Date(v):null); if(!d)return '-'; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`; }catch{return '';} }
 function fmtShortDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); if(!d)return ''; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; } catch { return fmtDate(v); } }
+function noticeAuthor(x){ return x.displayName||x.email?.split('@')[0]||'MidiAI Studio'; }
 function esc(s){ return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
+function patchChangeType(text){
+  const t = String(text || '');
+  if(/추가|신규|도입|새로운|새 |new|added?/i.test(t)) return { key:'new', label:'신규' };
+  if(/개선|향상|강화|업데이트|improv|enhanc|optim/i.test(t)) return { key:'improve', label:'개선' };
+  if(/수정|버그|오류|해결|fix|bug|패치|복구/i.test(t)) return { key:'fix', label:'수정' };
+  return { key:'change', label:'변경' };
+}
+function parsePatchContent(raw){
+  const text = String(raw || '').trim();
+  if(!text) return { sections:[], totalItems:0 };
+  const lines = text.split(/\r?\n/);
+  const sections = [];
+  let cur = null;
+  const bulletRe = /^[•·\-\*]\s*/;
+  const emojiHeaderRe = /^[\p{Extended_Pictographic}\uFE0F]/u;
+  const isHeader = (t)=> emojiHeaderRe.test(t) || (t.includes(' / ') && t.length < 90);
+  for(const line of lines){
+    const t = line.trim();
+    if(!t) continue;
+    if(bulletRe.test(t)){
+      const item = t.replace(bulletRe, '').trim();
+      if(!cur){ cur = { title:'변경 사항', items:[] }; sections.push(cur); }
+      cur.items.push(item);
+      continue;
+    }
+    if(isHeader(t)){
+      cur = { title:t, items:[] };
+      sections.push(cur);
+      continue;
+    }
+    if(!cur){ cur = { title:'변경 사항', items:[] }; sections.push(cur); }
+    cur.items.push(t);
+  }
+  const totalItems = sections.reduce((n,s)=>n+s.items.length,0);
+  return { sections, totalItems };
+}
+function patchContentHtml(sections){
+  if(!sections.length) return '<p class="patch-empty muted">내용이 없습니다.</p>';
+  const renderItems = (items)=> items.map(it=>{
+    const type = patchChangeType(it);
+    return `<li><span class="patch-change-tag is-${type.key}">${type.label}</span><span class="patch-change-text">${esc(it)}</span></li>`;
+  }).join('');
+  if(sections.length === 1){
+    const s = sections[0];
+    const title = s.title === '변경 사항' ? '' : `<h2 class="patch-section-title">${esc(s.title)}</h2>`;
+    return `<div class="patch-changelog is-flat">${title}<ul class="patch-section-list">${renderItems(s.items)}</ul></div>`;
+  }
+  return `<div class="patch-changelog">${sections.map((s,i)=>`<section class="patch-section" id="patch-section-${i}"><h2 class="patch-section-title">${esc(s.title)}</h2>${s.items.length?`<ul class="patch-section-list">${renderItems(s.items)}</ul>`:''}</section>`).join('')}</div>`;
+}
+function patchTocHtml(sections){
+  if(sections.length <= 1) return '';
+  return `<nav class="patch-toc" aria-label="목차">${sections.map((s,i)=>`<a href="#patch-section-${i}">${esc(s.title)}</a>`).join('')}</nav>`;
+}
+function patchNavHtml(nav){
+  if(!nav || (!nav.prev && !nav.next)) return '';
+  const newer = nav.prev ? `<a class="patch-nav-link is-newer" href="./patch-note.html?id=${encodeURIComponent(nav.prev.id)}"><span>최신</span><b>${nav.prev.version?`v${esc(nav.prev.version)}`:esc(nav.prev.title||'')}</b></a>` : '';
+  const older = nav.next ? `<a class="patch-nav-link is-older" href="./patch-note.html?id=${encodeURIComponent(nav.next.id)}"><span>이전</span><b>${nav.next.version?`v${esc(nav.next.version)}`:esc(nav.next.title||'')}</b></a>` : '';
+  return `<nav class="patch-detail-nav" aria-label="버전 이동">${newer}${older}</nav>`;
+}
+function patchDetailHtml(d, nav=null){
+  const version = d.version ? esc(d.version) : '';
+  const parsed = parsePatchContent(d.content);
+  const { sections } = parsed;
+  const bodyHtml = sections.length ? patchContentHtml(sections) : `<div class="patch-prose">${nl2br(d.content || '')}</div>`;
+  const toc = patchTocHtml(sections);
+  return `<article class="hub-post-detail hub-patch-detail">
+    <header class="patch-toolbar">
+      <a class="patch-back-link" href="./patch-notes.html">← 패치노트</a>
+      <button type="button" class="ghost mini-btn" data-share-patch>공유</button>
+    </header>
+    <div class="patch-head">
+      <div class="patch-head-main">
+        ${version?`<span class="patch-version-pill">v${version}</span>`:''}
+        <h1 class="patch-detail-title">${esc(d.title || '')}</h1>
+        <p class="patch-meta-line"><span>${esc(noticeAuthor(d))}</span><span>${esc(fmtListDate(d.createdAt))}</span><span>조회 ${Number(d.viewCount || 0)}</span></p>
+        ${toc}
+      </div>
+      <a class="primary patch-download-btn" href="./downloads.html">다운로드</a>
+    </div>
+    <div class="patch-detail-body">${bodyHtml}</div>
+    ${patchNavHtml(nav)}
+    <footer class="patch-detail-footer">
+      <a class="ghost mini-btn" href="./patch-notes.html">전체 패치노트</a>
+      <a class="ghost mini-btn" href="./faq.html">FAQ</a>
+      <a class="ghost mini-btn" href="./support.html">문의</a>
+    </footer>
+  </article>`;
+}
+function bindPatchDetailActions(root=document){
+  const shareBtn=root.querySelector('[data-share-patch]');
+  if(shareBtn && !shareBtn.dataset.bound){
+    shareBtn.dataset.bound='1';
+    shareBtn.addEventListener('click',async()=>{
+      const url=location.href;
+      try{
+        if(navigator.share){ await navigator.share({title:document.title,url}); return; }
+        await navigator.clipboard.writeText(url);
+        shareBtn.textContent='복사됨';
+        setTimeout(()=>{ shareBtn.textContent='공유'; },1200);
+      }catch{}
+    });
+  }
+}
 function getParam(k){ return new URLSearchParams(location.search).get(k); }
 function configuredFirebase(){ const f = CONFIG.firebase || {}; return f.apiKey && f.authDomain && f.projectId && !String(f.apiKey).startsWith('PASTE_') && !String(f.projectId).startsWith('PASTE_'); }
 function addUnsub(fn){ if (typeof fn === 'function') unsubscribers.push(fn); return fn; }
@@ -217,8 +322,12 @@ function paymentId(prefix='midiai'){
 function purchaseLocaleText(){
   if(lang === 'en') return {
     saleUntil:'Until July 31',
-    noteTitle:'License Benefits',
-    noteText:'Your Lifetime license is linked to your Google account immediately after payment.',
+    noteTitle:'License Guide',
+    licenseGuide:[
+      {title:'Full-song MIDI conversion',desc:'Convert entire YouTube links or audio files to MIDI with AI.'},
+      {title:'Instrument conversion',desc:'Generate MIDI for piano, guitar, bass, and other instruments.'},
+      {title:'MIDI Editor PRO',desc:'Edit multi-track piano rolls with velocity and CC parameters.'}
+    ],
     benefits:['Linked to your Google account','Available on your registered PC','Support via 1:1 Support'],
     accountTitle:'Sign in with Google before purchasing.',
     signedOut:'After signing in, the Lifetime license will be assigned automatically to your Google account after payment.',
@@ -239,8 +348,12 @@ function purchaseLocaleText(){
   };
   if(lang === 'ja') return {
     saleUntil:'7月31日まで',
-    noteTitle:'ライセンス特典',
-    noteText:'決済完了後、LifetimeライセンスがGoogleアカウントに連携されます。',
+    noteTitle:'ライセンス案内',
+    licenseGuide:[
+      {title:'全曲MIDI変換',desc:'YouTubeリンクやオーディオファイルをAIでMIDIに変換します。'},
+      {title:'楽器変換',desc:'ピアノ・ギター・ベースなど希望の楽器でMIDIを生成します。'},
+      {title:'MIDI編集 PRO',desc:'マルチトラックピアノロールでベロシティやCCを編集できます。'}
+    ],
     benefits:['Googleアカウントにライセンス連携','登録済みPCで利用可能','サイト内お問い合わせサポート'],
     accountTitle:'Googleアカウントでログイン後、ご購入いただけます。',
     signedOut:'ログイン後に決済すると、LifetimeライセンスがGoogleアカウントへ自動付与されます。',
@@ -261,8 +374,12 @@ function purchaseLocaleText(){
   };
   return {
     saleUntil:'7월 31일까지',
-    noteTitle:'라이선스 혜택',
-    noteText:'결제 즉시 Google 계정에 Lifetime 라이선스가 등록됩니다.',
+    noteTitle:'라이선스 안내',
+    licenseGuide:[
+      {title:'전체 구간 MIDI 변환',desc:'YouTube 링크·오디오 파일 전체를 AI로 MIDI로 변환합니다.'},
+      {title:'악기 변환',desc:'피아노·기타·베이스 등 원하는 악기로 MIDI를 생성합니다.'},
+      {title:'MIDI 편집 PRO',desc:'멀티트랙 피아노 롤에서 벨로시티·CC 파라미터를 편집합니다.'}
+    ],
     benefits:['Google 계정 라이선스 연결','등록된 PC에서 사용 가능','홈페이지 1:1 문의 지원'],
     accountTitle:'Google 로그인 후 결제할 수 있습니다.',
     signedOut:'결제 전 로그인하면 해당 Google 계정 UID에 라이선스가 자동 지급됩니다.',
@@ -294,20 +411,11 @@ function updatePurchaseI18n(){
   if(bank) bank.classList.toggle('hidden', lang !== 'ko');
   const note = document.querySelector('.purchase-final-note');
   if(note){
-    if(isKoreanCheckout()){
-      note.innerHTML = `<h3>라이선스 혜택</h3>
-        <ul class="license-benefit-list">
-          <li><b>즉시 적용</b><span>결제 완료 즉시 Google 계정에 Lifetime 라이선스가 등록됩니다.</span></li>
-          <li><b>계정 연동</b><span>프로그램에서 같은 Google 계정으로 로그인하면 바로 사용할 수 있습니다.</span></li>
-          <li><b>서비스 제공기간</b><span>디지털 라이선스 특성상 구매 즉시 서비스 제공이 완료됩니다.</span></li>
-        </ul>`;
-    } else {
-      note.innerHTML = `<h3>${esc(t.noteTitle || 'What you get')}</h3>
-        <ul class="license-benefit-list">
-          <li><b>${lang==='ja'?'即時適用':'Instant activation'}</b><span>${esc(t.noteText || '')}</span></li>
-          <li><b>${lang==='ja'?'アカウント連携':'Account linked'}</b><span>${lang==='ja'?'同じGoogleアカウントでログインすると利用できます。':'Sign in with the same Google account to use your license.'}</span></li>
-        </ul>`;
-    }
+    const guide = t.licenseGuide || [];
+    note.innerHTML = `<h3>${esc(t.noteTitle || '라이선스 안내')}</h3>
+      <ul class="license-benefit-list">
+        ${guide.map(item=>`<li><b>${esc(item.title)}</b><span>${esc(item.desc)}</span></li>`).join('')}
+      </ul>`;
   }
   if($('purchaseHeroLead')) $('purchaseHeroLead').textContent = lang==='en' ? 'A Lifetime license for faster and more reliable AI-powered MIDI conversion.' : lang==='ja' ? 'AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。' : 'AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.';
   const paypal = $('paypalButtons');
@@ -393,6 +501,7 @@ function setAuthUiSignedOut(){
   if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='admin.html') setAdminGate(`<p>${tr('need_login')}</p><p class="muted">Google 로그인 후 role=admin 계정만 접근할 수 있습니다.</p>`);
   updatePurchaseAccountBox();
+  updateSupportFormUi();
 }
 
 function metaCard(k,v){ return `<div class="stat-card"><b>${esc(k)}</b><span>${esc(v || '-')}</span></div>`; }
@@ -418,6 +527,7 @@ async function setAuthUiSignedIn(user){
     }
   }
   updatePurchaseAccountBox();
+  updateSupportFormUi();
 }
 
 async function upsertUser(user){
@@ -474,7 +584,6 @@ async function initAuth(){
   async function loginWithGoogle(){
     if(isInAppBrowser()){
       showOAuthBrowserNotice();
-bindBoardLightbox();
       alert('현재 브라우저에서는 Google 로그인이 제한될 수 있습니다.\n\n카카오톡·디스코드·인스타 내부 브라우저가 아닌 Chrome, Safari 또는 삼성 인터넷에서 다시 열어주세요.');
       return;
     }
@@ -538,10 +647,12 @@ function listenVisibleDocs(collectionName, render, orderField='createdAt', direc
 }
 function routeLoadPublic(){
   if(!db) return;
-  if(['index.html','downloads.html','purchase.html',''].includes(page)) listenDownload();
+  if(['downloads.html','purchase.html'].includes(page) || (page==='index.html' && $('downloadBox')) || (page==='' && $('downloadBox'))) listenDownload();
+  if(page==='' || page==='index.html') initHomePage();
   if(page==='notices.html') listenAnnouncements();
   if(page==='notice.html') listenNoticeDetail();
   if(page==='patch-notes.html') listenPatchNotes();
+  if(page==='patch-note.html') listenPatchDetail();
   if(page==='faq.html') listenFaq();
   if(page==='board.html') listenBoardPosts();
   if(page==='board-post.html') listenBoardPostDetail();
@@ -549,16 +660,88 @@ function routeLoadPublic(){
 }
 function renderDownload(d){
   const box=$('downloadBox'); if(!box)return;
-  if(!d){ box.innerHTML=`<h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p>`; return; }
-  box.innerHTML=`<h3>MidiAI Studio ${esc(d.version||'')}</h3><p>${esc(d.filename||'MidiAI Studio Installer')}</p><p class="muted">${fmtDate(d.releaseDate)||''}</p><div class="download-actions">${d.url?`<a class="primary" href="${esc(d.url)}" target="_blank" rel="noopener">${tr('download')}</a>`:''}</div>`;
+  if(!d){
+    box.innerHTML=`<div class="portal-download-inner download-card-pro portal-download-empty"><div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div class="portal-download-meta"><h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p></div><div class="portal-download-actions"><a class="secondary" href="./purchase.html">라이선스 구매</a></div></div>`;
+    return;
+  }
+  const mandatory = d.mandatory ? '<span class="portal-mandatory-pill">필수 업데이트</span>' : '';
+  const notes = d.notes||d.description ? `<p class="portal-download-notes">${esc(d.notes||d.description)}</p>` : '';
+  box.innerHTML=`<div class="portal-download-inner download-card-pro">
+    <div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>
+    <div class="portal-download-meta">
+      <div class="download-card-main-row">
+        <div class="download-card-line download-card-line-top">
+          <div class="portal-download-badges"><span class="portal-version-pill">v${esc(d.version||'-')}</span>${mandatory}<span class="download-platform-pill">Windows</span></div>
+          <h3>MidiAI Studio</h3>
+        </div>
+        <div class="download-card-line download-card-line-bottom">
+          <p class="portal-download-file"><span class="download-file-ext">EXE</span>${esc(d.filename||'MidiAI Installer.exe')}</p>
+          <div class="download-card-meta-row"><span>${esc(fmtDate(d.releaseDate)||'')}</span><span>공식 설치 프로그램</span></div>
+        </div>
+      </div>
+      ${notes}
+    </div>
+    <div class="portal-download-actions">
+      ${d.url?`<a class="primary download-cta" href="${esc(d.url)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>${tr('download')}</span></a>`:''}
+      <a class="secondary" href="./patch-notes.html">패치노트</a>
+    </div>
+  </div>`;
 }
 function listenDownload(){ if(!$('downloadBox')) return; listenDoc('downloads','latest',renderDownload); }
+function renderHomeUpdates(rows, err){
+  const box=$('homeUpdates'); if(!box) return;
+  if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
+  if(!rows?.length){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  box.innerHTML=`<div class="home-updates-list">${rows.map(x=>`<a class="home-update-item" href="./notice.html?id=${encodeURIComponent(x.id)}"><span class="home-update-tag">${x.pinned?'공지':'소식'}</span><b>${esc(x.title)}</b><em>${esc(fmtListDate(x.createdAt))}</em></a>`).join('')}</div>`;
+}
+function renderHomePatches(rows, err){
+  const box=$('homePatches'); if(!box) return;
+  if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
+  if(!rows?.length){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  box.innerHTML=`<div class="home-updates-list">${rows.map(x=>`<a class="home-update-item" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><span class="home-update-tag is-patch">${x.version?`v${esc(x.version)}`:'패치'}</span><b>${esc(x.title)}</b><em>${esc(fmtListDate(x.createdAt))}</em></a>`).join('')}</div>`;
+}
+async function initHomePage(){
+  if(!db) return;
+  const updatesBox=$('homeUpdates');
+  const patchesBox=$('homePatches');
+  if(updatesBox){
+    try{
+      const {collection,query,where,orderBy,getDocs,limit}=firestoreApi;
+      const q=query(collection(db,'announcements'),where('visible','==',true),orderBy('createdAt','desc'),limit(4));
+      const snap=await getDocs(q);
+      renderHomeUpdates(snap.docs.map(d=>({id:d.id,...d.data()})));
+    }catch(e){
+      try{
+        const {collection,query,where,getDocs}=firestoreApi;
+        const snap=await getDocs(query(collection(db,'announcements'),where('visible','==',true)));
+        const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.pinned===true)-(a.pinned===true)||((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0))).slice(0,4);
+        renderHomeUpdates(rows);
+      }catch(e2){ renderHomeUpdates([],e2); }
+    }
+  }
+  if(patchesBox){
+    try{
+      const {collection,query,where,orderBy,getDocs,limit}=firestoreApi;
+      const q=query(collection(db,'patchNotes'),where('visible','==',true),orderBy('createdAt','desc'),limit(4));
+      const snap=await getDocs(q);
+      renderHomePatches(snap.docs.map(d=>({id:d.id,...d.data()})));
+    }catch(e){
+      try{
+        const {collection,query,where,getDocs}=firestoreApi;
+        const snap=await getDocs(query(collection(db,'patchNotes'),where('visible','==',true)));
+        const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,4);
+        renderHomePatches(rows);
+      }catch(e2){ renderHomePatches([],e2); }
+    }
+  }
+}
 function renderAnnouncements(rows, err){
   const list=$('announcementList'); if(!list)return;
   if(err){ list.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>(b.pinned===true)-(a.pinned===true)||((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
-  list.innerHTML=`<div class="hub-list-head hub-notice-head"><span>날짜</span><span>제목</span><span>미리보기</span></div><div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./notice.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-date">${x.pinned?'📌 ':''}${fmtDate(x.createdAt)}</div><div class="hub-col-title"><b>${esc(x.title)}</b></div><div class="hub-col-preview">${nl2br(String(x.content||'').slice(0,120))}</div></a>`).join('')}</div>`;
+  let normalNo=rows.filter(x=>!x.pinned).length;
+  list.innerHTML=`<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div><div class="hub-list-body">${rows.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">공지</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div><div class="hub-col-author">${esc(noticeAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
   bindSearch(list);
 }
 function listenAnnouncements(){ if($('announcementList')) listenVisibleDocs('announcements',renderAnnouncements); }
@@ -566,51 +749,271 @@ function renderNoticeDetail(d,err){
   const box=$('noticeDetail'); if(!box)return;
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">← 목록</a></div><div class="post-card-head"><div class="post-kicker">공지사항</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>작성일</em><b>${fmtDate(d.createdAt)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div></article>`;
+  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">← 목록</a></div><div class="post-card-head"><div class="post-kicker">공지사항</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>글쓴이</em><b>${esc(noticeAuthor(d))}</b></span><span><em>작성일</em><b>${fmtDate(d.createdAt)}</b></span><span><em>조회</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div></article>`;
 }
-function listenNoticeDetail(){ const box=$('noticeDetail'); if(!box)return; const id=getParam('id'); if(!id){box.innerHTML=`<p class="muted">${tr('empty')}</p>`;return} listenDoc('announcements',id,renderNoticeDetail); }
+async function incrementNoticeViewOnce(id){
+  const key='midiai_notice_view_'+id;
+  if(sessionStorage.getItem(key))return;
+  sessionStorage.setItem(key,'1');
+  try{ const {doc,updateDoc,increment}=firestoreApi; await updateDoc(doc(db,'announcements',id),{viewCount:increment(1)}); }catch(e){ console.warn('notice view increment failed',e); }
+}
+function listenNoticeDetail(){ const box=$('noticeDetail'); if(!box)return; const id=getParam('id'); if(!id){box.innerHTML=`<p class="muted">${tr('empty')}</p>`;return} incrementNoticeViewOnce(id); listenDoc('announcements',id,renderNoticeDetail); }
 function renderPatchNotes(rows,err){
   const list=$('patchList'); if(!list)return;
   if(err){ list.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-  list.innerHTML=rows.map(x=>`<article class="timeline-item" data-version="${esc(x.version||'')}"><div class="date">${fmtDate(x.createdAt)}</div><h3>${x.version?`<span class="badge active">v${esc(x.version)}</span> `:''}${esc(x.title)}</h3><div class="content">${nl2br(x.content)}</div></article>`).join('');
+  let no=rows.length;
+  list.innerHTML=`<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div><div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${x.version?`<span class="badge active">v${esc(x.version)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div><div class="hub-col-author">${esc(noticeAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`).join('')}</div>`;
+  bindSearch(list);
 }
 function listenPatchNotes(){ if($('patchList')) listenVisibleDocs('patchNotes',renderPatchNotes); }
+let patchNotesIndex = [];
+async function loadPatchNotesIndex(){
+  if(patchNotesIndex.length || !db) return patchNotesIndex;
+  try{
+    const {collection,getDocs,query,where}=firestoreApi;
+    const q=query(collection(db,'patchNotes'), where('visible','==',true));
+    const snap=await getDocs(q);
+    patchNotesIndex=snap.docs.map(doc=>({id:doc.id,...doc.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  }catch(e){ console.warn('patch index load failed',e); }
+  return patchNotesIndex;
+}
+function patchNeighbors(id){
+  const idx=patchNotesIndex.findIndex(p=>p.id===id);
+  if(idx<0) return { prev:null, next:null };
+  return { prev: idx>0 ? patchNotesIndex[idx-1] : null, next: idx<patchNotesIndex.length-1 ? patchNotesIndex[idx+1] : null };
+}
+function renderPatchDetail(d,err){
+  const box=$('patchDetail'); if(!box)return;
+  if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
+  if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  const nav=patchNeighbors(d.id);
+  box.innerHTML = patchDetailHtml({...d,id:d.id}, nav);
+  bindPatchDetailActions(box);
+}
+async function incrementPatchViewOnce(id){
+  const key='midiai_patch_view_'+id;
+  if(sessionStorage.getItem(key))return;
+  sessionStorage.setItem(key,'1');
+  try{ const {doc,updateDoc,increment}=firestoreApi; await updateDoc(doc(db,'patchNotes',id),{viewCount:increment(1)}); }catch(e){ console.warn('patch view increment failed',e); }
+}
+function listenPatchDetail(){
+  const box=$('patchDetail'); if(!box)return;
+  const id=getParam('id');
+  if(!id){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  incrementPatchViewOnce(id);
+  loadPatchNotesIndex().then(()=>listenDoc('patchNotes',id,renderPatchDetail));
+}
 function renderFaq(rows,err){
   const list=$('faqList'); if(!list)return;
   if(err){ list.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>Number(a.order||999)-Number(b.order||999));
-  list.innerHTML=rows.map(x=>`<details class="faq-item"><summary><h3>${esc(x.question)}</h3></summary><div class="content">${nl2br(x.answer)}</div></details>`).join('');
+  list.innerHTML=rows.map(x=>`<article class="faq-item"><h3>${esc(x.question)}</h3><div class="content">${nl2br(x.answer)}</div></article>`).join('');
 }
 function listenFaq(){ if($('faqList')) listenVisibleDocs('faq',renderFaq,'order','asc'); }
 function bindSearch(list){ const input=$('boardSearch'); if(!input || input.dataset.bound) return; input.dataset.bound='1'; input.addEventListener('input',()=>{ const q=input.value.trim().toLowerCase(); list.querySelectorAll('.hub-list-row, .list-item').forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q)?'':'none'}); }); }
 
+const TICKET_CATEGORIES=[
+  {value:'login',label:'로그인/계정'},
+  {value:'license',label:'라이선스'},
+  {value:'payment',label:'결제/환불'},
+  {value:'bug',label:'오류/버그'},
+  {value:'feature',label:'기능 문의'},
+  {value:'other',label:'기타'},
+];
+function ticketCategoryLabel(v){ return TICKET_CATEGORIES.find(x=>x.value===v)?.label||'기타'; }
+function ticketOsLabel(v){ return ({windows11:'Windows 11',windows10:'Windows 10',other:'기타'})[v]||''; }
+
+const TICKET_MAX_ATTACHMENTS = 5;
+const TICKET_MAX_FILE_SIZE = 20 * 1024 * 1024;
+const TICKET_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm)|application\/pdf|text\/(plain|csv|log)|application\/(zip|x-zip-compressed))$/i;
+let selectedTicketFiles = [];
+
+function ticketFileType(fileOrAttachment){
+  const mime = String(fileOrAttachment?.type || fileOrAttachment?.mime || '');
+  if(mime.startsWith('video/')) return 'video';
+  if(mime.startsWith('image/')) return 'image';
+  return 'file';
+}
+function ticketFileIcon(type){ return ({video:'🎥',image:'🖼️',file:'📎'})[type] || '📎'; }
+function ticketAttachmentBadge(type){
+  return ({video:'영상',image:'사진',file:'파일'})[type] || '파일';
+}
+function ticketAttachmentItemHtml(a, idx, editable=false){
+  const type = ticketFileType(a);
+  const name = esc(a.name || a.fileName || 'attachment');
+  const url = esc(a.url || '');
+  const badge = ticketFileIcon(type) + ' ' + ticketAttachmentBadge(type);
+  const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-ticket-attachment="${idx}">삭제</button>` : '';
+  const media = type === 'video'
+    ? `<video controls preload="metadata" src="${url}"></video>`
+    : type === 'image'
+    ? `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`
+    : `<div class="ticket-attachment-file"><a href="${url}" target="_blank" rel="noopener noreferrer" download><span>📎</span><b>${name}</b></a></div>`;
+  return `<figure class="board-attachment-item board-attachment-${type}">${media}<figcaption><span>${badge}</span><b>${name}</b>${remove}</figcaption></figure>`;
+}
+function ticketAttachmentsHtml(list){
+  const arr = Array.isArray(list) ? list.filter(x=>x && x.url) : [];
+  if(!arr.length) return '';
+  return `<div class="board-attachments ticket-attachments">${arr.map((a,i)=>ticketAttachmentItemHtml(a,i,false)).join('')}</div>`;
+}
+function renderTicketAttachmentPreview(){
+  const box = $('ticketAttachmentPreview');
+  if(!box) return;
+  const fresh = selectedTicketFiles.map((file,i)=>{
+    const type = ticketFileType(file);
+    return `<div class="board-file-chip"><span>${ticketFileIcon(type)}</span><b>${esc(file.name)}</b><small>${Math.max(1, Math.ceil(file.size/1024/1024))}MB</small><button type="button" class="secondary mini-btn danger-btn" data-remove-new-ticket-attachment="${i}">삭제</button></div>`;
+  }).join('');
+  box.innerHTML = fresh ? `<div class="board-file-chip-list">${fresh}</div>` : '<p class="muted">첨부한 파일이 없습니다.</p>';
+  box.querySelectorAll('[data-remove-new-ticket-attachment]').forEach(btn=>btn.onclick=()=>{
+    selectedTicketFiles.splice(Number(btn.dataset.removeNewTicketAttachment),1);
+    const input = $('ticketAttachments');
+    if(input) input.value = '';
+    renderTicketAttachmentPreview();
+  });
+}
+function showTicketAttachmentMsg(text){
+  const el = $('ticketFormMsg');
+  if(el){ el.textContent = text; el.style.color = '#ff9aac'; }
+}
+function addTicketFiles(files){
+  const incoming = Array.from(files || []);
+  for(const file of incoming){
+    if(!TICKET_ALLOWED_MIME.test(file.type || '')){ showTicketAttachmentMsg('지원하지 않는 파일 형식입니다. 이미지/영상/PDF/TXT/CSV/LOG/ZIP만 업로드할 수 있어요.'); continue; }
+    if(file.size > TICKET_MAX_FILE_SIZE){ showTicketAttachmentMsg('파일당 최대 20MB까지 업로드할 수 있어요.'); continue; }
+    if(selectedTicketFiles.length >= TICKET_MAX_ATTACHMENTS){ showTicketAttachmentMsg('문의당 첨부는 최대 5개까지 가능합니다.'); break; }
+    selectedTicketFiles.push(file);
+  }
+  renderTicketAttachmentPreview();
+}
+function bindTicketAttachmentPicker(){
+  const input = $('ticketAttachments');
+  const drop = qs('.support-upload-box');
+  if(input && !input.dataset.bound){
+    input.dataset.bound = '1';
+    input.addEventListener('change', ()=>addTicketFiles(input.files));
+  }
+  if(drop && !drop.dataset.bound){
+    drop.dataset.bound = '1';
+    ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('dragover'); }));
+    drop.addEventListener('drop', e=>addTicketFiles(e.dataTransfer?.files));
+  }
+  renderTicketAttachmentPreview();
+}
+function resetTicketAttachments(){
+  selectedTicketFiles = [];
+  const input = $('ticketAttachments');
+  if(input) input.value = '';
+  renderTicketAttachmentPreview();
+}
+async function uploadTicketAttachments(ticketId){
+  if(!selectedTicketFiles.length) return [];
+  if(!storage || !storageApi?.ref) throw new Error('Firebase Storage 초기화에 실패했습니다.');
+  const {ref, uploadBytes, getDownloadURL} = storageApi;
+  const uploaded = [];
+  for(let i=0;i<selectedTicketFiles.length;i++){
+    const file = selectedTicketFiles[i];
+    showFormMsg(`첨부파일 업로드 중... ${i+1}/${selectedTicketFiles.length}`, true);
+    const safeName = boardSafeFilename(file.name);
+    const path = `support/${currentUser.uid}/${ticketId}/${Date.now()}_${i}_${safeName}`;
+    const fileRef = ref(storage, path);
+    await uploadBytes(fileRef, file, { contentType: file.type });
+    const url = await getDownloadURL(fileRef);
+    uploaded.push({ type: ticketFileType(file), mime: file.type, name: file.name, size: file.size, path, url });
+  }
+  return uploaded;
+}
+
+function updateSupportFormUi(){
+  if(page!=='support.html') return;
+  const gate=$('supportLoginGate');
+  const form=$('ticketForm');
+  const account=$('supportAccount');
+  const loginBtn=$('supportLoginBtn');
+  if(!form) return;
+  const fields=form.querySelectorAll('input,textarea,select,button[type=submit]');
+  if(!currentUser){
+    gate?.classList.remove('hidden');
+    account?.classList.add('hidden');
+    form.classList.add('is-disabled');
+    fields.forEach(el=>{ el.disabled=true; });
+    resetTicketAttachments();
+    if(loginBtn && !loginBtn.dataset.bound){
+      loginBtn.dataset.bound='1';
+      loginBtn.addEventListener('click',()=>$('loginBtn')?.click());
+    }
+    return;
+  }
+  gate?.classList.add('hidden');
+  account?.classList.remove('hidden');
+  form.classList.remove('is-disabled');
+  fields.forEach(el=>{
+    if(el.id==='ticketEmail'){ el.value=currentUser.email||''; el.disabled=true; return; }
+    el.disabled=false;
+  });
+  if($('supportAccountName')) $('supportAccountName').textContent=currentUser.displayName||'Google User';
+  if($('supportAccountEmail')) $('supportAccountEmail').textContent=currentUser.email||'';
+  bindTicketAttachmentPicker();
+}
+
 async function createTicket(e){
   e.preventDefault();
   if(!currentUser){ showFormMsg('need_login',false); return; }
-  const title=$('ticketTitle').value.trim(), content=$('ticketContent').value.trim();
+  if(!$('ticketPrivacy')?.checked){ showFormMsg('privacy_required',false); return; }
+  const title=$('ticketTitle').value.trim();
+  const content=$('ticketContent').value.trim();
+  const category=$('ticketCategory')?.value||'other';
+  const appVersion=$('ticketAppVersion')?.value?.trim()||'';
+  const os=$('ticketOs')?.value||'';
   if(!title||!content)return;
+  const form = $('ticketForm');
+  const submitBtn = form?.querySelector('button[type=submit]');
+  if(submitBtn) submitBtn.disabled = true;
   try{
-    const {collection,addDoc,serverTimestamp}=firestoreApi;
-    await addDoc(collection(db,'supportTickets'),{uid:currentUser.uid,email:currentUser.email||'',title,content,status:'open',private:true,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
-    $('ticketTitle').value=''; $('ticketContent').value='';
+    const {collection,addDoc,doc,updateDoc,serverTimestamp}=firestoreApi;
+    const ref = await addDoc(collection(db,'supportTickets'),{
+      uid:currentUser.uid,
+      email:currentUser.email||'',
+      displayName:currentUser.displayName||'',
+      category,appVersion,os,
+      title,content,status:'open',private:true,attachments:[],
+      createdAt:serverTimestamp(),updatedAt:serverTimestamp()
+    });
+    const uploaded = await uploadTicketAttachments(ref.id);
+    if(uploaded.length){
+      await updateDoc(doc(db,'supportTickets',ref.id),{attachments:uploaded,updatedAt:serverTimestamp()});
+    }
+    $('ticketTitle').value='';
+    $('ticketContent').value='';
+    if($('ticketAppVersion')) $('ticketAppVersion').value='';
+    if($('ticketOs')) $('ticketOs').value='';
+    if($('ticketPrivacy')) $('ticketPrivacy').checked=false;
+    resetTicketAttachments();
     showFormMsg('ticket_created',true);
     setTimeout(()=>location.href='./my-tickets.html',700);
   } catch(e){ console.error(e); showFormMsg(e.message || 'check_failed',false); }
+  finally{ if(submitBtn) submitBtn.disabled = !currentUser; }
 }
 function showFormMsg(key,ok=true){ const el=$('ticketFormMsg'); if(el){ el.textContent=tr(key)===key?key:tr(key); el.style.color=ok?'#8ff3c5':'#ff9aac'; } }
 function statusBadge(st){ const key=st==='answered'?'answered':st==='closed'?'closed':'open'; return `<span class="badge ${esc(st||'open')}">${tr(key)}</span>`; }
 function ticketShell(t, detail=false, admin=false){
   const canManage = admin || detail;
+  const metaExtra=[
+    t.category?`<span><em>유형</em><b>${esc(ticketCategoryLabel(t.category))}</b></span>`:'',
+    t.appVersion?`<span><em>버전</em><b>${esc(t.appVersion)}</b></span>`:'',
+    t.os?`<span><em>OS</em><b>${esc(ticketOsLabel(t.os))}</b></span>`:'',
+    t.email?`<span><em>이메일</em><b>${esc(t.email)}</b></span>`:'',
+  ].join('');
   if(detail){
     const form=(admin||detail)?`<form class="reply-form hub-reply-form" data-ticket="${esc(t.id)}"><input placeholder="${esc(tr('reply_placeholder'))}" required><button class="primary" type="submit">${tr('submit')}</button></form>`:'';
     const actions=canManage?`<div class="post-actions hub-post-actions"><button class="secondary mini-btn" data-ticket-edit="${esc(t.id)}">${tr('edit')}</button><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div>`:'';
-    return `<article class="hub-post-detail"><div class="post-card-head"><div class="post-kicker">1:1 문의</div><h1>${esc(t.title||'')}</h1><div class="post-meta-grid"><span>${statusBadge(t.status)}</span><span><em>작성일</em><b>${esc(fmtShortDate(t.createdAt))}</b></span></div></div><div class="post-body-content hub-post-body">${nl2br(t.content||'')}</div>${actions}<section class="hub-replies-panel"><h3>답변</h3><div class="ticket-replies hub-reply-list" data-replies="${esc(t.id)}"></div>${form}</section></article>`;
+    return `<article class="hub-post-detail"><div class="post-card-head"><div class="post-kicker">1:1 문의</div><h1>${esc(t.title||'')}</h1><div class="post-meta-grid"><span>${statusBadge(t.status)}</span><span><em>작성일</em><b>${esc(fmtShortDate(t.createdAt))}</b></span>${metaExtra}</div></div><div class="post-body-content hub-post-body">${nl2br(t.content||'')}</div>${ticketAttachmentsHtml(t.attachments)}${actions}<section class="hub-replies-panel"><h3>답변</h3><div class="ticket-replies hub-reply-list" data-replies="${esc(t.id)}"></div>${form}</section></article>`;
   }
   const href=`./ticket.html?id=${encodeURIComponent(t.id)}`;
-  return `<a class="hub-list-row hub-ticket-row" href="${href}"><div class="hub-col-title"><b>${esc(t.title||'(제목 없음)')}</b><small>${esc(String(t.content||'').slice(0,90))}</small></div><div class="hub-col-badge">${statusBadge(t.status)}</div><div class="hub-col-date">${esc(fmtShortDate(t.createdAt))}</div></a>`;
+  return `<a class="hub-list-row hub-ticket-row" href="${href}"><div class="hub-col-title"><b>${esc(t.title||'(제목 없음)')}</b></div><div class="hub-col-cat">${esc(ticketCategoryLabel(t.category))}</div><div class="hub-col-badge">${statusBadge(t.status)}</div><div class="hub-col-date">${esc(fmtListDate(t.createdAt))}</div></a>`;
 }
 function listenReplies(ticketId, container){
   const {collection,query,orderBy,onSnapshot}=firestoreApi;
@@ -743,7 +1146,7 @@ function listenMyTickets(){
   addUnsub(onSnapshot(q, snap=>{
     const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
     if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-    list.innerHTML=`<div class="hub-list-head hub-ticket-head"><span>제목</span><span>상태</span><span>작성일</span></div><div class="hub-list-body">${rows.map(t=>ticketShell(t,false,false)).join('')}</div>`;
+    list.innerHTML=`<div class="hub-list-head hub-ticket-head"><span>제목</span><span>유형</span><span>상태</span><span>작성일</span></div><div class="hub-list-body">${rows.map(t=>ticketShell(t,false,false)).join('')}</div>`;
     bindTicketActions(list);
   }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
@@ -815,10 +1218,10 @@ function renderAdminPostTable(kind){
 }
 function renderAdminTicketTable(){
   const box=$('adminTicketList'); if(!box||!isAdminUser)return;
-  const rows=filterRows(adminTicketRows,'adminTicketSearch','adminTicketStatus',['title','content','email','uid']).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
+  const rows=filterRows(adminTicketRows,'adminTicketSearch','adminTicketStatus',['title','content','email','uid','category']).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
   $('adminTicketCount') && ($('adminTicketCount').textContent = `${rows.length} / ${adminTicketRows.length}`);
   if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  box.innerHTML = `<table class="admin-table"><thead><tr><th>제목</th><th>사용자</th><th>상태</th><th>수정일</th><th>관리</th></tr></thead><tbody>${rows.map(t=>`<tr><td><b>${esc(t.title||'-')}</b><small>${esc((t.content||'').slice(0,80))}${(t.content||'').length>80?'...':''}</small></td><td><span class="mono">${esc(t.email||t.uid||'')}</span></td><td>${statusPill(t)}</td><td>${esc(fmtDate(t.updatedAt||t.createdAt))}</td><td><div class="table-actions"><a class="secondary mini-btn" href="./ticket.html?id=${encodeURIComponent(t.id)}">상세/답변</a><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div></td></tr>`).join('')}</tbody></table>`;
+  box.innerHTML = `<table class="admin-table"><thead><tr><th>제목</th><th>유형</th><th>사용자</th><th>상태</th><th>수정일</th><th>관리</th></tr></thead><tbody>${rows.map(t=>`<tr><td><b>${esc(t.title||'-')}</b><small>${esc((t.content||'').slice(0,80))}${(t.content||'').length>80?'...':''}</small></td><td>${esc(ticketCategoryLabel(t.category))}</td><td><span class="mono">${esc(t.email||t.uid||'')}</span></td><td>${statusPill(t)}</td><td>${esc(fmtDate(t.updatedAt||t.createdAt))}</td><td><div class="table-actions"><a class="secondary mini-btn" href="./ticket.html?id=${encodeURIComponent(t.id)}">상세/답변</a><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div></td></tr>`).join('')}</tbody></table>`;
   bindTicketActions(box);
 }
 function bindAdminPostActions(root=document){
@@ -989,19 +1392,13 @@ function boardEmail(){ return currentUser?.email || ''; }
 function boardPostUrl(id){ return `./board-post.html?id=${encodeURIComponent(id)}`; }
 function boardEditUrl(id){ return `./board-write.html?id=${encodeURIComponent(id)}`; }
 function boardFilteredSorted(rows){
-  const q=($('boardPostSearch')?.value||'').trim().toLowerCase();
-  const sort=$('boardSort')?.value||'latest';
+  const q=($('boardSearch')?.value||'').trim().toLowerCase();
   let out=rows.filter(x=>x.visible!==false && x.deleted!==true).filter(x=>{
     const hay=[x.title,x.content,x.displayName,x.email].join(' ').toLowerCase();
     return !q || hay.includes(q);
   });
   const time=x=>x.createdAt?.seconds||0;
-  out.sort((a,b)=> (b.pinned===true)-(a.pinned===true) || (
-    sort==='views' ? ((b.viewCount||0)-(a.viewCount||0)) :
-    sort==='likes' ? ((b.likeCount||0)-(a.likeCount||0)) :
-    sort==='comments' ? ((b.commentCount||0)-(a.commentCount||0)) :
-    (time(b)-time(a))
-  ));
+  out.sort((a,b)=>(b.pinned===true)-(a.pinned===true) || (time(b)-time(a)));
   return out;
 }
 function renderBoardPosts(rows, err){
@@ -1009,25 +1406,23 @@ function renderBoardPosts(rows, err){
   if(err){ box.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   const list=boardFilteredSorted(rows||[]);
   if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  box.innerHTML=`<div class="hub-list-head"><span>제목</span><span>작성자</span><span>조회</span><span>추천</span><span>댓글</span><span>작성일</span></div><div class="hub-list-body">${list.map(x=>`<a class="hub-list-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}"><div class="hub-col-title"><b>${x.pinned?'📌 ':''}${esc(x.title||'(제목 없음)')}</b><small>${esc(String(x.content||'').slice(0,80))}</small></div><div class="hub-col-author">${esc(x.displayName||x.email||'-')}</div><div>${Number(x.viewCount||0)}</div><div>${Number(x.likeCount||0)}</div><div>${Number(x.commentCount||0)}</div><div class="hub-col-date">${esc(fmtDate(x.createdAt))}</div></a>`).join('')}</div>`;
+  let normalNo=list.filter(x=>!x.pinned).length;
+  box.innerHTML=`<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div><div class="hub-list-body">${list.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">공지</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||'(제목 없음)')}</span></b></div><div class="hub-col-author">${esc(x.displayName||x.email||'-')}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
+  bindSearch(box);
 }
 function listenBoardPosts(){
-  const box=$('boardPostList'); if(!box)return;
-  const {collection,onSnapshot,query,where,getDocs}=firestoreApi;
-  const render=(rows,err)=>renderBoardPosts(rows,err);
-  const q=query(collection(db,'boardPosts'), where('visible','==',true));
-  addUnsub(onSnapshot(q, snap=>render(snap.docs.map(d=>({id:d.id,...d.data()}))), async err=>{
-    console.warn('board realtime failed',err);
-    try{ const s=await getDocs(q); render(s.docs.map(d=>({id:d.id,...d.data()}))); }catch(e){ render([],e); }
-  }));
-  ['boardPostSearch','boardSort'].forEach(id=>{ const el=$(id); if(el&&!el.dataset.bound){ el.dataset.bound='1'; el.addEventListener('input',()=>renderBoardPosts(window.__boardRows||[])); el.addEventListener('change',()=>renderBoardPosts(window.__boardRows||[])); }});
-  const old=renderBoardPosts;
-  window.__boardRows=[];
-  // small wrapper to keep rows for client-side filters
-  clearUnsubs();
-  if(['index.html','downloads.html','purchase.html',''].includes(page)) listenDownload();
-  const q2=query(collection(db,'boardPosts'), where('visible','==',true));
-  addUnsub(onSnapshot(q2, snap=>{ window.__boardRows=snap.docs.map(d=>({id:d.id,...d.data()})); old(window.__boardRows); }, err=>old([],err)));
+  if(!$('boardPostList')) return;
+  const search=$('boardSearch');
+  if(search && !search.dataset.boardBound){
+    search.dataset.boardBound='1';
+    search.addEventListener('input',()=>{
+      if(window.__boardRows) renderBoardPosts(window.__boardRows);
+    });
+  }
+  listenVisibleDocs('boardPosts',(rows,err)=>{
+    window.__boardRows=rows||[];
+    renderBoardPosts(window.__boardRows,err);
+  });
 }
 
 const BOARD_MAX_ATTACHMENTS = 5;
@@ -1306,7 +1701,7 @@ function initForms(){
   $('adminNoticeForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     try{
-      const id=await adminAdd('announcements',{title:$('adminNoticeTitle').value.trim(),content:$('adminNoticeContent').value.trim(),pinned:$('adminNoticePinned').checked});
+      const id=await adminAdd('announcements',{title:$('adminNoticeTitle').value.trim(),content:$('adminNoticeContent').value.trim(),pinned:$('adminNoticePinned').checked,viewCount:0,displayName:currentUser?.displayName||'MidiAI Studio',email:currentUser?.email||''});
       e.target.reset();
       if(id) adminFlash(`${tr('saved')} · <a href="./notice.html?id=${encodeURIComponent(id)}">상세 보기</a> · <a href="./notices.html">공지사항 목록</a>`);
     }catch(err){ alert(err.message); }
@@ -1314,9 +1709,9 @@ function initForms(){
   $('adminPatchForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     try{
-      const id=await adminAdd('patchNotes',{version:$('adminPatchVersion').value.trim(),title:$('adminPatchTitle').value.trim(),content:$('adminPatchContent').value.trim()});
+      const id=await adminAdd('patchNotes',{version:$('adminPatchVersion').value.trim(),title:$('adminPatchTitle').value.trim(),content:$('adminPatchContent').value.trim(),viewCount:0,displayName:currentUser?.displayName||'MidiAI Studio',email:currentUser?.email||''});
       e.target.reset();
-      if(id) adminFlash(`${tr('saved')} · <a href="./patch-notes.html">패치노트 확인</a>`);
+      if(id) adminFlash(`${tr('saved')} · <a href="./patch-note.html?id=${encodeURIComponent(id)}">상세 보기</a> · <a href="./patch-notes.html">패치노트 목록</a>`);
     }catch(err){ alert(err.message); }
   });
   $('adminFaqForm')?.addEventListener('submit',async e=>{
@@ -1485,17 +1880,100 @@ $('langBtn') && ($('langBtn').onclick=()=>{
   lang = lang==='ko' ? 'en' : lang==='en' ? 'ja' : 'ko';
   applyStaticI18n();
 });
-$('menuBtn')?.addEventListener('click',()=>$('mainNav')?.classList.toggle('open'));
+const SIDEBAR_ICONS={
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg>',
+  download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>',
+  product:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 8h8"/><path d="M8 12h5"/></svg>',
+  purchase:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h15l-1.5 9H7.5L6 6z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>',
+  notice:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a8 8 0 0 1 16 0v5l2 2H2l2-2z"/><path d="M10 21h4"/></svg>',
+  patch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>',
+  faq:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.2 1.8c0 1.8-2.2 2-2.2 3.7"/><circle cx="12" cy="17" r=".8" fill="currentColor" stroke="none"/></svg>',
+  board:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  support:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v11a2 2 0 0 1-2 2H8l-4 3V6z"/><path d="m8 10 2 2 4-4"/></svg>',
+  tickets:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16v4H4z"/><path d="M6 11v7"/><path d="M18 11v7"/><path d="M8 7V5h8v2"/></svg>',
+  account:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>',
+  admin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7v6c0 5 3.4 8.7 8 9 4.6-.3 8-4 8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>',
+};
+function navIcon(name){ return `<span class="nav-icon is-${name}" aria-hidden="true">${SIDEBAR_ICONS[name]||''}</span>`; }
+function initSidebarLayout(){
+  if(document.querySelector('.app-shell')) return;
+  const topbar=document.querySelector('.topbar');
+  const main=document.querySelector('main');
+  if(!topbar||!main) return;
+  const footer=document.querySelector('footer');
+  const base=window.MIDIAI_BASE_PATH||'./';
+  const brand=topbar.querySelector('.brand');
+  const shell=document.createElement('div');
+  shell.className='app-shell';
+  const sidebar=document.createElement('aside');
+  sidebar.className='sidebar';
+  sidebar.id='sidebar';
+  if(brand){
+    const brandClone=brand.cloneNode(true);
+    brandClone.classList.add('sidebar-brand');
+    sidebar.appendChild(brandClone);
+  }
+  const nav=document.createElement('nav');
+  nav.id='mainNav';
+  nav.className='sidebar-nav';
+  nav.setAttribute('aria-label','사이트 메뉴');
+  nav.innerHTML=`<div class="sidebar-primary"><a href="${base}index.html" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${base}purchase.html" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
+  sidebar.appendChild(nav);
+  const backdrop=document.createElement('div');
+  backdrop.className='sidebar-backdrop';
+  backdrop.id='sidebarBackdrop';
+  const appMain=document.createElement('div');
+  appMain.className='app-main';
+  topbar.classList.add('topbar-slim');
+  topbar.querySelector('.brand')?.remove();
+  topbar.querySelector('#mainNav')?.remove();
+  const pageTitle=(document.title||'MidiAI Studio').split(' - ')[0].trim()||'MidiAI Studio';
+  const topbarPage=document.createElement('div');
+  topbarPage.className='topbar-page';
+  topbarPage.textContent=pageTitle;
+  const actions=topbar.querySelector('.actions');
+  if(actions) topbar.insertBefore(topbarPage, actions);
+  else topbar.appendChild(topbarPage);
+  topbar.parentNode.insertBefore(shell, topbar);
+  shell.appendChild(sidebar);
+  appMain.appendChild(topbar);
+  appMain.appendChild(main);
+  if(footer) appMain.appendChild(footer);
+  shell.appendChild(appMain);
+  shell.appendChild(backdrop);
+  document.body.classList.add('sidebar-layout');
+}
+function bindSidebar(){
+  const close=()=>{
+    $('sidebar')?.classList.remove('open');
+    $('sidebarBackdrop')?.classList.remove('open');
+    document.body.classList.remove('sidebar-open');
+  };
+  $('menuBtn')?.addEventListener('click',()=>{
+    $('sidebar')?.classList.toggle('open');
+    $('sidebarBackdrop')?.classList.toggle('open');
+    document.body.classList.toggle('sidebar-open');
+  });
+  $('sidebarBackdrop')?.addEventListener('click',close);
+  document.querySelectorAll('#mainNav a').forEach(a=>a.addEventListener('click',()=>{ if(window.matchMedia('(max-width:980px)').matches) close(); }));
+}
+function initSidebarNav(){
+  const parentPage={'notice.html':'notices.html','patch-note.html':'patch-notes.html','board-post.html':'board.html','board-write.html':'board.html','ticket.html':'my-tickets.html'};
+  const file=parentPage[page]||page||'index.html';
+  document.querySelectorAll('#mainNav a[href]').forEach(a=>{
+    const href=a.getAttribute('href')||'';
+    const target=href.split('/').pop()?.split('?')[0]||'';
+    a.classList.toggle('active', target===file);
+  });
+}
+
 showOAuthBrowserNotice();
 bindBoardLightbox();
+initSidebarLayout();
+bindSidebar();
 applyStaticI18n();
-initHubSubnav();
+initSidebarNav();
 setAuthUiSignedOut();
-function initHubSubnav(){
-  const map={'notices.html':'notices','notice.html':'notices','patch-notes.html':'patches','faq.html':'faq','board.html':'board','board-write.html':'board','board-post.html':'board','support.html':'support','my-tickets.html':'tickets','ticket.html':'tickets'};
-  const active=map[page];
-  document.querySelectorAll('.hub-subnav a[data-hub]').forEach(a=>a.classList.toggle('active', a.dataset.hub===active));
-}
 
 initForms();
 initAuth();

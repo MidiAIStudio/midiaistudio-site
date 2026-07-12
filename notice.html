@@ -8,18 +8,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v33-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v36-3">
 </head>
-<body class="hub-page">
+<body class="portal-page hub-page">
   <div class="orb orb-a"></div><div class="orb orb-b"></div>
   <header class="topbar">
     <a class="brand" href="./index.html"><img class="brand-symbol" src="./assets/images/symbol.png" alt="MidiAI Studio"><b>MidiAI Studio</b></a>
     <button id="menuBtn" class="menu-btn" aria-label="menu">☰</button>
     <nav id="mainNav">
-      <a href="./index.html">홈</a><a href="./downloads.html">다운로드</a><a href="./purchase.html">구매</a>
-      <a href="./notices.html" class="active">공지사항</a><a href="./patch-notes.html">패치노트</a><a href="./faq.html">FAQ</a>
-      <a href="./board.html">자유게시판</a><a href="./support.html">1:1 문의</a><a href="./my-tickets.html">나의 문의</a>
-      <a href="./account.html">내 계정</a><a id="adminNav" class="hidden" href="./admin.html">관리자</a>
+      <a href="./index.html" data-nav="home">홈</a><a href="./downloads.html" data-nav="downloads">다운로드</a><a href="./purchase.html" data-nav="purchase">구매</a>
+      <a href="./notices.html" data-nav="community">공지사항</a><a href="./patch-notes.html" data-nav="community">패치노트</a><a href="./faq.html" data-nav="community">FAQ</a>
+      <a href="./board.html" data-nav="community">자유게시판</a><a href="./support.html" data-nav="support">1:1 문의</a><a href="./my-tickets.html" data-nav="support">나의 문의</a>
+      <a href="./account.html" data-nav="account">내 계정</a><a id="adminNav" class="hidden" href="./admin.html">관리자</a>
     </nav>
     <div class="actions"><button id="langBtn" class="ghost">EN</button><button id="loginBtn" class="login"><span>G</span><em>Google 로그인</em></button><button id="logoutBtn" class="ghost hidden">로그아웃</button></div>
   </header>
@@ -39,7 +39,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio. All rights reserved.</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=v33-1"></script>
-  <script type="module" src="./assets/js/app.js?v=v33-1"></script>
+  <script type="module" src="./assets/js/config.js?v=v36-2"></script>
+  <script type="module" src="./assets/js/app.js?v=v36-3"></script>
 </body>
 </html>
