@@ -2811,7 +2811,7 @@ function renderKoreanPaymentButtons(){
         <span class="kakao-mark">pay</span><strong>${esc(t.kakaoButton || '카카오페이로 구매')}</strong>
       </button>
     </div>
-    <p class="muted small purchase-test-payment-note">카드 결제는 현재 PG·카드사 심사용 테스트 모드입니다.</p>`;
+    <p class="muted small purchase-test-payment-note">카카오페이와 카드결제는 현재 심사용 테스트 모드입니다.</p>`;
 }
 function initPayPal(){
   if(!$('paypalButtons')) return;
