@@ -1943,10 +1943,7 @@ const BOARD_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm)|a
 let selectedBoardFiles = [];
 let existingBoardAttachments = [];
 let midiPlayerLibPromise = null;
-let boardMidiSynths = [];
-let boardMidiPlayingUrl = null;
-let boardMidiActiveBtn = null;
-let boardMidiStopTimer = 0;
+const boardMidiPreviewCache = new Map();
 
 function isBoardMidi(fileOrAttachment){
   const mime = String(fileOrAttachment?.type || fileOrAttachment?.mime || '').toLowerCase();
@@ -1970,7 +1967,7 @@ function boardMidiContentType(file){
   return 'audio/midi';
 }
 function ensureMidiPlayerLib(){
-  if(window.Tone && window.Midi) return Promise.resolve();
+  if(window.Tone && getToneMidi()) return Promise.resolve();
   if(midiPlayerLibPromise) return midiPlayerLibPromise;
   midiPlayerLibPromise = new Promise((resolve, reject)=>{
     const fail = ()=>{ midiPlayerLibPromise=null; reject(new Error('MIDI 엔진 로드 실패')); };
@@ -2000,40 +1997,6 @@ function boardSafeFilename(name){
   const raw = String(name || 'attachment').normalize('NFKC');
   return raw.replace(/[\\/#?%*:|"<>]/g, '_').replace(/\s+/g, '_').slice(-90);
 }
-function boardAttachmentItemHtml(a, idx, editable=false){
-  const type = boardFileType(a);
-  const name = esc(a.name || a.fileName || 'attachment');
-  const url = esc(a.url || '');
-  const path = esc(a.path || boardStoragePathFromUrl(a.url) || '');
-  const badge = type === 'video' ? '🎥 영상' : type === 'midi' ? '🎹 MIDI' : '🖼️ 사진';
-  const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-existing-attachment="${idx}">삭제</button>` : '';
-  if(type === 'midi'){
-    return `<figure class="board-attachment-item board-attachment-midi">
-      <div class="board-midi-card">
-        <div class="board-midi-row">
-          <span class="board-midi-badge">🎹 MIDI</span>
-          <b class="board-midi-name" title="${name}">${name}</b>
-          ${editable?'':`<button type="button" class="board-midi-play-btn" data-midi-play="${url}" data-midi-path="${path}" aria-label="재생">▶</button>
-          <a class="board-midi-dl" href="${url}" target="_blank" rel="noopener noreferrer" download>다운로드</a>`}
-          ${remove}
-        </div>
-        <p class="board-midi-msg muted" hidden></p>
-      </div>
-    </figure>`;
-  }
-  let media = '';
-  if(type === 'video'){
-    media = `<video controls preload="metadata" src="${url}"></video>`;
-  } else {
-    media = `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`;
-  }
-  return `<figure class="board-attachment-item board-attachment-${type}">${media}<figcaption><span>${badge}</span><b>${name}</b>${remove}</figcaption></figure>`;
-}
-function boardAttachmentsHtml(list){
-  const arr = Array.isArray(list) ? list.filter(x=>x && x.url) : [];
-  if(!arr.length) return '';
-  return `<div class="board-attachments">${arr.map((a,i)=>boardAttachmentItemHtml(a,i,false)).join('')}</div>`;
-}
 function boardStoragePathFromUrl(url){
   try{
     const u = new URL(String(url||''));
@@ -2049,33 +2012,43 @@ function setBoardMidiMsg(card, text){
   msg.hidden=false;
   msg.textContent=text;
 }
-function stopBoardMidiPlayback(){
-  if(boardMidiStopTimer){ clearTimeout(boardMidiStopTimer); boardMidiStopTimer=0; }
-  try{
-    window.Tone?.Transport?.stop?.();
-    window.Tone?.Transport?.cancel?.(0);
-    if(window.Tone?.Transport) window.Tone.Transport.position = 0;
-  }catch(_){}
-  boardMidiSynths.forEach(s=>{
-    try{
-      s.releaseAll?.();
-      s.stop?.(0);
-      s.dispose?.();
-    }catch(_){}
-  });
-  boardMidiSynths=[];
-  if(boardMidiActiveBtn){
-    boardMidiActiveBtn.classList.remove('is-playing');
-    boardMidiActiveBtn.textContent='▶';
-    boardMidiActiveBtn.disabled=false;
-    setBoardMidiMsg(boardMidiActiveBtn.closest('.board-midi-card'),'');
+function audioBufferToWavBlob(audioBuffer){
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const samples = audioBuffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = numChannels * bytesPerSample;
+  const buffer = new ArrayBuffer(44 + samples * blockAlign);
+  const view = new DataView(buffer);
+  const writeStr = (offset, str)=>{ for(let i=0;i<str.length;i++) view.setUint8(offset+i, str.charCodeAt(i)); };
+  writeStr(0, 'RIFF');
+  view.setUint32(4, 36 + samples * blockAlign, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  view.setUint32(40, samples * blockAlign, true);
+  let offset = 44;
+  const channels = [];
+  for(let c=0;c<numChannels;c++) channels.push(audioBuffer.getChannelData(c));
+  for(let i=0;i<samples;i++){
+    for(let c=0;c<numChannels;c++){
+      let sample = Math.max(-1, Math.min(1, channels[c][i]));
+      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+      offset += 2;
+    }
   }
-  boardMidiPlayingUrl=null;
-  boardMidiActiveBtn=null;
+  return new Blob([buffer], { type: 'audio/wav' });
 }
 async function boardMidiBytes(path, url){
   const tryPath = path || boardStoragePathFromUrl(url);
-  const withTimeout = (p, ms=20000)=>Promise.race([
+  const withTimeout = (p, ms=25000)=>Promise.race([
     p,
     new Promise((_,rej)=>setTimeout(()=>rej(new Error('MIDI 로드 시간 초과')), ms))
   ]);
@@ -2097,85 +2070,105 @@ async function boardMidiBytes(path, url){
   if(!res.ok) throw new Error('HTTP '+res.status);
   return res.arrayBuffer();
 }
-async function playBoardMidiBuffer(arrayBuffer){
+async function renderMidiPreviewWav(midiArrayBuffer, maxSec=40){
+  await ensureMidiPlayerLib();
   const Tone = window.Tone;
   const MidiCtor = getToneMidi();
-  if(!Tone || !MidiCtor) throw new Error('MIDI 엔진 없음');
-  await Tone.start();
-  Tone.Transport.stop();
-  Tone.Transport.cancel(0);
-  Tone.Transport.position = 0;
-  // Browser "temp file" equivalent: keep bytes in memory as Blob/ArrayBuffer, then schedule playback.
-  const midi = new MidiCtor(arrayBuffer);
-  const synth = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.35 }
-  }).toDestination();
-  synth.maxPolyphony = 64;
-  synth.volume.value = -10;
-  const events = [];
-  midi.tracks.forEach(track=>{
-    track.notes.forEach(note=>{
-      events.push({
-        time: note.time,
-        name: note.name,
-        duration: Math.max(0.04, note.duration),
-        velocity: Math.max(0.12, Math.min(1, note.velocity))
+  if(!Tone?.Offline || !MidiCtor) throw new Error('미리듣기 엔진 없음');
+  const midi = new MidiCtor(midiArrayBuffer);
+  const dur = Math.min(Math.max(Number(midi.duration)||1, 0.5), maxSec);
+  const rendered = await Tone.Offline(() => {
+    const synth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.005, decay: 0.1, sustain: 0.25, release: 0.3 }
+    }).toDestination();
+    synth.maxPolyphony = 48;
+    synth.volume.value = -9;
+    midi.tracks.forEach(track=>{
+      track.notes.forEach(note=>{
+        if(note.time >= maxSec) return;
+        const len = Math.min(Math.max(0.04, note.duration), Math.max(0.04, maxSec - note.time));
+        try{ synth.triggerAttackRelease(note.name, len, note.time, Math.max(0.12, Math.min(1, note.velocity))); }catch(_){}
       });
     });
-  });
-  if(!events.length) throw new Error('재생할 노트가 없습니다.');
-  events.sort((a,b)=>a.time-b.time);
-  const part = new Tone.Part((time, value)=>{
-    try{ synth.triggerAttackRelease(value.name, value.duration, time, value.velocity); }catch(_){}
-  }, events.map(e=>[e.time, e]));
-  part.start(0);
-  boardMidiSynths = [part, synth];
-  Tone.Transport.start('+0.05');
-  return Number(midi.duration || events[events.length-1].time + events[events.length-1].duration || 0);
+  }, dur);
+  const audioBuffer = typeof rendered?.get === 'function' ? rendered.get() : rendered;
+  if(!audioBuffer || !audioBuffer.getChannelData) throw new Error('미리듣기 변환 실패');
+  return audioBufferToWavBlob(audioBuffer);
 }
-async function toggleBoardMidiPlay(btn){
-  const url = btn.getAttribute('data-midi-play');
+async function makeBoardMidiPreviewUrl(path, url, cacheKey){
+  if(boardMidiPreviewCache.has(cacheKey)) return boardMidiPreviewCache.get(cacheKey);
+  const buf = await boardMidiBytes(path, url);
+  const wav = await renderMidiPreviewWav(buf, 40);
+  const obj = URL.createObjectURL(wav);
+  boardMidiPreviewCache.set(cacheKey, obj);
+  return obj;
+}
+function boardAttachmentItemHtml(a, idx, editable=false){
+  const type = boardFileType(a);
+  const name = esc(a.name || a.fileName || 'attachment');
+  const url = esc(a.url || '');
+  const path = esc(a.path || boardStoragePathFromUrl(a.url) || '');
+  const previewUrl = esc(a.previewUrl || '');
+  const badge = type === 'video' ? '🎥 영상' : type === 'midi' ? '🎹 MIDI' : '🖼️ 사진';
+  const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-existing-attachment="${idx}">삭제</button>` : '';
+  if(type === 'midi'){
+    const hasPreview = !!a.previewUrl;
+    return `<figure class="board-attachment-item board-attachment-midi">
+      <div class="board-midi-card">
+        <div class="board-midi-row">
+          <span class="board-midi-badge">🎹 MIDI</span>
+          <b class="board-midi-name" title="${name}">${name}</b>
+          ${editable?'':`${hasPreview?'':`<button type="button" class="board-midi-play-btn" data-midi-preview="${url}" data-midi-path="${path}" aria-label="미리듣기">미리듣기</button>`}
+          <a class="board-midi-dl" href="${url}" target="_blank" rel="noopener noreferrer" download>다운로드</a>`}
+          ${remove}
+        </div>
+        <audio class="board-midi-audio" controls preload="none" ${hasPreview?`src="${previewUrl}"`:'hidden'}></audio>
+        <p class="board-midi-msg muted" hidden></p>
+      </div>
+    </figure>`;
+  }
+  let media = '';
+  if(type === 'video'){
+    media = `<video controls preload="metadata" src="${url}"></video>`;
+  } else {
+    media = `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`;
+  }
+  return `<figure class="board-attachment-item board-attachment-${type}">${media}<figcaption><span>${badge}</span><b>${name}</b>${remove}</figcaption></figure>`;
+}
+function boardAttachmentsHtml(list){
+  const arr = Array.isArray(list) ? list.filter(x=>x && x.url) : [];
+  if(!arr.length) return '';
+  return `<div class="board-attachments">${arr.map((a,i)=>boardAttachmentItemHtml(a,i,false)).join('')}</div>`;
+}
+async function prepareBoardMidiPreview(btn){
+  const url = btn.getAttribute('data-midi-preview');
   const path = btn.getAttribute('data-midi-path') || boardStoragePathFromUrl(url);
   const card = btn.closest('.board-midi-card');
-  if(!url) return;
-  if(boardMidiPlayingUrl === url){
-    stopBoardMidiPlayback();
-    return;
-  }
-  stopBoardMidiPlayback();
-  btn.disabled=true;
-  btn.textContent='…';
-  setBoardMidiMsg(card, '브라우저 메모리로 불러오는 중…');
+  const audio = card?.querySelector('.board-midi-audio');
+  if(!url || !audio) return;
+  btn.disabled = true;
+  btn.textContent = '변환중…';
+  setBoardMidiMsg(card, 'MIDI → 오디오 미리듣기 변환 중 (첫 40초)…');
   try{
-    await ensureMidiPlayerLib();
-    const buf = await boardMidiBytes(path, url);
-    setBoardMidiMsg(card, '재생 시작…');
-    const duration = await playBoardMidiBuffer(buf);
-    boardMidiPlayingUrl = url;
-    boardMidiActiveBtn = btn;
-    btn.classList.add('is-playing');
-    btn.textContent='■';
-    btn.disabled=false;
-    setBoardMidiMsg(card, '재생 중 (브라우저 임시 재생)');
-    boardMidiStopTimer = setTimeout(()=>{ if(boardMidiPlayingUrl===url) stopBoardMidiPlayback(); }, Math.ceil(Math.max(1, duration)*1000)+800);
+    const preview = await makeBoardMidiPreviewUrl(path, url, url);
+    audio.src = preview;
+    audio.hidden = false;
+    setBoardMidiMsg(card, '미리듣기 준비됨 · 재생 버튼을 누르세요');
+    btn.hidden = true;
+    try{ await audio.play(); setBoardMidiMsg(card, ''); }catch(_){}
   }catch(err){
-    console.warn('midi play failed', err);
-    btn.disabled=false;
-    btn.textContent='▶';
-    const raw=String(err?.message||err||'');
-    if(/Failed to fetch|NetworkError|CORS|storage\/unauthorized|permission|HTTP |시간 초과/i.test(raw) || err?.name==='TypeError'){
-      setBoardMidiMsg(card, '온라인 재생 실패. 다운로드 후 PC 플레이어로 열어주세요.');
-    } else {
-      setBoardMidiMsg(card, '재생 실패: '+(raw.slice(0,90)||'알 수 없는 오류'));
-    }
+    console.warn('midi preview failed', err);
+    btn.disabled = false;
+    btn.textContent = '미리듣기';
+    setBoardMidiMsg(card, '미리듣기 변환 실패. 다운로드 후 PC에서 재생해주세요.');
   }
 }
 function hydrateBoardMidiPlayers(root=document){
-  root.querySelectorAll?.('[data-midi-play]').forEach(btn=>{
+  root.querySelectorAll?.('[data-midi-preview]').forEach(btn=>{
     if(btn.dataset.bound) return;
     btn.dataset.bound='1';
-    btn.addEventListener('click',()=>toggleBoardMidiPlay(btn));
+    btn.addEventListener('click',()=>prepareBoardMidiPreview(btn));
   });
 }
 function renderBoardAttachmentPreview(){
@@ -2237,7 +2230,21 @@ async function uploadBoardAttachments(postId){
     const contentType = isBoardMidi(file) ? boardMidiContentType(file) : (file.type || 'application/octet-stream');
     await uploadBytes(fileRef, file, { contentType });
     const url = await getDownloadURL(fileRef);
-    uploaded.push({ type: boardFileType(file), mime: contentType, name: file.name, size: file.size, path, url });
+    const item = { type: boardFileType(file), mime: contentType, name: file.name, size: file.size, path, url };
+    if(isBoardMidi(file)){
+      try{
+        if(msg) msg.textContent = `MIDI 미리듣기 생성 중... ${i+1}/${selectedBoardFiles.length}`;
+        const wav = await renderMidiPreviewWav(await file.arrayBuffer(), 40);
+        const previewPath = `board/${currentUser.uid}/${postId}/${Date.now()}_${i}_preview.wav`;
+        const previewRef = ref(storage, previewPath);
+        await uploadBytes(previewRef, wav, { contentType: 'audio/wav' });
+        item.previewUrl = await getDownloadURL(previewRef);
+        item.previewPath = previewPath;
+      }catch(err){
+        console.warn('midi preview upload skipped', err);
+      }
+    }
+    uploaded.push(item);
   }
   return uploaded;
 }

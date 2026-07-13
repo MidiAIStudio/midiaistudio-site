@@ -202,21 +202,24 @@ nav a.active{color:var(--text)}
 .board-lightbox{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:rgba(0,0,0,.82);backdrop-filter:blur(8px);padding:24px;cursor:zoom-out}
 .board-lightbox img{max-width:min(100%,1100px);max-height:88vh;border-radius:18px;box-shadow:0 30px 90px rgba(0,0,0,.55)}
 .board-lightbox button{position:fixed;top:18px;right:18px;width:46px;height:46px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.12);color:#fff;font-size:30px;cursor:pointer}
-.board-attachment-midi{grid-column:1/-1;max-width:min(100%,520px);border-radius:14px!important}
-.board-midi-card{display:grid;gap:6px;padding:10px 12px;background:rgba(0,0,0,.22)}
+.board-attachment-midi{grid-column:1/-1!important;max-width:min(100%,520px)!important;border-radius:14px!important;overflow:hidden}
+.board-midi-card{display:grid;gap:8px;padding:10px 12px;background:rgba(0,0,0,.22)}
 .board-midi-row{display:flex;align-items:center;gap:8px;min-width:0}
 .board-midi-badge{flex:none;font-size:11px;font-weight:900;color:#9af2ff;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.22);border-radius:8px;padding:4px 7px}
 .board-midi-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#e8ebf8}
-.board-midi-play-btn{flex:none;width:34px;height:34px;border-radius:10px;border:1px solid rgba(34,211,238,.35);background:linear-gradient(135deg,rgba(34,211,238,.28),rgba(139,92,246,.22));color:#fff;font-size:12px;font-weight:900;cursor:pointer;line-height:1}
+.board-midi-play-btn{flex:none;padding:7px 10px;border-radius:9px;border:1px solid rgba(34,211,238,.35);background:linear-gradient(135deg,rgba(34,211,238,.28),rgba(139,92,246,.22));color:#fff;font-size:11px;font-weight:900;cursor:pointer;line-height:1;white-space:nowrap}
 .board-midi-play-btn:hover{filter:brightness(1.08)}
-.board-midi-play-btn.is-playing{background:rgba(251,113,133,.18);border-color:rgba(251,113,133,.4)}
 .board-midi-play-btn:disabled{opacity:.55;cursor:wait}
 .board-midi-dl{flex:none;padding:7px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#c7d0ff;font-size:11px;font-weight:800;text-decoration:none}
 .board-midi-dl:hover{color:#fff;border-color:rgba(34,211,238,.3)}
+.board-midi-audio{display:block;width:100%;height:36px;border-radius:8px;background:rgba(0,0,0,.25)}
+.board-midi-audio[hidden]{display:none!important}
 .board-midi-msg{margin:0;font-size:11px;line-height:1.4}
 .board-midi-msg[hidden]{display:none!important}
 .board-attachment-item.board-attachment-midi img,.board-attachment-item.board-attachment-midi video{display:none}
 .board-attachment-item.board-attachment-midi figcaption{display:none}
+.hub-page .board-attachment-midi,.community-post-detail .board-attachment-midi{height:auto!important;max-height:none!important}
+.hub-page .board-attachment-midi .board-midi-card,.community-post-detail .board-attachment-midi .board-midi-card{min-height:0}
 
 /* V23 purchase + board detail refined final overrides */
 .purchase-v23-card .price strong{font-size:clamp(34px,4vw,48px)!important;letter-spacing:-.045em!important}

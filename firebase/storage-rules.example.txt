@@ -3,18 +3,17 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
-    // 자유게시판 사진/영상/MIDI 첨부파일
+    // 자유게시판 사진/영상/MIDI + 미리듣기(WAV)
     match /board/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if request.auth != null
         && request.auth.uid == userId
         && request.resource.size < 50 * 1024 * 1024
         && request.resource.contentType.matches(
-          'image/.*|video/.*|audio/(midi|mid|x-midi)|application/(x-)?midi'
+          'image/.*|video/.*|audio/(midi|mid|x-midi|wav|x-wav|wave|mpeg)|application/(x-)?midi'
         );
     }
 
-    // 그 외 경로는 모두 차단
     match /{allPaths=**} {
       allow read, write: if false;
     }
