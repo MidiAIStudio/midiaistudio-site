@@ -1905,6 +1905,7 @@ async function requestInicisCardPayment(){
         customerId: currentUser.uid,
         fullName: currentUser.displayName || currentUser.email || 'MidiAI User',
         email: currentUser.email || undefined,
+        phoneNumber: phoneNumber,
       },
       customData: {
         uid: currentUser.uid,
