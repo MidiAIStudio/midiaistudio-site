@@ -326,7 +326,7 @@ function purchaseCurrency(){
 }
 function paymentId(prefix='midiai'){
   const rand = (window.crypto?.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2)));
-  return `${prefix}-${rand}`.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+  return `${prefix}-${rand}`.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
 }
 
 function purchaseLocaleText(){
