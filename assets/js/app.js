@@ -1831,17 +1831,80 @@ async function requestKakaoPayPayment(){
   }
 }
 window.midiaiKakaoPay = requestKakaoPayPayment;
-function renderKakaoPayButton(){
+
+async function requestInicisCardPayment(){
+  if(!currentUser){
+    const msg = purchaseLocaleText().loginAlert || 'Google 로그인 후 결제할 수 있습니다.';
+    paypalStatus(msg, 'err');
+    alert(msg);
+    return;
+  }
+  if(!CONFIG.portoneStoreId || String(CONFIG.portoneStoreId).startsWith('PASTE_')){
+    paypalStatus('PortOne Store ID를 config.js에 입력해야 합니다.', 'err');
+    alert('PortOne Store ID를 config.js에 입력해야 합니다.');
+    return;
+  }
+  if(!CONFIG.portoneInicisChannelKey){
+    paypalStatus('KG이니시스 테스트 채널키가 없습니다.', 'err');
+    return;
+  }
+  try{
+    paypalStatus('KG이니시스 테스트 결제창을 여는 중입니다...');
+    const PortOne = await loadPortOneSdk();
+    const result = await PortOne.requestPayment({
+      storeId: CONFIG.portoneStoreId,
+      channelKey: CONFIG.portoneInicisChannelKey,
+      paymentId: paymentId('midiai-inicis-test'),
+      orderName: 'MidiAI Studio Lifetime 디지털 라이선스',
+      totalAmount: Number(CONFIG.priceValueKr || 90000),
+      currency: 'CURRENCY_KRW',
+      payMethod: 'CARD',
+      customer: {
+        customerId: currentUser.uid,
+        fullName: currentUser.displayName || currentUser.email || 'MidiAI User',
+        email: currentUser.email || undefined,
+      },
+      customData: {
+        uid: currentUser.uid,
+        plan: CONFIG.plan || 'lifetime',
+        mode: 'test',
+        provider: 'inicis_v2'
+      }
+    });
+    if(result?.code){
+      paypalStatus(`${result.message || result.code}`, 'err');
+      return;
+    }
+    paypalStatus('KG이니시스 테스트 결제가 완료되었습니다. 심사용 테스트 결제이며 라이선스는 자동 지급되지 않습니다.', 'ok');
+    alert('KG이니시스 테스트 결제가 완료되었습니다.');
+  }catch(err){
+    console.error('PortOne KG Inicis error', err);
+    paypalStatus('KG이니시스 결제 오류: ' + (err?.message || err), 'err');
+    alert('KG이니시스 결제 오류: ' + (err?.message || err));
+  }
+}
+window.midiaiInicisPay = requestInicisCardPayment;
+
+function renderKoreanPaymentButtons(){
   const box = $('paypalButtons');
   if(!box) return;
   const t = purchaseLocaleText();
-  box.innerHTML = `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" onclick="window.midiaiKakaoPay && window.midiaiKakaoPay()"><span class="kakao-mark">pay</span><strong>${esc(t.kakaoButton || '카카오페이로 구매')}</strong></button>`;
+  box.innerHTML = `
+    <div class="purchase-payment-actions">
+      <button id="inicisCardPayBtn" class="primary purchase-card-btn" type="button" onclick="window.midiaiInicisPay && window.midiaiInicisPay()">
+        <span class="payment-card-mark">CARD</span><strong>신용/체크카드 결제</strong>
+      </button>
+      <button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" onclick="window.midiaiKakaoPay && window.midiaiKakaoPay()">
+        <span class="kakao-mark">pay</span><strong>${esc(t.kakaoButton || '카카오페이로 구매')}</strong>
+      </button>
+    </div>
+    <p class="muted small purchase-test-payment-note">카드 결제는 현재 PG·카드사 심사용 테스트 모드입니다.</p>`;
 }
 function initPayPal(){
   if(!$('paypalButtons')) return;
   updatePurchaseAccountBox();
-  if(isKoreanCheckout() && CONFIG.portoneKakaoPayChannelKey){
-    renderKakaoPayButton();
+  if(isKoreanCheckout() && (CONFIG.portoneKakaoPayChannelKey || CONFIG.portoneInicisChannelKey)){
+    renderKoreanPaymentButtons();
     return;
   }
   if(!CONFIG.paypalClientId || String(CONFIG.paypalClientId).startsWith('PASTE_')) {

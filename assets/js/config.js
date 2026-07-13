@@ -21,6 +21,7 @@ window.MIDIAI_CONFIG = {
   plan: "lifetime",
   portoneStoreId: "store-034b6f5a-1dd6-4ee9-a83d-4fe7d8dfb6dd",
   portoneKakaoPayChannelKey: "channel-key-5aa0d34c-c202-45d8-87b3-1426db3fa31f",
+  portoneInicisChannelKey: "channel-key-52136d4d-abc7-4640-9107-5d4cae4a8e24",
   portoneMode: "test",
   supportDiscordUrl: ""
 };
