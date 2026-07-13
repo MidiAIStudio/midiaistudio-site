@@ -2432,7 +2432,10 @@ function renderBoardPost(d,err){
     ? {board:'コミュニティ', pinned:'固定投稿', author:'投稿者', date:'作成日', views:'閲覧', likes:'いいね', comments:'コメント', like:'いいね', edit:'編集', del:'削除'}
     : {board:'자유게시판', pinned:'고정 게시글', author:'작성자', date:'작성일', views:'조회', likes:'추천', comments:'댓글', like:'추천', edit:'수정', del:'삭제'};
   const author = contentAuthor(d);
-  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author"><i>👤</i><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 ${esc(labels.like)}</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">${esc(labels.edit)}</a><button id="postDeleteBtn" class="secondary danger-btn">${esc(labels.del)}</button>`:''}</div>`;
+  const likeLabel = esc(labels.like);
+  const editIcon = `<svg class="post-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
+  const delIcon = `<svg class="post-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
+  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author"><i>👤</i><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="like-btn" type="button" aria-pressed="false">${boardLikeBtnInner(likeLabel,false)}</button>${manage?`<a class="post-action-btn post-edit-btn" href="${boardEditUrl(d.id)}">${editIcon}<span>${esc(labels.edit)}</span></a><button id="postDeleteBtn" class="post-action-btn post-delete-btn" type="button">${delIcon}<span>${esc(labels.del)}</span></button>`:''}</div>`;
   hydrateBoardMidiPlayers(box);
   refreshBoardPostActions();
 }
@@ -2451,14 +2454,32 @@ function listenBoardPostDetail(){
   const form=$('commentForm');
   if(form&&!form.dataset.bound){ form.dataset.bound='1'; form.addEventListener('submit',e=>createBoardComment(e,id,null)); }
 }
+function boardLikeBtnInner(label, liked){
+  const text = liked
+    ? (lang==='en' ? 'Liked' : lang==='ja' ? 'いいね済' : '추천됨')
+    : label;
+  return `<svg class="like-btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11v10M15.5 21H9a2 2 0 0 1-2-2v-7.2a2 2 0 0 1 .5-1.3l5.2-6.1a1.7 1.7 0 0 1 2.9 1.5L14.5 11H19a2 2 0 0 1 1.9 2.6l-1.4 5A2 2 0 0 1 17.6 21Z"/></svg><span class="like-btn-label">${esc(text)}</span>`;
+}
 async function refreshBoardPostActions(){
   const d=activeBoardPost; if(!d)return;
   const id=d.id;
   const likeBtn=$('postLikeBtn');
   if(likeBtn){
     likeBtn.onclick=()=>toggleBoardLike(id);
+    const baseLabel = lang==='en'?'Like':lang==='ja'?'いいね':'추천';
     if(currentUser){
-      try{ const {doc,getDoc}=firestoreApi; const s=await getDoc(doc(db,'boardPosts',id,'likes',currentUser.uid)); likedActivePost=s.exists(); likeBtn.classList.toggle('liked',likedActivePost); likeBtn.textContent=likedActivePost?'👍 추천됨':'👍 추천'; }catch{}
+      try{
+        const {doc,getDoc}=firestoreApi;
+        const s=await getDoc(doc(db,'boardPosts',id,'likes',currentUser.uid));
+        likedActivePost=s.exists();
+        likeBtn.classList.toggle('liked',likedActivePost);
+        likeBtn.setAttribute('aria-pressed', likedActivePost?'true':'false');
+        likeBtn.innerHTML=boardLikeBtnInner(baseLabel, likedActivePost);
+      }catch{}
+    } else {
+      likeBtn.classList.remove('liked');
+      likeBtn.setAttribute('aria-pressed','false');
+      likeBtn.innerHTML=boardLikeBtnInner(baseLabel, false);
     }
   }
   const del=$('postDeleteBtn'); if(del&&!del.dataset.bound){ del.dataset.bound='1'; del.onclick=()=>deleteBoardPost(id); }
