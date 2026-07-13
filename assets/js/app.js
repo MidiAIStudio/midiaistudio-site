@@ -2000,6 +2000,7 @@ function boardAttachmentItemHtml(a, idx, editable=false){
   const type = boardFileType(a);
   const name = esc(a.name || a.fileName || 'attachment');
   const url = esc(a.url || '');
+  const path = esc(a.path || boardStoragePathFromUrl(a.url) || '');
   const badge = type === 'video' ? '🎥 영상' : type === 'midi' ? '🎹 MIDI' : '🖼️ 사진';
   const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-existing-attachment="${idx}">삭제</button>` : '';
   if(type === 'midi'){
@@ -2008,7 +2009,7 @@ function boardAttachmentItemHtml(a, idx, editable=false){
         <div class="board-midi-row">
           <span class="board-midi-badge">🎹 MIDI</span>
           <b class="board-midi-name" title="${name}">${name}</b>
-          ${editable?'':`<button type="button" class="board-midi-play-btn" data-midi-play="${url}" aria-label="재생">▶</button>
+          ${editable?'':`<button type="button" class="board-midi-play-btn" data-midi-play="${url}" data-midi-path="${path}" aria-label="재생">▶</button>
           <a class="board-midi-dl" href="${url}" target="_blank" rel="noopener noreferrer" download>다운로드</a>`}
           ${remove}
         </div>
@@ -2029,6 +2030,15 @@ function boardAttachmentsHtml(list){
   if(!arr.length) return '';
   return `<div class="board-attachments">${arr.map((a,i)=>boardAttachmentItemHtml(a,i,false)).join('')}</div>`;
 }
+function boardStoragePathFromUrl(url){
+  try{
+    const u = new URL(String(url||''));
+    // https://firebasestorage.googleapis.com/v0/b/.../o/board%2Fuid%2F...
+    const m = u.pathname.match(/\/o\/([^?]+)/);
+    if(m) return decodeURIComponent(m[1]);
+  }catch(_){}
+  return '';
+}
 function stopBoardMidiPlayback(){
   try{ boardMidiEngine?.stop?.(); }catch(_){}
   if(boardMidiActiveBtn){
@@ -2039,28 +2049,50 @@ function stopBoardMidiPlayback(){
   boardMidiPlayingUrl=null;
   boardMidiActiveBtn=null;
 }
-async function loadBoardNoteSequence(url, core){
+async function boardMidiBytes(path, url){
+  // Prefer Firebase SDK (no bucket CORS needed) when path is known.
+  if(path && storage && storageApi?.ref && storageApi?.getBytes){
+    try{
+      const bytes = await storageApi.getBytes(storageApi.ref(storage, path));
+      return bytes instanceof ArrayBuffer ? bytes : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    }catch(err){
+      console.warn('storage getBytes failed, fallback fetch', err);
+    }
+  }
+  if(path && storage && storageApi?.ref && storageApi?.getBlob){
+    try{
+      const blob = await storageApi.getBlob(storageApi.ref(storage, path));
+      return await blob.arrayBuffer();
+    }catch(err){
+      console.warn('storage getBlob failed, fallback fetch', err);
+    }
+  }
+  const res = await fetch(url, { mode:'cors' });
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  return res.arrayBuffer();
+}
+async function loadBoardNoteSequence(url, core, path=''){
+  let buf;
   try{
-    const res = await fetch(url, { mode:'cors' });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const buf = await res.arrayBuffer();
-    const blob = new Blob([buf], { type:'audio/midi' });
-    if(typeof core.blobToNoteSequence === 'function') return core.blobToNoteSequence(blob);
-    if(typeof core.midiToSequenceProto === 'function') return core.midiToSequenceProto(new Uint8Array(buf));
+    buf = await boardMidiBytes(path || boardStoragePathFromUrl(url), url);
   }catch(err){
     const msg = String(err?.message||err||'');
-    if(/Failed to fetch|NetworkError|CORS|Load failed/i.test(msg) || err?.name==='TypeError'){
-      const e = new Error('CORS');
+    if(/Failed to fetch|NetworkError|CORS|Load failed|storage\/unauthorized|permission/i.test(msg) || err?.name==='TypeError'){
+      const e = new Error('MIDI_LOAD');
       e.code = 'cors';
       throw e;
     }
     throw err;
   }
-  if(typeof core.urlToNoteSequence === 'function') return core.urlToNoteSequence(url);
+  const bytes = buf instanceof ArrayBuffer ? new Uint8Array(buf) : new Uint8Array(buf);
+  const blob = new Blob([bytes], { type:'audio/midi' });
+  if(typeof core.blobToNoteSequence === 'function') return core.blobToNoteSequence(blob);
+  if(typeof core.midiToSequenceProto === 'function') return core.midiToSequenceProto(bytes);
   throw new Error('MIDI 파서를 찾을 수 없습니다.');
 }
 async function toggleBoardMidiPlay(btn){
   const url = btn.getAttribute('data-midi-play');
+  const path = btn.getAttribute('data-midi-path') || boardStoragePathFromUrl(url);
   const card = btn.closest('.board-midi-card');
   const msg = card?.querySelector('.board-midi-msg');
   if(!url) return;
@@ -2075,7 +2107,7 @@ async function toggleBoardMidiPlay(btn){
   try{
     const core = await ensureMidiPlayerLib();
     if(window.Tone?.start) await window.Tone.start();
-    const ns = await loadBoardNoteSequence(url, core);
+    const ns = await loadBoardNoteSequence(url, core, path);
     if(!boardMidiEngine){
       boardMidiEngine = new core.SoundFontPlayer(BOARD_MIDI_SOUNDFONT);
     }
@@ -2101,7 +2133,7 @@ async function toggleBoardMidiPlay(btn){
     if(msg){
       msg.hidden=false;
       if(err?.code==='cors'){
-        msg.textContent='재생을 위해 Firebase Storage CORS 설정이 필요합니다. 다운로드는 가능합니다.';
+        msg.textContent='MIDI 파일을 불러오지 못했습니다. 잠시 후 다시 시도하거나 다운로드로 확인해주세요.';
       } else {
         msg.textContent='MIDI 재생에 실패했습니다. 다운로드로 확인해주세요.';
       }
