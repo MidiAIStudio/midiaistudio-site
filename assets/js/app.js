@@ -2051,39 +2051,46 @@ function setBoardMidiMsg(card, text){
 }
 function stopBoardMidiPlayback(){
   if(boardMidiStopTimer){ clearTimeout(boardMidiStopTimer); boardMidiStopTimer=0; }
-  try{ window.Tone?.Transport?.stop?.(); window.Tone?.Transport?.cancel?.(0); }catch(_){}
-  boardMidiSynths.forEach(s=>{ try{ s.releaseAll?.(); s.dispose?.(); }catch(_){ } });
+  try{
+    window.Tone?.Transport?.stop?.();
+    window.Tone?.Transport?.cancel?.(0);
+    if(window.Tone?.Transport) window.Tone.Transport.position = 0;
+  }catch(_){}
+  boardMidiSynths.forEach(s=>{
+    try{
+      s.releaseAll?.();
+      s.stop?.(0);
+      s.dispose?.();
+    }catch(_){}
+  });
   boardMidiSynths=[];
   if(boardMidiActiveBtn){
     boardMidiActiveBtn.classList.remove('is-playing');
     boardMidiActiveBtn.textContent='▶';
     boardMidiActiveBtn.disabled=false;
-  }
-  if(boardMidiActiveBtn){
-    const card=boardMidiActiveBtn.closest('.board-midi-card');
-    setBoardMidiMsg(card,'');
+    setBoardMidiMsg(boardMidiActiveBtn.closest('.board-midi-card'),'');
   }
   boardMidiPlayingUrl=null;
   boardMidiActiveBtn=null;
 }
 async function boardMidiBytes(path, url){
   const tryPath = path || boardStoragePathFromUrl(url);
-  const withTimeout = (p, ms=15000)=>Promise.race([
+  const withTimeout = (p, ms=20000)=>Promise.race([
     p,
     new Promise((_,rej)=>setTimeout(()=>rej(new Error('MIDI 로드 시간 초과')), ms))
   ]);
   if(tryPath && storage && storageApi?.ref){
-    if(storageApi.getBytes){
-      try{
-        const bytes = await withTimeout(storageApi.getBytes(storageApi.ref(storage, tryPath)));
-        return bytes instanceof ArrayBuffer ? bytes : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-      }catch(err){ console.warn('getBytes failed', err); }
-    }
     if(storageApi.getBlob){
       try{
         const blob = await withTimeout(storageApi.getBlob(storageApi.ref(storage, tryPath)));
         return await blob.arrayBuffer();
       }catch(err){ console.warn('getBlob failed', err); }
+    }
+    if(storageApi.getBytes){
+      try{
+        const bytes = await withTimeout(storageApi.getBytes(storageApi.ref(storage, tryPath)));
+        return bytes instanceof ArrayBuffer ? bytes : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      }catch(err){ console.warn('getBytes failed', err); }
     }
   }
   const res = await withTimeout(fetch(url, { mode:'cors', credentials:'omit' }));
@@ -2095,24 +2102,37 @@ async function playBoardMidiBuffer(arrayBuffer){
   const MidiCtor = getToneMidi();
   if(!Tone || !MidiCtor) throw new Error('MIDI 엔진 없음');
   await Tone.start();
+  Tone.Transport.stop();
+  Tone.Transport.cancel(0);
+  Tone.Transport.position = 0;
+  // Browser "temp file" equivalent: keep bytes in memory as Blob/ArrayBuffer, then schedule playback.
   const midi = new MidiCtor(arrayBuffer);
   const synth = new Tone.PolySynth(Tone.Synth, {
     oscillator: { type: 'triangle' },
-    envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.4 }
+    envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.35 }
   }).toDestination();
-  synth.maxPolyphony = 128;
-  synth.volume.value = -8;
-  boardMidiSynths = [synth];
-  const now = Tone.now() + 0.05;
-  let end = 0;
+  synth.maxPolyphony = 64;
+  synth.volume.value = -10;
+  const events = [];
   midi.tracks.forEach(track=>{
     track.notes.forEach(note=>{
-      const t = now + note.time;
-      synth.triggerAttackRelease(note.name, Math.max(0.05, note.duration), t, Math.max(0.15, Math.min(1, note.velocity)));
-      end = Math.max(end, note.time + note.duration);
+      events.push({
+        time: note.time,
+        name: note.name,
+        duration: Math.max(0.04, note.duration),
+        velocity: Math.max(0.12, Math.min(1, note.velocity))
+      });
     });
   });
-  return end;
+  if(!events.length) throw new Error('재생할 노트가 없습니다.');
+  events.sort((a,b)=>a.time-b.time);
+  const part = new Tone.Part((time, value)=>{
+    try{ synth.triggerAttackRelease(value.name, value.duration, time, value.velocity); }catch(_){}
+  }, events.map(e=>[e.time, e]));
+  part.start(0);
+  boardMidiSynths = [part, synth];
+  Tone.Transport.start('+0.05');
+  return Number(midi.duration || events[events.length-1].time + events[events.length-1].duration || 0);
 }
 async function toggleBoardMidiPlay(btn){
   const url = btn.getAttribute('data-midi-play');
@@ -2126,29 +2146,28 @@ async function toggleBoardMidiPlay(btn){
   stopBoardMidiPlayback();
   btn.disabled=true;
   btn.textContent='…';
-  setBoardMidiMsg(card, 'MIDI 불러오는 중…');
+  setBoardMidiMsg(card, '브라우저 메모리로 불러오는 중…');
   try{
     await ensureMidiPlayerLib();
-    setBoardMidiMsg(card, '재생 준비 중…');
     const buf = await boardMidiBytes(path, url);
+    setBoardMidiMsg(card, '재생 시작…');
     const duration = await playBoardMidiBuffer(buf);
-    if(!duration || duration <= 0) throw new Error('재생할 노트가 없습니다.');
     boardMidiPlayingUrl = url;
     boardMidiActiveBtn = btn;
     btn.classList.add('is-playing');
     btn.textContent='■';
     btn.disabled=false;
-    setBoardMidiMsg(card, '');
-    boardMidiStopTimer = setTimeout(()=>{ if(boardMidiPlayingUrl===url) stopBoardMidiPlayback(); }, Math.ceil(duration*1000)+500);
+    setBoardMidiMsg(card, '재생 중 (브라우저 임시 재생)');
+    boardMidiStopTimer = setTimeout(()=>{ if(boardMidiPlayingUrl===url) stopBoardMidiPlayback(); }, Math.ceil(Math.max(1, duration)*1000)+800);
   }catch(err){
     console.warn('midi play failed', err);
     btn.disabled=false;
     btn.textContent='▶';
     const raw=String(err?.message||err||'');
-    if(/Failed to fetch|NetworkError|CORS|storage\/unauthorized|permission|HTTP /i.test(raw) || err?.name==='TypeError'){
-      setBoardMidiMsg(card, 'MIDI 파일을 불러오지 못했습니다. 다운로드로 확인해주세요.');
+    if(/Failed to fetch|NetworkError|CORS|storage\/unauthorized|permission|HTTP |시간 초과/i.test(raw) || err?.name==='TypeError'){
+      setBoardMidiMsg(card, '온라인 재생 실패. 다운로드 후 PC 플레이어로 열어주세요.');
     } else {
-      setBoardMidiMsg(card, '재생 실패: '+(raw.slice(0,80)||'알 수 없는 오류'));
+      setBoardMidiMsg(card, '재생 실패: '+(raw.slice(0,90)||'알 수 없는 오류'));
     }
   }
 }
