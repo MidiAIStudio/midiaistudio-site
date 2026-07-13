@@ -1218,36 +1218,50 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 .purchase-phone-help{margin:-5px 0 10px;text-align:right;font-size:11px;color:var(--muted)}
 @media(max-width:560px){.purchase-phone-row{display:grid}.purchase-phone-input{width:100%;margin-left:0}.purchase-phone-help{text-align:left}}
 
-/* Like button — match body text scale */
+/* Post action buttons — ultra compact (match meta / MIDI chips) */
+.community-post-actions,
+.post-actions{
+  gap:6px!important;
+  padding-top:8px!important;
+  margin-top:10px!important;
+}
 #postLikeBtn.like-btn,
 .community-post-actions #postLikeBtn,
-.post-actions #postLikeBtn{
+.post-actions #postLikeBtn,
+.community-post-actions .post-action-btn,
+.post-actions .post-action-btn,
+.community-post-actions a.post-edit-btn,
+.community-post-actions button.post-delete-btn{
   display:inline-flex!important;
   align-items:center!important;
   justify-content:center!important;
-  gap:5px!important;
+  gap:4px!important;
   min-height:0!important;
   height:auto!important;
-  padding:5px 10px!important;
-  border-radius:8px!important;
+  min-width:0!important;
+  padding:3px 8px!important;
+  border-radius:6px!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+  line-height:1.2!important;
+  text-decoration:none!important;
+  box-shadow:none!important;
+  cursor:pointer!important;
+  transform:none!important;
+  transition:background .15s ease,border-color .15s ease,color .15s ease!important;
+}
+#postLikeBtn.like-btn,
+.community-post-actions #postLikeBtn{
   border:1px solid rgba(34,211,238,.4)!important;
   background:rgba(34,211,238,.12)!important;
   color:#dff9ff!important;
-  font-size:13px!important;
-  font-weight:700!important;
-  letter-spacing:0!important;
-  line-height:1.35!important;
-  box-shadow:none!important;
-  cursor:pointer!important;
-  transition:background .15s ease,border-color .15s ease,color .15s ease!important;
 }
 #postLikeBtn.like-btn:hover,
 .community-post-actions #postLikeBtn:hover{
   background:rgba(34,211,238,.2)!important;
   border-color:rgba(103,232,249,.7)!important;
   color:#fff!important;
-  transform:none!important;
-  box-shadow:none!important;
 }
 #postLikeBtn.like-btn.liked,
 .community-post-actions #postLikeBtn.liked{
@@ -1255,9 +1269,37 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
   border-color:rgba(103,232,249,.75)!important;
   color:#fff!important;
 }
-#postLikeBtn .like-btn-icon{
-  width:13px!important;
-  height:13px!important;
+.community-post-actions .post-edit-btn,
+.post-actions .post-edit-btn{
+  border:1px solid rgba(255,255,255,.18)!important;
+  background:rgba(255,255,255,.06)!important;
+  color:#d7dcf5!important;
+}
+.community-post-actions .post-edit-btn:hover,
+.post-actions .post-edit-btn:hover{
+  background:rgba(255,255,255,.11)!important;
+  border-color:rgba(255,255,255,.3)!important;
+  color:#fff!important;
+}
+.community-post-actions .post-delete-btn,
+.post-actions .post-delete-btn{
+  border:1px solid rgba(251,113,133,.35)!important;
+  background:rgba(251,113,133,.1)!important;
+  color:#ffb3c0!important;
+}
+.community-post-actions .post-delete-btn:hover,
+.post-actions .post-delete-btn:hover{
+  background:rgba(251,113,133,.18)!important;
+  border-color:rgba(251,113,133,.55)!important;
+  color:#fff!important;
+}
+#postLikeBtn .like-btn-icon,
+.community-post-actions .post-action-icon,
+.post-actions .post-action-icon{
+  width:11px!important;
+  height:11px!important;
+  max-width:11px!important;
+  max-height:11px!important;
   flex:none!important;
   fill:none!important;
   stroke:currentColor!important;
@@ -1268,65 +1310,13 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 #postLikeBtn.liked .like-btn-icon{
   fill:rgba(255,255,255,.18)!important;
 }
-#postLikeBtn .like-btn-label{
+#postLikeBtn .like-btn-label,
+.community-post-actions .post-action-btn span,
+.post-actions .post-action-btn span{
   color:inherit!important;
+  font-size:11px!important;
   font-weight:700!important;
-  font-size:13px!important;
-}
-
-/* Edit / Delete — same compact action style */
-.community-post-actions .post-action-btn,
-.post-actions .post-action-btn{
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:5px!important;
-  min-height:0!important;
-  height:auto!important;
-  padding:5px 10px!important;
-  border-radius:8px!important;
-  font-size:13px!important;
-  font-weight:700!important;
-  line-height:1.35!important;
-  text-decoration:none!important;
-  box-shadow:none!important;
-  cursor:pointer!important;
-  transition:background .15s ease,border-color .15s ease,color .15s ease!important;
-}
-.community-post-actions .post-action-icon,
-.post-actions .post-action-icon{
-  width:13px!important;
-  height:13px!important;
-  flex:none!important;
-  fill:none!important;
-  stroke:currentColor!important;
-  stroke-width:2!important;
-  stroke-linecap:round!important;
-  stroke-linejoin:round!important;
-}
-.community-post-actions .post-edit-btn,
-.post-actions .post-edit-btn{
-  border:1px solid rgba(255,255,255,.22)!important;
-  background:rgba(255,255,255,.07)!important;
-  color:#e8ebf8!important;
-}
-.community-post-actions .post-edit-btn:hover,
-.post-actions .post-edit-btn:hover{
-  background:rgba(255,255,255,.12)!important;
-  border-color:rgba(255,255,255,.35)!important;
-  color:#fff!important;
-}
-.community-post-actions .post-delete-btn,
-.post-actions .post-delete-btn{
-  border:1px solid rgba(251,113,133,.4)!important;
-  background:rgba(251,113,133,.12)!important;
-  color:#ffb3c0!important;
-}
-.community-post-actions .post-delete-btn:hover,
-.post-actions .post-delete-btn:hover{
-  background:rgba(251,113,133,.2)!important;
-  border-color:rgba(251,113,133,.65)!important;
-  color:#fff!important;
+  line-height:1.2!important;
 }
 
 /* Compact comment panel */
