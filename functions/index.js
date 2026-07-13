@@ -14,13 +14,14 @@ function paypalBaseUrl() {
     : 'https://api-m.paypal.com';
 }
 
-function cors(req, res) {
+function cors(req, res, methods = 'POST, OPTIONS') {
   const allowedOrigins = [
     cfg('APP_ORIGIN', 'https://midiaistudio.web.app'),
     'https://midiaistudio.web.app',
     'https://midiaistudio.firebaseapp.com',
     'https://midiaistudio.com',
-    'https://www.midiaistudio.com'
+    'https://www.midiaistudio.com',
+    'https://midiaistudio.github.io'
   ];
 
   const origin = req.headers.origin || '';
@@ -34,7 +35,7 @@ function cors(req, res) {
 
   res.set('Access-Control-Allow-Origin', allowOrigin);
   res.set('Vary', 'Origin');
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Methods', methods);
   res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') {
@@ -258,5 +259,50 @@ exports.paypalWebhook = functions.https.onRequest(async (req, res) => {
   } catch (err) {
     console.error('paypalWebhook', err);
     return res.status(500).send(err.message || 'webhook error');
+  }
+});
+
+// Board MIDI/file proxy — browser CORS 우회용 (미리듣기)
+exports.boardFileProxy = functions.https.onRequest(async (req, res) => {
+  // Public board attachments: allow any browser origin
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'GET') {
+    res.status(405).send('Method Not Allowed');
+    return;
+  }
+  try {
+    const path = String(req.query.path || '').trim();
+    if (!path || !path.startsWith('board/') || path.includes('..') || path.includes('\\')) {
+      res.status(400).send('Invalid path');
+      return;
+    }
+    const bucketName = cfg('STORAGE_BUCKET', '') || admin.app().options.storageBucket || '';
+    const bucket = bucketName ? admin.storage().bucket(bucketName) : admin.storage().bucket();
+    const file = bucket.file(path);
+    const [exists] = await file.exists();
+    if (!exists) {
+      res.status(404).send('File not found');
+      return;
+    }
+    const [buf] = await file.download();
+    let contentType = 'application/octet-stream';
+    try {
+      const [meta] = await file.getMetadata();
+      contentType = meta.contentType || contentType;
+    } catch (_) {}
+    if (/\.(mid|midi)$/i.test(path)) contentType = 'audio/midi';
+    if (/\.wav$/i.test(path)) contentType = 'audio/wav';
+    res.set('Content-Type', contentType);
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.status(200).send(buf);
+  } catch (err) {
+    console.error('boardFileProxy', err);
+    res.status(500).send(err.message || 'proxy error');
   }
 });

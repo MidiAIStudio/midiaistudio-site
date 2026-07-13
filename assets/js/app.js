@@ -2048,10 +2048,20 @@ function audioBufferToWavBlob(audioBuffer){
 }
 async function boardMidiBytes(path, url){
   const tryPath = path || boardStoragePathFromUrl(url);
-  const withTimeout = (p, ms=25000)=>Promise.race([
+  const withTimeout = (p, ms=30000)=>Promise.race([
     p,
     new Promise((_,rej)=>setTimeout(()=>rej(new Error('MIDI 로드 시간 초과')), ms))
   ]);
+  const base = String(CONFIG.functionsBaseUrl || '').replace(/\/$/, '');
+  // 1) Cloud Function proxy (CORS-safe)
+  if(tryPath && base && !base.includes('PASTE_')){
+    try{
+      const res = await withTimeout(fetch(`${base}/boardFileProxy?path=${encodeURIComponent(tryPath)}`, { credentials:'omit' }));
+      if(res.ok) return await res.arrayBuffer();
+      console.warn('boardFileProxy status', res.status);
+    }catch(err){ console.warn('boardFileProxy failed', err); }
+  }
+  // 2) Firebase Storage SDK
   if(tryPath && storage && storageApi?.ref){
     if(storageApi.getBlob){
       try{
@@ -2066,9 +2076,14 @@ async function boardMidiBytes(path, url){
       }catch(err){ console.warn('getBytes failed', err); }
     }
   }
-  const res = await withTimeout(fetch(url, { mode:'cors', credentials:'omit' }));
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  return res.arrayBuffer();
+  // 3) Direct download URL (needs Storage CORS)
+  if(url){
+    try{
+      const res = await withTimeout(fetch(url, { mode:'cors', credentials:'omit' }));
+      if(res.ok) return await res.arrayBuffer();
+    }catch(err){ console.warn('direct fetch failed', err); }
+  }
+  throw new Error('MIDI 파일을 가져오지 못했습니다. Functions(boardFileProxy) 배포와 Storage 경로를 확인하세요.');
 }
 async function renderMidiPreviewWav(midiArrayBuffer, maxSec=40){
   await ensureMidiPlayerLib();
@@ -2161,7 +2176,8 @@ async function prepareBoardMidiPreview(btn){
     console.warn('midi preview failed', err);
     btn.disabled = false;
     btn.textContent = '미리듣기';
-    setBoardMidiMsg(card, '미리듣기 변환 실패. 다운로드 후 PC에서 재생해주세요.');
+    const raw = String(err?.message || err || '');
+    setBoardMidiMsg(card, `미리듣기 실패: ${raw.slice(0,120) || '알 수 없는 오류'}`);
   }
 }
 function hydrateBoardMidiPlayers(root=document){
