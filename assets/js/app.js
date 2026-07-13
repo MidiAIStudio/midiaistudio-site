@@ -773,6 +773,14 @@ function bindAdminTabs(){
   });
 }
 
+function updateBoardPinnedUi(){
+  const wrap=$('boardPinnedWrap');
+  if(!wrap) return;
+  const show=!!isAdminUser;
+  wrap.style.display=show?'flex':'none';
+  wrap.hidden=!show;
+  if(!show && $('boardPostPinned')) $('boardPostPinned').checked=false;
+}
 function setAuthUiSignedOut(){
   currentUser = null; currentUserDoc = null; isAdminUser = false;
   $('adminNav')?.classList.add('hidden');
@@ -786,6 +794,7 @@ function setAuthUiSignedOut(){
   if (page==='my-tickets.html' && $('myTicketList')) $('myTicketList').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='admin.html') setAdminGate(`<p>${tr('need_login')}</p><p class="muted">Google 로그인 후 role=admin 계정만 접근할 수 있습니다.</p>`);
+  updateBoardPinnedUi();
   updatePurchaseAccountBox();
   updateSupportFormUi();
 }
@@ -812,6 +821,7 @@ async function setAuthUiSignedIn(user){
       setAdminGate(`<p>${tr('no_permission')}</p><p class="muted">${tr('admin_required')}</p>`);
     }
   }
+  updateBoardPinnedUi();
   updatePurchaseAccountBox();
   updateSupportFormUi();
 }
@@ -1929,14 +1939,45 @@ function listenBoardPosts(){
 
 const BOARD_MAX_ATTACHMENTS = 5;
 const BOARD_MAX_FILE_SIZE = 50 * 1024 * 1024;
-const BOARD_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm))$/i;
+const BOARD_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm)|audio\/(midi|mid|x-midi)|application\/(x-)?midi)$/i;
 let selectedBoardFiles = [];
 let existingBoardAttachments = [];
+let midiPlayerLibPromise = null;
 
+function isBoardMidi(fileOrAttachment){
+  const mime = String(fileOrAttachment?.type || fileOrAttachment?.mime || '').toLowerCase();
+  const name = String(fileOrAttachment?.name || fileOrAttachment?.fileName || '').toLowerCase();
+  const stored = String(fileOrAttachment?.type || '').toLowerCase();
+  if(stored === 'midi') return true;
+  if(/audio\/(midi|mid|x-midi)|application\/(x-)?midi/.test(mime)) return true;
+  if(/\.(mid|midi)$/.test(name)) return true;
+  return false;
+}
 function boardFileType(fileOrAttachment){
+  if(isBoardMidi(fileOrAttachment)) return 'midi';
   const mime = String(fileOrAttachment?.type || fileOrAttachment?.mime || '');
   if(mime.startsWith('video/')) return 'video';
+  if(String(fileOrAttachment?.type || '') === 'video') return 'video';
   return 'image';
+}
+function boardMidiContentType(file){
+  return file?.type || 'audio/midi';
+}
+function ensureMidiPlayerLib(){
+  if(window.customElements?.get('midi-player')) return Promise.resolve();
+  if(midiPlayerLibPromise) return midiPlayerLibPromise;
+  midiPlayerLibPromise = new Promise((resolve, reject)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/combine/npm/tone@14.7.77,npm/@magenta/music@1.23.1/es6/core.js,npm/html-midi-player@1.5.0';
+    s.async = true;
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('MIDI player load failed'));
+    document.head.appendChild(s);
+  }).catch(err=>{
+    midiPlayerLibPromise = null;
+    throw err;
+  });
+  return midiPlayerLibPromise;
 }
 function boardSafeFilename(name){
   const raw = String(name || 'attachment').normalize('NFKC');
@@ -1946,11 +1987,19 @@ function boardAttachmentItemHtml(a, idx, editable=false){
   const type = boardFileType(a);
   const name = esc(a.name || a.fileName || 'attachment');
   const url = esc(a.url || '');
-  const badge = type === 'video' ? '🎥 영상' : '🖼️ 사진';
+  const badge = type === 'video' ? '🎥 영상' : type === 'midi' ? '🎹 MIDI' : '🖼️ 사진';
   const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-existing-attachment="${idx}">삭제</button>` : '';
-  const media = type === 'video'
-    ? `<video controls preload="metadata" src="${url}"></video>`
-    : `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`;
+  let media = '';
+  if(type === 'video'){
+    media = `<video controls preload="metadata" src="${url}"></video>`;
+  } else if(type === 'midi'){
+    media = `<div class="board-midi-wrap">
+      <midi-player class="board-midi-player" src="${url}" sound-font="https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus"></midi-player>
+      <a class="board-midi-download" href="${url}" target="_blank" rel="noopener noreferrer" download>다운로드</a>
+    </div>`;
+  } else {
+    media = `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`;
+  }
   return `<figure class="board-attachment-item board-attachment-${type}">${media}<figcaption><span>${badge}</span><b>${name}</b>${remove}</figcaption></figure>`;
 }
 function boardAttachmentsHtml(list){
@@ -1958,24 +2007,33 @@ function boardAttachmentsHtml(list){
   if(!arr.length) return '';
   return `<div class="board-attachments">${arr.map((a,i)=>boardAttachmentItemHtml(a,i,false)).join('')}</div>`;
 }
+function hydrateBoardMidiPlayers(root=document){
+  if(!root.querySelector?.('midi-player, .board-midi-player')) return;
+  ensureMidiPlayerLib().catch(err=>console.warn(err));
+}
 function renderBoardAttachmentPreview(){
   const box = $('boardAttachmentPreview');
   if(!box) return;
   const existing = existingBoardAttachments.map((a,i)=>boardAttachmentItemHtml(a,i,true)).join('');
   const fresh = selectedBoardFiles.map((file,i)=>{
     const type = boardFileType(file);
-    const icon = type === 'video' ? '🎥' : '🖼️';
-    return `<div class="board-file-chip"><span>${icon}</span><b>${esc(file.name)}</b><small>${Math.ceil(file.size/1024/1024)}MB</small><button type="button" class="secondary mini-btn danger-btn" data-remove-new-attachment="${i}">삭제</button></div>`;
+    const icon = type === 'video' ? '🎥' : type === 'midi' ? '🎹' : '🖼️';
+    return `<div class="board-file-chip"><span>${icon}</span><b>${esc(file.name)}</b><small>${Math.max(1, Math.ceil(file.size/1024/1024))}MB</small><button type="button" class="secondary mini-btn danger-btn" data-remove-new-attachment="${i}">삭제</button></div>`;
   }).join('');
-  box.innerHTML = existing || fresh ? `${existing}<div class="board-file-chip-list">${fresh}</div>` : '<p class="muted">첨부한 사진/영상이 없습니다.</p>';
+  box.innerHTML = existing || fresh ? `${existing}<div class="board-file-chip-list">${fresh}</div>` : '<p class="muted">첨부한 파일이 없습니다.</p>';
   box.querySelectorAll('[data-remove-existing-attachment]').forEach(btn=>btn.onclick=()=>{ existingBoardAttachments.splice(Number(btn.dataset.removeExistingAttachment),1); renderBoardAttachmentPreview(); });
   box.querySelectorAll('[data-remove-new-attachment]').forEach(btn=>btn.onclick=()=>{ selectedBoardFiles.splice(Number(btn.dataset.removeNewAttachment),1); const input=$('boardAttachments'); if(input) input.value=''; renderBoardAttachmentPreview(); });
+  hydrateBoardMidiPlayers(box);
+}
+function boardFileAllowed(file){
+  if(isBoardMidi(file)) return true;
+  return BOARD_ALLOWED_MIME.test(file.type || '');
 }
 function addBoardFiles(files){
   const msg = $('boardPostMsg');
   const incoming = Array.from(files || []);
   for(const file of incoming){
-    if(!BOARD_ALLOWED_MIME.test(file.type || '')){ if(msg) msg.textContent = '지원하지 않는 파일 형식입니다. JPG/PNG/WEBP/GIF/MP4/WEBM만 업로드할 수 있어요.'; continue; }
+    if(!boardFileAllowed(file)){ if(msg) msg.textContent = '지원하지 않는 파일 형식입니다. JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI만 업로드할 수 있어요.'; continue; }
     if(file.size > BOARD_MAX_FILE_SIZE){ if(msg) msg.textContent = '파일당 최대 50MB까지 업로드할 수 있어요.'; continue; }
     if(existingBoardAttachments.length + selectedBoardFiles.length >= BOARD_MAX_ATTACHMENTS){ if(msg) msg.textContent = '게시글당 첨부는 최대 5개까지 가능합니다.'; break; }
     selectedBoardFiles.push(file);
@@ -2009,9 +2067,10 @@ async function uploadBoardAttachments(postId){
     const safeName = boardSafeFilename(file.name);
     const path = `board/${currentUser.uid}/${postId}/${Date.now()}_${i}_${safeName}`;
     const fileRef = ref(storage, path);
-    await uploadBytes(fileRef, file, { contentType: file.type });
+    const contentType = isBoardMidi(file) ? boardMidiContentType(file) : (file.type || 'application/octet-stream');
+    await uploadBytes(fileRef, file, { contentType });
     const url = await getDownloadURL(fileRef);
-    uploaded.push({ type: boardFileType(file), mime: file.type, name: file.name, size: file.size, path, url });
+    uploaded.push({ type: boardFileType(file), mime: contentType, name: file.name, size: file.size, path, url });
   }
   return uploaded;
 }
@@ -2030,27 +2089,124 @@ function bindBoardLightbox(){
   }, {once:false});
 }
 
+const BOARD_EMOJI_GROUPS = [
+  { id:'smile', icon:'😀', items:['😀','😃','😄','😁','😆','😅','🤣','😂','🙂','🙃','😉','😊','😇','🥰','😍','🤩','😘','😗','😚','😙','🥲','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😮‍💨','🤥','😌','😔','😪','🤤','😴','😷','🤒','🤕','🤢','🤮','🥵','🥶','🥴','😵','🤯','🤠','🥳','🥸','😎','🤓','🧐'] },
+  { id:'gesture', icon:'👍', items:['👍','👎','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','☝️','✋','🤚','🖐️','🖖','👋','🤝','👏','🙌','👐','🤲','🙏','💪','🦾','💅','✍️','🤳'] },
+  { id:'heart', icon:'❤️', items:['❤️','🧡','💛','💚','💙','💜','🖤','🤍','🤎','💔','❣️','💕','💞','💓','💗','💖','💘','💝','💟','☮️','✝️','☪️','🕉️','☸️','✡️','🔯','🕎','☯️','☦️','🛐'] },
+  { id:'fun', icon:'🎉', items:['🎉','🎊','🎈','🎁','🎀','🏆','🥇','🥈','🥉','⚽','🏀','🏈','⚾','🎾','🏐','🎱','🎮','🕹️','🎲','🧩','🎯','🎵','🎶','🎤','🎧','🎼','🎹','🥁','🎷','🎺','🎸','🪕','🎻'] },
+  { id:'nature', icon:'🌸', items:['🌸','💮','🏵️','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🌲','🌳','🌴','🌵','🌾','🌿','☘️','🍀','🍁','🍂','🍃','🍄','🌰','🦀','🦞','🦐','🦑','🌍','🌎','🌏','🌕','🌖','🌗','🌘','🌑','🌒','🌓','🌔','🌙','⭐','🌟','✨','⚡','🔥','💧','🌈'] },
+  { id:'food', icon:'🍕', items:['🍎','🍐','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌶️','🫒','🌽','🥕','🧄','🧅','🥔','🍠','🥐','🥯','🍞','🥖','🥨','🧀','🥚','🍳','🧈','🥞','🧇','🥓','🥩','🍗','🍖','🦴','🌭','🍔','🍟','🍕','🫓','🥪','🥙','🧆','🌮','🌯','🫔','🥗','🥘','🫕','🥫','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🦪','🍤','🍙','🍚','🍘','🍥','🥠','🥮','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪','🌰','🥜','🍯','🥛','🍼','☕','🍵','🧃','🥤','🧋','🍶','🍺','🍻','🥂','🍷','🥃','🍸','🍹','🧉','🍾'] },
+  { id:'travel', icon:'✈️', items:['🚗','🚕','🚙','🚌','🚎','🏎️','🚓','🚑','🚒','🚐','🛻','🚚','🚛','🚜','🛵','🏍️','🛺','🚲','🛴','🚏','🛣️','🛤️','⛽','🚨','🚥','🚦','🚧','⚓','⛵','🚤','🛳️','⛴️','🛥️','🚢','✈️','🛩️','🛫','🛬','🪂','💺','🚁','🚟','🚠','🚡','🛰️','🚀','🛸','🛎️','🧳','⌛','⏳','⌚','⏰','⏱️','⏲️','🕰️','🌡️','⛱️'] },
+  { id:'symbol', icon:'💯', items:['💯','💢','💥','💫','💦','💨','🕳️','💣','💬','👁️‍🗨️','🗨️','🗯️','💭','💤','👋','🔴','🟠','🟡','🟢','🔵','🟣','⚫','⚪','🟤','🔺','🔻','💠','🔘','🔳','🔲','▪️','▫️','◾','◽','◼️','◻️','🟥','🟧','🟨','🟩','🟦','🟪','⬛','⬜','🟫','🔈','🔇','🔉','🔊','🔔','🔕','📣','📢','💬','💭','🗯️','♠️','♥️','♦️','♣️','🃏','🀄','🎴','🎭','🖼️','🎨'] }
+];
+
+function insertBoardEmoji(emoji){
+  const ta=$('boardPostContent');
+  if(!ta) return;
+  const start=typeof ta.selectionStart==='number'?ta.selectionStart:ta.value.length;
+  const end=typeof ta.selectionEnd==='number'?ta.selectionEnd:ta.value.length;
+  const before=ta.value.slice(0,start);
+  const after=ta.value.slice(end);
+  ta.value=before+emoji+after;
+  const next=start+emoji.length;
+  ta.focus();
+  try{ ta.setSelectionRange(next,next); }catch(_){}
+  ta.dispatchEvent(new Event('input',{bubbles:true}));
+}
+
+function renderBoardEmojiPicker(activeId){
+  const picker=$('boardEmojiPicker');
+  if(!picker) return;
+  const group=BOARD_EMOJI_GROUPS.find(g=>g.id===activeId)||BOARD_EMOJI_GROUPS[0];
+  picker.innerHTML=`<div class="board-emoji-tabs">${BOARD_EMOJI_GROUPS.map(g=>`<button type="button" class="board-emoji-tab ${g.id===group.id?'is-active':''}" data-emoji-tab="${g.id}" aria-label="${g.id}">${g.icon}</button>`).join('')}</div><div class="board-emoji-grid">${group.items.map(e=>`<button type="button" class="board-emoji-item" data-emoji="${e}" title="${e}">${e}</button>`).join('')}</div><p class="board-emoji-hint">이모티콘을 눌러 내용에 삽입합니다.</p>`;
+}
+
+function setBoardEmojiPickerOpen(open){
+  const picker=$('boardEmojiPicker');
+  const btn=$('boardEmojiBtn');
+  if(!picker||!btn) return;
+  picker.classList.toggle('hidden',!open);
+  btn.setAttribute('aria-expanded', open?'true':'false');
+  if(open && !picker.dataset.ready){
+    renderBoardEmojiPicker('smile');
+    picker.dataset.ready='1';
+  }
+}
+
+function bindBoardEmojiPicker(){
+  const btn=$('boardEmojiBtn');
+  const picker=$('boardEmojiPicker');
+  if(!btn||!picker||btn.dataset.bound) return;
+  btn.dataset.bound='1';
+  btn.addEventListener('click',e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    setBoardEmojiPickerOpen(picker.classList.contains('hidden'));
+  });
+  picker.addEventListener('click',e=>{
+    const tab=e.target.closest('[data-emoji-tab]');
+    if(tab){
+      e.preventDefault();
+      renderBoardEmojiPicker(tab.getAttribute('data-emoji-tab'));
+      return;
+    }
+    const item=e.target.closest('[data-emoji]');
+    if(item){
+      e.preventDefault();
+      insertBoardEmoji(item.getAttribute('data-emoji')||'');
+    }
+  });
+  document.addEventListener('click',e=>{
+    if(picker.classList.contains('hidden')) return;
+    if(picker.contains(e.target)||btn.contains(e.target)) return;
+    setBoardEmojiPickerOpen(false);
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape') setBoardEmojiPickerOpen(false);
+  });
+}
+
 async function initBoardPostEditor(){
-  const form=$('boardPostForm'); if(!form||form.dataset.bound)return;
+  const form=$('boardPostForm'); if(!form) return;
+  updateBoardPinnedUi();
   const id=getParam('id');
   const {doc,getDoc,setDoc,addDoc,collection,serverTimestamp}=firestoreApi;
-  if($('boardPinnedWrap')) $('boardPinnedWrap').style.display=isAdminUser?'flex':'none';
-  if(id){
+  if(id && !form.dataset.editLoaded){
     try{
       const snap=await getDoc(doc(db,'boardPosts',id));
       const d=snap.exists()?{id:snap.id,...snap.data()}:null;
-      if(!d){ $('boardPostMsg').textContent=tr('empty'); }
-      else if(!canManageRecord(d)){ $('boardPostMsg').textContent=tr('no_permission'); form.querySelector('button[type="submit"]').disabled=true; }
-      else { $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정'); $('boardPostTitle').value=d.title||''; $('boardPostContent').value=d.content||''; existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : []; renderBoardAttachmentPreview(); if($('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned; }
+      if(!d){
+        $('boardPostMsg').textContent=tr('empty');
+        form.dataset.editLoaded='1';
+      } else if(!currentUser){
+        $('boardPostMsg').textContent=tr('need_login');
+        form.querySelector('button[type="submit"]').disabled=true;
+      } else if(!canManageRecord(d)){
+        $('boardPostMsg').textContent=tr('no_permission');
+        form.querySelector('button[type="submit"]').disabled=true;
+        form.dataset.editLoaded='1';
+      } else {
+        $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정');
+        $('boardPostTitle').value=d.title||'';
+        $('boardPostContent').value=d.content||'';
+        existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : [];
+        renderBoardAttachmentPreview();
+        if(isAdminUser && $('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned;
+        form.querySelector('button[type="submit"]').disabled=false;
+        if($('boardPostMsg')) $('boardPostMsg').textContent='';
+        form.dataset.editLoaded='1';
+      }
     }catch(e){ $('boardPostMsg').textContent=e.message; }
   }
+  if(form.dataset.bound) return;
   bindBoardAttachmentPicker();
+  bindBoardEmojiPicker();
   form.dataset.bound='1';
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
     const data={uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),title:$('boardPostTitle').value.trim(),content:$('boardPostContent').value.trim(),visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
-    if(isAdminUser){ data.authorRole='admin'; if($('boardPostPinned')) data.pinned=$('boardPostPinned').checked; }
+    if(isAdminUser){ data.authorRole='admin'; data.pinned=!!$('boardPostPinned')?.checked; }
     try{
       let postId=id;
       if(id){
@@ -2058,7 +2214,7 @@ async function initBoardPostEditor(){
         await setDoc(doc(db,'boardPosts',id),{...data,attachments:[...existingBoardAttachments,...uploaded]},{merge:true});
         postId=id;
       } else {
-        const ref=await addDoc(collection(db,'boardPosts'),{...data,pinned:isAdminUser&&$('boardPostPinned')?.checked || false,commentCount:0,viewCount:0,likeCount:0,attachments:[],createdAt:serverTimestamp()});
+        const ref=await addDoc(collection(db,'boardPosts'),{...data,pinned:isAdminUser&&!!$('boardPostPinned')?.checked,commentCount:0,viewCount:0,likeCount:0,attachments:[],createdAt:serverTimestamp()});
         postId=ref.id;
         const uploaded = await uploadBoardAttachments(postId);
         if(uploaded.length) await setDoc(doc(db,'boardPosts',postId),{attachments:uploaded,updatedAt:serverTimestamp()},{merge:true});
@@ -2080,6 +2236,7 @@ function renderBoardPost(d,err){
     : {board:'자유게시판', pinned:'고정 게시글', author:'작성자', date:'작성일', views:'조회', likes:'추천', comments:'댓글', like:'추천', edit:'수정', del:'삭제'};
   const author = contentAuthor(d);
   box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author"><i>👤</i><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="secondary like-btn">👍 ${esc(labels.like)}</button>${manage?`<a class="secondary" href="${boardEditUrl(d.id)}">${esc(labels.edit)}</a><button id="postDeleteBtn" class="secondary danger-btn">${esc(labels.del)}</button>`:''}</div>`;
+  hydrateBoardMidiPlayers(box);
   refreshBoardPostActions();
 }
 async function incrementViewOnce(postId){

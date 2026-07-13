@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v46-i18n-20260713">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v65-emoji-corner-20260714">
 </head>
 <body class="portal-page hub-page">
   <div class="orb orb-a"></div>
@@ -56,14 +56,18 @@
       <div class="hub-card">
         <form id="boardPostForm" class="hub-form-card">
           <input id="boardPostTitle" placeholder="제목" required>
-          <textarea id="boardPostContent" rows="8" placeholder="내용" required></textarea>
-          <div class="board-upload-box">
-            <label for="boardAttachments">사진/영상 첨부</label>
-            <input id="boardAttachments" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm" multiple>
-            <p class="muted small-copy">JPG/PNG/WEBP/GIF/MP4/WEBM · 파일당 50MB · 최대 5개</p>
-            <div id="boardAttachmentPreview" class="board-attachment-preview"><p class="muted">첨부한 사진/영상이 없습니다.</p></div>
+          <div class="board-compose-box">
+            <textarea id="boardPostContent" rows="8" placeholder="내용" required></textarea>
+            <button type="button" id="boardEmojiBtn" class="board-emoji-btn" aria-label="이모티콘" aria-expanded="false" title="이모티콘">😊</button>
+            <div id="boardEmojiPicker" class="board-emoji-picker hidden" role="dialog" aria-label="이모티콘 선택"></div>
           </div>
-          <label class="check" id="boardPinnedWrap"><input id="boardPostPinned" type="checkbox"> 상단 고정</label>
+          <div class="board-upload-box">
+            <label for="boardAttachments">사진/영상/MIDI 첨부</label>
+            <input id="boardAttachments" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/midi,audio/mid,.mid,.midi" multiple>
+            <p class="muted small-copy">JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 파일당 50MB · 최대 5개</p>
+            <div id="boardAttachmentPreview" class="board-attachment-preview"><p class="muted">첨부한 파일이 없습니다.</p></div>
+          </div>
+          <label class="check" id="boardPinnedWrap" hidden style="display:none"><input id="boardPostPinned" type="checkbox"> 상단 고정</label>
           <button class="primary" type="submit">저장</button>
           <p id="boardPostMsg" class="form-msg"></p>
         </form>
@@ -86,7 +90,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio. All rights reserved.</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=v46-i18n-20260713"></script>
-  <script type="module" src="./assets/js/app.js?v=v46-i18n-20260713"></script>
+  <script type="module" src="./assets/js/config.js?v=v64-board-emoji-20260713"></script>
+  <script type="module" src="./assets/js/app.js?v=v64-board-emoji-20260713"></script>
 </body>
 </html>
