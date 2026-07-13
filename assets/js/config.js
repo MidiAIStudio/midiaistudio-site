@@ -1,4 +1,5 @@
 window.MIDIAI_CONFIG = {
+  buildTag: "v37-inicis-card-20260713",
   firebase: {
     apiKey: "AIzaSyAAS0fFhGk9zHz0eb3XtNob42g3OvYdDiA",
     authDomain: "midiaistudio.firebaseapp.com",
