@@ -1942,11 +1942,11 @@ const BOARD_MAX_FILE_SIZE = 50 * 1024 * 1024;
 const BOARD_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm)|audio\/(midi|mid|x-midi)|application\/(x-)?midi)$/i;
 let selectedBoardFiles = [];
 let existingBoardAttachments = [];
-const BOARD_MIDI_SOUNDFONT = 'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus';
 let midiPlayerLibPromise = null;
-let boardMidiEngine = null;
+let boardMidiSynths = [];
 let boardMidiPlayingUrl = null;
 let boardMidiActiveBtn = null;
+let boardMidiStopTimer = 0;
 
 function isBoardMidi(fileOrAttachment){
   const mime = String(fileOrAttachment?.type || fileOrAttachment?.mime || '').toLowerCase();
@@ -1969,28 +1969,32 @@ function boardMidiContentType(file){
   if(/^(audio\/(midi|mid|x-midi)|application\/(x-)?midi)$/.test(t)) return t;
   return 'audio/midi';
 }
-function getMagentaCore(){
-  return window.core || null;
-}
 function ensureMidiPlayerLib(){
-  if(getMagentaCore()?.SoundFontPlayer) return Promise.resolve(getMagentaCore());
+  if(window.Tone && window.Midi) return Promise.resolve();
   if(midiPlayerLibPromise) return midiPlayerLibPromise;
   midiPlayerLibPromise = new Promise((resolve, reject)=>{
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js';
-    s.async = true;
-    s.onload = ()=>{
-      const core = getMagentaCore();
-      if(core?.SoundFontPlayer) resolve(core);
-      else reject(new Error('MIDI 엔진 로드 실패'));
+    const fail = ()=>{ midiPlayerLibPromise=null; reject(new Error('MIDI 엔진 로드 실패')); };
+    const load = (src, next)=>{
+      const s=document.createElement('script');
+      s.src=src;
+      s.async=true;
+      s.onload=next;
+      s.onerror=fail;
+      document.head.appendChild(s);
     };
-    s.onerror = ()=>reject(new Error('MIDI 엔진 로드 실패'));
-    document.head.appendChild(s);
-  }).catch(err=>{
-    midiPlayerLibPromise = null;
-    throw err;
+    load('https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js', ()=>{
+      load('https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/build/Midi.js', ()=>{
+        if(window.Tone && getToneMidi()) resolve();
+        else fail();
+      });
+    });
   });
   return midiPlayerLibPromise;
+}
+function getToneMidi(){
+  if(typeof window.Midi === 'function') return window.Midi;
+  if(typeof window.Midi?.Midi === 'function') return window.Midi.Midi;
+  return null;
 }
 function boardSafeFilename(name){
   const raw = String(name || 'attachment').normalize('NFKC');
@@ -2033,70 +2037,88 @@ function boardAttachmentsHtml(list){
 function boardStoragePathFromUrl(url){
   try{
     const u = new URL(String(url||''));
-    // https://firebasestorage.googleapis.com/v0/b/.../o/board%2Fuid%2F...
     const m = u.pathname.match(/\/o\/([^?]+)/);
     if(m) return decodeURIComponent(m[1]);
   }catch(_){}
   return '';
 }
+function setBoardMidiMsg(card, text){
+  const msg = card?.querySelector('.board-midi-msg');
+  if(!msg) return;
+  if(!text){ msg.hidden=true; msg.textContent=''; return; }
+  msg.hidden=false;
+  msg.textContent=text;
+}
 function stopBoardMidiPlayback(){
-  try{ boardMidiEngine?.stop?.(); }catch(_){}
+  if(boardMidiStopTimer){ clearTimeout(boardMidiStopTimer); boardMidiStopTimer=0; }
+  try{ window.Tone?.Transport?.stop?.(); window.Tone?.Transport?.cancel?.(0); }catch(_){}
+  boardMidiSynths.forEach(s=>{ try{ s.releaseAll?.(); s.dispose?.(); }catch(_){ } });
+  boardMidiSynths=[];
   if(boardMidiActiveBtn){
     boardMidiActiveBtn.classList.remove('is-playing');
     boardMidiActiveBtn.textContent='▶';
     boardMidiActiveBtn.disabled=false;
   }
+  if(boardMidiActiveBtn){
+    const card=boardMidiActiveBtn.closest('.board-midi-card');
+    setBoardMidiMsg(card,'');
+  }
   boardMidiPlayingUrl=null;
   boardMidiActiveBtn=null;
 }
 async function boardMidiBytes(path, url){
-  // Prefer Firebase SDK (no bucket CORS needed) when path is known.
-  if(path && storage && storageApi?.ref && storageApi?.getBytes){
-    try{
-      const bytes = await storageApi.getBytes(storageApi.ref(storage, path));
-      return bytes instanceof ArrayBuffer ? bytes : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-    }catch(err){
-      console.warn('storage getBytes failed, fallback fetch', err);
+  const tryPath = path || boardStoragePathFromUrl(url);
+  const withTimeout = (p, ms=15000)=>Promise.race([
+    p,
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('MIDI 로드 시간 초과')), ms))
+  ]);
+  if(tryPath && storage && storageApi?.ref){
+    if(storageApi.getBytes){
+      try{
+        const bytes = await withTimeout(storageApi.getBytes(storageApi.ref(storage, tryPath)));
+        return bytes instanceof ArrayBuffer ? bytes : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+      }catch(err){ console.warn('getBytes failed', err); }
+    }
+    if(storageApi.getBlob){
+      try{
+        const blob = await withTimeout(storageApi.getBlob(storageApi.ref(storage, tryPath)));
+        return await blob.arrayBuffer();
+      }catch(err){ console.warn('getBlob failed', err); }
     }
   }
-  if(path && storage && storageApi?.ref && storageApi?.getBlob){
-    try{
-      const blob = await storageApi.getBlob(storageApi.ref(storage, path));
-      return await blob.arrayBuffer();
-    }catch(err){
-      console.warn('storage getBlob failed, fallback fetch', err);
-    }
-  }
-  const res = await fetch(url, { mode:'cors' });
+  const res = await withTimeout(fetch(url, { mode:'cors', credentials:'omit' }));
   if(!res.ok) throw new Error('HTTP '+res.status);
   return res.arrayBuffer();
 }
-async function loadBoardNoteSequence(url, core, path=''){
-  let buf;
-  try{
-    buf = await boardMidiBytes(path || boardStoragePathFromUrl(url), url);
-  }catch(err){
-    const msg = String(err?.message||err||'');
-    if(/Failed to fetch|NetworkError|CORS|Load failed|storage\/unauthorized|permission/i.test(msg) || err?.name==='TypeError'){
-      const e = new Error('MIDI_LOAD');
-      e.code = 'cors';
-      throw e;
-    }
-    throw err;
-  }
-  const bytes = buf instanceof ArrayBuffer ? new Uint8Array(buf) : new Uint8Array(buf);
-  const blob = new Blob([bytes], { type:'audio/midi' });
-  if(typeof core.blobToNoteSequence === 'function') return core.blobToNoteSequence(blob);
-  if(typeof core.midiToSequenceProto === 'function') return core.midiToSequenceProto(bytes);
-  throw new Error('MIDI 파서를 찾을 수 없습니다.');
+async function playBoardMidiBuffer(arrayBuffer){
+  const Tone = window.Tone;
+  const MidiCtor = getToneMidi();
+  if(!Tone || !MidiCtor) throw new Error('MIDI 엔진 없음');
+  await Tone.start();
+  const midi = new MidiCtor(arrayBuffer);
+  const synth = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 0.4 }
+  }).toDestination();
+  synth.maxPolyphony = 128;
+  synth.volume.value = -8;
+  boardMidiSynths = [synth];
+  const now = Tone.now() + 0.05;
+  let end = 0;
+  midi.tracks.forEach(track=>{
+    track.notes.forEach(note=>{
+      const t = now + note.time;
+      synth.triggerAttackRelease(note.name, Math.max(0.05, note.duration), t, Math.max(0.15, Math.min(1, note.velocity)));
+      end = Math.max(end, note.time + note.duration);
+    });
+  });
+  return end;
 }
 async function toggleBoardMidiPlay(btn){
   const url = btn.getAttribute('data-midi-play');
   const path = btn.getAttribute('data-midi-path') || boardStoragePathFromUrl(url);
   const card = btn.closest('.board-midi-card');
-  const msg = card?.querySelector('.board-midi-msg');
   if(!url) return;
-  if(msg){ msg.hidden=true; msg.textContent=''; }
   if(boardMidiPlayingUrl === url){
     stopBoardMidiPlayback();
     return;
@@ -2104,41 +2126,30 @@ async function toggleBoardMidiPlay(btn){
   stopBoardMidiPlayback();
   btn.disabled=true;
   btn.textContent='…';
+  setBoardMidiMsg(card, 'MIDI 불러오는 중…');
   try{
-    const core = await ensureMidiPlayerLib();
-    if(window.Tone?.start) await window.Tone.start();
-    const ns = await loadBoardNoteSequence(url, core, path);
-    if(!boardMidiEngine){
-      boardMidiEngine = new core.SoundFontPlayer(BOARD_MIDI_SOUNDFONT);
-    }
-    await boardMidiEngine.loadSamples(ns);
-    boardMidiEngine.start(ns);
+    await ensureMidiPlayerLib();
+    setBoardMidiMsg(card, '재생 준비 중…');
+    const buf = await boardMidiBytes(path, url);
+    const duration = await playBoardMidiBuffer(buf);
+    if(!duration || duration <= 0) throw new Error('재생할 노트가 없습니다.');
     boardMidiPlayingUrl = url;
     boardMidiActiveBtn = btn;
     btn.classList.add('is-playing');
     btn.textContent='■';
     btn.disabled=false;
-    const finish = ()=>{ if(boardMidiPlayingUrl===url) stopBoardMidiPlayback(); };
-    if(typeof boardMidiEngine.callbackObject !== 'undefined'){
-      boardMidiEngine.callbackObject = {
-        run: ()=>{},
-        stop: finish
-      };
-    }
-    const total = Number(ns?.totalTime||0);
-    if(total>0) setTimeout(finish, Math.ceil(total*1000)+400);
+    setBoardMidiMsg(card, '');
+    boardMidiStopTimer = setTimeout(()=>{ if(boardMidiPlayingUrl===url) stopBoardMidiPlayback(); }, Math.ceil(duration*1000)+500);
   }catch(err){
+    console.warn('midi play failed', err);
     btn.disabled=false;
     btn.textContent='▶';
-    if(msg){
-      msg.hidden=false;
-      if(err?.code==='cors'){
-        msg.textContent='MIDI 파일을 불러오지 못했습니다. 잠시 후 다시 시도하거나 다운로드로 확인해주세요.';
-      } else {
-        msg.textContent='MIDI 재생에 실패했습니다. 다운로드로 확인해주세요.';
-      }
+    const raw=String(err?.message||err||'');
+    if(/Failed to fetch|NetworkError|CORS|storage\/unauthorized|permission|HTTP /i.test(raw) || err?.name==='TypeError'){
+      setBoardMidiMsg(card, 'MIDI 파일을 불러오지 못했습니다. 다운로드로 확인해주세요.');
+    } else {
+      setBoardMidiMsg(card, '재생 실패: '+(raw.slice(0,80)||'알 수 없는 오류'));
     }
-    console.warn('midi play failed', err);
   }
 }
 function hydrateBoardMidiPlayers(root=document){
