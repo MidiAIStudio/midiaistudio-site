@@ -1774,10 +1774,14 @@ async function callFunctionJson(name, payload){
   return data || {};
 }
 async function loadPortOneSdk(){
-  if(window.PortOne) return window.PortOne;
+  if(window.PortOneSdk) return window.PortOneSdk;
   const mod = await import('https://cdn.portone.io/v2/browser-sdk.esm.js');
-  window.PortOne = mod;
-  return mod;
+  const sdk = mod.default?.requestPayment ? mod.default : (mod.requestPayment ? mod : mod.default);
+  if(!sdk || typeof sdk.requestPayment !== 'function'){
+    throw new Error('PortOne SDK를 불러오지 못했습니다.');
+  }
+  window.PortOneSdk = sdk;
+  return sdk;
 }
 async function requestKakaoPayPayment(){
   if(!currentUser){
@@ -1944,9 +1948,15 @@ function renderKoreanPaymentButtons(){
 }
 function initPayPal(){
   if(!$('paypalButtons')) return;
-  updatePurchaseAccountBox();
-  if(isKoreanCheckout() && (CONFIG.portoneKakaoPayChannelKey || CONFIG.portoneInicisChannelKey)){
-    renderKoreanPaymentButtons();
+  try{
+    updatePurchaseAccountBox();
+    if(isKoreanCheckout() && (CONFIG.portoneKakaoPayChannelKey || CONFIG.portoneInicisChannelKey)){
+      renderKoreanPaymentButtons();
+      return;
+    }
+  }catch(err){
+    console.error('initPayPal', err);
+    $('paypalButtons').innerHTML = `<p class="muted">${esc('결제 버튼을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.')}</p>`;
     return;
   }
   if(!CONFIG.paypalClientId || String(CONFIG.paypalClientId).startsWith('PASTE_')) {

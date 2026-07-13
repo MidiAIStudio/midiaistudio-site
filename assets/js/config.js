@@ -1,5 +1,5 @@
 window.MIDIAI_CONFIG = {
-  buildTag: "v38-inicis-phone-20260713",
+  buildTag: "v42-deploy-fix-20260713",
   firebase: {
     apiKey: "AIzaSyAAS0fFhGk9zHz0eb3XtNob42g3OvYdDiA",
     authDomain: "midiaistudio.firebaseapp.com",
