@@ -1811,7 +1811,6 @@ async function requestKakaoPayPayment(){
         customerId: currentUser.uid,
         fullName: currentUser.displayName || currentUser.email || 'MidiAI User',
         email: currentUser.email || undefined,
-        phoneNumber,
       },
       customData: {
         uid: currentUser.uid,
