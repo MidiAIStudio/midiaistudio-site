@@ -451,7 +451,7 @@ function updatePurchaseAccountBox(){
 
 function updatePurchaseReviewPanel(){
   if($('purchaseReviewPrice')) $('purchaseReviewPrice').textContent = purchaseDisplayPrice();
-  if($('purchasePaymentMethod')) $('purchasePaymentMethod').textContent = isKoreanCheckout() ? '카카오페이' : 'PayPal';
+  if($('purchasePaymentMethod')) $('purchasePaymentMethod').textContent = isKoreanCheckout() ? '신용/체크카드 · 카카오페이' : 'PayPal';
   if($('purchaseBuyerInfo')){
     if(currentUser){
       $('purchaseBuyerInfo').textContent = currentUser.email || currentUser.displayName || currentUser.uid;
@@ -1811,6 +1811,7 @@ async function requestKakaoPayPayment(){
         customerId: currentUser.uid,
         fullName: currentUser.displayName || currentUser.email || 'MidiAI User',
         email: currentUser.email || undefined,
+        phoneNumber,
       },
       customData: {
         uid: currentUser.uid,
@@ -1832,6 +1833,37 @@ async function requestKakaoPayPayment(){
 }
 window.midiaiKakaoPay = requestKakaoPayPayment;
 
+function normalizeKoreanPhone(value){
+  return String(value || '').replace(/\D/g, '').slice(0, 11);
+}
+function formatKoreanPhone(value){
+  const digits = normalizeKoreanPhone(value);
+  if(digits.length <= 3) return digits;
+  if(digits.length <= 7) return `${digits.slice(0,3)}-${digits.slice(3)}`;
+  if(digits.length === 10) return `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`;
+  return `${digits.slice(0,3)}-${digits.slice(3,7)}-${digits.slice(7)}`;
+}
+function getPurchasePhone(){
+  return normalizeKoreanPhone($('purchasePhone')?.value);
+}
+function initPurchasePhone(){
+  const input = $('purchasePhone');
+  const row = $('purchasePhoneRow');
+  const help = $('purchasePhoneHelp');
+  if(!input) return;
+  const visible = isKoreanCheckout();
+  row?.classList.toggle('hidden', !visible);
+  help?.classList.toggle('hidden', !visible);
+  const saved = localStorage.getItem('midiai_purchase_phone') || '';
+  if(saved && !input.value) input.value = formatKoreanPhone(saved);
+  input.addEventListener('input', ()=>{
+    const digits = normalizeKoreanPhone(input.value);
+    input.value = formatKoreanPhone(digits);
+    input.classList.remove('is-invalid');
+    if(digits.length >= 10) localStorage.setItem('midiai_purchase_phone', digits);
+  });
+}
+
 async function requestInicisCardPayment(){
   if(!currentUser){
     const msg = purchaseLocaleText().loginAlert || 'Google 로그인 후 결제할 수 있습니다.';
@@ -1848,6 +1880,16 @@ async function requestInicisCardPayment(){
     paypalStatus('KG이니시스 테스트 채널키가 없습니다.', 'err');
     return;
   }
+  const phoneNumber = getPurchasePhone();
+  if(!/^01\d{8,9}$/.test(phoneNumber)){
+    const input = $('purchasePhone');
+    input?.classList.add('is-invalid');
+    input?.focus();
+    paypalStatus('휴대폰 번호를 정확히 입력해주세요. 예: 010-1234-5678', 'err');
+    alert('KG이니시스 카드 결제를 위해 휴대폰 번호를 입력해주세요.');
+    return;
+  }
+  localStorage.setItem('midiai_purchase_phone', phoneNumber);
   try{
     paypalStatus('KG이니시스 테스트 결제창을 여는 중입니다...');
     const PortOne = await loadPortOneSdk();
@@ -2061,4 +2103,5 @@ setAuthUiSignedOut();
 
 initForms();
 initAuth();
+initPurchasePhone();
 initPayPal();
