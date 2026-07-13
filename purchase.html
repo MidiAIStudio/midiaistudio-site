@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v42-deploy-fix-20260713">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v46-i18n-20260713">
 </head>
 <body class="portal-page purchase-page hub-page">
   <div class="orb orb-a"></div>
@@ -88,20 +88,28 @@
             </div>
 
             <div class="purchase-checkout">
-              <div class="purchase-checkout-meta payment-review-panel">
-                <div class="purchase-checkout-row">
-                  <span>주문자 정보</span>
-                  <strong id="purchaseBuyerInfo">Google 로그인 계정 기준</strong>
+              <div class="purchase-checkout-meta checkout-order-panel">
+                <div class="checkout-order-head">
+                  <span class="checkout-order-kicker">Checkout</span>
+                  <h3>결제 정보</h3>
                 </div>
-                <div class="purchase-checkout-row purchase-phone-row" id="purchasePhoneRow">
-                  <label for="purchasePhone">휴대폰 번호</label>
-                  <input id="purchasePhone" class="purchase-phone-input" type="tel" inputmode="numeric" autocomplete="tel" maxlength="13" placeholder="010-1234-5678" aria-describedby="purchasePhoneHelp">
-                </div>
-                <p id="purchasePhoneHelp" class="purchase-phone-help">KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.</p>
-                <div class="purchase-checkout-row">
-                  <span>결제수단</span>
-                  <strong id="purchasePaymentMethod">신용/체크카드 · 카카오페이</strong>
-                </div>
+                <dl class="checkout-order-list">
+                  <div class="checkout-order-item">
+                    <dt>주문자 정보</dt>
+                    <dd id="purchaseBuyerInfo" class="checkout-order-value">Google 로그인 계정 기준</dd>
+                  </div>
+                  <div class="checkout-order-item checkout-order-item--phone" id="purchasePhoneRow">
+                    <dt><label for="purchasePhone">휴대폰 번호</label></dt>
+                    <dd class="checkout-order-field">
+                      <input id="purchasePhone" class="checkout-order-input" type="tel" inputmode="numeric" autocomplete="tel" maxlength="13" placeholder="010-1234-5678" aria-describedby="purchasePhoneHelp">
+                      <p id="purchasePhoneHelp" class="checkout-order-hint">KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.</p>
+                    </dd>
+                  </div>
+                  <div class="checkout-order-item">
+                    <dt>결제수단</dt>
+                    <dd id="purchasePaymentMethod" class="checkout-pay-tags" aria-label="결제수단"></dd>
+                  </div>
+                </dl>
               </div>
               <div id="paypalButtons" class="paypal purchase-paypal-box"><p>결제 버튼을 준비하고 있습니다.</p></div>
               <p id="paypalStatus" class="muted small"></p>
@@ -156,7 +164,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio. All rights reserved.</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=v42-deploy-fix-20260713"></script>
-  <script type="module" src="./assets/js/app.js?v=v42-deploy-fix-20260713"></script>
+  <script type="module" src="./assets/js/config.js?v=v46-i18n-20260713"></script>
+  <script type="module" src="./assets/js/app.js?v=v46-i18n-20260713"></script>
 </body>
 </html>

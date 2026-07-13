@@ -3,141 +3,162 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="MidiAI Studio 공식 포털">
+  <meta name="description" content="MidiAI Studio Lifetimeライセンス購入">
   <title>購入 - MidiAI Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/style.css?v=v41-kakao-phone-scope-fix-20260713">
+  <link rel="stylesheet" href="../assets/css/style.css?v=v46-i18n-20260713">
 </head>
-<body class="portal-page">
+<body class="portal-page purchase-page hub-page">
   <div class="orb orb-a"></div>
   <div class="orb orb-b"></div>
 
   <header class="topbar">
-    <a class="brand" href="../ja/index.html"><img class="brand-symbol" src="../assets/images/symbol.png" alt="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <a class="brand" href="../index.html"><img class="brand-symbol" src="../assets/images/symbol.png" alt="MidiAI Studio"><b>MidiAI Studio</b></a>
     <button id="menuBtn" class="menu-btn" aria-label="menu">☰</button>
     <nav id="mainNav">
-      <a href="../ja/index.html">홈</a>
-      <a href="../downloads.html">다운로드</a>
-      <a href="../ja/purchase.html">구매</a>
-      <a href="../notices.html">공지사항</a>
-      <a href="../patch-notes.html">패치노트</a>
-      <a href="../faq.html">FAQ</a>
-      <a href="../board.html">자유게시판</a>
-      <a href="../support.html">1:1 문의</a>
-      <a href="../my-tickets.html">나의 문의</a>
-      <a href="../account.html">내 계정</a>
-      <a id="adminNav" class="hidden" href="../admin.html">관리자</a>
+      <a href="../index.html" data-nav="home">ホーム</a>
+      <a href="../product.html" data-nav="product">製品</a>
+      <a href="../downloads.html" data-nav="downloads">ダウンロード</a>
+      <a href="./purchase.html" data-nav="purchase">購入</a>
+      <a href="../notices.html" data-nav="community">お知らせ</a>
+      <a href="../patch-notes.html" data-nav="community">パッチノート</a>
+      <a href="../faq.html" data-nav="community">FAQ</a>
+      <a href="../board.html" data-nav="community">自由掲示板</a>
+      <a href="../support.html" data-nav="support">お問い合わせ</a>
+      <a href="../my-tickets.html" data-nav="support">マイ問い合わせ</a>
+      <a href="../account.html" data-nav="account">アカウント</a>
+      <a id="adminNav" class="hidden" href="../admin.html">管理者</a>
     </nav>
-    <div class="actions"><button id="langBtn" class="ghost">EN</button><button id="loginBtn" class="login"><span>G</span><em>Google 로그인</em></button><button id="logoutBtn" class="ghost hidden">로그아웃</button></div>
+    <div class="actions"><button id="langBtn" class="ghost">EN</button><button id="loginBtn" class="login"><span>G</span><em>Googleログイン</em></button><button id="logoutBtn" class="ghost hidden">ログアウト</button></div>
   </header>
 
-  <main>
-    <section class="purchase-final-hero wrap">
-      <p class="eyebrow">Lifetime License</p>
-      <h1 id="purchaseHeroTitle">MidiAI Studio</h1>
-      <p id="purchaseHeroLead">AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。</p>
-    </section>
-
-    <section class="wrap purchase-final-layout">
-      <div class="purchase-final-main">
-        <div class="price-card purchase-final-card purchase-v23-card">
-          <div class="purchase-final-topline">
-            <span class="eyebrow">Final Sale</span>
-            <span id="purchaseSaleUntil" class="purchase-sale-pill">7月31日まで</span>
-          </div>
-          <h2>Lifetime License</h2>
-          <div class="price purchase-final-price"><strong id="purchasePrice">$65 USD</strong></div>
-          <ul id="purchaseBenefitList" class="purchase-final-benefits">
-            <li>Googleアカウントにライセンス連携</li>
-            <li>登録済みPCで利用可能</li>
-            <li>サイト内お問い合わせサポート</li>
-          </ul>
-          <div class="purchase-review-panel" aria-label="상품 및 결제 정보">
-            <div class="review-row">
-              <span>商品名</span>
-              <strong>MidiAI Studio Lifetime 디지털 라이선스</strong>
-            </div>
-            <div class="review-row">
-              <span>販売価格</span>
-              <strong id="purchaseReviewPrice">$65 USD</strong>
-            </div>
-            <div class="review-row">
-              <span>決済形態</span>
-              <strong>単発決済</strong>
-            </div>
-            <div class="review-row">
-              <span>サービス提供期間</span>
-              <strong>決済完了後すぐにライセンス発行</strong>
-            </div>
-          </div>
-
-          <div class="purchase-account-box" id="purchaseAccountBox">
-            <strong id="purchaseAccountTitle">Googleアカウントでログイン後、ご購入いただけます。</strong>
-            <p id="purchaseAccountText">ログイン後に決済すると、LifetimeライセンスがGoogleアカウントへ自動付与されます。</p>
-          </div>
-
-          <div class="purchase-review-panel payment-review-panel" aria-label="주문자 및 決済手段 정보">
-            <div class="review-row">
-              <span>購入者情報</span>
-              <strong id="purchaseBuyerInfo">Googleログインアカウント基準</strong>
-            </div>
-            <div class="review-row">
-              <span>決済手段</span>
-              <strong id="purchasePaymentMethod">PayPal</strong>
-            </div>
-          </div>
-
-          <div id="paypalButtons" class="paypal purchase-paypal-box"><p>決済ボタンを準備しています。</p></div>
-          <p id="paypalStatus" class="muted small"></p>
-        </div>
+  <main class="purchase-main">
+    <section class="wrap purchase-shell">
+      <div class="purchase-hero">
+        <p class="eyebrow">Lifetime License</p>
+        <h1 id="purchaseHeroTitle">MidiAI Studio</h1>
+        <p id="purchaseHeroLead">AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。</p>
       </div>
 
-      <aside class="purchase-final-side">
-        <div class="notice purchase-final-note">
-          <h3>What you get</h3>
-          <p>決済完了後、LifetimeライセンスがGoogleアカウントに連携されます。</p>
+      <div class="purchase-layout purchase-final-layout">
+        <div class="purchase-main-col">
+          <div class="price-card purchase-final-card purchase-v23-card purchase-pro-card">
+            <div class="purchase-price-head">
+              <div class="purchase-final-topline">
+                <span class="purchase-badge sale">Final Sale</span>
+                <span id="purchaseSaleUntil" class="purchase-sale-pill">7月31日まで</span>
+              </div>
+              <div class="purchase-price-row">
+                <div>
+                  <h2>Lifetime License</h2>
+                  <div class="price purchase-final-price"><strong id="purchasePrice">$65 USD</strong></div>
+                </div>
+              </div>
+              <ul id="purchaseBenefitList" class="purchase-final-benefits purchase-benefit-pills">
+                <li>Googleアカウントにライセンス連携</li>
+                <li>登録済みPCで利用可能</li>
+                <li>サイト内お問い合わせサポート</li>
+              </ul>
+            </div>
+
+            <div class="purchase-spec-grid" aria-label="商品および決済情報">
+              <div class="purchase-spec-item">
+                <span>商品名</span>
+                <strong>MidiAI Studio Lifetime デジタルライセンス</strong>
+              </div>
+              <div class="purchase-spec-item">
+                <span>販売価格</span>
+                <strong id="purchaseReviewPrice">$65 USD</strong>
+              </div>
+              <div class="purchase-spec-item">
+                <span>決済形態</span>
+                <strong>単発決済</strong>
+              </div>
+              <div class="purchase-spec-item">
+                <span>サービス提供</span>
+                <strong class="purchase-service-period">決済完了後すぐにライセンス発行</strong>
+              </div>
+            </div>
+
+            <div class="purchase-account-box" id="purchaseAccountBox">
+              <strong id="purchaseAccountTitle">Googleアカウントでログイン後、ご購入いただけます。</strong>
+              <p id="purchaseAccountText">ログイン後に決済すると、LifetimeライセンスがGoogleアカウントへ自動付与されます。</p>
+            </div>
+
+            <div class="purchase-checkout">
+              <div class="purchase-checkout-meta checkout-order-panel">
+                <div class="checkout-order-head">
+                  <span class="checkout-order-kicker">Checkout</span>
+                  <h3>決済情報</h3>
+                </div>
+                <dl class="checkout-order-list">
+                  <div class="checkout-order-item">
+                    <dt>購入者情報</dt>
+                    <dd id="purchaseBuyerInfo" class="checkout-order-value">Googleログイン後に表示</dd>
+                  </div>
+                  <div class="checkout-order-item checkout-order-item--phone hidden" id="purchasePhoneRow">
+                    <dt><label for="purchasePhone">携帯電話番号</label></dt>
+                    <dd class="checkout-order-field">
+                      <input id="purchasePhone" class="checkout-order-input" type="tel" inputmode="numeric" autocomplete="tel" maxlength="13" placeholder="010-1234-5678" aria-describedby="purchasePhoneHelp">
+                      <p id="purchasePhoneHelp" class="checkout-order-hint hidden">韓国カード決済時に必要な連絡先です。</p>
+                    </dd>
+                  </div>
+                  <div class="checkout-order-item">
+                    <dt>決済手段</dt>
+                    <dd id="purchasePaymentMethod" class="checkout-pay-tags" aria-label="決済手段"></dd>
+                  </div>
+                </dl>
+              </div>
+              <div id="paypalButtons" class="paypal purchase-paypal-box"><p>決済ボタンを準備しています。</p></div>
+              <p id="paypalStatus" class="muted small"></p>
+            </div>
+          </div>
         </div>
-        <div id="bankTransferNotice" class="notice bank-transfer-notice purchase-final-bank hidden">
-          <h3>銀行振込案内</h3>
-          <p><b>할인금액</b><br>$65 USD</p>
-          <p><b>카카오뱅크</b><br>3333-37-8700109</p>
-          <p><b>예금주</b><br>미디에이아이스튜디오</p>
-          <p>계좌이체 후 1:1 문의에 입금자명을 남겨주세요.<br>입금 확인 후 라이선스를 지급해드립니다.</p>
-        </div>
-      </aside>
+
+        <aside class="purchase-final-side purchase-side">
+          <div class="notice purchase-final-note purchase-side-card">
+            <h3>ライセンス案内</h3>
+            <ul class="license-benefit-list">
+              <li><b>全曲MIDI変換</b><span>YouTubeリンクやオーディオファイルをAIでMIDIに変換します。</span></li>
+              <li><b>楽器変換</b><span>ピアノ・ギター・ベースなど希望の楽器でMIDIを生成します。</span></li>
+              <li><b>MIDI編集 PRO</b><span>マルチトラックピアノロールでベロシティやCCを編集できます。</span></li>
+            </ul>
+          </div>
+          <div id="bankTransferNotice" class="notice bank-transfer-notice purchase-final-bank purchase-side-card hidden">
+            <h3>銀行振込案内</h3>
+          </div>
+        </aside>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer legal-footer">
-  <div class="footer-main">
-    <div>
-      <strong>MidiAI Studio</strong>
-      <p>AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품</p>
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>AIベースMIDI変換ソフト · デジタルライセンス商品</p></div>
+      <div class="footer-links">
+        <a href="../terms.html">利用規約</a>
+        <a href="../privacy.html">プライバシーポリシー</a>
+        <a href="../refund.html">返金ポリシー</a>
+        <a href="../business-info.html">事業者情報</a>
+        <a href="../support.html">サポート</a>
+      </div>
     </div>
-    <div class="footer-links">
-      <a href="../terms.html">이용약관</a>
-      <a href="../privacy.html">개인정보처리방침</a>
-      <a href="../refund.html">환불정책</a>
-      <a href="../business-info.html">사업자정보</a>
-      <a href="../support.html">고객센터</a>
+    <div class="business-box">
+      <span>商号: MidiAI Studio</span>
+      <span>代表者: チェ・ジョンファン</span>
+      <span>事業者登録番号: 332-22-02381</span>
+      <span>所在地: 慶尚南道昌原市城山区昌原大路780番街47、1101号</span>
+      <span>電話: 010-2166-5563</span>
+      <span>通信販売業届出: 第2026-昌原城山-0312号</span>
+      <span>サポート: お問い合わせ掲示板</span>
+      <span>メール: midiaistudio@gmail.com</span>
     </div>
-  </div>
-  <div class="business-box">
-    <span>상호: 미디에이아이스튜디오</span>
-    <span>대표자: 최정환</span>
-    <span>사업자등록번호: 332-22-02381</span>
-    <span>사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호(외동, 외동대동아파트)</span>
-    <span>대표전화번호: 010-2166-5563</span>
-    <span>통신판매업 신고번호: 제2026-창원성산-0312호</span>
-    <span>고객센터: 1:1 문의 게시판</span>
-    <span>이메일: midiaistudio@gmail.com</span>
-  </div>
-  <div class="footer-copy">© <span id="year"></span> MidiAI Studio. All rights reserved.</div>
-</footer>
-  <script>window.MIDIAI_BASE_PATH='../';</script>
-  <script type="module" src="../assets/js/config.js?v=v41-kakao-phone-scope-fix-20260713"></script>
-  <script type="module" src="../assets/js/app.js?v=v41-kakao-phone-scope-fix-20260713"></script>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio. All rights reserved.</div>
+  </footer>
+  <script>window.MIDIAI_BASE_PATH='../'; localStorage.setItem('midiai_lang','ja');</script>
+  <script type="module" src="../assets/js/config.js?v=v46-i18n-20260713"></script>
+  <script type="module" src="../assets/js/app.js?v=v46-i18n-20260713"></script>
 </body>
 </html>

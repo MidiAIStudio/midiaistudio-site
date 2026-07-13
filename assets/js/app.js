@@ -37,22 +37,32 @@ const attrOriginals = new WeakMap();
 
 const I18N = {
   en: {
-    '번호':'No.','글쓴이':'Author','작성일':'Date','포털':'Portal','커뮤니티':'Community','지원':'Support','계정':'Account','홈':'Home','다운로드':'Downloads','구매':'Purchase','공지사항':'Notices','패치노트 목록':'Patch notes list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','FAQ':'FAQ','자유게시판':'Free board','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout',
-    '7월 31일까지 할인 진행중':'Discount available until July 31','피아노 커버를':'Piano covers','MIDI로 바꾸는':'into MIDI','가장 쉬운 방법':'made easy','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'The easiest way to turn piano covers into MIDI','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio official portal. The home page focuses on product, purchase, and downloads; notices, patch notes, and private support are separated into board-style pages.',
-    '라이선스 구매하기':'Buy license','1:1 문의하기':'Contact support','Windows 지원':'Windows support','Google 계정 연동':'Google account linked','비공개 문의':'Private support','업데이트, 이벤트, 운영 안내를 확인합니다.':'Check updates, events, and service notices.','버전별 변경 사항을 확인합니다.':'Check changes by version.','비공개 문의를 작성하고 답변을 확인합니다.':'Create private tickets and check replies.','라이선스 상태와 로그인 정보를 확인합니다.':'Check license status and login details.','바로가기':'Open','문의하기':'Contact','확인하기':'View','최신 설치 파일':'Latest installer','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Shows the latest version from Firestore downloads/latest.','불러오는 중...':'Loading...',
+    '번호':'No.','글쓴이':'Author','작성일':'Date','포털':'Portal','커뮤니티':'Community','고객지원':'Support','지원':'Support','계정':'Account','홈':'Home','제품':'Product','다운로드':'Downloads','구매':'Purchase','공지사항':'Notices','패치노트 목록':'Patch notes list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','FAQ':'FAQ','자유게시판':'Free board','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout','문의 작성':'Create ticket','전체 보기':'View all',
+    '7월 31일까지 할인 진행중':'Discount available until July 31','피아노 커버를':'Piano covers','프로 MIDI':'pro MIDI','로':'into MIDI','MIDI로 바꾸는':'into MIDI','가장 쉬운 방법':'made easy','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'The easiest way to turn piano covers into MIDI','MidiAI Studio 공식 포털입니다.':'MidiAI Studio official portal.','구매, 다운로드, 공지사항, 패치노트, 1:1 문의를 이용할 수 있습니다.':'Use purchase, downloads, notices, patch notes, and 1:1 support.','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio official portal. The home page focuses on product, purchase, and downloads; notices, patch notes, and private support are separated into board-style pages.',
+    '라이선스 구매하기':'Buy license','무료 체험 다운로드':'Download free trial','1:1 문의하기':'Contact support','Windows 지원':'Windows support','Google 계정 연동':'Google account linked','비공개 문의':'Private support','업데이트, 이벤트, 운영 안내를 확인합니다.':'Check updates, events, and service notices.','버전별 변경 사항을 확인합니다.':'Check changes by version.','비공개 문의를 작성하고 답변을 확인합니다.':'Create private tickets and check replies.','라이선스 상태와 로그인 정보를 확인합니다.':'Check license status and login details.','바로가기':'Open','문의하기':'Contact','확인하기':'View','최신 설치 파일':'Latest installer','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Shows the latest version from Firestore downloads/latest.','불러오는 중...':'Loading...','최신 설치 파일과 버전 정보를 확인합니다.':'Check the latest installer and version info.',
     'Google 로그인':'Sign in with Google','로그인 전':'Not signed in','Google 로그인으로 라이선스 확인 준비':'Sign in with Google to check your license','라이선스 확인 전':'License not checked',
     '공지 상세':'Notice detail','자주 묻는 질문':'FAQ','비공개 1:1 문의':'Private support','문의 등록':'Submit ticket','문의 상세':'Ticket detail','라이선스 구매':'Buy license','MidiAI Studio License':'MidiAI Studio License','패치노트 등록':'Add patch note','공지 등록':'Add notice','FAQ 등록':'Add FAQ','라이선스 저장':'Save license','문의 답변':'Ticket replies','공지 작성':'Write notice','패치노트 작성':'Write patch note','FAQ 작성':'Write FAQ','라이선스 지급/수정':'Grant/edit license',
     '제목':'Title','내용':'Content','검색':'Search','버전':'Version','질문':'Question','답변':'Answer','순서':'Order','상단 고정':'Pin to top','플랜':'Plan','상태':'Status','메모':'Memo','사용자 UID':'User UID','등록':'Submit','저장':'Save','문의 내용을 자세히 적어주세요.':'Please describe your issue in detail.','로그인 오류 / 라이선스 문의':'Login issue / license question','로그인이 필요합니다.':'Sign-in required.','내가 작성한 비공개 문의와 답변을 확인합니다.':'View your private tickets and replies.','문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.':'Only you and the admin can view this ticket. Please sign in first.','role=admin 계정만 사용할 수 있습니다.':'Only role=admin accounts can use this page.',
-    '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.'
+    '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.',
+    '이용약관':'Terms of use','개인정보처리방침':'Privacy policy','환불정책':'Refund policy','사업자정보':'Business info','고객센터':'Support','AI 기반 MIDI 변환 소프트웨어':'AI-powered MIDI conversion software','AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품':'AI-powered MIDI conversion software · digital license',
+    '피아노 커버 작업실':'Piano cover studio','YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.':'Load a YouTube link or audio file and convert it to MIDI with AI.','변환·편집·트랙 분리·라이브러리까지 한 앱에서 이어집니다.':'Conversion, editing, stem separation, and library — all in one app.','영상·오디오를 MIDI로':'Video & audio to MIDI','YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.':'Start with a YouTube link, local upload, or song search. Preview the waveform, pick a range, and export MIDI for your instrument.','YouTube 링크 분석':'YouTube link analysis','웨이브폼 미리듣기':'Waveform preview','출력 악기·구간 선택':'Choose instrument & range','MIDI 편집 PRO':'MIDI Editor PRO','멀티트랙 피아노 롤':'Multi-track piano roll','변환된 MIDI를 바로 편집합니다. 11종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.':'Edit converted MIDI right away — 11 instruments, velocity/pitch bend/modulation, undo/copy/quantize.','11종 악기 지원':'11 instruments','벨로시티·CC 파라미터 편집':'Velocity & CC editing','홈 · 포털 연동':'Home · portal sync','공지사항, 패치노트, 라이선스 상태를 앱 안에서 확인하고 Studio로 바로 이동합니다.':'Check notices, patch notes, and license status in-app, then jump into Studio.','Google 로그인 후 홈페이지 자유게시판 글을 앱에서 바로 확인하고 작성할 수 있습니다.':'After Google sign-in, browse and post on the free board from the app.','트랙 분리':'Stem separation','기능 준비중':'Coming soon','라이브러리':'Library','변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.':'Manage converted and edited MIDI files in the library and reopen them anytime.','정식 라이선스 혜택':'Full license benefits','전체 구간 MIDI 변환':'Full-song MIDI conversion','악기 변환':'Instrument conversion','제한 없는 저장 · full song export':'Unlimited save · full song export','MIDI 편집 기능':'MIDI editing features',
+    '공식 설치 · 업데이트 프로그램':'Official installer & updater','MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.':'MidiAI Installer is a Windows tool for install, quick update, full install/repair, and runtime checks.','설치 방법':'How to install','실행 · 업데이트 방법':'How to run & update','결제 정보':'Payment details','주문자 정보':'Buyer','휴대폰 번호':'Phone number','결제수단':'Payment method','상품명':'Product','판매가격':'Price','결제형태':'Payment type','단건 결제':'One-time payment','서비스 제공기간':'Service delivery','결제 완료 후 즉시 라이선스 발급':'License issued immediately after payment','Google 로그인 계정 기준':'Based on your Google account','Google 로그인 후 자동 입력':'Filled after Google sign-in','KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.':'Buyer contact required for Korean card checkout.','결제 버튼을 준비하고 있습니다.':'Preparing payment buttons.','라이선스 안내':'License guide','계좌 입금 안내':'Bank transfer guide','사이트 메뉴':'Site menu','게시판 메뉴':'Board menu',
+    '질문, 후기, 정보를 자유롭게 나누는 공간입니다.':'A place to share questions, reviews, and tips freely.','게시글 목록':'Posts','공지 목록':'Notices','공지':'Notice','← 목록':'← Back','목록':'Back','유형':'Type','(제목 없음)':'(No title)','로그인 후 게시글을 작성할 수 있습니다.':'Sign in to write a post.','자주 묻는 질문과 답변을 빠르게 확인하세요.':'Quick answers to common questions.','Google 로그인 정보와 라이선스 상태를 확인합니다.':'Check your Google sign-in and license status.',
+    '신규':'New','개선':'Improved','수정':'Fixed','변경':'Changed','변경 사항':'Changes','내용이 없습니다.':'No content.','목차':'Contents','최신':'Newer','이전':'Older','버전 이동':'Version navigation','공유':'Share','전체 패치노트':'All patch notes','문의':'Support'
   },
   ja: {
-    '번호':'番号','글쓴이':'投稿者','작성일':'作成日','포털':'ポータル','커뮤니티':'コミュニティ','지원':'サポート','계정':'アカウント','홈':'ホーム','다운로드':'ダウンロード','구매':'購入','공지사항':'お知らせ','패치노트 목록':'パッチノート一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト',
-    '7월 31일까지 할인 진행중':'7月31日まで割引中','피아노 커버를':'ピアノカバーを','MIDI로 바꾸는':'MIDIに変える','가장 쉬운 방법':'一番簡単な方法','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'ピアノカバーをMIDIに変える一番簡単な方法','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio公式ポータルです。ホームは紹介・購入・ダウンロードを中心にし、お知らせ・パッチノート・非公開問い合わせは別ページに分けました。',
-    '라이선스 구매하기':'ライセンス購入','1:1 문의하기':'問い合わせる','Windows 지원':'Windows対応','Google 계정 연동':'Googleアカウント連携','비공개 문의':'非公開問い合わせ','업데이트, 이벤트, 운영 안내를 확인합니다.':'アップデート、イベント、運営案内を確認できます。','버전별 변경 사항을 확인합니다.':'バージョン別の変更内容を確認できます。','비공개 문의를 작성하고 답변을 확인합니다.':'非公開問い合わせを作成し、返信を確認できます。','라이선스 상태와 로그인 정보를 확인합니다.':'ライセンス状態とログイン情報を確認できます。','바로가기':'開く','문의하기':'問い合わせ','확인하기':'確認','최신 설치 파일':'最新インストーラー','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Firestore downloads/latest を基準に最新バージョンを表示します。','불러오는 중...':'読み込み中...',
+    '번호':'番号','글쓴이':'投稿者','작성일':'作成日','포털':'ポータル','커뮤니티':'コミュニティ','고객지원':'サポート','지원':'サポート','계정':'アカウント','홈':'ホーム','제품':'製品','다운로드':'ダウンロード','구매':'購入','공지사항':'お知らせ','패치노트 목록':'パッチノート一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト','문의 작성':'問い合わせ作成','전체 보기':'すべて見る',
+    '7월 31일까지 할인 진행중':'7月31日まで割引中','피아노 커버를':'ピアノカバーを','프로 MIDI':'プロMIDI','로':'に','MIDI로 바꾸는':'MIDIに変える','가장 쉬운 방법':'一番簡単な方法','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'ピアノカバーをMIDIに変える一番簡単な方法','MidiAI Studio 공식 포털입니다.':'MidiAI Studio公式ポータルです。','구매, 다운로드, 공지사항, 패치노트, 1:1 문의를 이용할 수 있습니다.':'購入・ダウンロード・お知らせ・パッチノート・お問い合わせをご利用いただけます。','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio公式ポータルです。ホームは紹介・購入・ダウンロードを中心にし、お知らせ・パッチノート・非公開問い合わせは別ページに分けました。',
+    '라이선스 구매하기':'ライセンス購入','무료 체험 다운로드':'無料体験ダウンロード','1:1 문의하기':'問い合わせる','Windows 지원':'Windows対応','Google 계정 연동':'Googleアカウント連携','비공개 문의':'非公開問い合わせ','업데이트, 이벤트, 운영 안내를 확인합니다.':'アップデート、イベント、運営案内を確認できます。','버전별 변경 사항을 확인합니다.':'バージョン別の変更内容を確認できます。','비공개 문의를 작성하고 답변을 확인합니다.':'非公開問い合わせを作成し、返信を確認できます。','라이선스 상태와 로그인 정보를 확인합니다.':'ライセンス状態とログイン情報を確認できます。','바로가기':'開く','문의하기':'問い合わせ','확인하기':'確認','최신 설치 파일':'最新インストーラー','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Firestore downloads/latest を基準に最新バージョンを表示します。','불러오는 중...':'読み込み中...','최신 설치 파일과 버전 정보를 확인합니다.':'最新インストーラーとバージョン情報を確認できます。',
     'Google 로그인':'Googleログイン','로그인 전':'未ログイン','Google 로그인으로 라이선스 확인 준비':'Googleログインでライセンス確認','라이선스 확인 전':'ライセンス未確認',
     '공지 상세':'お知らせ詳細','자주 묻는 질문':'よくある質問','비공개 1:1 문의':'非公開お問い合わせ','문의 등록':'送信','문의 상세':'問い合わせ詳細','라이선스 구매':'ライセンス購入','MidiAI Studio License':'MidiAI Studio License','패치노트 등록':'パッチノート登録','공지 등록':'お知らせ登録','FAQ 등록':'FAQ登録','라이선스 저장':'ライセンス保存','문의 답변':'問い合わせ返信','공지 작성':'お知らせ作成','패치노트 작성':'パッチノート作成','FAQ 작성':'FAQ作成','라이선스 지급/수정':'ライセンス付与/修正',
     '제목':'タイトル','내용':'内容','검색':'検索','버전':'バージョン','질문':'質問','답변':'回答','순서':'順序','상단 고정':'上部固定','플랜':'プラン','상태':'状態','메모':'メモ','사용자 UID':'ユーザーUID','등록':'登録','저장':'保存','문의 내용을 자세히 적어주세요.':'お問い合わせ内容を詳しく入力してください。','로그인 오류 / 라이선스 문의':'ログインエラー / ライセンス問い合わせ','로그인이 필요합니다.':'ログインが必要です。','내가 작성한 비공개 문의와 답변을 확인합니다.':'自分の非公開問い合わせと返信を確認します。','문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.':'問い合わせ内容は作成者と管理者のみ閲覧できます。ログイン後に作成してください。','role=admin 계정만 사용할 수 있습니다.':'role=adminアカウントのみ使用できます。',
-    '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','수정':'編集','삭제':'削除','종료 처리':'終了にする','관리':'管理','상세 보기':'詳細を見る','공지 관리':'お知らせ管理','패치노트 관리':'パッチノート管理','FAQ 관리':'FAQ管理','정말 삭제할까요?':'本当に削除しますか？','수정 완료':'更新しました','삭제 완료':'削除しました','문의가 등록되었습니다.':'問い合わせを登録しました。'
+    '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','수정':'編集','삭제':'削除','종료 처리':'終了にする','관리':'管理','상세 보기':'詳細を見る','공지 관리':'お知らせ管理','패치노트 관리':'パッチノート管理','FAQ 관리':'FAQ管理','정말 삭제할까요?':'本当に削除しますか？','수정 완료':'更新しました','삭제 완료':'削除しました','문의가 등록되었습니다.':'問い合わせを登録しました。',
+    '이용약관':'利用規約','개인정보처리방침':'プライバシーポリシー','환불정책':'返金ポリシー','사업자정보':'事業者情報','고객센터':'サポート','AI 기반 MIDI 변환 소프트웨어':'AIベースMIDI変換ソフト','AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품':'AIベースMIDI変換ソフト · デジタルライセンス商品',
+    '피아노 커버 작업실':'ピアノカバー作業室','YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.':'YouTubeリンクやオーディオファイルを読み込み、AIがMIDIに変換します。','변환·편집·트랙 분리·라이브러리까지 한 앱에서 이어집니다.':'変換・編集・トラック分離・ライブラリまで1つのアプリで続けられます。','영상·오디오를 MIDI로':'映像・オーディオをMIDIに','YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.':'YouTubeリンクの貼り付け、ローカルアップロード、曲検索で作業を開始。波形プレビューと区間選択後、希望の楽器でMIDIを取得できます。','YouTube 링크 분석':'YouTubeリンク解析','웨이브폼 미리듣기':'波形プレビュー','출력 악기·구간 선택':'出力楽器・区間選択','MIDI 편집 PRO':'MIDI編集 PRO','멀티트랙 피아노 롤':'マルチトラックピアノロール','변환된 MIDI를 바로 편집합니다. 11종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.':'変換したMIDIをすぐ編集。11種楽器、ベロシティ・ピッチベンド・モジュレーション、元に戻す/コピー/クオンタイズまで対応。','11종 악기 지원':'11種楽器対応','벨로시티·CC 파라미터 편집':'ベロシティ・CC編集','홈 · 포털 연동':'ホーム・ポータル連携','공지사항, 패치노트, 라이선스 상태를 앱 안에서 확인하고 Studio로 바로 이동합니다.':'お知らせ、パッチノート、ライセンス状態をアプリ内で確認しStudioへ移動できます。','Google 로그인 후 홈페이지 자유게시판 글을 앱에서 바로 확인하고 작성할 수 있습니다.':'Googleログイン後、自由掲示板の投稿をアプリで確認・作成できます。','트랙 분리':'トラック分離','기능 준비중':'準備中','라이브러리':'ライブラリ','변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.':'変換・編集したMIDIをライブラリで管理し、再度開いて作業を続けられます。','정식 라이선스 혜택':'正式ライセンス特典','전체 구간 MIDI 변환':'全曲MIDI変換','악기 변환':'楽器変換','제한 없는 저장 · full song export':'無制限保存 · full song export','MIDI 편집 기능':'MIDI編集機能',
+    '공식 설치 · 업데이트 프로그램':'公式インストール・更新プログラム','MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.':'MidiAI Installerは、インストール、クイック更新、フルインストール/修復、ランタイム確認を1画面で行うWindows専用ツールです。','설치 방법':'インストール方法','실행 · 업데이트 방법':'実行・更新方法','결제 정보':'決済情報','주문자 정보':'購入者情報','휴대폰 번호':'携帯電話番号','결제수단':'決済手段','상품명':'商品名','판매가격':'販売価格','결제형태':'決済形態','단건 결제':'単発決済','서비스 제공기간':'サービス提供','결제 완료 후 즉시 라이선스 발급':'決済完了後すぐにライセンス発行','Google 로그인 계정 기준':'Googleログインアカウント基準','Google 로그인 후 자동 입력':'Googleログイン後に表示','KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.':'韓国カード決済時に必要な連絡先です。','결제 버튼을 준비하고 있습니다.':'決済ボタンを準備しています。','라이선스 안내':'ライセンス案内','계좌 입금 안내':'銀行振込案内','사이트 메뉴':'サイトメニュー','게시판 메뉴':'掲示板メニュー',
+    '질문, 후기, 정보를 자유롭게 나누는 공간입니다.':'質問・レビュー・情報を自由に共有する場所です。','게시글 목록':'投稿一覧','공지 목록':'お知らせ一覧','공지':'お知らせ','← 목록':'← 一覧','목록':'一覧','유형':'種類','(제목 없음)':'（タイトルなし）','로그인 후 게시글을 작성할 수 있습니다.':'ログイン後に投稿できます。','자주 묻는 질문과 답변을 빠르게 확인하세요.':'よくある質問と回答を素早く確認できます。','Google 로그인 정보와 라이선스 상태를 확인합니다.':'Googleログイン情報とライセンス状態を確認できます。',
+    '신규':'新規','개선':'改善','수정':'修正','변경':'変更','변경 사항':'変更内容','내용이 없습니다.':'内容がありません。','목차':'目次','최신':'新しい版','이전':'前の版','버전 이동':'バージョン移動','공유':'共有','전체 패치노트':'パッチノート一覧','문의':'問い合わせ'
   }
 };
 
@@ -89,6 +99,18 @@ function showOAuthBrowserNotice(){
 
 function dict(){ return I18N[lang] || {}; }
 function normalize(s){ return String(s || '').replace(/\s+/g, ' ').trim(); }
+function tt(ko){
+  if(lang === 'ko') return ko;
+  const d = dict();
+  const key = normalize(ko);
+  return d[key] || d[key.replace(/\s+/g,'')] || ko;
+}
+function hubNoticeHeadHtml(){
+  return `<div class="hub-list-head hub-notice-head"><span>${esc(tt('번호'))}</span><span>${esc(tt('제목'))}</span><span>${esc(tt('글쓴이'))}</span><span>${esc(tt('작성일'))}</span><span>${esc(tt('조회'))}</span></div>`;
+}
+function hubTicketHeadHtml(){
+  return `<div class="hub-list-head hub-ticket-head"><span>${esc(tt('제목'))}</span><span>${esc(tt('유형'))}</span><span>${esc(tt('상태'))}</span><span>${esc(tt('작성일'))}</span></div>`;
+}
 function translate(s){
   const raw = String(s ?? '');
   const trimmed = normalize(raw);
@@ -152,9 +174,164 @@ function applyStaticI18n(){
   });
 
   updatePurchaseLinks();
-  const b = $('langBtn');
-  if (b) b.textContent = lang === 'ko' ? 'EN' : lang === 'en' ? '日本語' : '한국어';
+  refreshTopbarActionLabels();
+  refreshTopbarPageTitle();
+  applySupportI18n();
+  applyDownloadsI18n();
+  applyFooterI18n();
   updatePurchaseI18n();
+}
+function refreshTopbarPageTitle(){
+  const el = document.querySelector('.topbar-page');
+  if(!el) return;
+  if(page === 'support.html'){
+    el.textContent = supportLocaleText().title;
+    return;
+  }
+  if(page === 'downloads.html'){
+    el.textContent = downloadLocaleText().title;
+    return;
+  }
+  const raw = (document.title || 'MidiAI Studio').split(' - ')[0].trim() || 'MidiAI Studio';
+  el.textContent = lang === 'ko' ? raw : (translate(raw) || raw);
+}
+function downloadLocaleText(){
+  if(lang === 'en') return {
+    title:'Downloads',
+    desc:'Check the latest installer and version info.',
+    guideTitle:'Official installer & updater',
+    guideLead:'MidiAI Installer is a Windows tool for install, quick update, full install/repair, and runtime checks.',
+    setupTitle:'How to install',
+    runTitle:'How to run & update',
+    setupSteps:[
+      'Use the <strong>Download</strong> button above to get <code>MidiAI Installer.exe</code>.',
+      'Run the installer and confirm the install path. The default is <code>C:\\MidiAI</code>.',
+      'For a first install, choose <strong>Full Install / Repair</strong>.',
+      'Progress follows Core → Media → Library → Runtime → Check. Check status in the install log below.',
+      'When verification finishes, open the install folder with <strong>Open Folder</strong>.'
+    ],
+    runSteps:[
+      'If already installed, run the Installer again and use <strong>Quick Update</strong> to refresh app files quickly.',
+      'If launch fails or files are missing, use <strong>Full Install / Repair</strong> or <strong>Update / Repair Mode</strong>.',
+      'After install, launch MidiAI Studio from the <code>C:\\MidiAI</code> folder.',
+      'License activation happens after launch by signing in with your Google account.',
+      'If issues continue, attach Installer <strong>System Check</strong> and <strong>Show HWID</strong> results to a 1:1 support ticket.'
+    ],
+    mandatory:'Required update',
+    officialInstaller:'Official installer',
+    buyLicense:'Buy license',
+    patchNotes:'Patch notes'
+  };
+  if(lang === 'ja') return {
+    title:'ダウンロード',
+    desc:'最新インストーラーとバージョン情報を確認できます。',
+    guideTitle:'公式インストール・更新プログラム',
+    guideLead:'MidiAI Installerは、インストール、クイック更新、フルインストール/修復、ランタイム確認を1画面で行うWindows専用ツールです。',
+    setupTitle:'インストール方法',
+    runTitle:'実行・更新方法',
+    setupSteps:[
+      '上の<strong>ダウンロード</strong>ボタンで<code>MidiAI Installer.exe</code>を取得します。',
+      'インストーラーを実行し、インストール先を確認します。既定パスは<code>C:\\MidiAI</code>です。',
+      '初回インストール時は<strong>Full Install / Repair</strong>を選択します。',
+      'Core → Media → Library → Runtime → Check の順で進み、下部ログで状態を確認します。',
+      '最終確認が終わると<strong>Open Folder</strong>でインストールフォルダを開けます。'
+    ],
+    runSteps:[
+      'すでにインストール済みの場合はInstallerを再実行し、<strong>Quick Update</strong>でアプリファイルだけを素早く更新します。',
+      '起動エラーやファイル欠損がある場合は<strong>Full Install / Repair</strong>または<strong>Update / Repair Mode</strong>で修復します。',
+      'インストール後は<code>C:\\MidiAI</code>フォルダからMidiAI Studioを起動します。',
+      'ライセンス認証はアプリ起動後、Googleアカウントでログインして行います。',
+      '問題が続く場合はInstallerの<strong>System Check</strong>と<strong>Show HWID</strong>結果を1:1問い合わせに添付してください。'
+    ],
+    mandatory:'必須アップデート',
+    officialInstaller:'公式インストーラー',
+    buyLicense:'ライセンス購入',
+    patchNotes:'パッチノート'
+  };
+  return {
+    title:'다운로드',
+    desc:'최신 설치 파일과 버전 정보를 확인합니다.',
+    guideTitle:'공식 설치 · 업데이트 프로그램',
+    guideLead:'MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.',
+    setupTitle:'설치 방법',
+    runTitle:'실행 · 업데이트 방법',
+    setupSteps:[
+      '위 <strong>다운로드</strong> 버튼으로 <code>MidiAI Installer.exe</code>를 받습니다.',
+      '설치 파일을 실행하고 설치 경로를 확인합니다. 기본 경로는 <code>C:\\MidiAI</code>입니다.',
+      '처음 설치하는 경우 <strong>Full Install / Repair</strong>를 선택합니다.',
+      'Core → Media → Library → Runtime → Check 순서로 진행되며, 하단 설치 로그에서 상태를 확인합니다.',
+      '최종 점검이 완료되면 <strong>Open Folder</strong>로 설치 폴더를 열 수 있습니다.'
+    ],
+    runSteps:[
+      '이미 설치된 경우 Installer를 다시 실행한 뒤 <strong>Quick Update</strong>로 앱 파일만 빠르게 갱신합니다.',
+      '실행 오류나 파일 누락이 있으면 <strong>Full Install / Repair</strong> 또는 <strong>Update / Repair Mode</strong>로 복구합니다.',
+      '설치 후 <code>C:\\MidiAI</code> 폴더에서 MidiAI Studio를 실행합니다.',
+      '라이선스 인증은 앱 실행 후 Google 계정으로 로그인해 진행합니다.',
+      '문제가 계속되면 Installer의 <strong>System Check</strong>와 <strong>Show HWID</strong> 결과를 1:1 문의에 첨부해 주세요.'
+    ],
+    mandatory:'필수 업데이트',
+    officialInstaller:'공식 설치 프로그램',
+    buyLicense:'라이선스 구매',
+    patchNotes:'패치노트'
+  };
+}
+function applyDownloadsI18n(){
+  if(page !== 'downloads.html') return;
+  const t = downloadLocaleText();
+  const h1 = document.querySelector('.hub-topline h1');
+  const desc = document.querySelector('.hub-topline .hub-desc');
+  if(h1) h1.textContent = t.title;
+  if(desc) desc.textContent = t.desc;
+  const guideH2 = document.querySelector('.download-guide-intro h2');
+  const guideLead = document.querySelector('.download-guide-lead');
+  if(guideH2) guideH2.textContent = t.guideTitle;
+  if(guideLead) guideLead.textContent = t.guideLead;
+  const blocks = document.querySelectorAll('.download-guide-block');
+  const setupH3 = blocks[0]?.querySelector('h3');
+  const runH3 = blocks[1]?.querySelector('h3');
+  if(setupH3) setupH3.textContent = t.setupTitle;
+  if(runH3) runH3.textContent = t.runTitle;
+  const setupLis = blocks[0]?.querySelectorAll('.guide-step-text') || [];
+  setupLis.forEach((el,i)=>{ if(t.setupSteps[i]) el.innerHTML = t.setupSteps[i]; });
+  const runLis = blocks[1]?.querySelectorAll('.guide-step-text') || [];
+  runLis.forEach((el,i)=>{ if(t.runSteps[i]) el.innerHTML = t.runSteps[i]; });
+  const pill = document.querySelector('.portal-mandatory-pill');
+  if(pill) pill.textContent = t.mandatory;
+  const meta = document.querySelector('.download-card-meta-row span:last-child');
+  if(meta && /공식|Official|公式/.test(meta.textContent||'')) meta.textContent = t.officialInstaller;
+  document.querySelectorAll('.portal-download-actions a.secondary').forEach(a=>{
+    if(/패치노트|Patch notes|パッチノート/.test(a.textContent||'') || (a.getAttribute('href')||'').includes('patch-notes')) a.textContent = t.patchNotes;
+    if(/라이선스|Buy license|ライセンス購入/.test(a.textContent||'') || (a.getAttribute('href')||'').includes('purchase')) a.textContent = t.buyLicense;
+  });
+  refreshTopbarPageTitle();
+}
+function applyFooterI18n(){
+  const box = document.querySelector('.business-box');
+  if(!box) return;
+  if(!box.dataset.koHtml) box.dataset.koHtml = box.innerHTML;
+  if(lang === 'en'){
+    box.innerHTML = `
+      <span>Business name: MidiAI Studio</span>
+      <span>CEO: Jeonghwan Choi</span>
+      <span>Business registration: 332-22-02381</span>
+      <span>Address: 1101, 47 Changwondae-ro 780beon-gil, Seongsan-gu, Changwon-si, Gyeongsangnam-do, Korea</span>
+      <span>Phone: 010-2166-5563</span>
+      <span>Mail-order registration: 2026-Changwon Seongsan-0312</span>
+      <span>Support: 1:1 Support board</span>
+      <span>Email: midiaistudio@gmail.com</span>`;
+  } else if(lang === 'ja'){
+    box.innerHTML = `
+      <span>商号: MidiAI Studio</span>
+      <span>代表者: チェ・ジョンファン</span>
+      <span>事業者登録番号: 332-22-02381</span>
+      <span>所在地: 慶尚南道昌原市城山区昌原大路780番街47、1101号</span>
+      <span>電話: 010-2166-5563</span>
+      <span>通信販売業届出: 第2026-昌原城山-0312号</span>
+      <span>サポート: お問い合わせ掲示板</span>
+      <span>メール: midiaistudio@gmail.com</span>`;
+  } else {
+    box.innerHTML = box.dataset.koHtml;
+  }
 }
 function tr(k){
   const KO = {
@@ -202,10 +379,13 @@ function esc(s){ return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':
 function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
 function patchChangeType(text){
   const t = String(text || '');
-  if(/추가|신규|도입|새로운|새 |new|added?/i.test(t)) return { key:'new', label:'신규' };
-  if(/개선|향상|강화|업데이트|improv|enhanc|optim/i.test(t)) return { key:'improve', label:'개선' };
-  if(/수정|버그|오류|해결|fix|bug|패치|복구/i.test(t)) return { key:'fix', label:'수정' };
-  return { key:'change', label:'변경' };
+  if(/추가|신규|도입|새로운|새 |new|added?/i.test(t)) return { key:'new', label: tt('신규') };
+  if(/개선|향상|강화|업데이트|improv|enhanc|optim/i.test(t)) return { key:'improve', label: tt('개선') };
+  if(/수정|버그|오류|해결|fix|bug|패치|복구/i.test(t)) return { key:'fix', label: tt('수정') };
+  return { key:'change', label: tt('변경') };
+}
+function patchItemDisplayText(text){
+  return String(text || '').replace(/^(신규|개선|수정|변경|New|Improved?|Fixed?|Changed?)\s*[-–—:·]\s*/i, '').trim() || String(text || '').trim();
 }
 function parsePatchContent(raw){
   const text = String(raw || '').trim();
@@ -221,7 +401,7 @@ function parsePatchContent(raw){
     if(!t) continue;
     if(bulletRe.test(t)){
       const item = t.replace(bulletRe, '').trim();
-      if(!cur){ cur = { title:'변경 사항', items:[] }; sections.push(cur); }
+      if(!cur){ cur = { title: tt('변경 사항'), items:[] }; sections.push(cur); }
       cur.items.push(item);
       continue;
     }
@@ -230,34 +410,37 @@ function parsePatchContent(raw){
       sections.push(cur);
       continue;
     }
-    if(!cur){ cur = { title:'변경 사항', items:[] }; sections.push(cur); }
+    if(!cur){ cur = { title: tt('변경 사항'), items:[] }; sections.push(cur); }
     cur.items.push(t);
   }
   const totalItems = sections.reduce((n,s)=>n+s.items.length,0);
   return { sections, totalItems };
 }
 function patchContentHtml(sections){
-  if(!sections.length) return '<p class="patch-empty muted">내용이 없습니다.</p>';
+  if(!sections.length) return `<p class="patch-empty muted">${esc(tt('내용이 없습니다.'))}</p>`;
   const renderItems = (items)=> items.map(it=>{
     const type = patchChangeType(it);
-    return `<li><span class="patch-change-tag is-${type.key}">${type.label}</span><span class="patch-change-text">${esc(it)}</span></li>`;
+    const body = patchItemDisplayText(it);
+    return `<li class="is-${type.key}"><span class="patch-change-text">${esc(body)}</span></li>`;
   }).join('');
   if(sections.length === 1){
     const s = sections[0];
-    const title = s.title === '변경 사항' ? '' : `<h2 class="patch-section-title">${esc(s.title)}</h2>`;
+    const isDefault = s.title === '변경 사항' || s.title === tt('변경 사항');
+    const title = isDefault ? '' : `<h2 class="patch-section-title">${esc(s.title)}</h2>`;
     return `<div class="patch-changelog is-flat">${title}<ul class="patch-section-list">${renderItems(s.items)}</ul></div>`;
   }
   return `<div class="patch-changelog">${sections.map((s,i)=>`<section class="patch-section" id="patch-section-${i}"><h2 class="patch-section-title">${esc(s.title)}</h2>${s.items.length?`<ul class="patch-section-list">${renderItems(s.items)}</ul>`:''}</section>`).join('')}</div>`;
 }
 function patchTocHtml(sections){
-  if(sections.length <= 1) return '';
-  return `<nav class="patch-toc" aria-label="목차">${sections.map((s,i)=>`<a href="#patch-section-${i}">${esc(s.title)}</a>`).join('')}</nav>`;
+  // Dense emoji pill clouds make long notes look messy — skip TOC for cluttered notes.
+  if(sections.length <= 1 || sections.length > 6) return '';
+  return `<nav class="patch-toc" aria-label="${esc(tt('목차'))}"><ol>${sections.map((s,i)=>`<li><a href="#patch-section-${i}">${esc(s.title.replace(/^[\p{Extended_Pictographic}\uFE0F\s]+/u, '') || s.title)}</a></li>`).join('')}</ol></nav>`;
 }
 function patchNavHtml(nav){
   if(!nav || (!nav.prev && !nav.next)) return '';
-  const newer = nav.prev ? `<a class="patch-nav-link is-newer" href="./patch-note.html?id=${encodeURIComponent(nav.prev.id)}"><span>최신</span><b>${nav.prev.version?`v${esc(nav.prev.version)}`:esc(nav.prev.title||'')}</b></a>` : '';
-  const older = nav.next ? `<a class="patch-nav-link is-older" href="./patch-note.html?id=${encodeURIComponent(nav.next.id)}"><span>이전</span><b>${nav.next.version?`v${esc(nav.next.version)}`:esc(nav.next.title||'')}</b></a>` : '';
-  return `<nav class="patch-detail-nav" aria-label="버전 이동">${newer}${older}</nav>`;
+  const newer = nav.prev ? `<a class="patch-nav-link is-newer" href="./patch-note.html?id=${encodeURIComponent(nav.prev.id)}"><span>${esc(tt('최신'))}</span><b>${nav.prev.version?`v${esc(nav.prev.version)}`:esc(nav.prev.title||'')}</b></a>` : '';
+  const older = nav.next ? `<a class="patch-nav-link is-older" href="./patch-note.html?id=${encodeURIComponent(nav.next.id)}"><span>${esc(tt('이전'))}</span><b>${nav.next.version?`v${esc(nav.next.version)}`:esc(nav.next.title||'')}</b></a>` : '';
+  return `<nav class="patch-detail-nav" aria-label="${esc(tt('버전 이동'))}">${newer}${older}</nav>`;
 }
 function patchDetailHtml(d, nav=null){
   const version = d.version ? esc(d.version) : '';
@@ -267,24 +450,23 @@ function patchDetailHtml(d, nav=null){
   const toc = patchTocHtml(sections);
   return `<article class="hub-post-detail hub-patch-detail">
     <header class="patch-toolbar">
-      <a class="patch-back-link" href="./patch-notes.html">← 패치노트</a>
-      <button type="button" class="ghost mini-btn" data-share-patch>공유</button>
+      <a class="patch-back-link" href="./patch-notes.html">← ${esc(tt('패치노트'))}</a>
+      <button type="button" class="ghost mini-btn" data-share-patch>${esc(tt('공유'))}</button>
     </header>
     <div class="patch-head">
       <div class="patch-head-main">
         ${version?`<span class="patch-version-pill">v${version}</span>`:''}
         <h1 class="patch-detail-title">${esc(d.title || '')}</h1>
-        <p class="patch-meta-line"><span>${esc(noticeAuthor(d))}</span><span>${esc(fmtListDate(d.createdAt))}</span><span>조회 ${Number(d.viewCount || 0)}</span></p>
+        <p class="patch-meta-line"><span>${esc(noticeAuthor(d))}</span><span>${esc(fmtListDate(d.createdAt))}</span><span>${esc(tt('조회'))} ${Number(d.viewCount || 0)}</span></p>
         ${toc}
       </div>
-      <a class="primary patch-download-btn" href="./downloads.html">다운로드</a>
+      <a class="primary patch-download-btn" href="./downloads.html">${esc(tr('download'))}</a>
     </div>
     <div class="patch-detail-body">${bodyHtml}</div>
-    ${patchNavHtml(nav)}
     <footer class="patch-detail-footer">
-      <a class="ghost mini-btn" href="./patch-notes.html">전체 패치노트</a>
-      <a class="ghost mini-btn" href="./faq.html">FAQ</a>
-      <a class="ghost mini-btn" href="./support.html">문의</a>
+      <a class="patch-footer-link" href="./patch-notes.html">${esc(tt('전체 패치노트'))}</a>
+      <a class="patch-footer-link" href="./faq.html">FAQ</a>
+      <a class="patch-footer-link" href="./support.html">${esc(tt('문의'))}</a>
     </footer>
   </article>`;
 }
@@ -333,6 +515,20 @@ function purchaseLocaleText(){
   if(lang === 'en') return {
     saleUntil:'Until July 31',
     noteTitle:'License Guide',
+    checkoutTitle:'Payment details',
+    buyerLabel:'Buyer',
+    buyerGuest:'Filled after Google sign-in',
+    phoneLabel:'Phone number',
+    phoneHelp:'Required for Korean card checkout.',
+    paymentLabel:'Payment method',
+    productLabel:'Product',
+    productName:'MidiAI Studio Lifetime digital license',
+    priceLabel:'Price',
+    paymentTypeLabel:'Payment type',
+    paymentTypeValue:'One-time payment',
+    serviceLabel:'Service delivery',
+    serviceValue:'License issued immediately after payment',
+    preparingPayment:'Preparing payment buttons.',
     licenseGuide:[
       {title:'Full-song MIDI conversion',desc:'Convert entire YouTube links or audio files to MIDI with AI.'},
       {title:'Instrument conversion',desc:'Generate MIDI for piano, guitar, bass, and other instruments.'},
@@ -359,6 +555,20 @@ function purchaseLocaleText(){
   if(lang === 'ja') return {
     saleUntil:'7月31日まで',
     noteTitle:'ライセンス案内',
+    checkoutTitle:'決済情報',
+    buyerLabel:'購入者情報',
+    buyerGuest:'Googleログイン後に表示',
+    phoneLabel:'携帯電話番号',
+    phoneHelp:'韓国カード決済時に必要な連絡先です。',
+    paymentLabel:'決済手段',
+    productLabel:'商品名',
+    productName:'MidiAI Studio Lifetime デジタルライセンス',
+    priceLabel:'販売価格',
+    paymentTypeLabel:'決済形態',
+    paymentTypeValue:'単発決済',
+    serviceLabel:'サービス提供',
+    serviceValue:'決済完了後すぐにライセンス発行',
+    preparingPayment:'決済ボタンを準備しています。',
     licenseGuide:[
       {title:'全曲MIDI変換',desc:'YouTubeリンクやオーディオファイルをAIでMIDIに変換します。'},
       {title:'楽器変換',desc:'ピアノ・ギター・ベースなど希望の楽器でMIDIを生成します。'},
@@ -385,6 +595,20 @@ function purchaseLocaleText(){
   return {
     saleUntil:'7월 31일까지',
     noteTitle:'라이선스 안내',
+    checkoutTitle:'결제 정보',
+    buyerLabel:'주문자 정보',
+    buyerGuest:'Google 로그인 후 자동 입력',
+    phoneLabel:'휴대폰 번호',
+    phoneHelp:'KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.',
+    paymentLabel:'결제수단',
+    productLabel:'상품명',
+    productName:'MidiAI Studio Lifetime 디지털 라이선스',
+    priceLabel:'판매가격',
+    paymentTypeLabel:'결제형태',
+    paymentTypeValue:'단건 결제',
+    serviceLabel:'서비스 제공기간',
+    serviceValue:'결제 완료 후 즉시 라이선스 발급',
+    preparingPayment:'결제 버튼을 준비하고 있습니다.',
     licenseGuide:[
       {title:'전체 구간 MIDI 변환',desc:'YouTube 링크·오디오 파일 전체를 AI로 MIDI로 변환합니다.'},
       {title:'악기 변환',desc:'피아노·기타·베이스 등 원하는 악기로 MIDI를 생성합니다.'},
@@ -428,8 +652,51 @@ function updatePurchaseI18n(){
       </ul>`;
   }
   if($('purchaseHeroLead')) $('purchaseHeroLead').textContent = lang==='en' ? 'A Lifetime license for faster and more reliable AI-powered MIDI conversion.' : lang==='ja' ? 'AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。' : 'AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.';
+  const checkoutTitle = document.querySelector('.checkout-order-head h3');
+  if(checkoutTitle) checkoutTitle.textContent = t.checkoutTitle || checkoutTitle.textContent;
+  const orderItems = document.querySelectorAll('.checkout-order-item');
+  if(orderItems[0]){
+    const dt = orderItems[0].querySelector('dt');
+    if(dt) dt.textContent = t.buyerLabel;
+  }
+  if(orderItems[1]){
+    const label = orderItems[1].querySelector('label[for="purchasePhone"]') || orderItems[1].querySelector('dt');
+    if(label) label.textContent = t.phoneLabel;
+  }
+  if(orderItems[2]){
+    const dt = orderItems[2].querySelector('dt');
+    if(dt) dt.textContent = t.paymentLabel;
+  }
+  if($('purchasePhoneHelp')) $('purchasePhoneHelp').textContent = t.phoneHelp;
+  const specItems = document.querySelectorAll('.purchase-spec-item');
+  if(specItems[0]){
+    const span = specItems[0].querySelector('span');
+    const strong = specItems[0].querySelector('strong');
+    if(span) span.textContent = t.productLabel;
+    if(strong && !strong.id) strong.textContent = t.productName;
+  }
+  if(specItems[1]){
+    const span = specItems[1].querySelector('span');
+    if(span) span.textContent = t.priceLabel;
+  }
+  if(specItems[2]){
+    const span = specItems[2].querySelector('span');
+    const strong = specItems[2].querySelector('strong');
+    if(span) span.textContent = t.paymentTypeLabel;
+    if(strong) strong.textContent = t.paymentTypeValue;
+  }
+  if(specItems[3]){
+    const span = specItems[3].querySelector('span');
+    const strong = specItems[3].querySelector('strong');
+    if(span) span.textContent = t.serviceLabel;
+    if(strong) strong.textContent = t.serviceValue;
+  }
   const paypal = $('paypalButtons');
-  if(paypal && paypal.textContent.includes('Client ID')) paypal.innerHTML = `<p>${esc(t.paypalReady)}</p>`;
+  if(paypal){
+    const onlyPrep = paypal.querySelector('p') && paypal.children.length === 1;
+    const txt = paypal.textContent || '';
+    if(onlyPrep && (/준비|Preparing|準備|Client ID/.test(txt))) paypal.innerHTML = `<p>${esc(t.preparingPayment || t.paypalReady)}</p>`;
+  }
   updatePurchaseAccountBox();
 }
 
@@ -449,14 +716,23 @@ function updatePurchaseAccountBox(){
   updatePurchaseReviewPanel();
 }
 
+function renderPurchasePaymentTags(){
+  const box = $('purchasePaymentMethod');
+  if(!box) return;
+  if(isKoreanCheckout()){
+    box.innerHTML = '<span class="checkout-pay-chip">신용/체크카드</span><span class="checkout-pay-chip is-kakao">카카오페이</span>';
+  } else {
+    box.innerHTML = '<span class="checkout-pay-chip is-paypal">PayPal</span>';
+  }
+}
 function updatePurchaseReviewPanel(){
   if($('purchaseReviewPrice')) $('purchaseReviewPrice').textContent = purchaseDisplayPrice();
-  if($('purchasePaymentMethod')) $('purchasePaymentMethod').textContent = isKoreanCheckout() ? '신용/체크카드 · 카카오페이' : 'PayPal';
+  renderPurchasePaymentTags();
   if($('purchaseBuyerInfo')){
     if(currentUser){
       $('purchaseBuyerInfo').textContent = currentUser.email || currentUser.displayName || currentUser.uid;
     } else {
-      $('purchaseBuyerInfo').textContent = isKoreanCheckout() ? 'Google 로그인 후 자동 입력' : 'Filled after Google sign-in';
+      $('purchaseBuyerInfo').textContent = purchaseLocaleText().buyerGuest || (isKoreanCheckout() ? 'Google 로그인 후 자동 입력' : 'Filled after Google sign-in');
     }
   }
 }
@@ -670,11 +946,12 @@ function routeLoadPublic(){
 }
 function renderDownload(d){
   const box=$('downloadBox'); if(!box)return;
+  const t = downloadLocaleText();
   if(!d){
-    box.innerHTML=`<div class="portal-download-inner download-card-pro portal-download-empty"><div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div class="portal-download-meta"><h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p></div><div class="portal-download-actions"><a class="secondary" href="./purchase.html">라이선스 구매</a></div></div>`;
+    box.innerHTML=`<div class="portal-download-inner download-card-pro portal-download-empty"><div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div class="portal-download-meta"><h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p></div><div class="portal-download-actions"><a class="secondary" href="./purchase.html">${esc(t.buyLicense)}</a></div></div>`;
     return;
   }
-  const mandatory = d.mandatory ? '<span class="portal-mandatory-pill">필수 업데이트</span>' : '';
+  const mandatory = d.mandatory ? `<span class="portal-mandatory-pill">${esc(t.mandatory)}</span>` : '';
   const notes = d.notes||d.description ? `<p class="portal-download-notes">${esc(d.notes||d.description)}</p>` : '';
   box.innerHTML=`<div class="portal-download-inner download-card-pro">
     <div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>
@@ -686,14 +963,14 @@ function renderDownload(d){
         </div>
         <div class="download-card-line download-card-line-bottom">
           <p class="portal-download-file"><span class="download-file-ext">EXE</span>${esc(d.filename||'MidiAI Installer.exe')}</p>
-          <div class="download-card-meta-row"><span>${esc(fmtDate(d.releaseDate)||'')}</span><span>공식 설치 프로그램</span></div>
+          <div class="download-card-meta-row"><span>${esc(fmtDate(d.releaseDate)||'')}</span><span>${esc(t.officialInstaller)}</span></div>
         </div>
       </div>
       ${notes}
     </div>
     <div class="portal-download-actions">
       ${d.url?`<a class="primary download-cta" href="${esc(d.url)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>${tr('download')}</span></a>`:''}
-      <a class="secondary" href="./patch-notes.html">패치노트</a>
+      <a class="secondary" href="./patch-notes.html">${esc(t.patchNotes)}</a>
     </div>
   </div>`;
 }
@@ -751,7 +1028,7 @@ function renderAnnouncements(rows, err){
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>(b.pinned===true)-(a.pinned===true)||((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
   let normalNo=rows.filter(x=>!x.pinned).length;
-  list.innerHTML=`<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div><div class="hub-list-body">${rows.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">공지</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div><div class="hub-col-author">${esc(noticeAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
+  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div><div class="hub-col-author">${esc(noticeAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
   bindSearch(list);
 }
 function listenAnnouncements(){ if($('announcementList')) listenVisibleDocs('announcements',renderAnnouncements); }
@@ -759,7 +1036,7 @@ function renderNoticeDetail(d,err){
   const box=$('noticeDetail'); if(!box)return;
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">← 목록</a></div><div class="post-card-head"><div class="post-kicker">공지사항</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>글쓴이</em><b>${esc(noticeAuthor(d))}</b></span><span><em>작성일</em><b>${fmtDate(d.createdAt)}</b></span><span><em>조회</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div></article>`;
+  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span><span><em>${esc(tt('조회'))}</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div></article>`;
 }
 async function incrementNoticeViewOnce(id){
   const key='midiai_notice_view_'+id;
@@ -774,7 +1051,7 @@ function renderPatchNotes(rows,err){
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   let no=rows.length;
-  list.innerHTML=`<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div><div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${x.version?`<span class="badge active">v${esc(x.version)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div><div class="hub-col-author">${esc(noticeAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`).join('')}</div>`;
+  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${x.version?`<span class="badge active">v${esc(x.version)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div><div class="hub-col-author">${esc(noticeAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`).join('')}</div>`;
   bindSearch(list);
 }
 function listenPatchNotes(){ if($('patchList')) listenVisibleDocs('patchNotes',renderPatchNotes); }
@@ -826,15 +1103,228 @@ function listenFaq(){ if($('faqList')) listenVisibleDocs('faq',renderFaq,'order'
 function bindSearch(list){ const input=$('boardSearch'); if(!input || input.dataset.bound) return; input.dataset.bound='1'; input.addEventListener('input',()=>{ const q=input.value.trim().toLowerCase(); list.querySelectorAll('.hub-list-row, .list-item').forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q)?'':'none'}); }); }
 
 const TICKET_CATEGORIES=[
-  {value:'login',label:'로그인/계정'},
-  {value:'license',label:'라이선스'},
-  {value:'payment',label:'결제/환불'},
-  {value:'bug',label:'오류/버그'},
-  {value:'feature',label:'기능 문의'},
-  {value:'other',label:'기타'},
+  {value:'login',labelKey:'cat_login'},
+  {value:'license',labelKey:'cat_license'},
+  {value:'payment',labelKey:'cat_payment'},
+  {value:'bug',labelKey:'cat_bug'},
+  {value:'feature',labelKey:'cat_feature'},
+  {value:'other',labelKey:'cat_other'},
 ];
-function ticketCategoryLabel(v){ return TICKET_CATEGORIES.find(x=>x.value===v)?.label||'기타'; }
-function ticketOsLabel(v){ return ({windows11:'Windows 11',windows10:'Windows 10',other:'기타'})[v]||''; }
+function supportLocaleText(){
+  if(lang === 'en') return {
+    title:'1:1 Support',
+    desc:'Only you and the admin can view this ticket. Please sign in first.',
+    guideTitle:'Before you contact us',
+    guide:[
+      'Tickets and replies are private — visible only to you and the admin.',
+      'We usually reply within 1–2 business days, in order received.',
+      'For login, license, or payment issues, include your Google account email.',
+      'For bugs, attach app version, Windows version, and screenshots/logs when possible.'
+    ],
+    faqFirst:'Check FAQ first',
+    myTickets:'View my tickets',
+    needLoginTitle:'Google sign-in required',
+    needLoginDesc:'You must be signed in to create tickets and view replies.',
+    accountLabel:'Support account',
+    category:'Category',
+    titleLabel:'Title',
+    contentLabel:'Details',
+    titlePh:'Login issue / license question',
+    contentPh:'Describe your issue in detail. For bugs, include steps to reproduce, error messages, and screenshot notes.',
+    attachments:'Attachments',
+    attachHint:'Screenshots, video, PDF, logs, ZIP · 20MB each · max 5 files',
+    noAttach:'No files attached.',
+    appVersion:'App version',
+    os:'Operating system',
+    optional:'(optional)',
+    select:'Select',
+    other:'Other',
+    email:'Contact email',
+    emailPh:'Filled after Google sign-in',
+    privacyHtml:'I agree to the collection and use of information for support under the <a href="./privacy.html" target="_blank" rel="noopener">Privacy policy</a>.',
+    submit:'Submit ticket',
+    cat_login:'Login / Account',
+    cat_license:'License',
+    cat_payment:'Payment / Refund',
+    cat_bug:'Bug / Error',
+    cat_feature:'Feature question',
+    cat_other:'Other',
+    appVersionPh:'e.g. 1.5.7',
+    badge_video:'Video',
+    badge_image:'Image',
+    badge_file:'File',
+    attachUnsupported:'Unsupported file type. Use image, video, PDF, TXT, CSV, LOG, or ZIP.',
+    attachTooBig:'Each file can be up to 20MB.',
+    attachMax:'Up to 5 attachments per ticket.',
+    uploading:(i,n)=>`Uploading attachment... ${i}/${n}`,
+  };
+  if(lang === 'ja') return {
+    title:'お問い合わせ',
+    desc:'問い合わせ内容は作成者と管理者のみ閲覧できます。ログイン後に作成してください。',
+    guideTitle:'お問い合わせ前のご案内',
+    guide:[
+      '問い合わせと返信は作成者と管理者のみ閲覧できる非公開掲示板です。',
+      '平日基準で1〜2営業日以内に順次返信します。',
+      'ログイン・ライセンス・決済のご質問はGoogleアカウントのメールをご確認ください。',
+      '不具合の場合はアプリ版・Windows版・スクリーンショット/ログを添付すると確認が早くなります。'
+    ],
+    faqFirst:'FAQを先に確認',
+    myTickets:'マイ問い合わせを見る',
+    needLoginTitle:'Googleログインが必要です',
+    needLoginDesc:'問い合わせ登録と返信確認はログインしたアカウントでのみ可能です。',
+    accountLabel:'問い合わせアカウント',
+    category:'問い合わせ種類',
+    titleLabel:'件名',
+    contentLabel:'内容',
+    titlePh:'ログインエラー / ライセンス問い合わせ',
+    contentPh:'お問い合わせ内容を詳しく入力してください。不具合の場合は再現手順、メッセージ、スクリーンショットの説明を含めてください。',
+    attachments:'添付ファイル',
+    attachHint:'スクリーンショット・動画・PDF・ログ・ZIP · 1ファイル20MB · 最大5個',
+    noAttach:'添付ファイルはありません。',
+    appVersion:'アプリ版',
+    os:'OS',
+    optional:'（任意）',
+    select:'選択',
+    other:'その他',
+    email:'連絡用メール',
+    emailPh:'Googleログイン後に表示',
+    privacyHtml:'<a href="./privacy.html" target="_blank" rel="noopener">プライバシーポリシー</a>に従い、問い合わせ対応のための情報収集・利用に同意します。',
+    submit:'送信',
+    cat_login:'ログイン/アカウント',
+    cat_license:'ライセンス',
+    cat_payment:'決済/返金',
+    cat_bug:'不具合/バグ',
+    cat_feature:'機能について',
+    cat_other:'その他',
+    appVersionPh:'例: 1.5.7',
+    badge_video:'動画',
+    badge_image:'画像',
+    badge_file:'ファイル',
+    attachUnsupported:'対応していない形式です。画像/動画/PDF/TXT/CSV/LOG/ZIPのみアップロードできます。',
+    attachTooBig:'1ファイルあたり最大20MBまでです。',
+    attachMax:'問い合わせあたり添付は最大5個までです。',
+    uploading:(i,n)=>`添付ファイルをアップロード中... ${i}/${n}`,
+  };
+  return {
+    title:'1:1 문의',
+    desc:'문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.',
+    guideTitle:'문의 전 안내',
+    guide:[
+      '문의와 답변은 작성자와 관리자만 볼 수 있는 비공개 게시판입니다.',
+      '평일 기준 1~2영업일 내 답변을 드리며, 순차적으로 처리됩니다.',
+      '로그인·라이선스·결제 문의는 Google 계정 이메일을 꼭 확인해주세요.',
+      '오류 문의 시 앱 버전·Windows 버전·스크린샷/로그를 함께 첨부해주시면 빠른 확인이 가능합니다.'
+    ],
+    faqFirst:'FAQ 먼저 확인',
+    myTickets:'나의 문의 보기',
+    needLoginTitle:'Google 로그인이 필요합니다.',
+    needLoginDesc:'문의 등록과 답변 확인은 로그인한 계정으로만 가능합니다.',
+    accountLabel:'문의 계정',
+    category:'문의 유형',
+    titleLabel:'제목',
+    contentLabel:'내용',
+    titlePh:'로그인 오류 / 라이선스 문의',
+    contentPh:'문의 내용을 자세히 적어주세요. 오류의 경우 재현 방법, 메시지, 스크린샷 설명을 포함해주세요.',
+    attachments:'첨부파일',
+    attachHint:'스크린샷·영상·PDF·로그·ZIP · 파일당 20MB · 최대 5개',
+    noAttach:'첨부한 파일이 없습니다.',
+    appVersion:'앱 버전',
+    os:'운영체제',
+    optional:'(선택)',
+    select:'선택',
+    other:'기타',
+    email:'연락 이메일',
+    emailPh:'Google 로그인 후 자동 입력',
+    privacyHtml:'<a href="./privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>에 따라 문의 처리를 위한 정보 수집·이용에 동의합니다.',
+    submit:'문의 등록',
+    cat_login:'로그인/계정',
+    cat_license:'라이선스',
+    cat_payment:'결제/환불',
+    cat_bug:'오류/버그',
+    cat_feature:'기능 문의',
+    cat_other:'기타',
+    appVersionPh:'예: 1.5.7',
+    badge_video:'영상',
+    badge_image:'사진',
+    badge_file:'파일',
+    attachUnsupported:'지원하지 않는 파일 형식입니다. 이미지/영상/PDF/TXT/CSV/LOG/ZIP만 업로드할 수 있어요.',
+    attachTooBig:'파일당 최대 20MB까지 업로드할 수 있어요.',
+    attachMax:'문의당 첨부는 최대 5개까지 가능합니다.',
+    uploading:(i,n)=>`첨부파일 업로드 중... ${i}/${n}`,
+  };
+}
+function ticketCategoryLabel(v){
+  const t = supportLocaleText();
+  const item = TICKET_CATEGORIES.find(x=>x.value===v);
+  return item ? (t[item.labelKey] || item.labelKey) : t.cat_other;
+}
+function ticketOsLabel(v){
+  const t = supportLocaleText();
+  return ({windows11:'Windows 11',windows10:'Windows 10',other:t.other})[v]||'';
+}
+function applySupportI18n(){
+  if(page !== 'support.html') return;
+  const t = supportLocaleText();
+  const h1 = document.querySelector('.hub-topline h1');
+  const desc = document.querySelector('.hub-topline .hub-desc');
+  if(h1) h1.textContent = t.title;
+  if(desc) desc.textContent = t.desc;
+  const guideTitle = document.querySelector('.support-info h3');
+  if(guideTitle) guideTitle.textContent = t.guideTitle;
+  const guideLis = document.querySelectorAll('.support-info ul li');
+  guideLis.forEach((li,i)=>{ if(t.guide[i]) li.textContent = t.guide[i]; });
+  const links = document.querySelectorAll('.support-info-links a');
+  if(links[0]) links[0].textContent = t.faqFirst;
+  if(links[1]) links[1].textContent = t.myTickets;
+  const gate = $('supportLoginGate');
+  if(gate){
+    const ps = gate.querySelectorAll('p');
+    if(ps[0]) ps[0].innerHTML = `<b>${esc(t.needLoginTitle)}</b>`;
+    if(ps[1]) ps[1].textContent = t.needLoginDesc;
+    const btn = $('supportLoginBtn');
+    if(btn) btn.textContent = tr('login');
+  }
+  const accountLabel = document.querySelector('.support-account-label');
+  if(accountLabel) accountLabel.textContent = t.accountLabel;
+  const catLabel = document.querySelector('label[for="ticketCategory"]');
+  if(catLabel) catLabel.textContent = t.category;
+  const cat = $('ticketCategory');
+  if(cat){
+    const cur = cat.value;
+    cat.innerHTML = TICKET_CATEGORIES.map(x=>`<option value="${x.value}">${esc(t[x.labelKey])}</option>`).join('');
+    if(cur) cat.value = cur;
+  }
+  const titleLabel = document.querySelector('label[for="ticketTitle"]');
+  if(titleLabel) titleLabel.textContent = t.titleLabel;
+  const contentLabel = document.querySelector('label[for="ticketContent"]');
+  if(contentLabel) contentLabel.textContent = t.contentLabel;
+  if($('ticketTitle')) $('ticketTitle').placeholder = t.titlePh;
+  if($('ticketContent')) $('ticketContent').placeholder = t.contentPh;
+  const attachLabel = document.querySelector('label[for="ticketAttachments"]');
+  if(attachLabel) attachLabel.textContent = t.attachments;
+  const attachHint = document.querySelector('.support-upload-box .small-copy');
+  if(attachHint) attachHint.textContent = t.attachHint;
+  const appLabel = document.querySelector('label[for="ticketAppVersion"]');
+  if(appLabel) appLabel.innerHTML = `${esc(t.appVersion)} <span class="muted">${esc(t.optional)}</span>`;
+  const osLabel = document.querySelector('label[for="ticketOs"]');
+  if(osLabel) osLabel.innerHTML = `${esc(t.os)} <span class="muted">${esc(t.optional)}</span>`;
+  if($('ticketAppVersion')) $('ticketAppVersion').placeholder = t.appVersionPh;
+  const os = $('ticketOs');
+  if(os){
+    const cur = os.value;
+    os.innerHTML = `<option value="">${esc(t.select)}</option><option value="windows11">Windows 11</option><option value="windows10">Windows 10</option><option value="other">${esc(t.other)}</option>`;
+    if(cur) os.value = cur;
+  }
+  const emailLabel = document.querySelector('label[for="ticketEmail"]');
+  if(emailLabel) emailLabel.textContent = t.email;
+  if($('ticketEmail') && !currentUser) $('ticketEmail').placeholder = t.emailPh;
+  const privacySpan = document.querySelector('.support-check span');
+  if(privacySpan) privacySpan.innerHTML = t.privacyHtml;
+  const submit = document.querySelector('#ticketForm button[type="submit"]');
+  if(submit) submit.textContent = t.submit;
+  renderTicketAttachmentPreview();
+  refreshTopbarPageTitle();
+}
 
 const TICKET_MAX_ATTACHMENTS = 5;
 const TICKET_MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -849,7 +1339,8 @@ function ticketFileType(fileOrAttachment){
 }
 function ticketFileIcon(type){ return ({video:'🎥',image:'🖼️',file:'📎'})[type] || '📎'; }
 function ticketAttachmentBadge(type){
-  return ({video:'영상',image:'사진',file:'파일'})[type] || '파일';
+  const t = supportLocaleText();
+  return ({video:t.badge_video,image:t.badge_image,file:t.badge_file})[type] || t.badge_file;
 }
 function ticketAttachmentItemHtml(a, idx, editable=false){
   const type = ticketFileType(a);
@@ -876,7 +1367,7 @@ function renderTicketAttachmentPreview(){
     const type = ticketFileType(file);
     return `<div class="board-file-chip"><span>${ticketFileIcon(type)}</span><b>${esc(file.name)}</b><small>${Math.max(1, Math.ceil(file.size/1024/1024))}MB</small><button type="button" class="secondary mini-btn danger-btn" data-remove-new-ticket-attachment="${i}">삭제</button></div>`;
   }).join('');
-  box.innerHTML = fresh ? `<div class="board-file-chip-list">${fresh}</div>` : '<p class="muted">첨부한 파일이 없습니다.</p>';
+  box.innerHTML = fresh ? `<div class="board-file-chip-list">${fresh}</div>` : `<p class="muted">${esc(supportLocaleText().noAttach)}</p>`;
   box.querySelectorAll('[data-remove-new-ticket-attachment]').forEach(btn=>btn.onclick=()=>{
     selectedTicketFiles.splice(Number(btn.dataset.removeNewTicketAttachment),1);
     const input = $('ticketAttachments');
@@ -890,10 +1381,11 @@ function showTicketAttachmentMsg(text){
 }
 function addTicketFiles(files){
   const incoming = Array.from(files || []);
+  const t = supportLocaleText();
   for(const file of incoming){
-    if(!TICKET_ALLOWED_MIME.test(file.type || '')){ showTicketAttachmentMsg('지원하지 않는 파일 형식입니다. 이미지/영상/PDF/TXT/CSV/LOG/ZIP만 업로드할 수 있어요.'); continue; }
-    if(file.size > TICKET_MAX_FILE_SIZE){ showTicketAttachmentMsg('파일당 최대 20MB까지 업로드할 수 있어요.'); continue; }
-    if(selectedTicketFiles.length >= TICKET_MAX_ATTACHMENTS){ showTicketAttachmentMsg('문의당 첨부는 최대 5개까지 가능합니다.'); break; }
+    if(!TICKET_ALLOWED_MIME.test(file.type || '')){ showTicketAttachmentMsg(t.attachUnsupported); continue; }
+    if(file.size > TICKET_MAX_FILE_SIZE){ showTicketAttachmentMsg(t.attachTooBig); continue; }
+    if(selectedTicketFiles.length >= TICKET_MAX_ATTACHMENTS){ showTicketAttachmentMsg(t.attachMax); break; }
     selectedTicketFiles.push(file);
   }
   renderTicketAttachmentPreview();
@@ -926,7 +1418,7 @@ async function uploadTicketAttachments(ticketId){
   const uploaded = [];
   for(let i=0;i<selectedTicketFiles.length;i++){
     const file = selectedTicketFiles[i];
-    showFormMsg(`첨부파일 업로드 중... ${i+1}/${selectedTicketFiles.length}`, true);
+    showFormMsg(supportLocaleText().uploading(i+1, selectedTicketFiles.length), true);
     const safeName = boardSafeFilename(file.name);
     const path = `support/${currentUser.uid}/${ticketId}/${Date.now()}_${i}_${safeName}`;
     const fileRef = ref(storage, path);
@@ -1156,7 +1648,7 @@ function listenMyTickets(){
   addUnsub(onSnapshot(q, snap=>{
     const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
     if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-    list.innerHTML=`<div class="hub-list-head hub-ticket-head"><span>제목</span><span>유형</span><span>상태</span><span>작성일</span></div><div class="hub-list-body">${rows.map(t=>ticketShell(t,false,false)).join('')}</div>`;
+    list.innerHTML=`${hubTicketHeadHtml()}<div class="hub-list-body">${rows.map(t=>ticketShell(t,false,false)).join('')}</div>`;
     bindTicketActions(list);
   }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
@@ -1417,7 +1909,7 @@ function renderBoardPosts(rows, err){
   const list=boardFilteredSorted(rows||[]);
   if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   let normalNo=list.filter(x=>!x.pinned).length;
-  box.innerHTML=`<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div><div class="hub-list-body">${list.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">공지</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||'(제목 없음)')}</span></b></div><div class="hub-col-author">${esc(contentAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
+  box.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${list.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div><div class="hub-col-author">${esc(contentAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
   bindSearch(box);
 }
 function listenBoardPosts(){
@@ -2031,6 +2523,39 @@ const SIDEBAR_ICONS={
   admin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 7v6c0 5 3.4 8.7 8 9 4.6-.3 8-4 8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>',
 };
 function navIcon(name){ return `<span class="nav-icon is-${name}" aria-hidden="true">${SIDEBAR_ICONS[name]||''}</span>`; }
+const GOOGLE_MARK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>';
+const TOPBAR_GLOBE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/></svg>';
+function refreshTopbarActionLabels(){
+  const langBtn = $('langBtn');
+  if(langBtn){
+    const code = langBtn.querySelector('.topbar-lang-code');
+    const label = lang === 'ko' ? 'EN' : lang === 'en' ? '日本語' : '한국어';
+    if(code) code.textContent = label;
+    else langBtn.textContent = label;
+  }
+  const loginLabel = $('loginBtn')?.querySelector('.login-label');
+  if(loginLabel) loginLabel.textContent = tr('login');
+  const logoutBtn = $('logoutBtn');
+  if(logoutBtn && !logoutBtn.querySelector('svg')) logoutBtn.textContent = tr('logout');
+}
+function initTopbarActions(){
+  const actions = document.querySelector('.topbar .actions');
+  if(!actions || actions.dataset.upgraded === '1') return;
+  actions.dataset.upgraded = '1';
+  actions.classList.add('topbar-actions');
+  const langBtn = $('langBtn');
+  if(langBtn && !langBtn.querySelector('.topbar-lang-code')){
+    langBtn.classList.add('topbar-lang');
+    langBtn.innerHTML = `<span class="topbar-lang-icon">${TOPBAR_GLOBE_SVG}</span><span class="topbar-lang-code">EN</span>`;
+  }
+  const loginBtn = $('loginBtn');
+  if(loginBtn && !loginBtn.querySelector('.login-label')){
+    loginBtn.classList.add('topbar-login');
+    loginBtn.innerHTML = `<span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">Google 로그인</span>`;
+  }
+  $('logoutBtn')?.classList.add('topbar-logout');
+  refreshTopbarActionLabels();
+}
 function initSidebarLayout(){
   if(document.querySelector('.app-shell')) return;
   const topbar=document.querySelector('.topbar');
@@ -2106,6 +2631,7 @@ function initSidebarNav(){
 showOAuthBrowserNotice();
 bindBoardLightbox();
 initSidebarLayout();
+initTopbarActions();
 bindSidebar();
 applyStaticI18n();
 initSidebarNav();
