@@ -1942,7 +1942,11 @@ const BOARD_MAX_FILE_SIZE = 50 * 1024 * 1024;
 const BOARD_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm)|audio\/(midi|mid|x-midi)|application\/(x-)?midi)$/i;
 let selectedBoardFiles = [];
 let existingBoardAttachments = [];
+const BOARD_MIDI_SOUNDFONT = 'https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus';
 let midiPlayerLibPromise = null;
+let boardMidiEngine = null;
+let boardMidiPlayingUrl = null;
+let boardMidiActiveBtn = null;
 
 function isBoardMidi(fileOrAttachment){
   const mime = String(fileOrAttachment?.type || fileOrAttachment?.mime || '').toLowerCase();
@@ -1961,17 +1965,26 @@ function boardFileType(fileOrAttachment){
   return 'image';
 }
 function boardMidiContentType(file){
-  return file?.type || 'audio/midi';
+  const t = String(file?.type || '').toLowerCase();
+  if(/^(audio\/(midi|mid|x-midi)|application\/(x-)?midi)$/.test(t)) return t;
+  return 'audio/midi';
+}
+function getMagentaCore(){
+  return window.core || null;
 }
 function ensureMidiPlayerLib(){
-  if(window.customElements?.get('midi-player')) return Promise.resolve();
+  if(getMagentaCore()?.SoundFontPlayer) return Promise.resolve(getMagentaCore());
   if(midiPlayerLibPromise) return midiPlayerLibPromise;
   midiPlayerLibPromise = new Promise((resolve, reject)=>{
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/combine/npm/tone@14.7.77,npm/@magenta/music@1.23.1/es6/core.js,npm/html-midi-player@1.5.0';
+    s.src = 'https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js';
     s.async = true;
-    s.onload = ()=>resolve();
-    s.onerror = ()=>reject(new Error('MIDI player load failed'));
+    s.onload = ()=>{
+      const core = getMagentaCore();
+      if(core?.SoundFontPlayer) resolve(core);
+      else reject(new Error('MIDI 엔진 로드 실패'));
+    };
+    s.onerror = ()=>reject(new Error('MIDI 엔진 로드 실패'));
     document.head.appendChild(s);
   }).catch(err=>{
     midiPlayerLibPromise = null;
@@ -1989,14 +2002,23 @@ function boardAttachmentItemHtml(a, idx, editable=false){
   const url = esc(a.url || '');
   const badge = type === 'video' ? '🎥 영상' : type === 'midi' ? '🎹 MIDI' : '🖼️ 사진';
   const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-existing-attachment="${idx}">삭제</button>` : '';
+  if(type === 'midi'){
+    return `<figure class="board-attachment-item board-attachment-midi">
+      <div class="board-midi-card">
+        <div class="board-midi-row">
+          <span class="board-midi-badge">🎹 MIDI</span>
+          <b class="board-midi-name" title="${name}">${name}</b>
+          ${editable?'':`<button type="button" class="board-midi-play-btn" data-midi-play="${url}" aria-label="재생">▶</button>
+          <a class="board-midi-dl" href="${url}" target="_blank" rel="noopener noreferrer" download>다운로드</a>`}
+          ${remove}
+        </div>
+        <p class="board-midi-msg muted" hidden></p>
+      </div>
+    </figure>`;
+  }
   let media = '';
   if(type === 'video'){
     media = `<video controls preload="metadata" src="${url}"></video>`;
-  } else if(type === 'midi'){
-    media = `<div class="board-midi-wrap">
-      <midi-player class="board-midi-player" src="${url}" sound-font="https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus"></midi-player>
-      <a class="board-midi-download" href="${url}" target="_blank" rel="noopener noreferrer" download>다운로드</a>
-    </div>`;
   } else {
     media = `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`;
   }
@@ -2007,9 +2029,92 @@ function boardAttachmentsHtml(list){
   if(!arr.length) return '';
   return `<div class="board-attachments">${arr.map((a,i)=>boardAttachmentItemHtml(a,i,false)).join('')}</div>`;
 }
+function stopBoardMidiPlayback(){
+  try{ boardMidiEngine?.stop?.(); }catch(_){}
+  if(boardMidiActiveBtn){
+    boardMidiActiveBtn.classList.remove('is-playing');
+    boardMidiActiveBtn.textContent='▶';
+    boardMidiActiveBtn.disabled=false;
+  }
+  boardMidiPlayingUrl=null;
+  boardMidiActiveBtn=null;
+}
+async function loadBoardNoteSequence(url, core){
+  try{
+    const res = await fetch(url, { mode:'cors' });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const buf = await res.arrayBuffer();
+    const blob = new Blob([buf], { type:'audio/midi' });
+    if(typeof core.blobToNoteSequence === 'function') return core.blobToNoteSequence(blob);
+    if(typeof core.midiToSequenceProto === 'function') return core.midiToSequenceProto(new Uint8Array(buf));
+  }catch(err){
+    const msg = String(err?.message||err||'');
+    if(/Failed to fetch|NetworkError|CORS|Load failed/i.test(msg) || err?.name==='TypeError'){
+      const e = new Error('CORS');
+      e.code = 'cors';
+      throw e;
+    }
+    throw err;
+  }
+  if(typeof core.urlToNoteSequence === 'function') return core.urlToNoteSequence(url);
+  throw new Error('MIDI 파서를 찾을 수 없습니다.');
+}
+async function toggleBoardMidiPlay(btn){
+  const url = btn.getAttribute('data-midi-play');
+  const card = btn.closest('.board-midi-card');
+  const msg = card?.querySelector('.board-midi-msg');
+  if(!url) return;
+  if(msg){ msg.hidden=true; msg.textContent=''; }
+  if(boardMidiPlayingUrl === url){
+    stopBoardMidiPlayback();
+    return;
+  }
+  stopBoardMidiPlayback();
+  btn.disabled=true;
+  btn.textContent='…';
+  try{
+    const core = await ensureMidiPlayerLib();
+    if(window.Tone?.start) await window.Tone.start();
+    const ns = await loadBoardNoteSequence(url, core);
+    if(!boardMidiEngine){
+      boardMidiEngine = new core.SoundFontPlayer(BOARD_MIDI_SOUNDFONT);
+    }
+    await boardMidiEngine.loadSamples(ns);
+    boardMidiEngine.start(ns);
+    boardMidiPlayingUrl = url;
+    boardMidiActiveBtn = btn;
+    btn.classList.add('is-playing');
+    btn.textContent='■';
+    btn.disabled=false;
+    const finish = ()=>{ if(boardMidiPlayingUrl===url) stopBoardMidiPlayback(); };
+    if(typeof boardMidiEngine.callbackObject !== 'undefined'){
+      boardMidiEngine.callbackObject = {
+        run: ()=>{},
+        stop: finish
+      };
+    }
+    const total = Number(ns?.totalTime||0);
+    if(total>0) setTimeout(finish, Math.ceil(total*1000)+400);
+  }catch(err){
+    btn.disabled=false;
+    btn.textContent='▶';
+    if(msg){
+      msg.hidden=false;
+      if(err?.code==='cors'){
+        msg.textContent='재생을 위해 Firebase Storage CORS 설정이 필요합니다. 다운로드는 가능합니다.';
+      } else {
+        msg.textContent='MIDI 재생에 실패했습니다. 다운로드로 확인해주세요.';
+      }
+    }
+    console.warn('midi play failed', err);
+  }
+}
 function hydrateBoardMidiPlayers(root=document){
-  if(!root.querySelector?.('midi-player, .board-midi-player')) return;
-  ensureMidiPlayerLib().catch(err=>console.warn(err));
+  root.querySelectorAll?.('[data-midi-play]').forEach(btn=>{
+    if(btn.dataset.bound) return;
+    btn.dataset.bound='1';
+    btn.addEventListener('click',()=>toggleBoardMidiPlay(btn));
+  });
 }
 function renderBoardAttachmentPreview(){
   const box = $('boardAttachmentPreview');
@@ -2220,7 +2325,14 @@ async function initBoardPostEditor(){
         if(uploaded.length) await setDoc(doc(db,'boardPosts',postId),{attachments:uploaded,updatedAt:serverTimestamp()},{merge:true});
       }
       location.href=boardPostUrl(postId);
-    }catch(err){ $('boardPostMsg').textContent=err.message; }
+    }catch(err){
+      const raw=String(err?.message||err||'');
+      if(/storage\/unauthorized|does not have permission/i.test(raw)){
+        $('boardPostMsg').textContent='첨부파일 업로드 권한이 없습니다. Firebase Storage 규칙에 MIDI(audio/midi) 허용이 필요합니다.';
+      } else {
+        $('boardPostMsg').textContent=raw;
+      }
+    }
   });
 }
 function renderBoardPost(d,err){
