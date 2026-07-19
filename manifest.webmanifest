@@ -1,0 +1,19 @@
+{
+  "name": "MidiAI Studio",
+  "short_name": "MidiAI",
+  "description": "AI로 피아노 커버를 MIDI로 변환하는 Windows 소프트웨어 공식 포털",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/assets/images/symbol.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

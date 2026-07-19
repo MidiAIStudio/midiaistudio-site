@@ -1,3 +1,11 @@
 User-agent: *
 Allow: /
+
+# Private / app areas
+Disallow: /admin.html
+Disallow: /account.html
+Disallow: /my-tickets.html
+Disallow: /ticket.html
+Disallow: /board-write.html
+
 Sitemap: https://midiaistudio.com/sitemap.xml

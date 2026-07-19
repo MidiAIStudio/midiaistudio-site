@@ -1,5 +1,11 @@
 window.MIDIAI_CONFIG = {
   buildTag: "v42-deploy-fix-20260713",
+  seo: {
+    // Paste Google Search Console HTML tag verification code value here
+    googleSiteVerification: "",
+    // Paste Bing Webmaster Tools meta verification code here
+    bingSiteVerification: ""
+  },
   firebase: {
     apiKey: "AIzaSyAAS0fFhGk9zHz0eb3XtNob42g3OvYdDiA",
     authDomain: "midiaistudio.firebaseapp.com",
