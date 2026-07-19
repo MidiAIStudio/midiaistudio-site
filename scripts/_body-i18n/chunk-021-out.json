@@ -1,0 +1,482 @@
+{
+  "There is a fork in the road every time you convert a score, and it is decided by one question: do you want to hear it or re-print it? If you want playback and editing of the performance, MIDI is your target. If you want to re-engrave the notation — to publish, transpose on the page, or extract parts — you want MusicXML.": {
+    "ko": "악보를 변환할 때마다 갈림길이 있으며, 한 질문으로 결정됩니다. 듣고 싶은가, 다시 인쇄하고 싶은가? 연주의 재생과 편집이 목적이면 MIDI가 목표입니다. 기보를 다시 새기려 한다면—출판, 악보상 이조, 파트 추출—MusicXML이 필요합니다.",
+    "ja": "楽譜を変換するたび分岐があり、次の一文で決まります。聴きたいのか、再印刷したいのか。演奏の再生と編集ならMIDIが目標です。記譜を彫り直す—出版、譜面上の移調、パート抽出—ならMusicXMLが必要です。"
+  },
+  "There is a judgment call about when editing stops being worth it. If you are changing more than half the notes, re-engraving from a blank page can be cleaner than reshaping a conversion. The tipping point is roughly when you spend more time undoing the original than building the new one.": {
+    "ko": "편집이 더 이상 가치가 없을 때를 판단해야 합니다. 절반 이상의 음을 고치고 있다면, 변환을 다듬기보다 빈 페이지에서 다시 새기는 편이 더 깨끗할 수 있습니다. 분기점은 대략 원본을 되돌리는 데 새것을 만드는 것보다 더 많은 시간을 쓸 때입니다.",
+    "ja": "編集が割に合わなくなる時点の判断があります。半分以上の音符を直しているなら、変換を整形するより白紙から彫り直す方がきれいなことがあります。分岐点はおおよそ、新しいものを作るより元を取り消す時間の方が長いときです。"
+  },
+  "There is a limit worth respecting: recognition reconstructs what was written, not what a performer would do. Rubato, voicing balance, and pedaling are interpretive, and no amount of accuracy will invent them from a clean page. The MIDI is a faithful skeleton you then bring to life.": {
+    "ko": "존중할 한계가 있습니다. 인식은 연주자가 할 일이 아니라 적힌 것을 재구성합니다. 루바토, 보이싱 밸런스, 페달링은 해석의 영역이며, 아무리 정확해도 깨끗한 페이지에서 만들어 내지는 못합니다. MIDI는 충실한 골격이고, 생명을 불어넣는 일은 그다음입니다.",
+    "ja": "尊重すべき限界があります。認識は演奏者がすることではなく、書かれたものを再構成します。ルバート、ヴォイシングのバランス、ペダリングは解釈であり、どれだけ精度が高くてもきれいなページから発明はできません。MIDIは忠実な骨格であり、命を吹き込むのはその後です。"
+  },
+  "There is a real ethical texture to transcribing covers that is worth naming. A cover arrangement is itself a creative work, and lifting it note for note is closer to studying a teacher than copying a fact. Approaching it as learning — understanding the choices rather than merely harvesting them — keeps the practice honest and, frankly, more useful.": {
+    "ko": "커버 채보에는 이름을 붙여 둘 만한 윤리적 결이 있습니다. 커버 편곡 자체가 창작이며, 음 하나하나를 들어 올리는 일은 사실을 베끼기보다 스승을 배우는 쪽에 가깝습니다. 수확만이 아니라 선택을 이해하는 학습으로 접근하면 실천이 정직해지고, 솔직히 더 유용해집니다.",
+    "ja": "カバーの採譜には名前をつけておく価値のある倫理的な質感があります。カバーアレンジ自体が創作であり、音を一つずつ拾うことは事実のコピーより師匠に学ぶのに近いです。収穫ではなく選択を理解する学びとして臨めば、実践は誠実になり、率直に言ってより役に立ちます。"
+  },
+  "There is a satisfying reason piano is the transcriber's friend: its physics align with what compression keeps and what transcription needs. The hammer strike is a brief, high-energy event that perceptual coding treats as important, so the very onsets an engine relies on are the ones an encoder protects. Instrument and format happen to agree on what matters.": {
+    "ko": "피아노가 채보자의 친구인 데는 만족스러운 이유가 있습니다. 그 물리가 압축이 남기는 것과 채보가 필요로 하는 것과 맞습니다. 해머 타격은 짧고 에너지가 큰 사건이라 지각 부호화가 중요하게 다루므로, 엔진이 의존하는 바로 그 온셋을 인코더가 보호합니다. 악기와 형식이 우연히 중요한 것에서 합의합니다.",
+    "ja": "ピアノが採譜者の味方である納得の理由があります。その物理は圧縮が残すものと採譜が必要とするものに揃います。ハンマー打撃は短く高エネルギーの出来事で、知覚符号化が重要と扱うため、エンジンが頼るオンセットそのものをエンコーダが守ります。楽器と形式が、何が大切かでたまたま一致するのです。"
+  },
+  "There is a useful distinction hiding here: you can edit the performance (what plays back) or the page (how it looks), and depending on your format those are different jobs. MIDI editing is mostly about the performance; notation editing is about the page. Knowing which you are doing keeps your effort aimed.": {
+    "ko": "여기에는 유용한 구분이 숨어 있습니다. 연주(재생되는 것)를 편집할지 페이지(보이는 모습)를 편집할지이며, 형식에 따라 다른 일입니다. MIDI 편집은 주로 연주에 관한 것이고, 기보 편집은 페이지에 관한 것입니다. 지금 무엇을 하는지 알면 노력이 방향을 잃지 않습니다.",
+    "ja": "ここに役立つ区別が隠れています。演奏（再生されるもの）を編集するか、ページ（見た目）を編集するかで、形式によって別の仕事です。MIDI編集は主に演奏、記譜編集はページです。自分がどちらをしているかを知れば、努力は狙いを保てます。"
+  },
+  "There is craft in cleanup order that pays off invisibly. By fixing the things everything else depends on first, you ensure that no correction is wasted on material you later change. It is the same coarse-to-fine discipline that governs editing anywhere, and it turns cleanup from a frustrating game of whack-a-mole into a steady, converging process.": {
+    "ko": "정리 순서에는 보이지 않게 보답하는 기교가 있습니다. 다른 모든 것이 의존하는 것부터 고치면, 나중에 바꿀 재료에 수정을 낭비하지 않게 됩니다. 어디서든 편집을 지배하는 거친 것에서 세밀한 것으로의 규율이며, 정리를 답답한 두더지 잡기에서 안정적으로 수렴하는 과정으로 바꿉니다.",
+    "ja": "クリーンアップの順序には、目に見えず報われる技があります。他のすべてが依存するものから直すと、後で変える材料に修正を浪費しません。どこでも編集を律する粗いものから細かいものへ、という規律であり、整理をいらだたしいモグラ叩きから、着実に収束する過程へ変えます。"
+  },
+  "There is real creative liberation in the learn-then-create model. Transcribing a brilliant cover with MidiAI Studio and studying exactly how an arranger transformed a song teaches you techniques you can carry into your own music, and the arrangements you then write are genuinely yours. The transcription becomes a teacher rather than a source to copy.": {
+    "ko": "배우고 나서 창작하는 모델에는 진정한 창작의 해방이 있습니다. MidiAI Studio로 뛰어난 커버를 채보하고 편곡자가 곡을 어떻게 바꿨는지 정확히 공부하면, 자신의 음악으로 가져갈 기법을 배우게 되고, 그때 쓰는 편곡은 진정으로 자신의 것이 됩니다. 채보는 베낄 출처가 아니라 스승이 됩니다.",
+    "ja": "学んでから創るモデルには、本物の創造的解放があります。MidiAI Studioで優れたカバーを採譜し、アレンジャーが曲をどう変えたかを正確に学べば、自分の音楽へ持ち込める技法が身につき、その後書くアレンジは本当に自分のものになります。採譜はコピー元ではなく教師になります。"
+  },
+  "These habits apply whether you are using MidiAI Studio on a downloaded track or a recording of your own playing. None of them are difficult; they are simply the differences between a transcription you fight and one that mostly just works.": {
+    "ko": "이 습관들은 다운로드한 트랙이든 본인 연주 녹음이든 MidiAI Studio를 쓸 때 모두 적용됩니다. 어려운 것은 없고, 싸우는 채보와 대체로 그냥 되는 채보 사이의 차이일 뿐입니다.",
+    "ja": "これらの習慣は、ダウンロードしたトラックでも自分の演奏録音でも、MidiAI Studioを使うときに当てはまります。どれも難しくなく、戦う採譜とだいたいそのまま動く採譜の違いにすぎません。"
+  },
+  "These travel well but not perfectly. Check syllable alignment and confirm any ambiguous chord qualities against the original before you rely on the sheet.": {
+    "ko": "이들은 잘 옮겨지지만 완벽하지는 않습니다. 악보에 의존하기 전에 음절 정렬을 확인하고, 모호한 코드 성질은 원본과 대조하세요.",
+    "ja": "これらはよく持ち運べますが完璧ではありません。譜面に頼る前に音節の整列を確認し、曖昧なコード品質は原曲と照合してください。"
+  },
+  "They are assembled onto a time grid, grouped into voices or tracks, and written with musical structure. This assembly stage is where isolated predictions become a coherent, usable timeline.": {
+    "ko": "시간 격자 위에 조립되고, 성부나 트랙으로 묶이며, 음악적 구조로 기록됩니다. 이 조립 단계에서 고립된 예측이 일관되고 쓸 수 있는 타임라인이 됩니다.",
+    "ja": "時間グリッド上に組み立てられ、声部やトラックにまとめられ、音楽構造として書かれます。この組み立て段階で、孤立した予測がまとまりのある使えるタイムラインになります。"
+  },
+  "They are identical in content, so downgrading your expectations is unwarranted.": {
+    "ko": "내용은 동일하므로 기대치를 낮출 이유는 없습니다.",
+    "ja": "内容は同一なので、期待を下げる必要はありません。"
+  },
+  "They are interpreted as expressive gestures, usually as ornaments approaching a target note rather than as many discrete notes. This judgment produces a more musical, readable melody than transcribing every pitch step.": {
+    "ko": "표현적 제스처로 해석되며, 보통 많은 개별 음이 아니라 목표 음에 다가가는 장식으로 다뤄집니다. 이 판단이 모든 음고 단계를 채보하는 것보다 더 음악적이고 읽기 쉬운 선율을 만듭니다.",
+    "ja": "表現的な身ぶりとして解釈され、通常は多数の離散音ではなく目標音へ近づく装飾として扱われます。この判断は、すべての音高ステップを採譜するより音楽的で読みやすい旋律を生みます。"
+  },
+  "They are retained as notation data when layout preservation is on, so the re-opened score reads naturally. You may still refine spacing to match your program's house style.": {
+    "ko": "레이아웃 보존이 켜져 있으면 기보 데이터로 유지되어, 다시 연 악보가 자연스럽게 읽힙니다. 그래도 프로그램의 하우스 스타일에 맞게 간격을 다듬을 수는 있습니다.",
+    "ja": "レイアウト保持がオンなら記譜データとして残るので、開き直した楽譜は自然に読めます。それでもプログラムのハウススタイルに合わせて間隔を整えることはできます。"
+  },
+  "They are unrolled into a linear stream, so a repeat plays twice and a D.S. jumps as written, producing the sequence a listener would actually hear. Verify the result, since structural realization is where surprises occur.": {
+    "ko": "선형 스트림으로 펼쳐지므로 반복은 두 번 재생되고 D.S.는 적힌 대로 점프하여, 청자가 실제로 듣는 순서를 만듭니다. 구조 실현에서 의외의 일이 생기므로 결과를 확인하세요.",
+    "ja": "線形ストリームに展開されるので、リピートは二度再生され、D.S.は書かれたとおりに飛び、聴取者が実際に聞く並びになります。構造の実現で意外が起きるので、結果を検証してください。"
+  },
+  "They can and should, because their low velocities are central to a groove's feel. Preserving the full dynamic range, including the quiet hits around the backbeat, keeps the extracted beat alive rather than flat.": {
+    "ko": "가능하고 그래야 합니다. 낮은 벨로시티가 그루브 감의 핵심이기 때문입니다. 백비트 주변의 약한 히트를 포함한 전체 다이내믹을 보존하면, 추출된 비트가 평평하지 않고 살아 있습니다.",
+    "ja": "でき、そうすべきです。低いベロシティがグルーヴ感の中心だからです。バックビート周りの静かなヒットを含むフルのダイナミックを保てば、抽出したビートは平坦ではなく生きたままになります。"
+  },
+  "They can, because distinguishing separate rapid strikes from one sustained tone is subtle. Checking note counts in fast passages catches merges or splits that would otherwise alter the rhythm.": {
+    "ko": "가능합니다. 빠른 연속 타격과 하나의 지속음을 구분하는 일이 미묘하기 때문입니다. 빠른 패시지의 음 개수를 확인하면 리듬을 바꿀 병합이나 분할을 잡습니다.",
+    "ja": "できます。別々の速い打撃と一つの持続音を区別するのは微妙だからです。速いパッセージの音符数を確認すれば、そうでなければリズムを変える結合や分割を拾えます。"
+  },
+  "They cluster around loud transients, decaying chords, and reverb tails, where lingering sound is misread as new attacks. Knowing that lets you find and delete them by location rather than searching everywhere.": {
+    "ko": "큰 트랜지언트, 감쇠하는 코드, 리버브 테일 주변에 몰려 있으며, 남는 소리가 새 어택으로 오인됩니다. 그걸 알면 전체를 뒤지지 않고 위치별로 찾아 지울 수 있습니다.",
+    "ja": "大きなトランジェント、減衰する和音、リバーブのテール周りに集まり、残響が新しいアタックと誤読されます。それを知れば、全体を探すのではなく位置で見つけて削除できます。"
+  },
+  "They share the idea of reading pixels into meaning, but OMR is far more complex because music is two-dimensional and its symbols overlap. Text flows in lines; notation stacks pitch vertically and time horizontally at once.": {
+    "ko": "픽셀을 의미로 읽는다는 아이디어는 같지만, 음악은 2차원이고 기호가 겹치므로 OMR이 훨씬 복잡합니다. 텍스트는 줄로 흐르지만, 기보는 음고를 세로로, 시간을 가로로 동시에 쌓습니다.",
+    "ja": "ピクセルを意味へ読むという考えは共有しますが、音楽は二次元で記号が重なるためOMRははるかに複雑です。テキストは行で流れ、記譜は音高を縦に、時間を横に同時に積みます。"
+  },
+  "They store different things, so swapping them mid-task guarantees fighting the format.": {
+    "ko": "담는 것이 다르므로, 작업 중간에 바꾸면 형식과 싸우게 됩니다.",
+    "ja": "保存するものが違うので、作業の途中で入れ替えると形式と戦うことになります。"
+  },
+  "Thick and blurred textures hide inner-voice errors that only ear verification catches.": {
+    "ko": "두껍고 흐린 텍스처는 귀로만 잡을 수 있는 내성부 오류를 숨깁니다.",
+    "ja": "厚くぼやけたテクスチャは、耳の検証でしか拾えない内声の誤りを隠します。"
+  },
+  "Thicker chords, heavy sustain pedal, and expressive rubato. The notes may transcribe correctly, but the pedal leaves ringing tones to clean and the flexible timing needs careful anchoring.": {
+    "ko": "더 두꺼운 코드, 무거운 서스테인 페달, 표현적인 루바토. 음은 맞게 채보될 수 있지만, 페달이 남긴 울림을 정리해야 하고 유연한 타이밍은 신중히 고정해야 합니다.",
+    "ja": "より厚い和音、重いサスティンペダル、表現的なルバート。音符は正しく採譜されても、ペダルが残す響きを掃除し、柔軟なタイミングは慎重にアンカーする必要があります。"
+  },
+  "Think in terms of the four note properties for every edit.": {
+    "ko": "모든 편집에서 네 가지 음 속성을 기준으로 생각하세요.",
+    "ja": "すべての編集で、四つの音符属性の観点で考えてください。"
+  },
+  "Thinking MIDI is low quality:": {
+    "ko": "MIDI가 저품질이라고 생각하는 것:",
+    "ja": "MIDIは低品質だと思うこと:"
+  },
+  "This article explains that shift in plain terms and connects it to practical outcomes. It is the conceptual backbone behind tools like MidiAI Studio, and knowing it helps you understand both why AI transcription is so much better than what came before and why it still is not magic.": {
+    "ko": "이 글은 그 전환을 쉬운 말로 설명하고 실질적 결과와 연결합니다. MidiAI Studio 같은 도구 뒤의 개념적 뼈대이며, 알면 AI 채보가 이전보다 훨씬 나은 이유와 여전히 마법이 아닌 이유를 모두 이해하게 됩니다.",
+    "ja": "この記事はその転換を平易に説明し、実務的な結果につなげます。MidiAI Studioのようなツールの背後にある概念的骨格であり、知ればAI採譜が以前よりはるかに良い理由と、それでも魔法ではない理由の両方を理解できます。"
+  },
+  "This article is written for musicians, not lawyers, and it is general information rather than legal advice. It explains how copyright applies to YouTube-to-MIDI work so you can use MidiAI Studio confidently and responsibly, and know when to seek a license or professional guidance.": {
+    "ko": "이 글은 변호사가 아니라 연주자를 위한 것이며, 법률 자문이 아닌 일반 정보입니다. YouTube-to-MIDI 작업에 저작권이 어떻게 적용되는지 설명해, MidiAI Studio를 자신 있고 책임감 있게 쓰고 라이선스나 전문가 조언을 언제 구할지를 알 수 있게 합니다.",
+    "ja": "この記事は弁護士ではなくミュージシャン向けで、法的助言ではなく一般情報です。YouTube-to-MIDI作業に著作権がどう適用されるかを説明し、MidiAI Studioを自信と責任をもって使い、ライセンスや専門家の助言をいつ求めるかを知る助けになります。"
+  },
+  "This article lays out a workflow that has one job: turn a MidiAI Studio conversion into a finished, performance-ready score with the least backtracking. It is editor-agnostic, so the sequence holds whether you live in MuseScore, Sibelius, Dorico, or Finale.": {
+    "ko": "이 글은 한 가지 일을 하는 워크플로를 제시합니다. MidiAI Studio 변환을 되돌아감이 최소인 완성된 연주 가능 악보로 만드는 것입니다. 편집기 비의존이라 MuseScore, Sibelius, Dorico, Finale 어디에 살든 순서는 유지됩니다.",
+    "ja": "この記事は一つの仕事をもつワークフローを示します。MidiAI Studioの変換を、後戻りを最小にして完成した演奏可能な楽譜にすることです。エディタ非依存なので、MuseScore、Sibelius、Dorico、Finaleのどれでも順序は持ちます。"
+  },
+  "This article opens the hood without drowning you in computer-vision jargon. The goal is a working mental model of how a picture of a staff becomes a stream of pitches, and where in that pipeline things most often go wrong.": {
+    "ko": "이 글은 컴퓨터 비전 전문 용어에 빠뜨리지 않고 후드를 엽니다. 목표는 오선 그림이 음고 스트림이 되는 방식과, 그 파이프라인에서 가장 자주 어긋나는 곳에 대한 작동하는 멘탈 모델입니다.",
+    "ja": "この記事はコンピュータビジョンの専門用語に溺れさせずボンネットを開けます。目標は、五線の絵が音高の流れになる仕組みと、そのパイプラインでいちばんよく壊れる場所についての使えるメンタルモデルです。"
+  },
+  "This combination — simple in polyphony, complex in pitch behavior — gives vocal transcription its distinctive character. The engine never has to untangle overlapping notes, but it constantly has to decide what a continuously-moving pitch actually means as discrete notes.": {
+    "ko": "이 조합—다성에서는 단순하고 음고 동작에서는 복잡—이 보컬 채보에 독특한 성격을 줍니다. 엔진은 겹치는 음을 풀 필요는 없지만, 연속으로 움직이는 음고가 개별 음으로 무엇을 의미하는지 끊임없이 결정해야 합니다.",
+    "ja": "この組み合わせ—多声では単純、音高の振る舞いでは複雑—がボーカル採譜に独特の性格を与えます。エンジンは重なる音符をほどく必要はありませんが、連続して動く音高が離散音として実際に何を意味するかを絶えず決めねばなりません。"
+  },
+  "This comparison lays them side by side without jargon, so that the next time MidiAI Studio offers you both, you know instantly which one your task actually calls for. The deciding factor is simpler than you might expect.": {
+    "ko": "이 비교는 전문 용어 없이 둘을 나란히 놓아, 다음에 MidiAI Studio가 둘 다 줄 때 작업이 실제로 무엇을 필요로 하는지 바로 알게 합니다. 결정 요인은 생각보다 단순합니다.",
+    "ja": "この比較は専門用語なしで両者を並べ、次にMidiAI Studioが両方を出したとき、自分の作業が実際にどちらを求めるかを即座にわかるようにします。決め手は想像より単純です。"
+  },
+  "This conversion is a useful reminder that going from more information to less is the easy direction. Audio-to-MIDI is hard because it reconstructs music from ambiguous sound; MusicXML-to-MIDI is easy because the music is already fully specified. The lesson generalizes: conversions are hard in proportion to how much they must infer, and here they infer almost nothing.": {
+    "ko": "이 변환은 정보가 많은 쪽에서 적은 쪽으로 가는 것이 쉬운 방향이라는 유용한 상기입니다. 오디오-to-MIDI는 모호한 소리에서 음악을 재구성하므로 어렵고, MusicXML-to-MIDI는 음악이 이미 완전히 명시되어 있어 쉽습니다. 교훈은 일반화됩니다. 변환의 난이도는 추론해야 할 양에 비례하며, 여기서는 거의 추론하지 않습니다.",
+    "ja": "この変換は、情報が多い方から少ない方へ進むのが易しい方向だという有用な思い出です。Audio-to-MIDIは曖昧な音から音楽を再構成するので難しく、MusicXML-to-MIDIは音楽がすでに完全に指定されているので易しいです。教訓は一般化できます。変換の難しさは推論量に比例し、ここではほとんど推論しません。"
+  },
+  "This conversion is the clearest demonstration of what MIDI deliberately leaves out. Working from a performance to a page, you feel every gap: the ambiguity of every enharmonic pitch, the absence of a key, the missing voice boundaries. Rather than a flaw, this is MIDI being honest about its job — it stores a performance, and notation is a different language it never claimed to speak.": {
+    "ko": "이 변환은 MIDI가 의도적으로 남기지 않는 것을 가장 분명히 보여 줍니다. 연주에서 페이지로 가면 모든 틈이 느껴집니다. 이명동의 모호함, 조성의 부재, 성부 경계의 결여. 결함이 아니라 MIDI가 자기 일에 정직한 것입니다—연주를 저장하며, 기보는 말한 적 없는 다른 언어입니다.",
+    "ja": "この変換は、MIDIが意図的に省くものを最もはっきり示します。演奏からページへ進むと、すべての隙間を感じます。すべての異名同音の曖昧さ、調の不在、声部境界の欠落。欠陥ではなく、MIDIが自分の仕事に正直なだけです—演奏を保存し、記譜は一度も話したと主張しない別の言語です。"
+  },
+  "This difference drives the file-size and fidelity trade-offs. Audio must store the full detailed waveform, making it large but perfectly faithful to what was recorded, while MIDI stores only compact instructions, making it tiny and endlessly editable but dependent on the sound source that renders it. Neither is better; they optimize for different things.": {
+    "ko": "이 차이가 파일 크기와 충실도의 트레이드오프를 만듭니다. 오디오는 상세한 파형 전체를 저장해 크지만 녹음에 완벽하게 충실하고, MIDI는 압축된 지시만 저장해 작고 끝없이 편집 가능하지만 렌더하는 음원에 의존합니다. 어느 쪽이 낫다기보다 다른 것을 최적화합니다.",
+    "ja": "この違いがファイルサイズと忠実度のトレードオフを駆動します。オーディオは詳細な波形全体を保存するため大きくても録音に完全に忠実で、MIDIはコンパクトな指示だけを保存するため小さく無限に編集できますが、レンダーする音源に依存します。どちらが上ではなく、別のものを最適化しています。"
+  },
+  "This field guide surveys the instrument families through that predictive lens, so you can plan a MidiAI Studio workflow around the sources you actually have. Think of it as a map of the transcription terrain, organized by the traits that matter.": {
+    "ko": "이 현장 가이드는 그 예측적 렌즈로 악기군을 살펴, 실제로 가진 소스에 맞춰 MidiAI Studio 워크플로를 계획하게 합니다. 중요한 특성으로 정리한 채보 지형의 지도라고 생각하세요.",
+    "ja": "このフィールドガイドは、その予測のレンズで楽器群を概観し、実際にあるソースに合わせてMidiAI Studioのワークフローを計画できるようにします。大事な特質で整理した採譜地形の地図だと考えてください。"
+  },
+  "This first encounter teaches the whole concept viscerally: the MIDI file is a set of instructions, the instrument provides the voice, and the notes are yours to edit. Once this clicks, MIDI stops being mysterious and starts being useful.": {
+    "ko": "이 첫 만남은 개념 전체를 몸으로 가르칩니다. MIDI 파일은 지시의 집합이고, 악기가 목소리를 제공하며, 음은 편집할 여러분의 것입니다. 이것이 이해되면 MIDI는 신비롭기보다 유용해집니다.",
+    "ja": "この最初の出会いが概念全体を体で教えます。MIDIファイルは指示の集合、楽器が声を提供し、音符は編集するあなたのものです。これが腑に落ちると、MIDIは神秘ではなく役立つものになります。"
+  },
+  "This framework also explains why isolation is such a universal recommendation. Ensembles are hard not because of any single instrument but because overlap muddies all three determinations at once, so separating instruments restores each to its individual difficulty. MidiAI Studio can then apply its strengths to one clear source at a time, which is almost always better than confronting the blend.": {
+    "ko": "이 틀은 분리가 보편 권고인 이유도 설명합니다. 앙상블이 어려운 것은 한 악기 때문이 아니라 겹침이 세 가지 판단을 한꺼번에 흐리기 때문이며, 악기를 나누면 각각 개별 난이도로 돌아갑니다. 그러면 MidiAI Studio가 한 번에 하나의 명확한 소스에 강점을 쓸 수 있어, 블렌드와 맞서는 것보다 거의 항상 낫습니다.",
+    "ja": "この枠組みは、分離が普遍的な推奨である理由も説明します。アンサンブルが難しいのは単一楽器のためではなく、重なりが三つの判定を同時に濁すからで、楽器を分ければそれぞれ個別の難しさに戻ります。するとMidiAI Studioは一度に一つの明確なソースへ強みを使え、ブレンドと向き合うよりほぼ常に良いです。"
+  },
+  "This guide aims for that grounded middle, surveying the real capabilities and honest limits of the technology and, more importantly, how to fold it into an actual musical practice. Transcription is not just a product you consume but a practice you develop, and the musicians who benefit most treat it that way.": {
+    "ko": "이 가이드는 그 현실적인 중도를 겨냥해, 기술의 실제 능력과 정직한 한계, 무엇보다 실제 음악 실천에 접어 넣는 방법을 살핍니다. 채보는 소비하는 제품만이 아니라 기르는 실천이며, 가장 이득을 보는 연주자는 그렇게 다룹니다.",
+    "ja": "このガイドはその地に足のついた中道を目指し、技術の実能力と正直な限界、そして何より実際の音楽実践へ織り込む方法を概観します。採譜は消費する製品だけでなく育てる実践であり、最も得るミュージシャンはそう扱います。"
+  },
+  "This guide assumes you have already converted a score — perhaps a paper part run through MidiAI Studio — and focuses on what to do next: the specific, repeatable moves that turn a raw conversion into a polished, correct, and flexible piece of music.": {
+    "ko": "이 가이드는 이미 악보를 변환했다고 가정합니다—예를 들어 MidiAI Studio로 돌린 종이 파트—그리고 다음에 할 일에 집중합니다. 날것의 변환을 다듬어지고 정확하며 유연한 음악으로 바꾸는 구체적이고 반복 가능한 동작입니다.",
+    "ja": "このガイドはすでに楽譜を変換したと想定します—たとえばMidiAI Studioに通した紙のパート—そして次に何をするかに焦点を当てます。生の変換を磨かれ正しく柔軟な音楽へ変える、具体的で反復可能な手です。"
+  },
+  "This guide breaks down each challenge specific to jazz and offers concrete ways to work through them with MidiAI Studio. If you have ever wanted to see exactly what a pianist played in a solo you love, this is the terrain you will be navigating.": {
+    "ko": "이 가이드는 재즈 특유의 각 과제를 풀고 MidiAI Studio로 헤쳐 나갈 구체적 방법을 제시합니다. 좋아하는 솔로에서 피아니스트가 정확히 무엇을 쳤는지 보고 싶었던 적이 있다면, 그것이 여러분이 지나갈 지형입니다.",
+    "ja": "このガイドはジャズ特有の各課題を分解し、MidiAI Studioで乗り越える具体的な方法を示します。好きなソロでピアニストが正確に何を弾いたか見たかったことがあるなら、それがこれから進む地形です。"
+  },
+  "This guide clears up where FLAC sits relative to MP3 and WAV, and how to feed it to MidiAI Studio so its lossless detail translates into an accurate MIDI part. The short version is encouraging: FLAC is as good a source as WAV, and easier to store.": {
+    "ko": "이 가이드는 FLAC가 MP3·WAV 대비 어디에 있는지, 무손실 디테일이 정확한 MIDI 파트로 이어지도록 MidiAI Studio에 어떻게 넣을지를 정리합니다. 짧은 결론은 고무적입니다. FLAC는 WAV만큼 좋은 소스이며 저장은 더 쉽습니다.",
+    "ja": "このガイドは、FLACがMP3とWAVに対してどこに位置するか、その可逆の細部が正確なMIDIパートへつながるようMidiAI Studioへどう渡すかをはっきりさせます。短い結論は励みになります。FLACはWAVと同じく良いソースで、保存はより簡単です。"
+  },
+  "This guide compares MidiAI Studio-style conversion with manual transcription honestly, respecting what each offers. The goal is a nuanced view that lets you deploy automation and ear-work where each serves you best, often in combination.": {
+    "ko": "이 가이드는 MidiAI Studio 방식 변환과 수동 채보를 정직하게 비교하며 각자의 강점을 존중합니다. 목표는 자동화와 귀 작업을 각각 가장 잘 쓰이는 곳에—종종 함께—배치하게 하는 섬세한 시각입니다.",
+    "ja": "このガイドはMidiAI Studio流の変換と手採譜を正直に比較し、それぞれが提供するものを尊重します。目標は、自動化と耳の作業をそれぞれが最も役立つところへ—しばしば組み合わせて—配分できる繊細な見方です。"
+  },
+  "This guide covers how drum MIDI extraction works and how to get a beat you can actually reprogram, from a live recording or a loop. With MidiAI Studio, turning an audio drum performance into editable, remixable MIDI opens up a beat's every element for reshaping.": {
+    "ko": "이 가이드는 드럼 MIDI 추출이 어떻게 작동하는지, 라이브 녹음이나 루프에서 실제로 재프로그래밍할 수 있는 비트를 얻는 방법을 다룹니다. MidiAI Studio로 오디오 드럼 연주를 편집·리믹스 가능한 MIDI로 바꾸면 비트의 모든 요소를 다시 빚을 수 있습니다.",
+    "ja": "このガイドはドラムMIDI抽出の仕組みと、ライブ録音やループから実際に再プログラムできるビートを得る方法を扱います。MidiAI Studioでオーディオのドラム演奏を編集・リミックス可能なMIDIにすれば、ビートのすべての要素を形作り直せます。"
+  },
+  "This guide covers how that interpretation works — how a crescendo marking becomes a velocity ramp, how repeats unroll into a linear stream — and how to make the resulting MIDI from MidiAI Studio sound musical rather than robotic.": {
+    "ko": "이 가이드는 그 해석이 어떻게 작동하는지—크레셴도 기호가 벨로시티 램프로, 반복이 선형 스트림으로 펼쳐지는 방식—그리고 MidiAI Studio에서 나온 MIDI를 로봇처럼 아니라 음악적으로 들리게 하는 방법을 다룹니다.",
+    "ja": "このガイドはその解釈の仕組み—クレッシェンド記号がベロシティランプになり、リピートが線形ストリームへ展開される方法—と、MidiAI Studioから得たMIDIをロボットではなく音楽的に聴かせる方法を扱います。"
+  },
+  "This guide covers how to transcribe the voice into clean, usable MIDI with MidiAI Studio, whether you are capturing a melody to develop, extracting a topline, or turning a hummed idea into notation. The voice rewards a light touch and an understanding of its quirks.": {
+    "ko": "이 가이드는 MidiAI Studio로 목소리를 깨끗하고 쓸 수 있는 MIDI로 채보하는 방법을 다룹니다. 발전시킬 선율 캡처, 톱라인 추출, 흥얼거린 아이디어를 기보로 바꾸는 경우 모두입니다. 목소리는 가벼운 손길과 그 특성에 대한 이해를 보상합니다.",
+    "ja": "このガイドは、発展させる旋律のキャプチャ、トップライン抽出、ハミングしたアイデアの記譜化など、MidiAI Studioで声をきれいで使えるMIDIへ採譜する方法を扱います。声は軽い手つきとその癖の理解に報います。"
+  },
+  "This guide covers quantizing converted MIDI intelligently — choosing the right grid, using partial strength, and preserving groove — so a MidiAI Studio conversion ends up tight where it should be tight and loose where looseness is the point.": {
+    "ko": "이 가이드는 변환된 MIDI를 지능적으로 양자화하는 법—적절한 그리드 선택, 부분 강도 사용, 그루브 보존—을 다뤄, MidiAI Studio 변환이 타이트해야 할 곳은 타이트하고, 느슨함이 요점인 곳은 느슨하게 끝나게 합니다.",
+    "ja": "このガイドは変換MIDIを賢くクオンタイズする方法—適切なグリッド選択、部分強度の使用、グルーヴ保持—を扱い、MidiAI Studioの変換が締めるべきところは締まり、緩さが要点のところは緩く終わるようにします。"
+  },
+  "This guide covers the specific obstacles guitar presents and how to work with MidiAI Studio to get clean results. Whether you want editable MIDI, a jumping-off point for tab, or a way to re-voice a riff on another instrument, guitar transcription is very doable with the right approach.": {
+    "ko": "이 가이드는 기타가 던지는 구체적 장애와 깨끗한 결과를 위해 MidiAI Studio와 일하는 방법을 다룹니다. 편집 가능한 MIDI, 탭의 출발점, 다른 악기로 리프를 다시 보이싱하는 방법 중 무엇이든, 올바른 접근이면 기타 채보는 충분히 가능합니다.",
+    "ja": "このガイドはギターがもたらす具体的な障害と、きれいな結果のためにMidiAI Studioとどう組むかを扱います。編集可能なMIDI、TABの出発点、別楽器でリフを再ヴォイシングする方法のいずれでも、正しいアプローチならギター採譜は十分可能です。"
+  },
+  "This guide covers using converted MIDI in FL Studio specifically — importing into the piano roll, routing through the channel rack, building patterns, and arranging in the playlist. It builds on the general DAW workflow and focuses on FL's distinctive way of working.": {
+    "ko": "이 가이드는 변환된 MIDI를 FL Studio에서 쓰는 법을 특별히 다룹니다—피아노 롤로 가져오기, 채널 랙으로 라우팅, 패턴 만들기, 플레이리스트에서 편곡. 일반 DAW 워크플로를 바탕으로 FL 특유의 작업 방식에 초점을 둡니다.",
+    "ja": "このガイドは変換MIDIをFL Studioで使う方法を特に扱います—ピアノロールへの読み込み、チャンネルラック経由のルーティング、パターン作成、プレイリストでのアレンジ。一般的なDAWワークフローを土台に、FL独自の働き方に焦点を当てます。"
+  },
+  "This guide covers using converted MIDI in Logic Pro specifically, from importing into the timeline to leveraging the score editor and software instruments. It assumes the general DAW workflow and highlights what Logic brings that is distinctive.": {
+    "ko": "이 가이드는 변환된 MIDI를 Logic Pro에서 쓰는 법을 특별히 다룹니다. 타임라인으로 가져오기부터 스코어 에디터와 소프트웨어 악기 활용까지. 일반 DAW 워크플로를 전제하고 Logic이 가져오는 독특한 점을 강조합니다.",
+    "ja": "このガイドは変換MIDIをLogic Proで使う方法を特に扱い、タイムラインへの読み込みからスコアエディタとソフトウェア音源の活用までをカバーします。一般的なDAWワークフローを前提に、Logicがもたらす独自性を強調します。"
+  },
+  "This guide covers using MidiAI Studio conversions in Live specifically, from importing clips to warping for sync to developing ideas across the session and arrangement views. It assumes familiarity with the general DAW workflow and focuses on what is distinct about Live.": {
+    "ko": "이 가이드는 MidiAI Studio 변환을 Live에서 쓰는 법을 특별히 다룹니다. 클립 가져오기, 동기용 워핑, 세션·어레인지먼트 뷰에서 아이디어 발전까지. 일반 DAW 워크플로에 익숙하다고 가정하고 Live만의 점에 초점을 둡니다.",
+    "ja": "このガイドはMidiAI Studioの変換をLiveで使う方法を特に扱い、クリップ読み込みから同期のためのワーピング、セッションとアレンジメントビューでのアイデア展開までをカバーします。一般的なDAWワークフローへの慣れを前提に、Live固有の点に焦点を当てます。"
+  },
+  "This guide explains how the problem is solved, where it still breaks down, and how to verify that a dense passage came through complete. Understanding polyphony makes you a better user of MidiAI Studio, because you learn where to trust the transcription and where to listen closely.": {
+    "ko": "이 가이드는 문제가 어떻게 풀리고, 어디서 여전히 깨지며, 밀집 패시지가 온전히 통과했는지 검증하는 방법을 설명합니다. 다성을 이해하면 MidiAI Studio를 더 잘 쓰게 됩니다. 채보를 믿을 곳과 귀를 기울일 곳을 배우기 때문입니다.",
+    "ja": "このガイドは問題がどう解かれ、どこでなお壊れ、密なパッセージが完全に通ったかを検証する方法を説明します。多声を理解すればMidiAI Studioのより良いユーザーになります。採譜を信じる場所と耳を傾ける場所を学ぶからです。"
+  },
+  "This guide explains the acoustic reasons piano is the transcriber's favorite instrument and how to make the most of them with MidiAI Studio. Whether you are capturing your own playing or a recording, knowing why piano converts so well lets you push its accuracy even higher.": {
+    "ko": "이 가이드는 피아노가 채보자가 가장 좋아하는 악기인 음향적 이유와 MidiAI Studio로 그 이점을 최대한 쓰는 방법을 설명합니다. 본인 연주든 녹음이든, 피아노가 잘 변환되는 이유를 알면 정확도를 더 높일 수 있습니다.",
+    "ja": "このガイドは、ピアノが採譜者のお気に入り楽器である音響的理由と、MidiAI Studioでそれを最大限活かす方法を説明します。自分の演奏でも録音でも、ピアノがうまく変換される理由を知れば、精度をさらに押し上げられます。"
+  },
+  "This guide explains the split clearly and traces its consequences, so that the rest of the conversion landscape makes sense. Whether you use MidiAI Studio or any other tool, this is the concept everything else rests on.": {
+    "ko": "이 가이드는 그 구분을 분명히 설명하고 결과를 추적해, 변환 지형의 나머지가 이해되게 합니다. MidiAI Studio든 다른 도구든, 이것이 다른 모든 것이 딛고 서는 개념입니다.",
+    "ja": "このガイドはその分かれをはっきり説明し帰結を追い、変換の風景の残りが意味をなすようにします。MidiAI Studioでも他のツールでも、これが他のすべてが依拠する概念です。"
+  },
+  "This guide explains what that extra information buys you and how to capitalize on it. When you feed MidiAI Studio a clean WAV, you are giving it the best possible chance, and a few habits ensure that advantage translates into a genuinely cleaner MIDI part.": {
+    "ko": "이 가이드는 그 추가 정보가 무엇을 사 주는지, 어떻게 활용하는지를 설명합니다. MidiAI Studio에 깨끗한 WAV를 주면 최선의 기회를 주는 것이며, 몇 가지 습관이 그 이점을 진정으로 더 깨끗한 MIDI 파트로 바꿉니다.",
+    "ja": "このガイドは、その余分な情報が何を買ってくれるか、どう活かすかを説明します。MidiAI StudioにきれいなWAVを渡せば最善の機会を与えることになり、いくつかの習慣がその優位を本当にきれいなMIDIパートへ変えます。"
+  },
+  "This guide focuses on that notation-first path: what MusicXML preserves that MIDI cannot, how MidiAI Studio produces it, and how to land the file cleanly in the notation editor of your choice.": {
+    "ko": "이 가이드는 그 기보 우선 경로에 초점을 둡니다. MusicXML이 MIDI가 못 하는 무엇을 보존하는지, MidiAI Studio가 어떻게 만드는지, 선택한 기보 편집기에 파일을 깨끗이 착지시키는 방법입니다.",
+    "ja": "このガイドはその記譜優先の道に焦点を当てます。MusicXMLがMIDIにできない何を保持するか、MidiAI Studioがどう作るか、好みの記譜エディタへファイルをきれいに着地させる方法です。"
+  },
+  "This guide gives you that framework, applicable to any tool including MidiAI Studio. The goal is not to crown a winner but to equip you to evaluate for yourself, because the right tool depends on your material, your workflow, and your priorities.": {
+    "ko": "이 가이드는 MidiAI Studio를 포함한 어떤 도구에도 적용되는 그 틀을 제공합니다. 목표는 승자를 정하는 것이 아니라 스스로 평가할 힘을 주는 것입니다. 올바른 도구는 소재, 워크플로, 우선순위에 달렸기 때문입니다.",
+    "ja": "このガイドはMidiAI Studioを含むあらゆるツールに使えるその枠組みを与えます。目標は勝者を決めることではなく、自分で評価できるようにすることです。正しいツールは素材、ワークフロー、優先順位に依存するからです。"
+  },
+  "This guide gives you that systematic process for cleaning up MidiAI Studio output into a polished, musical part. It assumes the transcription is already largely accurate and focuses on the finishing work that turns good into genuinely done.": {
+    "ko": "이 가이드는 MidiAI Studio 출력을 다듬어진 음악적 파트로 정리하는 체계적 과정을 제공합니다. 채보가 이미 대체로 정확하다고 가정하고, 좋음을 진정으로 끝낸 상태로 바꾸는 마무리 작업에 집중합니다.",
+    "ja": "このガイドは、MidiAI Studioの出力を磨かれた音楽的パートへ整える体系的プロセスを与えます。採譜はすでに大方正確だと想定し、良いものを本当に完了したものへ変える仕上げに焦点を当てます。"
+  },
+  "This guide goes deep on velocity and the broader craft of expression in converted MIDI. With MidiAI Studio giving you the notes, learning to shape their dynamics and feel is what turns a technically-right part into one that moves people.": {
+    "ko": "이 가이드는 변환된 MIDI의 벨로시티와 더 넓은 표현 기교를 깊이 다룹니다. MidiAI Studio가 음을 준 뒤, 다이내믹과 느낌을 조형하는 법을 배우는 일이 기술적으로 맞는 파트를 사람을 움직이는 파트로 바꿉니다.",
+    "ja": "このガイドは変換MIDIのベロシティと、より広い表現の技を深く掘ります。MidiAI Studioが音符をくれたあと、ダイナミクスと感触を形作る学びが、技術的に正しいパートを人を動かすパートへ変えます。"
+  },
+  "This guide is a practical toolkit for that work. It assumes you have a MidiAI Studio conversion in hand and want it more accurate, and it gives you the diagnostic eye and the correction order to get there without spinning your wheels.": {
+    "ko": "이 가이드는 그 작업을 위한 실용 툴킷입니다. MidiAI Studio 변환을 손에 두고 더 정확하게 만들고 싶다고 가정하며, 헛바퀴 없이 그곳에 도달할 진단의 눈과 수정 순서를 줍니다.",
+    "ja": "このガイドはその作業のための実用ツールキットです。MidiAI Studioの変換を手元に持ち、もっと正確にしたいと想定し、空回りせずそこに至る診断の目と修正順序を与えます。"
+  },
+  "This guide is about working with that reality rather than against it. It explains what an MP3 actually hands MidiAI Studio, how bitrate sets your quality ceiling, and how to squeeze the cleanest possible transcription out of whatever file you happen to have.": {
+    "ko": "이 가이드는 그 현실에 맞서기보다 함께 일하는 법에 관한 것입니다. MP3가 MidiAI Studio에 실제로 무엇을 넘기는지, 비트레이트가 품질 상한을 어떻게 정하는지, 손에 있는 파일에서 가능한 한 깨끗한 채보를 짜내는 방법을 설명합니다.",
+    "ja": "このガイドは、その現実に逆らうのではなく共に働くことです。MP3がMidiAI Studioに実際に何を渡すか、ビットレートが品質の天井をどう決めるか、手元のファイルから可能な限りきれいな採譜を絞り出す方法を説明します。"
+  },
+  "This guide is aimed at the musician who wants to learn from covers: to see how an arranger voiced a chorus, to slow a run down and play along, to lift a reharmonization into their own playing. MidiAI Studio makes the capture easy; understanding the arrangement makes the capture meaningful.": {
+    "ko": "이 가이드는 커버에서 배우려는 연주자를 겨냥합니다. 편곡자가 코러스를 어떻게 보이싱했는지 보고, 런을 느리게 해 따라 치고, 리하모나이즈를 자신의 연주로 옮기는 일. MidiAI Studio는 캡처를 쉽게 하고, 편곡을 이해하는 일이 캡처를 의미 있게 만듭니다.",
+    "ja": "このガイドはカバーから学びたいミュージシャン向けです。アレンジャーがコーラスをどうヴォイシングしたかを見、ランを遅くして合わせ、リハモを自分の演奏へ取り込むこと。MidiAI Studioはキャプチャを易しくし、アレンジを理解することがキャプチャを意味あるものにします。"
+  },
+  "This guide is aimed at video makers, streamers, and podcasters who want that flexibility. It shows how MidiAI Studio fits a creator's pipeline, and — importantly — how to keep the resulting soundtrack on clean footing rather than borrowing rights you do not have.": {
+    "ko": "이 가이드는 그 유연성을 원하는 영상 제작자, 스트리머, 팟캐스터를 겨냥합니다. MidiAI Studio가 크리에이터 파이프라인에 어떻게 맞는지, 그리고—중요하게—없는 권리를 빌리지 않고 결과 사운드트랙을 깨끗한 발판 위에 두는 방법을 보여 줍니다.",
+    "ja": "このガイドはその柔軟性を求める映像制作者、配信者、ポッドキャスター向けです。MidiAI Studioがクリエイターのパイプラインにどう収まるか、そして—重要に—持っていない権利を借りるのではなく、結果のサウンドトラックをきれいな足場に保つ方法を示します。"
+  },
+  "This guide is aimed at Windows users specifically, covering how to choose and set up conversion software like MidiAI Studio on the platform. The focus is on the concrete, Windows-flavored details that turn a working setup into a genuinely good one.": {
+    "ko": "이 가이드는 Windows 사용자를 특별히 겨냥해, MidiAI Studio 같은 변환 소프트웨어를 플랫폼에서 고르고 설정하는 방법을 다룹니다. 초점은 작동하는 설정을 진정으로 좋은 설정으로 바꾸는 구체적이고 Windows다운 디테일입니다.",
+    "ja": "このガイドはWindowsユーザーを特に対象に、MidiAI Studioのような変換ソフトをこのプラットフォームで選び設定する方法を扱います。焦点は、動くセットアップを本当に良いものへ変える具体的でWindowsらしい細部です。"
+  },
+  "This guide is full of classroom-ready uses of MidiAI Studio for teachers, along with the responsible practices — especially around copyright — that keep a teaching studio on solid ground. The focus is practical: things you can use in your next lesson.": {
+    "ko": "이 가이드에는 교사를 위한 MidiAI Studio의 교실 바로 쓸 활용과, 특히 저작권을 중심으로 교육 스튜디오를 단단한 토대에 두는 책임 있는 실천이 가득합니다. 초점은 실용적입니다. 다음 수업에 쓸 수 있는 것들입니다.",
+    "ja": "このガイドには教師向けのMidiAI Studioの教室ですぐ使える使い方と、特に著作権まわりで教育スタジオを堅い土台に保つ責任ある実践が詰まっています。焦点は実用です。次のレッスンで使えるものです。"
+  },
+  "This guide is honest about the ceiling and generous with the technique. It explains what MidiAI Studio is actually listening to, why a lone piano recording transcribes so much better than a dense band mix, and the concrete moves that get you the cleanest MIDI a given video can yield.": {
+    "ko": "이 가이드는 상한에 정직하고 기법에는 후합니다. MidiAI Studio가 실제로 무엇을 듣는지, 왜 혼자 피아노 녹음이 밀집 밴드 믹스보다 훨씬 잘 채보되는지, 주어진 영상에서 가장 깨끗한 MIDI를 얻는 구체적 동작을 설명합니다.",
+    "ja": "このガイドは天井に正直で、技法には気前よくあります。MidiAI Studioが実際に何を聴いているか、なぜ単独ピアノ録音が密なバンドミックスよりはるかに採譜しやすいか、与えられた動画から最もきれいなMIDIを得る具体的な手を説明します。"
+  },
+  "This guide lays out a DAW-agnostic workflow for developing MidiAI Studio conversions into finished tracks. The specific menus differ between Ableton, Logic, FL Studio, and the rest, but the sequence and the thinking transfer to any of them.": {
+    "ko": "이 가이드는 MidiAI Studio 변환을 완성 트랙으로 키우는 DAW 비의존 워크플로를 제시합니다. Ableton, Logic, FL Studio 등마다 메뉴는 다르지만, 순서와 사고방식은 어느 쪽으로든 옮겨집니다.",
+    "ja": "このガイドは、MidiAI Studioの変換を完成トラックへ育てるDAW非依存のワークフローを示します。Ableton、Logic、FL Studioなどメニューは違っても、順序と考え方はどれへも移せます。"
+  },
+  "This guide lays out how to convert covers with MidiAI Studio in a way you can stand behind — distinguishing the layers of rights, identifying uses that stay within bounds, and finding legitimate paths when you want to go public. As with any rights topic, this is general guidance rather than legal advice.": {
+    "ko": "이 가이드는 MidiAI Studio로 커버를 자신 있게 변환하는 방법을 제시합니다—권리의 층을 구분하고, 범위 안의 이용을 식별하며, 공개하려 할 때 정당한 길을 찾는 일. 모든 권리 주제와 같이 법률 자문이 아닌 일반 안내입니다.",
+    "ja": "このガイドは、MidiAI Studioでカバーを後ろめたくなく変換する方法を示します—権利の層を見分け、範囲内の利用を特定し、公開したいときの正当な道を見つけること。あらゆる権利トピックと同様、法的助言ではなく一般的な案内です。"
+  },
+  "This guide lays out the considerations clearly so you can decide for your own situation. MidiAI Studio and tools like it can figure into either approach, and the point here is to match the deployment model to your needs rather than to declare a single winner.": {
+    "ko": "이 가이드는 고려사항을 분명히 제시해 자신의 상황에서 결정하게 합니다. MidiAI Studio와 같은 도구는 어느 접근에도 들어갈 수 있으며, 여기서의 요점은 단일 승자를 선언하는 것이 아니라 배포 모델을 필요에 맞추는 것입니다.",
+    "ja": "このガイドは考慮点をはっきり示し、自分の状況で決められるようにします。MidiAI Studioのようなツールはどちらのアプローチにも入り得、ここでの要点は単一の勝者を宣言することではなく、配備モデルをニーズに合わせることです。"
+  },
+  "This guide makes the distinction concrete and, more importantly, actionable. Knowing where your material sits on the monophonic-to-polyphonic spectrum lets you plan a MidiAI Studio workflow that plays to the easy cases and manages the hard ones deliberately.": {
+    "ko": "이 가이드는 구분을 구체적이고, 무엇보다 실행 가능하게 만듭니다. 소재가 단성–다성 스펙트럼의 어디에 있는지 알면, 쉬운 경우를 살리고 어려운 경우를 의도적으로 다루는 MidiAI Studio 워크플로를 계획할 수 있습니다.",
+    "ja": "このガイドは区別を具体的に、そして何より実行可能にします。素材が単旋律から多声のスペクトルのどこにあるかを知れば、易しいケースを活かし難しいケースを意図的に扱うMidiAI Studioワークフローを計画できます。"
+  },
+  "This guide maps that terrain, matching realistic expectations to the major style periods and showing how to handle each with MidiAI Studio. Whether you are capturing a gentle Clementi study or a torrential Rachmaninoff climax, understanding the music's texture is half the battle.": {
+    "ko": "이 가이드는 그 지형을 그려, 주요 양식 시대에 현실적 기대를 맞추고 MidiAI Studio로 각각을 다루는 법을 보여 줍니다. 부드러운 클레멘티 연습곡이든 격렬한 라흐마니노프 클라이맥스든, 음악의 텍스처를 이해하는 일이 절반입니다.",
+    "ja": "このガイドはその地形を地図化し、主要様式期に現実的な期待を合わせ、MidiAI Studioでそれぞれを扱う方法を示します。穏やかなクレメンティの練習曲でも、奔流のようなラフマニノフのクライマックスでも、音楽のテクスチャを理解することが戦いの半分です。"
+  },
+  "This guide teaches those fundamentals from the ground up, assuming no prior editing experience. With these basics, you can clean up a MidiAI Studio conversion, shape a performance, or restructure an arrangement — the same skills serve every task.": {
+    "ko": "이 가이드는 사전 편집 경험이 없다고 가정하고 그 기초를 처음부터 가르칩니다. 이 기본으로 MidiAI Studio 변환을 정리하고, 연주를 조형하며, 편곡을 재구성할 수 있습니다—같은 기술이 모든 작업에 쓰입니다.",
+    "ja": "このガイドは事前の編集経験を前提にせず、その基礎を一から教えます。この基本があれば、MidiAI Studioの変換を整え、演奏を形作り、アレンジを再構成できます—同じスキルがすべての作業に役立ちます。"
+  },
+  "This guide treats conversion as a study method, not a party trick. Using MidiAI Studio to turn a favorite YouTube performance into MIDI, you can build a genuinely effective practice loop — the kind that moves a hard passage from impossible to automatic.": {
+    "ko": "이 가이드는 변환을 파티 트릭이 아니라 학습 방법으로 다룹니다. MidiAI Studio로 좋아하는 YouTube 연주를 MIDI로 바꾸면, 어려운 패시지를 불가능에서 자동으로 옮기는 진정으로 효과적인 연습 루프를 만들 수 있습니다.",
+    "ja": "このガイドは変換を余興の手品ではなく学習法として扱います。MidiAI Studioで好きなYouTube演奏をMIDIにすれば、難しいパッセージを不可能から自動へ移す、本当に効果的な練習ループを作れます。"
+  },
+  "This guide walks the full MidiAI Studio pipeline in musician-friendly terms, covering both the audio and the score-image paths. By the end, the black box should look more like a comprehensible assembly line you can reason about.": {
+    "ko": "이 가이드는 MidiAI Studio 전체 파이프라인을 연주자 친화적 용어로 걸으며, 오디오와 악보 이미지 경로를 모두 다룹니다. 끝나면 블랙박스가 추론할 수 있는 이해 가능한 조립 라인처럼 보일 것입니다.",
+    "ja": "このガイドはMidiAI Studioの全パイプラインをミュージシャン向けの言葉で歩き、オーディオと楽譜画像の両方の経路を扱います。終わりには、ブラックボックスは推論できるわかりやすい組み立てラインのように見えるはずです。"
+  },
+  "This guide walks the whole path in the order you will actually meet it: what the file holds, how recognition rebuilds the score, where you should expect to step in, and how to export something a DAW will respect. Nothing here assumes you read engraving software manuals for fun.": {
+    "ko": "이 가이드는 실제로 만나는 순서로 전체 경로를 걷습니다. 파일이 담는 것, 인식이 악보를 다시 짓는 방식, 개입할 지점, DAW가 존중할 것을 내보내는 방법. 여기 어디에도 조각 소프트웨어 설명서를 취미로 읽는다고 가정하지 않습니다.",
+    "ja": "このガイドは実際に出会う順で全体の道を歩きます。ファイルが持つもの、認識が楽譜を再建する方法、介入を見込む場所、DAWが尊重するものの書き出し方。ここには、彫版ソフトのマニュアルを趣味で読む前提はありません。"
+  },
+  "This guide walks through those decisions in order, so that a MIDI file — whether recorded or produced by MidiAI Studio — becomes MusicXML you can hand to a notation program and get a legible score rather than a mess of un-spelled, un-beamed notes.": {
+    "ko": "이 가이드는 그 결정들을 순서대로 밟아, 녹음이든 MidiAI Studio 산물이든 MIDI 파일이 기보 프로그램에 넘겨 읽을 수 있는 악보가 되게 합니다—철자·빔이 없는 음들의 혼란이 아니라.",
+    "ja": "このガイドはその判断を順にたどり、録音でもMidiAI Studio製でも、MIDIファイルが記譜プログラムに渡せて読みやすい楽譜になるようにします—綴りもビームもない音符の混乱ではなく。"
+  },
+  "This guide zeroes in on piano specifically, so the advice is concrete rather than generic. Whether your file is a practice-room recording or a ripped album track, MidiAI Studio can turn a piano MP3 into an editable part — and a few targeted habits make that part markedly cleaner.": {
+    "ko": "이 가이드는 피아노에 특별히 초점을 맞춰 조언이 일반론이 아니라 구체적입니다. 연습실 녹음이든 리핑한 앨범 트랙이든, MidiAI Studio는 피아노 MP3를 편집 가능한 파트로 바꿀 수 있고, 몇 가지 겨냥한 습관이 그 파트를 눈에 띄게 더 깨끗하게 만듭니다.",
+    "ja": "このガイドはピアノに特化し、助言は汎用ではなく具体的です。練習室の録音でもリッピングしたアルバムトラックでも、MidiAI StudioはピアノMP3を編集可能なパートにでき、いくつかの的を絞った習慣がそのパートを一段ときれいにします。"
+  },
+  "This is MusicXML doing exactly its job — carrying the written score across a boundary that would otherwise have trapped it. The same mechanism is what lets a MidiAI Studio MusicXML export open cleanly in whatever notation program you prefer.": {
+    "ko": "이것이 바로 MusicXML이 제 일을 하는 모습입니다—그렇지 않으면 가둬 두었을 경계를 넘어 기보 악보를 옮기는 일. 같은 메커니즘이 MidiAI Studio MusicXML 내보내기를 원하는 기보 프로그램에서 깨끗이 열리게 합니다.",
+    "ja": "これこそMusicXMLがまさにその仕事をしている姿です—さもなければ閉じ込めていた境界を越えて、書かれた楽譜を運ぶこと。同じ仕組みが、MidiAI StudioのMusicXML書き出しを好みの記譜プログラムできれいに開かせます。"
+  },
+  "This is not a discouragement — jazz is also one of the most rewarding things to transcribe, because the transcription becomes a window into how great players actually build their music. But going in with clear eyes about the challenges makes the difference between an illuminating study and a frustrating slog.": {
+    "ko": "낙담시키려는 말이 아닙니다—재즈는 채보할 때 가장 보람 있는 것 중 하나이기도 합니다. 채보가 위대한 연주자가 실제로 음악을 짓는 방식을 보는 창이 되기 때문입니다. 다만 과제를 맑은 눈으로 들어가면, 빛나는 학습과 답답한 고행의 차이가 납니다.",
+    "ja": "落胆させるための言葉ではありません—ジャズは採譜して最も報われるものの一つでもあります。採譜が偉大な奏者が実際に音楽を築く様子を見る窓になるからです。ただし課題をはっきり見据えて入れば、啓示的な学びと苛立たしい苦行の差がつきます。"
+  },
+  "This is not a reason to avoid it. Turning a favorite performance into editable MIDI is one of the most satisfying things a curious musician can do, and it works remarkably well when the source cooperates. The trick is knowing which sources cooperate and how to help the ones that do not.": {
+    "ko": "피할 이유는 아닙니다. 좋아하는 연주를 편집 가능한 MIDI로 바꾸는 일은 호기심 많은 연주자가 할 수 있는 가장 만족스러운 일 중 하나이며, 소스가 협력하면 놀랍도록 잘됩니다. 요령은 어떤 소스가 협력하는지, 그렇지 않은 것을 어떻게 도울지 아는 것입니다.",
+    "ja": "避ける理由ではありません。好きな演奏を編集可能なMIDIにすることは、好奇心旺盛なミュージシャンができる最も満足なことの一つで、ソースが協力すれば驚くほどうまくいきます。コツはどのソースが協力するか、しないものをどう助けるかを知ることです。"
+  },
+  "This is not luck; it is physics. The piano's mechanism produces exactly the acoustic clarity that transcription thrives on, which is why piano-to-MIDI consistently outperforms conversion of instruments with softer onsets or sliding pitches. Understanding why helps you exploit the advantage fully.": {
+    "ko": "운이 아니라 물리입니다. 피아노의 메커니즘이 채보가 잘 되는 바로 그 음향적 명료함을 만들어, 부드러운 온셋이나 미끄러지는 음고의 악기 변환보다 piano-to-MIDI가 일관되게 앞섭니다. 이유를 알면 이점을 온전히 쓸 수 있습니다.",
+    "ja": "運ではなく物理です。ピアノの機構は採譜が活きるまさにその音響的明瞭さを生み、柔らかいオンセットや滑る音高の楽器変換よりpiano-to-MIDIが一貫して勝ります。理由を知れば優位を十分に活かせます。"
+  },
+  "This is the same challenge as printing sheet music from MIDI, but aimed at an interchange file rather than a page. The goal is a MusicXML that opens cleanly in any notation program as a readable score, which requires the conversion to make many written-language decisions the performance data left open.": {
+    "ko": "MIDI에서 악보를 인쇄하는 것과 같은 과제지만, 페이지가 아니라 교환 파일을 겨냥합니다. 목표는 어떤 기보 프로그램에서도 읽을 수 있는 악보로 깨끗이 열리는 MusicXML이며, 변환이 연주 데이터가 열어 둔 많은 기보 언어 결정을 내려야 합니다.",
+    "ja": "MIDIから楽譜を印刷するのと同じ課題ですが、ページではなく交換ファイルを狙います。目標はどの記譜プログラムでも読みやすい楽譜としてきれいに開くMusicXMLで、変換は演奏データが開いたままにした多くの書記言語上の判断を下す必要があります。"
+  },
+  "This is why a MIDI file, which contains no audio at all, can still infringe. The absence of the original recording does not matter, because what copyright protects in the composition is the sequence of notes and harmonies — and that is exactly what a good transcription reproduces. MidiAI Studio gives you an accurate composition capture, which is powerful and precisely why its output deserves care.": {
+    "ko": "그래서 오디오가 전혀 없는 MIDI 파일도 침해할 수 있습니다. 원본 녹음의 부재는 중요하지 않습니다. 저작권이 작곡에서 보호하는 것은 음과 화성의 연쇄이고—좋은 채보가 바로 그것을 재현하기 때문입니다. MidiAI Studio는 정확한 작곡 캡처를 주며, 그것이 강력하고 출력을 조심해야 하는 바로 그 이유입니다.",
+    "ja": "だからこそ、音声を全く含まないMIDIファイルでも侵害し得ます。原録音の不在は問題ではありません。著作権が作曲で保護するのは音符と和声の並びであり—良い採譜がまさにそれを再現するからです。MidiAI Studioは正確な作曲キャプチャを与え、それが強力で、出力に注意が必要なまさにその理由です。"
+  },
+  "This is why simply crediting a cover is not the same as clearing it. Attribution is a matter of respect and honesty, but it does not substitute for permission, and a responsible workflow separates the courtesy of credit from the legal step of licensing where a public use requires one.": {
+    "ko": "그래서 커버에 크레딧만 다는 것은 클리어와 같지 않습니다. 출처 표기는 존중과 정직의 문제이지만 허가를 대체하지 않으며, 책임 있는 워크플로는 공개 이용에 라이선스가 필요할 때 크레딧의 예의와 라이선스의 법적 단계를 분리합니다.",
+    "ja": "だからこそ、カバーにクレジットするだけではクリアと同じではありません。帰属表示は敬意と誠実の問題ですが許可の代わりにはならず、責任あるワークフローは、公開利用にライセンスが必要なとき、クレジットの礼儀とライセンスの法的手続きを分けます。"
+  },
+  "This is why voice separation is the quiet hero of an editable export. MidiAI Studio can route each staff and, where the writing allows, each independent line onto its own track, so re-voicing an arrangement becomes a matter of dragging a whole part rather than reconstructing it note by note.": {
+    "ko": "그래서 성부 분리가 편집 가능한 내보내기의 조용한 주인공입니다. MidiAI Studio는 각 오선과, 기보가 허용하면 각 독립 라인을 자체 트랙으로 보내, 편곡을 다시 보이싱하는 일이 음 하나하나 재구성이 아니라 파트 전체를 드래그하는 일이 됩니다.",
+    "ja": "だからこそ声部分離は編集可能な書き出しの静かな英雄です。MidiAI Studioは各五線と、書法が許すところでは各独立ラインを自トラックへ送り、アレンジの再ヴォイシングは音符ごとの再構築ではなくパート全体をドラッグする話になります。"
+  },
+  "This makes WAV the preferred source whenever accuracy matters. You will never get better transcription from a compressed version of a recording than from its lossless master, because the master simply contains more of the information the engine needs.": {
+    "ko": "그래서 정확도가 중요할 때 WAV가 선호 소스가 됩니다. 압축본에서는 무손실 마스터보다 더 나은 채보를 얻을 수 없습니다. 마스터에 엔진이 필요로 하는 정보가 더 많기 때문입니다.",
+    "ja": "だからこそ精度が重要なときはWAVが好ましいソースになります。圧縮版から可逆マスターより良い採譜は得られません。マスターにはエンジンが必要とする情報が単純により多く含まれるからです。"
+  },
+  "This map prevents keyword cannibalization: each URL owns one primary keyword. Pillar pages own head terms; articles own unique long-tail intents.": {
+    "ko": "이 맵은 키워드 카니발라이제이션을 막습니다. 각 URL이 하나의 주요 키워드를 소유합니다. 필라 페이지는 헤드 텀을, 글은 고유한 롱테일 의도를 소유합니다.",
+    "ja": "このマップはキーワードカニバリゼーションを防ぎます。各URLが一つの主要キーワードを所有します。ピラーページはヘッド語を、記事は固有のロングテール意図を所有します。"
+  },
+  "This piece focuses less on the mechanics of recognition and more on the editing freedom conversion delivers, and how to set up your MidiAI Studio export so that freedom is actually usable rather than a tangle you have to untangle first.": {
+    "ko": "이 글은 인식의 메커니즘보다 변환이 주는 편집의 자유, 그리고 그 자유가 먼저 풀어야 할 엉킴이 아니라 실제로 쓸 수 있도록 MidiAI Studio 내보내기를 설정하는 법에 더 초점을 둡니다.",
+    "ja": "この文章は認識の仕組みより、変換がもたらす編集の自由と、その自由が先にほどくもつれではなく実際に使えるようMidiAI Studioの書き出しを整える方法に焦点を当てます。"
+  },
+  "This reframes source selection as the most powerful lever you have. Two minutes spent finding a cleaner upload or a solo cover will outperform any amount of post-transcription editing, because you cannot edit back information the recording never preserved. MidiAI Studio can only work with what reaches its ears.": {
+    "ko": "이렇게 보면 소스 선택이 가장 강력한 레버입니다. 더 깨끗한 업로드나 솔로 커버를 찾는 데 쓴 2분이 채보 후 편집 어떤 양보다 낫습니다. 녹음이 보존하지 않은 정보는 편집으로 되돌릴 수 없기 때문입니다. MidiAI Studio는 귀에 도달한 것만으로 일합니다.",
+    "ja": "こう捉え直すと、ソース選びが最も強力なレバーです。よりきれいなアップロードやソロカバーを探す2分は、採譜後の編集のどんな量より勝ります。録音が保存しなかった情報は編集で戻せないからです。MidiAI Studioは耳に届いたものだけで働けます。"
+  },
+  "Three main ones: how sharply it attacks notes, whether its pitch is fixed or continuous, and how many notes it plays at once. Sharp onsets, discrete pitches, and monophony make an instrument easy; the opposites make it hard.": {
+    "ko": "세 가지가 핵심입니다. 음을 얼마나 날카롭게 어택하는지, 음고가 고정인지 연속인지, 한 번에 몇 음을 치는지. 날카로운 온셋, 이산 음고, 단성은 악기를 쉽게 만들고, 그 반대는 어렵게 만듭니다.",
+    "ja": "主な三つです。どれだけ鋭く音をアタックするか、音高が固定か連続か、一度に何音を弾くか。鋭いオンセット、離散音高、単旋律は楽器を易しくし、その反対は難しくします。"
+  },
+  "Tightening a converted drum loop without ironing out the groove": {
+    "ko": "그루브를 펴 버리지 않고 변환된 드럼 루프를 조이기",
+    "ja": "グルーヴを伸ばし切らずに変換ドラムループを締める"
+  },
+  "Time-stretching audio instead of MIDI:": {
+    "ko": "MIDI 대신 오디오를 타임스트레치하는 것:",
+    "ja": "MIDIではなくオーディオをタイムストレッチすること:"
+  },
+  "Timing adds its own wrinkle. A metronomic recording gives a clean tempo to lock onto, but a rubato solo performance stretches and compresses time expressively, so the engine must track a moving tempo rather than a fixed grid. Getting the note positions right in that setting is as much about following the performer as identifying pitches.": {
+    "ko": "타이밍은 자체 주름을 더합니다. 메트로놈 같은 녹음은 잠글 깨끗한 템포를 주지만, 루바토 솔로는 시간을 표현적으로 늘리고 줄이므로 엔진은 고정 그리드가 아니라 움직이는 템포를 추적해야 합니다. 그 설정에서 음 위치를 맞추는 일은 음고 식별만큼 연주자를 따르는 일입니다.",
+    "ja": "タイミングは独自のしわを加えます。メトロノーム的な録音はロックできるきれいなテンポを与えますが、ルバートのソロは時間を表現的に伸縮させるので、エンジンは固定グリッドではなく動くテンポを追わねばなりません。その設定で音符位置を合わせることは、音高の特定と同じくらい演奏者を追うことです。"
+  },
+  "Timing drift compounds across a passage; anchoring it late means more to re-align.": {
+    "ko": "타이밍 드리프트는 패시지 전체에서 누적됩니다. 늦게 고정하면 다시 맞출 양이 늘어납니다.",
+    "ja": "タイミングのドリフトはパッセージ全体で積み上がります。遅くアンカーすると、再整列する量が増えます。"
+  },
+  "To let notation programs exchange scores. Before it, a score made in one program could not be opened in another without re-entry; MusicXML is the shared standard that made scores portable between applications.": {
+    "ko": "기보 프로그램이 악보를 교환하게 하기 위해서입니다. 이전에는 한 프로그램에서 만든 악보를 다른 프로그램에서 재입력 없이 열 수 없었고, MusicXML이 애플리케이션 간 악보를 이식 가능하게 만든 공유 표준입니다.",
+    "ja": "記譜プログラムが楽譜を交換できるようにするためです。以前は一つのプログラムで作った楽譜を別のプログラムで再入力なしに開けず、MusicXMLがアプリケーション間で楽譜を持ち運べる共有標準になりました。"
+  },
+  "Together they constitute the performance dimension of MIDI — the part that is not about which notes but about how they are played — and they are what distinguish a lifeless sequence from a convincing interpretation.": {
+    "ko": "함께하면 MIDI의 연주 차원을 이룹니다—어떤 음인지가 아니라 어떻게 연주되는지에 관한 부분—이며, 생기 없는 수열과 설득력 있는 해석을 가르는 요소입니다.",
+    "ja": "合わせてMIDIの演奏次元をなします—どの音符かではなくどう弾かれるかに関する部分—であり、生気のない並びと説得力ある解釈を分けるものです。"
+  },
+  "Toggle snap consciously to balance precision and expression.": {
+    "ko": "정밀함과 표현의 균형을 위해 스냅을 의식적으로 켜고 끄세요.",
+    "ja": "精度と表現のバランスのため、スナップを意識的に切り替えてください。"
+  },
+  "Top and bottom notes of a chord are usually captured reliably; the buried middle voices are where errors hide. Focus your verification there rather than everywhere.": {
+    "ko": "코드의 윗음과 아랫음은 보통 안정적으로 잡히고, 오류는 묻힌 중간 성부에 숨습니다. 검증은 전체가 아니라 그곳에 집중하세요.",
+    "ja": "和音の最上・最下音は通常しっかり捉えられ、誤りは埋もれた中声に隠れます。検証は全体ではなくそこに集中してください。"
+  },
+  "Topical Map — MidiAI Studio SEO Architecture": {
+    "ko": "토피컬 맵 — MidiAI Studio SEO 아키텍처",
+    "ja": "トピカルマップ — MidiAI Studio SEOアーキテクチャ"
+  },
+  "Track the count of remaining errors as you work; when corrections yield diminishing returns and the file matches the source for your purpose, it is accurate enough. Perfect fidelity is rarely worth chasing.": {
+    "ko": "작업하면서 남은 오류 수를 추적하세요. 수정 효과가 줄어들고 목적상 파일이 소스와 맞으면 충분히 정확합니다. 완벽한 충실도를 쫓을 가치는 드뭅니다.",
+    "ja": "作業しながら残りの誤り数を追跡してください。修正の効果が薄れ、目的上ファイルがソースと合えば十分正確です。完璧な忠実さはめったに追う価値がありません。"
+  },
+  "Track timing flexibly and avoid over-quantizing to a straight grid. The uneven eighth notes and behind-the-beat phrasing are the essence of swing, so preserving that timing matters more than tidy notation.": {
+    "ko": "타이밍을 유연하게 추적하고 직선 그리드로 과도하게 양자화하지 마세요. 불균등한 8분음과 비트 뒤 프레이징이 스윙의 본질이므로, 그 타이밍 보존이 깔끔한 기보보다 중요합니다.",
+    "ja": "タイミングを柔軟に追い、まっすぐなグリッドへの過度なクオンタイズを避けてください。不均一な八分音符と裏拍のフレージングがスウィングの本質なので、そのタイミング保持はきれいな記譜より大切です。"
+  },
+  "Track timing flexibly and resist over-quantizing. The uneven eighths and behind-the-beat phrasing are the point, so protect them rather than snapping them to a grid.": {
+    "ko": "타이밍을 유연하게 추적하고 과도한 양자화에 저항하세요. 불균등한 8분음과 비트 뒤 프레이징이 요점이므로, 그리드에 스냅하기보다 보호하세요.",
+    "ja": "タイミングを柔軟に追い、過度なクオンタイズに抗ってください。不均一な八分と裏拍のフレージングが要点なので、グリッドにスナップするより守ってください。"
+  },
+  "Transcribe covers freely for your own learning and practice. Private study of both the song and the arrangement is the low-risk heart of what conversion enables.": {
+    "ko": "자신의 학습과 연습을 위해 커버를 자유롭게 채보하세요. 곡과 편곡 모두의 사적 공부는 변환이 가능하게 하는 것의 저위험 핵심입니다.",
+    "ja": "自分の学習と練習のためにカバーを自由に採譜してください。曲とアレンジ双方の私的な学びは、変換が可能にすることの低リスクな核心です。"
+  },
+  "Transcribe exposed instruments from an MP3 before attempting buried ones.": {
+    "ko": "묻힌 악기에 손대기 전에 MP3에서 드러난 악기부터 채보하세요.",
+    "ja": "埋もれた楽器に手をつける前に、MP3から露出した楽器を採譜してください。"
+  },
+  "Transcribe exposed sections first.": {
+    "ko": "드러난 섹션부터 채보하세요.",
+    "ja": "露出したセクションから採譜してください。"
+  },
+  "Transcribe monophonic parts directly.": {
+    "ko": "단성 파트를 직접 채보하세요.",
+    "ja": "単旋律パートを直接採譜してください。"
+  },
+  "Transcribe one clearly-audible instrument at a time rather than the whole mix at once.": {
+    "ko": "믹스 전체를 한 번에 하기보다 분명히 들리는 악기 하나씩 채보하세요.",
+    "ja": "ミックス全体を一度にではなく、はっきり聞こえる楽器を一つずつ採譜してください。"
+  },
+  "Transcribe the full texture, then separate voices.": {
+    "ko": "전체 텍스처를 채보한 뒤 성부를 분리하세요.",
+    "ja": "全体のテクスチャを採譜してから声部を分けてください。"
+  },
+  "Transcribe the video, then check that the passage you want to learn came through accurately. There is no point drilling wrong notes, so confirm the tricky section against your ear first.": {
+    "ko": "영상을 채보한 뒤 배우고 싶은 패시지가 정확히 통과했는지 확인하세요. 틀린 음을 드릴할 이유는 없으므로, 까다로운 구간을 먼저 귀로 확인하세요.",
+    "ja": "動画を採譜し、学びたいパッセージが正確に通ったか確認してください。間違った音符をドリルする意味はないので、難しい箇所はまず耳で確かめてください。"
+  },
+  "Transcribe with pedal-aware cleanup in mind.": {
+    "ko": "페달을 의식한 정리를 염두에 두고 채보하세요.",
+    "ja": "ペダルを意識したクリーンアップを念頭に採譜してください。"
+  },
+  "Transcribe, then prune ghost notes.": {
+    "ko": "채보한 뒤 고스트 노트를 쳐내세요.",
+    "ja": "採譜してからゴーストノートを刈り込んでください。"
+  },
+  "Transcribed in MidiAI Studio, the extended chords come through with their added tones visible, and the melody sits clearly above the accompaniment. A few pedal-blurred bass notes appear as slightly long, and one ghost note from a sustained chord needs deleting — quick fixes given how much the transcription reveals.": {
+    "ko": "MidiAI Studio로 채보하면 확장 코드의 부가음이 보이며 나오고, 선율이 반주 위에 분명히 앉습니다. 페달로 흐려진 베이스 음 몇 개가 조금 길게 나타나고, 지속 코드에서 온 고스트 노트 하나는 지워야 합니다—채보가 보여 주는 양에 비하면 빠른 수정입니다.",
+    "ja": "MidiAI Studioで採譜すると拡張和音の付加音が見えて通り、旋律は伴奏の上にはっきり座ります。ペダルでぼやけた低音が少し長く現れ、持続和音からのゴーストノート一つは削除が必要です—採譜が明らかにする量にすれば手早い修正です。"
+  },
+  "Transcribing a bebop solo over rhythm changes": {
+    "ko": "리듬 체인지 위의 비밥 솔로 채보하기",
+    "ja": "リズムチェンジ上のビバップソロを採譜する"
+  },
+  "Transcribing a blend as one part:": {
+    "ko": "블렌드를 한 파트로 채보하는 것:",
+    "ja": "ブレンドを一つのパートとして採譜すること:"
+  },
+  "Transcribing a clean fingerstyle riff versus a distorted solo": {
+    "ko": "클린 핑거스타일 리프 대 디스토션 솔로 채보",
+    "ja": "クリーンなフィンガースタイルリフ対ディストーションソロの採譜"
+  },
+  "Transcribing a dense FLAC mix raw:": {
+    "ko": "밀집 FLAC 믹스를 날것으로 채보하는 것:",
+    "ja": "密なFLACミックスを生のまま採譜すること:"
+  },
+  "Transcribing a dense mix as-is:": {
+    "ko": "밀집 믹스를 그대로 채보하는 것:",
+    "ja": "密なミックスをそのまま採譜すること:"
+  },
+  "Transcribing a distinctive acoustic cover of a rock song": {
+    "ko": "록 곡의 독특한 어쿠스틱 커버 채보하기",
+    "ja": "ロック曲の個性的なアコースティックカバーを採譜する"
+  },
+  "Transcribing a fingerstyle guitar WAV recorded at home": {
+    "ko": "집에서 녹음한 핑거스타일 기타 WAV 채보하기",
+    "ja": "自宅で録音したフィンガースタイルギターWAVを採譜する"
+  },
+  "Transcribing a full mix and blaming the model:": {
+    "ko": "풀 믹스를 채보하고 모델을 탓하는 것:",
+    "ja": "フルミックスを採譜してモデルを責めること:"
+  },
+  "Transcribing a full mix:": {
+    "ko": "풀 믹스를 채보하는 것:",
+    "ja": "フルミックスを採譜すること:"
+  },
+  "Transcribing a full-band mix directly:": {
+    "ko": "풀밴드 믹스를 직접 채보하는 것:",
+    "ja": "フルバンドミックスを直接採譜すること:"
+  }
+}

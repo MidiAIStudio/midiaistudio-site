@@ -1,0 +1,482 @@
+[
+  {
+    "text": "There is a fork in the road every time you convert a score, and it is decided by one question: do you want to hear it or re-print it? If you want playback and editing of the performance, MIDI is your target. If you want to re-engrave the notation — to publish, transpose on the page, or extract parts — you want MusicXML.",
+    "count": 1
+  },
+  {
+    "text": "There is a judgment call about when editing stops being worth it. If you are changing more than half the notes, re-engraving from a blank page can be cleaner than reshaping a conversion. The tipping point is roughly when you spend more time undoing the original than building the new one.",
+    "count": 1
+  },
+  {
+    "text": "There is a limit worth respecting: recognition reconstructs what was written, not what a performer would do. Rubato, voicing balance, and pedaling are interpretive, and no amount of accuracy will invent them from a clean page. The MIDI is a faithful skeleton you then bring to life.",
+    "count": 1
+  },
+  {
+    "text": "There is a real ethical texture to transcribing covers that is worth naming. A cover arrangement is itself a creative work, and lifting it note for note is closer to studying a teacher than copying a fact. Approaching it as learning — understanding the choices rather than merely harvesting them — keeps the practice honest and, frankly, more useful.",
+    "count": 1
+  },
+  {
+    "text": "There is a satisfying reason piano is the transcriber's friend: its physics align with what compression keeps and what transcription needs. The hammer strike is a brief, high-energy event that perceptual coding treats as important, so the very onsets an engine relies on are the ones an encoder protects. Instrument and format happen to agree on what matters.",
+    "count": 1
+  },
+  {
+    "text": "There is a useful distinction hiding here: you can edit the performance (what plays back) or the page (how it looks), and depending on your format those are different jobs. MIDI editing is mostly about the performance; notation editing is about the page. Knowing which you are doing keeps your effort aimed.",
+    "count": 1
+  },
+  {
+    "text": "There is craft in cleanup order that pays off invisibly. By fixing the things everything else depends on first, you ensure that no correction is wasted on material you later change. It is the same coarse-to-fine discipline that governs editing anywhere, and it turns cleanup from a frustrating game of whack-a-mole into a steady, converging process.",
+    "count": 1
+  },
+  {
+    "text": "There is real creative liberation in the learn-then-create model. Transcribing a brilliant cover with MidiAI Studio and studying exactly how an arranger transformed a song teaches you techniques you can carry into your own music, and the arrangements you then write are genuinely yours. The transcription becomes a teacher rather than a source to copy.",
+    "count": 1
+  },
+  {
+    "text": "These habits apply whether you are using MidiAI Studio on a downloaded track or a recording of your own playing. None of them are difficult; they are simply the differences between a transcription you fight and one that mostly just works.",
+    "count": 1
+  },
+  {
+    "text": "These travel well but not perfectly. Check syllable alignment and confirm any ambiguous chord qualities against the original before you rely on the sheet.",
+    "count": 1
+  },
+  {
+    "text": "They are assembled onto a time grid, grouped into voices or tracks, and written with musical structure. This assembly stage is where isolated predictions become a coherent, usable timeline.",
+    "count": 1
+  },
+  {
+    "text": "They are identical in content, so downgrading your expectations is unwarranted.",
+    "count": 1
+  },
+  {
+    "text": "They are interpreted as expressive gestures, usually as ornaments approaching a target note rather than as many discrete notes. This judgment produces a more musical, readable melody than transcribing every pitch step.",
+    "count": 1
+  },
+  {
+    "text": "They are retained as notation data when layout preservation is on, so the re-opened score reads naturally. You may still refine spacing to match your program's house style.",
+    "count": 1
+  },
+  {
+    "text": "They are unrolled into a linear stream, so a repeat plays twice and a D.S. jumps as written, producing the sequence a listener would actually hear. Verify the result, since structural realization is where surprises occur.",
+    "count": 1
+  },
+  {
+    "text": "They can and should, because their low velocities are central to a groove's feel. Preserving the full dynamic range, including the quiet hits around the backbeat, keeps the extracted beat alive rather than flat.",
+    "count": 1
+  },
+  {
+    "text": "They can, because distinguishing separate rapid strikes from one sustained tone is subtle. Checking note counts in fast passages catches merges or splits that would otherwise alter the rhythm.",
+    "count": 1
+  },
+  {
+    "text": "They cluster around loud transients, decaying chords, and reverb tails, where lingering sound is misread as new attacks. Knowing that lets you find and delete them by location rather than searching everywhere.",
+    "count": 1
+  },
+  {
+    "text": "They share the idea of reading pixels into meaning, but OMR is far more complex because music is two-dimensional and its symbols overlap. Text flows in lines; notation stacks pitch vertically and time horizontally at once.",
+    "count": 1
+  },
+  {
+    "text": "They store different things, so swapping them mid-task guarantees fighting the format.",
+    "count": 1
+  },
+  {
+    "text": "Thick and blurred textures hide inner-voice errors that only ear verification catches.",
+    "count": 1
+  },
+  {
+    "text": "Thicker chords, heavy sustain pedal, and expressive rubato. The notes may transcribe correctly, but the pedal leaves ringing tones to clean and the flexible timing needs careful anchoring.",
+    "count": 1
+  },
+  {
+    "text": "Think in terms of the four note properties for every edit.",
+    "count": 1
+  },
+  {
+    "text": "Thinking MIDI is low quality:",
+    "count": 1
+  },
+  {
+    "text": "This article explains that shift in plain terms and connects it to practical outcomes. It is the conceptual backbone behind tools like MidiAI Studio, and knowing it helps you understand both why AI transcription is so much better than what came before and why it still is not magic.",
+    "count": 1
+  },
+  {
+    "text": "This article is written for musicians, not lawyers, and it is general information rather than legal advice. It explains how copyright applies to YouTube-to-MIDI work so you can use MidiAI Studio confidently and responsibly, and know when to seek a license or professional guidance.",
+    "count": 1
+  },
+  {
+    "text": "This article lays out a workflow that has one job: turn a MidiAI Studio conversion into a finished, performance-ready score with the least backtracking. It is editor-agnostic, so the sequence holds whether you live in MuseScore, Sibelius, Dorico, or Finale.",
+    "count": 1
+  },
+  {
+    "text": "This article opens the hood without drowning you in computer-vision jargon. The goal is a working mental model of how a picture of a staff becomes a stream of pitches, and where in that pipeline things most often go wrong.",
+    "count": 1
+  },
+  {
+    "text": "This combination — simple in polyphony, complex in pitch behavior — gives vocal transcription its distinctive character. The engine never has to untangle overlapping notes, but it constantly has to decide what a continuously-moving pitch actually means as discrete notes.",
+    "count": 1
+  },
+  {
+    "text": "This comparison lays them side by side without jargon, so that the next time MidiAI Studio offers you both, you know instantly which one your task actually calls for. The deciding factor is simpler than you might expect.",
+    "count": 1
+  },
+  {
+    "text": "This conversion is a useful reminder that going from more information to less is the easy direction. Audio-to-MIDI is hard because it reconstructs music from ambiguous sound; MusicXML-to-MIDI is easy because the music is already fully specified. The lesson generalizes: conversions are hard in proportion to how much they must infer, and here they infer almost nothing.",
+    "count": 1
+  },
+  {
+    "text": "This conversion is the clearest demonstration of what MIDI deliberately leaves out. Working from a performance to a page, you feel every gap: the ambiguity of every enharmonic pitch, the absence of a key, the missing voice boundaries. Rather than a flaw, this is MIDI being honest about its job — it stores a performance, and notation is a different language it never claimed to speak.",
+    "count": 1
+  },
+  {
+    "text": "This difference drives the file-size and fidelity trade-offs. Audio must store the full detailed waveform, making it large but perfectly faithful to what was recorded, while MIDI stores only compact instructions, making it tiny and endlessly editable but dependent on the sound source that renders it. Neither is better; they optimize for different things.",
+    "count": 1
+  },
+  {
+    "text": "This field guide surveys the instrument families through that predictive lens, so you can plan a MidiAI Studio workflow around the sources you actually have. Think of it as a map of the transcription terrain, organized by the traits that matter.",
+    "count": 1
+  },
+  {
+    "text": "This first encounter teaches the whole concept viscerally: the MIDI file is a set of instructions, the instrument provides the voice, and the notes are yours to edit. Once this clicks, MIDI stops being mysterious and starts being useful.",
+    "count": 1
+  },
+  {
+    "text": "This framework also explains why isolation is such a universal recommendation. Ensembles are hard not because of any single instrument but because overlap muddies all three determinations at once, so separating instruments restores each to its individual difficulty. MidiAI Studio can then apply its strengths to one clear source at a time, which is almost always better than confronting the blend.",
+    "count": 1
+  },
+  {
+    "text": "This guide aims for that grounded middle, surveying the real capabilities and honest limits of the technology and, more importantly, how to fold it into an actual musical practice. Transcription is not just a product you consume but a practice you develop, and the musicians who benefit most treat it that way.",
+    "count": 1
+  },
+  {
+    "text": "This guide assumes you have already converted a score — perhaps a paper part run through MidiAI Studio — and focuses on what to do next: the specific, repeatable moves that turn a raw conversion into a polished, correct, and flexible piece of music.",
+    "count": 1
+  },
+  {
+    "text": "This guide breaks down each challenge specific to jazz and offers concrete ways to work through them with MidiAI Studio. If you have ever wanted to see exactly what a pianist played in a solo you love, this is the terrain you will be navigating.",
+    "count": 1
+  },
+  {
+    "text": "This guide clears up where FLAC sits relative to MP3 and WAV, and how to feed it to MidiAI Studio so its lossless detail translates into an accurate MIDI part. The short version is encouraging: FLAC is as good a source as WAV, and easier to store.",
+    "count": 1
+  },
+  {
+    "text": "This guide compares MidiAI Studio-style conversion with manual transcription honestly, respecting what each offers. The goal is a nuanced view that lets you deploy automation and ear-work where each serves you best, often in combination.",
+    "count": 1
+  },
+  {
+    "text": "This guide covers how drum MIDI extraction works and how to get a beat you can actually reprogram, from a live recording or a loop. With MidiAI Studio, turning an audio drum performance into editable, remixable MIDI opens up a beat's every element for reshaping.",
+    "count": 1
+  },
+  {
+    "text": "This guide covers how that interpretation works — how a crescendo marking becomes a velocity ramp, how repeats unroll into a linear stream — and how to make the resulting MIDI from MidiAI Studio sound musical rather than robotic.",
+    "count": 1
+  },
+  {
+    "text": "This guide covers how to transcribe the voice into clean, usable MIDI with MidiAI Studio, whether you are capturing a melody to develop, extracting a topline, or turning a hummed idea into notation. The voice rewards a light touch and an understanding of its quirks.",
+    "count": 1
+  },
+  {
+    "text": "This guide covers quantizing converted MIDI intelligently — choosing the right grid, using partial strength, and preserving groove — so a MidiAI Studio conversion ends up tight where it should be tight and loose where looseness is the point.",
+    "count": 1
+  },
+  {
+    "text": "This guide covers the specific obstacles guitar presents and how to work with MidiAI Studio to get clean results. Whether you want editable MIDI, a jumping-off point for tab, or a way to re-voice a riff on another instrument, guitar transcription is very doable with the right approach.",
+    "count": 1
+  },
+  {
+    "text": "This guide covers using converted MIDI in FL Studio specifically — importing into the piano roll, routing through the channel rack, building patterns, and arranging in the playlist. It builds on the general DAW workflow and focuses on FL's distinctive way of working.",
+    "count": 1
+  },
+  {
+    "text": "This guide covers using converted MIDI in Logic Pro specifically, from importing into the timeline to leveraging the score editor and software instruments. It assumes the general DAW workflow and highlights what Logic brings that is distinctive.",
+    "count": 1
+  },
+  {
+    "text": "This guide covers using MidiAI Studio conversions in Live specifically, from importing clips to warping for sync to developing ideas across the session and arrangement views. It assumes familiarity with the general DAW workflow and focuses on what is distinct about Live.",
+    "count": 1
+  },
+  {
+    "text": "This guide explains how the problem is solved, where it still breaks down, and how to verify that a dense passage came through complete. Understanding polyphony makes you a better user of MidiAI Studio, because you learn where to trust the transcription and where to listen closely.",
+    "count": 1
+  },
+  {
+    "text": "This guide explains the acoustic reasons piano is the transcriber's favorite instrument and how to make the most of them with MidiAI Studio. Whether you are capturing your own playing or a recording, knowing why piano converts so well lets you push its accuracy even higher.",
+    "count": 1
+  },
+  {
+    "text": "This guide explains the split clearly and traces its consequences, so that the rest of the conversion landscape makes sense. Whether you use MidiAI Studio or any other tool, this is the concept everything else rests on.",
+    "count": 1
+  },
+  {
+    "text": "This guide explains what that extra information buys you and how to capitalize on it. When you feed MidiAI Studio a clean WAV, you are giving it the best possible chance, and a few habits ensure that advantage translates into a genuinely cleaner MIDI part.",
+    "count": 1
+  },
+  {
+    "text": "This guide focuses on that notation-first path: what MusicXML preserves that MIDI cannot, how MidiAI Studio produces it, and how to land the file cleanly in the notation editor of your choice.",
+    "count": 1
+  },
+  {
+    "text": "This guide gives you that framework, applicable to any tool including MidiAI Studio. The goal is not to crown a winner but to equip you to evaluate for yourself, because the right tool depends on your material, your workflow, and your priorities.",
+    "count": 1
+  },
+  {
+    "text": "This guide gives you that systematic process for cleaning up MidiAI Studio output into a polished, musical part. It assumes the transcription is already largely accurate and focuses on the finishing work that turns good into genuinely done.",
+    "count": 1
+  },
+  {
+    "text": "This guide goes deep on velocity and the broader craft of expression in converted MIDI. With MidiAI Studio giving you the notes, learning to shape their dynamics and feel is what turns a technically-right part into one that moves people.",
+    "count": 1
+  },
+  {
+    "text": "This guide is a practical toolkit for that work. It assumes you have a MidiAI Studio conversion in hand and want it more accurate, and it gives you the diagnostic eye and the correction order to get there without spinning your wheels.",
+    "count": 1
+  },
+  {
+    "text": "This guide is about working with that reality rather than against it. It explains what an MP3 actually hands MidiAI Studio, how bitrate sets your quality ceiling, and how to squeeze the cleanest possible transcription out of whatever file you happen to have.",
+    "count": 1
+  },
+  {
+    "text": "This guide is aimed at the musician who wants to learn from covers: to see how an arranger voiced a chorus, to slow a run down and play along, to lift a reharmonization into their own playing. MidiAI Studio makes the capture easy; understanding the arrangement makes the capture meaningful.",
+    "count": 1
+  },
+  {
+    "text": "This guide is aimed at video makers, streamers, and podcasters who want that flexibility. It shows how MidiAI Studio fits a creator's pipeline, and — importantly — how to keep the resulting soundtrack on clean footing rather than borrowing rights you do not have.",
+    "count": 1
+  },
+  {
+    "text": "This guide is aimed at Windows users specifically, covering how to choose and set up conversion software like MidiAI Studio on the platform. The focus is on the concrete, Windows-flavored details that turn a working setup into a genuinely good one.",
+    "count": 1
+  },
+  {
+    "text": "This guide is full of classroom-ready uses of MidiAI Studio for teachers, along with the responsible practices — especially around copyright — that keep a teaching studio on solid ground. The focus is practical: things you can use in your next lesson.",
+    "count": 1
+  },
+  {
+    "text": "This guide is honest about the ceiling and generous with the technique. It explains what MidiAI Studio is actually listening to, why a lone piano recording transcribes so much better than a dense band mix, and the concrete moves that get you the cleanest MIDI a given video can yield.",
+    "count": 1
+  },
+  {
+    "text": "This guide lays out a DAW-agnostic workflow for developing MidiAI Studio conversions into finished tracks. The specific menus differ between Ableton, Logic, FL Studio, and the rest, but the sequence and the thinking transfer to any of them.",
+    "count": 1
+  },
+  {
+    "text": "This guide lays out how to convert covers with MidiAI Studio in a way you can stand behind — distinguishing the layers of rights, identifying uses that stay within bounds, and finding legitimate paths when you want to go public. As with any rights topic, this is general guidance rather than legal advice.",
+    "count": 1
+  },
+  {
+    "text": "This guide lays out the considerations clearly so you can decide for your own situation. MidiAI Studio and tools like it can figure into either approach, and the point here is to match the deployment model to your needs rather than to declare a single winner.",
+    "count": 1
+  },
+  {
+    "text": "This guide makes the distinction concrete and, more importantly, actionable. Knowing where your material sits on the monophonic-to-polyphonic spectrum lets you plan a MidiAI Studio workflow that plays to the easy cases and manages the hard ones deliberately.",
+    "count": 1
+  },
+  {
+    "text": "This guide maps that terrain, matching realistic expectations to the major style periods and showing how to handle each with MidiAI Studio. Whether you are capturing a gentle Clementi study or a torrential Rachmaninoff climax, understanding the music's texture is half the battle.",
+    "count": 1
+  },
+  {
+    "text": "This guide teaches those fundamentals from the ground up, assuming no prior editing experience. With these basics, you can clean up a MidiAI Studio conversion, shape a performance, or restructure an arrangement — the same skills serve every task.",
+    "count": 1
+  },
+  {
+    "text": "This guide treats conversion as a study method, not a party trick. Using MidiAI Studio to turn a favorite YouTube performance into MIDI, you can build a genuinely effective practice loop — the kind that moves a hard passage from impossible to automatic.",
+    "count": 1
+  },
+  {
+    "text": "This guide walks the full MidiAI Studio pipeline in musician-friendly terms, covering both the audio and the score-image paths. By the end, the black box should look more like a comprehensible assembly line you can reason about.",
+    "count": 1
+  },
+  {
+    "text": "This guide walks the whole path in the order you will actually meet it: what the file holds, how recognition rebuilds the score, where you should expect to step in, and how to export something a DAW will respect. Nothing here assumes you read engraving software manuals for fun.",
+    "count": 1
+  },
+  {
+    "text": "This guide walks through those decisions in order, so that a MIDI file — whether recorded or produced by MidiAI Studio — becomes MusicXML you can hand to a notation program and get a legible score rather than a mess of un-spelled, un-beamed notes.",
+    "count": 1
+  },
+  {
+    "text": "This guide zeroes in on piano specifically, so the advice is concrete rather than generic. Whether your file is a practice-room recording or a ripped album track, MidiAI Studio can turn a piano MP3 into an editable part — and a few targeted habits make that part markedly cleaner.",
+    "count": 1
+  },
+  {
+    "text": "This is MusicXML doing exactly its job — carrying the written score across a boundary that would otherwise have trapped it. The same mechanism is what lets a MidiAI Studio MusicXML export open cleanly in whatever notation program you prefer.",
+    "count": 1
+  },
+  {
+    "text": "This is not a discouragement — jazz is also one of the most rewarding things to transcribe, because the transcription becomes a window into how great players actually build their music. But going in with clear eyes about the challenges makes the difference between an illuminating study and a frustrating slog.",
+    "count": 1
+  },
+  {
+    "text": "This is not a reason to avoid it. Turning a favorite performance into editable MIDI is one of the most satisfying things a curious musician can do, and it works remarkably well when the source cooperates. The trick is knowing which sources cooperate and how to help the ones that do not.",
+    "count": 1
+  },
+  {
+    "text": "This is not luck; it is physics. The piano's mechanism produces exactly the acoustic clarity that transcription thrives on, which is why piano-to-MIDI consistently outperforms conversion of instruments with softer onsets or sliding pitches. Understanding why helps you exploit the advantage fully.",
+    "count": 1
+  },
+  {
+    "text": "This is the same challenge as printing sheet music from MIDI, but aimed at an interchange file rather than a page. The goal is a MusicXML that opens cleanly in any notation program as a readable score, which requires the conversion to make many written-language decisions the performance data left open.",
+    "count": 1
+  },
+  {
+    "text": "This is why a MIDI file, which contains no audio at all, can still infringe. The absence of the original recording does not matter, because what copyright protects in the composition is the sequence of notes and harmonies — and that is exactly what a good transcription reproduces. MidiAI Studio gives you an accurate composition capture, which is powerful and precisely why its output deserves care.",
+    "count": 1
+  },
+  {
+    "text": "This is why simply crediting a cover is not the same as clearing it. Attribution is a matter of respect and honesty, but it does not substitute for permission, and a responsible workflow separates the courtesy of credit from the legal step of licensing where a public use requires one.",
+    "count": 1
+  },
+  {
+    "text": "This is why voice separation is the quiet hero of an editable export. MidiAI Studio can route each staff and, where the writing allows, each independent line onto its own track, so re-voicing an arrangement becomes a matter of dragging a whole part rather than reconstructing it note by note.",
+    "count": 1
+  },
+  {
+    "text": "This makes WAV the preferred source whenever accuracy matters. You will never get better transcription from a compressed version of a recording than from its lossless master, because the master simply contains more of the information the engine needs.",
+    "count": 1
+  },
+  {
+    "text": "This map prevents keyword cannibalization: each URL owns one primary keyword. Pillar pages own head terms; articles own unique long-tail intents.",
+    "count": 1
+  },
+  {
+    "text": "This piece focuses less on the mechanics of recognition and more on the editing freedom conversion delivers, and how to set up your MidiAI Studio export so that freedom is actually usable rather than a tangle you have to untangle first.",
+    "count": 1
+  },
+  {
+    "text": "This reframes source selection as the most powerful lever you have. Two minutes spent finding a cleaner upload or a solo cover will outperform any amount of post-transcription editing, because you cannot edit back information the recording never preserved. MidiAI Studio can only work with what reaches its ears.",
+    "count": 1
+  },
+  {
+    "text": "Three main ones: how sharply it attacks notes, whether its pitch is fixed or continuous, and how many notes it plays at once. Sharp onsets, discrete pitches, and monophony make an instrument easy; the opposites make it hard.",
+    "count": 1
+  },
+  {
+    "text": "Tightening a converted drum loop without ironing out the groove",
+    "count": 1
+  },
+  {
+    "text": "Time-stretching audio instead of MIDI:",
+    "count": 1
+  },
+  {
+    "text": "Timing adds its own wrinkle. A metronomic recording gives a clean tempo to lock onto, but a rubato solo performance stretches and compresses time expressively, so the engine must track a moving tempo rather than a fixed grid. Getting the note positions right in that setting is as much about following the performer as identifying pitches.",
+    "count": 1
+  },
+  {
+    "text": "Timing drift compounds across a passage; anchoring it late means more to re-align.",
+    "count": 1
+  },
+  {
+    "text": "To let notation programs exchange scores. Before it, a score made in one program could not be opened in another without re-entry; MusicXML is the shared standard that made scores portable between applications.",
+    "count": 1
+  },
+  {
+    "text": "Together they constitute the performance dimension of MIDI — the part that is not about which notes but about how they are played — and they are what distinguish a lifeless sequence from a convincing interpretation.",
+    "count": 1
+  },
+  {
+    "text": "Toggle snap consciously to balance precision and expression.",
+    "count": 1
+  },
+  {
+    "text": "Top and bottom notes of a chord are usually captured reliably; the buried middle voices are where errors hide. Focus your verification there rather than everywhere.",
+    "count": 1
+  },
+  {
+    "text": "Topical Map — MidiAI Studio SEO Architecture",
+    "count": 1
+  },
+  {
+    "text": "Track the count of remaining errors as you work; when corrections yield diminishing returns and the file matches the source for your purpose, it is accurate enough. Perfect fidelity is rarely worth chasing.",
+    "count": 1
+  },
+  {
+    "text": "Track timing flexibly and avoid over-quantizing to a straight grid. The uneven eighth notes and behind-the-beat phrasing are the essence of swing, so preserving that timing matters more than tidy notation.",
+    "count": 1
+  },
+  {
+    "text": "Track timing flexibly and resist over-quantizing. The uneven eighths and behind-the-beat phrasing are the point, so protect them rather than snapping them to a grid.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe covers freely for your own learning and practice. Private study of both the song and the arrangement is the low-risk heart of what conversion enables.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe exposed instruments from an MP3 before attempting buried ones.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe exposed sections first.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe monophonic parts directly.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe one clearly-audible instrument at a time rather than the whole mix at once.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe the full texture, then separate voices.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe the video, then check that the passage you want to learn came through accurately. There is no point drilling wrong notes, so confirm the tricky section against your ear first.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe with pedal-aware cleanup in mind.",
+    "count": 1
+  },
+  {
+    "text": "Transcribe, then prune ghost notes.",
+    "count": 1
+  },
+  {
+    "text": "Transcribed in MidiAI Studio, the extended chords come through with their added tones visible, and the melody sits clearly above the accompaniment. A few pedal-blurred bass notes appear as slightly long, and one ghost note from a sustained chord needs deleting — quick fixes given how much the transcription reveals.",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a bebop solo over rhythm changes",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a blend as one part:",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a clean fingerstyle riff versus a distorted solo",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a dense FLAC mix raw:",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a dense mix as-is:",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a distinctive acoustic cover of a rock song",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a fingerstyle guitar WAV recorded at home",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a full mix and blaming the model:",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a full mix:",
+    "count": 1
+  },
+  {
+    "text": "Transcribing a full-band mix directly:",
+    "count": 1
+  }
+]
