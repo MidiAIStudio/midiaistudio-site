@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v101-support-tips">
   <script defer src="./assets/js/analytics.js"></script>
   <script type="application/ld+json">
   {
@@ -118,7 +118,6 @@
           <div class="portal-cta">
             <a class="primary" href="./purchase.html">라이선스 구매</a>
             <a class="secondary" href="./downloads.html">무료 체험 다운로드</a>
-            <a class="ghost" href="./guides/index.html">변환 가이드</a>
           </div>
         </div>
         <div class="portal-hero-panel">
@@ -182,22 +181,105 @@
       </div>
     </section>
 
+    <section class="wrap home-support" aria-label="지원하는 워크플로">
+      <div class="home-panel home-support-panel">
+        <div class="home-panel-head">
+          <h2>지원하는 워크플로</h2>
+          <a class="home-panel-link" href="./product.html">제품 보기</a>
+        </div>
+        <div class="home-panel-body home-support-body">
+          <p class="muted home-support-lead">입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.</p>
+          <div class="home-support-org">
+            <div class="home-support-row home-support-inputs" role="group" aria-label="입력">
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">입력</span>
+                <strong>YouTube → MIDI</strong>
+                <span>피아노 커버·영상 링크를 분석해 MIDI로 변환</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>YouTube → MIDI</b>
+                  <p>YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.</p>
+                </div>
+              </div>
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">입력</span>
+                <strong>MP3 / Audio → MIDI</strong>
+                <span>MP3·WAV 등 오디오 파일을 AI로 변환</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>MP3 / Audio → MIDI</b>
+                  <p>MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.</p>
+                </div>
+              </div>
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">입력</span>
+                <strong>PDF → MIDI</strong>
+                <span>악보 PDF를 인식해 편집 가능한 MIDI로</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>PDF → MIDI</b>
+                  <p>스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="home-support-connector" aria-hidden="true"></div>
+            <div class="home-support-row home-support-hub" role="group" aria-label="변환">
+              <div class="home-support-card home-support-card-hub" tabindex="0">
+                <span class="home-support-kicker">코어</span>
+                <strong>AI MIDI 변환</strong>
+                <span>MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>AI MIDI 변환</b>
+                  <p>YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="home-support-connector" aria-hidden="true"></div>
+            <div class="home-support-row home-support-outputs" role="group" aria-label="결과">
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">결과</span>
+                <strong>MIDI 편집 PRO</strong>
+                <span>멀티트랙 피아노 롤에서 노트·벨로시티 편집</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>MIDI 편집 PRO</b>
+                  <p>변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.</p>
+                </div>
+              </div>
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">결과</span>
+                <strong>MIDI → PDF / MusicXML</strong>
+                <span>변환된 MIDI를 인쇄용 PDF·MusicXML 악보로</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>MIDI → PDF / MusicXML</b>
+                  <p>변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.</p>
+                </div>
+              </div>
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">결과</span>
+                <strong>라이브러리 저장</strong>
+                <span>변환·편집한 MIDI를 모아 다시 열어 작업</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>라이브러리 저장</b>
+                  <p>변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="wrap home-bottom" aria-label="MIDI conversion guides">
-      <div class="home-panel" style="margin-bottom:18px">
+      <div class="home-panel home-guides-panel">
         <div class="home-panel-head"><h2>MIDI 변환 가이드</h2><a class="home-panel-link" href="./guides/index.html">전체 보기</a></div>
-        <div class="home-panel-body" style="padding:8px 0 0">
-          <p class="muted" style="margin:0 0 12px;line-height:1.7">PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.</p>
-          <p style="display:flex;flex-wrap:wrap;gap:10px;margin:0">
-            <a class="secondary mini-btn" href="./guides/pdf-to-midi.html">PDF → MIDI</a>
-            <a class="secondary mini-btn" href="./guides/youtube-to-midi.html">YouTube → MIDI</a>
-            <a class="secondary mini-btn" href="./guides/mp3-to-midi.html">MP3 → MIDI</a>
-            <a class="secondary mini-btn" href="./guides/audio-to-midi.html">Audio → MIDI</a>
-            <a class="secondary mini-btn" href="./guides/musicxml.html">MusicXML</a>
-            <a class="secondary mini-btn" href="./guides/midi-converter-faq.html">변환 FAQ</a>
-            <a class="secondary mini-btn" href="./about.html">회사·제작자</a>
-            <a class="secondary mini-btn" href="./product.html">제품</a>
-            <a class="secondary mini-btn" href="./support.html">지원</a>
-          </p>
+        <div class="home-panel-body home-guides-body">
+          <p class="muted home-guides-lead">PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.</p>
+          <div class="home-guides-btns" role="group" aria-label="변환 가이드">
+            <a class="home-guide-btn" href="./guides/pdf-to-midi.html">PDF → MIDI</a>
+            <a class="home-guide-btn" href="./guides/youtube-to-midi.html">YouTube → MIDI</a>
+            <a class="home-guide-btn" href="./guides/mp3-to-midi.html">MP3 → MIDI</a>
+            <a class="home-guide-btn" href="./guides/audio-to-midi.html">Audio → MIDI</a>
+            <a class="home-guide-btn" href="./guides/articles/midi-to-pdf-sheet-music.html">MIDI → PDF</a>
+            <a class="home-guide-btn" href="./guides/musicxml.html">MusicXML</a>
+            <a class="home-guide-btn home-guide-btn-alt" href="./guides/midi-converter-faq.html">변환 FAQ</a>
+          </div>
         </div>
       </div>
       <div class="home-bottom-grid">
@@ -216,7 +298,7 @@
     <div class="footer-main">
       <div class="footer-brand"><img src="./assets/images/symbol.png" alt="MidiAI Studio" width="32" height="32" title="MidiAI Studio"><div><strong>MidiAI Studio</strong><p>AI 기반 MIDI 변환 소프트웨어</p></div></div>
       <div class="footer-links">
-        <a href="./about.html">소개</a><a href="./guides/index.html">가이드</a><a href="./product.html">제품</a><a href="./downloads.html">다운로드</a><a href="./purchase.html">구매</a><a href="./faq.html">FAQ</a><a href="./patch-notes.html">패치노트</a><a href="./board.html">커뮤니티</a><a href="./support.html">고객센터</a><a href="./terms.html">이용약관</a><a href="./privacy.html">개인정보처리방침</a><a href="./refund.html">환불정책</a><a href="./business-info.html">사업자정보</a>
+        <a href="./support.html">고객센터</a><a href="./terms.html">이용약관</a><a href="./privacy.html">개인정보처리방침</a><a href="./refund.html">환불정책</a><a href="./business-info.html">사업자정보</a>
       </div>
     </div>
     <div class="business-box">
@@ -228,6 +310,6 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=v81-sidebar-user-20260719"></script>
-  <script type="module" src="./assets/js/app.js?v=v81-sidebar-user-20260719"></script>
+  <script type="module" src="./assets/js/app.js?v=v101-support-tips"></script>
 </body>
 </html>

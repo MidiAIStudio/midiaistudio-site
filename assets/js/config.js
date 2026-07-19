@@ -1,5 +1,5 @@
 window.MIDIAI_CONFIG = {
-  buildTag: "v42-deploy-fix-20260713",
+  buildTag: "v83-guides-nav-20260720",
   seo: {
     // Paste Google Search Console HTML tag verification code value here
     googleSiteVerification: "",
