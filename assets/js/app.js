@@ -375,6 +375,67 @@ function authorAvatarInitial(x){
   return name === BRAND_AUTHOR ? 'M' : String(x?.displayName || x?.email || 'U').slice(0, 1).toUpperCase();
 }
 function noticeAuthor(){ return BRAND_AUTHOR; }
+
+const authorLicenseCache = new Map();
+let currentLicenseActive = false;
+
+function authorKind(x){
+  if(isAdminAuthor(x) || contentAuthor(x) === BRAND_AUTHOR) return 'admin';
+  const uid = x?.uid || x?.authorUid || '';
+  if(x?._licensed === true || x?.authorLicensed === true) return 'buyer';
+  if(uid && authorLicenseCache.has(uid)) return authorLicenseCache.get(uid) ? 'buyer' : 'guest';
+  return 'guest';
+}
+
+function authorKindLabel(kind){
+  if(kind==='admin') return lang==='en' ? 'Admin' : lang==='ja' ? '管理者' : '관리자';
+  if(kind==='buyer') return lang==='en' ? 'License holder' : lang==='ja' ? '購入者' : '구매자';
+  return lang==='en' ? 'Guest' : lang==='ja' ? '未購入' : '비구매자';
+}
+
+function authorKindIcon(kind){
+  if(kind==='admin'){
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.5 2.9 7.8 7 9 4.1-1.2 7-4.5 7-9V6l-7-3z"/><path d="m9.2 12.2 1.9 1.9 3.7-3.8"/></svg>`;
+  }
+  if(kind==='buyer'){
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.8 12.2 2.1 2.1 4.3-4.4"/></svg>`;
+  }
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.2" r="3.2"/><path d="M5.5 19.2c1.6-3.1 4-4.6 6.5-4.6s4.9 1.5 6.5 4.6"/></svg>`;
+}
+
+function authorCellHtml(x){
+  const kind = authorKind(x);
+  const label = authorKindLabel(kind);
+  return `<div class="hub-col-author"><span class="author-badge is-${kind}" title="${esc(label)}" aria-label="${esc(label)}">${authorKindIcon(kind)}</span><span class="author-name">${esc(contentAuthor(x))}</span></div>`;
+}
+
+async function fetchAuthorLicenses(uids){
+  if(!db || !firestoreApi?.doc) return;
+  const missing = [...new Set((uids||[]).filter(Boolean))].filter(uid => !authorLicenseCache.has(uid));
+  if(!missing.length) return;
+  const {doc,getDoc}=firestoreApi;
+  await Promise.all(missing.map(async uid=>{
+    try{
+      const snap=await getDoc(doc(db,'licenses',uid));
+      const d=snap.exists()?snap.data():null;
+      const active=!!(d && d.licensed===true && String(d.status||'').toLowerCase()==='active');
+      authorLicenseCache.set(uid, active);
+    }catch(_){
+      authorLicenseCache.set(uid, false);
+    }
+  }));
+}
+
+async function enrichRowsWithAuthorLicense(rows){
+  const list = Array.isArray(rows) ? rows : [];
+  const uids = list.filter(x=>!isAdminAuthor(x)).map(x=>x.uid||x.authorUid).filter(Boolean);
+  await fetchAuthorLicenses(uids);
+  return list.map(x=>{
+    if(isAdminAuthor(x)) return { ...x, _licensed:false };
+    const uid = x.uid || x.authorUid || '';
+    return { ...x, _licensed: uid ? !!authorLicenseCache.get(uid) : !!x.authorLicensed };
+  });
+}
 function esc(s){ return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
 function patchChangeType(text){
@@ -796,9 +857,18 @@ function setAdminNavVisible(show){
 }
 function setAuthUiSignedOut(){
   currentUser = null; currentUserDoc = null; isAdminUser = false;
+  currentLicenseActive = false;
   setAdminNavVisible(false);
   $('loginBtn')?.classList.remove('hidden');
   $('logoutBtn')?.classList.add('hidden');
+  syncSidebarAuthUi({
+    signedIn:false,
+    name:tr('guest'),
+    email:tr('guest_desc'),
+    avatar:'?',
+    licenseClass:'pending',
+    licenseText:tr('license_wait')
+  });
   if ($('avatar')) $('avatar').textContent='?';
   if ($('userName')) $('userName').textContent=tr('guest');
   if ($('userEmail')) $('userEmail').textContent=tr('guest_desc');
@@ -812,14 +882,41 @@ function setAuthUiSignedOut(){
   updateSupportFormUi();
 }
 
+function syncSidebarAuthUi({signedIn, name, email, avatar, licenseClass, licenseText}){
+  const card=$('sidebarUserCard');
+  if(card) card.classList.toggle('is-signed-in', !!signedIn);
+  if($('sidebarAvatar')) $('sidebarAvatar').textContent=avatar||'?';
+  if($('sidebarUserName')) $('sidebarUserName').textContent=name||tr('guest');
+  if($('sidebarUserEmail')){
+    $('sidebarUserEmail').textContent=email||'';
+    $('sidebarUserEmail').title=email||'';
+  }
+  const badge=$('sidebarLicenseBadge');
+  if(badge){
+    badge.className='badge sidebar-license-badge '+(licenseClass||'pending');
+    badge.textContent=licenseText||tr('license_wait');
+  }
+}
+
 function metaCard(k,v){ return `<div class="stat-card"><b>${esc(k)}</b><span>${esc(v || '-')}</span></div>`; }
 async function setAuthUiSignedIn(user){
   currentUser=user;
   $('loginBtn')?.classList.add('hidden');
   $('logoutBtn')?.classList.remove('hidden');
-  if ($('avatar')) $('avatar').textContent=(user.displayName||user.email||'?').slice(0,1).toUpperCase();
-  if ($('userName')) $('userName').textContent=user.displayName||'Google User';
-  if ($('userEmail')) $('userEmail').textContent=user.email||'';
+  const name=user.displayName||'Google User';
+  const email=user.email||'';
+  const avatar=(user.displayName||user.email||'?').slice(0,1).toUpperCase();
+  if ($('avatar')) $('avatar').textContent=avatar;
+  if ($('userName')) $('userName').textContent=name;
+  if ($('userEmail')) $('userEmail').textContent=email;
+  syncSidebarAuthUi({
+    signedIn:true,
+    name,
+    email,
+    avatar,
+    licenseClass:'pending',
+    licenseText:tr('checking')
+  });
   await upsertUser(user);
   await loadLicense(user.uid);
   if (page==='my-tickets.html') listenMyTickets();
@@ -859,20 +956,31 @@ async function upsertUser(user){
 }
 async function loadLicense(uid){
   const badge=$('licenseBadge');
+  const sideBadge=$('sidebarLicenseBadge');
   if(badge){ badge.className='badge pending'; badge.textContent=tr('checking'); }
+  if(sideBadge){ sideBadge.className='badge sidebar-license-badge pending'; sideBadge.textContent=tr('checking'); }
   try{
     const {doc,getDoc}=firestoreApi;
     const snap=await getDoc(doc(db,'licenses',uid));
     const d=snap.exists()?snap.data():null;
     const active=!!(d && d.licensed===true && String(d.status||'').toLowerCase()==='active');
-    if(badge){ badge.className='badge '+(active?'active':'none'); badge.textContent=active?tr('active'):tr('none'); }
+    currentLicenseActive = active;
+    if(uid) authorLicenseCache.set(uid, active);
+    const licenseClass=active?'active':'none';
+    const licenseText=active?tr('active'):tr('none');
+    if(badge){ badge.className='badge '+licenseClass; badge.textContent=licenseText; }
+    if(sideBadge){ sideBadge.className='badge sidebar-license-badge '+licenseClass; sideBadge.textContent=licenseText; }
     if($('accountMeta')){
       $('accountMeta').innerHTML=[
         metaCard('UID',uid), metaCard('Email',currentUser.email), metaCard('Display Name',currentUser.displayName),
         metaCard('Plan',d?.plan), metaCard('Status',d?.status), metaCard('Role',isAdminUser?'admin':'user')
       ].join('');
     }
-  } catch(e) { console.error(e); if(badge){ badge.className='badge none'; badge.textContent=tr('check_failed'); } }
+  } catch(e) {
+    console.error(e);
+    if(badge){ badge.className='badge none'; badge.textContent=tr('check_failed'); }
+    if(sideBadge){ sideBadge.className='badge sidebar-license-badge none'; sideBadge.textContent=tr('check_failed'); }
+  }
 }
 
 async function initAuth(){
@@ -1055,7 +1163,7 @@ function renderAnnouncements(rows, err){
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>(b.pinned===true)-(a.pinned===true)||((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
   let normalNo=rows.filter(x=>!x.pinned).length;
-  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div><div class="hub-col-author">${esc(noticeAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
+  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
   bindSearch(list);
 }
 function listenAnnouncements(){ if($('announcementList')) listenVisibleDocs('announcements',renderAnnouncements); }
@@ -1078,7 +1186,7 @@ function renderPatchNotes(rows,err){
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   let no=rows.length;
-  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${x.version?`<span class="badge active">v${esc(x.version)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div><div class="hub-col-author">${esc(noticeAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`).join('')}</div>`;
+  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${x.version?`<span class="badge active">v${esc(x.version)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`).join('')}</div>`;
   bindSearch(list);
 }
 function listenPatchNotes(){ if($('patchList')) listenVisibleDocs('patchNotes',renderPatchNotes); }
@@ -1936,7 +2044,7 @@ function renderBoardPosts(rows, err){
   const list=boardFilteredSorted(rows||[]);
   if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   let normalNo=list.filter(x=>!x.pinned).length;
-  box.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${list.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div><div class="hub-col-author">${esc(contentAuthor(x))}</div><div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
+  box.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${list.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
   bindSearch(box);
 }
 function listenBoardPosts(){
@@ -1951,6 +2059,12 @@ function listenBoardPosts(){
   listenVisibleDocs('boardPosts',(rows,err)=>{
     window.__boardRows=rows||[];
     renderBoardPosts(window.__boardRows,err);
+    if(!err && rows?.length){
+      enrichRowsWithAuthorLicense(rows).then(enriched=>{
+        window.__boardRows=enriched;
+        renderBoardPosts(window.__boardRows);
+      }).catch(()=>{});
+    }
   });
 }
 
@@ -2166,7 +2280,7 @@ function boardAttachmentItemHtml(a, idx, editable=false){
   } else {
     media = `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`;
   }
-  return `<figure class="board-attachment-item board-attachment-${type}">${media}<figcaption><span>${badge}</span><b>${name}</b>${remove}</figcaption></figure>`;
+  return `<figure class="board-attachment-item board-attachment-${type}">${media}<figcaption><span class="board-attach-badge">${badge}</span><b class="board-attach-name" title="${name}">${name}</b>${remove}</figcaption></figure>`;
 }
 function boardAttachmentsHtml(list){
   const arr = Array.isArray(list) ? list.filter(x=>x && x.url) : [];
@@ -2412,7 +2526,7 @@ async function initBoardPostEditor(){
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
-    const data={uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),title:$('boardPostTitle').value.trim(),content:$('boardPostContent').value.trim(),visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
+    const data={uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),title:$('boardPostTitle').value.trim(),content:$('boardPostContent').value.trim(),visible:true,deleted:false,edited:!!id,category:'free',authorLicensed:isAdminUser?false:!!currentLicenseActive,updatedAt:serverTimestamp()};
     if(isAdminUser){ data.authorRole='admin'; data.pinned=!!$('boardPostPinned')?.checked; }
     try{
       let postId=id;
@@ -2449,12 +2563,26 @@ function renderBoardPost(d,err){
     ? {board:'コミュニティ', pinned:'固定投稿', author:'投稿者', date:'作成日', views:'閲覧', likes:'いいね', comments:'コメント', like:'いいね', edit:'編集', del:'削除'}
     : {board:'자유게시판', pinned:'고정 게시글', author:'작성자', date:'작성일', views:'조회', likes:'추천', comments:'댓글', like:'추천', edit:'수정', del:'삭제'};
   const author = contentAuthor(d);
+  const aKind = authorKind(d);
   const likeLabel = esc(labels.like);
   const editIcon = `<svg class="post-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
   const delIcon = `<svg class="post-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
-  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author"><i>👤</i><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="like-btn" type="button" aria-pressed="false">${boardLikeBtnInner(likeLabel,false)}</button>${manage?`<a class="post-action-btn post-edit-btn" href="${boardEditUrl(d.id)}">${editIcon}<span>${esc(labels.edit)}</span></a><button id="postDeleteBtn" class="post-action-btn post-delete-btn" type="button">${delIcon}<span>${esc(labels.del)}</span></button>`:''}</div>`;
+  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author meta-author-badge"><span class="author-badge is-${aKind}" title="${esc(authorKindLabel(aKind))}" aria-label="${esc(authorKindLabel(aKind))}">${authorKindIcon(aKind)}</span><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="like-btn" type="button" aria-pressed="false">${boardLikeBtnInner(likeLabel,false)}</button>${manage?`<a class="post-action-btn post-edit-btn" href="${boardEditUrl(d.id)}">${editIcon}<span>${esc(labels.edit)}</span></a><button id="postDeleteBtn" class="post-action-btn post-delete-btn" type="button">${delIcon}<span>${esc(labels.del)}</span></button>`:''}</div>`;
   hydrateBoardMidiPlayers(box);
   refreshBoardPostActions();
+  if(!isAdminAuthor(d) && (d.uid||d.authorUid)){
+    enrichRowsWithAuthorLicense([d]).then(rows=>{
+      const enriched=rows[0];
+      if(!enriched || !box.isConnected) return;
+      const badge=box.querySelector('.meta-author .author-badge');
+      if(!badge) return;
+      const kind=authorKind(enriched);
+      badge.className=`author-badge is-${kind}`;
+      badge.title=authorKindLabel(kind);
+      badge.setAttribute('aria-label', authorKindLabel(kind));
+      badge.innerHTML=authorKindIcon(kind);
+    }).catch(()=>{});
+  }
 }
 async function incrementViewOnce(postId){
   const key='midiai_view_'+postId;
@@ -2966,6 +3094,13 @@ function initSidebarLayout(){
     brandClone.classList.add('sidebar-brand');
     sidebar.appendChild(brandClone);
   }
+  const userCard=document.createElement('a');
+  userCard.className='sidebar-user';
+  userCard.id='sidebarUserCard';
+  userCard.href=`${base}account.html`;
+  userCard.setAttribute('aria-label','내 계정');
+  userCard.innerHTML=`<div id="sidebarAvatar" class="sidebar-avatar">?</div><div class="sidebar-user-meta"><b id="sidebarUserName">${esc(tr('guest'))}</b><span id="sidebarUserEmail">${esc(tr('guest_desc'))}</span><span id="sidebarLicenseBadge" class="badge sidebar-license-badge pending">${esc(tr('license_wait'))}</span></div>`;
+  sidebar.appendChild(userCard);
   const nav=document.createElement('nav');
   nav.id='mainNav';
   nav.className='sidebar-nav';
