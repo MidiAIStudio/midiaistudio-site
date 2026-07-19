@@ -743,6 +743,7 @@ body.sidebar-layout{overflow-x:hidden}
 .sidebar-group{display:grid;gap:2px;padding:8px 8px 10px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.07)}
 .sidebar-label{display:block;padding:0 8px 8px;margin:0 0 6px;color:rgba(154,160,191,.82)!important;font-size:10px!important;font-weight:900!important;letter-spacing:.14em;text-transform:uppercase;line-height:1.2;text-align:left;pointer-events:none;user-select:none;border-bottom:1px solid rgba(255,255,255,.08)}
 body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{display:flex!important;align-items:center;justify-content:flex-start!important;width:100%;padding:9px 10px!important;border-radius:10px;color:#d7dbf2!important;font-size:13px!important;font-weight:700!important;border:1px solid transparent;text-align:left!important;transform:none!important}
+body.sidebar-layout #mainNav.sidebar-nav a.hidden,body.sidebar-layout .sidebar-nav a.hidden,#adminNav.hidden{display:none!important}
 body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.07)!important}
 body.sidebar-layout #mainNav.sidebar-nav a.active,body.sidebar-layout .sidebar-nav a.active{color:#fff!important;border:1px solid rgba(139,92,246,.42)!important;background:linear-gradient(135deg,rgba(139,92,246,.26),rgba(34,211,238,.12))!important}
 .app-main{flex:1;min-width:0;display:flex;flex-direction:column}
@@ -911,7 +912,7 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 .product-points li:before{content:'';position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:999px;background:var(--accent2)}
 .product-feature-media{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.25)}
 .product-video,.product-feature-media img,.product-card img,.product-card-video{display:block;width:100%;height:auto}
-.product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:28px}
+.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:28px}
 .product-card{display:grid;gap:0;border-radius:18px;border:1px solid var(--site-stroke);background:var(--site-card);overflow:hidden}
 .product-card img,.product-card-video{aspect-ratio:16/10;object-fit:cover;object-position:top}
 .product-card>div,.product-card-text{padding:14px 16px;display:grid;gap:6px}
@@ -927,6 +928,7 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 .product-license-list li.is-soon{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#c7cbe4}
 .product-license-list li.is-soon span{padding:3px 8px;border-radius:999px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.28);color:#ffd98e;font-size:11px;font-weight:900;white-space:nowrap}
 @media(max-width:980px){.product-feature,.product-feature-reverse,.product-license{grid-template-columns:1fr}.product-feature-reverse .product-feature-copy,.product-feature-reverse .product-feature-media{order:unset}.product-grid{grid-template-columns:1fr}}
+@media(max-width:1100px) and (min-width:981px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* V39 Download guide */
 .download-guide{margin-top:14px;padding:20px;display:grid;gap:18px}
@@ -1398,3 +1400,25 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 .hub-comments-panel .comment-head{
   font-size:11px!important;
 }
+
+/* Sale promo popup */
+.sale-promo-backdrop{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.68);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .28s ease}
+.sale-promo-backdrop.is-open{opacity:1;pointer-events:auto}
+.sale-promo-modal{width:min(420px,100%);border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:26px 24px 22px;background:linear-gradient(165deg,rgba(42,46,72,.98),rgba(14,16,28,.98));box-shadow:0 34px 100px rgba(0,0,0,.55);transform:translateY(14px) scale(.97);transition:transform .28s ease;position:relative;overflow:hidden}
+.sale-promo-backdrop.is-open .sale-promo-modal{transform:none}
+.sale-promo-modal:before{content:'';position:absolute;inset:-40% -20% auto;height:180px;background:radial-gradient(circle at 30% 40%,rgba(34,211,238,.22),transparent 55%),radial-gradient(circle at 80% 20%,rgba(139,92,246,.2),transparent 50%);pointer-events:none}
+.sale-promo-x{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:var(--text);font-size:22px;cursor:pointer;z-index:1}
+.sale-promo-badge{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;border:1px solid rgba(34,211,238,.34);background:rgba(34,211,238,.12);color:#9af2ff;font-size:12px;font-weight:900;letter-spacing:.02em;position:relative}
+.sale-promo-title{margin:14px 0 8px;font-size:clamp(24px,4vw,30px);letter-spacing:-.04em;line-height:1.15;position:relative}
+.sale-promo-lead{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.65;position:relative}
+.sale-promo-price-box{display:grid;gap:6px;padding:16px 18px;border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.28);margin-bottom:18px;position:relative}
+.sale-promo-was{color:#9aa0bd;font-size:15px;font-weight:700;text-decoration:line-through;text-decoration-thickness:2px}
+.sale-promo-now{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sale-promo-now strong{font-size:clamp(34px,6vw,44px);letter-spacing:-.05em;line-height:1;background:linear-gradient(135deg,#fff,#bfefff 50%,#d7c7ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sale-promo-now span{color:#9af2ff;font-size:13px;font-weight:900}
+.sale-promo-actions{display:grid;gap:10px;position:relative}
+.sale-promo-actions .primary{width:100%;justify-content:center;text-align:center;padding:14px 18px}
+.sale-promo-hide{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;user-select:none}
+.sale-promo-hide input{width:auto;accent-color:#22d3ee}
+.sale-promo-close-link{border:0;background:transparent;color:#9aa0bd;font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:4px}
+@media(max-width:480px){.sale-promo-modal{padding:22px 18px 18px;border-radius:22px}.sale-promo-now strong{font-size:34px}}

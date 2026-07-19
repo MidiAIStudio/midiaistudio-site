@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="MidiAI Studio 제품 소개 — AI 오디오를 MIDI로 변환하는 Windows 데스크톱 앱">
+  <meta name="description" content="MidiAI Studio 제품 소개 — AI 오디오→MIDI 변환, MIDI 편집, 악보 변환(MIDI↔PDF), 악보 편집기">
   <title>제품 - MidiAI Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v59-product-hero-left-20260713">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v61-admin-nav-hide-20260719">
 </head>
 <body class="portal-page product-page">
   <div class="orb orb-a"></div><div class="orb orb-b"></div>
@@ -35,7 +35,7 @@
     <section class="wrap product-hero">
       <p class="pill portal-pill">MidiAI Studio</p>
       <h1>AI Audio → MIDI<br><span class="portal-gradient">피아노 커버 작업실</span></h1>
-      <p class="portal-lead">YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.<br>변환·편집·트랙 분리·라이브러리까지 한 앱에서 이어집니다.</p>
+      <p class="portal-lead">YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.<br>변환·편집·악보 변환·악보 편집까지 한 앱에서 이어집니다.</p>
       <div class="portal-cta">
         <a class="primary" href="./downloads.html">무료 체험 다운로드</a>
         <a class="secondary" href="./purchase.html">라이선스 구매</a>
@@ -62,15 +62,47 @@
       <div class="product-feature-copy">
         <p class="eyebrow">MIDI 편집 PRO</p>
         <h2>멀티트랙 피아노 롤</h2>
-        <p>변환된 MIDI를 바로 편집합니다. 11종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.</p>
+        <p>변환된 MIDI를 바로 편집합니다. 128종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.</p>
         <ul class="product-points">
           <li>멀티트랙 피아노 롤</li>
-          <li>11종 악기 지원</li>
+          <li>128종 악기 지원</li>
           <li>벨로시티·CC 파라미터 편집</li>
         </ul>
       </div>
       <div class="product-feature-media">
         <video class="product-video" src="./assets/videos/clip-midi.mp4?v=20260712" poster="./assets/images/product/shot-midi.jpg?v=20260712" muted loop playsinline autoplay></video>
+      </div>
+    </section>
+
+    <section class="wrap product-feature">
+      <div class="product-feature-copy">
+        <p class="eyebrow">악보 변환 · BETA</p>
+        <h2>MIDI ↔ 악보</h2>
+        <p>MIDI를 PDF·MusicXML 악보로 저장하고, PDF 악보를 인식해 MIDI로 다시 변환합니다. 곡 제목·작사·작곡 메타데이터까지 함께 다룰 수 있습니다.</p>
+        <ul class="product-points">
+          <li>MIDI → PDF / MusicXML</li>
+          <li>PDF → MIDI 변환</li>
+          <li>악보 미리보기 · 결과 폴더 저장</li>
+        </ul>
+      </div>
+      <div class="product-feature-media">
+        <video class="product-video" src="./assets/videos/clip-score-convert.mp4?v=20260719" poster="./assets/images/product/shot-score-convert.jpg?v=20260719" muted loop playsinline autoplay></video>
+      </div>
+    </section>
+
+    <section class="wrap product-feature product-feature-reverse">
+      <div class="product-feature-copy">
+        <p class="eyebrow">악보 편집기 · BETA</p>
+        <h2>악보를 바로 수정</h2>
+        <p>변환된 악보를 페이지·연속·타임라인으로 보며 음표와 벨로시티를 편집합니다. AI 검토 제안으로 피치 점프·겹침 음표 등을 확인하고 바로 반영할 수 있습니다.</p>
+        <ul class="product-points">
+          <li>페이지 / 연속 / 타임라인 보기</li>
+          <li>음표 선택·속성 편집</li>
+          <li>AI 검토 제안</li>
+        </ul>
+      </div>
+      <div class="product-feature-media">
+        <video class="product-video" src="./assets/videos/clip-score.mp4?v=20260719" poster="./assets/images/product/shot-score-editor.jpg?v=20260719" muted loop playsinline autoplay></video>
       </div>
     </section>
 
@@ -90,13 +122,6 @@
         </div>
       </article>
       <article class="product-card product-card-text">
-        <div class="product-card-icon" aria-hidden="true">♫</div>
-        <div>
-          <h3>트랙 분리</h3>
-          <p>기능 준비중</p>
-        </div>
-      </article>
-      <article class="product-card product-card-text">
         <div class="product-card-icon" aria-hidden="true">▣</div>
         <div>
           <h3>라이브러리</h3>
@@ -112,8 +137,10 @@
         <ul class="product-license-list">
           <li>전체 구간 MIDI 변환</li>
           <li>악기 변환</li>
-          <li>제한 없는 저장 · full song export</li>
           <li>MIDI 편집 기능</li>
+          <li>악보 변환 · MIDI ↔ PDF</li>
+          <li>악보 편집기</li>
+          <li>제한 없는 저장 · full song export</li>
         </ul>
         <div class="portal-cta">
           <a class="primary" href="./purchase.html">라이선스 구매</a>
@@ -132,7 +159,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio. All rights reserved.</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=v46-i18n-20260713"></script>
-  <script type="module" src="./assets/js/app.js?v=v46-i18n-20260713"></script>
+  <script type="module" src="./assets/js/config.js?v=v61-admin-nav-hide-20260719"></script>
+  <script type="module" src="./assets/js/app.js?v=v61-admin-nav-hide-20260719"></script>
 </body>
 </html>

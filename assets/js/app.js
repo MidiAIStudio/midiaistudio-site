@@ -45,7 +45,7 @@ const I18N = {
     '제목':'Title','내용':'Content','검색':'Search','버전':'Version','질문':'Question','답변':'Answer','순서':'Order','상단 고정':'Pin to top','플랜':'Plan','상태':'Status','메모':'Memo','사용자 UID':'User UID','등록':'Submit','저장':'Save','문의 내용을 자세히 적어주세요.':'Please describe your issue in detail.','로그인 오류 / 라이선스 문의':'Login issue / license question','로그인이 필요합니다.':'Sign-in required.','내가 작성한 비공개 문의와 답변을 확인합니다.':'View your private tickets and replies.','문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.':'Only you and the admin can view this ticket. Please sign in first.','role=admin 계정만 사용할 수 있습니다.':'Only role=admin accounts can use this page.',
     '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.',
     '이용약관':'Terms of use','개인정보처리방침':'Privacy policy','환불정책':'Refund policy','사업자정보':'Business info','고객센터':'Support','AI 기반 MIDI 변환 소프트웨어':'AI-powered MIDI conversion software','AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품':'AI-powered MIDI conversion software · digital license',
-    '피아노 커버 작업실':'Piano cover studio','YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.':'Load a YouTube link or audio file and convert it to MIDI with AI.','변환·편집·트랙 분리·라이브러리까지 한 앱에서 이어집니다.':'Conversion, editing, stem separation, and library — all in one app.','영상·오디오를 MIDI로':'Video & audio to MIDI','YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.':'Start with a YouTube link, local upload, or song search. Preview the waveform, pick a range, and export MIDI for your instrument.','YouTube 링크 분석':'YouTube link analysis','웨이브폼 미리듣기':'Waveform preview','출력 악기·구간 선택':'Choose instrument & range','MIDI 편집 PRO':'MIDI Editor PRO','멀티트랙 피아노 롤':'Multi-track piano roll','변환된 MIDI를 바로 편집합니다. 11종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.':'Edit converted MIDI right away — 11 instruments, velocity/pitch bend/modulation, undo/copy/quantize.','11종 악기 지원':'11 instruments','벨로시티·CC 파라미터 편집':'Velocity & CC editing','홈 · 포털 연동':'Home · portal sync','공지사항, 패치노트, 라이선스 상태를 앱 안에서 확인하고 Studio로 바로 이동합니다.':'Check notices, patch notes, and license status in-app, then jump into Studio.','Google 로그인 후 홈페이지 자유게시판 글을 앱에서 바로 확인하고 작성할 수 있습니다.':'After Google sign-in, browse and post on the free board from the app.','트랙 분리':'Stem separation','기능 준비중':'Coming soon','라이브러리':'Library','변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.':'Manage converted and edited MIDI files in the library and reopen them anytime.','정식 라이선스 혜택':'Full license benefits','전체 구간 MIDI 변환':'Full-song MIDI conversion','악기 변환':'Instrument conversion','제한 없는 저장 · full song export':'Unlimited save · full song export','MIDI 편집 기능':'MIDI editing features',
+    '피아노 커버 작업실':'Piano cover studio','YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.':'Load a YouTube link or audio file and convert it to MIDI with AI.','변환·편집·악보 변환·악보 편집까지 한 앱에서 이어집니다.':'Conversion, editing, score conversion, and score editing — all in one app.','영상·오디오를 MIDI로':'Video & audio to MIDI','YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.':'Start with a YouTube link, local upload, or song search. Preview the waveform, pick a range, and export MIDI for your instrument.','YouTube 링크 분석':'YouTube link analysis','웨이브폼 미리듣기':'Waveform preview','출력 악기·구간 선택':'Choose instrument & range','MIDI 편집 PRO':'MIDI Editor PRO','멀티트랙 피아노 롤':'Multi-track piano roll','변환된 MIDI를 바로 편집합니다. 128종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.':'Edit converted MIDI right away — 128 instruments, velocity/pitch bend/modulation, undo/copy/quantize.','128종 악기 지원':'128 instruments','벨로시티·CC 파라미터 편집':'Velocity & CC editing','악보 변환 · BETA':'Score conversion · BETA','MIDI ↔ 악보':'MIDI ↔ Score','MIDI를 PDF·MusicXML 악보로 저장하고, PDF 악보를 인식해 MIDI로 다시 변환합니다. 곡 제목·작사·작곡 메타데이터까지 함께 다룰 수 있습니다.':'Save MIDI as PDF/MusicXML scores, and recognize PDF scores back into MIDI — with title, lyricist, and composer metadata.','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','PDF → MIDI 변환':'PDF → MIDI conversion','악보 미리보기 · 결과 폴더 저장':'Score preview · save to results folder','악보 편집기 · BETA':'Score editor · BETA','악보를 바로 수정':'Edit scores directly','변환된 악보를 페이지·연속·타임라인으로 보며 음표와 벨로시티를 편집합니다. AI 검토 제안으로 피치 점프·겹침 음표 등을 확인하고 바로 반영할 수 있습니다.':'View converted scores in page, continuous, or timeline mode and edit notes and velocity. Use AI review suggestions for pitch jumps and overlapping notes.','페이지 / 연속 / 타임라인 보기':'Page / continuous / timeline views','음표 선택·속성 편집':'Note selection & property editing','AI 검토 제안':'AI review suggestions','홈 · 포털 연동':'Home · portal sync','공지사항, 패치노트, 라이선스 상태를 앱 안에서 확인하고 Studio로 바로 이동합니다.':'Check notices, patch notes, and license status in-app, then jump into Studio.','Google 로그인 후 홈페이지 자유게시판 글을 앱에서 바로 확인하고 작성할 수 있습니다.':'After Google sign-in, browse and post on the free board from the app.','라이브러리':'Library','변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.':'Manage converted and edited MIDI files in the library and reopen them anytime.','정식 라이선스 혜택':'Full license benefits','전체 구간 MIDI 변환':'Full-song MIDI conversion','악기 변환':'Instrument conversion','제한 없는 저장 · full song export':'Unlimited save · full song export','MIDI 편집 기능':'MIDI editing features','악보 변환 · MIDI ↔ PDF':'Score conversion · MIDI ↔ PDF','악보 편집기':'Score editor',
     '공식 설치 · 업데이트 프로그램':'Official installer & updater','MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.':'MidiAI Installer is a Windows tool for install, quick update, full install/repair, and runtime checks.','설치 방법':'How to install','실행 · 업데이트 방법':'How to run & update','결제 정보':'Payment details','주문자 정보':'Buyer','휴대폰 번호':'Phone number','결제수단':'Payment method','상품명':'Product','판매가격':'Price','결제형태':'Payment type','단건 결제':'One-time payment','서비스 제공기간':'Service delivery','결제 완료 후 즉시 라이선스 발급':'License issued immediately after payment','Google 로그인 계정 기준':'Based on your Google account','Google 로그인 후 자동 입력':'Filled after Google sign-in','KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.':'Buyer contact required for Korean card checkout.','결제 버튼을 준비하고 있습니다.':'Preparing payment buttons.','라이선스 안내':'License guide','계좌 입금 안내':'Bank transfer guide','사이트 메뉴':'Site menu','게시판 메뉴':'Board menu',
     '질문, 후기, 정보를 자유롭게 나누는 공간입니다.':'A place to share questions, reviews, and tips freely.','게시글 목록':'Posts','공지 목록':'Notices','공지':'Notice','← 목록':'← Back','목록':'Back','유형':'Type','(제목 없음)':'(No title)','로그인 후 게시글을 작성할 수 있습니다.':'Sign in to write a post.','자주 묻는 질문과 답변을 빠르게 확인하세요.':'Quick answers to common questions.','Google 로그인 정보와 라이선스 상태를 확인합니다.':'Check your Google sign-in and license status.',
     '신규':'New','개선':'Improved','수정':'Fixed','변경':'Changed','변경 사항':'Changes','내용이 없습니다.':'No content.','목차':'Contents','최신':'Newer','이전':'Older','버전 이동':'Version navigation','공유':'Share','전체 패치노트':'All patch notes','문의':'Support'
@@ -59,7 +59,7 @@ const I18N = {
     '제목':'タイトル','내용':'内容','검색':'検索','버전':'バージョン','질문':'質問','답변':'回答','순서':'順序','상단 고정':'上部固定','플랜':'プラン','상태':'状態','메모':'メモ','사용자 UID':'ユーザーUID','등록':'登録','저장':'保存','문의 내용을 자세히 적어주세요.':'お問い合わせ内容を詳しく入力してください。','로그인 오류 / 라이선스 문의':'ログインエラー / ライセンス問い合わせ','로그인이 필요합니다.':'ログインが必要です。','내가 작성한 비공개 문의와 답변을 확인합니다.':'自分の非公開問い合わせと返信を確認します。','문의 내용은 작성자와 관리자만 볼 수 있습니다. 로그인 후 작성해주세요.':'問い合わせ内容は作成者と管理者のみ閲覧できます。ログイン後に作成してください。','role=admin 계정만 사용할 수 있습니다.':'role=adminアカウントのみ使用できます。',
     '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','수정':'編集','삭제':'削除','종료 처리':'終了にする','관리':'管理','상세 보기':'詳細を見る','공지 관리':'お知らせ管理','패치노트 관리':'パッチノート管理','FAQ 관리':'FAQ管理','정말 삭제할까요?':'本当に削除しますか？','수정 완료':'更新しました','삭제 완료':'削除しました','문의가 등록되었습니다.':'問い合わせを登録しました。',
     '이용약관':'利用規約','개인정보처리방침':'プライバシーポリシー','환불정책':'返金ポリシー','사업자정보':'事業者情報','고객센터':'サポート','AI 기반 MIDI 변환 소프트웨어':'AIベースMIDI変換ソフト','AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품':'AIベースMIDI変換ソフト · デジタルライセンス商品',
-    '피아노 커버 작업실':'ピアノカバー作業室','YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.':'YouTubeリンクやオーディオファイルを読み込み、AIがMIDIに変換します。','변환·편집·트랙 분리·라이브러리까지 한 앱에서 이어집니다.':'変換・編集・トラック分離・ライブラリまで1つのアプリで続けられます。','영상·오디오를 MIDI로':'映像・オーディオをMIDIに','YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.':'YouTubeリンクの貼り付け、ローカルアップロード、曲検索で作業を開始。波形プレビューと区間選択後、希望の楽器でMIDIを取得できます。','YouTube 링크 분석':'YouTubeリンク解析','웨이브폼 미리듣기':'波形プレビュー','출력 악기·구간 선택':'出力楽器・区間選択','MIDI 편집 PRO':'MIDI編集 PRO','멀티트랙 피아노 롤':'マルチトラックピアノロール','변환된 MIDI를 바로 편집합니다. 11종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.':'変換したMIDIをすぐ編集。11種楽器、ベロシティ・ピッチベンド・モジュレーション、元に戻す/コピー/クオンタイズまで対応。','11종 악기 지원':'11種楽器対応','벨로시티·CC 파라미터 편집':'ベロシティ・CC編集','홈 · 포털 연동':'ホーム・ポータル連携','공지사항, 패치노트, 라이선스 상태를 앱 안에서 확인하고 Studio로 바로 이동합니다.':'お知らせ、パッチノート、ライセンス状態をアプリ内で確認しStudioへ移動できます。','Google 로그인 후 홈페이지 자유게시판 글을 앱에서 바로 확인하고 작성할 수 있습니다.':'Googleログイン後、自由掲示板の投稿をアプリで確認・作成できます。','트랙 분리':'トラック分離','기능 준비중':'準備中','라이브러리':'ライブラリ','변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.':'変換・編集したMIDIをライブラリで管理し、再度開いて作業を続けられます。','정식 라이선스 혜택':'正式ライセンス特典','전체 구간 MIDI 변환':'全曲MIDI変換','악기 변환':'楽器変換','제한 없는 저장 · full song export':'無制限保存 · full song export','MIDI 편집 기능':'MIDI編集機能',
+    '피아노 커버 작업실':'ピアノカバー作業室','YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.':'YouTubeリンクやオーディオファイルを読み込み、AIがMIDIに変換します。','변환·편집·악보 변환·악보 편집까지 한 앱에서 이어집니다.':'変換・編集・楽譜変換・楽譜編集まで1つのアプリで続けられます。','영상·오디오를 MIDI로':'映像・オーディオをMIDIに','YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.':'YouTubeリンクの貼り付け、ローカルアップロード、曲検索で作業を開始。波形プレビューと区間選択後、希望の楽器でMIDIを取得できます。','YouTube 링크 분석':'YouTubeリンク解析','웨이브폼 미리듣기':'波形プレビュー','출력 악기·구간 선택':'出力楽器・区間選択','MIDI 편집 PRO':'MIDI編集 PRO','멀티트랙 피아노 롤':'マルチトラックピアノロール','변환된 MIDI를 바로 편집합니다. 128종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.':'変換したMIDIをすぐ編集。128種楽器、ベロシティ・ピッチベンド・モジュレーション、元に戻す/コピー/クオンタイズまで対応。','128종 악기 지원':'128種楽器対応','벨로시티·CC 파라미터 편집':'ベロシティ・CC編集','악보 변환 · BETA':'楽譜変換 · BETA','MIDI ↔ 악보':'MIDI ↔ 楽譜','MIDI를 PDF·MusicXML 악보로 저장하고, PDF 악보를 인식해 MIDI로 다시 변환합니다. 곡 제목·작사·작곡 메타데이터까지 함께 다룰 수 있습니다.':'MIDIをPDF・MusicXML楽譜として保存し、PDF楽譜を認識してMIDIに再変換。曲名・作詞・作曲メタデータにも対応。','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','PDF → MIDI 변환':'PDF → MIDI変換','악보 미리보기 · 결과 폴더 저장':'楽譜プレビュー・結果フォルダ保存','악보 편집기 · BETA':'楽譜エディター · BETA','악보를 바로 수정':'楽譜をその場で編集','변환된 악보를 페이지·연속·타임라인으로 보며 음표와 벨로시티를 편집합니다. AI 검토 제안으로 피치 점프·겹침 음표 등을 확인하고 바로 반영할 수 있습니다.':'変換した楽譜をページ・連続・タイムライン表示で確認し、音符とベロシティを編集。AIレビュー提案でピッチジャンプや重なり音符をすぐ反映できます。','페이지 / 연속 / 타임라인 보기':'ページ / 連続 / タイムライン表示','음표 선택·속성 편집':'音符選択・属性編集','AI 검토 제안':'AIレビュー提案','홈 · 포털 연동':'ホーム・ポータル連携','공지사항, 패치노트, 라이선스 상태를 앱 안에서 확인하고 Studio로 바로 이동합니다.':'お知らせ、パッチノート、ライセンス状態をアプリ内で確認しStudioへ移動できます。','Google 로그인 후 홈페이지 자유게시판 글을 앱에서 바로 확인하고 작성할 수 있습니다.':'Googleログイン後、自由掲示板の投稿をアプリで確認・作成できます。','라이브러리':'ライブラリ','변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.':'変換・編集したMIDIをライブラリで管理し、再度開いて作業を続けられます。','정식 라이선스 혜택':'正式ライセンス特典','전체 구간 MIDI 변환':'全曲MIDI変換','악기 변환':'楽器変換','제한 없는 저장 · full song export':'無制限保存 · full song export','MIDI 편집 기능':'MIDI編集機能','악보 변환 · MIDI ↔ PDF':'楽譜変換 · MIDI ↔ PDF','악보 편집기':'楽譜エディター',
     '공식 설치 · 업데이트 프로그램':'公式インストール・更新プログラム','MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.':'MidiAI Installerは、インストール、クイック更新、フルインストール/修復、ランタイム確認を1画面で行うWindows専用ツールです。','설치 방법':'インストール方法','실행 · 업데이트 방법':'実行・更新方法','결제 정보':'決済情報','주문자 정보':'購入者情報','휴대폰 번호':'携帯電話番号','결제수단':'決済手段','상품명':'商品名','판매가격':'販売価格','결제형태':'決済形態','단건 결제':'単発決済','서비스 제공기간':'サービス提供','결제 완료 후 즉시 라이선스 발급':'決済完了後すぐにライセンス発行','Google 로그인 계정 기준':'Googleログインアカウント基準','Google 로그인 후 자동 입력':'Googleログイン後に表示','KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.':'韓国カード決済時に必要な連絡先です。','결제 버튼을 준비하고 있습니다.':'決済ボタンを準備しています。','라이선스 안내':'ライセンス案内','계좌 입금 안내':'銀行振込案内','사이트 메뉴':'サイトメニュー','게시판 메뉴':'掲示板メニュー',
     '질문, 후기, 정보를 자유롭게 나누는 공간입니다.':'質問・レビュー・情報を自由に共有する場所です。','게시글 목록':'投稿一覧','공지 목록':'お知らせ一覧','공지':'お知らせ','← 목록':'← 一覧','목록':'一覧','유형':'種類','(제목 없음)':'（タイトルなし）','로그인 후 게시글을 작성할 수 있습니다.':'ログイン後に投稿できます。','자주 묻는 질문과 답변을 빠르게 확인하세요.':'よくある質問と回答を素早く確認できます。','Google 로그인 정보와 라이선스 상태를 확인합니다.':'Googleログイン情報とライセンス状態を確認できます。',
     '신규':'新規','개선':'改善','수정':'修正','변경':'変更','변경 사항':'変更内容','내용이 없습니다.':'内容がありません。','목차':'目次','최신':'新しい版','이전':'前の版','버전 이동':'バージョン移動','공유':'共有','전체 패치노트':'パッチノート一覧','문의':'問い合わせ'
@@ -532,7 +532,9 @@ function purchaseLocaleText(){
     licenseGuide:[
       {title:'Full-song MIDI conversion',desc:'Convert entire YouTube links or audio files to MIDI with AI.'},
       {title:'Instrument conversion',desc:'Generate MIDI for piano, guitar, bass, and other instruments.'},
-      {title:'MIDI Editor PRO',desc:'Edit multi-track piano rolls with velocity and CC parameters.'}
+      {title:'MIDI Editor PRO',desc:'Edit multi-track piano rolls with velocity and CC parameters.'},
+      {title:'Score conversion',desc:'Convert MIDI to PDF/MusicXML and PDF scores back to MIDI.'},
+      {title:'Score editor',desc:'Edit converted scores and apply AI review suggestions.'}
     ],
     benefits:['Linked to your Google account','Available on your registered PC','Support via 1:1 Support'],
     accountTitle:'Sign in with Google before purchasing.',
@@ -572,7 +574,9 @@ function purchaseLocaleText(){
     licenseGuide:[
       {title:'全曲MIDI変換',desc:'YouTubeリンクやオーディオファイルをAIでMIDIに変換します。'},
       {title:'楽器変換',desc:'ピアノ・ギター・ベースなど希望の楽器でMIDIを生成します。'},
-      {title:'MIDI編集 PRO',desc:'マルチトラックピアノロールでベロシティやCCを編集できます。'}
+      {title:'MIDI編集 PRO',desc:'マルチトラックピアノロールでベロシティやCCを編集できます。'},
+      {title:'楽譜変換',desc:'MIDI → PDF/MusicXML、PDF → MIDI変換に対応します。'},
+      {title:'楽譜エディター',desc:'変換した楽譜を編集し、AIレビュー提案を反映できます。'}
     ],
     benefits:['Googleアカウントにライセンス連携','登録済みPCで利用可能','サイト内お問い合わせサポート'],
     accountTitle:'Googleアカウントでログイン後、ご購入いただけます。',
@@ -612,7 +616,9 @@ function purchaseLocaleText(){
     licenseGuide:[
       {title:'전체 구간 MIDI 변환',desc:'YouTube 링크·오디오 파일 전체를 AI로 MIDI로 변환합니다.'},
       {title:'악기 변환',desc:'피아노·기타·베이스 등 원하는 악기로 MIDI를 생성합니다.'},
-      {title:'MIDI 편집 PRO',desc:'멀티트랙 피아노 롤에서 벨로시티·CC 파라미터를 편집합니다.'}
+      {title:'MIDI 편집 PRO',desc:'멀티트랙 피아노 롤에서 벨로시티·CC 파라미터를 편집합니다.'},
+      {title:'악보 변환',desc:'MIDI → PDF/MusicXML, PDF → MIDI 변환을 지원합니다.'},
+      {title:'악보 편집기',desc:'변환된 악보를 바로 수정하고 AI 검토 제안을 반영합니다.'}
     ],
     benefits:['Google 계정 라이선스 연결','등록된 PC에서 사용 가능','홈페이지 1:1 문의 지원'],
     accountTitle:'Google 로그인 후 결제할 수 있습니다.',
@@ -781,9 +787,16 @@ function updateBoardPinnedUi(){
   wrap.hidden=!show;
   if(!show && $('boardPostPinned')) $('boardPostPinned').checked=false;
 }
+function setAdminNavVisible(show){
+  document.querySelectorAll('#adminNav').forEach(el=>{
+    el.classList.toggle('hidden', !show);
+    el.hidden = !show;
+    el.setAttribute('aria-hidden', show ? 'false' : 'true');
+  });
+}
 function setAuthUiSignedOut(){
   currentUser = null; currentUserDoc = null; isAdminUser = false;
-  $('adminNav')?.classList.add('hidden');
+  setAdminNavVisible(false);
   $('loginBtn')?.classList.remove('hidden');
   $('logoutBtn')?.classList.add('hidden');
   if ($('avatar')) $('avatar').textContent='?';
@@ -837,8 +850,12 @@ async function upsertUser(user){
     await setDoc(ref,data,{merge:true});
     currentUserDoc={...old,...data};
     isAdminUser=old.role==='admin';
-    if(isAdminUser) $('adminNav')?.classList.remove('hidden');
-  } catch(e) { console.error('user upsert',e); }
+    setAdminNavVisible(isAdminUser);
+  } catch(e) {
+    console.error('user upsert',e);
+    isAdminUser=false;
+    setAdminNavVisible(false);
+  }
 }
 async function loadLicense(uid){
   const badge=$('licenseBadge');
@@ -2953,7 +2970,7 @@ function initSidebarLayout(){
   nav.id='mainNav';
   nav.className='sidebar-nav';
   nav.setAttribute('aria-label','사이트 메뉴');
-  nav.innerHTML=`<div class="sidebar-primary"><a href="${base}index.html" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${base}purchase.html" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
+  nav.innerHTML=`<div class="sidebar-primary"><a href="${base}index.html" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${base}purchase.html" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" hidden aria-hidden="true" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
   sidebar.appendChild(nav);
   const backdrop=document.createElement('div');
   backdrop.className='sidebar-backdrop';
@@ -3003,6 +3020,116 @@ function initSidebarNav(){
   });
 }
 
+const SALE_PROMO_END = '2026-07-31';
+const SALE_PROMO_HIDE_KEY = 'midiai_sale_promo_hide_day';
+
+function salePromoCopy(){
+  if(lang==='en') return {
+    badge:'Final Sale',
+    title:'Lifetime License Discount',
+    lead:'Get MidiAI Studio Lifetime at a special price until July 31.',
+    until:'Until July 31',
+    was:'₩130,000',
+    now:'₩90,000',
+    cta:'Buy license',
+    hideToday:"Don't show again today",
+    close:'Close'
+  };
+  if(lang==='ja') return {
+    badge:'Final Sale',
+    title:'Lifetimeライセンス割引',
+    lead:'7月31日まで、MidiAI Studio Lifetimeをお得な価格でご購入いただけます。',
+    until:'7月31日まで',
+    was:'₩130,000',
+    now:'₩90,000',
+    cta:'ライセンス購入',
+    hideToday:'今日は表示しない',
+    close:'閉じる'
+  };
+  return {
+    badge:'Final Sale',
+    title:'Lifetime 라이선스 할인',
+    lead:'7월 31일까지 MidiAI Studio Lifetime을 특별가로 구매할 수 있습니다.',
+    until:'7월 31일까지',
+    was:'130,000원',
+    now:'90,000원',
+    cta:'라이선스 구매',
+    hideToday:'오늘 하루 보지 않기',
+    close:'닫기'
+  };
+}
+
+function isSalePromoActive(){
+  const now=new Date();
+  const y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0'), d=String(now.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}` <= SALE_PROMO_END;
+}
+
+function todayKey(){
+  const now=new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+
+function shouldShowSalePromo(){
+  if(!isSalePromoActive()) return false;
+  const home = !page || page==='index.html' || page==='';
+  if(!home) return false;
+  try{ if(localStorage.getItem(SALE_PROMO_HIDE_KEY)===todayKey()) return false; }catch(_){}
+  return true;
+}
+
+function closeSalePromo(root, hideToday){
+  if(hideToday){
+    try{ localStorage.setItem(SALE_PROMO_HIDE_KEY, todayKey()); }catch(_){}
+  }
+  root.classList.remove('is-open');
+  setTimeout(()=>root.remove(), 280);
+  if(root._cleanup) root._cleanup();
+}
+
+function openSalePromoPopup(){
+  if(document.querySelector('.sale-promo-backdrop')) return;
+  const t=salePromoCopy();
+  const base=window.MIDIAI_BASE_PATH||'./';
+  const purchaseHref = lang==='en' ? `${base}en/purchase.html` : lang==='ja' ? `${base}ja/purchase.html` : `${base}purchase.html`;
+  const overlay=document.createElement('div');
+  overlay.className='sale-promo-backdrop';
+  overlay.setAttribute('role','dialog');
+  overlay.setAttribute('aria-modal','true');
+  overlay.setAttribute('aria-label', t.title);
+  overlay.innerHTML=`
+    <div class="sale-promo-modal">
+      <button type="button" class="sale-promo-x" aria-label="${esc(t.close)}">×</button>
+      <span class="sale-promo-badge">${esc(t.badge)}</span>
+      <h2 class="sale-promo-title">${esc(t.title)}</h2>
+      <p class="sale-promo-lead">${esc(t.lead)}</p>
+      <div class="sale-promo-price-box">
+        <div class="sale-promo-was">${esc(t.was)}</div>
+        <div class="sale-promo-now"><strong>${esc(t.now)}</strong><span>${esc(t.until)}</span></div>
+      </div>
+      <div class="sale-promo-actions">
+        <a class="primary" href="${esc(purchaseHref)}">${esc(t.cta)}</a>
+        <label class="sale-promo-hide"><input type="checkbox" id="salePromoHideToday"> ${esc(t.hideToday)}</label>
+        <button type="button" class="sale-promo-close-link" data-close>${esc(t.close)}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(()=>overlay.classList.add('is-open'));
+
+  const dismiss=()=>closeSalePromo(overlay, !!overlay.querySelector('#salePromoHideToday')?.checked);
+  overlay.querySelector('.sale-promo-x')?.addEventListener('click', dismiss);
+  overlay.querySelector('[data-close]')?.addEventListener('click', dismiss);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) dismiss(); });
+  const onKey=(e)=>{ if(e.key==='Escape') dismiss(); };
+  document.addEventListener('keydown', onKey);
+  overlay._cleanup=()=>document.removeEventListener('keydown', onKey);
+}
+
+function initSalePromoPopup(){
+  if(!shouldShowSalePromo()) return;
+  setTimeout(openSalePromoPopup, 600);
+}
+
 showOAuthBrowserNotice();
 bindBoardLightbox();
 initSidebarLayout();
@@ -3011,6 +3138,7 @@ bindSidebar();
 applyStaticI18n();
 initSidebarNav();
 setAuthUiSignedOut();
+initSalePromoPopup();
 
 initForms();
 initAuth();
