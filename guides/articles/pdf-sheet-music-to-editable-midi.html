@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>From Frozen PDF to Fully Editable MIDI: A Musician's Workflow</title>
+  <meta name="description" content="How to turn a read-only PDF of sheet music into MIDI you can actually rearrange, re-voice, and rescore — with a focus on the editing freedom that conversion unlocks.">
+  <meta name="keywords" content="editable MIDI from PDF scores, make PDF scores playable, score to piano roll">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/pdf-sheet-music-to-editable-midi.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="From Frozen PDF to Fully Editable MIDI: A Musician's Workflow">
+  <meta property="og:description" content="How to turn a read-only PDF of sheet music into MIDI you can actually rearrange, re-voice, and rescore — with a focus on the editing freedom that conversion unlocks.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/pdf-sheet-music-to-editable-midi.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="From Frozen PDF to Fully Editable MIDI: A Musician's Workflow">
+  <meta name="twitter:description" content="How to turn a read-only PDF of sheet music into MIDI you can actually rearrange, re-voice, and rescore — with a focus on the editing freedom that conversion unlocks.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "From Frozen PDF to Fully Editable MIDI: A Musician's Workflow",
+  "description": "How to turn a read-only PDF of sheet music into MIDI you can actually rearrange, re-voice, and rescore — with a focus on the editing freedom that conversion unlocks.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT9M",
+  "keywords": "editable MIDI from PDF scores, make PDF scores playable, score to piano roll",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/pdf-sheet-music-to-editable-midi.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is editable MIDI the same as having the original notation file?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Not quite — you get the notes as data, but not the engraver's layout choices like page turns or spacing. For rearranging, that is usually all you need; for republishing the exact look, you would re-engrave from the MIDI."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I reassign a piano part to different instruments after converting a PDF?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, and it is one of the biggest reasons to convert. With voices on separate tracks you can route each line to any instrument and adjust octaves to fit its range."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does making a PDF editable let me change the key permanently?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It does. Transpose at the track level and export, and the new file is in the new key with no memory of the original — ideal for accommodating a singer or a transposing instrument."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will my edits to the MIDI change the source PDF?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Conversion produces an independent MIDI file; the PDF is untouched, so you can always return to it as your reference of the original arrangement."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I keep an arrangement's character while editing it heavily?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Edit a copy and keep the raw conversion beside it. Compare frequently so your changes are deliberate departures rather than accidental drift from the original intent."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "PDF to MIDI",
+      "item": "https://midiaistudio.com/guides/pdf-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Making a PDF Score Editable Instead of Just Viewable",
+      "item": "https://midiaistudio.com/guides/articles/pdf-sheet-music-to-editable-midi.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../pdf-to-midi.html">PDF to MIDI</a> ›
+<span class="seo-crumb-cluster">Sheet music &amp; OMR</span> ›
+<span aria-current="page">Making a PDF Score Editable Instead of Just Viewable</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · Sheet music &amp; OMR</p>
+<h1>Making a PDF Score Editable Instead of Just Viewable</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">9 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: Sheet music &amp; OMR</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#the-difference-between-a-viewable-score-and-an-editable-one">The difference between a viewable score and an editable one</a></li>
+<li><a href="#what-editability-really-buys-you-as-an-arranger">What editability really buys you as an arranger</a></li>
+<li><a href="#keeping-voice-independence-intact-through-conversion">Keeping voice independence intact through conversion</a></li>
+<li><a href="#re-barring-and-re-metering-after-the-notes-arrive">Re-barring and re-metering after the notes arrive</a></li>
+<li><a href="#turning-a-fixed-arrangement-into-a-flexible-template">Turning a fixed arrangement into a flexible template</a></li>
+<li><a href="#when-to-edit-midi-versus-re-engrave-from-scratch">When to edit MIDI versus re-engrave from scratch</a></li>
+<li><a href="#protecting-the-original-intent-while-you-rework-it">Protecting the original intent while you rework it</a></li>
+<li><a href="#round-tripping-edits-back-to-notation-cleanly">Round-tripping edits back to notation cleanly</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>A PDF score is perfect for reading and useless for rewriting. The moment you want to move a phrase up an octave, hand a countermelody to a different instrument, or shorten an eight-bar intro, the printed page becomes a wall. Editable MIDI is the door through that wall.</p>
+<p>The point of converting is not novelty; it is leverage. Once the notes are data, an arrangement stops being a fixed object and becomes raw material you can reshape. That shift — from consuming a score to remixing it — is what most people are really after when they ask how to make a PDF editable.</p>
+<p>This piece focuses less on the mechanics of recognition and more on the editing freedom conversion delivers, and how to set up your MidiAI Studio export so that freedom is actually usable rather than a tangle you have to untangle first.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/sheet-music-score-editor.jpg" alt="A four-part hymn opened as four independent MidiAI Studio tracks, ready to reassign to a small ensemble." title="A four-part hymn opened as four independent MidiAI Studio tracks, ready to reassign to a small ensemble." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">A four-part hymn opened as four independent MidiAI Studio tracks, ready to reassign to a small ensemble.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “editable MIDI from PDF scores”</span></figcaption>
+</figure>
+
+<h2 id="the-difference-between-a-viewable-score-and-an-editable-one">The difference between a viewable score and an editable one</h2>
+<p>Making a PDF editable means converting its printed notes into MIDI events that any editor can move, delete, lengthen, or retune. Editability is the property that the music is now addressable — every note has a handle you can grab — rather than being a flat picture of a performance.</p>
+<p>Crucially, editable does not mean recognized-and-abandoned. A conversion is only as editable as its structure allows: separated voices, sensible track names, and honest bar lines are what make the difference between a file you can rework in minutes and one you fight for an hour.</p>
+
+<h2 id="what-editability-really-buys-you-as-an-arranger">What editability really buys you as an arranger</h2>
+<p>The recognition layer rebuilds pitches and rhythms, but editability is won or lost in how those events are grouped afterward. If a four-part chorale lands as one undifferentiated track, editing the tenor line means hunting through every chord; if it lands as four tracks, the tenor is one click away.</p>
+<p>This is why voice separation is the quiet hero of an editable export. MidiAI Studio can route each staff and, where the writing allows, each independent line onto its own track, so re-voicing an arrangement becomes a matter of dragging a whole part rather than reconstructing it note by note.</p>
+<p>Bar structure matters just as much. When the time signature and downbeats are correct, quantization, copy-paste of whole measures, and looping all behave predictably. A conversion that fudges the meter looks fine on playback but fights you the instant you try to edit in measures instead of milliseconds.</p>
+
+<h2 id="keeping-voice-independence-intact-through-conversion">Keeping voice independence intact through conversion</h2>
+<h3>Reworking a fixed hymn arrangement for a small ensemble</h3>
+<p>Say you have a PDF of a four-part hymn in E-flat major and you need to adapt it for two clarinets and a cello, dropping the arrangement into a range those instruments enjoy. On paper this is a rewrite; as MIDI it is a re-routing.</p>
+<p>After conversion, each of the four voices sits on its own track. You transpose the whole thing down a tone to D major so the clarinets sit comfortably, then hand the soprano and alto to the two clarinets and give the combined bass to the cello, muting the tenor doublings you no longer need.</p>
+<p>What would have been an evening of copying by hand becomes twenty minutes of dragging parts. Because MidiAI Studio kept the voices independent, nothing had to be untangled first — the editability was baked in from the export.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for editable MIDI from PDF scores" title="Supporting view for editable MIDI from PDF scores" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “editable MIDI from PDF scores”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “editable MIDI from PDF scores” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/pdf-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="re-barring-and-re-metering-after-the-notes-arrive">Re-barring and re-metering after the notes arrive</h2>
+<ol class="seo-steps">
+<li><strong>Decide what you intend to change before converting.</strong> Editing goals shape your export settings. If you plan to reassign parts, insist on per-voice tracks; if you only plan to transpose, a simpler split is fine. Knowing the destination keeps you from re-exporting halfway through.</li>
+<li><strong>Verify voice separation right after import.</strong> Solo each track and listen. If two independent lines share a track, split them now while the structure is fresh in your mind rather than after you have already started rearranging.</li>
+<li><strong>Lock the meter and downbeats.</strong> Confirm the time signature and that bar one starts where the music does. Correct bars turn every later edit — looping, copying, quantizing — into a measure-aware operation instead of a stopwatch exercise.</li>
+<li><strong>Make structural edits before cosmetic ones.</strong> Cut the intro, repeat the chorus, or reassign instruments first. Doing the big moves before fine-tuning velocities means you are not polishing material you are about to delete.</li>
+<li><strong>Export a working copy and an archival copy.</strong> Keep the untouched conversion as a reference and edit a duplicate. If a rework goes sideways you can rebuild from the clean MidiAI Studio export instead of starting over from the PDF.</li>
+</ol>
+
+<h2 id="turning-a-fixed-arrangement-into-a-flexible-template">Turning a fixed arrangement into a flexible template</h2>
+<ul class="seo-list">
+<li>Rename tracks to their musical role the instant you import, before the layout fades from memory.</li>
+<li>Color-code parts you intend to reassign so they are visible at a glance during rearranging.</li>
+<li>Do all transposition at the track level, not per note, so you can reverse it in one move.</li>
+<li>Keep a scratch track for experimental edits so your committed parts stay clean.</li>
+<li>Re-check ranges after transposing so a moved part has not slipped below an instrument's floor.</li>
+</ul>
+
+<h2 id="when-to-edit-midi-versus-re-engrave-from-scratch">When to edit MIDI versus re-engrave from scratch</h2>
+<ul class="seo-list">
+<li><strong>Editing before verifying voices:</strong> Rearranging a track that secretly holds two lines guarantees rework once you notice the tangle.</li>
+<li><strong>Transposing note-by-note:</strong> Per-note pitch shifts are impossible to undo cleanly; move whole tracks so the change is reversible.</li>
+<li><strong>Skipping the meter check:</strong> Wrong bar lines make measure-based edits land off the beat and quietly corrupt loops.</li>
+<li><strong>Overwriting the raw export:</strong> Losing the clean conversion means any mistake sends you all the way back to the PDF.</li>
+<li><strong>Reassigning parts out of range:</strong> Handing a bass line to an instrument that cannot reach it produces silent or octave-jumped notes.</li>
+</ul>
+
+<h2 id="protecting-the-original-intent-while-you-rework-it">Protecting the original intent while you rework it</h2>
+<p>The most underrated benefit of an editable conversion is reversibility. On paper every change is destructive — an eraser and a hope — but as MIDI you can branch, compare, and revert. That safety net encourages the kind of bold rearranging that makes an adaptation genuinely yours.</p>
+<p>It pays to think of the converted file as a template rather than a finished piece. A hymn that becomes editable MIDI can be re-keyed for a dozen singers, re-scored for a dozen ensembles, and looped for rehearsal — one conversion, many outputs. The upfront work amortizes fast.</p>
+
+<h2 id="round-tripping-edits-back-to-notation-cleanly">Round-tripping edits back to notation cleanly</h2>
+<p>There is a judgment call about when editing stops being worth it. If you are changing more than half the notes, re-engraving from a blank page can be cleaner than reshaping a conversion. The tipping point is roughly when you spend more time undoing the original than building the new one.</p>
+<p>Finally, remember that editability is a spectrum, not a switch. A conversion with clean voices and honest bars is highly editable; the same notes dumped onto one track are technically editable and practically miserable. Investing in structure at export time is what makes the freedom real.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “editable MIDI from PDF scores” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/pdf-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>editable MIDI from PDF scores</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Is editable MIDI the same as having the original notation file?</summary><p>Not quite — you get the notes as data, but not the engraver's layout choices like page turns or spacing. For rearranging, that is usually all you need; for republishing the exact look, you would re-engrave from the MIDI.</p></details>
+<details><summary>Can I reassign a piano part to different instruments after converting a PDF?</summary><p>Yes, and it is one of the biggest reasons to convert. With voices on separate tracks you can route each line to any instrument and adjust octaves to fit its range.</p></details>
+<details><summary>Does making a PDF editable let me change the key permanently?</summary><p>It does. Transpose at the track level and export, and the new file is in the new key with no memory of the original — ideal for accommodating a singer or a transposing instrument.</p></details>
+<details><summary>Will my edits to the MIDI change the source PDF?</summary><p>No. Conversion produces an independent MIDI file; the PDF is untouched, so you can always return to it as your reference of the original arrangement.</p></details>
+<details><summary>How do I keep an arrangement's character while editing it heavily?</summary><p>Edit a copy and keep the raw conversion beside it. Compare frequently so your changes are deliberate departures rather than accidental drift from the original intent.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “editable MIDI from PDF scores”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Sheet music &amp; OMR</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../pdf-to-midi.html"><strong>Pillar · PDF to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">convert PDF sheet music to MIDI · how-to</span></a>
+<a href="./how-to-edit-sheet-music-digitally.html"><strong>Editing Sheet Music Digitally: A Practical Approach</strong><br><span class="seo-related-meta">edit sheet music digitally · how-to</span></a>
+<a href="./sheet-music-recognition-ocr.html"><strong>How Optical Music Recognition Reads a Score</strong><br><span class="seo-related-meta">optical music recognition OMR · explainer</span></a>
+<a href="./pdf-to-musicxml.html"><strong>Turning a PDF Into MusicXML You Can Re-Engrave</strong><br><span class="seo-related-meta">PDF to MusicXML conversion · how-to</span></a>
+<a href="./midi-to-pdf-sheet-music.html"><strong>Turning a MIDI File Into Printable Sheet Music</strong><br><span class="seo-related-meta">Nearby · MIDI to PDF sheet music</span></a>
+<a href="./youtube-to-midi-converter.html"><strong>Converting a YouTube Performance Into MIDI</strong><br><span class="seo-related-meta">Nearby · YouTube piano cover to MIDI</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in Sheet music &amp; OMR">
+<a class="seo-pager-link seo-pager-prev" href="./pdf-to-midi-complete-guide.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Turning a PDF Score Into Playable, Editable MIDI</span></a>
+<a class="seo-pager-link seo-pager-next" href="./sheet-music-recognition-ocr.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">How Optical Music Recognition Reads a Score</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

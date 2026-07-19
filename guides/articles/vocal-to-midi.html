@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vocal to MIDI: Transcribing the Human Voice Into Notes</title>
+  <meta name="description" content="The voice is monophonic but slippery — full of slides, vibrato, and pitch that never sits still. This guide covers transcribing vocals into clean, usable MIDI melodies.">
+  <meta name="keywords" content="vocal melody to MIDI, sing to MIDI notes, monophonic vocal transcription">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/vocal-to-midi.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="Vocal to MIDI: Transcribing the Human Voice Into Notes">
+  <meta property="og:description" content="The voice is monophonic but slippery — full of slides, vibrato, and pitch that never sits still. This guide covers transcribing vocals into clean, usable MIDI melodies.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/vocal-to-midi.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Vocal to MIDI: Transcribing the Human Voice Into Notes">
+  <meta name="twitter:description" content="The voice is monophonic but slippery — full of slides, vibrato, and pitch that never sits still. This guide covers transcribing vocals into clean, usable MIDI melodies.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Vocal to MIDI: Transcribing the Human Voice Into Notes",
+  "description": "The voice is monophonic but slippery — full of slides, vibrato, and pitch that never sits still. This guide covers transcribing vocals into clean, usable MIDI melodies.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "vocal melody to MIDI, sing to MIDI notes, monophonic vocal transcription",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/vocal-to-midi.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Is transcribing a vocal easier or harder than transcribing a chord?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "In one sense easier, because the voice is monophonic with no overlapping notes to resolve, and in another harder, because vocal pitch glides continuously and shakes with vibrato. The polyphony is simple but the pitch behavior is subtle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does vocal-to-MIDI handle vibrato?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It aims for the center pitch the vibrato oscillates around, treating the note as a single sustained pitch rather than transcribing every wobble as a separate event. That keeps the melody clean instead of fragmented."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens to scoops and slides when I convert a vocal?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "They are interpreted as expressive gestures, usually as ornaments approaching a target note rather than as many discrete notes. This judgment produces a more musical, readable melody than transcribing every pitch step."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why do breaths and consonants show up in a vocal transcription?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because singing includes non-pitched sounds — breaths, consonants, noise — that produce audio events which are not sung notes. These artifacts can appear as faint or spurious notes and are worth trimming from the melody."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use a converted vocal melody for harmonies and re-arrangement?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Absolutely — once you have the melody as MIDI you can harmonize it, re-voice it on other instruments, or notate it. Isolating and cleanly transcribing the vocal turns a performance into flexible melodic raw material."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Converting a Vocal Melody Into MIDI",
+      "item": "https://midiaistudio.com/guides/articles/vocal-to-midi.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">Other instruments</span> ›
+<span aria-current="page">Converting a Vocal Melody Into MIDI</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · Other instruments</p>
+<h1>Converting a Vocal Melody Into MIDI</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: Other instruments</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#the-voice-as-a-monophonic-but-continuous-instrument">The voice as a monophonic but continuous instrument</a></li>
+<li><a href="#portamento-scoops-and-pitch-that-glides">Portamento, scoops, and pitch that glides</a></li>
+<li><a href="#vibrato-and-separating-it-from-the-true-pitch">Vibrato and separating it from the true pitch</a></li>
+<li><a href="#where-a-note-begins-when-there-is-no-attack">Where a note begins when there is no attack</a></li>
+<li><a href="#consonants-breaths-and-non-pitched-sounds">Consonants, breaths, and non-pitched sounds</a></li>
+<li><a href="#isolating-a-vocal-from-its-backing-track">Isolating a vocal from its backing track</a></li>
+<li><a href="#quantizing-expressive-singing-without-killing-it">Quantizing expressive singing without killing it</a></li>
+<li><a href="#using-vocal-midi-for-melodies-harmonies-and-toplines">Using vocal MIDI for melodies, harmonies, and toplines</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>The human voice is a fascinating transcription case: it is monophonic, which should make it easy, yet it is one of the most expressive and pitch-fluid instruments there is, which makes it slippery. A singer scoops into notes, glides between them, and shakes them with vibrato, so the pitch is rarely sitting still on a clean semitone.</p>
+<p>This combination — simple in polyphony, complex in pitch behavior — gives vocal transcription its distinctive character. The engine never has to untangle overlapping notes, but it constantly has to decide what a continuously-moving pitch actually means as discrete notes.</p>
+<p>This guide covers how to transcribe the voice into clean, usable MIDI with MidiAI Studio, whether you are capturing a melody to develop, extracting a topline, or turning a hummed idea into notation. The voice rewards a light touch and an understanding of its quirks.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio transcribing an isolated soulful topline, reading through vibrato to clean center pitches." title="MidiAI Studio transcribing an isolated soulful topline, reading through vibrato to clean center pitches." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio transcribing an isolated soulful topline, reading through vibrato to clean center pitches.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “vocal melody to MIDI”</span></figcaption>
+</figure>
+
+<h2 id="the-voice-as-a-monophonic-but-continuous-instrument">The voice as a monophonic but continuous instrument</h2>
+<p>Vocal-to-MIDI conversion is the transcription of a sung or hummed melody into note data. Because the voice sounds one pitch at a time, it is monophonic and thus polyphonically simple, but its continuous pitch gestures make the note-boundary and pitch decisions unusually subtle.</p>
+<p>The result is an editable melody line that can be developed, harmonized, re-voiced on other instruments, or notated, capturing the sung pitches and rhythm while necessarily interpreting the voice's expressive glides.</p>
+
+<h2 id="portamento-scoops-and-pitch-that-glides">Portamento, scoops, and pitch that glides</h2>
+<p>Because the voice is monophonic, there is only ever one pitch to track, which removes the hardest part of transcription entirely — there are no chords to resolve. This is why a clean solo vocal, once isolated, can transcribe into a very accurate melody with MidiAI Studio.</p>
+<p>The difficulty is that vocal pitch is continuous and expressive. Singers scoop up into notes, slide between them, and add vibrato that oscillates around the true pitch, so the engine must decide where a glide becomes a new note and must see through vibrato to the intended center pitch rather than transcribing every wobble as a separate event.</p>
+<p>Note boundaries are genuinely ambiguous in singing, because a smoothly-connected legato phrase has no percussive attack to mark where one note ends and the next begins. Consonants, breaths, and other non-pitched vocal sounds add further events that are not notes at all, so a vocal transcription needs interpretation of what counts as a sung pitch versus an artifact of singing.</p>
+
+<h2 id="vibrato-and-separating-it-from-the-true-pitch">Vibrato and separating it from the true pitch</h2>
+<h3>Capturing a soulful topline with scoops and vibrato</h3>
+<p>Imagine a soulful vocal topline in A minor, sung with expressive scoops into the high notes and a wide vibrato on the sustained ones, over a full backing track. You want the melody as clean MIDI to build a new arrangement.</p>
+<p>First you isolate the vocal from the backing track, then MidiAI Studio transcribes the monophonic line accurately in pitch and rhythm. It interprets the scoops as ornaments leading into the target notes and reads through the vibrato to the center pitches rather than transcribing the oscillation as separate notes.</p>
+<p>A little cleanup smooths a couple of glide interpretations and trims a breath that registered as a faint event. The result is a clean melody you can harmonize, re-voice on a synth, or notate — the expressive performance distilled into editable notes.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for vocal melody to MIDI" title="Supporting view for vocal melody to MIDI" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “vocal melody to MIDI”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “vocal melody to MIDI” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="where-a-note-begins-when-there-is-no-attack">Where a note begins when there is no attack</h2>
+<ol class="seo-steps">
+<li><strong>Isolate the vocal first.</strong> Separate the voice from any backing track before transcribing. As a monophonic source, an isolated vocal transcribes cleanly, while a vocal buried in a mix does not.</li>
+<li><strong>Let the engine read through vibrato.</strong> Aim for the center pitch of each note rather than the vibrato oscillation. Treating vibrato as a single sustained note, not many, keeps the melody clean.</li>
+<li><strong>Interpret scoops and slides as ornaments.</strong> Decide whether expressive glides are separate notes or approaches into a target pitch. Reading them as ornaments usually yields a more musical, readable melody.</li>
+<li><strong>Trim non-pitched vocal sounds.</strong> Remove events from consonants, breaths, and noise that are not sung pitches. These artifacts appear as faint or spurious notes that clutter the line.</li>
+<li><strong>Quantize timing with a light touch.</strong> Round the rhythm gently to keep the melody readable without erasing its expressive phrasing. Over-quantizing a vocal line strips its human feel.</li>
+</ol>
+
+<h2 id="consonants-breaths-and-non-pitched-sounds">Consonants, breaths, and non-pitched sounds</h2>
+<ul class="seo-list">
+<li>Always isolate the voice before transcribing a vocal from a song.</li>
+<li>Treat vibrato as one note centered on the intended pitch.</li>
+<li>Interpret scoops and slides as approaches rather than distinct notes.</li>
+<li>Clear breaths and consonant artifacts from the melody.</li>
+<li>Quantize lightly to preserve the singing's natural phrasing.</li>
+</ul>
+
+<h2 id="isolating-a-vocal-from-its-backing-track">Isolating a vocal from its backing track</h2>
+<ul class="seo-list">
+<li><strong>Transcribing a vocal in the full mix:</strong> Backing instruments obscure the melody; isolate the voice for a clean monophonic capture.</li>
+<li><strong>Transcribing vibrato as many notes:</strong> Reading each oscillation as a note fragments a single sustained pitch into noise.</li>
+<li><strong>Ignoring scoops and slides:</strong> Leaving glides uninterpreted produces a jagged melody that misrepresents the singing.</li>
+<li><strong>Keeping breath and consonant artifacts:</strong> Non-pitched sounds appear as spurious notes that clutter the line.</li>
+<li><strong>Over-quantizing the phrasing:</strong> Snapping expressive timing to a rigid grid drains the melody of its human feel.</li>
+</ul>
+
+<h2 id="quantizing-expressive-singing-without-killing-it">Quantizing expressive singing without killing it</h2>
+<p>The voice beautifully illustrates that monophonic does not mean simple. Removing the polyphony problem should make transcription trivial, and in one dimension it does, but the voice replaces that difficulty with another: pitch that never holds still. This trade reveals that transcription difficulty is multi-dimensional, and an instrument can be easy on one axis and hard on another.</p>
+<p>Vibrato is a particularly elegant challenge because it forces a distinction between the pitch that is sounding and the pitch that is meant. A singer's vibrato oscillates around a target the listener perceives as a single steady note, so faithful transcription means capturing the intention, not the literal fluctuation. MidiAI Studio reading through vibrato to the center pitch is a small act of musical understanding.</p>
+
+<h2 id="using-vocal-midi-for-melodies-harmonies-and-toplines">Using vocal MIDI for melodies, harmonies, and toplines</h2>
+<p>Note boundaries in legato singing expose an assumption transcription usually relies on: that notes begin with detectable attacks. The voice can glide from one pitch to the next with no articulation at all, leaving the boundary genuinely fuzzy, which is why vocal transcription involves more interpretation of where notes start than a percussive instrument ever requires.</p>
+<p>For all these subtleties, vocal-to-MIDI is enormously useful precisely because the voice is where so much music originates. Melodies are conceived by singing and humming, and turning that most natural of musical acts into editable notes closes the gap between a musical idea and its development. A hummed fragment becomes a topline, a harmony, an arrangement — the voice's ideas set free into data.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “vocal melody to MIDI” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>vocal melody to MIDI</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Is transcribing a vocal easier or harder than transcribing a chord?</summary><p>In one sense easier, because the voice is monophonic with no overlapping notes to resolve, and in another harder, because vocal pitch glides continuously and shakes with vibrato. The polyphony is simple but the pitch behavior is subtle.</p></details>
+<details><summary>How does vocal-to-MIDI handle vibrato?</summary><p>It aims for the center pitch the vibrato oscillates around, treating the note as a single sustained pitch rather than transcribing every wobble as a separate event. That keeps the melody clean instead of fragmented.</p></details>
+<details><summary>What happens to scoops and slides when I convert a vocal?</summary><p>They are interpreted as expressive gestures, usually as ornaments approaching a target note rather than as many discrete notes. This judgment produces a more musical, readable melody than transcribing every pitch step.</p></details>
+<details><summary>Why do breaths and consonants show up in a vocal transcription?</summary><p>Because singing includes non-pitched sounds — breaths, consonants, noise — that produce audio events which are not sung notes. These artifacts can appear as faint or spurious notes and are worth trimming from the melody.</p></details>
+<details><summary>Can I use a converted vocal melody for harmonies and re-arrangement?</summary><p>Absolutely — once you have the melody as MIDI you can harmonize it, re-voice it on other instruments, or notate it. Isolating and cleanly transcribing the vocal turns a performance into flexible melodic raw material.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “vocal melody to MIDI”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Other instruments</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./guitar-to-midi.html"><strong>Converting Guitar Recordings Into MIDI</strong><br><span class="seo-related-meta">guitar audio to MIDI · how-to</span></a>
+<a href="./drum-midi-extraction.html"><strong>Extracting Drum MIDI From a Recording</strong><br><span class="seo-related-meta">extract drum MIDI from audio · how-to</span></a>
+<a href="./instrument-conversion-midi.html"><strong>How Different Instruments Convert to MIDI</strong><br><span class="seo-related-meta">MIDI instrument remapping · workflow</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in Other instruments">
+<a class="seo-pager-link seo-pager-prev" href="./drum-midi-extraction.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Extracting Drum MIDI From a Recording</span></a>
+<a class="seo-pager-link seo-pager-next" href="./instrument-conversion-midi.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">How Different Instruments Convert to MIDI</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

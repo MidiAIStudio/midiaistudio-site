@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Guitar to MIDI: Transcribing the Instrument That Fights Back</title>
+  <meta name="description" content="Guitar poses distinct transcription challenges — bends, slides, harmonics, and the same note in multiple places. This guide explains them and how to get clean guitar MIDI.">
+  <meta name="keywords" content="guitar audio to MIDI, guitar bends MIDI limits, DI guitar transcription">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/guitar-to-midi.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="Guitar to MIDI: Transcribing the Instrument That Fights Back">
+  <meta property="og:description" content="Guitar poses distinct transcription challenges — bends, slides, harmonics, and the same note in multiple places. This guide explains them and how to get clean guitar MIDI.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/guitar-to-midi.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Guitar to MIDI: Transcribing the Instrument That Fights Back">
+  <meta name="twitter:description" content="Guitar poses distinct transcription challenges — bends, slides, harmonics, and the same note in multiple places. This guide explains them and how to get clean guitar MIDI.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Guitar to MIDI: Transcribing the Instrument That Fights Back",
+  "description": "Guitar poses distinct transcription challenges — bends, slides, harmonics, and the same note in multiple places. This guide explains them and how to get clean guitar MIDI.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "guitar audio to MIDI, guitar bends MIDI limits, DI guitar transcription",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/guitar-to-midi.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why is guitar harder to transcribe to MIDI than piano?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because the guitar produces continuous pitch motion through bends and slides, rings harmonics with confusing overtones, and overlaps strings when strummed. Piano's fixed pitches and single-mechanism attacks avoid most of these complications."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does a converter handle string bends and slides?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It must interpret whether a continuous pitch gesture is a discrete note change or an ornament, often rendering it as notes plus pitch information. Because the pitch moves between semitones, this representation is inherently a judgment call."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does distortion affect guitar-to-MIDI accuracy?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, significantly. Distortion adds extra harmonics that thicken and muddy the spectrum, making onsets and pitches harder to resolve. A clean tone transcribes far more accurately than a heavily overdriven one."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why might a converted guitar part not match the position I played?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because the same pitch can be played on several different frets and strings, and the MIDI captures pitch, not fretboard position. The transcription reflects what was sounded, not where on the neck it was fingered."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I turn guitar MIDI into tablature?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It can serve as a basis for tab, though position must be assigned since MIDI stores pitch rather than fret location. The transcription gives you the notes; generating playable tab adds fretboard decisions on top."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Converting Guitar Recordings Into MIDI",
+      "item": "https://midiaistudio.com/guides/articles/guitar-to-midi.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">Other instruments</span> ›
+<span aria-current="page">Converting Guitar Recordings Into MIDI</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · Other instruments</p>
+<h1>Converting Guitar Recordings Into MIDI</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: Other instruments</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#why-guitar-is-harder-than-piano-to-transcribe">Why guitar is harder than piano to transcribe</a></li>
+<li><a href="#bends-slides-and-pitches-between-the-frets">Bends, slides, and pitches between the frets</a></li>
+<li><a href="#harmonics-and-their-confusing-overtones">Harmonics and their confusing overtones</a></li>
+<li><a href="#the-same-pitch-in-several-fretboard-positions">The same pitch in several fretboard positions</a></li>
+<li><a href="#chords-strumming-and-overlapping-strings">Chords, strumming, and overlapping strings</a></li>
+<li><a href="#palm-muting-ghost-notes-and-percussive-sounds">Palm muting, ghost notes, and percussive sounds</a></li>
+<li><a href="#clean-tone-versus-distortion-for-transcription">Clean tone versus distortion for transcription</a></li>
+<li><a href="#turning-guitar-midi-into-tab-or-another-instrument">Turning guitar MIDI into tab or another instrument</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>After piano, guitar is where many musicians first meet the limits of transcription — and it is a genuine step up in difficulty. The guitar is expressive precisely because it does things pianos cannot: bending pitches, sliding between notes, ringing harmonics, and muting strings, all of which complicate the neat picture transcription prefers.</p>
+<p>None of this means guitar cannot be transcribed well; it means guitar rewards understanding its quirks. The techniques that make the instrument sing are the same ones that challenge the engine, so knowing where those challenges lie lets you record and convert in ways that minimize them.</p>
+<p>This guide covers the specific obstacles guitar presents and how to work with MidiAI Studio to get clean results. Whether you want editable MIDI, a jumping-off point for tab, or a way to re-voice a riff on another instrument, guitar transcription is very doable with the right approach.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio transcribing a clean fingerstyle riff cleanly while flagging bends in a distorted solo." title="MidiAI Studio transcribing a clean fingerstyle riff cleanly while flagging bends in a distorted solo." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio transcribing a clean fingerstyle riff cleanly while flagging bends in a distorted solo.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “guitar audio to MIDI”</span></figcaption>
+</figure>
+
+<h2 id="why-guitar-is-harder-than-piano-to-transcribe">Why guitar is harder than piano to transcribe</h2>
+<p>Guitar-to-MIDI conversion is the transcription of guitar audio into note data, complicated by the instrument's continuous pitch techniques, harmonics, and the fact that a given pitch can be played in multiple positions. It sits meaningfully higher on the difficulty scale than piano.</p>
+<p>The defining challenge is that the guitar routinely produces pitches that do not sit neatly on discrete semitones — bends and slides move continuously — so the engine must decide how to represent expressive, in-between pitches as discrete MIDI notes.</p>
+
+<h2 id="bends-slides-and-pitches-between-the-frets">Bends, slides, and pitches between the frets</h2>
+<p>Unlike the piano's fixed pitches, the guitar produces continuous pitch motion through bends and slides, so a single expressive gesture may sweep through several semitones. Transcription must interpret whether a bend is a discrete pitch change or an ornament, and MidiAI Studio can render such gestures as notes plus pitch information, but the interpretation is inherently a judgment.</p>
+<p>Harmonics add spectral confusion, because a natural or artificial harmonic sounds a pitch whose overtone structure differs from a normally-fretted note, and can be misread. String overlap during strumming creates dense, fast polyphony where six strings may ring together, blurring onsets in a way that a piano chord, struck by one mechanism, does not.</p>
+<p>The instrument also makes percussive and muted sounds — palm mutes, ghost notes, string scrapes — that are pitched ambiguously or not at all, and these can appear as spurious notes. Distortion, common in electric playing, thickens the spectrum with added harmonics that further challenge clean transcription, which is why a clean tone transcribes far better than a heavily overdriven one.</p>
+
+<h2 id="harmonics-and-their-confusing-overtones">Harmonics and their confusing overtones</h2>
+<h3>Transcribing a clean fingerstyle riff versus a distorted solo</h3>
+<p>Imagine two guitar recordings: a clean fingerstyle riff in E minor with distinct, separated notes, and a heavily distorted rock solo in the same key full of bends and vibrato. The first plays to transcription's strengths; the second fights it.</p>
+<p>The clean fingerstyle riff transcribes well in MidiAI Studio — the separated notes have clear onsets and stable pitches, so the result needs little cleanup. The distorted solo is harder: the bends sweep between pitches, the vibrato wobbles the fundamental, and the distortion's added harmonics muddy the spectrum, so more interpretation and cleanup are required.</p>
+<p>The contrast is instructive. Recording guitar clean, with notes clearly articulated, dramatically improves transcription, while heavy distortion and continuous pitch techniques are exactly what push the difficulty up. Same instrument, same key, very different results driven by tone and technique.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for guitar audio to MIDI" title="Supporting view for guitar audio to MIDI" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “guitar audio to MIDI”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “guitar audio to MIDI” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="the-same-pitch-in-several-fretboard-positions">The same pitch in several fretboard positions</h2>
+<ol class="seo-steps">
+<li><strong>Record a clean tone when possible.</strong> Prefer a clean or lightly-driven sound over heavy distortion. Distortion adds harmonics that muddy the spectrum, so a cleaner tone transcribes markedly better.</li>
+<li><strong>Articulate notes clearly.</strong> Play with distinct, separated notes where the goal is transcription. Clear articulation gives the engine the crisp onsets it needs, especially in single-note lines.</li>
+<li><strong>Decide how to treat bends and slides.</strong> Choose whether expressive pitch gestures should become discrete notes or be preserved as pitch motion. This judgment shapes how faithfully the MIDI reflects the playing.</li>
+<li><strong>Prune percussive and muted artifacts.</strong> Remove spurious notes from palm mutes, ghost notes, and scrapes. These pitch-ambiguous sounds often appear as false notes that need clearing.</li>
+<li><strong>Repurpose the MIDI as tab or another voice.</strong> Use the transcription as a basis for tablature or re-voice it on another instrument. Guitar MIDI is a springboard, not just a literal capture.</li>
+</ol>
+
+<h2 id="chords-strumming-and-overlapping-strings">Chords, strumming, and overlapping strings</h2>
+<ul class="seo-list">
+<li>Favor clean tones over distortion for any transcription-focused recording.</li>
+<li>Play single-note lines with clear separation to aid onset detection.</li>
+<li>Make a deliberate choice about representing bends and slides.</li>
+<li>Clear muted and percussive artifacts that masquerade as notes.</li>
+<li>Treat the result as a starting point for tab or re-instrumentation.</li>
+</ul>
+
+<h2 id="palm-muting-ghost-notes-and-percussive-sounds">Palm muting, ghost notes, and percussive sounds</h2>
+<ul class="seo-list">
+<li><strong>Transcribing heavy distortion:</strong> Overdrive's added harmonics thicken the spectrum and multiply transcription errors.</li>
+<li><strong>Ignoring bends and slides:</strong> Leaving continuous pitch gestures uninterpreted yields notes that misrepresent the playing.</li>
+<li><strong>Keeping percussive artifacts:</strong> Palm mutes and ghost notes appear as false pitches if not pruned.</li>
+<li><strong>Expecting piano-level accuracy:</strong> Guitar's continuous pitches and string overlap make it inherently harder than piano.</li>
+<li><strong>Forgetting position ambiguity:</strong> The same pitch on multiple frets means the MIDI alone will not reflect the played position.</li>
+</ul>
+
+<h2 id="clean-tone-versus-distortion-for-transcription">Clean tone versus distortion for transcription</h2>
+<p>Guitar is a wonderful teacher about the gap between how an instrument feels to play and how it looks to a transcriber. Everything that makes the guitar expressive in the hands — the bend into a note, the harmonic shimmer, the palm-muted chug — is a departure from the clean, discrete events transcription models most easily. The instrument's soul lives exactly in its transcription challenges.</p>
+<p>The continuous-pitch problem is philosophically interesting because it exposes an assumption baked into MIDI itself. MIDI was built around discrete notes with defined pitches, but a guitar bend is a smear, not a step, so representing it means either discretizing something continuous or carrying extra pitch data alongside the note. Neither is wrong; they are different translations of a gesture the format never fully anticipated.</p>
+
+<h2 id="turning-guitar-midi-into-tab-or-another-instrument">Turning guitar MIDI into tab or another instrument</h2>
+<p>Position ambiguity is a quiet reminder that MIDI captures sound, not performance geometry. Two guitarists playing the same passage in different positions produce identical MIDI, because the format records the pitch that was heard, not the fret that produced it. This is fine for playback and re-voicing but means guitar-specific information like fingering lives outside the transcription.</p>
+<p>The encouraging conclusion is that guitar transcription is a matter of technique on both ends. Recording clean, articulating clearly, and making deliberate choices about expressive gestures turns a hard problem into a manageable one, and MidiAI Studio handles the resulting audio far better than a distorted, gesture-heavy take. Meet the instrument where transcription is strong, and even the guitar cooperates.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “guitar audio to MIDI” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>guitar audio to MIDI</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Why is guitar harder to transcribe to MIDI than piano?</summary><p>Because the guitar produces continuous pitch motion through bends and slides, rings harmonics with confusing overtones, and overlaps strings when strummed. Piano's fixed pitches and single-mechanism attacks avoid most of these complications.</p></details>
+<details><summary>How does a converter handle string bends and slides?</summary><p>It must interpret whether a continuous pitch gesture is a discrete note change or an ornament, often rendering it as notes plus pitch information. Because the pitch moves between semitones, this representation is inherently a judgment call.</p></details>
+<details><summary>Does distortion affect guitar-to-MIDI accuracy?</summary><p>Yes, significantly. Distortion adds extra harmonics that thicken and muddy the spectrum, making onsets and pitches harder to resolve. A clean tone transcribes far more accurately than a heavily overdriven one.</p></details>
+<details><summary>Why might a converted guitar part not match the position I played?</summary><p>Because the same pitch can be played on several different frets and strings, and the MIDI captures pitch, not fretboard position. The transcription reflects what was sounded, not where on the neck it was fingered.</p></details>
+<details><summary>Can I turn guitar MIDI into tablature?</summary><p>It can serve as a basis for tab, though position must be assigned since MIDI stores pitch rather than fret location. The transcription gives you the notes; generating playable tab adds fretboard decisions on top.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “guitar audio to MIDI”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Other instruments</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./drum-midi-extraction.html"><strong>Extracting Drum MIDI From a Recording</strong><br><span class="seo-related-meta">extract drum MIDI from audio · how-to</span></a>
+<a href="./vocal-to-midi.html"><strong>Converting a Vocal Melody Into MIDI</strong><br><span class="seo-related-meta">vocal melody to MIDI · how-to</span></a>
+<a href="./instrument-conversion-midi.html"><strong>How Different Instruments Convert to MIDI</strong><br><span class="seo-related-meta">MIDI instrument remapping · workflow</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in Other instruments">
+<span class="seo-pager-link seo-pager-empty"></span>
+<a class="seo-pager-link seo-pager-next" href="./drum-midi-extraction.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Extracting Drum MIDI From a Recording</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

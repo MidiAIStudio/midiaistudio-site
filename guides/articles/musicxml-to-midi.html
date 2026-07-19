@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MusicXML to MIDI: Turning Notation Into a Playable Performance</title>
+  <meta name="description" content="When you have notation and need playback, converting MusicXML to MIDI is the move. This guide covers what carries over, what gets interpreted, and how to get musical playback.">
+  <meta name="keywords" content="MusicXML to MIDI playback, realize MusicXML as MIDI, score to DAW MIDI">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/musicxml-to-midi.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="MusicXML to MIDI: Turning Notation Into a Playable Performance">
+  <meta property="og:description" content="When you have notation and need playback, converting MusicXML to MIDI is the move. This guide covers what carries over, what gets interpreted, and how to get musical playback.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/musicxml-to-midi.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MusicXML to MIDI: Turning Notation Into a Playable Performance">
+  <meta name="twitter:description" content="When you have notation and need playback, converting MusicXML to MIDI is the move. This guide covers what carries over, what gets interpreted, and how to get musical playback.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "MusicXML to MIDI: Turning Notation Into a Playable Performance",
+  "description": "When you have notation and need playback, converting MusicXML to MIDI is the move. This guide covers what carries over, what gets interpreted, and how to get musical playback.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "MusicXML to MIDI playback, realize MusicXML as MIDI, score to DAW MIDI",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/musicxml-to-midi.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why convert MusicXML to MIDI when I already have the notation?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because notation is for reading and MIDI is for playing. Converting gives you a performance you can play back, feed a DAW, or hand a student as a rehearsal track, which a static score cannot do."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is MusicXML-to-MIDI more accurate than audio-to-MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Far more, because MusicXML states the notes explicitly, so there is nothing to guess. The only challenge is interpreting written markings into performance data, not identifying the music itself."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do written dynamics become part of a MIDI performance?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Dynamic markings map to MIDI velocity — a forte plays louder than a piano, and a crescendo becomes a rising velocity ramp. This is how the conversion turns written expression into audible expression."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do repeats and D.S. markings play back correctly after conversion?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "They are unrolled into a linear stream, so a repeat plays twice and a D.S. jumps as written, producing the sequence a listener would actually hear. Verify the result, since structural realization is where surprises occur."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does my converted MusicXML sound mechanical on playback?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because raw interpretation applies markings literally, with abrupt velocity steps and rigid timing. Shaping the velocities and tempo afterward — softening jumps, easing ritardandos — is what makes the performance feel human."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "MusicXML",
+      "item": "https://midiaistudio.com/guides/musicxml.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Converting MusicXML Into a MIDI Performance",
+      "item": "https://midiaistudio.com/guides/articles/musicxml-to-midi.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../musicxml.html">MusicXML</a> ›
+<span class="seo-crumb-cluster">MusicXML &amp; score interchange</span> ›
+<span aria-current="page">Converting MusicXML Into a MIDI Performance</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · MusicXML &amp; score interchange</p>
+<h1>Converting MusicXML Into a MIDI Performance</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: MusicXML &amp; score interchange</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#why-you-d-convert-notation-into-a-performance-format">Why you'd convert notation into a performance format</a></li>
+<li><a href="#what-musicxml-gives-midi-for-free">What MusicXML gives MIDI for free</a></li>
+<li><a href="#interpreting-articulations-into-performance-data">Interpreting articulations into performance data</a></li>
+<li><a href="#turning-dynamics-markings-into-velocity">Turning dynamics markings into velocity</a></li>
+<li><a href="#realizing-repeats-voltas-and-d-s-into-a-linear-stream">Realizing repeats, voltas, and D.S. into a linear stream</a></li>
+<li><a href="#tempo-and-expression-marks-becoming-a-tempo-map">Tempo and expression marks becoming a tempo map</a></li>
+<li><a href="#what-midi-simply-cannot-carry-from-the-score">What MIDI simply cannot carry from the score</a></li>
+<li><a href="#making-the-resulting-midi-actually-sound-musical">Making the resulting MIDI actually sound musical</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>Converting MusicXML to MIDI is the opposite journey from most transcription: you already have clean notation and you want it to play. This happens constantly — you have a score in a notation program and need a rehearsal track, a DAW mockup, or a playable version for a student — and it is one of the more reliable conversions there is.</p>
+<p>It is reliable because you are moving from more information to less. MusicXML already knows the notes, rhythms, and dynamics explicitly, so unlike audio transcription there is nothing ambiguous to infer; the work is interpretation, turning written instructions into a performance rather than guessing at pitches.</p>
+<p>This guide covers how that interpretation works — how a crescendo marking becomes a velocity ramp, how repeats unroll into a linear stream — and how to make the resulting MIDI from MidiAI Studio sound musical rather than robotic.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio converting a choral MusicXML into four part-dominant MIDI rehearsal tracks with a realized tempo map." title="MidiAI Studio converting a choral MusicXML into four part-dominant MIDI rehearsal tracks with a realized tempo map." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio converting a choral MusicXML into four part-dominant MIDI rehearsal tracks with a realized tempo map.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MusicXML to MIDI playback”</span></figcaption>
+</figure>
+
+<h2 id="why-you-d-convert-notation-into-a-performance-format">Why you'd convert notation into a performance format</h2>
+<p>Converting MusicXML to MIDI means translating a written score into a timed performance, realizing its notes, rhythms, dynamics, and structural instructions as MIDI events. It turns notation meant to be read into data meant to be played.</p>
+<p>Because MusicXML explicitly encodes the music, this conversion is interpretive rather than inferential: the challenge is not identifying notes but deciding how written markings like slurs, accents, and tempo changes should sound as performance data.</p>
+
+<h2 id="what-musicxml-gives-midi-for-free">What MusicXML gives MIDI for free</h2>
+<p>The notes and rhythms transfer directly, since MusicXML states them explicitly — there is no pitch detection or rhythm guessing involved. That is why MusicXML-to-MIDI is so much cleaner than audio-to-MIDI: the hard problem of identifying the music is already solved by the notation.</p>
+<p>Markings become performance data through interpretation. A dynamic marking like mezzo-forte maps to a velocity level, a crescendo becomes a rising velocity ramp, and a staccato dot shortens a note's played duration. MidiAI Studio applies these translations so the MIDI reflects not just the notes but the written intent behind them.</p>
+<p>Structure gets realized into a linear timeline. Repeats, first and second endings, and navigation marks like D.S. al Coda are written shorthand for a longer performance, so the conversion unrolls them into the actual sequence of events a listener would hear, and turns tempo and ritardando markings into a tempo map the playback follows.</p>
+
+<h2 id="interpreting-articulations-into-performance-data">Interpreting articulations into performance data</h2>
+<h3>Making a rehearsal track from a choral MusicXML</h3>
+<p>Imagine a choral anthem in G major exported as MusicXML, complete with dynamics from pianissimo to forte, a repeated verse with first and second endings, and a ritardando into the final phrase. The choir needs a rehearsal track for each part.</p>
+<p>Converted in MidiAI Studio, the four voices become four MIDI tracks a singer can isolate. The dynamics translate into velocity so the track swells and softens as marked, the repeat unrolls so the second ending plays at the right time, and the closing ritardando slows the tempo map convincingly.</p>
+<p>A little shaping makes it musical — you soften some abrupt velocity jumps at dynamic changes and lengthen the ritardando slightly — but the structural heavy lifting was automatic. The choir gets part-dominant rehearsal tracks that actually follow the score.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio detail for MusicXML to MIDI playback" title="Supporting view for MusicXML to MIDI playback" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “MusicXML to MIDI playback”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “MusicXML to MIDI playback” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/musicxml.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="turning-dynamics-markings-into-velocity">Turning dynamics markings into velocity</h2>
+<ol class="seo-steps">
+<li><strong>Start from clean, correct notation.</strong> Since notes transfer directly, the MIDI is only as good as the MusicXML. Fix any notation errors in the score first, because they will pass straight through to the performance.</li>
+<li><strong>Confirm dynamics and articulations translated.</strong> Check that markings became velocity and duration changes as expected. Verifying the interpretation early lets you shape it before building anything on top.</li>
+<li><strong>Verify repeats and navigation unrolled correctly.</strong> Play through to confirm repeats, endings, and D.S. jumps produced the right linear sequence. Structural realization is where a conversion most often surprises you.</li>
+<li><strong>Check the tempo map.</strong> Ensure ritardandos, accelerandos, and tempo marks became a musical tempo map. A flat tempo makes even correct notes feel mechanical.</li>
+<li><strong>Shape the performance to taste.</strong> Soften abrupt velocity jumps and refine timing so the MIDI breathes. The conversion gives you accurate performance data; you make it feel human.</li>
+</ol>
+
+<h2 id="realizing-repeats-voltas-and-d-s-into-a-linear-stream">Realizing repeats, voltas, and D.S. into a linear stream</h2>
+<ul class="seo-list">
+<li>Correct the notation before converting, since errors pass straight through.</li>
+<li>Keep parts on separate tracks so players can isolate their own line.</li>
+<li>Audition the tempo map to catch a ritardando that starts too abruptly.</li>
+<li>Smooth mechanical velocity steps at dynamic changes for a natural swell.</li>
+<li>Compare the unrolled structure against the score to confirm repeats played right.</li>
+</ul>
+
+<h2 id="tempo-and-expression-marks-becoming-a-tempo-map">Tempo and expression marks becoming a tempo map</h2>
+<ul class="seo-list">
+<li><strong>Converting flawed notation:</strong> Errors in the MusicXML transfer directly to the MIDI, so fix the score first.</li>
+<li><strong>Ignoring the tempo map:</strong> A flat tempo makes accurate notes sound robotic; realize the written tempo changes.</li>
+<li><strong>Not checking repeat realization:</strong> A misread repeat or ending produces the wrong sequence of events on playback.</li>
+<li><strong>Leaving velocities mechanical:</strong> Abrupt, uniform velocity changes betray the conversion's machine origin.</li>
+<li><strong>Merging parts into one track:</strong> A single track denies singers and players the isolated line they need to rehearse.</li>
+</ul>
+
+<h2 id="what-midi-simply-cannot-carry-from-the-score">What MIDI simply cannot carry from the score</h2>
+<p>This conversion is a useful reminder that going from more information to less is the easy direction. Audio-to-MIDI is hard because it reconstructs music from ambiguous sound; MusicXML-to-MIDI is easy because the music is already fully specified. The lesson generalizes: conversions are hard in proportion to how much they must infer, and here they infer almost nothing.</p>
+<p>The interpretive work that remains is genuinely musical, though, and worth taking seriously. Deciding how much a staccato shortens a note, how steep a crescendo should be, or how a ritardando should curve are performance decisions that a literal reading handles crudely. MidiAI Studio makes reasonable defaults, but the difference between acceptable and expressive playback is in your shaping.</p>
+
+<h2 id="making-the-resulting-midi-actually-sound-musical">Making the resulting MIDI actually sound musical</h2>
+<p>Structural realization is quietly one of the most valuable parts. A score's repeats and navigation marks are a compact shorthand that humans expand effortlessly and machines must be told to unroll; getting that expansion right means the playback matches the performance a musician would give, without you manually copying repeated sections. It is a small automation that removes a tedious task.</p>
+<p>Ultimately the goal is a MIDI that serves the score rather than merely reproducing it. Rehearsal tracks that swell where the music swells, that slow where it slows, and that let each singer hear their own line are far more useful than a flat, correct-but-lifeless rendering. The conversion hands you the notes; a little interpretation hands your musicians something they will actually want to use.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “MusicXML to MIDI playback” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/musicxml.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>MusicXML to MIDI playback</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Why convert MusicXML to MIDI when I already have the notation?</summary><p>Because notation is for reading and MIDI is for playing. Converting gives you a performance you can play back, feed a DAW, or hand a student as a rehearsal track, which a static score cannot do.</p></details>
+<details><summary>Is MusicXML-to-MIDI more accurate than audio-to-MIDI?</summary><p>Far more, because MusicXML states the notes explicitly, so there is nothing to guess. The only challenge is interpreting written markings into performance data, not identifying the music itself.</p></details>
+<details><summary>How do written dynamics become part of a MIDI performance?</summary><p>Dynamic markings map to MIDI velocity — a forte plays louder than a piano, and a crescendo becomes a rising velocity ramp. This is how the conversion turns written expression into audible expression.</p></details>
+<details><summary>Do repeats and D.S. markings play back correctly after conversion?</summary><p>They are unrolled into a linear stream, so a repeat plays twice and a D.S. jumps as written, producing the sequence a listener would actually hear. Verify the result, since structural realization is where surprises occur.</p></details>
+<details><summary>Why does my converted MusicXML sound mechanical on playback?</summary><p>Because raw interpretation applies markings literally, with abrupt velocity steps and rigid timing. Shaping the velocities and tempo afterward — softening jumps, easing ritardandos — is what makes the performance feel human.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “MusicXML to MIDI playback”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>MusicXML &amp; score interchange</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../musicxml.html"><strong>Pillar · MusicXML</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./midi-to-pdf-sheet-music.html"><strong>Turning a MIDI File Into Printable Sheet Music</strong><br><span class="seo-related-meta">MIDI to PDF sheet music · how-to</span></a>
+<a href="./midi-to-musicxml.html"><strong>Converting MIDI Into MusicXML Notation</strong><br><span class="seo-related-meta">MIDI to MusicXML notation · how-to</span></a>
+<a href="./score-editor-workflow.html"><strong>Building a Reliable Score Editor Workflow</strong><br><span class="seo-related-meta">MIDI score editor workflow · workflow</span></a>
+<a href="./musicxml-explained.html"><strong>What MusicXML Is and Why It Matters</strong><br><span class="seo-related-meta">what is MusicXML format · explainer</span></a>
+<a href="./musicxml-vs-midi.html"><strong>MusicXML vs MIDI: Choosing the Right Format</strong><br><span class="seo-related-meta">MusicXML vs MIDI differences · comparison</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in MusicXML &amp; score interchange">
+<a class="seo-pager-link seo-pager-prev" href="./musicxml-vs-midi.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">MusicXML vs MIDI: Choosing the Right Format</span></a>
+<a class="seo-pager-link seo-pager-next" href="./midi-to-musicxml.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Converting MIDI Into MusicXML Notation</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

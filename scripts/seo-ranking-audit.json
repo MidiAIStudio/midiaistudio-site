@@ -1,0 +1,14 @@
+﻿{
+  "date": "2026-07-20",
+  "seoScore": 88,
+  "contentQuality": 82,
+  "eeatScore": 86,
+  "internalLinkingScore": 84,
+  "schemaScore": 90,
+  "keywordCoverage": ["PDF to MIDI","YouTube to MIDI","MP3 to MIDI","Audio to MIDI","AI MIDI Converter","Sheet Music to MIDI","MusicXML","MIDI Converter","Piano MIDI Converter"],
+  "pagesCreated": {"landings": 5, "articles": 50, "faq": 1, "about": 1, "hub": 1},
+  "priorityImprovements": ["Collect real reviews before AggregateRating", "Add unique custom photography per article over time", "Localize top guides to Korean", "Build backlinks from music education sites", "Expand FAQ dynamically from Search Console queries"],
+  "expectedImpact": "Improved topical authority for MIDI conversion queries over 1-3 months after indexing; landings + 50 articles create crawlable keyword coverage without thin doorway pages when interlinked.",
+  "competitorGapsFilled": ["Connected YouTube/audio intake + MIDI edit + score path on Windows", "Transparent business/support/patch notes EEAT", "Long-form intent guides vs feature-only pages"],
+  "wordCountRange": "1303-1375"
+}

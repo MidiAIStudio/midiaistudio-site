@@ -1,0 +1,75 @@
+/* SEO content / guides — extends existing portal look, no redesign */
+.seo-page .seo-prose{max-width:760px;margin:0 auto}
+.seo-page .seo-prose h1{font-size:clamp(28px,4vw,44px);letter-spacing:-.04em;line-height:1.15;margin:0 0 14px}
+.seo-page .seo-prose h2{font-size:clamp(20px,2.4vw,28px);margin:36px 0 12px;letter-spacing:-.03em;scroll-margin-top:84px}
+.seo-page .seo-prose h3{font-size:17px;margin:22px 0 8px;scroll-margin-top:84px}
+.seo-page .seo-prose p,.seo-page .seo-prose li{color:var(--muted);line-height:1.85;font-size:15px}
+.seo-page .seo-prose p{margin:0 0 14px}
+.seo-page .seo-prose ul,.seo-page .seo-prose ol{margin:0 0 18px;padding-left:1.25em}
+.seo-page .seo-prose a{color:#9fdfff;text-decoration:underline;text-underline-offset:3px}
+.seo-page .seo-prose strong{color:var(--text);font-weight:700}
+.seo-page .seo-meta{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:13px;color:var(--muted);margin:0 0 18px}
+.seo-page .seo-read-time{color:var(--text);font-weight:600}
+.seo-page .seo-breadcrumbs{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.6}
+.seo-page .seo-breadcrumbs a{color:#c7d0ff;text-decoration:none}
+.seo-page .seo-crumb-cluster{color:var(--muted)}
+.seo-page .seo-cta-box{margin:32px 0;padding:22px 24px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,.04))}
+.seo-page .seo-cta-box h2{margin:0 0 8px;font-size:22px}
+.seo-page .seo-cta-box p{margin:0 0 14px}
+.seo-page .seo-cta-actions{display:flex;gap:10px;flex-wrap:wrap;margin:0!important}
+.seo-page .seo-cta-note{font-size:13px;opacity:.9}
+.seo-page .seo-faq details{border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px;background:rgba(255,255,255,.04)}
+.seo-page .seo-faq summary{cursor:pointer;font-weight:700;color:var(--text);line-height:1.45}
+.seo-page .seo-faq details p{margin:10px 0 0}
+.seo-page .seo-faq-intro{margin:0 0 14px!important;font-size:14px!important}
+.seo-page .seo-related{display:grid;gap:10px;margin:18px 0 28px}
+.seo-page .seo-related-lead{margin:0 0 4px!important;font-size:14px!important}
+.seo-page .seo-related-meta{color:var(--muted);font-size:13px}
+.seo-page .seo-related a{display:block;padding:12px 14px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04);text-decoration:none;color:var(--text)}
+.seo-page .seo-related a:hover{border-color:rgba(34,211,238,.35)}
+.seo-page .seo-figure{margin:22px 0;padding:0;border:0}
+.seo-page .seo-figure img{width:100%;height:auto;border-radius:16px;border:1px solid var(--line);display:block}
+.seo-page .seo-figure figcaption{margin-top:8px;font-size:13px;color:var(--muted);line-height:1.55}
+.seo-page .seo-fig-credit{display:block;margin-top:4px;opacity:.85;font-size:12px}
+.seo-page .seo-toc{margin:0 0 28px;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:rgba(0,0,0,.18)}
+.seo-page .seo-toc-label{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 8px;color:var(--text)}
+.seo-page .seo-toc-hint{font-size:12px;color:var(--muted);font-weight:500}
+.seo-page .seo-toc-list{margin:0;padding-left:1.2em}
+.seo-page .seo-toc-list a{display:inline;font-size:14px;color:#9fdfff;text-decoration:none;line-height:1.55}
+.seo-page .seo-toc-list li{margin:5px 0;color:var(--muted)}
+.seo-page .seo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:18px 0 36px}
+.seo-page .seo-card{padding:16px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.05)}
+.seo-page .seo-card h3{margin:0 0 8px;font-size:16px}
+.seo-page .seo-card p{margin:0;font-size:13px;line-height:1.6;color:var(--muted)}
+.seo-page .seo-card a{color:#9fdfff}
+.seo-trust{display:grid;gap:8px;margin:16px 0 28px;font-size:13px;color:var(--muted)}
+.seo-trust span{display:block}
+
+.seo-author{display:flex;gap:14px;align-items:flex-start;margin:0 0 24px;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+.seo-author-mark{flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:800;color:#fff;background:linear-gradient(135deg,rgba(139,92,246,.85),rgba(34,211,238,.55));border:1px solid rgba(255,255,255,.18)}
+.seo-author-name{margin:0 0 6px!important;color:var(--text)!important;font-size:14px!important;font-weight:700}
+.seo-author-name a{color:var(--text);text-decoration:none}
+.seo-author-bio{margin:0 0 8px!important;font-size:13px!important;line-height:1.55!important}
+.seo-author-links{margin:0!important;font-size:12px!important;line-height:1.5!important}
+
+.seo-pager{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 36px}
+.seo-pager-link{display:block;padding:14px 16px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04);text-decoration:none;color:var(--text);min-height:74px}
+.seo-pager-link:hover{border-color:rgba(34,211,238,.35)}
+.seo-pager-next{text-align:right}
+.seo-pager-kicker{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.seo-pager-title{display:block;font-size:14px;line-height:1.45;font-weight:600}
+.seo-pager-empty{border:0;background:transparent;min-height:0;padding:0}
+
+.seo-skip{position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden}
+.seo-skip:focus{left:12px;top:12px;width:auto;height:auto;z-index:99;padding:10px 14px;background:#0b1020;border:1px solid var(--line);border-radius:12px;color:#fff}
+
+@media(max-width:720px){
+  .seo-page .seo-prose{padding:0 4px;max-width:100%}
+  .seo-page .seo-prose p,.seo-page .seo-prose li{font-size:15px;line-height:1.9}
+  .seo-page .seo-prose h1{font-size:clamp(26px,7vw,34px);line-height:1.2}
+  .seo-page .seo-prose h2{margin-top:28px}
+  .seo-pager{grid-template-columns:1fr}
+  .seo-pager-next{text-align:left}
+  .seo-page .seo-cta-actions .primary,.seo-page .seo-cta-actions .secondary,.seo-page .seo-cta-actions .ghost{width:100%;text-align:center;box-sizing:border-box}
+  .seo-page .seo-toc{padding:14px}
+}

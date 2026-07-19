@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MusicXML vs MIDI: Which Format Do You Actually Need?</title>
+  <meta name="description" content="A side-by-side comparison of MusicXML and MIDI, clarifying what each stores, what each loses, and which to choose for playback, editing, notation, or archiving.">
+  <meta name="keywords" content="MusicXML vs MIDI differences, notation vs performance data, when to use MusicXML">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/musicxml-vs-midi.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="MusicXML vs MIDI: Which Format Do You Actually Need?">
+  <meta property="og:description" content="A side-by-side comparison of MusicXML and MIDI, clarifying what each stores, what each loses, and which to choose for playback, editing, notation, or archiving.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/musicxml-vs-midi.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MusicXML vs MIDI: Which Format Do You Actually Need?">
+  <meta name="twitter:description" content="A side-by-side comparison of MusicXML and MIDI, clarifying what each stores, what each loses, and which to choose for playback, editing, notation, or archiving.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "MusicXML vs MIDI: Which Format Do You Actually Need?",
+  "description": "A side-by-side comparison of MusicXML and MIDI, clarifying what each stores, what each loses, and which to choose for playback, editing, notation, or archiving.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "MusicXML vs MIDI differences, notation vs performance data, when to use MusicXML",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/musicxml-vs-midi.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the simplest rule for choosing between MusicXML and MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ask whether you care about the sound or the page. Sound, playback, and DAW work call for MIDI; printed notation, parts, and publishing call for MusicXML. That one question settles most decisions."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why can't I just publish sheet music directly from a MIDI file?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because MIDI does not store notation details like correct spelling, beaming, or lyrics. Notation software would have to reconstruct all of that, which is why MusicXML is the better source for printing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What does MIDI store that MusicXML does not emphasize?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "MIDI stores performance nuance as timed events — exact timing, note velocity, and expression — in a lean, universally playable stream. MusicXML focuses on the written page rather than a performance stream."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I lose information converting MusicXML to MIDI or back?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, in both directions. Going to MIDI drops notation detail like spelling and beaming; going to MusicXML must infer written structure MIDI never stored. Convert only when your purpose genuinely changes."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I ever keep both a MIDI and a MusicXML of the same piece?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For projects that need both playback and printing, yes. Keeping both exports means you never have to reconstruct the detail one format discards when your task shifts between sound and page."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "MusicXML",
+      "item": "https://midiaistudio.com/guides/musicxml.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "MusicXML vs MIDI: Choosing the Right Format",
+      "item": "https://midiaistudio.com/guides/articles/musicxml-vs-midi.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../musicxml.html">MusicXML</a> ›
+<span class="seo-crumb-cluster">MusicXML &amp; score interchange</span> ›
+<span aria-current="page">MusicXML vs MIDI: Choosing the Right Format</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · MusicXML &amp; score interchange</p>
+<h1>MusicXML vs MIDI: Choosing the Right Format</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: comparison</span>
+  <span>Cluster: MusicXML &amp; score interchange</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#the-one-question-that-decides-which-format-you-need">The one question that decides which format you need</a></li>
+<li><a href="#what-midi-stores-and-deliberately-ignores">What MIDI stores and deliberately ignores</a></li>
+<li><a href="#what-musicxml-stores-that-midi-cannot">What MusicXML stores that MIDI cannot</a></li>
+<li><a href="#playback-and-editing-midi-s-home-turf">Playback and editing: MIDI's home turf</a></li>
+<li><a href="#notation-and-printing-musicxml-s-home-turf">Notation and printing: MusicXML's home turf</a></li>
+<li><a href="#file-size-portability-and-tooling-differences">File size, portability, and tooling differences</a></li>
+<li><a href="#converting-between-the-two-and-what-leaks-out">Converting between the two and what leaks out</a></li>
+<li><a href="#a-decision-guide-for-common-musician-tasks">A decision guide for common musician tasks</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>MusicXML and MIDI are constantly confused because both come out of the same conversion tools and both represent music as data. But they answer different questions, and choosing the wrong one means fighting your format for the rest of a project. Getting the distinction right up front saves real frustration.</p>
+<p>The confusion is understandable — a beginner sees two export buttons and reasonably assumes they are variations on a theme. In fact they are almost complementary: each stores what the other largely ignores, and knowing which stores what turns the choice from a coin flip into an obvious decision.</p>
+<p>This comparison lays them side by side without jargon, so that the next time MidiAI Studio offers you both, you know instantly which one your task actually calls for. The deciding factor is simpler than you might expect.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/sheet-music-score-editor.jpg" alt="MidiAI Studio offering MIDI and MusicXML exports of the same folk tune for a DAW loop and a printed lead sheet." title="MidiAI Studio offering MIDI and MusicXML exports of the same folk tune for a DAW loop and a printed lead sheet." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio offering MIDI and MusicXML exports of the same folk tune for a DAW loop and a printed lead sheet.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MusicXML vs MIDI differences”</span></figcaption>
+</figure>
+
+<h2 id="the-one-question-that-decides-which-format-you-need">The one question that decides which format you need</h2>
+<p>MIDI is a performance format: it stores which notes sound, when, how long, and how hard, as a stream of timed events. It knows nothing about how the music is written on a page — no clefs, no beaming, no distinction between a G-sharp and an A-flat.</p>
+<p>MusicXML is a notation format: it stores the written score, including pitches spelled correctly, rhythms, beaming, lyrics, and articulations. It captures how music looks on the page, but it is not a performance stream the way MIDI is.</p>
+
+<h2 id="what-midi-stores-and-deliberately-ignores">What MIDI stores and deliberately ignores</h2>
+<p>The deciding question is whether you care about the sound or the page. If your endpoint is playback, editing a performance, or feeding a DAW, MIDI is the natural fit because it stores exactly that — timed, expressive events. Its blindness to notation is a feature, keeping it lean and universally playable.</p>
+<p>If your endpoint is printed music — publishing, extracting parts, transposing on the page — MusicXML is the fit, because it preserves the written detail MIDI throws away. It knows a note is spelled as an E-flat, that two notes are beamed, that a syllable sits beneath a pitch, which is exactly what notation software needs to draw a readable score.</p>
+<p>MidiAI Studio can export either, and the right call follows directly from that one question. Trying to publish clean sheet music from a MIDI file means reconstructing everything MIDI discarded; trying to drive a synthesizer from MusicXML means ignoring most of what it carries. Matching format to purpose avoids both mismatches.</p>
+
+<h2 id="what-musicxml-stores-that-midi-cannot">What MusicXML stores that MIDI cannot</h2>
+<h3>Same song, two different jobs, two different formats</h3>
+<p>Suppose you have transcribed a folk tune in D major and you have two separate tasks: first, to loop it into a backing track in your DAW, and second, to publish a clean lead sheet with chords and lyrics for a songbook.</p>
+<p>For the DAW task you export MIDI, drop it onto a track, and immediately loop, transpose, and assign it to a synth — the performance data is all you need. For the songbook you export MusicXML, open it in a notation program, and the chords, lyrics, and correct note spellings are all there to engrave.</p>
+<p>Same transcription, two formats, two smooth workflows. Had you tried to publish from the MIDI or sequence from the MusicXML, each task would have fought you the whole way. The formats were not interchangeable; they were job-specific.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for MusicXML vs MIDI differences" title="Supporting view for MusicXML vs MIDI differences" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “MusicXML vs MIDI differences”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="comparison-mid" aria-label="Call to action">
+<h2>Compare options, then verify with a real file</h2>
+<p>Use this page to pick the right job. When you are ready, MidiAI Studio covers intake → MIDI edit → score paths on Windows.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Test on your machine</a>
+<a class="secondary" href="https://midiaistudio.com/purchase.html">Lifetime license</a>
+<a class="ghost" href="https://midiaistudio.com/about.html">Publisher &amp; trust info</a>
+</p>
+</aside>
+
+<h2 id="playback-and-editing-midi-s-home-turf">Playback and editing: MIDI's home turf</h2>
+<ol class="seo-steps">
+<li><strong>Ask whether you want the sound or the page.</strong> Decide up front whether your endpoint is playback and performance, or printed and re-engraved notation. This single question determines the correct format for almost every task.</li>
+<li><strong>Choose MIDI for performance workflows.</strong> Export MIDI when you will play back, edit expression, loop, or feed a DAW. Its timed-event model is exactly what those tasks consume.</li>
+<li><strong>Choose MusicXML for notation workflows.</strong> Export MusicXML when you will publish, extract parts, or transpose on the page. Its preservation of written detail is what notation software needs.</li>
+<li><strong>Convert only when the job genuinely changes.</strong> Move between formats when your purpose shifts, accepting that each conversion loses what the target format cannot hold. Convert for a reason, not by default.</li>
+<li><strong>Keep both if a project spans both worlds.</strong> For projects that need playback and printing, maintain a MIDI and a MusicXML export. Keeping both avoids repeatedly reconstructing lost detail.</li>
+</ol>
+
+<h2 id="notation-and-printing-musicxml-s-home-turf">Notation and printing: MusicXML's home turf</h2>
+<ul class="seo-list">
+<li>Let the sound-versus-page question drive every format choice.</li>
+<li>Reach for MIDI by default for DAW and playback work.</li>
+<li>Reach for MusicXML by default for anything printed or re-engraved.</li>
+<li>Expect detail loss whenever you convert from one to the other.</li>
+<li>Maintain both exports for projects that live in both worlds.</li>
+</ul>
+
+<h2 id="file-size-portability-and-tooling-differences">File size, portability, and tooling differences</h2>
+<ul class="seo-list">
+<li><strong>Publishing sheet music from MIDI:</strong> MIDI lacks spelling and beaming, so notation from it needs heavy reconstruction.</li>
+<li><strong>Sequencing from MusicXML:</strong> Driving a synth from a notation format ignores most of what it carries and adds friction.</li>
+<li><strong>Assuming the two are interchangeable:</strong> They store different things, so swapping them mid-task guarantees fighting the format.</li>
+<li><strong>Converting back and forth casually:</strong> Each round trip loses detail the target cannot hold; convert only with purpose.</li>
+<li><strong>Keeping only one for a dual-purpose project:</strong> Projects that need both sound and page suffer when you must rebuild the missing format repeatedly.</li>
+</ul>
+
+<h2 id="converting-between-the-two-and-what-leaks-out">Converting between the two and what leaks out</h2>
+<p>The most freeing realization is that MusicXML and MIDI are not competitors to be ranked but tools to be matched. Asking which is better is like asking whether a hammer beats a screwdriver; the honest answer is that it depends entirely on what you are building. Once you stop ranking them, choosing becomes effortless.</p>
+<p>Their complementarity runs deep. MIDI is lean precisely because it ignores the page, which makes it fast, tiny, and playable anywhere; MusicXML is rich precisely because it captures the page, which makes it larger and notation-focused. Each format's strength is the other's deliberate omission, and that is by design, not deficiency.</p>
+
+<h2 id="a-decision-guide-for-common-musician-tasks">A decision guide for common musician tasks</h2>
+<p>Conversion between them is where beginners get burned, because it feels lossless and is not. Every time you cross the divide, the target format silently drops or invents detail — spelling lost going to MIDI, structure guessed going to MusicXML. Understanding this keeps you from casually round-tripping a file into gradual degradation.</p>
+<p>The mature approach treats the two as a pair to be kept, not a choice to be regretted. When MidiAI Studio can hand you both, a project that spans performance and publication is best served by keeping a MIDI for the DAW and a MusicXML for the page. Holding both is cheaper than repeatedly rebuilding whichever one you threw away.</p>
+
+<aside class="seo-cta-box" data-cta="comparison-end" aria-label="Call to action">
+<h2>Compare options, then verify with a real file</h2>
+<p>Use this page to pick the right job. When you are ready, MidiAI Studio covers intake → MIDI edit → score paths on Windows.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Test on your machine</a>
+<a class="secondary" href="https://midiaistudio.com/purchase.html">Lifetime license</a>
+<a class="ghost" href="https://midiaistudio.com/about.html">Publisher &amp; trust info</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>MusicXML vs MIDI differences</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>What is the simplest rule for choosing between MusicXML and MIDI?</summary><p>Ask whether you care about the sound or the page. Sound, playback, and DAW work call for MIDI; printed notation, parts, and publishing call for MusicXML. That one question settles most decisions.</p></details>
+<details><summary>Why can't I just publish sheet music directly from a MIDI file?</summary><p>Because MIDI does not store notation details like correct spelling, beaming, or lyrics. Notation software would have to reconstruct all of that, which is why MusicXML is the better source for printing.</p></details>
+<details><summary>What does MIDI store that MusicXML does not emphasize?</summary><p>MIDI stores performance nuance as timed events — exact timing, note velocity, and expression — in a lean, universally playable stream. MusicXML focuses on the written page rather than a performance stream.</p></details>
+<details><summary>Do I lose information converting MusicXML to MIDI or back?</summary><p>Yes, in both directions. Going to MIDI drops notation detail like spelling and beaming; going to MusicXML must infer written structure MIDI never stored. Convert only when your purpose genuinely changes.</p></details>
+<details><summary>Should I ever keep both a MIDI and a MusicXML of the same piece?</summary><p>For projects that need both playback and printing, yes. Keeping both exports means you never have to reconstruct the detail one format discards when your task shifts between sound and page.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “MusicXML vs MIDI differences”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>MusicXML &amp; score interchange</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../musicxml.html"><strong>Pillar · MusicXML</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./midi-to-pdf-sheet-music.html"><strong>Turning a MIDI File Into Printable Sheet Music</strong><br><span class="seo-related-meta">MIDI to PDF sheet music · how-to</span></a>
+<a href="./score-editor-workflow.html"><strong>Building a Reliable Score Editor Workflow</strong><br><span class="seo-related-meta">MIDI score editor workflow · workflow</span></a>
+<a href="./musicxml-explained.html"><strong>What MusicXML Is and Why It Matters</strong><br><span class="seo-related-meta">what is MusicXML format · explainer</span></a>
+<a href="./musicxml-to-midi.html"><strong>Converting MusicXML Into a MIDI Performance</strong><br><span class="seo-related-meta">MusicXML to MIDI playback · how-to</span></a>
+<a href="./midi-to-musicxml.html"><strong>Converting MIDI Into MusicXML Notation</strong><br><span class="seo-related-meta">MIDI to MusicXML notation · how-to</span></a>
+<a href="./pdf-to-musicxml.html"><strong>Turning a PDF Into MusicXML You Can Re-Engrave</strong><br><span class="seo-related-meta">Nearby · PDF to MusicXML conversion</span></a>
+<a href="./monophonic-vs-polyphonic-midi.html"><strong>Monophonic vs Polyphonic Transcription Explained</strong><br><span class="seo-related-meta">Nearby · monophonic vs polyphonic MIDI</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in MusicXML &amp; score interchange">
+<a class="seo-pager-link seo-pager-prev" href="./musicxml-explained.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">What MusicXML Is and Why It Matters</span></a>
+<a class="seo-pager-link seo-pager-next" href="./musicxml-to-midi.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Converting MusicXML Into a MIDI Performance</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cleaning Up AI-Generated MIDI: From Rough Draft to Polished Part</title>
+  <meta name="description" content="An AI transcription is a strong draft, not a finished part. This guide is a systematic cleanup process for the specific artifacts AI conversion tends to introduce.">
+  <meta name="keywords" content="cleanup checklist AI MIDI, remove doubled MIDI notes, octave error fixes">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/cleaning-up-ai-generated-midi.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="Cleaning Up AI-Generated MIDI: From Rough Draft to Polished Part">
+  <meta property="og:description" content="An AI transcription is a strong draft, not a finished part. This guide is a systematic cleanup process for the specific artifacts AI conversion tends to introduce.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/cleaning-up-ai-generated-midi.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cleaning Up AI-Generated MIDI: From Rough Draft to Polished Part">
+  <meta name="twitter:description" content="An AI transcription is a strong draft, not a finished part. This guide is a systematic cleanup process for the specific artifacts AI conversion tends to introduce.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Cleaning Up AI-Generated MIDI: From Rough Draft to Polished Part",
+  "description": "An AI transcription is a strong draft, not a finished part. This guide is a systematic cleanup process for the specific artifacts AI conversion tends to introduce.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "cleanup checklist AI MIDI, remove doubled MIDI notes, octave error fixes",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/cleaning-up-ai-generated-midi.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why does accurate AI-transcribed MIDI still sound mechanical?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Usually because the model over-quantized the timing and flattened the velocities as a side effect of prioritizing accuracy. Restoring subtle timing variation and shaped dynamics is what returns the human feel to correct notes."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What are the telltale artifacts of AI-generated MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Stray or doubled notes near ambiguous onsets and reverb tails, overly rigid timing, compressed velocities, and sustained notes fragmented by false re-attacks. Knowing this family lets you hunt them systematically."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I fix stray notes or dynamics first when cleaning up AI MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Remove spurious and doubled notes first, because they clutter the part and can mislead your later edits. With the true notes revealed, you can then shape timing and dynamics efficiently."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why did one long note become two in my transcription?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The model likely detected a false re-attack within a sustained note and split it. Rejoining the fragments into the single intended note restores the legato and correct duration."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I know when an AI-transcribed part is finished?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "When the characteristic artifacts are gone and the part sounds intentional — clean of stray notes, breathing in its timing, shaped in its dynamics, and connected in its phrasing. At that point further edits yield diminishing returns."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Turning Raw AI MIDI Into a Clean, Musical Part",
+      "item": "https://midiaistudio.com/guides/articles/cleaning-up-ai-generated-midi.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">MIDI editing craft</span> ›
+<span aria-current="page">Turning Raw AI MIDI Into a Clean, Musical Part</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · MIDI editing craft</p>
+<h1>Turning Raw AI MIDI Into a Clean, Musical Part</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: checklist</span>
+  <span>Cluster: MIDI editing craft</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#treating-ai-output-as-a-draft-not-a-verdict">Treating AI output as a draft, not a verdict</a></li>
+<li><a href="#the-signature-artifacts-of-ai-transcription">The signature artifacts of AI transcription</a></li>
+<li><a href="#removing-stray-doubled-and-overlapping-notes">Removing stray, doubled, and overlapping notes</a></li>
+<li><a href="#fixing-quantization-the-ai-applied-too-eagerly">Fixing quantization the AI applied too eagerly</a></li>
+<li><a href="#restoring-dynamics-the-model-flattened">Restoring dynamics the model flattened</a></li>
+<li><a href="#rejoining-notes-the-ai-fragmented">Rejoining notes the AI fragmented</a></li>
+<li><a href="#a-cleanup-order-that-converges-quickly">A cleanup order that converges quickly</a></li>
+<li><a href="#knowing-when-the-part-is-genuinely-finished">Knowing when the part is genuinely finished</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>An AI transcription arrives as a confident, capable draft — and drafts need editing. The best mental posture is to treat the raw output as a strong first pass by a fast assistant, not as a final verdict, because AI conversion introduces a recognizable family of small artifacts that a short cleanup pass resolves.</p>
+<p>What makes cleanup efficient is that these artifacts are predictable. Once you know the specific things AI transcription tends to get slightly wrong — stray notes, over-eager quantization, flattened dynamics — you can hunt them systematically rather than proofreading blindly, and the part comes together quickly.</p>
+<p>This guide gives you that systematic process for cleaning up MidiAI Studio output into a polished, musical part. It assumes the transcription is already largely accurate and focuses on the finishing work that turns good into genuinely done.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio piano roll showing a string melody cleaned of stray notes with a redrawn velocity arc." title="MidiAI Studio piano roll showing a string melody cleaned of stray notes with a redrawn velocity arc." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio piano roll showing a string melody cleaned of stray notes with a redrawn velocity arc.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “cleanup checklist AI MIDI”</span></figcaption>
+</figure>
+
+<h2 id="treating-ai-output-as-a-draft-not-a-verdict">Treating AI output as a draft, not a verdict</h2>
+<p>Cleaning up AI-generated MIDI is the finishing process of correcting the characteristic artifacts of automated transcription — spurious notes, timing quantization, flattened velocity, and fragmented durations — to produce a part that sounds intentional and musical.</p>
+<p>It differs from accuracy correction in emphasis: the notes are largely right, and the work is refinement, removing the tell-tale signs of automation so the result reads as a considered performance rather than a machine's readout.</p>
+
+<h2 id="the-signature-artifacts-of-ai-transcription">The signature artifacts of AI transcription</h2>
+<p>AI transcription tends toward a few signature artifacts, and recognizing them is what makes cleanup fast. Extra notes appear where the model heard ambiguity — reverb tails, overlapping harmonics — and doubled or overlapping notes appear where it was unsure whether one event or two occurred. These clustered errors are found by pattern, not by scanning every note.</p>
+<p>The model also often over-quantizes or flattens expression as a side effect of prioritizing accuracy. Timing may be snapped a little too rigidly and velocities compressed toward a middle value, so MidiAI Studio's output can be technically correct yet feel mechanical until you restore the human variation the transcription smoothed away.</p>
+<p>Fragmentation is the subtler artifact: a single sustained note may be split into two shorter ones where the model detected a false re-attack, or a legato phrase may lose its connectedness. Rejoining these fragments and restoring intended durations is what returns the part to sounding like continuous music rather than a series of clipped events.</p>
+
+<h2 id="removing-stray-doubled-and-overlapping-notes">Removing stray, doubled, and overlapping notes</h2>
+<h3>Polishing a transcribed string melody</h3>
+<p>Suppose MidiAI Studio transcribed a lyrical string melody in E major, and the notes are all correct but the part feels stiff. Inspecting it, you find three telltale artifacts: a few stray notes from bow noise, uniform velocities, and one long note split into two.</p>
+<p>You delete the stray notes clustered around the phrase ends, redraw a gentle velocity arc so the melody swells and recedes as a string player would phrase it, and rejoin the fragmented note into the single sustained tone it should be. Each fix targets a known AI artifact.</p>
+<p>The transformation is striking: the same correct notes now breathe and sing rather than sitting flat. The cleanup took minutes because you knew exactly which artifacts to look for, turning an accurate-but-mechanical draft into an expressive, finished part.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio detail for cleanup checklist AI MIDI" title="Supporting view for cleanup checklist AI MIDI" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “cleanup checklist AI MIDI”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="checklist-mid" aria-label="Call to action">
+<h2>Run the checklist inside MidiAI Studio</h2>
+<p>Keep this list open beside the app. Check one item per listen-pass so cleanup stays focused.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Open the app</a>
+<a class="secondary" href="https://midiaistudio.com/patch-notes.html">Check latest fixes</a>
+<a class="ghost" href="https://midiaistudio.com/faq.html">Portal FAQ</a>
+</p>
+</aside>
+
+<h2 id="fixing-quantization-the-ai-applied-too-eagerly">Fixing quantization the AI applied too eagerly</h2>
+<ol class="seo-steps">
+<li><strong>Adopt a draft mindset.</strong> Approach the AI output expecting to refine it, not judge it. Treating the transcription as a capable first pass focuses you on finishing work rather than disappointment at imperfection.</li>
+<li><strong>Sweep out spurious and doubled notes.</strong> Remove stray, doubled, and overlapping notes, checking the clusters near reverb tails and ambiguous onsets. Clearing these first reveals the true part underneath.</li>
+<li><strong>Loosen over-eager quantization.</strong> Where timing feels rigid, restore small human deviations so the rhythm breathes. Perfectly gridded timing is a common giveaway of automated output.</li>
+<li><strong>Redraw flattened dynamics.</strong> Replace uniform velocities with shaped crescendos, accents, and contrast appropriate to the instrument. Restoring dynamics is the biggest single step toward a musical feel.</li>
+<li><strong>Rejoin fragmented notes.</strong> Merge notes the model split by false re-attacks and restore intended durations. Reconnecting fragments returns legato and sustain to the part.</li>
+</ol>
+
+<h2 id="restoring-dynamics-the-model-flattened">Restoring dynamics the model flattened</h2>
+<ul class="seo-list">
+<li>Expect and look for the known family of AI artifacts rather than reading blindly.</li>
+<li>Clear spurious notes before refining timing or dynamics.</li>
+<li>Reintroduce subtle timing variation where the grid feels too rigid.</li>
+<li>Shape velocity to the instrument's natural phrasing.</li>
+<li>Check for and rejoin fragmented sustained notes.</li>
+</ul>
+
+<h2 id="rejoining-notes-the-ai-fragmented">Rejoining notes the AI fragmented</h2>
+<ul class="seo-list">
+<li><strong>Judging the draft instead of refining it:</strong> Treating AI output as final rather than a draft leads to abandoning good material over minor artifacts.</li>
+<li><strong>Refining over spurious notes:</strong> Shaping dynamics before removing stray notes wastes effort on clutter you will delete.</li>
+<li><strong>Leaving rigid quantization:</strong> Over-gridded timing keeps the part sounding mechanical no matter how correct the notes.</li>
+<li><strong>Accepting flat velocities:</strong> Uniform dynamics are the clearest sign of unpolished automated output.</li>
+<li><strong>Ignoring fragmented notes:</strong> Split sustained notes break legato and betray the part's machine origin.</li>
+</ul>
+
+<h2 id="a-cleanup-order-that-converges-quickly">A cleanup order that converges quickly</h2>
+<p>The draft mindset is the quiet key to getting value from AI transcription, because it aligns your expectations with reality. A model produces a fast, capable first pass the way a skilled assistant might, and no one would hand an assistant's first draft straight to a client. Seeing MidiAI Studio's output as that draft turns cleanup from a grievance into a normal, satisfying stage of the work.</p>
+<p>What makes AI cleanup so much faster than blind proofreading is that automation errs in patterns, not at random. A human copyist makes idiosyncratic slips, but a model makes systematic ones tied to how it reasons about sound, so the same artifact types recur in predictable places. Learning that family once pays off on every transcription you ever clean.</p>
+
+<h2 id="knowing-when-the-part-is-genuinely-finished">Knowing when the part is genuinely finished</h2>
+<p>The tension between accuracy and expression is worth understanding, because it explains why correct MIDI can feel dead. A model optimizing to place the right notes at the right times will tend to regularize timing and dynamics, since irregularity looks like error to it — but that very irregularity is what human expression is made of. Your cleanup is, in a sense, adding back the meaningful imperfection the model removed.</p>
+<p>Ultimately, cleanup is where the transcription becomes yours. The model supplies the notes, but the phrasing, the dynamic arc, and the connectedness are decisions only a musician makes, and applying them is what transforms a shared, automated draft into a personal, finished interpretation. That final layer of judgment is not a chore but the part where your musicianship actually shows.</p>
+
+<aside class="seo-cta-box" data-cta="checklist-end" aria-label="Call to action">
+<h2>Run the checklist inside MidiAI Studio</h2>
+<p>Keep this list open beside the app. Check one item per listen-pass so cleanup stays focused.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Open the app</a>
+<a class="secondary" href="https://midiaistudio.com/patch-notes.html">Check latest fixes</a>
+<a class="ghost" href="https://midiaistudio.com/faq.html">Portal FAQ</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>cleanup checklist AI MIDI</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Why does accurate AI-transcribed MIDI still sound mechanical?</summary><p>Usually because the model over-quantized the timing and flattened the velocities as a side effect of prioritizing accuracy. Restoring subtle timing variation and shaped dynamics is what returns the human feel to correct notes.</p></details>
+<details><summary>What are the telltale artifacts of AI-generated MIDI?</summary><p>Stray or doubled notes near ambiguous onsets and reverb tails, overly rigid timing, compressed velocities, and sustained notes fragmented by false re-attacks. Knowing this family lets you hunt them systematically.</p></details>
+<details><summary>Should I fix stray notes or dynamics first when cleaning up AI MIDI?</summary><p>Remove spurious and doubled notes first, because they clutter the part and can mislead your later edits. With the true notes revealed, you can then shape timing and dynamics efficiently.</p></details>
+<details><summary>Why did one long note become two in my transcription?</summary><p>The model likely detected a false re-attack within a sustained note and split it. Rejoining the fragments into the single intended note restores the legato and correct duration.</p></details>
+<details><summary>How do I know when an AI-transcribed part is finished?</summary><p>When the characteristic artifacts are gone and the part sounds intentional — clean of stray notes, breathing in its timing, shaped in its dynamics, and connected in its phrasing. At that point further edits yield diminishing returns.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “cleanup checklist AI MIDI”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>MIDI editing craft</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./midi-editing-basics.html"><strong>The Fundamentals of Editing MIDI</strong><br><span class="seo-related-meta">MIDI editing after AI conversion · how-to</span></a>
+<a href="./midi-velocity-and-expression.html"><strong>Adding Real Expression to Converted MIDI</strong><br><span class="seo-related-meta">MIDI velocity expression editing · how-to</span></a>
+<a href="./quantize-midi-after-conversion.html"><strong>Quantizing Converted MIDI the Musical Way</strong><br><span class="seo-related-meta">quantize AI MIDI timing · how-to</span></a>
+<a href="./audio-to-midi-ai.html"><strong>How AI Turns Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · AI audio transcription to MIDI</span></a>
+<a href="./wav-to-midi.html"><strong>Converting Uncompressed WAV Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · WAV to MIDI conversion quality</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in MIDI editing craft">
+<a class="seo-pager-link seo-pager-prev" href="./midi-editing-basics.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">The Fundamentals of Editing MIDI</span></a>
+<a class="seo-pager-link seo-pager-next" href="./midi-velocity-and-expression.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Adding Real Expression to Converted MIDI</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

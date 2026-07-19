@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How to Improve MIDI Accuracy After Any Conversion</title>
+  <meta name="description" content="Whatever the source, a converted MIDI can almost always be made more accurate. This guide is a focused toolkit for diagnosing and correcting conversion errors efficiently.">
+  <meta name="keywords" content="improve AI MIDI accuracy, fix bad transcriptions, reduce MIDI note errors">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/improve-midi-accuracy.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="How to Improve MIDI Accuracy After Any Conversion">
+  <meta property="og:description" content="Whatever the source, a converted MIDI can almost always be made more accurate. This guide is a focused toolkit for diagnosing and correcting conversion errors efficiently.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/improve-midi-accuracy.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="How to Improve MIDI Accuracy After Any Conversion">
+  <meta name="twitter:description" content="Whatever the source, a converted MIDI can almost always be made more accurate. This guide is a focused toolkit for diagnosing and correcting conversion errors efficiently.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How to Improve MIDI Accuracy After Any Conversion",
+  "description": "Whatever the source, a converted MIDI can almost always be made more accurate. This guide is a focused toolkit for diagnosing and correcting conversion errors efficiently.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "improve AI MIDI accuracy, fix bad transcriptions, reduce MIDI note errors",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/improve-midi-accuracy.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I tell whether a conversion error came from the source or the tool?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Look at the pattern: source problems track with ambiguous or messy audio and appear where the recording is unclear, while tool or setting errors are more systematic, like a whole region shifted by a semitone. The fingerprint points to the cause."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the fastest way to fix a whole passage that came out a semitone off?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Correct it as a block rather than note by note. A systematic pitch shift, often from a missed accidental or clef, is best fixed by selecting the region and transposing it back in one move."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where do ghost notes in a transcription usually come from?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "They cluster around loud transients, decaying chords, and reverb tails, where lingering sound is misread as new attacks. Knowing that lets you find and delete them by location rather than searching everywhere."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I fix timing that gradually drifts out over a passage?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Re-anchor the passage to the beat rather than nudging individual notes. Drift accumulates from tempo-tracking assumptions, so realigning the whole span to the correct tempo addresses the root cause."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I know when a converted MIDI is accurate enough?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Track the count of remaining errors as you work; when corrections yield diminishing returns and the file matches the source for your purpose, it is accurate enough. Perfect fidelity is rarely worth chasing."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Improving the Accuracy of a Converted MIDI File",
+      "item": "https://midiaistudio.com/guides/articles/improve-midi-accuracy.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">Audio file conversion</span> ›
+<span aria-current="page">Improving the Accuracy of a Converted MIDI File</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · Audio file conversion</p>
+<h1>Improving the Accuracy of a Converted MIDI File</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: troubleshooting</span>
+  <span>Cluster: Audio file conversion</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#diagnosing-whether-errors-are-source-engine-or-setting">Diagnosing whether errors are source, engine, or setting</a></li>
+<li><a href="#the-most-common-error-types-and-their-fingerprints">The most common error types and their fingerprints</a></li>
+<li><a href="#correcting-pitch-errors-without-disturbing-rhythm">Correcting pitch errors without disturbing rhythm</a></li>
+<li><a href="#fixing-timing-drift-and-misplaced-onsets">Fixing timing drift and misplaced onsets</a></li>
+<li><a href="#removing-ghost-notes-and-doubled-events">Removing ghost notes and doubled events</a></li>
+<li><a href="#restoring-durations-mangled-by-sustain-or-reverb">Restoring durations mangled by sustain or reverb</a></li>
+<li><a href="#re-checking-against-the-source-systematically">Re-checking against the source systematically</a></li>
+<li><a href="#measuring-improvement-so-you-know-when-to-stop">Measuring improvement so you know when to stop</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>No conversion is perfect, but almost any conversion can be made better. The gap between a rough transcription and an accurate one is rarely closed by a single dramatic fix; it is closed by recognizing a handful of common error types and correcting each with the right, targeted technique.</p>
+<p>The trap most people fall into is editing reactively — fixing whatever error they happen to notice next, in no particular order. A more effective approach diagnoses the kind of errors present, then addresses them in a sequence that prevents one fix from undoing another.</p>
+<p>This guide is a practical toolkit for that work. It assumes you have a MidiAI Studio conversion in hand and want it more accurate, and it gives you the diagnostic eye and the correction order to get there without spinning your wheels.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio with confidence flags highlighting a mis-pitched region, a ghost-note cluster, and a drifting passage." title="MidiAI Studio with confidence flags highlighting a mis-pitched region, a ghost-note cluster, and a drifting passage." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio with confidence flags highlighting a mis-pitched region, a ghost-note cluster, and a drifting passage.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “improve AI MIDI accuracy”</span></figcaption>
+</figure>
+
+<h2 id="diagnosing-whether-errors-are-source-engine-or-setting">Diagnosing whether errors are source, engine, or setting</h2>
+<p>Improving MIDI accuracy means systematically identifying and correcting the discrepancies between a converted file and the music it represents — wrong pitches, misplaced timings, spurious or missing notes, and distorted durations. It is diagnosis followed by targeted repair.</p>
+<p>Accuracy improvement is distinct from arrangement or expression editing: the goal is fidelity to the source, making the MIDI match what was actually written or played, before any interpretive changes are layered on top.</p>
+
+<h2 id="the-most-common-error-types-and-their-fingerprints">The most common error types and their fingerprints</h2>
+<p>Effective correction starts with diagnosis, because different error types have different causes and cures. Pitch errors often trace to source ambiguity, timing errors to tempo assumptions, and ghost notes to reverb or pedal — and knowing the cause tells you both how to fix the error and how to prevent its siblings elsewhere.</p>
+<p>Each error type has a signature. Ghost notes cluster near loud transients and decaying chords; timing drift accumulates across a passage rather than appearing at a single point; duration errors show as notes that overlap when they should be separate. Learning these fingerprints lets you find errors by pattern instead of hunting note by note.</p>
+<p>The correction sequence mirrors the coarse-to-fine principle: fix systematic issues before isolated ones. If MidiAI Studio placed a whole passage a semitone off because of a misread accidental, correcting that region wholesale is far faster than fixing each note, and it prevents you from mistaking a systematic error for many random ones.</p>
+
+<h2 id="correcting-pitch-errors-without-disturbing-rhythm">Correcting pitch errors without disturbing rhythm</h2>
+<h3>Cleaning a transcription with three different error types</h3>
+<p>Suppose a converted piano transcription in B-flat major at 88 BPM has three problems: a run of notes a semitone flat from a missed accidental, some ghost notes clustered under a pedaled chord, and gradual timing drift in a rubato passage.</p>
+<p>Diagnosing first, you recognize these as one systematic pitch error, a reverb-and-pedal artifact cluster, and a tempo-tracking issue — three distinct causes. You correct the semitone run as a block, delete the ghost notes around the sustained chord, and re-anchor the drifting passage against the beat.</p>
+<p>Because you identified the types before fixing them, each correction was wholesale and quick rather than a note-by-note slog. MidiAI Studio's confidence flags pointed you to two of the three regions before you even started listening closely.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio detail for improve AI MIDI accuracy" title="Supporting view for improve AI MIDI accuracy" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “improve AI MIDI accuracy”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="troubleshooting-mid" aria-label="Call to action">
+<h2>Stuck on “improve AI MIDI accuracy”? Fix source quality first</h2>
+<p>Most accuracy issues are upstream. Improve the input, convert a shorter section, then edit—or ask support with a concrete example.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/support.html">Get 1:1 help</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Update / reinstall</a>
+<a class="ghost" href="https://midiaistudio.com/guides/articles/improve-midi-accuracy.html">Accuracy guide</a>
+</p>
+</aside>
+
+<h2 id="fixing-timing-drift-and-misplaced-onsets">Fixing timing drift and misplaced onsets</h2>
+<ol class="seo-steps">
+<li><strong>Diagnose before you correct.</strong> Identify what kinds of errors are present and their likely causes. Knowing whether a problem is systematic or isolated determines whether you fix a region wholesale or a note individually.</li>
+<li><strong>Fix systematic errors first.</strong> Correct whole-passage issues like a mis-pitched region or a wrong meter before touching individual notes. Systematic fixes are fast and prevent you from mistaking one cause for many.</li>
+<li><strong>Purge ghost and doubled notes.</strong> Remove spurious notes clustered near transients, decaying chords, and reverb tails. Clearing these first reveals the real part clearly for finer correction.</li>
+<li><strong>Repair timing and durations.</strong> Re-anchor drifting passages to the beat and trim durations distorted by sustain. Correct timing makes the remaining pitch checks easier to judge.</li>
+<li><strong>Verify against the source and measure progress.</strong> Compare the corrected file to the original, and track how many errors remain. Measuring improvement tells you when accuracy is sufficient and further editing is optional.</li>
+</ol>
+
+<h2 id="removing-ghost-notes-and-doubled-events">Removing ghost notes and doubled events</h2>
+<ul class="seo-list">
+<li>Start every correction session by categorizing the errors you see and hear.</li>
+<li>Prefer block corrections for systematic errors over note-by-note patching.</li>
+<li>Use confidence flags to jump straight to the likeliest error regions.</li>
+<li>Separate accuracy fixes from expression edits so you never confuse the two.</li>
+<li>Recount remaining errors periodically so stopping is a decision, not a surrender.</li>
+</ul>
+
+<h2 id="restoring-durations-mangled-by-sustain-or-reverb">Restoring durations mangled by sustain or reverb</h2>
+<ul class="seo-list">
+<li><strong>Correcting before diagnosing:</strong> Fixing errors blindly means missing that many share one systematic cause you could fix at once.</li>
+<li><strong>Note-by-note on systematic errors:</strong> Patching a mis-pitched region one note at a time wastes time a block correction would save.</li>
+<li><strong>Refining notes amid ghost clutter:</strong> Leaving spurious notes in place obscures the real part and misleads your corrections.</li>
+<li><strong>Ignoring accumulating drift:</strong> Timing drift compounds across a passage; anchoring it late means more to re-align.</li>
+<li><strong>Mixing accuracy and expression edits:</strong> Blending the two makes it unclear whether a change fixed an error or altered the music.</li>
+</ul>
+
+<h2 id="re-checking-against-the-source-systematically">Re-checking against the source systematically</h2>
+<p>The mindset that transforms accuracy work is thinking like a diagnostician rather than a proofreader. A proofreader reads everything hoping to catch mistakes; a diagnostician forms a hypothesis about what kinds of mistakes a given source and tool tend to make, then goes looking for those specifically. The second approach is faster and more thorough at once.</p>
+<p>Errors are rarely as random as they first appear. Behind a page of wrong notes there are usually a few underlying causes — a missed accidental, an overzealous reverb, a tempo misjudgment — each producing a characteristic family of symptoms. Correcting causes rather than symptoms is what makes accuracy work converge instead of dragging on.</p>
+
+<h2 id="measuring-improvement-so-you-know-when-to-stop">Measuring improvement so you know when to stop</h2>
+<p>It helps to keep accuracy and artistry in separate passes. When you conflate fixing a wrong note with shaping a phrase, you lose the clarity to judge whether the file yet matches its source. MidiAI Studio gives you an accurate draft; deciding it is accurate is a job best done before you start making it beautiful.</p>
+<p>The final discipline is measurement. Because accuracy is improvable almost without limit, the only way to end well is to quantify it — how many errors remain, how they cluster, whether the last hour actually helped. Knowing your numbers turns an open-ended chore into a task with a clear and satisfying finish line.</p>
+
+<aside class="seo-cta-box" data-cta="troubleshooting-end" aria-label="Call to action">
+<h2>Stuck on “improve AI MIDI accuracy”? Fix source quality first</h2>
+<p>Most accuracy issues are upstream. Improve the input, convert a shorter section, then edit—or ask support with a concrete example.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/support.html">Get 1:1 help</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Update / reinstall</a>
+<a class="ghost" href="https://midiaistudio.com/guides/articles/improve-midi-accuracy.html">Accuracy guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>improve AI MIDI accuracy</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>How do I tell whether a conversion error came from the source or the tool?</summary><p>Look at the pattern: source problems track with ambiguous or messy audio and appear where the recording is unclear, while tool or setting errors are more systematic, like a whole region shifted by a semitone. The fingerprint points to the cause.</p></details>
+<details><summary>What is the fastest way to fix a whole passage that came out a semitone off?</summary><p>Correct it as a block rather than note by note. A systematic pitch shift, often from a missed accidental or clef, is best fixed by selecting the region and transposing it back in one move.</p></details>
+<details><summary>Where do ghost notes in a transcription usually come from?</summary><p>They cluster around loud transients, decaying chords, and reverb tails, where lingering sound is misread as new attacks. Knowing that lets you find and delete them by location rather than searching everywhere.</p></details>
+<details><summary>How do I fix timing that gradually drifts out over a passage?</summary><p>Re-anchor the passage to the beat rather than nudging individual notes. Drift accumulates from tempo-tracking assumptions, so realigning the whole span to the correct tempo addresses the root cause.</p></details>
+<details><summary>How do I know when a converted MIDI is accurate enough?</summary><p>Track the count of remaining errors as you work; when corrections yield diminishing returns and the file matches the source for your purpose, it is accurate enough. Perfect fidelity is rarely worth chasing.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “improve AI MIDI accuracy”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Audio file conversion</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./audio-to-midi-ai.html"><strong>How AI Turns Audio Into MIDI</strong><br><span class="seo-related-meta">AI audio transcription to MIDI · explainer</span></a>
+<a href="./wav-to-midi.html"><strong>Converting Uncompressed WAV Audio Into MIDI</strong><br><span class="seo-related-meta">WAV to MIDI conversion quality · how-to</span></a>
+<a href="./flac-to-midi.html"><strong>Converting FLAC Audio Into MIDI Without Losing Detail</strong><br><span class="seo-related-meta">FLAC to MIDI transcription · how-to</span></a>
+<a href="./best-practices-audio-to-midi.html"><strong>Practical Habits for Accurate Audio-to-MIDI</strong><br><span class="seo-related-meta">audio to MIDI accuracy checklist · checklist</span></a>
+<a href="./mp3-to-midi-conversion.html"><strong>Converting an MP3 Recording Into MIDI Notes</strong><br><span class="seo-related-meta">extract MIDI notes from MP3 · how-to</span></a>
+<a href="./piano-midi-converter.html"><strong>Converting Piano to MIDI: The Ideal Case</strong><br><span class="seo-related-meta">Nearby · piano MIDI conversion tips</span></a>
+<a href="./polyphonic-piano-transcription.html"><strong>Transcribing Polyphonic Piano, Note by Note</strong><br><span class="seo-related-meta">Nearby · polyphonic piano transcription</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in Audio file conversion">
+<a class="seo-pager-link seo-pager-prev" href="./best-practices-audio-to-midi.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Practical Habits for Accurate Audio-to-MIDI</span></a>
+<span class="seo-pager-link seo-pager-empty"></span>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

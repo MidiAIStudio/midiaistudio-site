@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIDI to PDF Sheet Music: Printing Readable Scores From MIDI</title>
+  <meta name="description" content="Going the other direction — from MIDI back to a clean printed page — requires quantization, spelling, and layout choices. Here is how to get readable sheet music out of raw MIDI.">
+  <meta name="keywords" content="MIDI to PDF sheet music, print MIDI as score, MIDI engraving tips">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/midi-to-pdf-sheet-music.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="MIDI to PDF Sheet Music: Printing Readable Scores From MIDI">
+  <meta property="og:description" content="Going the other direction — from MIDI back to a clean printed page — requires quantization, spelling, and layout choices. Here is how to get readable sheet music out of raw MIDI.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/midi-to-pdf-sheet-music.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MIDI to PDF Sheet Music: Printing Readable Scores From MIDI">
+  <meta name="twitter:description" content="Going the other direction — from MIDI back to a clean printed page — requires quantization, spelling, and layout choices. Here is how to get readable sheet music out of raw MIDI.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "MIDI to PDF Sheet Music: Printing Readable Scores From MIDI",
+  "description": "Going the other direction — from MIDI back to a clean printed page — requires quantization, spelling, and layout choices. Here is how to get readable sheet music out of raw MIDI.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT9M",
+  "keywords": "MIDI to PDF sheet music, print MIDI as score, MIDI engraving tips",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/sheet-music-score-editor.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/midi-to-pdf-sheet-music.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Why does my MIDI file print with so many tiny rests and odd rhythms?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because raw MIDI stores exact performance timing, not tidy notation. Quantizing to an appropriate grid before engraving converts those messy durations into the rounded rhythms a reader expects."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does the converter decide between sharps and flats when printing MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It uses the key signature and melodic direction to pick the enharmonic spelling a musician would anticipate. Setting the correct key first is the biggest factor in getting readable accidentals."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can a single MIDI track become a proper two-staff piano part?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, by splitting notes across treble and bass staves at a pitch boundary or by voice. Choosing a sensible split point is what turns one crowded staff into a readable grand staff."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will MIDI-to-PDF keep the exact feel of my recorded performance?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It keeps the notes and approximate phrasing, but quantization necessarily rounds expressive timing so the page stays readable. You trade a little literal accuracy for legibility."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need to add time and key signatures myself for MIDI-to-PDF?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Often yes, because MIDI does not reliably store them. Supplying the meter and key before conversion lets the engine bar the music correctly and spell notes sensibly."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "MusicXML",
+      "item": "https://midiaistudio.com/guides/musicxml.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Turning a MIDI File Into Printable Sheet Music",
+      "item": "https://midiaistudio.com/guides/articles/midi-to-pdf-sheet-music.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../musicxml.html">MusicXML</a> ›
+<span class="seo-crumb-cluster">MusicXML &amp; score interchange</span> ›
+<span aria-current="page">Turning a MIDI File Into Printable Sheet Music</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · MusicXML &amp; score interchange</p>
+<h1>Turning a MIDI File Into Printable Sheet Music</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">9 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: MusicXML &amp; score interchange</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#why-raw-midi-rarely-prints-as-readable-notation">Why raw MIDI rarely prints as readable notation</a></li>
+<li><a href="#quantizing-performance-timing-into-notated-rhythm">Quantizing performance timing into notated rhythm</a></li>
+<li><a href="#choosing-enharmonic-spellings-that-read-correctly">Choosing enharmonic spellings that read correctly</a></li>
+<li><a href="#splitting-a-track-into-treble-and-bass-staves">Splitting a track into treble and bass staves</a></li>
+<li><a href="#assigning-voices-so-chords-notate-cleanly">Assigning voices so chords notate cleanly</a></li>
+<li><a href="#adding-time-and-key-signatures-midi-never-stored">Adding time and key signatures MIDI never stored</a></li>
+<li><a href="#beaming-and-rest-placement-for-a-legible-page">Beaming and rest placement for a legible page</a></li>
+<li><a href="#final-layout-measures-per-line-and-page-turns">Final layout: measures per line and page turns</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>MIDI and notation feel like two views of the same thing, but going from MIDI to a printed page is genuinely harder than the reverse. MIDI records a performance in raw time — this note started 12 milliseconds late and lasted an odd fraction of a beat — while notation demands tidy, human-readable rhythms. Bridging that gap is the whole job.</p>
+<p>The temptation is to expect a MIDI file to simply become sheet music at the push of a button, and it can, but a naive conversion produces a page cluttered with thirty-second rests and unreadable tuplets. Getting a clean score means making deliberate choices about how loosely-timed performance data should be tidied into notation.</p>
+<p>This guide covers those choices in order, from quantization to layout, so that a MIDI file — whether you recorded it or produced it in MidiAI Studio — comes out the other side as sheet music a musician can actually read at a stand.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/sheet-music-score-editor.jpg" alt="MidiAI Studio quantizing a rubato D-minor improvisation and engraving it across a readable grand staff." title="MidiAI Studio quantizing a rubato D-minor improvisation and engraving it across a readable grand staff." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio quantizing a rubato D-minor improvisation and engraving it across a readable grand staff.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MIDI to PDF sheet music”</span></figcaption>
+</figure>
+
+<h2 id="why-raw-midi-rarely-prints-as-readable-notation">Why raw MIDI rarely prints as readable notation</h2>
+<p>Converting MIDI to PDF sheet music means interpreting timed performance events as notated rhythms and pitches, then engraving them onto staves and exporting a printable page. It is a translation from how music was played into how music is written.</p>
+<p>The core challenge is that MIDI has no concept of a bar line, a key signature, or whether a black key is a G-sharp or an A-flat. All of that notational meaning must be inferred or supplied during conversion, which is why the same MIDI file can print several legitimately different ways.</p>
+
+<h2 id="quantizing-performance-timing-into-notated-rhythm">Quantizing performance timing into notated rhythm</h2>
+<p>Quantization is the first and most consequential step. The engine snaps loosely-timed performance events onto a rhythmic grid — sixteenth notes, triplets, or finer — trading a little timing realism for a page you can read. Choose too coarse a grid and you lose real rhythms; too fine and the page fills with clutter.</p>
+<p>Pitch spelling comes next, because MIDI note 61 is just a number that could be notated as C-sharp or D-flat. The engine uses the key signature and melodic context to pick the reading that a musician expects, so an ascending line spells sharps and a descending one may spell flats. MidiAI Studio makes these enharmonic decisions so the resulting accidentals look natural rather than arbitrary.</p>
+<p>Then structure is imposed: a single MIDI track is split across treble and bass staves by pitch, simultaneous notes are grouped into chords, and overlapping lines are separated into voices with independent stems. Only after all that does layout happen — beaming, rests, and the spacing that turns correct notation into a legible one.</p>
+
+<h2 id="choosing-enharmonic-spellings-that-read-correctly">Choosing enharmonic spellings that read correctly</h2>
+<h3>Printing a recorded piano improvisation in D minor</h3>
+<p>Imagine a loose, rubato piano improvisation you recorded to MIDI in D minor at a nominal 76 BPM, full of expressive timing that made it feel alive. Printed literally, it would be a nightmare of dotted-thirty-second rests and un-notatable syncopations.</p>
+<p>Running it through MidiAI Studio with a sixteenth-note grid and swing awareness tidies the rhythm into something readable while keeping the phrasing recognizable. The engine splits the two hands across a grand staff, spells the raised leading tone as C-sharp rather than D-flat, and beams the running passages sensibly.</p>
+<p>A short cleanup follows — you widen a couple of measures per line for a busy passage and confirm one triplet grouping — and the improvisation prints as a page a pianist could sight-read, without erasing the character of the original take.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for MIDI to PDF sheet music" title="Supporting view for MIDI to PDF sheet music" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “MIDI to PDF sheet music”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “MIDI to PDF sheet music” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/musicxml.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="splitting-a-track-into-treble-and-bass-staves">Splitting a track into treble and bass staves</h2>
+<ol class="seo-steps">
+<li><strong>Pick a quantization grid that matches the music.</strong> Choose the finest rhythmic value the piece actually uses — often sixteenths, sometimes triplets — as your grid. Matching the grid to the material tidies timing without flattening genuine rhythms.</li>
+<li><strong>Set the key and meter before spelling notes.</strong> Supply the correct key and time signature up front. They guide enharmonic spelling and bar placement, so setting them first prevents a page full of wrongly-spelled accidentals.</li>
+<li><strong>Split hands or parts onto separate staves.</strong> Assign a pitch split point or use voice data to place material on treble and bass staves. Clean staff assignment is what makes a two-handed part readable rather than a single overloaded line.</li>
+<li><strong>Resolve chords and overlapping voices.</strong> Group simultaneous notes into chords and separate genuinely independent lines into voices with their own stems. This is what stops a dense passage from becoming an unreadable stack.</li>
+<li><strong>Do a legibility layout pass.</strong> Adjust measures per line, beaming, and page turns so a performer can read ahead. Correct notation is not the same as comfortable notation, and this pass closes that gap.</li>
+</ol>
+
+<h2 id="assigning-voices-so-chords-notate-cleanly">Assigning voices so chords notate cleanly</h2>
+<ul class="seo-list">
+<li>Clean obvious timing outliers in the MIDI before quantizing so the grid has an easier target.</li>
+<li>Prefer the coarsest grid that still captures the real rhythms to keep the page uncluttered.</li>
+<li>Set a sensible split point for hands rather than accepting a default that strands notes.</li>
+<li>Confirm enharmonic spelling in chromatic passages where the automatic choice is least certain.</li>
+<li>Print a test page and read it at a stand before committing to the final layout.</li>
+</ul>
+
+<h2 id="adding-time-and-key-signatures-midi-never-stored">Adding time and key signatures MIDI never stored</h2>
+<ul class="seo-list">
+<li><strong>Over-quantizing expressive timing:</strong> Snapping everything to a coarse grid erases the rhythms that made the performance musical.</li>
+<li><strong>Skipping the key signature:</strong> Without a key, spelling defaults produce awkward accidentals that make the page hard to read.</li>
+<li><strong>Leaving both hands on one staff:</strong> A single overloaded staff turns readable piano writing into an illegible pile of ledger lines.</li>
+<li><strong>Ignoring voice separation in chords:</strong> Merged voices produce nonsensical stems and rests that no performer can parse at speed.</li>
+<li><strong>Printing without a layout pass:</strong> Technically correct notation still fails at the stand if the spacing and page turns fight the reader.</li>
+</ul>
+
+<h2 id="beaming-and-rest-placement-for-a-legible-page">Beaming and rest placement for a legible page</h2>
+<p>The counterintuitive truth of MIDI-to-notation is that a perfect performance makes a worse-looking page than a quantized one. Human timing is what makes music feel alive and what makes it un-notatable, so every conversion is a negotiation between fidelity to the take and readability on the stand.</p>
+<p>This is why quantization is an editorial act, not a mechanical one. Deciding that a passage is really straight sixteenths rather than a swung triplet feel is a musical judgment, and the best results come when you tell the engine what the music is rather than hoping it guesses. MidiAI Studio gives you that grid control precisely because there is no universally correct answer.</p>
+
+<h2 id="final-layout-measures-per-line-and-page-turns">Final layout: measures per line and page turns</h2>
+<p>Notation also demands information MIDI never stored. A file has no idea it is in D minor or in four-four; those are frames you impose to make the numbers meaningful. Supplying them thoughtfully up front prevents a cascade of downstream oddities in spelling and barring.</p>
+<p>Ultimately, printing from MIDI rewards treating the output as a first engraving rather than a finished score. Expect to do a legibility pass, expect to make a few editorial calls, and the reward is a clean, playable page produced in minutes from data that started life as pure performance.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “MIDI to PDF sheet music” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/musicxml.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>MIDI to PDF sheet music</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Why does my MIDI file print with so many tiny rests and odd rhythms?</summary><p>Because raw MIDI stores exact performance timing, not tidy notation. Quantizing to an appropriate grid before engraving converts those messy durations into the rounded rhythms a reader expects.</p></details>
+<details><summary>How does the converter decide between sharps and flats when printing MIDI?</summary><p>It uses the key signature and melodic direction to pick the enharmonic spelling a musician would anticipate. Setting the correct key first is the biggest factor in getting readable accidentals.</p></details>
+<details><summary>Can a single MIDI track become a proper two-staff piano part?</summary><p>Yes, by splitting notes across treble and bass staves at a pitch boundary or by voice. Choosing a sensible split point is what turns one crowded staff into a readable grand staff.</p></details>
+<details><summary>Will MIDI-to-PDF keep the exact feel of my recorded performance?</summary><p>It keeps the notes and approximate phrasing, but quantization necessarily rounds expressive timing so the page stays readable. You trade a little literal accuracy for legibility.</p></details>
+<details><summary>Do I need to add time and key signatures myself for MIDI-to-PDF?</summary><p>Often yes, because MIDI does not reliably store them. Supplying the meter and key before conversion lets the engine bar the music correctly and spell notes sensibly.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “MIDI to PDF sheet music”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>MusicXML &amp; score interchange</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../musicxml.html"><strong>Pillar · MusicXML</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./musicxml-to-midi.html"><strong>Converting MusicXML Into a MIDI Performance</strong><br><span class="seo-related-meta">MusicXML to MIDI playback · how-to</span></a>
+<a href="./midi-to-musicxml.html"><strong>Converting MIDI Into MusicXML Notation</strong><br><span class="seo-related-meta">MIDI to MusicXML notation · how-to</span></a>
+<a href="./score-editor-workflow.html"><strong>Building a Reliable Score Editor Workflow</strong><br><span class="seo-related-meta">MIDI score editor workflow · workflow</span></a>
+<a href="./musicxml-explained.html"><strong>What MusicXML Is and Why It Matters</strong><br><span class="seo-related-meta">what is MusicXML format · explainer</span></a>
+<a href="./musicxml-vs-midi.html"><strong>MusicXML vs MIDI: Choosing the Right Format</strong><br><span class="seo-related-meta">MusicXML vs MIDI differences · comparison</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in MusicXML &amp; score interchange">
+<span class="seo-pager-link seo-pager-empty"></span>
+<a class="seo-pager-link seo-pager-next" href="./score-editor-workflow.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Building a Reliable Score Editor Workflow</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

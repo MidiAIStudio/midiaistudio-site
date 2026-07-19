@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIDI Velocity and Expression: Making Converted Parts Come Alive</title>
+  <meta name="description" content="Velocity and expression are what separate a lifeless sequence from a performance. This guide goes deep on shaping dynamics, phrasing, and feel in converted MIDI.">
+  <meta name="keywords" content="MIDI velocity expression editing, restore dynamics in MIDI, CC and expression data">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/midi-velocity-and-expression.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="MIDI Velocity and Expression: Making Converted Parts Come Alive">
+  <meta property="og:description" content="Velocity and expression are what separate a lifeless sequence from a performance. This guide goes deep on shaping dynamics, phrasing, and feel in converted MIDI.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/midi-velocity-and-expression.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MIDI Velocity and Expression: Making Converted Parts Come Alive">
+  <meta name="twitter:description" content="Velocity and expression are what separate a lifeless sequence from a performance. This guide goes deep on shaping dynamics, phrasing, and feel in converted MIDI.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "MIDI Velocity and Expression: Making Converted Parts Come Alive",
+  "description": "Velocity and expression are what separate a lifeless sequence from a performance. This guide goes deep on shaping dynamics, phrasing, and feel in converted MIDI.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "MIDI velocity expression editing, restore dynamics in MIDI, CC and expression data",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/midi-velocity-and-expression.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What exactly is velocity in a MIDI file?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It is a value for how forcefully each note is played, which most audibly controls loudness and often affects timbre too. Our ears read graded velocities as emphasis and phrasing, which is why it carries so much of a performance's emotion."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does shaping velocity matter more than getting louder or softer overall?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because relative velocity between notes creates phrasing, accents, and balance, which convey musical meaning that a uniform volume change cannot. A phrase's rise and fall lives in those relationships, not in overall level."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I make a melody stand out from its accompaniment in MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Lower the accompaniment's velocity relative to the melody so the tune sings above it. Dynamic balance between layers is what lets a listener follow the melody clearly."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is expression in MIDI only about velocity?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No — velocity is central, but timing nuance and articulation matter too. Small early or late placements convey feel, and staccato or legato choices shape the space between notes, all contributing to a convincing performance."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I add too much expression to a MIDI part?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Exaggerated or excessive nuance sounds as artificial as none at all, tipping into an uncanny, over-programmed feel. The goal is natural shaping that serves the music, applied with restraint."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Adding Real Expression to Converted MIDI",
+      "item": "https://midiaistudio.com/guides/articles/midi-velocity-and-expression.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">MIDI editing craft</span> ›
+<span aria-current="page">Adding Real Expression to Converted MIDI</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · MIDI editing craft</p>
+<h1>Adding Real Expression to Converted MIDI</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: MIDI editing craft</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#what-velocity-is-and-why-it-carries-emotion">What velocity is and why it carries emotion</a></li>
+<li><a href="#reading-the-dynamics-a-conversion-captured">Reading the dynamics a conversion captured</a></li>
+<li><a href="#shaping-phrases-with-velocity-arcs">Shaping phrases with velocity arcs</a></li>
+<li><a href="#accents-stresses-and-metrical-feel">Accents, stresses, and metrical feel</a></li>
+<li><a href="#expression-beyond-velocity-timing-and-articulation">Expression beyond velocity: timing and articulation</a></li>
+<li><a href="#instrument-appropriate-dynamic-behavior">Instrument-appropriate dynamic behavior</a></li>
+<li><a href="#continuous-controllers-for-swells-and-fades">Continuous controllers for swells and fades</a></li>
+<li><a href="#avoiding-the-uncanny-valley-of-over-programming">Avoiding the uncanny valley of over-programming</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>Velocity is the most important MIDI property that beginners ignore, and it is the difference between music and a metronomic readout of notes. It encodes how hard each note was struck, which our ears interpret as emphasis, emotion, and phrasing — the very things that make a performance feel human.</p>
+<p>A converted part often arrives with its dynamics either captured imperfectly or flattened, so shaping velocity and expression is where you breathe life back into it. This is not decoration; it is the layer where correct notes become actual music, and it deserves as much attention as the notes themselves.</p>
+<p>This guide goes deep on velocity and the broader craft of expression in converted MIDI. With MidiAI Studio giving you the notes, learning to shape their dynamics and feel is what turns a technically-right part into one that moves people.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio velocity lane showing a shaped arc over a piano phrase with accented downbeats." title="MidiAI Studio velocity lane showing a shaped arc over a piano phrase with accented downbeats." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio velocity lane showing a shaped arc over a piano phrase with accented downbeats.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MIDI velocity expression editing”</span></figcaption>
+</figure>
+
+<h2 id="what-velocity-is-and-why-it-carries-emotion">What velocity is and why it carries emotion</h2>
+<p>In MIDI, velocity is a value representing how forcefully each note is played, most audibly affecting loudness but often also timbre. Expression is the broader shaping of a performance through velocity, timing nuance, and articulation to convey musical intent.</p>
+<p>Together they constitute the performance dimension of MIDI — the part that is not about which notes but about how they are played — and they are what distinguish a lifeless sequence from a convincing interpretation.</p>
+
+<h2 id="reading-the-dynamics-a-conversion-captured">Reading the dynamics a conversion captured</h2>
+<p>Velocity works because our perception ties loudness to importance: a louder note reads as accented or emphasized, and a series of graded velocities reads as a phrase rising and falling. On many instruments velocity also changes timbre — a hard-struck piano note is brighter, not just louder — so shaping velocity shapes tone as well as volume, which is why MidiAI Studio preserving captured velocity matters so much.</p>
+<p>Musical phrasing has a natural dynamic shape, typically rising toward a peak and relaxing away from it, and velocity is how you draw that shape in MIDI. Accents on strong beats, gentle stresses that convey meter, and the overall arc of a line are all velocity decisions, and applying them thoughtfully is what makes a phrase feel intended rather than typed.</p>
+<p>Expression extends beyond velocity into timing and articulation. Tiny timing deviations — a note placed fractionally early or late — convey feel, while articulation choices like staccato and legato shape the space between notes, and continuous controllers can add swells and fades on instruments that sustain. The art is combining these so the result feels alive without tipping into overwrought, unnatural programming.</p>
+
+<h2 id="shaping-phrases-with-velocity-arcs">Shaping phrases with velocity arcs</h2>
+<h3>Bringing a converted piano phrase to life</h3>
+<p>Imagine a converted piano phrase in F major — a four-bar melody over gentle accompaniment — that plays back correctly but flatly, every note at the same velocity. It is accurate and lifeless in equal measure.</p>
+<p>You shape it by drawing a velocity arc that swells toward the phrase's high point in bar three and eases back, adding light accents on the downbeats to convey the meter, and softening the accompaniment beneath the melody so the tune sings above it. You place one expressive note a hair behind the beat for feel.</p>
+<p>Suddenly the phrase breathes. The same MidiAI Studio notes now have direction and emphasis, the melody stands out from the accompaniment, and the whole thing sounds like a pianist playing rather than a sequence running. Nothing about the notes changed — only their expression.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio detail for MIDI velocity expression editing" title="Supporting view for MIDI velocity expression editing" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “MIDI velocity expression editing”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “MIDI velocity expression editing” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="accents-stresses-and-metrical-feel">Accents, stresses, and metrical feel</h2>
+<ol class="seo-steps">
+<li><strong>Assess the captured dynamics first.</strong> Look at what velocity the conversion already captured before changing anything. Building on real captured dynamics is better than overwriting them with generic shapes.</li>
+<li><strong>Draw velocity arcs for phrases.</strong> Shape each phrase with a rise toward its peak and a relaxation away from it. This natural dynamic contour is what gives a line direction and musical sense.</li>
+<li><strong>Add accents for meter and emphasis.</strong> Place stronger velocities on structurally important beats and notes. Accents convey the pulse and highlight the notes that carry the phrase's meaning.</li>
+<li><strong>Balance layers by velocity.</strong> Lower the velocity of accompaniment relative to melody so the tune sings above it. Dynamic balance between parts is as important as the shape within them.</li>
+<li><strong>Add subtle timing and articulation.</strong> Introduce small timing nuances and articulation choices to deepen the feel. These refinements, used sparingly, complete the sense of a real performance.</li>
+</ol>
+
+<h2 id="expression-beyond-velocity-timing-and-articulation">Expression beyond velocity: timing and articulation</h2>
+<ul class="seo-list">
+<li>Preserve and build on captured velocity rather than flattening and restarting.</li>
+<li>Give every phrase a deliberate dynamic arc.</li>
+<li>Use accents to make meter and emphasis audible.</li>
+<li>Balance melody above accompaniment through velocity.</li>
+<li>Apply timing and articulation nuance sparingly for feel, not excess.</li>
+</ul>
+
+<h2 id="instrument-appropriate-dynamic-behavior">Instrument-appropriate dynamic behavior</h2>
+<ul class="seo-list">
+<li><strong>Leaving velocities uniform:</strong> Flat dynamics are the surest way to make correct notes sound mechanical.</li>
+<li><strong>Overwriting captured dynamics:</strong> Replacing real captured velocity with generic shapes discards genuine performance information.</li>
+<li><strong>Ignoring layer balance:</strong> Equal velocities across melody and accompaniment bury the tune in its own backing.</li>
+<li><strong>Neglecting phrase shape:</strong> Notes without a dynamic arc lack direction and sound like a list rather than a line.</li>
+<li><strong>Over-programming expression:</strong> Excessive, exaggerated nuance sounds as artificial as no nuance at all.</li>
+</ul>
+
+<h2 id="continuous-controllers-for-swells-and-fades">Continuous controllers for swells and fades</h2>
+<p>Velocity rewards attention because it is where MIDI stops being a spreadsheet of notes and starts being a performance. The notes answer what; velocity answers how, and how is where music lives. A musician who masters velocity shaping can make even a simple converted line compelling, while one who ignores it will make even a brilliant transcription sound dead.</p>
+<p>It helps to understand that expression is fundamentally about relationships, not absolutes. No single velocity value is expressive; expression emerges from the contrast between notes — this one louder than that, this phrase swelling past the last. This is why shaping is a matter of drawing curves and balances rather than setting numbers, and why MidiAI Studio's captured dynamics are a starting relationship worth preserving.</p>
+
+<h2 id="avoiding-the-uncanny-valley-of-over-programming">Avoiding the uncanny valley of over-programming</h2>
+<p>The multi-dimensional nature of expression is what gives it depth. Velocity, micro-timing, and articulation each contribute a facet of feel, and their interplay is what our ears recognize as a human at the controls. Learning to reach for the right facet — a timing nuance here, an accent there — rather than leaning on velocity alone is what elevates good expression to convincing performance.</p>
+<p>The caution against over-programming is really a lesson about naturalness. Human performance has a characteristic amount of variation — enough to feel alive, not so much as to feel erratic — and both too little and too much read as artificial. The skilled ear aims for that natural middle, and developing it is a lifelong refinement that makes every converted part you touch sound more like music.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “MIDI velocity expression editing” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>MIDI velocity expression editing</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>What exactly is velocity in a MIDI file?</summary><p>It is a value for how forcefully each note is played, which most audibly controls loudness and often affects timbre too. Our ears read graded velocities as emphasis and phrasing, which is why it carries so much of a performance's emotion.</p></details>
+<details><summary>Why does shaping velocity matter more than getting louder or softer overall?</summary><p>Because relative velocity between notes creates phrasing, accents, and balance, which convey musical meaning that a uniform volume change cannot. A phrase's rise and fall lives in those relationships, not in overall level.</p></details>
+<details><summary>How do I make a melody stand out from its accompaniment in MIDI?</summary><p>Lower the accompaniment's velocity relative to the melody so the tune sings above it. Dynamic balance between layers is what lets a listener follow the melody clearly.</p></details>
+<details><summary>Is expression in MIDI only about velocity?</summary><p>No — velocity is central, but timing nuance and articulation matter too. Small early or late placements convey feel, and staccato or legato choices shape the space between notes, all contributing to a convincing performance.</p></details>
+<details><summary>Can I add too much expression to a MIDI part?</summary><p>Yes. Exaggerated or excessive nuance sounds as artificial as none at all, tipping into an uncanny, over-programmed feel. The goal is natural shaping that serves the music, applied with restraint.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “MIDI velocity expression editing”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>MIDI editing craft</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./midi-editing-basics.html"><strong>The Fundamentals of Editing MIDI</strong><br><span class="seo-related-meta">MIDI editing after AI conversion · how-to</span></a>
+<a href="./quantize-midi-after-conversion.html"><strong>Quantizing Converted MIDI the Musical Way</strong><br><span class="seo-related-meta">quantize AI MIDI timing · how-to</span></a>
+<a href="./cleaning-up-ai-generated-midi.html"><strong>Turning Raw AI MIDI Into a Clean, Musical Part</strong><br><span class="seo-related-meta">cleanup checklist AI MIDI · checklist</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in MIDI editing craft">
+<a class="seo-pager-link seo-pager-prev" href="./cleaning-up-ai-generated-midi.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Turning Raw AI MIDI Into a Clean, Musical Part</span></a>
+<a class="seo-pager-link seo-pager-next" href="./quantize-midi-after-conversion.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Quantizing Converted MIDI the Musical Way</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

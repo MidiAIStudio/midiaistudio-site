@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SITE = "https://midiaistudio.com";
-const OG_IMAGE = `${SITE}/assets/images/product/shot-home.jpg`;
+const OG_IMAGE = `${SITE}/assets/images/product/ai-midi-converter-home.jpg`;
 const LOGO_IMAGE = `${SITE}/assets/images/symbol.png`;
 const TODAY = new Date().toISOString().slice(0, 10);
 const THEME = "#0b1020";

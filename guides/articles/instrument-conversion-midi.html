@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Instrument-to-MIDI Conversion: A Field Guide Across Instruments</title>
+  <meta name="description" content="Every instrument transcribes differently. This field guide compares how pianos, strings, winds, brass, and more behave under audio-to-MIDI, so you can predict results.">
+  <meta name="keywords" content="MIDI instrument remapping, change MIDI instrument sound, arrangement remapping">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/instrument-conversion-midi.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="Instrument-to-MIDI Conversion: A Field Guide Across Instruments">
+  <meta property="og:description" content="Every instrument transcribes differently. This field guide compares how pianos, strings, winds, brass, and more behave under audio-to-MIDI, so you can predict results.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/instrument-conversion-midi.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midiai-studio-license-screen.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Instrument-to-MIDI Conversion: A Field Guide Across Instruments">
+  <meta name="twitter:description" content="Every instrument transcribes differently. This field guide compares how pianos, strings, winds, brass, and more behave under audio-to-MIDI, so you can predict results.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midiai-studio-license-screen.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Instrument-to-MIDI Conversion: A Field Guide Across Instruments",
+  "description": "Every instrument transcribes differently. This field guide compares how pianos, strings, winds, brass, and more behave under audio-to-MIDI, so you can predict results.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "MIDI instrument remapping, change MIDI instrument sound, arrangement remapping",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/midiai-studio-license-screen.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/instrument-conversion-midi.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What properties determine how well an instrument converts to MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Three main ones: how sharply it attacks notes, whether its pitch is fixed or continuous, and how many notes it plays at once. Sharp onsets, discrete pitches, and monophony make an instrument easy; the opposites make it hard."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why do bowed strings transcribe less cleanly than piano?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because a bowed note swells in gradually rather than starting with a percussive attack, blurring exactly when the note begins. The fretless neck also allows continuous pitch, adding note-boundary ambiguity piano avoids."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are wind and brass instruments easy to transcribe?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Often yes, because they are naturally monophonic, playing one note at a time with no chords to resolve. Their main complication is the gradual breath onset, which can soften the detected timing of note starts."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How should I approach transcribing a full ensemble?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Isolate the instruments and transcribe each as its simpler individual case, then recombine. Transcribing the blend directly forces the engine to fight overlap, whereas separated parts play to each instrument's strengths."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I predict transcription difficulty before I start?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes — assess the source's onset sharpness, pitch discreteness, and polyphony. Those three properties forecast most of the difficulty, letting you plan where your cleanup effort will go before converting a single note."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "How Different Instruments Convert to MIDI",
+      "item": "https://midiaistudio.com/guides/articles/instrument-conversion-midi.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">Other instruments</span> ›
+<span aria-current="page">How Different Instruments Convert to MIDI</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · Other instruments</p>
+<h1>How Different Instruments Convert to MIDI</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: workflow</span>
+  <span>Cluster: Other instruments</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#the-properties-that-make-any-instrument-easy-or-hard">The properties that make any instrument easy or hard</a></li>
+<li><a href="#struck-and-plucked-instruments-with-clear-onsets">Struck and plucked instruments with clear onsets</a></li>
+<li><a href="#bowed-strings-and-their-gradual-attacks">Bowed strings and their gradual attacks</a></li>
+<li><a href="#winds-and-brass-as-breath-driven-monophony">Winds and brass as breath-driven monophony</a></li>
+<li><a href="#fretless-and-continuous-pitch-instruments">Fretless and continuous-pitch instruments</a></li>
+<li><a href="#percussion-and-the-pitchless-special-case">Percussion and the pitchless special case</a></li>
+<li><a href="#ensembles-and-the-overlap-problem">Ensembles and the overlap problem</a></li>
+<li><a href="#choosing-which-instrument-to-isolate-first">Choosing which instrument to isolate first</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>Ask why one recording transcribes flawlessly and another falls apart, and the answer almost always comes down to the instrument. Every instrument has an acoustic personality — how it starts notes, whether its pitch is fixed or sliding, how many notes it plays at once — and those traits predict transcription results with remarkable reliability.</p>
+<p>Rather than learning each instrument's quirks by trial and error, it is far more efficient to understand the underlying properties that make any instrument easy or hard. Once you know what transcription likes and dislikes, you can look at any source and forecast how it will go.</p>
+<p>This field guide surveys the instrument families through that predictive lens, so you can plan a MidiAI Studio workflow around the sources you actually have. Think of it as a map of the transcription terrain, organized by the traits that matter.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/midiai-studio-license-screen.jpg" alt="MidiAI Studio workflow isolating piano, cello, and clarinet from a chamber recording for individual transcription." title="MidiAI Studio workflow isolating piano, cello, and clarinet from a chamber recording for individual transcription." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio workflow isolating piano, cello, and clarinet from a chamber recording for individual transcription.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MIDI instrument remapping”</span></figcaption>
+</figure>
+
+<h2 id="the-properties-that-make-any-instrument-easy-or-hard">The properties that make any instrument easy or hard</h2>
+<p>Instrument-to-MIDI conversion is audio transcription considered across the full range of instruments, each of which behaves differently based on its acoustic properties. The same engine yields very different accuracy depending on onset clarity, pitch stability, and polyphony.</p>
+<p>The unifying idea is that a handful of properties — attack sharpness, pitch discreteness, and number of simultaneous notes — predict transcription difficulty for any instrument, letting you generalize rather than memorize.</p>
+
+<h2 id="struck-and-plucked-instruments-with-clear-onsets">Struck and plucked instruments with clear onsets</h2>
+<p>Two properties dominate onset behavior: instruments that start notes with a sharp percussive attack, like piano, mallet percussion, and plucked strings, give transcription precise timing, while instruments that swell in gradually, like bowed strings and sustained winds, blur the moment a note begins and complicate timing detection.</p>
+<p>Pitch behavior is the second axis. Fixed-pitch instruments — piano, fretted guitar, mallets — map cleanly onto discrete MIDI notes, whereas fretless strings, trombones, and voices produce continuous pitch that must be interpreted into notes. MidiAI Studio handles both, but the continuous-pitch instruments demand more judgment about where notes begin and end.</p>
+<p>Polyphony is the third and often decisive axis. Naturally monophonic instruments like most winds and brass transcribe with high accuracy because there is one note at a time, while chordal instruments like piano and guitar introduce the harder polyphonic problem. Percussion is the special case that trades pitch detection for timbre classification entirely, and ensembles multiply difficulty through instrument overlap.</p>
+
+<h2 id="bowed-strings-and-their-gradual-attacks">Bowed strings and their gradual attacks</h2>
+<h3>Predicting results for a mixed chamber recording</h3>
+<p>Imagine a chamber recording in G major with piano, cello, and clarinet playing together. Using the property lens, you can predict how each will behave before transcribing a single note.</p>
+<p>The piano has sharp onsets and fixed pitches but is polyphonic; the clarinet is monophonic with fixed-ish pitches but gradual breath onsets; the cello is monophonic but bowed, with soft attacks and continuous pitch from its fretless neck. Transcribed as a blend, they overlap badly, so you isolate them first.</p>
+<p>Isolated, the clarinet transcribes cleanly as monophonic, the cello needs attention to its soft onsets and any slides, and the piano needs the usual polyphonic care. MidiAI Studio handles each, but knowing their properties told you exactly where the effort would go — no surprises.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for MIDI instrument remapping" title="Supporting view for MIDI instrument remapping" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “MIDI instrument remapping”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="workflow-mid" aria-label="Call to action">
+<h2>Wire “MIDI instrument remapping” into your daily toolchain</h2>
+<p>Export clean MIDI, then continue in your DAW or score tools. Lifetime licensing unlocks full conversion and editing.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/purchase.html">Buy Lifetime</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Download trial</a>
+<a class="ghost" href="https://midiaistudio.com/product.html">Feature overview</a>
+</p>
+</aside>
+
+<h2 id="winds-and-brass-as-breath-driven-monophony">Winds and brass as breath-driven monophony</h2>
+<ol class="seo-steps">
+<li><strong>Assess the instrument's three key properties.</strong> For any source, note its onset sharpness, pitch discreteness, and polyphony. These three traits predict most of the transcription difficulty before you begin.</li>
+<li><strong>Expect the best from sharp-onset, fixed-pitch, monophonic sources.</strong> Instruments combining clear attacks, discrete pitches, and single-note playing transcribe most accurately. Prioritize and trust these.</li>
+<li><strong>Give gradual-onset instruments timing attention.</strong> For bowed strings and sustained winds, expect softer note starts and plan to refine timing. Their attacks are inherently harder to pin down.</li>
+<li><strong>Interpret continuous-pitch instruments deliberately.</strong> For fretless strings, trombone, and voice, decide how slides and glides become discrete notes. Continuous pitch always needs a judgment about note boundaries.</li>
+<li><strong>Isolate before transcribing ensembles.</strong> Separate overlapping instruments so each can be transcribed as its simpler individual case. Isolation converts a hard ensemble into a set of manageable parts.</li>
+</ol>
+
+<h2 id="fretless-and-continuous-pitch-instruments">Fretless and continuous-pitch instruments</h2>
+<ul class="seo-list">
+<li>Predict difficulty from onset, pitch, and polyphony before transcribing.</li>
+<li>Lean on sharp-onset, fixed-pitch, monophonic sources for the cleanest results.</li>
+<li>Budget timing attention for bowed and breath-driven instruments.</li>
+<li>Treat continuous-pitch instruments as requiring boundary judgments.</li>
+<li>Always isolate ensemble instruments into individual parts first.</li>
+</ul>
+
+<h2 id="percussion-and-the-pitchless-special-case">Percussion and the pitchless special case</h2>
+<ul class="seo-list">
+<li><strong>Judging by instrument name, not properties:</strong> Reputations mislead; the underlying acoustic traits predict difficulty far better.</li>
+<li><strong>Expecting sharp timing from bowed strings:</strong> Gradual attacks blur note starts, so their timing needs refinement.</li>
+<li><strong>Ignoring continuous pitch:</strong> Fretless and breath instruments glide, so their notes need boundary interpretation.</li>
+<li><strong>Transcribing ensembles as a blend:</strong> Overlap masks notes; isolate instruments into their simpler individual cases.</li>
+<li><strong>Assuming one setting fits all instruments:</strong> Different acoustic personalities call for different attention and expectations.</li>
+</ul>
+
+<h2 id="ensembles-and-the-overlap-problem">Ensembles and the overlap problem</h2>
+<p>The property-based lens is liberating because it replaces a long list of instrument-specific rules with a short set of principles that apply everywhere. Instead of memorizing that violins are tricky and flutes are easy, you understand why — gradual onset and continuous pitch versus monophony — and can then reason about any instrument, even one you have never transcribed, including unusual or electronic ones.</p>
+<p>It is striking how the same three properties keep recurring across every family. Onset sharpness, pitch discreteness, and polyphony are not arbitrary; they map directly onto the three things transcription must determine — when a note starts, what pitch it is, and how many notes are present. The instruments that make these easy to determine are the ones that transcribe well, full stop.</p>
+
+<h2 id="choosing-which-instrument-to-isolate-first">Choosing which instrument to isolate first</h2>
+<p>This framework also explains why isolation is such a universal recommendation. Ensembles are hard not because of any single instrument but because overlap muddies all three determinations at once, so separating instruments restores each to its individual difficulty. MidiAI Studio can then apply its strengths to one clear source at a time, which is almost always better than confronting the blend.</p>
+<p>The deepest payoff is confidence in the face of the unfamiliar. Handed a recording of an instrument you have never worked with, you are not helpless — you listen for its onset, its pitch behavior, and its polyphony, and you know immediately what to expect and where to concentrate. That transferable understanding is worth far more than any instrument-by-instrument cheat sheet.</p>
+
+<aside class="seo-cta-box" data-cta="workflow-end" aria-label="Call to action">
+<h2>Wire “MIDI instrument remapping” into your daily toolchain</h2>
+<p>Export clean MIDI, then continue in your DAW or score tools. Lifetime licensing unlocks full conversion and editing.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/purchase.html">Buy Lifetime</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Download trial</a>
+<a class="ghost" href="https://midiaistudio.com/product.html">Feature overview</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>MIDI instrument remapping</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>What properties determine how well an instrument converts to MIDI?</summary><p>Three main ones: how sharply it attacks notes, whether its pitch is fixed or continuous, and how many notes it plays at once. Sharp onsets, discrete pitches, and monophony make an instrument easy; the opposites make it hard.</p></details>
+<details><summary>Why do bowed strings transcribe less cleanly than piano?</summary><p>Because a bowed note swells in gradually rather than starting with a percussive attack, blurring exactly when the note begins. The fretless neck also allows continuous pitch, adding note-boundary ambiguity piano avoids.</p></details>
+<details><summary>Are wind and brass instruments easy to transcribe?</summary><p>Often yes, because they are naturally monophonic, playing one note at a time with no chords to resolve. Their main complication is the gradual breath onset, which can soften the detected timing of note starts.</p></details>
+<details><summary>How should I approach transcribing a full ensemble?</summary><p>Isolate the instruments and transcribe each as its simpler individual case, then recombine. Transcribing the blend directly forces the engine to fight overlap, whereas separated parts play to each instrument's strengths.</p></details>
+<details><summary>Can I predict transcription difficulty before I start?</summary><p>Yes — assess the source's onset sharpness, pitch discreteness, and polyphony. Those three properties forecast most of the difficulty, letting you plan where your cleanup effort will go before converting a single note.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “MIDI instrument remapping”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Other instruments</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./guitar-to-midi.html"><strong>Converting Guitar Recordings Into MIDI</strong><br><span class="seo-related-meta">guitar audio to MIDI · how-to</span></a>
+<a href="./drum-midi-extraction.html"><strong>Extracting Drum MIDI From a Recording</strong><br><span class="seo-related-meta">extract drum MIDI from audio · how-to</span></a>
+<a href="./vocal-to-midi.html"><strong>Converting a Vocal Melody Into MIDI</strong><br><span class="seo-related-meta">vocal melody to MIDI · how-to</span></a>
+<a href="./score-editor-workflow.html"><strong>Building a Reliable Score Editor Workflow</strong><br><span class="seo-related-meta">Nearby · MIDI score editor workflow</span></a>
+<a href="./audio-to-midi-ai.html"><strong>How AI Turns Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · AI audio transcription to MIDI</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in Other instruments">
+<a class="seo-pager-link seo-pager-prev" href="./vocal-to-midi.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Converting a Vocal Melody Into MIDI</span></a>
+<span class="seo-pager-link seo-pager-empty"></span>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

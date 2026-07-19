@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MusicXML Explained: The Interchange Format Behind Digital Scores</title>
+  <meta name="description" content="A clear explanation of MusicXML — what it stores, why it exists, and how it lets notation travel between programs — for musicians who keep encountering the term.">
+  <meta name="keywords" content="what is MusicXML format, MusicXML definition, open score exchange format">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/musicxml-explained.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="MusicXML Explained: The Interchange Format Behind Digital Scores">
+  <meta property="og:description" content="A clear explanation of MusicXML — what it stores, why it exists, and how it lets notation travel between programs — for musicians who keep encountering the term.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/musicxml-explained.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/sheet-music-pdf-musicxml-convert.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MusicXML Explained: The Interchange Format Behind Digital Scores">
+  <meta name="twitter:description" content="A clear explanation of MusicXML — what it stores, why it exists, and how it lets notation travel between programs — for musicians who keep encountering the term.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/sheet-music-pdf-musicxml-convert.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "MusicXML Explained: The Interchange Format Behind Digital Scores",
+  "description": "A clear explanation of MusicXML — what it stores, why it exists, and how it lets notation travel between programs — for musicians who keep encountering the term.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "what is MusicXML format, MusicXML definition, open score exchange format",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/sheet-music-pdf-musicxml-convert.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/musicxml-explained.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What exactly does a MusicXML file contain?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It contains a structured, text-based description of a written score — parts, measures, pitches, rhythms, beaming, lyrics, articulations, and layout hints. It captures how the music looks on the page, not just how it sounds."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why was MusicXML created in the first place?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To let notation programs exchange scores. Before it, a score made in one program could not be opened in another without re-entry; MusicXML is the shared standard that made scores portable between applications."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is MusicXML different from a MIDI file conceptually?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "MusicXML represents the written notation, while MIDI represents a performance in time. MusicXML keeps visual and structural detail like beaming and lyrics that MIDI has no way to store."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do MusicXML versions actually matter in practice?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sometimes. Newer versions add elements older programs may not read, so exporting at a version both programs support prevents details from being dropped during transfer."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is MusicXML a good format for long-term score archiving?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, because it is an open, documented standard that many programs read, unlike a proprietary file tied to one application. Archiving MusicXML guards against being locked out of your own scores later."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "MusicXML",
+      "item": "https://midiaistudio.com/guides/musicxml.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "What MusicXML Is and Why It Matters",
+      "item": "https://midiaistudio.com/guides/articles/musicxml-explained.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../musicxml.html">MusicXML</a> ›
+<span class="seo-crumb-cluster">MusicXML &amp; score interchange</span> ›
+<span aria-current="page">What MusicXML Is and Why It Matters</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · MusicXML &amp; score interchange</p>
+<h1>What MusicXML Is and Why It Matters</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: explainer</span>
+  <span>Cluster: MusicXML &amp; score interchange</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#the-problem-musicxml-was-invented-to-solve">The problem MusicXML was invented to solve</a></li>
+<li><a href="#what-a-musicxml-file-actually-stores-inside">What a MusicXML file actually stores inside</a></li>
+<li><a href="#notation-data-versus-performance-data">Notation data versus performance data</a></li>
+<li><a href="#how-programs-read-and-write-musicxml">How programs read and write MusicXML</a></li>
+<li><a href="#the-role-of-musicxml-in-conversion-workflows">The role of MusicXML in conversion workflows</a></li>
+<li><a href="#compressed-and-uncompressed-musicxml-files">Compressed and uncompressed MusicXML files</a></li>
+<li><a href="#versions-and-why-they-occasionally-matter">Versions and why they occasionally matter</a></li>
+<li><a href="#musicxml-as-a-long-term-archival-format">MusicXML as a long-term archival format</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>Musicians keep bumping into MusicXML without ever being told what it is. It shows up as an export option, an import filter, a file someone emailed — always adjacent to the music, never quite explained. This article fixes that, because understanding MusicXML makes a surprising number of workflow decisions obvious.</p>
+<p>The short version is that MusicXML is how notation programs talk to each other. Before it existed, a score made in one program was trapped there; MusicXML is the shared language that set scores free to move between applications, and that portability is why it underpins so many conversion tools.</p>
+<p>Once you grasp what MusicXML stores and why, choices like whether to export MIDI or MusicXML from MidiAI Studio stop being guesses and become straightforward. This is the conceptual foundation the rest of the notation workflow rests on.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/sheet-music-pdf-musicxml-convert.jpg" alt="A choral score moving between two notation programs via a MusicXML export, lyrics and parts intact." title="A choral score moving between two notation programs via a MusicXML export, lyrics and parts intact." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">A choral score moving between two notation programs via a MusicXML export, lyrics and parts intact.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “what is MusicXML format”</span></figcaption>
+</figure>
+
+<h2 id="the-problem-musicxml-was-invented-to-solve">The problem MusicXML was invented to solve</h2>
+<p>MusicXML is an open, standardized file format for representing Western music notation in a way that many different programs can read and write. It captures the written score — pitches, rhythms, beaming, lyrics, articulations, layout hints, and more — as structured, text-based data.</p>
+<p>It is best understood as an interchange format: its purpose is not to be the format you compose in, but the format you use to move a score from one program to another without losing its notational meaning.</p>
+
+<h2 id="what-a-musicxml-file-actually-stores-inside">What a MusicXML file actually stores inside</h2>
+<p>Under the hood, a MusicXML file is structured text that describes a score element by element: this part, this measure, this note with this pitch, duration, stem direction, and beam. Because it is a documented standard, any program that implements the standard can reconstruct the score from that description.</p>
+<p>The crucial distinction MusicXML preserves is notation over performance. Where MIDI records what was played in time, MusicXML records what was written on the page, which is why it keeps things MIDI discards — how notes are grouped visually, which syllable sits under which note, whether a mark is a staccato dot or an accent. Tools like MidiAI Studio export MusicXML precisely when that written detail is the deliverable.</p>
+<p>Programs interact with MusicXML through import and export filters that translate between their own internal format and the shared standard. The translation is rarely perfect — each program has features the standard handles imperfectly — but it is good enough that a score can travel between applications and remain recognizably itself.</p>
+
+<h2 id="notation-data-versus-performance-data">Notation data versus performance data</h2>
+<h3>Moving a choral score from one program to another</h3>
+<p>Imagine a four-part choral piece in F major with two verses of lyrics, engraved by a colleague in one notation program, that you need to open in a different program to extract rehearsal parts. Without MusicXML this would mean re-entering the whole score by hand.</p>
+<p>Your colleague exports MusicXML, you import it, and the four vocal parts arrive with their lyrics aligned, dynamics in place, and rehearsal letters intact. A few spacing details differ because the two programs have different house styles, but every note and word made the trip.</p>
+<p>This is MusicXML doing exactly its job — carrying the written score across a boundary that would otherwise have trapped it. The same mechanism is what lets a MidiAI Studio MusicXML export open cleanly in whatever notation program you prefer.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for what is MusicXML format" title="Supporting view for what is MusicXML format" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “what is MusicXML format”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="explainer-mid" aria-label="Call to action">
+<h2>See the concepts behind “what is MusicXML format” in the product</h2>
+<p>After you understand the idea, try one concrete conversion so theory turns into muscle memory.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/product.html">Explore MidiAI Studio</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Try the installer</a>
+<a class="ghost" href="https://midiaistudio.com/guides/midi-converter-faq.html">Read converter FAQ</a>
+</p>
+</aside>
+
+<h2 id="how-programs-read-and-write-musicxml">How programs read and write MusicXML</h2>
+<ol class="seo-steps">
+<li><strong>Recognize when notation data is what you need.</strong> Reach for MusicXML when your goal involves the written page — moving between notation programs, extracting parts, or archiving a score. If you only need playback, MIDI is the simpler choice.</li>
+<li><strong>Export from the source program correctly.</strong> Use the highest MusicXML version the source supports so the richest possible detail travels. A current-version export carries elements older exports would drop.</li>
+<li><strong>Import into your destination and check basics.</strong> Open the file and verify parts, lyrics, and structure first. Confirming the essentials made the trip is quicker than assuming and discovering a gap later.</li>
+<li><strong>Reconcile house-style differences.</strong> Adjust spacing and layout to the destination program's conventions. The notes travel faithfully, but each program applies its own visual style you may want to refine.</li>
+<li><strong>Keep the MusicXML as an archive.</strong> Save the MusicXML alongside any program-specific file. It is the portable, future-proof copy that any future program can still read.</li>
+</ol>
+
+<h2 id="the-role-of-musicxml-in-conversion-workflows">The role of MusicXML in conversion workflows</h2>
+<ul class="seo-list">
+<li>Use MusicXML whenever a score must cross between different notation programs.</li>
+<li>Export at the newest supported version to preserve the most detail.</li>
+<li>Verify lyrics and part structure immediately after importing.</li>
+<li>Expect and reconcile house-style layout differences between programs.</li>
+<li>Archive MusicXML as your program-independent master copy.</li>
+</ul>
+
+<h2 id="compressed-and-uncompressed-musicxml-files">Compressed and uncompressed MusicXML files</h2>
+<ul class="seo-list">
+<li><strong>Using MusicXML for playback-only needs:</strong> You carry notation overhead unnecessarily when MIDI would have been simpler.</li>
+<li><strong>Exporting at an outdated version:</strong> Old versions drop newer elements, silently losing detail in the transfer.</li>
+<li><strong>Assuming a perfect import:</strong> Programs differ, so verify parts and lyrics rather than trusting a flawless trip.</li>
+<li><strong>Ignoring house-style differences:</strong> Leaving default spacing from the source program can make the import look wrong.</li>
+<li><strong>Treating MusicXML as disposable:</strong> Discarding it forfeits a portable, future-proof master for no benefit.</li>
+</ul>
+
+<h2 id="versions-and-why-they-occasionally-matter">Versions and why they occasionally matter</h2>
+<p>The reason MusicXML matters more than most exchange formats is that music notation is unusually rich and unusually varied between programs. Each notation program grew its own internal representation, and without a common tongue the field would have fractured into incompatible islands. MusicXML is the lingua franca that keeps the ecosystem connected.</p>
+<p>Its text-based, open nature is quietly important. Because a MusicXML file is human-readable structured text following a documented standard, it is not hostage to any company's survival or goodwill. A proprietary notation file can become unreadable when its program is discontinued; a MusicXML file remains legible as long as the standard is documented, which it openly is.</p>
+
+<h2 id="musicxml-as-a-long-term-archival-format">MusicXML as a long-term archival format</h2>
+<p>The notation-versus-performance distinction is the concept that most clarifies workflow choices. Once you see MusicXML as the format of the written page and MIDI as the format of the played performance, deciding which to export from MidiAI Studio becomes a simple question of whether you care about the look or the sound. The formats are not rivals but tools for different jobs.</p>
+<p>For all its power, MusicXML is an interchange format, not a composing environment, and that framing keeps expectations right. You do not live in MusicXML; you pass through it. It is the bridge between programs and the archive that outlasts them, and understanding it as a bridge rather than a destination is what makes it genuinely useful.</p>
+
+<aside class="seo-cta-box" data-cta="explainer-end" aria-label="Call to action">
+<h2>See the concepts behind “what is MusicXML format” in the product</h2>
+<p>After you understand the idea, try one concrete conversion so theory turns into muscle memory.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/product.html">Explore MidiAI Studio</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Try the installer</a>
+<a class="ghost" href="https://midiaistudio.com/guides/midi-converter-faq.html">Read converter FAQ</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>what is MusicXML format</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>What exactly does a MusicXML file contain?</summary><p>It contains a structured, text-based description of a written score — parts, measures, pitches, rhythms, beaming, lyrics, articulations, and layout hints. It captures how the music looks on the page, not just how it sounds.</p></details>
+<details><summary>Why was MusicXML created in the first place?</summary><p>To let notation programs exchange scores. Before it, a score made in one program could not be opened in another without re-entry; MusicXML is the shared standard that made scores portable between applications.</p></details>
+<details><summary>How is MusicXML different from a MIDI file conceptually?</summary><p>MusicXML represents the written notation, while MIDI represents a performance in time. MusicXML keeps visual and structural detail like beaming and lyrics that MIDI has no way to store.</p></details>
+<details><summary>Do MusicXML versions actually matter in practice?</summary><p>Sometimes. Newer versions add elements older programs may not read, so exporting at a version both programs support prevents details from being dropped during transfer.</p></details>
+<details><summary>Is MusicXML a good format for long-term score archiving?</summary><p>Yes, because it is an open, documented standard that many programs read, unlike a proprietary file tied to one application. Archiving MusicXML guards against being locked out of your own scores later.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “what is MusicXML format”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>MusicXML &amp; score interchange</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../musicxml.html"><strong>Pillar · MusicXML</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./midi-to-pdf-sheet-music.html"><strong>Turning a MIDI File Into Printable Sheet Music</strong><br><span class="seo-related-meta">MIDI to PDF sheet music · how-to</span></a>
+<a href="./score-editor-workflow.html"><strong>Building a Reliable Score Editor Workflow</strong><br><span class="seo-related-meta">MIDI score editor workflow · workflow</span></a>
+<a href="./musicxml-vs-midi.html"><strong>MusicXML vs MIDI: Choosing the Right Format</strong><br><span class="seo-related-meta">MusicXML vs MIDI differences · comparison</span></a>
+<a href="./musicxml-to-midi.html"><strong>Converting MusicXML Into a MIDI Performance</strong><br><span class="seo-related-meta">MusicXML to MIDI playback · how-to</span></a>
+<a href="./midi-to-musicxml.html"><strong>Converting MIDI Into MusicXML Notation</strong><br><span class="seo-related-meta">MIDI to MusicXML notation · how-to</span></a>
+<a href="./sheet-music-recognition-ocr.html"><strong>How Optical Music Recognition Reads a Score</strong><br><span class="seo-related-meta">Nearby · optical music recognition OMR</span></a>
+<a href="./pdf-to-musicxml.html"><strong>Turning a PDF Into MusicXML You Can Re-Engrave</strong><br><span class="seo-related-meta">Nearby · PDF to MusicXML conversion</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in MusicXML &amp; score interchange">
+<a class="seo-pager-link seo-pager-prev" href="./score-editor-workflow.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Building a Reliable Score Editor Workflow</span></a>
+<a class="seo-pager-link seo-pager-next" href="./musicxml-vs-midi.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">MusicXML vs MIDI: Choosing the Right Format</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

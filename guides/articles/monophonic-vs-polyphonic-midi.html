@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monophonic vs Polyphonic MIDI: Why It Changes Everything</title>
+  <meta name="description" content="The single biggest predictor of transcription accuracy is whether a part is monophonic or polyphonic. This guide explains the difference and how to use it to your advantage.">
+  <meta name="keywords" content="monophonic vs polyphonic MIDI, melody vs chord transcription, choose transcription mode">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/monophonic-vs-polyphonic-midi.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="Monophonic vs Polyphonic MIDI: Why It Changes Everything">
+  <meta property="og:description" content="The single biggest predictor of transcription accuracy is whether a part is monophonic or polyphonic. This guide explains the difference and how to use it to your advantage.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/monophonic-vs-polyphonic-midi.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Monophonic vs Polyphonic MIDI: Why It Changes Everything">
+  <meta name="twitter:description" content="The single biggest predictor of transcription accuracy is whether a part is monophonic or polyphonic. This guide explains the difference and how to use it to your advantage.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Monophonic vs Polyphonic MIDI: Why It Changes Everything",
+  "description": "The single biggest predictor of transcription accuracy is whether a part is monophonic or polyphonic. This guide explains the difference and how to use it to your advantage.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "monophonic vs polyphonic MIDI, melody vs chord transcription, choose transcription mode",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/monophonic-vs-polyphonic-midi.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between monophonic and polyphonic transcription?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Monophonic transcription handles one note at a time, like a solo melody, while polyphonic transcription handles multiple simultaneous notes, like a chord. The single-note case is far more accurate than the stacked one."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is transcribing a single melody so much more accurate than a chord?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because a melody presents one pitch at any instant, so there is nothing to disentangle, whereas a chord's overlapping harmonics create ambiguity. Fewer simultaneous notes means fewer chances for error."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I turn a hard polyphonic transcription into easier monophonic ones?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Often yes — if you can isolate a polyphonic source into separate single-note lines, each becomes a near-solved monophonic case. Transcribing isolated lines and reassembling them usually beats transcribing the blend."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which instruments are naturally monophonic for transcription?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Instruments that sound one note at a time, such as flute, most single-line woodwinds and brass, and the singing voice, are naturally monophonic. Piano and guitar are typically polyphonic because they sound several notes together."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I expect the same accuracy from all my transcriptions?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No — accuracy tracks strongly with density. Clean monophonic lines approach perfection, while dense polyphonic passages carry inherent ambiguity, so set your expectations by classifying the material first."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Monophonic vs Polyphonic Transcription Explained",
+      "item": "https://midiaistudio.com/guides/articles/monophonic-vs-polyphonic-midi.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">Piano &amp; polyphony</span> ›
+<span aria-current="page">Monophonic vs Polyphonic Transcription Explained</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · Piano &amp; polyphony</p>
+<h1>Monophonic vs Polyphonic Transcription Explained</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: comparison</span>
+  <span>Cluster: Piano &amp; polyphony</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#one-note-at-a-time-versus-many-at-once">One note at a time versus many at once</a></li>
+<li><a href="#why-monophonic-transcription-is-nearly-solved">Why monophonic transcription is nearly solved</a></li>
+<li><a href="#why-polyphonic-transcription-stays-hard">Why polyphonic transcription stays hard</a></li>
+<li><a href="#instruments-that-are-naturally-monophonic">Instruments that are naturally monophonic</a></li>
+<li><a href="#splitting-polyphony-into-monophonic-lines">Splitting polyphony into monophonic lines</a></li>
+<li><a href="#choosing-the-easiest-path-to-your-target-part">Choosing the easiest path to your target part</a></li>
+<li><a href="#accuracy-expectations-for-each-case">Accuracy expectations for each case</a></li>
+<li><a href="#when-a-hybrid-approach-wins">When a hybrid approach wins</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>If you want to predict how well a transcription will go before you even start, ask one question: is the part monophonic or polyphonic? A single line, one note at a time, transcribes with near-perfect accuracy, while stacked notes are genuinely hard. This distinction shapes everything about a transcription workflow.</p>
+<p>Most musicians never think about it, but it is the most useful lens for setting expectations and choosing an approach. A flute melody and a piano chorale are worlds apart in difficulty not because of the instruments but because of how many notes sound at once.</p>
+<p>This guide makes the distinction concrete and, more importantly, actionable. Knowing where your material sits on the monophonic-to-polyphonic spectrum lets you plan a MidiAI Studio workflow that plays to the easy cases and manages the hard ones deliberately.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio transcribing three isolated woodwind lines as clean monophonic captures instead of one blended mix." title="MidiAI Studio transcribing three isolated woodwind lines as clean monophonic captures instead of one blended mix." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio transcribing three isolated woodwind lines as clean monophonic captures instead of one blended mix.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “monophonic vs polyphonic MIDI”</span></figcaption>
+</figure>
+
+<h2 id="one-note-at-a-time-versus-many-at-once">One note at a time versus many at once</h2>
+<p>A monophonic part sounds one note at a time — a solo flute line, a sung melody, a walking bass — while a polyphonic part sounds multiple notes simultaneously, like a piano chord or a guitar strum. Transcription difficulty rises sharply from the former to the latter.</p>
+<p>The distinction matters because monophonic transcription is a nearly-solved problem with very high accuracy, whereas polyphonic transcription is an active challenge where accuracy depends heavily on density, instrument, and recording quality.</p>
+
+<h2 id="why-monophonic-transcription-is-nearly-solved">Why monophonic transcription is nearly solved</h2>
+<p>Monophonic transcription is tractable because at any instant there is only one pitch to identify, so the engine simply tracks the single fundamental frequency over time. With no overlapping notes to disentangle, MidiAI Studio can follow a clean solo line with accuracy that approaches perfection on a good recording.</p>
+<p>Polyphonic transcription is hard for exactly the opposite reason: multiple notes sound together, their harmonics overlap, and the engine must decide how many notes are present and what they are from a tangled combined spectrum. Every note added to a chord multiplies the ambiguity, which is why density predicts difficulty.</p>
+<p>The powerful practical consequence is that you can often convert a hard problem into an easy one. If you can isolate a polyphonic recording into separate monophonic lines — by separating instruments or targeting exposed passages — you transcribe each as a near-solved monophonic case, sidestepping the polyphony problem entirely.</p>
+
+<h2 id="why-polyphonic-transcription-stays-hard">Why polyphonic transcription stays hard</h2>
+<h3>Two ways to transcribe a woodwind trio</h3>
+<p>Imagine a woodwind trio — flute, oboe, and clarinet — playing an interweaving passage in B-flat major. Considered as one combined sound, it is a polyphonic transcription problem with three overlapping voices to untangle.</p>
+<p>But each instrument is monophonic on its own, playing one note at a time. If you isolate the three instruments and feed MidiAI Studio each line separately, every transcription becomes a near-perfect monophonic capture, and you reassemble the three clean parts afterward.</p>
+<p>The contrast is stark: transcribing the blended trio wholesale yields a fuzzy, error-prone result, while transcribing three isolated monophonic lines yields three excellent ones. Recognizing the parts as individually monophonic transformed a hard job into three easy ones.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for monophonic vs polyphonic MIDI" title="Supporting view for monophonic vs polyphonic MIDI" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “monophonic vs polyphonic MIDI”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="comparison-mid" aria-label="Call to action">
+<h2>Compare options, then verify with a real file</h2>
+<p>Use this page to pick the right job. When you are ready, MidiAI Studio covers intake → MIDI edit → score paths on Windows.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Test on your machine</a>
+<a class="secondary" href="https://midiaistudio.com/purchase.html">Lifetime license</a>
+<a class="ghost" href="https://midiaistudio.com/about.html">Publisher &amp; trust info</a>
+</p>
+</aside>
+
+<h2 id="instruments-that-are-naturally-monophonic">Instruments that are naturally monophonic</h2>
+<ol class="seo-steps">
+<li><strong>Classify your material first.</strong> Before transcribing, decide whether your target is monophonic or polyphonic. This single classification sets your accuracy expectations and points to the right approach.</li>
+<li><strong>Transcribe monophonic parts directly.</strong> For genuine single-note lines, convert straightaway and expect very high accuracy. Monophonic material rarely needs the elaborate care polyphony demands.</li>
+<li><strong>Try to reduce polyphony to monophony.</strong> For polyphonic sources, look for ways to isolate individual lines — separating instruments or targeting exposed passages — so each becomes an easy monophonic case.</li>
+<li><strong>Reserve full polyphonic transcription for the irreducible.</strong> When a part is inherently polyphonic on one instrument, like a piano chord, accept the harder path and verify dense passages carefully.</li>
+<li><strong>Reassemble isolated lines into the full part.</strong> After transcribing separated monophonic lines, combine them into the complete texture. This hybrid route often beats transcribing the blend directly.</li>
+</ol>
+
+<h2 id="splitting-polyphony-into-monophonic-lines">Splitting polyphony into monophonic lines</h2>
+<ul class="seo-list">
+<li>Diagnose monophonic versus polyphonic before choosing an approach.</li>
+<li>Expect near-perfect results from clean monophonic lines.</li>
+<li>Convert polyphony to monophony through isolation whenever possible.</li>
+<li>Verify inherently polyphonic passages more carefully than monophonic ones.</li>
+<li>Prefer transcribing separated lines over a blended polyphonic mix.</li>
+</ul>
+
+<h2 id="choosing-the-easiest-path-to-your-target-part">Choosing the easiest path to your target part</h2>
+<ul class="seo-list">
+<li><strong>Transcribing a blend as one part:</strong> Treating separable lines as a single polyphonic mass forfeits the easy monophonic route.</li>
+<li><strong>Over-verifying monophonic captures:</strong> Spending polyphony-level scrutiny on a clean solo line wastes effort it does not need.</li>
+<li><strong>Ignoring isolation opportunities:</strong> Missing a chance to split polyphony into monophonic lines makes the job needlessly hard.</li>
+<li><strong>Expecting equal accuracy everywhere:</strong> Assuming a piano chorale will transcribe like a flute solo sets you up for disappointment.</li>
+<li><strong>Skipping classification:</strong> Diving in without knowing the part's type means choosing an approach blind.</li>
+</ul>
+
+<h2 id="accuracy-expectations-for-each-case">Accuracy expectations for each case</h2>
+<p>The monophonic-polyphonic distinction is the single most clarifying idea in transcription, because it replaces a vague sense that some things are harder than others with a precise, predictive rule. Once you can look at any source and place it on that spectrum, you can forecast the effort, choose the approach, and set expectations before touching the tool. Few concepts pay off so reliably.</p>
+<p>It reframes instrument separation from a nice-to-have into a strategic move. Isolating instruments is not merely about reducing clutter; it is about converting an intractable polyphonic problem into a stack of nearly-solved monophonic ones. When you see isolation this way, you start looking for it everywhere, and your results improve accordingly.</p>
+
+<h2 id="when-a-hybrid-approach-wins">When a hybrid approach wins</h2>
+<p>The distinction also explains why the field advanced unevenly. Monophonic transcription was essentially conquered years ago, which is why a solo line comes through so cleanly, while polyphonic transcription remains where the research energy concentrates. Knowing this, you can be confident in the easy cases and appropriately careful in the hard ones.</p>
+<p>The hybrid mindset that emerges is the mark of an experienced transcriber. Rather than asking a tool to solve the hardest version of a problem, you reshape the problem toward its easy form — isolating, targeting exposed passages, reassembling clean lines. MidiAI Studio handles both cases, but the musician who steers material toward monophony consistently gets the better results.</p>
+
+<aside class="seo-cta-box" data-cta="comparison-end" aria-label="Call to action">
+<h2>Compare options, then verify with a real file</h2>
+<p>Use this page to pick the right job. When you are ready, MidiAI Studio covers intake → MIDI edit → score paths on Windows.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Test on your machine</a>
+<a class="secondary" href="https://midiaistudio.com/purchase.html">Lifetime license</a>
+<a class="ghost" href="https://midiaistudio.com/about.html">Publisher &amp; trust info</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>monophonic vs polyphonic MIDI</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>What is the difference between monophonic and polyphonic transcription?</summary><p>Monophonic transcription handles one note at a time, like a solo melody, while polyphonic transcription handles multiple simultaneous notes, like a chord. The single-note case is far more accurate than the stacked one.</p></details>
+<details><summary>Why is transcribing a single melody so much more accurate than a chord?</summary><p>Because a melody presents one pitch at any instant, so there is nothing to disentangle, whereas a chord's overlapping harmonics create ambiguity. Fewer simultaneous notes means fewer chances for error.</p></details>
+<details><summary>Can I turn a hard polyphonic transcription into easier monophonic ones?</summary><p>Often yes — if you can isolate a polyphonic source into separate single-note lines, each becomes a near-solved monophonic case. Transcribing isolated lines and reassembling them usually beats transcribing the blend.</p></details>
+<details><summary>Which instruments are naturally monophonic for transcription?</summary><p>Instruments that sound one note at a time, such as flute, most single-line woodwinds and brass, and the singing voice, are naturally monophonic. Piano and guitar are typically polyphonic because they sound several notes together.</p></details>
+<details><summary>Should I expect the same accuracy from all my transcriptions?</summary><p>No — accuracy tracks strongly with density. Clean monophonic lines approach perfection, while dense polyphonic passages carry inherent ambiguity, so set your expectations by classifying the material first.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “monophonic vs polyphonic MIDI”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Piano &amp; polyphony</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./piano-midi-converter.html"><strong>Converting Piano to MIDI: The Ideal Case</strong><br><span class="seo-related-meta">piano MIDI conversion tips · how-to</span></a>
+<a href="./polyphonic-piano-transcription.html"><strong>Transcribing Polyphonic Piano, Note by Note</strong><br><span class="seo-related-meta">polyphonic piano transcription · explainer</span></a>
+<a href="./transcribe-classical-piano.html"><strong>Transcribing Classical Piano Repertoire to MIDI</strong><br><span class="seo-related-meta">classical piano AI transcription · use-case</span></a>
+<a href="./jazz-piano-to-midi-challenges.html"><strong>Why Jazz Piano Is Uniquely Hard to Transcribe</strong><br><span class="seo-related-meta">jazz piano MIDI transcription · troubleshooting</span></a>
+<a href="./audio-to-midi-ai.html"><strong>How AI Turns Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · AI audio transcription to MIDI</span></a>
+<a href="./wav-to-midi.html"><strong>Converting Uncompressed WAV Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · WAV to MIDI conversion quality</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in Piano &amp; polyphony">
+<a class="seo-pager-link seo-pager-prev" href="./polyphonic-piano-transcription.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Transcribing Polyphonic Piano, Note by Note</span></a>
+<a class="seo-pager-link seo-pager-next" href="./transcribe-classical-piano.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Transcribing Classical Piano Repertoire to MIDI</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

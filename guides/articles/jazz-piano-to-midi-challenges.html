@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jazz Piano to MIDI: The Unique Challenges of Transcribing Jazz</title>
+  <meta name="description" content="Jazz piano combines dense extended harmony, swing feel, and improvisation — a perfect storm for transcription. This guide explains the challenges and how to work through them.">
+  <meta name="keywords" content="jazz piano MIDI transcription, swing feel MIDI, jazz voicing cleanup">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/jazz-piano-to-midi-challenges.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="Jazz Piano to MIDI: The Unique Challenges of Transcribing Jazz">
+  <meta property="og:description" content="Jazz piano combines dense extended harmony, swing feel, and improvisation — a perfect storm for transcription. This guide explains the challenges and how to work through them.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/jazz-piano-to-midi-challenges.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Jazz Piano to MIDI: The Unique Challenges of Transcribing Jazz">
+  <meta name="twitter:description" content="Jazz piano combines dense extended harmony, swing feel, and improvisation — a perfect storm for transcription. This guide explains the challenges and how to work through them.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Jazz Piano to MIDI: The Unique Challenges of Transcribing Jazz",
+  "description": "Jazz piano combines dense extended harmony, swing feel, and improvisation — a perfect storm for transcription. This guide explains the challenges and how to work through them.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "jazz piano MIDI transcription, swing feel MIDI, jazz voicing cleanup",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/jazz-piano-to-midi-challenges.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What makes jazz piano harder to transcribe than classical piano?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It combines every difficulty at once: dense extended and altered harmony, deliberately loose swing timing, and improvisation with no written score to verify against. Each factor alone is hard, and jazz stacks them together."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I keep the swing feel when transcribing jazz to MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Track timing flexibly and avoid over-quantizing to a straight grid. The uneven eighth notes and behind-the-beat phrasing are the essence of swing, so preserving that timing matters more than tidy notation."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why are rootless voicings a problem for transcription?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because they omit the bass note that would anchor the chord, leaving the harmony's foundation ambiguous. Identifying the intended chord requires reading the harmonic context rather than the notes alone."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How can I verify a jazz transcription with no original score?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use your ears and harmonic knowledge, since an improvised solo exists only in that performance. Your analysis of what fits the changes becomes the reference that a published score would provide in classical music."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is transcribing jazz worth the extra effort?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "For learning the jazz language, absolutely. A transcription reveals exactly which tensions, voicings, and rhythmic choices a player used, turning a dazzling solo into a study you can absorb phrase by phrase."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Why Jazz Piano Is Uniquely Hard to Transcribe",
+      "item": "https://midiaistudio.com/guides/articles/jazz-piano-to-midi-challenges.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">Piano &amp; polyphony</span> ›
+<span aria-current="page">Why Jazz Piano Is Uniquely Hard to Transcribe</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · Piano &amp; polyphony</p>
+<h1>Why Jazz Piano Is Uniquely Hard to Transcribe</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: troubleshooting</span>
+  <span>Cluster: Piano &amp; polyphony</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#extended-and-altered-harmony-s-dense-voicings">Extended and altered harmony's dense voicings</a></li>
+<li><a href="#swing-feel-versus-a-straight-rhythmic-grid">Swing feel versus a straight rhythmic grid</a></li>
+<li><a href="#improvisation-and-the-absence-of-a-score-to-check">Improvisation and the absence of a score to check</a></li>
+<li><a href="#rootless-voicings-and-ambiguous-bass">Rootless voicings and ambiguous bass</a></li>
+<li><a href="#fast-bebop-lines-and-note-count-precision">Fast bebop lines and note-count precision</a></li>
+<li><a href="#comping-rhythms-that-defy-quantization">Comping rhythms that defy quantization</a></li>
+<li><a href="#verifying-jazz-transcription-without-a-reference">Verifying jazz transcription without a reference</a></li>
+<li><a href="#using-transcription-to-learn-the-jazz-language">Using transcription to learn the jazz language</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>Jazz piano might be the single most demanding source for transcription, and understanding why is a lesson in what makes transcription hard in general. It combines every difficulty at once: dense extended harmony, deliberately loose swing timing, and improvisation with no written score to check against.</p>
+<p>This is not a discouragement — jazz is also one of the most rewarding things to transcribe, because the transcription becomes a window into how great players actually build their music. But going in with clear eyes about the challenges makes the difference between an illuminating study and a frustrating slog.</p>
+<p>This guide breaks down each challenge specific to jazz and offers concrete ways to work through them with MidiAI Studio. If you have ever wanted to see exactly what a pianist played in a solo you love, this is the terrain you will be navigating.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio capturing a fast bebop solo with swing timing preserved and rootless voicings flagged for review." title="MidiAI Studio capturing a fast bebop solo with swing timing preserved and rootless voicings flagged for review." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio capturing a fast bebop solo with swing timing preserved and rootless voicings flagged for review.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “jazz piano MIDI transcription”</span></figcaption>
+</figure>
+
+<h2 id="extended-and-altered-harmony-s-dense-voicings">Extended and altered harmony's dense voicings</h2>
+<p>Transcribing jazz piano to MIDI means capturing improvised, harmonically dense, rhythmically supple performances as note data. It is distinguished by combining maximal harmonic complexity, non-metronomic timing, and the absence of a canonical score, making it among the hardest transcription tasks.</p>
+<p>Unlike classical repertoire, jazz usually has no definitive written version to verify against, so the transcription is both a technical challenge and an act of analysis — deciding what the improviser actually played.</p>
+
+<h2 id="swing-feel-versus-a-straight-rhythmic-grid">Swing feel versus a straight rhythmic grid</h2>
+<p>Jazz harmony piles extensions and alterations — ninths, elevenths, thirteenths, altered fifths — into dense voicings that are exactly the thick polyphony transcription finds hardest. Rootless voicings compound this by omitting the bass note that would anchor the chord, leaving the harmony's foundation genuinely ambiguous even to trained listeners.</p>
+<p>Swing feel fights the quantization that notation and clean MIDI want. The characteristic uneven eighth notes and behind-the-beat phrasing are the soul of jazz and the enemy of a rigid grid, so MidiAI Studio must track the timing flexibly and you must resist over-quantizing away the very feel you are trying to capture.</p>
+<p>Improvisation removes the safety net entirely. With classical music you can check a transcription against the published score, but a jazz solo exists only in that one performance, so verification means using your ears and harmonic knowledge to judge what was played. Fast bebop lines add note-count precision to the challenge, where a single missed or doubled note changes the phrase.</p>
+
+<h2 id="improvisation-and-the-absence-of-a-score-to-check">Improvisation and the absence of a score to check</h2>
+<h3>Transcribing a bebop solo over rhythm changes</h3>
+<p>Picture a fast bebop piano solo over rhythm changes in B-flat major at around 220 BPM, full of rootless left-hand voicings and cascading right-hand eighth-note lines with a strong swing feel. This is jazz transcription at its most demanding.</p>
+<p>MidiAI Studio captures the flurry of right-hand notes and the left-hand comping, but the rootless voicings leave some chords harmonically ambiguous, and the swing eighths resist a straight grid. You keep the flexible timing to preserve the feel and use your ear to confirm the altered tensions in the voicings.</p>
+<p>The payoff is extraordinary: a note-for-note view of how the player navigated the changes, which tensions they favored, and how their line related to the harmony. The transcription needed real work, but it turned a dazzling solo into a lesson you can study phrase by phrase.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio detail for jazz piano MIDI transcription" title="Supporting view for jazz piano MIDI transcription" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “jazz piano MIDI transcription”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="troubleshooting-mid" aria-label="Call to action">
+<h2>Stuck on “jazz piano MIDI transcription”? Fix source quality first</h2>
+<p>Most accuracy issues are upstream. Improve the input, convert a shorter section, then edit—or ask support with a concrete example.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/support.html">Get 1:1 help</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Update / reinstall</a>
+<a class="ghost" href="https://midiaistudio.com/guides/articles/improve-midi-accuracy.html">Accuracy guide</a>
+</p>
+</aside>
+
+<h2 id="rootless-voicings-and-ambiguous-bass">Rootless voicings and ambiguous bass</h2>
+<ol class="seo-steps">
+<li><strong>Expect and plan for harmonic density.</strong> Anticipate thick extended and altered voicings, and budget time to verify the tensions by ear. Jazz harmony is exactly the dense polyphony that needs your listening most.</li>
+<li><strong>Preserve the swing feel.</strong> Track timing flexibly and resist over-quantizing. The uneven eighths and behind-the-beat phrasing are the point, so protect them rather than snapping them to a grid.</li>
+<li><strong>Infer rootless voicings from context.</strong> When the bass is omitted, use the harmonic context to identify the underlying chord. Rootless voicings are ambiguous by design, so context is your guide.</li>
+<li><strong>Verify by ear, not against a score.</strong> Because a solo is improvised, check the transcription against your hearing and harmonic knowledge. There is no published version to compare, so your analysis is the reference.</li>
+<li><strong>Study the result as jazz vocabulary.</strong> Treat the transcription as a lesson in the language — the licks, voicings, and rhythmic choices. Turning capture into study is where jazz transcription pays off most.</li>
+</ol>
+
+<h2 id="fast-bebop-lines-and-note-count-precision">Fast bebop lines and note-count precision</h2>
+<ul class="seo-list">
+<li>Budget verification time proportional to the harmonic density.</li>
+<li>Guard the swing feel against reflexive quantization.</li>
+<li>Use harmonic context to resolve rootless, ambiguous voicings.</li>
+<li>Rely on your ear and theory since no canonical score exists.</li>
+<li>Mine every transcription for reusable jazz vocabulary.</li>
+</ul>
+
+<h2 id="comping-rhythms-that-defy-quantization">Comping rhythms that defy quantization</h2>
+<ul class="seo-list">
+<li><strong>Over-quantizing the swing:</strong> Snapping uneven eighths to a straight grid destroys the feel that defines the music.</li>
+<li><strong>Trusting ambiguous voicings blindly:</strong> Rootless, altered chords need ear verification; taking them as-is invites harmonic errors.</li>
+<li><strong>Expecting a score to check against:</strong> Improvised solos have no published version, so relying on one leaves you with no reference.</li>
+<li><strong>Ignoring bebop note counts:</strong> In fast lines a single missed or doubled note reshapes the phrase; check counts carefully.</li>
+<li><strong>Capturing without studying:</strong> A jazz transcription left unanalyzed wastes its greatest value as a vocabulary lesson.</li>
+</ul>
+
+<h2 id="verifying-jazz-transcription-without-a-reference">Verifying jazz transcription without a reference</h2>
+<p>Jazz transcription is a masterclass in why transcription is fundamentally an act of interpretation. Every hard property of jazz — the dense harmony, the elastic time, the improvised content — forces judgment rather than mere measurement, so you end up thinking like a musician deciding what was played, not a machine reading a page. That is demanding, but it is also where the deep learning happens.</p>
+<p>The absence of a canonical score changes the whole psychology of the task. In classical music the score is truth and the transcription is checked against it; in jazz the performance is the only truth, and your transcription is a claim about it. This makes jazz transcription intellectually closer to analysis than to copying, which is exactly why generations of players have learned by transcribing solos.</p>
+
+<h2 id="using-transcription-to-learn-the-jazz-language">Using transcription to learn the jazz language</h2>
+<p>Swing feel is a beautiful illustration of the tension between accuracy and meaning. A perfectly quantized jazz line is more accurate in one sense and completely wrong in another, because it has lost the timing that made it jazz. MidiAI Studio's flexible timing exists precisely because the meaningful version of a jazz transcription is not the mathematically tidy one.</p>
+<p>For all its difficulty, jazz may be the most rewarding thing you can transcribe, because the effort is inseparable from the education. Wrestling with a bebop solo's voicings and rhythms forces you to understand them, and that understanding becomes part of your own playing. The transcription is not the goal; the fluency it builds is, and that is worth every hard-won phrase.</p>
+
+<aside class="seo-cta-box" data-cta="troubleshooting-end" aria-label="Call to action">
+<h2>Stuck on “jazz piano MIDI transcription”? Fix source quality first</h2>
+<p>Most accuracy issues are upstream. Improve the input, convert a shorter section, then edit—or ask support with a concrete example.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/support.html">Get 1:1 help</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Update / reinstall</a>
+<a class="ghost" href="https://midiaistudio.com/guides/articles/improve-midi-accuracy.html">Accuracy guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>jazz piano MIDI transcription</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>What makes jazz piano harder to transcribe than classical piano?</summary><p>It combines every difficulty at once: dense extended and altered harmony, deliberately loose swing timing, and improvisation with no written score to verify against. Each factor alone is hard, and jazz stacks them together.</p></details>
+<details><summary>How do I keep the swing feel when transcribing jazz to MIDI?</summary><p>Track timing flexibly and avoid over-quantizing to a straight grid. The uneven eighth notes and behind-the-beat phrasing are the essence of swing, so preserving that timing matters more than tidy notation.</p></details>
+<details><summary>Why are rootless voicings a problem for transcription?</summary><p>Because they omit the bass note that would anchor the chord, leaving the harmony's foundation ambiguous. Identifying the intended chord requires reading the harmonic context rather than the notes alone.</p></details>
+<details><summary>How can I verify a jazz transcription with no original score?</summary><p>Use your ears and harmonic knowledge, since an improvised solo exists only in that performance. Your analysis of what fits the changes becomes the reference that a published score would provide in classical music.</p></details>
+<details><summary>Is transcribing jazz worth the extra effort?</summary><p>For learning the jazz language, absolutely. A transcription reveals exactly which tensions, voicings, and rhythmic choices a player used, turning a dazzling solo into a study you can absorb phrase by phrase.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “jazz piano MIDI transcription”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Piano &amp; polyphony</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./piano-midi-converter.html"><strong>Converting Piano to MIDI: The Ideal Case</strong><br><span class="seo-related-meta">piano MIDI conversion tips · how-to</span></a>
+<a href="./polyphonic-piano-transcription.html"><strong>Transcribing Polyphonic Piano, Note by Note</strong><br><span class="seo-related-meta">polyphonic piano transcription · explainer</span></a>
+<a href="./monophonic-vs-polyphonic-midi.html"><strong>Monophonic vs Polyphonic Transcription Explained</strong><br><span class="seo-related-meta">monophonic vs polyphonic MIDI · comparison</span></a>
+<a href="./transcribe-classical-piano.html"><strong>Transcribing Classical Piano Repertoire to MIDI</strong><br><span class="seo-related-meta">classical piano AI transcription · use-case</span></a>
+<a href="./audio-to-midi-ai.html"><strong>How AI Turns Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · AI audio transcription to MIDI</span></a>
+<a href="./wav-to-midi.html"><strong>Converting Uncompressed WAV Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · WAV to MIDI conversion quality</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in Piano &amp; polyphony">
+<a class="seo-pager-link seo-pager-prev" href="./transcribe-classical-piano.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Transcribing Classical Piano Repertoire to MIDI</span></a>
+<span class="seo-pager-link seo-pager-empty"></span>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

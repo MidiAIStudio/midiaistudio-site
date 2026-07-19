@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIDI Editing Basics: The Core Skills Every Musician Needs</title>
+  <meta name="description" content="Whatever produced your MIDI, editing it comes down to a handful of core skills. This guide teaches the fundamentals — notes, timing, velocity, and structure — from the ground up.">
+  <meta name="keywords" content="MIDI editing after AI conversion, piano roll cleanup basics, fix AI MIDI drafts">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/midi-editing-basics.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="MIDI Editing Basics: The Core Skills Every Musician Needs">
+  <meta property="og:description" content="Whatever produced your MIDI, editing it comes down to a handful of core skills. This guide teaches the fundamentals — notes, timing, velocity, and structure — from the ground up.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/midi-editing-basics.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MIDI Editing Basics: The Core Skills Every Musician Needs">
+  <meta name="twitter:description" content="Whatever produced your MIDI, editing it comes down to a handful of core skills. This guide teaches the fundamentals — notes, timing, velocity, and structure — from the ground up.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "MIDI Editing Basics: The Core Skills Every Musician Needs",
+  "description": "Whatever produced your MIDI, editing it comes down to a handful of core skills. This guide teaches the fundamentals — notes, timing, velocity, and structure — from the ground up.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "MIDI editing after AI conversion, piano roll cleanup basics, fix AI MIDI drafts",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/midi-editing-basics.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What can you actually change about a MIDI note?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Exactly four things: its pitch, its start time, its duration, and its velocity. Every MIDI edit, no matter how advanced it looks, comes down to changing one or more of these properties."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Should I edit MIDI in the piano roll or the notation view?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The piano roll is best for precise control over timing and velocity and is where most editing happens, while notation view suits reading and score-oriented work. Beginners benefit most from building piano-roll fluency first."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What does snap-to-grid do when editing MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It makes notes align to beat divisions as you move or place them, giving quantized precision. Turning snap off allows free placement for expressive timing, so you choose based on whether you want accuracy or nuance."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does my edited MIDI still sound mechanical?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Usually because the velocities are flat and uniform. Shaping velocity into crescendos, accents, and contrast is what gives a sequence dynamic life, so actively editing it is essential for musical results."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I repeat or restructure a section of MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Select the region and use copy, paste, loop, and delete to rearrange whole sections. Structural editing operates above individual notes, letting you reshape a piece's form as easily as its details."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "The Fundamentals of Editing MIDI",
+      "item": "https://midiaistudio.com/guides/articles/midi-editing-basics.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">MIDI editing craft</span> ›
+<span aria-current="page">The Fundamentals of Editing MIDI</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · MIDI editing craft</p>
+<h1>The Fundamentals of Editing MIDI</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: MIDI editing craft</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#the-four-things-you-can-edit-in-any-midi-note">The four things you can edit in any MIDI note</a></li>
+<li><a href="#working-in-the-piano-roll-versus-notation-view">Working in the piano roll versus notation view</a></li>
+<li><a href="#selecting-moving-and-resizing-notes-precisely">Selecting, moving, and resizing notes precisely</a></li>
+<li><a href="#editing-velocity-to-shape-dynamics">Editing velocity to shape dynamics</a></li>
+<li><a href="#understanding-the-grid-and-snap">Understanding the grid and snap</a></li>
+<li><a href="#copy-paste-and-looping-structural-sections">Copy, paste, and looping structural sections</a></li>
+<li><a href="#non-destructive-habits-that-protect-your-work">Non-destructive habits that protect your work</a></li>
+<li><a href="#building-speed-with-keyboard-shortcuts">Building speed with keyboard shortcuts</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>Every MIDI file, however it was created, is editable with the same small set of core skills. Whether your notes came from a keyboard performance, an audio transcription, or a PDF conversion, editing them comes down to manipulating four properties and understanding a few interface concepts. Master those and every MIDI file bends to your will.</p>
+<p>Beginners often feel overwhelmed by a piano roll full of colored bars, but the underlying model is genuinely simple. There are only so many things you can do to a note, and once you internalize them, the apparent complexity dissolves into a handful of confident moves.</p>
+<p>This guide teaches those fundamentals from the ground up, assuming no prior editing experience. With these basics, you can clean up a MidiAI Studio conversion, shape a performance, or restructure an arrangement — the same skills serve every task.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio piano roll showing a converted melody with a pitch fix, timing nudge, and velocity shaping." title="MidiAI Studio piano roll showing a converted melody with a pitch fix, timing nudge, and velocity shaping." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio piano roll showing a converted melody with a pitch fix, timing nudge, and velocity shaping.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MIDI editing after AI conversion”</span></figcaption>
+</figure>
+
+<h2 id="the-four-things-you-can-edit-in-any-midi-note">The four things you can edit in any MIDI note</h2>
+<p>MIDI editing is the manipulation of the individual note events in a MIDI file — changing their pitch, start time, duration, and velocity, and rearranging them structurally. It is the craft of reshaping recorded or converted note data into exactly the music you intend.</p>
+<p>At its core, every edit acts on one of four note properties or on the arrangement of notes in time, which means the whole discipline rests on a small, learnable foundation rather than an endless list of features.</p>
+
+<h2 id="working-in-the-piano-roll-versus-notation-view">Working in the piano roll versus notation view</h2>
+<p>A MIDI note has exactly four editable properties: pitch (which note it is), start time (when it begins), duration (how long it lasts), and velocity (how hard it was struck). Every edit you will ever make changes one or more of these, so understanding them individually is the whole conceptual basis of MIDI editing.</p>
+<p>The piano roll is where most editing happens, showing pitch on the vertical axis and time on the horizontal, with each note as a bar you can move, lengthen, or drag to a new pitch. The grid and snap settings determine how notes align to beats, and MidiAI Studio, like any editor, lets you toggle snap so you can choose between quantized precision and free placement.</p>
+<p>Structural editing operates above the note level, letting you select regions and copy, paste, loop, or delete whole sections. This is how you repeat a chorus, remove an intro, or duplicate a pattern, and combined with the four note properties it gives you complete control over both the details and the shape of a piece.</p>
+
+<h2 id="selecting-moving-and-resizing-notes-precisely">Selecting, moving, and resizing notes precisely</h2>
+<h3>Cleaning up a converted melody step by step</h3>
+<p>Suppose you have a converted eight-bar melody in C major that needs four small fixes: one wrong pitch, a note that starts slightly late, a note held too long, and a flat, uniform dynamic feel. These four fixes exercise every core skill.</p>
+<p>In the piano roll you drag the wrong note up two semitones to correct its pitch, nudge the late note back onto the beat with snap on, shorten the over-long note by dragging its right edge, and then draw a gentle velocity rise across the phrase to give it shape. Four moves, four properties.</p>
+<p>Finally you select the whole eight bars and copy them to build a repeat, adjusting the last note for a proper ending. Using only the fundamentals — pitch, timing, duration, velocity, and structural copy — you turned a rough MidiAI Studio conversion into a polished, shaped phrase.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio detail for MIDI editing after AI conversion" title="Supporting view for MIDI editing after AI conversion" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “MIDI editing after AI conversion”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “MIDI editing after AI conversion” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="editing-velocity-to-shape-dynamics">Editing velocity to shape dynamics</h2>
+<ol class="seo-steps">
+<li><strong>Learn the four note properties.</strong> Understand that every note has a pitch, start time, duration, and velocity, and that all editing changes these. This mental model makes every tool in the editor make sense.</li>
+<li><strong>Get comfortable in the piano roll.</strong> Practice selecting, moving, and resizing notes in the piano roll, where pitch is vertical and time horizontal. Fluency here underlies almost all MIDI editing.</li>
+<li><strong>Use the grid and snap deliberately.</strong> Turn snap on for precise, beat-aligned edits and off for free placement. Knowing when to use each keeps your timing edits both accurate and expressive.</li>
+<li><strong>Shape dynamics with velocity.</strong> Edit velocity to create crescendos, accents, and contrast. Velocity is what turns a flat, mechanical sequence into music with feeling.</li>
+<li><strong>Edit structure with copy and loop.</strong> Select regions to copy, paste, loop, and delete whole sections. Structural editing lets you reshape a piece's form, not just its details.</li>
+</ol>
+
+<h2 id="understanding-the-grid-and-snap">Understanding the grid and snap</h2>
+<ul class="seo-list">
+<li>Think in terms of the four note properties for every edit.</li>
+<li>Build piano-roll fluency before worrying about advanced features.</li>
+<li>Toggle snap consciously to balance precision and expression.</li>
+<li>Use velocity actively rather than leaving dynamics flat.</li>
+<li>Work on a copy so your original conversion is always safe.</li>
+</ul>
+
+<h2 id="copy-paste-and-looping-structural-sections">Copy, paste, and looping structural sections</h2>
+<ul class="seo-list">
+<li><strong>Editing without understanding the four properties:</strong> Poking at tools blindly is slow; the property model makes every edit intentional.</li>
+<li><strong>Fighting the piano roll:</strong> Avoiding it for the notation view limits precise control over timing and velocity.</li>
+<li><strong>Leaving snap on for everything:</strong> Rigid snapping can strip expressive timing where free placement is wanted.</li>
+<li><strong>Ignoring velocity:</strong> Flat dynamics leave the music sounding mechanical no matter how correct the notes.</li>
+<li><strong>Editing the only copy:</strong> Working destructively on the original risks losing your clean starting point.</li>
+</ul>
+
+<h2 id="non-destructive-habits-that-protect-your-work">Non-destructive habits that protect your work</h2>
+<p>The single most empowering realization for a beginner is that MIDI editing has a small, closed vocabulary. There are only four note properties and a handful of structural operations, so the entire discipline is learnable in an afternoon of practice rather than being an endless expanse of features. Everything advanced is just these fundamentals combined and automated.</p>
+<p>The piano roll deserves to be embraced rather than feared, because it is the most honest view of what MIDI actually is. Notation adds a layer of interpretation, but the piano roll shows the raw truth — pitch against time, each note a tangible object you can grab. Fluency there translates directly into control over MidiAI Studio conversions and any other MIDI you touch.</p>
+
+<h2 id="building-speed-with-keyboard-shortcuts">Building speed with keyboard shortcuts</h2>
+<p>Velocity is the property beginners most often neglect and the one that most separates lifeless from living music. Correct pitches and rhythms with flat dynamics sound like a machine, while the same notes with thoughtful velocity shaping sound like a performance. Treating velocity as a first-class part of every edit is a habit that pays off immediately.</p>
+<p>Above all, non-destructive habits turn editing from a nervous act into a confident one. Working on a copy, keeping your original conversion safe, and knowing that every change is reversible frees you to experiment boldly. The musicians who edit best are not the most cautious but the most fearless, precisely because they have made their mistakes cost nothing.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “MIDI editing after AI conversion” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>MIDI editing after AI conversion</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>What can you actually change about a MIDI note?</summary><p>Exactly four things: its pitch, its start time, its duration, and its velocity. Every MIDI edit, no matter how advanced it looks, comes down to changing one or more of these properties.</p></details>
+<details><summary>Should I edit MIDI in the piano roll or the notation view?</summary><p>The piano roll is best for precise control over timing and velocity and is where most editing happens, while notation view suits reading and score-oriented work. Beginners benefit most from building piano-roll fluency first.</p></details>
+<details><summary>What does snap-to-grid do when editing MIDI?</summary><p>It makes notes align to beat divisions as you move or place them, giving quantized precision. Turning snap off allows free placement for expressive timing, so you choose based on whether you want accuracy or nuance.</p></details>
+<details><summary>Why does my edited MIDI still sound mechanical?</summary><p>Usually because the velocities are flat and uniform. Shaping velocity into crescendos, accents, and contrast is what gives a sequence dynamic life, so actively editing it is essential for musical results.</p></details>
+<details><summary>How do I repeat or restructure a section of MIDI?</summary><p>Select the region and use copy, paste, loop, and delete to rearrange whole sections. Structural editing operates above individual notes, letting you reshape a piece's form as easily as its details.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “MIDI editing after AI conversion”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>MIDI editing craft</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./midi-velocity-and-expression.html"><strong>Adding Real Expression to Converted MIDI</strong><br><span class="seo-related-meta">MIDI velocity expression editing · how-to</span></a>
+<a href="./quantize-midi-after-conversion.html"><strong>Quantizing Converted MIDI the Musical Way</strong><br><span class="seo-related-meta">quantize AI MIDI timing · how-to</span></a>
+<a href="./cleaning-up-ai-generated-midi.html"><strong>Turning Raw AI MIDI Into a Clean, Musical Part</strong><br><span class="seo-related-meta">cleanup checklist AI MIDI · checklist</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in MIDI editing craft">
+<span class="seo-pager-link seo-pager-empty"></span>
+<a class="seo-pager-link seo-pager-next" href="./cleaning-up-ai-generated-midi.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Turning Raw AI MIDI Into a Clean, Musical Part</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

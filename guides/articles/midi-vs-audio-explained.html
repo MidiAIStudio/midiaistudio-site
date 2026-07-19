@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIDI vs Audio Explained: Two Fundamentally Different Things</title>
+  <meta name="description" content="MIDI and audio are constantly confused but fundamentally different. This guide explains the distinction clearly and why it underlies everything about conversion between them.">
+  <meta name="keywords" content="MIDI vs audio explained, symbolic vs waveform, why convert to MIDI">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/midi-vs-audio-explained.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="MIDI vs Audio Explained: Two Fundamentally Different Things">
+  <meta property="og:description" content="MIDI and audio are constantly confused but fundamentally different. This guide explains the distinction clearly and why it underlies everything about conversion between them.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/midi-vs-audio-explained.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-midi-converter-home.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MIDI vs Audio Explained: Two Fundamentally Different Things">
+  <meta name="twitter:description" content="MIDI and audio are constantly confused but fundamentally different. This guide explains the distinction clearly and why it underlies everything about conversion between them.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/ai-midi-converter-home.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "MIDI vs Audio Explained: Two Fundamentally Different Things",
+  "description": "MIDI and audio are constantly confused but fundamentally different. This guide explains the distinction clearly and why it underlies everything about conversion between them.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT9M",
+  "keywords": "MIDI vs audio explained, symbolic vs waveform, why convert to MIDI",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/ai-midi-converter-home.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/midi-vs-audio-explained.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the fundamental difference between MIDI and audio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Audio is a recording of actual sound stored as a waveform, while MIDI is a set of instructions describing which notes to play. One captures the result of music; the other describes the actions that produce it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why can't I edit individual notes in an audio file the way I can in MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because audio fuses all the notes into a single waveform, so they cannot be separated as distinct notes. MIDI keeps every note as an individual editable event, which is why it offers note-level editing that audio cannot."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does a MIDI file sometimes sound different on different devices?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because MIDI is instructions that depend on the sound source interpreting them, so the same file plays differently through different instruments or synths. Audio, being a fixed recording, sounds the same everywhere."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is converting audio to MIDI harder than converting MIDI to audio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "MIDI-to-audio simply follows instructions to produce sound, while audio-to-MIDI must reverse-engineer the individual notes out of a fused waveform. Inferring the recipe from the finished recording is the whole difficulty of transcription."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I choose between MIDI and audio for a task?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Choose MIDI when you need to edit, transpose, or reshape notes, and audio when you need a fixed, faithful recording. Matching the format to whether flexibility or fidelity matters avoids fighting the wrong one."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "MIDI vs Audio: Understanding the Core Difference",
+      "item": "https://midiaistudio.com/guides/articles/midi-vs-audio-explained.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">AI &amp; MIDI fundamentals</span> ›
+<span aria-current="page">MIDI vs Audio: Understanding the Core Difference</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · AI &amp; MIDI fundamentals</p>
+<h1>MIDI vs Audio: Understanding the Core Difference</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">9 min read</span>
+  <span>Intent: explainer</span>
+  <span>Cluster: AI &amp; MIDI fundamentals</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#instructions-versus-recordings-the-core-split">Instructions versus recordings: the core split</a></li>
+<li><a href="#what-a-midi-file-actually-is">What a MIDI file actually is</a></li>
+<li><a href="#what-an-audio-file-actually-is">What an audio file actually is</a></li>
+<li><a href="#why-you-can-edit-midi-notes-but-not-audio-notes">Why you can edit MIDI notes but not audio notes</a></li>
+<li><a href="#file-size-flexibility-and-fidelity-trade-offs">File size, flexibility, and fidelity trade-offs</a></li>
+<li><a href="#why-converting-audio-to-midi-is-hard">Why converting audio to MIDI is hard</a></li>
+<li><a href="#why-converting-midi-to-audio-is-easy">Why converting MIDI to audio is easy</a></li>
+<li><a href="#choosing-which-you-need-for-a-given-task">Choosing which you need for a given task</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>MIDI and audio are two of the most confused concepts in music technology, and the confusion causes real mistakes — people expect to edit individual notes in a recording, or wonder why a MIDI file sounds different on another device. Clearing up the distinction is foundational to understanding everything about conversion.</p>
+<p>The difference is not subtle once you see it: audio is a recording of sound, while MIDI is a set of instructions for producing sound. That single distinction — recording versus instructions — explains their different capabilities, their different file sizes, and why converting one way is easy and the other is hard.</p>
+<p>This guide explains the split clearly and traces its consequences, so that the rest of the conversion landscape makes sense. Whether you use MidiAI Studio or any other tool, this is the concept everything else rests on.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/ai-midi-converter-home.jpg" alt="A side-by-side view in MidiAI Studio of the same melody as a fixed audio waveform and as editable MIDI notes." title="A side-by-side view in MidiAI Studio of the same melody as a fixed audio waveform and as editable MIDI notes." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">A side-by-side view in MidiAI Studio of the same melody as a fixed audio waveform and as editable MIDI notes.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MIDI vs audio explained”</span></figcaption>
+</figure>
+
+<h2 id="instructions-versus-recordings-the-core-split">Instructions versus recordings: the core split</h2>
+<p>Audio is a recording of actual sound, stored as a waveform — a continuous capture of air pressure over time that reproduces exactly what was heard. MIDI is a set of instructions — which notes to play, when, how long, and how hard — that a sound source interprets to produce sound.</p>
+<p>The essential distinction is recording versus instructions: audio captures the result of music being made, while MIDI describes the actions that would make it. This is why audio sounds identical everywhere and MIDI can sound different depending on what plays it.</p>
+
+<h2 id="what-a-midi-file-actually-is">What a MIDI file actually is</h2>
+<p>Because audio is a recording of combined sound, the individual notes within it are fused into a single waveform and cannot be separated or edited as notes — you can process the sound but not grab the third note of a chord and move it. MIDI, being instructions, keeps every note as a distinct, editable event, which is precisely why converted MIDI is so flexible.</p>
+<p>This difference drives the file-size and fidelity trade-offs. Audio must store the full detailed waveform, making it large but perfectly faithful to what was recorded, while MIDI stores only compact instructions, making it tiny and endlessly editable but dependent on the sound source that renders it. Neither is better; they optimize for different things.</p>
+<p>The asymmetry of conversion follows directly. Turning MIDI into audio is easy because you are simply following instructions to produce sound — MidiAI Studio or any synth just plays the notes. Turning audio into MIDI is hard because you must reverse-engineer the instructions from the finished recording, inferring the individual notes back out of a fused waveform, which is the entire challenge of transcription.</p>
+
+<h2 id="what-an-audio-file-actually-is">What an audio file actually is</h2>
+<h3>The same melody as audio and as MIDI</h3>
+<p>Imagine a simple melody in C major recorded two ways: once as an audio file of a piano playing it, and once as a MIDI file of the same notes. They sound similar on your speakers but behave completely differently.</p>
+<p>In the audio file, the notes are baked into a waveform — you can make it louder or add reverb, but you cannot change the third note from E to F without re-recording. In the MIDI file, that third note is a distinct event you can drag to F in a second, transpose the whole melody, or play back on a guitar sound instead of piano.</p>
+<p>The audio is a faithful photograph of one performance; the MIDI is an editable recipe for it. Converting the MIDI to audio is trivial — just play it — while converting the audio to MIDI means figuring out the recipe from the photograph, which is exactly what makes transcription the hard direction.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for MIDI vs audio explained" title="Supporting view for MIDI vs audio explained" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “MIDI vs audio explained”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="explainer-mid" aria-label="Call to action">
+<h2>See the concepts behind “MIDI vs audio explained” in the product</h2>
+<p>After you understand the idea, try one concrete conversion so theory turns into muscle memory.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/product.html">Explore MidiAI Studio</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Try the installer</a>
+<a class="ghost" href="https://midiaistudio.com/guides/midi-converter-faq.html">Read converter FAQ</a>
+</p>
+</aside>
+
+<h2 id="why-you-can-edit-midi-notes-but-not-audio-notes">Why you can edit MIDI notes but not audio notes</h2>
+<ol class="seo-steps">
+<li><strong>Fix the core distinction in mind.</strong> Hold onto recording versus instructions as the fundamental difference. This single idea explains every downstream property of MIDI and audio.</li>
+<li><strong>Recognize what each lets you do.</strong> Understand that MIDI's notes are individually editable while audio's are fused. This tells you which format to reach for when editing flexibility matters.</li>
+<li><strong>Weigh the trade-offs deliberately.</strong> Account for audio's fidelity and size against MIDI's flexibility and dependence on a sound source. Choose based on which properties your task needs.</li>
+<li><strong>Expect the conversion asymmetry.</strong> Anticipate that MIDI-to-audio is easy and audio-to-MIDI is hard. This sets realistic expectations for transcription effort and results.</li>
+<li><strong>Match the format to the task.</strong> Choose MIDI when you need to edit and reshape, audio when you need a fixed, faithful recording. Letting the task pick the format avoids fighting the wrong one.</li>
+</ol>
+
+<h2 id="file-size-flexibility-and-fidelity-trade-offs">File size, flexibility, and fidelity trade-offs</h2>
+<ul class="seo-list">
+<li>Anchor your thinking to recording-versus-instructions.</li>
+<li>Reach for MIDI when note-level editing matters.</li>
+<li>Reach for audio when fixed fidelity matters.</li>
+<li>Expect transcription to be the hard direction and plan accordingly.</li>
+<li>Let the task's needs choose between the two formats.</li>
+</ul>
+
+<h2 id="why-converting-audio-to-midi-is-hard">Why converting audio to MIDI is hard</h2>
+<ul class="seo-list">
+<li><strong>Expecting to edit notes in audio:</strong> Audio's notes are fused into a waveform and cannot be grabbed and moved individually.</li>
+<li><strong>Assuming MIDI sounds identical everywhere:</strong> MIDI depends on the sound source rendering it, so it varies between devices and instruments.</li>
+<li><strong>Ignoring the size trade-off:</strong> Treating MIDI and audio as interchangeable overlooks their very different sizes and fidelity.</li>
+<li><strong>Underestimating audio-to-MIDI difficulty:</strong> Assuming transcription is as easy as playback misjudges the reverse-engineering it requires.</li>
+<li><strong>Choosing format by habit:</strong> Defaulting to one format regardless of task means fighting its weaknesses needlessly.</li>
+</ul>
+
+<h2 id="why-converting-midi-to-audio-is-easy">Why converting MIDI to audio is easy</h2>
+<p>The recording-versus-instructions distinction is one of those foundational ideas that, once grasped, reorganizes a whole domain. Suddenly it is obvious why audio cannot be note-edited, why MIDI varies between devices, why files differ so much in size, and why transcription is hard — all of it flows from that single split. Few concepts in music technology explain so much from so little.</p>
+<p>The flexibility-versus-fidelity trade-off deserves to be seen as a genuine design choice rather than a ranking. Audio's inflexible faithfulness is exactly right for distributing a finished performance, while MIDI's malleable dependence on a sound source is exactly right for composing and editing. Understanding this keeps you from wishing one format had the other's strengths and instead choosing the right tool.</p>
+
+<h2 id="choosing-which-you-need-for-a-given-task">Choosing which you need for a given task</h2>
+<p>The conversion asymmetry is a beautiful illustration of a deep computational truth: following instructions is easy, but inferring instructions from results is hard. Playing MIDI is deterministic and simple, while transcribing audio is an inverse problem full of ambiguity, which is why so much cleverness goes into audio-to-MIDI and so little into MIDI-to-audio. MidiAI Studio's transcription is impressive precisely because it works the hard direction.</p>
+<p>Ultimately, internalizing this distinction makes you fluent in the entire language of music technology conversion. Every article about PDF-to-MIDI, audio-to-MIDI, or format choices is really an application of this one idea, so time spent understanding it here pays off everywhere else. It is the grammar underneath all the specific vocabulary, and knowing it makes the rest read easily.</p>
+
+<aside class="seo-cta-box" data-cta="explainer-end" aria-label="Call to action">
+<h2>See the concepts behind “MIDI vs audio explained” in the product</h2>
+<p>After you understand the idea, try one concrete conversion so theory turns into muscle memory.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/product.html">Explore MidiAI Studio</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Try the installer</a>
+<a class="ghost" href="https://midiaistudio.com/guides/midi-converter-faq.html">Read converter FAQ</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>MIDI vs audio explained</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>What is the fundamental difference between MIDI and audio?</summary><p>Audio is a recording of actual sound stored as a waveform, while MIDI is a set of instructions describing which notes to play. One captures the result of music; the other describes the actions that produce it.</p></details>
+<details><summary>Why can't I edit individual notes in an audio file the way I can in MIDI?</summary><p>Because audio fuses all the notes into a single waveform, so they cannot be separated as distinct notes. MIDI keeps every note as an individual editable event, which is why it offers note-level editing that audio cannot.</p></details>
+<details><summary>Why does a MIDI file sometimes sound different on different devices?</summary><p>Because MIDI is instructions that depend on the sound source interpreting them, so the same file plays differently through different instruments or synths. Audio, being a fixed recording, sounds the same everywhere.</p></details>
+<details><summary>Why is converting audio to MIDI harder than converting MIDI to audio?</summary><p>MIDI-to-audio simply follows instructions to produce sound, while audio-to-MIDI must reverse-engineer the individual notes out of a fused waveform. Inferring the recipe from the finished recording is the whole difficulty of transcription.</p></details>
+<details><summary>How do I choose between MIDI and audio for a task?</summary><p>Choose MIDI when you need to edit, transpose, or reshape notes, and audio when you need a fixed, faithful recording. Matching the format to whether flexibility or fidelity matters avoids fighting the wrong one.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “MIDI vs audio explained”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>AI &amp; MIDI fundamentals</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./how-ai-midi-conversion-works.html"><strong>How AI MIDI Conversion Actually Works</strong><br><span class="seo-related-meta">how AI MIDI models work · explainer</span></a>
+<a href="./ai-music-transcription-guide.html"><strong>A Complete Guide to AI Music Transcription</strong><br><span class="seo-related-meta">AI music transcription overview · explainer</span></a>
+<a href="./beginner-guide-midi-files.html"><strong>Understanding MIDI Files From Scratch</strong><br><span class="seo-related-meta">beginner guide to MIDI files · explainer</span></a>
+<a href="./sheet-music-recognition-ocr.html"><strong>How Optical Music Recognition Reads a Score</strong><br><span class="seo-related-meta">Nearby · optical music recognition OMR</span></a>
+<a href="./audio-to-midi-ai.html"><strong>How AI Turns Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · AI audio transcription to MIDI</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in AI &amp; MIDI fundamentals">
+<a class="seo-pager-link seo-pager-prev" href="./ai-music-transcription-guide.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">A Complete Guide to AI Music Transcription</span></a>
+<a class="seo-pager-link seo-pager-next" href="./beginner-guide-midi-files.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Understanding MIDI Files From Scratch</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

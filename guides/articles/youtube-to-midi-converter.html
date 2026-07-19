@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YouTube to MIDI: How Converting Video Audio Into MIDI Really Works</title>
+  <meta name="description" content="A grounded explanation of turning the audio from a YouTube performance into MIDI notes, what the compressed source costs you, and how to get the cleanest possible result.">
+  <meta name="keywords" content="YouTube piano cover to MIDI, convert piano cover videos, YouTube MIDI practice files">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/youtube-to-midi-converter.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="YouTube to MIDI: How Converting Video Audio Into MIDI Really Works">
+  <meta property="og:description" content="A grounded explanation of turning the audio from a YouTube performance into MIDI notes, what the compressed source costs you, and how to get the cleanest possible result.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/youtube-to-midi-converter.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="YouTube to MIDI: How Converting Video Audio Into MIDI Really Works">
+  <meta name="twitter:description" content="A grounded explanation of turning the audio from a YouTube performance into MIDI notes, what the compressed source costs you, and how to get the cleanest possible result.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "YouTube to MIDI: How Converting Video Audio Into MIDI Really Works",
+  "description": "A grounded explanation of turning the audio from a YouTube performance into MIDI notes, what the compressed source costs you, and how to get the cleanest possible result.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT9M",
+  "keywords": "YouTube piano cover to MIDI, convert piano cover videos, YouTube MIDI practice files",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/youtube-to-midi-converter.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Does converting YouTube to MIDI use the video or just the sound?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Only the sound. The video frames are irrelevant to transcription; the engine analyzes the audio track's frequencies over time to estimate notes, so picture quality has no bearing on the result."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does a solo piano video convert so much better than a band video?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because one exposed instrument has clear, unmasked onsets, while a band mixes many overlapping frequencies. The more instruments compete in the same spectral space, the harder each note is to isolate."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I convert a YouTube video where the piano is behind vocals and drums?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can, but isolating the piano first gives far better results. Transcribing the raw mix tends to capture fragments, whereas an extracted piano part transcribes much more coherently."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does the converter handle a performance that speeds up and slows down?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It tracks a moving tempo rather than assuming a fixed grid, following the performer's rubato so note positions stay accurate. Forcing a rigid tempo would misplace expressive timing."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will streaming compression limit how accurate my MIDI can be?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, to a degree. Compression thins the high-frequency detail that helps separate instruments, so a high-bitrate source sets a higher ceiling than a heavily re-encoded upload."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "YouTube to MIDI",
+      "item": "https://midiaistudio.com/guides/youtube-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Converting a YouTube Performance Into MIDI",
+      "item": "https://midiaistudio.com/guides/articles/youtube-to-midi-converter.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../youtube-to-midi.html">YouTube to MIDI</a> ›
+<span class="seo-crumb-cluster">YouTube &amp; covers</span> ›
+<span aria-current="page">Converting a YouTube Performance Into MIDI</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · YouTube &amp; covers</p>
+<h1>Converting a YouTube Performance Into MIDI</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">9 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: YouTube &amp; covers</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#what-you-are-really-converting-audio-not-video">What you are really converting: audio, not video</a></li>
+<li><a href="#how-streaming-compression-shapes-transcription-quality">How streaming compression shapes transcription quality</a></li>
+<li><a href="#why-a-solo-piano-video-beats-a-full-band-mix">Why a solo piano video beats a full-band mix</a></li>
+<li><a href="#separating-an-instrument-before-transcribing-it">Separating an instrument before transcribing it</a></li>
+<li><a href="#handling-reverb-room-noise-and-audience-sound">Handling reverb, room noise, and audience sound</a></li>
+<li><a href="#tempo-detection-when-the-performer-plays-rubato">Tempo detection when the performer plays rubato</a></li>
+<li><a href="#turning-detected-notes-into-an-editable-midi-part">Turning detected notes into an editable MIDI part</a></li>
+<li><a href="#setting-realistic-expectations-for-busy-textures">Setting realistic expectations for busy textures</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>The phrase YouTube to MIDI hides an important detail: you are never converting the video, only the audio underneath it. That audio has already been compressed for streaming, mixed with everything else in the recording, and possibly bathed in room reverb — and each of those facts shapes how well a transcription can work.</p>
+<p>This is not a reason to avoid it. Turning a favorite performance into editable MIDI is one of the most satisfying things a curious musician can do, and it works remarkably well when the source cooperates. The trick is knowing which sources cooperate and how to help the ones that do not.</p>
+<p>This guide is honest about the ceiling and generous with the technique. It explains what MidiAI Studio is actually listening to, why a lone piano recording transcribes so much better than a dense band mix, and the concrete moves that get you the cleanest MIDI a given video can yield.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio transcribing an isolated solo-piano cover from a YouTube performance into an editable MIDI part." title="MidiAI Studio transcribing an isolated solo-piano cover from a YouTube performance into an editable MIDI part." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio transcribing an isolated solo-piano cover from a YouTube performance into an editable MIDI part.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “YouTube piano cover to MIDI”</span></figcaption>
+</figure>
+
+<h2 id="what-you-are-really-converting-audio-not-video">What you are really converting: audio, not video</h2>
+<p>Converting YouTube audio to MIDI means analyzing the sound of a performance and estimating the pitches, timings, and durations of the notes being played, then writing them as MIDI events. It is audio transcription applied to a streamed recording.</p>
+<p>The essential constraint is that transcription works backward from a finished mix. Where PDF conversion reads an explicit score, audio transcription infers notes from overlapping vibrations, which is inherently harder — and harder still when the source is compressed and full of competing sounds.</p>
+
+<h2 id="how-streaming-compression-shapes-transcription-quality">How streaming compression shapes transcription quality</h2>
+<p>The engine analyzes the audio's frequency content over time, looking for the stable pitches that mark note onsets and tracking how long each sounds. In a clean recording those pitches stand out sharply; in a compressed stream, the high-frequency detail that helps distinguish instruments has been thinned to save bandwidth.</p>
+<p>Texture is the deciding factor. A solo piano presents one instrument with clear onsets, so MidiAI Studio can follow its lines confidently, whereas a full band layers guitars, bass, drums, and vocals whose frequencies overlap and mask one another. The more instruments share the spectrum, the more the engine must disentangle before it can even name a note.</p>
+<p>Timing adds its own wrinkle. A metronomic recording gives a clean tempo to lock onto, but a rubato solo performance stretches and compresses time expressively, so the engine must track a moving tempo rather than a fixed grid. Getting the note positions right in that setting is as much about following the performer as identifying pitches.</p>
+
+<h2 id="why-a-solo-piano-video-beats-a-full-band-mix">Why a solo piano video beats a full-band mix</h2>
+<h3>Transcribing a solo piano cover versus a full-band live clip</h3>
+<p>Consider two YouTube videos of the same ballad. The first is a solo piano cover in F major, recorded close and clean at a steady 72 BPM. The second is a live band performance of the same tune with drums, bass, and a vocalist over the piano.</p>
+<p>Fed to MidiAI Studio, the solo piano transcribes beautifully — the melody and left-hand accompaniment come through with clear onsets, needing only light cleanup of a few pedal-blurred notes. The band clip is a different story: the piano is buried under cymbals and vocals, and the transcription captures fragments rather than a coherent part.</p>
+<p>The takeaway is to choose your source deliberately. When both exist, the solo cover is worth ten of the band clip, and if only the band version is available, isolating the piano first is the move that makes the transcription usable at all.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for YouTube piano cover to MIDI" title="Supporting view for YouTube piano cover to MIDI" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “YouTube piano cover to MIDI”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “YouTube piano cover to MIDI” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/youtube-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="separating-an-instrument-before-transcribing-it">Separating an instrument before transcribing it</h2>
+<ol class="seo-steps">
+<li><strong>Choose the cleanest available source.</strong> Prefer a solo, close-mic'd performance over a live band mix. The single biggest determinant of transcription quality is how exposed your target instrument is in the recording.</li>
+<li><strong>Isolate your target instrument if the mix is busy.</strong> When the part you want is buried, separate it out before transcribing. Feeding the engine an isolated piano instead of a full mix dramatically improves what it can hear.</li>
+<li><strong>Let tempo detection follow rubato.</strong> For expressive performances, allow a flexible tempo rather than forcing a fixed grid. Matching the engine's timing to the performer's keeps note positions honest.</li>
+<li><strong>Transcribe, then prune ghost notes.</strong> Expect some spurious notes from reverb tails and bleed. Delete the obvious phantoms first so the real part stands clear before you refine it.</li>
+<li><strong>Rebuild expression after cleanup.</strong> Once the notes are right, restore dynamics and phrasing the compression flattened. The transcription gives you accurate pitches; you give it back its life.</li>
+</ol>
+
+<h2 id="handling-reverb-room-noise-and-audience-sound">Handling reverb, room noise, and audience sound</h2>
+<ul class="seo-list">
+<li>Favor official or high-bitrate uploads over low-quality re-encodes when a choice exists.</li>
+<li>Transcribe one clearly-audible instrument at a time rather than the whole mix at once.</li>
+<li>Use headphones to spot bleed and reverb artifacts the engine may render as ghost notes.</li>
+<li>Accept that dense sections need more manual repair than exposed solo passages.</li>
+<li>Keep a reference tab of the video open to check ambiguous passages by ear.</li>
+</ul>
+
+<h2 id="tempo-detection-when-the-performer-plays-rubato">Tempo detection when the performer plays rubato</h2>
+<ul class="seo-list">
+<li><strong>Transcribing a full-band mix directly:</strong> Overlapping instruments mask each other, so the target part comes out fragmentary and frustrating.</li>
+<li><strong>Forcing a fixed tempo on rubato:</strong> A rigid grid misplaces every expressive note in a performance that breathes.</li>
+<li><strong>Trusting a low-bitrate re-upload:</strong> Heavy compression strips the detail transcription depends on, capping quality before you start.</li>
+<li><strong>Leaving reverb ghost notes in:</strong> Un-pruned phantom notes clutter the part and hide the real melody underneath.</li>
+<li><strong>Expecting a busy texture to transcribe cleanly:</strong> Dense arrangements simply carry more ambiguity; planning for cleanup avoids disappointment.</li>
+</ul>
+
+<h2 id="turning-detected-notes-into-an-editable-midi-part">Turning detected notes into an editable MIDI part</h2>
+<p>It helps to understand that audio transcription is an act of inference, not measurement. The engine never sees a note; it sees a spectrum and reasons about what combination of notes could have produced it. That is why an exposed line is easy and a dense chord over drums is genuinely ambiguous even to expert human ears.</p>
+<p>The compression built into streaming is a quiet antagonist. To save bandwidth, encoders discard sound they judge inaudible, but some of what they discard is exactly the fine spectral detail that distinguishes one instrument from another. You are transcribing a lossy shadow of the original performance, and that sets a hard ceiling no tool can exceed.</p>
+
+<h2 id="setting-realistic-expectations-for-busy-textures">Setting realistic expectations for busy textures</h2>
+<p>This reframes source selection as the most powerful lever you have. Two minutes spent finding a cleaner upload or a solo cover will outperform any amount of post-transcription editing, because you cannot edit back information the recording never preserved. MidiAI Studio can only work with what reaches its ears.</p>
+<p>None of this diminishes how useful the result is. A transcribed melody you can transpose, loop, and learn from is a genuine creative asset, and for exposed performances the accuracy is often startling. Calibrate your source, respect the ceiling, and YouTube becomes a vast, playable library.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “YouTube piano cover to MIDI” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/youtube-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>YouTube piano cover to MIDI</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Does converting YouTube to MIDI use the video or just the sound?</summary><p>Only the sound. The video frames are irrelevant to transcription; the engine analyzes the audio track's frequencies over time to estimate notes, so picture quality has no bearing on the result.</p></details>
+<details><summary>Why does a solo piano video convert so much better than a band video?</summary><p>Because one exposed instrument has clear, unmasked onsets, while a band mixes many overlapping frequencies. The more instruments compete in the same spectral space, the harder each note is to isolate.</p></details>
+<details><summary>Can I convert a YouTube video where the piano is behind vocals and drums?</summary><p>You can, but isolating the piano first gives far better results. Transcribing the raw mix tends to capture fragments, whereas an extracted piano part transcribes much more coherently.</p></details>
+<details><summary>How does the converter handle a performance that speeds up and slows down?</summary><p>It tracks a moving tempo rather than assuming a fixed grid, following the performer's rubato so note positions stay accurate. Forcing a rigid tempo would misplace expressive timing.</p></details>
+<details><summary>Will streaming compression limit how accurate my MIDI can be?</summary><p>Yes, to a degree. Compression thins the high-frequency detail that helps separate instruments, so a high-bitrate source sets a higher ceiling than a heavily re-encoded upload.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “YouTube piano cover to MIDI”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>YouTube &amp; covers</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../youtube-to-midi.html"><strong>Pillar · YouTube to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./convert-youtube-piano-covers-to-midi.html"><strong>Turning YouTube Piano Covers Into MIDI You Can Study</strong><br><span class="seo-related-meta">step-by-step YouTube piano MIDI · how-to</span></a>
+<a href="./piano-learning-from-youtube-midi.html"><strong>Using Converted YouTube MIDI to Actually Learn Piano</strong><br><span class="seo-related-meta">learn piano with YouTube MIDI · use-case</span></a>
+<a href="./copyright-and-youtube-to-midi.html"><strong>Understanding Copyright When Converting YouTube to MIDI</strong><br><span class="seo-related-meta">YouTube MIDI copyright basics · legal-edu</span></a>
+<a href="./convert-cover-songs-to-midi-legally.html"><strong>Converting Cover Songs to MIDI the Responsible Way</strong><br><span class="seo-related-meta">legal checklist cover song MIDI · legal-edu</span></a>
+<a href="./midi-for-content-creators.html"><strong>How Content Creators Use Converted MIDI</strong><br><span class="seo-related-meta">MIDI for music content creators · use-case</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in YouTube &amp; covers">
+<span class="seo-pager-link seo-pager-empty"></span>
+<a class="seo-pager-link seo-pager-next" href="./convert-youtube-piano-covers-to-midi.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Turning YouTube Piano Covers Into MIDI You Can Study</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

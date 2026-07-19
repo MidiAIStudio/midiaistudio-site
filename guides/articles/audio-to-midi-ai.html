@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Audio to MIDI: How Machine Listening Turns Sound Into Notes</title>
+  <meta name="description" content="A focused look at the AI behind modern audio-to-MIDI: what the models learned, why they outperform older methods, and where machine listening still meets its limits.">
+  <meta name="keywords" content="AI audio transcription to MIDI, neural audio-to-MIDI, recording to MIDI draft">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/audio-to-midi-ai.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="AI Audio to MIDI: How Machine Listening Turns Sound Into Notes">
+  <meta property="og:description" content="A focused look at the AI behind modern audio-to-MIDI: what the models learned, why they outperform older methods, and where machine listening still meets its limits.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/audio-to-midi-ai.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AI Audio to MIDI: How Machine Listening Turns Sound Into Notes">
+  <meta name="twitter:description" content="A focused look at the AI behind modern audio-to-MIDI: what the models learned, why they outperform older methods, and where machine listening still meets its limits.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "AI Audio to MIDI: How Machine Listening Turns Sound Into Notes",
+  "description": "A focused look at the AI behind modern audio-to-MIDI: what the models learned, why they outperform older methods, and where machine listening still meets its limits.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT9M",
+  "keywords": "AI audio transcription to MIDI, neural audio-to-MIDI, recording to MIDI draft",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/ai-audio-to-midi-studio.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/audio-to-midi-ai.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How is AI audio-to-MIDI different from older pitch-tracking software?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Older tools followed hand-written rules and typically tracked one note at a time, while AI models learn from vast examples and resolve overlapping notes. That learning is why AI handles polyphony and real-world audio far better."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why can AI transcribe a full chord when old tools only heard one note?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Because the model learned from data how overlapping frequencies combine, rather than relying on a rule that picks the loudest partial. It recognizes the pattern of a chord and pulls the individual notes back out."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does the AI's training data affect what it transcribes best?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Very much so. A model hears most accurately the instruments and conditions it saw most during training, so common instruments in clean recordings are its sweet spot and unusual timbres its weaker areas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can an AI transcription model tell when it is unsure?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, learned models can express confidence, flagging passages where the audio was ambiguous. Those flags are a genuine window into the model's uncertainty and a useful guide for review."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will AI audio-to-MIDI ever be perfectly accurate?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It will keep improving, but some ambiguity is inherent to sound itself — even expert humans disagree on buried voices. AI narrows the gap dramatically while leaving a role for musical judgment."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "How AI Turns Audio Into MIDI",
+      "item": "https://midiaistudio.com/guides/articles/audio-to-midi-ai.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">Audio file conversion</span> ›
+<span aria-current="page">How AI Turns Audio Into MIDI</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · Audio file conversion</p>
+<h1>How AI Turns Audio Into MIDI</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">9 min read</span>
+  <span>Intent: explainer</span>
+  <span>Cluster: Audio file conversion</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#what-older-pitch-tracking-got-wrong-that-ai-gets-right">What older pitch-tracking got wrong that AI gets right</a></li>
+<li><a href="#learning-from-data-instead-of-hand-written-rules">Learning from data instead of hand-written rules</a></li>
+<li><a href="#onset-detection-as-a-learned-skill">Onset detection as a learned skill</a></li>
+<li><a href="#polyphony-the-problem-that-broke-earlier-tools">Polyphony: the problem that broke earlier tools</a></li>
+<li><a href="#why-training-data-shapes-what-a-model-hears-best">Why training data shapes what a model hears best</a></li>
+<li><a href="#confidence-uncertainty-and-honest-transcription">Confidence, uncertainty, and honest transcription</a></li>
+<li><a href="#the-gap-between-human-hearing-and-machine-listening">The gap between human hearing and machine listening</a></li>
+<li><a href="#where-the-technology-is-heading-next">Where the technology is heading next</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>For decades, turning audio into notes meant hand-written rules: look for the loudest frequency, guess the pitch, move on. Those methods worked for a single clean melody and fell apart the instant two notes sounded at once. Modern AI transcription is a different animal entirely, and understanding why illuminates what it can do.</p>
+<p>The shift was from rules to learning. Instead of a programmer describing what a note looks like in a spectrum, a model is shown enormous quantities of audio paired with the correct notes and learns the mapping itself — including all the messy exceptions no rule could enumerate.</p>
+<p>This article explains that shift in plain terms and connects it to practical outcomes. It is the conceptual backbone behind tools like MidiAI Studio, and knowing it helps you understand both why AI transcription is so much better than what came before and why it still is not magic.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio resolving a rolled six-note piano chord into individual MIDI notes with confidence indicators." title="MidiAI Studio resolving a rolled six-note piano chord into individual MIDI notes with confidence indicators." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">MidiAI Studio resolving a rolled six-note piano chord into individual MIDI notes with confidence indicators.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “AI audio transcription to MIDI”</span></figcaption>
+</figure>
+
+<h2 id="what-older-pitch-tracking-got-wrong-that-ai-gets-right">What older pitch-tracking got wrong that AI gets right</h2>
+<p>AI audio-to-MIDI is the use of machine-learning models to transcribe recorded sound into note data. Rather than following fixed rules, these models learn from examples what note onsets, pitches, and durations look like across many instruments and recording conditions.</p>
+<p>The defining advantage is generalization: a well-trained model handles sounds it never saw during training by applying patterns it learned, which is why AI copes with real-world messiness — reverb, overlap, timbral variety — far better than rule-based predecessors ever could.</p>
+
+<h2 id="learning-from-data-instead-of-hand-written-rules">Learning from data instead of hand-written rules</h2>
+<p>At the core, a model transforms audio into a time-frequency representation and learns to predict, for each moment, which pitches are sounding and where new notes begin. Onset detection — spotting the exact instant a note starts — is treated as a learned skill, because a struck piano key, a plucked string, and a bowed note all begin differently and no single rule captures them all.</p>
+<p>Polyphony is where learning decisively beats rules. When several notes sound together their frequencies interlock, and telling them apart requires recognizing patterns humans grasp intuitively but cannot easily codify. MidiAI Studio's models learn these patterns from data, which is how they resolve a full chord where older pitch trackers would report only the strongest note.</p>
+<p>Crucially, the training data shapes the model's ear. A system trained heavily on piano will hear piano superbly and may be less sure on an unusual instrument it rarely saw, so a model's strengths and blind spots trace directly back to what it was taught. This is why honest transcription includes a sense of its own uncertainty.</p>
+
+<h2 id="onset-detection-as-a-learned-skill">Onset detection as a learned skill</h2>
+<h3>A dense piano chord that broke old tools</h3>
+<p>Consider a rolled C-minor-eleventh chord on piano — six notes struck almost together, spanning three octaves. To an old pitch tracker this was hopeless: it would lock onto the loudest partial and report a single note, discarding the rest of the harmony entirely.</p>
+<p>A modern AI model trained on piano recognizes the whole chord. Fed to MidiAI Studio, the six pitches emerge as six MIDI notes with plausible velocities, because the model learned from countless examples how overlapping piano partials combine and how to pull the constituent notes back out.</p>
+<p>The chord still holds a lesson about limits: if one inner note is very quiet relative to the others, the model may render it faintly or miss it, exactly as a human transcriber straining to hear a buried voice might. The improvement over old tools is dramatic, but it is improvement, not omniscience.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for AI audio transcription to MIDI" title="Supporting view for AI audio transcription to MIDI" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “AI audio transcription to MIDI”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="explainer-mid" aria-label="Call to action">
+<h2>See the concepts behind “AI audio transcription to MIDI” in the product</h2>
+<p>After you understand the idea, try one concrete conversion so theory turns into muscle memory.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/product.html">Explore MidiAI Studio</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Try the installer</a>
+<a class="ghost" href="https://midiaistudio.com/guides/midi-converter-faq.html">Read converter FAQ</a>
+</p>
+</aside>
+
+<h2 id="polyphony-the-problem-that-broke-earlier-tools">Polyphony: the problem that broke earlier tools</h2>
+<ol class="seo-steps">
+<li><strong>Match the source to the model's strengths.</strong> AI models transcribe best what they trained on most, typically common instruments in clear recordings. Feeding the model material close to its training sweet spot yields the most accurate results.</li>
+<li><strong>Give the model clean, exposed audio.</strong> Even a strong model benefits from an isolated instrument. Separating your target from the mix lets the learned patterns apply cleanly rather than fighting overlap the training rarely covered.</li>
+<li><strong>Read the confidence, not just the notes.</strong> Where the model signals uncertainty, look. A learned system knows when it is guessing, and those flags point you to the passages most worth verifying by ear.</li>
+<li><strong>Correct against the model's known blind spots.</strong> Expect softness on unusual timbres or very quiet inner voices. Directing your review to those predictable weak points is more efficient than proofreading uniformly.</li>
+<li><strong>Treat the output as a strong draft.</strong> Use the AI transcription as an excellent starting point, then apply your musical judgment. The model handles the heavy lifting; you supply the final musical decisions.</li>
+</ol>
+
+<h2 id="why-training-data-shapes-what-a-model-hears-best">Why training data shapes what a model hears best</h2>
+<ul class="seo-list">
+<li>Play to the model's strengths by transcribing common instruments in clean recordings first.</li>
+<li>Isolate instruments so learned patterns are not fighting overlapping sound.</li>
+<li>Use confidence signals to triage which passages deserve a careful listen.</li>
+<li>Remember that quiet inner voices are a predictable weak spot to double-check.</li>
+<li>Keep human judgment in the loop; the model drafts, you decide.</li>
+</ul>
+
+<h2 id="confidence-uncertainty-and-honest-transcription">Confidence, uncertainty, and honest transcription</h2>
+<ul class="seo-list">
+<li><strong>Assuming AI equals perfect:</strong> Even strong models draft rather than dictate; expecting flawless output leads to unverified errors.</li>
+<li><strong>Feeding unusual timbres blindly:</strong> Instruments underrepresented in training transcribe less reliably; verify them extra carefully.</li>
+<li><strong>Ignoring the model's uncertainty:</strong> Confidence flags exist to guide you; skipping them wastes the model's self-knowledge.</li>
+<li><strong>Overlooking buried voices:</strong> Very quiet inner notes are where even good models falter, so listen specifically for them.</li>
+<li><strong>Transcribing a full mix and blaming the model:</strong> Overlap the model rarely trained on is the culprit; isolate first before judging accuracy.</li>
+</ul>
+
+<h2 id="the-gap-between-human-hearing-and-machine-listening">The gap between human hearing and machine listening</h2>
+<p>The move from rules to learning is one of those quiet revolutions that changes what is possible rather than merely what is convenient. Rule-based transcription was a ceiling that no amount of clever engineering could raise much, because the real world has more exceptions than any rulebook can hold. Learning from data sidesteps that ceiling by absorbing the exceptions directly.</p>
+<p>It is worth sitting with the idea that a model's ear is a mirror of its diet. Everything it does well and everything it fumbles can be traced to the balance of what it was shown, which is both a limitation and a roadmap — expand and diversify the training, and the blind spots shrink. MidiAI Studio's strengths reflect exactly this principle in action.</p>
+
+<h2 id="where-the-technology-is-heading-next">Where the technology is heading next</h2>
+<p>Machine listening and human listening are converging but not identical. A model can attend to a dozen frequency bands at once without fatigue, yet a human brings context, expectation, and knowledge of the piece that no spectrum contains. The most powerful transcription workflows pair the two, letting each cover the other's weaknesses.</p>
+<p>Looking forward, the interesting frontier is not just accuracy but understanding — models that grasp that a passage is a jazz turnaround or a Baroque sequence and transcribe accordingly. As that musical context deepens, AI transcription will feel less like measurement and more like an assistant who actually knows the music, and that is a genuinely exciting direction.</p>
+
+<aside class="seo-cta-box" data-cta="explainer-end" aria-label="Call to action">
+<h2>See the concepts behind “AI audio transcription to MIDI” in the product</h2>
+<p>After you understand the idea, try one concrete conversion so theory turns into muscle memory.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/product.html">Explore MidiAI Studio</a>
+<a class="secondary" href="https://midiaistudio.com/downloads.html">Try the installer</a>
+<a class="ghost" href="https://midiaistudio.com/guides/midi-converter-faq.html">Read converter FAQ</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>AI audio transcription to MIDI</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>How is AI audio-to-MIDI different from older pitch-tracking software?</summary><p>Older tools followed hand-written rules and typically tracked one note at a time, while AI models learn from vast examples and resolve overlapping notes. That learning is why AI handles polyphony and real-world audio far better.</p></details>
+<details><summary>Why can AI transcribe a full chord when old tools only heard one note?</summary><p>Because the model learned from data how overlapping frequencies combine, rather than relying on a rule that picks the loudest partial. It recognizes the pattern of a chord and pulls the individual notes back out.</p></details>
+<details><summary>Does the AI's training data affect what it transcribes best?</summary><p>Very much so. A model hears most accurately the instruments and conditions it saw most during training, so common instruments in clean recordings are its sweet spot and unusual timbres its weaker areas.</p></details>
+<details><summary>Can an AI transcription model tell when it is unsure?</summary><p>Yes, learned models can express confidence, flagging passages where the audio was ambiguous. Those flags are a genuine window into the model's uncertainty and a useful guide for review.</p></details>
+<details><summary>Will AI audio-to-MIDI ever be perfectly accurate?</summary><p>It will keep improving, but some ambiguity is inherent to sound itself — even expert humans disagree on buried voices. AI narrows the gap dramatically while leaving a role for musical judgment.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “AI audio transcription to MIDI”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Audio file conversion</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./wav-to-midi.html"><strong>Converting Uncompressed WAV Audio Into MIDI</strong><br><span class="seo-related-meta">WAV to MIDI conversion quality · how-to</span></a>
+<a href="./flac-to-midi.html"><strong>Converting FLAC Audio Into MIDI Without Losing Detail</strong><br><span class="seo-related-meta">FLAC to MIDI transcription · how-to</span></a>
+<a href="./best-practices-audio-to-midi.html"><strong>Practical Habits for Accurate Audio-to-MIDI</strong><br><span class="seo-related-meta">audio to MIDI accuracy checklist · checklist</span></a>
+<a href="./improve-midi-accuracy.html"><strong>Improving the Accuracy of a Converted MIDI File</strong><br><span class="seo-related-meta">improve AI MIDI accuracy · troubleshooting</span></a>
+<a href="./mp3-to-midi-conversion.html"><strong>Converting an MP3 Recording Into MIDI Notes</strong><br><span class="seo-related-meta">extract MIDI notes from MP3 · how-to</span></a>
+<a href="./sheet-music-recognition-ocr.html"><strong>How Optical Music Recognition Reads a Score</strong><br><span class="seo-related-meta">Nearby · optical music recognition OMR</span></a>
+<a href="./musicxml-explained.html"><strong>What MusicXML Is and Why It Matters</strong><br><span class="seo-related-meta">Nearby · what is MusicXML format</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in Audio file conversion">
+<a class="seo-pager-link seo-pager-prev" href="./mp3-piano-to-midi.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Getting Clean Piano MIDI From an MP3 Recording</span></a>
+<a class="seo-pager-link seo-pager-next" href="./wav-to-midi.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Converting Uncompressed WAV Audio Into MIDI</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

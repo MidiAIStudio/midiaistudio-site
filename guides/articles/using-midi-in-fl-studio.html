@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Using Converted MIDI in FL Studio: A Beatmaker's Guide</title>
+  <meta name="description" content="FL Studio's pattern-and-playlist workflow and piano roll are ideal for converted MIDI. This guide covers importing, channel routing, and developing transcriptions in FL specifically.">
+  <meta name="keywords" content="FL Studio piano roll AI MIDI, FL Studio MIDI import, Channel rack MIDI cleanup">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="author" content="최정환">
+  <meta name="theme-color" content="#0b1020">
+  <link rel="canonical" href="https://midiaistudio.com/guides/articles/using-midi-in-fl-studio.html">
+  <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
+  <link rel="apple-touch-icon" href="../../assets/images/symbol.png">
+  <link rel="manifest" href="../../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:title" content="Using Converted MIDI in FL Studio: A Beatmaker's Guide">
+  <meta property="og:description" content="FL Studio's pattern-and-playlist workflow and piano roll are ideal for converted MIDI. This guide covers importing, channel routing, and developing transcriptions in FL specifically.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/articles/using-midi-in-fl-studio.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <meta property="article:author" content="최정환">
+  <meta property="article:modified_time" content="2026-07-20">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Using Converted MIDI in FL Studio: A Beatmaker's Guide">
+  <meta name="twitter:description" content="FL Studio's pattern-and-playlist workflow and piano roll are ideal for converted MIDI. This guide covers importing, channel routing, and developing transcriptions in FL specifically.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/css/style.css?v=v81-sidebar-user-20260719">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-eeat">
+  <script defer src="../../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Using Converted MIDI in FL Studio: A Beatmaker's Guide",
+  "description": "FL Studio's pattern-and-playlist workflow and piano roll are ideal for converted MIDI. This guide covers importing, channel routing, and developing transcriptions in FL specifically.",
+  "datePublished": "2026-07-20",
+  "dateModified": "2026-07-20",
+  "timeRequired": "PT8M",
+  "keywords": "FL Studio piano roll AI MIDI, FL Studio MIDI import, Channel rack MIDI cleanup",
+  "author": {
+    "@type": "Person",
+    "name": "최정환",
+    "jobTitle": "Founder & Product Lead",
+    "url": "https://midiaistudio.com/about.html",
+    "worksFor": {
+      "@type": "Organization",
+      "name": "미디에이아이스튜디오",
+      "url": "https://midiaistudio.com"
+    }
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "MidiAI Studio",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://midiaistudio.com/assets/images/symbol.png"
+    }
+  },
+  "image": [
+    "https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg",
+    "https://midiaistudio.com/assets/images/symbol.png"
+  ],
+  "mainEntityOfPage": "https://midiaistudio.com/guides/articles/using-midi-in-fl-studio.html"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Where does converted MIDI go when I import it into FL Studio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It lands in the piano roll attached to a channel, where you edit the notes. Grouping channels into patterns then lets you reuse the transcribed phrase across the playlist as a building block."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is FL Studio's piano roll good for editing converted MIDI?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It offers exceptionally fluid tools for selecting, moving, and shaping notes, which makes the cleanup pass a conversion usually needs fast and comfortable. Many producers consider it among the best piano rolls available."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How should I route multiple converted parts in FL Studio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Give each converted line its own channel and instrument in the channel rack, then route channels to mixer tracks for effects. Clear per-part routing keeps a multi-track conversion organized and mixable."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I reuse a converted phrase across a song in FL Studio?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Turn it into a pattern, which FL lets you place and repeat freely in the playlist. This build-once, arrange-many approach makes a transcription a flexible centerpiece rather than a one-off part."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I keep an FL arrangement of converted patterns from sounding repetitive?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Introduce pattern variations — chop, transpose, or re-voice the converted material for different sections. Placing varied patterns rather than identical repeats keeps the arrangement engaging."
+      }
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://midiaistudio.com/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Guides",
+      "item": "https://midiaistudio.com/guides/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Audio to MIDI",
+      "item": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Bringing Converted MIDI Into FL Studio",
+      "item": "https://midiaistudio.com/guides/articles/using-midi-in-fl-studio.html"
+    }
+  ]
+}
+</script>
+</head>
+<body class="portal-page seo-page">
+  <div class="orb orb-a"></div><div class="orb orb-b"></div>
+  <a class="seo-skip" href="#guide-main">Skip to guide content</a>
+  <header class="topbar">
+    <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <nav id="mainNav" aria-label="Primary">
+      <a href="../../index.html">Home</a>
+      <a href="../../product.html">Product</a>
+      <a href="../../downloads.html">Downloads</a>
+      <a href="../index.html">Guides</a>
+      <a href="../../faq.html">FAQ</a>
+      <a href="../../support.html">Support</a>
+      <a href="../../about.html">About</a>
+    </nav>
+    <div class="actions"><a class="primary" href="../../downloads.html">Free trial</a></div>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+<a href="../../index.html">Home</a> ›
+<a href="../index.html">Guides</a> ›
+<a href="../audio-to-midi.html">Audio to MIDI</a> ›
+<span class="seo-crumb-cluster">DAW integration</span> ›
+<span aria-current="page">Bringing Converted MIDI Into FL Studio</span>
+</nav>
+      
+<p class="pill portal-pill" style="display:inline-block">Guide · DAW integration</p>
+<h1>Bringing Converted MIDI Into FL Studio</h1>
+<div class="seo-meta" role="group" aria-label="Article metadata">
+  <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
+  <span><time datetime="2026-07-20">Updated 2026-07-20</time></span>
+  <span class="seo-read-time">8 min read</span>
+  <span>Intent: how-to</span>
+  <span>Cluster: DAW integration</span>
+</div>
+<aside class="seo-author" aria-label="About the author">
+<div class="seo-author-mark" aria-hidden="true">M</div>
+<div class="seo-author-copy">
+<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
+<p class="seo-author-links">
+<a href="../../about.html">About &amp; credentials</a>
+· <a href="../../business-info.html">Business info</a>
+· <a href="../../patch-notes.html">Update history</a>
+· <a href="../../support.html">Support</a>
+· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+</p>
+</div>
+</aside>
+<nav class="seo-toc" aria-label="Table of contents">
+<p class="seo-toc-label"><strong>Contents</strong> <span class="seo-toc-hint">Jump to a section</span></p>
+<ol class="seo-toc-list">
+<li><a href="#how-fl-s-patterns-and-playlist-organize-midi">How FL's patterns and playlist organize MIDI</a></li>
+<li><a href="#importing-converted-midi-into-the-piano-roll">Importing converted MIDI into the piano roll</a></li>
+<li><a href="#channel-rack-routing-for-converted-parts">Channel rack routing for converted parts</a></li>
+<li><a href="#fl-s-piano-roll-tools-for-editing-transcriptions">FL's piano roll tools for editing transcriptions</a></li>
+<li><a href="#building-patterns-from-a-converted-phrase">Building patterns from a converted phrase</a></li>
+<li><a href="#arranging-patterns-in-the-playlist">Arranging patterns in the playlist</a></li>
+<li><a href="#mixer-routing-and-effects-for-converted-parts">Mixer routing and effects for converted parts</a></li>
+<li><a href="#fl-specific-tips-for-transcribed-material">FL-specific tips for transcribed material</a></li>
+<li><a href="#faq">FAQ</a></li>
+<li><a href="#related-guides">Related guides</a></li>
+</ol>
+</nav>
+<p>FL Studio built its reputation on a pattern-and-playlist workflow and a famously powerful piano roll, and both are a natural fit for converted MIDI. Where transcriptions are often loops or phrases, FL's pattern-based approach lets you treat a conversion as a reusable building block arranged freely across a song.</p>
+<p>FL's piano roll, widely regarded as one of the best, is also where cleaning up and developing a transcription feels effortless. Its editing tools make the finishing work on a MidiAI Studio conversion fast, which matters because converted MIDI usually benefits from a polish pass.</p>
+<p>This guide covers using converted MIDI in FL Studio specifically — importing into the piano roll, routing through the channel rack, building patterns, and arranging in the playlist. It builds on the general DAW workflow and focuses on FL's distinctive way of working.</p>
+<figure class="seo-figure">
+<img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="A converted D-minor melody in FL Studio's piano roll, built into reusable patterns arranged in the playlist." title="A converted D-minor melody in FL Studio's piano roll, built into reusable patterns arranged in the playlist." width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">A converted D-minor melody in FL Studio's piano roll, built into reusable patterns arranged in the playlist.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “FL Studio piano roll AI MIDI”</span></figcaption>
+</figure>
+
+<h2 id="how-fl-s-patterns-and-playlist-organize-midi">How FL's patterns and playlist organize MIDI</h2>
+<p>Using converted MIDI in FL Studio means integrating transcribed note data into FL's pattern-based environment, where MIDI is edited in the piano roll, routed through the channel rack, and arranged as patterns in the playlist. It suits FL's loop-and-arrange production style.</p>
+<p>The defining FL characteristic is the pattern-and-playlist separation: converted MIDI becomes patterns you build once and then place and repeat freely across the playlist, distinct from a purely linear timeline model.</p>
+
+<h2 id="importing-converted-midi-into-the-piano-roll">Importing converted MIDI into the piano roll</h2>
+<p>In FL Studio, converted MIDI lands in the piano roll attached to a channel, and patterns group these together as reusable units. This means a transcribed phrase becomes a pattern you can drop repeatedly into the playlist, so MidiAI Studio output fits FL's build-once, arrange-many philosophy that beatmakers favor.</p>
+<p>The channel rack routes each converted part to an instrument, and understanding this routing is key to organization. Each transcribed line gets its own channel and instrument, and the piano roll — FL's standout feature — provides exceptionally fluid tools for editing those notes, making the cleanup of a conversion faster than in many other environments.</p>
+<p>Arrangement happens in the playlist, where patterns are placed, repeated, and layered along the timeline. Mixer routing then sends channels to mixer tracks for effects and balance, so the full path runs from converted MIDI in the piano roll, through channels and patterns, into a playlist arrangement and a mix — FL's characteristic signal flow.</p>
+
+<h2 id="channel-rack-routing-for-converted-parts">Channel rack routing for converted parts</h2>
+<h3>Turning a converted melody into a beat in FL Studio</h3>
+<p>Imagine you converted an eight-bar melody in D minor at 90 BPM and want to build a hip-hop beat around it in FL Studio. You import the MIDI into the piano roll on its own channel and assign a mellow electric piano.</p>
+<p>Using FL's piano roll, you quickly clean a couple of stray notes and shape the velocities, then make the melody a pattern. You add drum patterns in the channel rack and a bass pattern derived from the melody's roots, routing each channel to its own mixer track for processing.</p>
+<p>In the playlist you arrange the patterns into a full beat — intro, verse, and a variation where you chop the melody pattern. FL's pattern workflow made the converted melody a reusable centerpiece, and its piano roll made the cleanup nearly instant.</p>
+<figure class="seo-figure seo-figure-mid">
+<img src="../../assets/images/product/ai-audio-to-midi-studio.jpg" alt="MidiAI Studio detail for FL Studio piano roll AI MIDI" title="Supporting view for FL Studio piano roll AI MIDI" width="1280" height="720" loading="lazy" decoding="async">
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “FL Studio piano roll AI MIDI”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+</figure>
+<aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
+<h2>Practice “FL Studio piano roll AI MIDI” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+
+<h2 id="fl-s-piano-roll-tools-for-editing-transcriptions">FL's piano roll tools for editing transcriptions</h2>
+<ol class="seo-steps">
+<li><strong>Import converted MIDI into the piano roll.</strong> Bring the transcription into FL's piano roll on its own channel. The piano roll is FL's editing strength and the natural home for developing converted notes.</li>
+<li><strong>Route parts through the channel rack.</strong> Give each converted line its own channel and instrument in the channel rack. Clear per-channel routing keeps a multi-part conversion organized.</li>
+<li><strong>Clean and shape in the piano roll.</strong> Use FL's piano roll tools to remove stray notes and shape velocity. Its fluid editing makes the conversion polish pass fast.</li>
+<li><strong>Build reusable patterns.</strong> Group converted parts into patterns you can place repeatedly. FL's build-once philosophy turns a transcription into a flexible building block.</li>
+<li><strong>Arrange patterns in the playlist.</strong> Place, repeat, and layer patterns along the playlist timeline, routing channels to mixer tracks for effects. This assembles the patterns into a finished arrangement.</li>
+</ol>
+
+<h2 id="building-patterns-from-a-converted-phrase">Building patterns from a converted phrase</h2>
+<ul class="seo-list">
+<li>Do converted-MIDI editing in FL's piano roll to exploit its strong tools.</li>
+<li>Give every converted part its own channel for clean routing.</li>
+<li>Turn transcribed phrases into reusable patterns.</li>
+<li>Arrange by placing and layering patterns in the playlist.</li>
+<li>Route channels to mixer tracks for per-part processing.</li>
+</ul>
+
+<h2 id="arranging-patterns-in-the-playlist">Arranging patterns in the playlist</h2>
+<ul class="seo-list">
+<li><strong>Underusing the piano roll:</strong> Editing converted MIDI elsewhere ignores FL's biggest strength for note work.</li>
+<li><strong>Crowding parts onto one channel:</strong> Merging converted lines onto a single channel tangles routing and instruments.</li>
+<li><strong>Not building patterns:</strong> Treating a transcription as a one-off forfeits FL's reusable-pattern advantage.</li>
+<li><strong>Skipping mixer routing:</strong> Leaving channels unrouted prevents per-part effects and clean balance.</li>
+<li><strong>Arranging without pattern variation:</strong> Repeating identical patterns with no variation makes the arrangement monotonous.</li>
+</ul>
+
+<h2 id="mixer-routing-and-effects-for-converted-parts">Mixer routing and effects for converted parts</h2>
+<p>FL Studio's pattern philosophy aligns beautifully with the loop-like nature of much converted material. A transcription is frequently a self-contained phrase, and FL's whole design is oriented around building such units once and arranging them many times, so converted MIDI slots into the workflow as a natural building block rather than an awkward import.</p>
+<p>The piano roll's excellence is not a mere convenience but a genuine productivity multiplier for converted work. Because transcriptions almost always need a cleanup pass, the speed and fluidity of the editing environment directly determines how pleasant that pass is, and FL's piano roll makes shaping a MidiAI Studio conversion feel quick rather than tedious. The tool's strength meets the material's need.</p>
+
+<h2 id="fl-specific-tips-for-transcribed-material">FL-specific tips for transcribed material</h2>
+<p>The pattern-and-playlist separation encourages a modular way of thinking that rewards converted material. Rather than committing a transcription to a fixed place, you keep it as a reusable pattern and discover arrangements by placement and variation, which is a flexible, beatmaker-friendly approach. The conversion becomes a component in a system rather than a fixed line in a timeline.</p>
+<p>FL's signal flow, once understood, makes multi-part conversions clean to manage. The path from channel to pattern to playlist to mixer is distinctive, and mapping converted parts onto it — one channel per line, patterns for reuse, mixer tracks for processing — keeps even a complex transcription organized. Learning that flow is what turns FL from confusing to comfortable for converted MIDI.</p>
+
+<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
+<h2>Practice “FL Studio piano roll AI MIDI” in MidiAI Studio</h2>
+<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
+
+<p class="seo-cta-actions">
+<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
+<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
+<a class="ghost" href="https://midiaistudio.com/guides/audio-to-midi.html">Back to pillar guide</a>
+</p>
+</aside>
+<section class="seo-faq" aria-label="FAQ" id="faq">
+<h2>FAQ</h2>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>FL Studio piano roll AI MIDI</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Where does converted MIDI go when I import it into FL Studio?</summary><p>It lands in the piano roll attached to a channel, where you edit the notes. Grouping channels into patterns then lets you reuse the transcribed phrase across the playlist as a building block.</p></details>
+<details><summary>Why is FL Studio's piano roll good for editing converted MIDI?</summary><p>It offers exceptionally fluid tools for selecting, moving, and shaping notes, which makes the cleanup pass a conversion usually needs fast and comfortable. Many producers consider it among the best piano rolls available.</p></details>
+<details><summary>How should I route multiple converted parts in FL Studio?</summary><p>Give each converted line its own channel and instrument in the channel rack, then route channels to mixer tracks for effects. Clear per-part routing keeps a multi-track conversion organized and mixable.</p></details>
+<details><summary>How do I reuse a converted phrase across a song in FL Studio?</summary><p>Turn it into a pattern, which FL lets you place and repeat freely in the playlist. This build-once, arrange-many approach makes a transcription a flexible centerpiece rather than a one-off part.</p></details>
+<details><summary>How do I keep an FL arrangement of converted patterns from sounding repetitive?</summary><p>Introduce pattern variations — chop, transpose, or re-voice the converted material for different sections. Placing varied patterns rather than identical repeats keeps the arrangement engaging.</p></details>
+</section>
+<nav class="seo-related" id="related-guides" aria-label="Related guides">
+<h2>Related guides for “FL Studio piano roll AI MIDI”</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>DAW integration</strong> cluster and nearby intents—not a generic footer dump.</p>
+<a href="../audio-to-midi.html"><strong>Pillar · Audio to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./using-midi-in-ableton.html"><strong>Bringing Converted MIDI Into Ableton Live</strong><br><span class="seo-related-meta">Ableton Live converted MIDI · how-to</span></a>
+<a href="./using-midi-in-logic-pro.html"><strong>Bringing Converted MIDI Into Logic Pro</strong><br><span class="seo-related-meta">Logic Pro converted MIDI scores · how-to</span></a>
+<a href="./daw-workflow-with-converted-midi.html"><strong>Working With Converted MIDI in Your DAW</strong><br><span class="seo-related-meta">import converted MIDI to DAW · workflow</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
+<a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
+</nav>
+<nav class="seo-pager" aria-label="Previous and next guides in DAW integration">
+<a class="seo-pager-link seo-pager-prev" href="./using-midi-in-ableton.html"><span class="seo-pager-kicker">Previous</span><span class="seo-pager-title">Bringing Converted MIDI Into Ableton Live</span></a>
+<a class="seo-pager-link seo-pager-next" href="./using-midi-in-logic-pro.html"><span class="seo-pager-kicker">Next</span><span class="seo-pager-title">Bringing Converted MIDI Into Logic Pro</span></a>
+</nav>
+
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-links">
+        <a href="../../about.html">About</a>
+        <a href="../index.html">Guides</a>
+        <a href="../topical-map.html">Topical map</a>
+        <a href="../../product.html">Product</a>
+        <a href="../../downloads.html">Downloads</a>
+        <a href="../../support.html">Support</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../../';</script>
+  <script type="module" src="../../assets/js/config.js"></script>
+  <script type="module" src="../../assets/js/app.js"></script>
+</body>
+</html>

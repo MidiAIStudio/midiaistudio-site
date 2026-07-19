@@ -1,0 +1,1088 @@
+{
+  "generated": "2026-07-19",
+  "rules": [
+    "Each URL has exactly one primary keyword",
+    "Pillars own head terms; articles own long-tail only",
+    "No two pages share the same primary",
+    "Internal links flow pillar ↔ cluster siblings ↔ product CTAs"
+  ],
+  "pillars": [
+    {
+      "slug": "pdf-to-midi",
+      "path": "/guides/pdf-to-midi.html",
+      "primary": "PDF to MIDI",
+      "cluster": "score-omr",
+      "role": "pillar"
+    },
+    {
+      "slug": "youtube-to-midi",
+      "path": "/guides/youtube-to-midi.html",
+      "primary": "YouTube to MIDI",
+      "cluster": "youtube-covers",
+      "role": "pillar"
+    },
+    {
+      "slug": "mp3-to-midi",
+      "path": "/guides/mp3-to-midi.html",
+      "primary": "MP3 to MIDI",
+      "cluster": "audio-formats",
+      "role": "pillar"
+    },
+    {
+      "slug": "audio-to-midi",
+      "path": "/guides/audio-to-midi.html",
+      "primary": "Audio to MIDI",
+      "cluster": "audio-formats",
+      "role": "pillar"
+    },
+    {
+      "slug": "musicxml",
+      "path": "/guides/musicxml.html",
+      "primary": "MusicXML",
+      "cluster": "score-formats",
+      "role": "pillar"
+    }
+  ],
+  "clusters": [
+    {
+      "id": "score-omr",
+      "name": "Sheet music & OMR",
+      "pillar": "pdf-to-midi",
+      "description": "PDF/score recognition, OMR, editable scores",
+      "articles": [
+        {
+          "slug": "pdf-to-midi-complete-guide",
+          "primary": "convert PDF sheet music to MIDI",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/pdf-to-midi-complete-guide.html"
+        },
+        {
+          "slug": "pdf-sheet-music-to-editable-midi",
+          "primary": "editable MIDI from PDF scores",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/pdf-sheet-music-to-editable-midi.html"
+        },
+        {
+          "slug": "sheet-music-recognition-ocr",
+          "primary": "optical music recognition OMR",
+          "intent": "explainer",
+          "url": "https://midiaistudio.com/guides/articles/sheet-music-recognition-ocr.html"
+        },
+        {
+          "slug": "pdf-to-musicxml",
+          "primary": "PDF to MusicXML conversion",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/pdf-to-musicxml.html"
+        },
+        {
+          "slug": "how-to-edit-sheet-music-digitally",
+          "primary": "edit sheet music digitally",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/how-to-edit-sheet-music-digitally.html"
+        }
+      ]
+    },
+    {
+      "id": "youtube-covers",
+      "name": "YouTube & covers",
+      "pillar": "youtube-to-midi",
+      "description": "Piano covers, learning, copyright-aware use",
+      "articles": [
+        {
+          "slug": "youtube-to-midi-converter",
+          "primary": "YouTube piano cover to MIDI",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/youtube-to-midi-converter.html"
+        },
+        {
+          "slug": "convert-youtube-piano-covers-to-midi",
+          "primary": "step-by-step YouTube piano MIDI",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/convert-youtube-piano-covers-to-midi.html"
+        },
+        {
+          "slug": "piano-learning-from-youtube-midi",
+          "primary": "learn piano with YouTube MIDI",
+          "intent": "use-case",
+          "url": "https://midiaistudio.com/guides/articles/piano-learning-from-youtube-midi.html"
+        },
+        {
+          "slug": "copyright-and-youtube-to-midi",
+          "primary": "YouTube MIDI copyright basics",
+          "intent": "legal-edu",
+          "url": "https://midiaistudio.com/guides/articles/copyright-and-youtube-to-midi.html"
+        },
+        {
+          "slug": "convert-cover-songs-to-midi-legally",
+          "primary": "legal checklist cover song MIDI",
+          "intent": "legal-edu",
+          "url": "https://midiaistudio.com/guides/articles/convert-cover-songs-to-midi-legally.html"
+        },
+        {
+          "slug": "midi-for-content-creators",
+          "primary": "MIDI for music content creators",
+          "intent": "use-case",
+          "url": "https://midiaistudio.com/guides/articles/midi-for-content-creators.html"
+        }
+      ]
+    },
+    {
+      "id": "audio-formats",
+      "name": "Audio file conversion",
+      "pillar": "audio-to-midi",
+      "description": "MP3/WAV/FLAC/audio → MIDI quality & prep",
+      "articles": [
+        {
+          "slug": "mp3-to-midi-conversion",
+          "primary": "extract MIDI notes from MP3",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/mp3-to-midi-conversion.html"
+        },
+        {
+          "slug": "mp3-piano-to-midi",
+          "primary": "piano MP3 to MIDI transcription",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/mp3-piano-to-midi.html"
+        },
+        {
+          "slug": "audio-to-midi-ai",
+          "primary": "AI audio transcription to MIDI",
+          "intent": "explainer",
+          "url": "https://midiaistudio.com/guides/articles/audio-to-midi-ai.html"
+        },
+        {
+          "slug": "wav-to-midi",
+          "primary": "WAV to MIDI conversion quality",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/wav-to-midi.html"
+        },
+        {
+          "slug": "flac-to-midi",
+          "primary": "FLAC to MIDI transcription",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/flac-to-midi.html"
+        },
+        {
+          "slug": "best-practices-audio-to-midi",
+          "primary": "audio to MIDI accuracy checklist",
+          "intent": "checklist",
+          "url": "https://midiaistudio.com/guides/articles/best-practices-audio-to-midi.html"
+        },
+        {
+          "slug": "improve-midi-accuracy",
+          "primary": "improve AI MIDI accuracy",
+          "intent": "troubleshooting",
+          "url": "https://midiaistudio.com/guides/articles/improve-midi-accuracy.html"
+        }
+      ]
+    },
+    {
+      "id": "score-formats",
+      "name": "MusicXML & score interchange",
+      "pillar": "musicxml",
+      "description": "MusicXML ↔ MIDI ↔ PDF notation paths",
+      "articles": [
+        {
+          "slug": "midi-to-pdf-sheet-music",
+          "primary": "MIDI to PDF sheet music",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/midi-to-pdf-sheet-music.html"
+        },
+        {
+          "slug": "score-editor-workflow",
+          "primary": "MIDI score editor workflow",
+          "intent": "workflow",
+          "url": "https://midiaistudio.com/guides/articles/score-editor-workflow.html"
+        },
+        {
+          "slug": "musicxml-explained",
+          "primary": "what is MusicXML format",
+          "intent": "explainer",
+          "url": "https://midiaistudio.com/guides/articles/musicxml-explained.html"
+        },
+        {
+          "slug": "musicxml-vs-midi",
+          "primary": "MusicXML vs MIDI differences",
+          "intent": "comparison",
+          "url": "https://midiaistudio.com/guides/articles/musicxml-vs-midi.html"
+        },
+        {
+          "slug": "musicxml-to-midi",
+          "primary": "MusicXML to MIDI playback",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/musicxml-to-midi.html"
+        },
+        {
+          "slug": "midi-to-musicxml",
+          "primary": "MIDI to MusicXML notation",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/midi-to-musicxml.html"
+        }
+      ]
+    },
+    {
+      "id": "piano-polyphony",
+      "name": "Piano & polyphony",
+      "pillar": "audio-to-midi",
+      "description": "Piano-specific transcription difficulty",
+      "articles": [
+        {
+          "slug": "piano-midi-converter",
+          "primary": "piano MIDI conversion tips",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/piano-midi-converter.html"
+        },
+        {
+          "slug": "polyphonic-piano-transcription",
+          "primary": "polyphonic piano transcription",
+          "intent": "explainer",
+          "url": "https://midiaistudio.com/guides/articles/polyphonic-piano-transcription.html"
+        },
+        {
+          "slug": "monophonic-vs-polyphonic-midi",
+          "primary": "monophonic vs polyphonic MIDI",
+          "intent": "comparison",
+          "url": "https://midiaistudio.com/guides/articles/monophonic-vs-polyphonic-midi.html"
+        },
+        {
+          "slug": "transcribe-classical-piano",
+          "primary": "classical piano AI transcription",
+          "intent": "use-case",
+          "url": "https://midiaistudio.com/guides/articles/transcribe-classical-piano.html"
+        },
+        {
+          "slug": "jazz-piano-to-midi-challenges",
+          "primary": "jazz piano MIDI transcription",
+          "intent": "troubleshooting",
+          "url": "https://midiaistudio.com/guides/articles/jazz-piano-to-midi-challenges.html"
+        }
+      ]
+    },
+    {
+      "id": "instruments",
+      "name": "Other instruments",
+      "pillar": "audio-to-midi",
+      "description": "Guitar, drums, vocals, remapping",
+      "articles": [
+        {
+          "slug": "guitar-to-midi",
+          "primary": "guitar audio to MIDI",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/guitar-to-midi.html"
+        },
+        {
+          "slug": "drum-midi-extraction",
+          "primary": "extract drum MIDI from audio",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/drum-midi-extraction.html"
+        },
+        {
+          "slug": "vocal-to-midi",
+          "primary": "vocal melody to MIDI",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/vocal-to-midi.html"
+        },
+        {
+          "slug": "instrument-conversion-midi",
+          "primary": "MIDI instrument remapping",
+          "intent": "workflow",
+          "url": "https://midiaistudio.com/guides/articles/instrument-conversion-midi.html"
+        }
+      ]
+    },
+    {
+      "id": "midi-editing",
+      "name": "MIDI editing craft",
+      "pillar": "audio-to-midi",
+      "description": "Cleanup, velocity, quantize",
+      "articles": [
+        {
+          "slug": "midi-editing-basics",
+          "primary": "MIDI editing after AI conversion",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/midi-editing-basics.html"
+        },
+        {
+          "slug": "cleaning-up-ai-generated-midi",
+          "primary": "cleanup checklist AI MIDI",
+          "intent": "checklist",
+          "url": "https://midiaistudio.com/guides/articles/cleaning-up-ai-generated-midi.html"
+        },
+        {
+          "slug": "midi-velocity-and-expression",
+          "primary": "MIDI velocity expression editing",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/midi-velocity-and-expression.html"
+        },
+        {
+          "slug": "quantize-midi-after-conversion",
+          "primary": "quantize AI MIDI timing",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/quantize-midi-after-conversion.html"
+        }
+      ]
+    },
+    {
+      "id": "daw-workflows",
+      "name": "DAW integration",
+      "pillar": "audio-to-midi",
+      "description": "Ableton, FL, Logic, generic DAW",
+      "articles": [
+        {
+          "slug": "daw-workflow-with-converted-midi",
+          "primary": "import converted MIDI to DAW",
+          "intent": "workflow",
+          "url": "https://midiaistudio.com/guides/articles/daw-workflow-with-converted-midi.html"
+        },
+        {
+          "slug": "using-midi-in-ableton",
+          "primary": "Ableton Live converted MIDI",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/using-midi-in-ableton.html"
+        },
+        {
+          "slug": "using-midi-in-fl-studio",
+          "primary": "FL Studio piano roll AI MIDI",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/using-midi-in-fl-studio.html"
+        },
+        {
+          "slug": "using-midi-in-logic-pro",
+          "primary": "Logic Pro converted MIDI scores",
+          "intent": "how-to",
+          "url": "https://midiaistudio.com/guides/articles/using-midi-in-logic-pro.html"
+        }
+      ]
+    },
+    {
+      "id": "ai-concepts",
+      "name": "AI & MIDI fundamentals",
+      "pillar": "audio-to-midi",
+      "description": "How models work, MIDI vs audio",
+      "articles": [
+        {
+          "slug": "how-ai-midi-conversion-works",
+          "primary": "how AI MIDI models work",
+          "intent": "explainer",
+          "url": "https://midiaistudio.com/guides/articles/how-ai-midi-conversion-works.html"
+        },
+        {
+          "slug": "ai-music-transcription-guide",
+          "primary": "AI music transcription overview",
+          "intent": "explainer",
+          "url": "https://midiaistudio.com/guides/articles/ai-music-transcription-guide.html"
+        },
+        {
+          "slug": "midi-vs-audio-explained",
+          "primary": "MIDI vs audio explained",
+          "intent": "explainer",
+          "url": "https://midiaistudio.com/guides/articles/midi-vs-audio-explained.html"
+        },
+        {
+          "slug": "beginner-guide-midi-files",
+          "primary": "beginner guide to MIDI files",
+          "intent": "explainer",
+          "url": "https://midiaistudio.com/guides/articles/beginner-guide-midi-files.html"
+        }
+      ]
+    },
+    {
+      "id": "product-fit",
+      "name": "Tool selection",
+      "pillar": "audio-to-midi",
+      "description": "Offline/online, Windows checklist, AI vs manual",
+      "articles": [
+        {
+          "slug": "compare-ai-transcription-tools",
+          "primary": "choose AI transcription tool by job",
+          "intent": "comparison",
+          "url": "https://midiaistudio.com/guides/articles/compare-ai-transcription-tools.html"
+        },
+        {
+          "slug": "offline-vs-online-midi-converters",
+          "primary": "offline vs online MIDI converters",
+          "intent": "comparison",
+          "url": "https://midiaistudio.com/guides/articles/offline-vs-online-midi-converters.html"
+        },
+        {
+          "slug": "windows-midi-converter-software",
+          "primary": "Windows MIDI converter software checklist",
+          "intent": "checklist",
+          "url": "https://midiaistudio.com/guides/articles/windows-midi-converter-software.html"
+        },
+        {
+          "slug": "midiai-studio-vs-manual-transcription",
+          "primary": "AI MIDI vs manual transcription",
+          "intent": "comparison",
+          "url": "https://midiaistudio.com/guides/articles/midiai-studio-vs-manual-transcription.html"
+        }
+      ]
+    },
+    {
+      "id": "education",
+      "name": "Teaching & learning",
+      "pillar": "youtube-to-midi",
+      "description": "Teachers and practice workflows",
+      "articles": [
+        {
+          "slug": "midi-for-music-teachers",
+          "primary": "MIDI lesson materials for teachers",
+          "intent": "use-case",
+          "url": "https://midiaistudio.com/guides/articles/midi-for-music-teachers.html"
+        }
+      ]
+    }
+  ],
+  "articles": [
+    {
+      "slug": "pdf-to-midi-complete-guide",
+      "primary": "convert PDF sheet music to MIDI",
+      "secondaries": [
+        "PDF score to MIDI workflow",
+        "OMR MIDI cleanup"
+      ],
+      "intent": "how-to",
+      "cluster": "score-omr",
+      "parentPillar": "pdf-to-midi",
+      "screenshot": "sheet-music-pdf-musicxml-convert.jpg",
+      "url": "https://midiaistudio.com/guides/articles/pdf-to-midi-complete-guide.html"
+    },
+    {
+      "slug": "pdf-sheet-music-to-editable-midi",
+      "primary": "editable MIDI from PDF scores",
+      "secondaries": [
+        "make PDF scores playable",
+        "score to piano roll"
+      ],
+      "intent": "how-to",
+      "cluster": "score-omr",
+      "parentPillar": "pdf-to-midi",
+      "screenshot": "sheet-music-score-editor.jpg",
+      "url": "https://midiaistudio.com/guides/articles/pdf-sheet-music-to-editable-midi.html"
+    },
+    {
+      "slug": "sheet-music-recognition-ocr",
+      "primary": "optical music recognition OMR",
+      "secondaries": [
+        "sheet music OCR accuracy",
+        "OMR vs audio transcription"
+      ],
+      "intent": "explainer",
+      "cluster": "score-omr",
+      "parentPillar": "pdf-to-midi",
+      "screenshot": "sheet-music-pdf-musicxml-convert.jpg",
+      "url": "https://midiaistudio.com/guides/articles/sheet-music-recognition-ocr.html"
+    },
+    {
+      "slug": "pdf-to-musicxml",
+      "primary": "PDF to MusicXML conversion",
+      "secondaries": [
+        "digitize PDF scores",
+        "MusicXML for MuseScore"
+      ],
+      "intent": "how-to",
+      "cluster": "score-omr",
+      "parentPillar": "musicxml",
+      "screenshot": "sheet-music-pdf-musicxml-convert.jpg",
+      "url": "https://midiaistudio.com/guides/articles/pdf-to-musicxml.html"
+    },
+    {
+      "slug": "how-to-edit-sheet-music-digitally",
+      "primary": "edit sheet music digitally",
+      "secondaries": [
+        "digital score editing workflow",
+        "fix engraving errors"
+      ],
+      "intent": "how-to",
+      "cluster": "score-omr",
+      "parentPillar": "pdf-to-midi",
+      "screenshot": "sheet-music-score-editor.jpg",
+      "url": "https://midiaistudio.com/guides/articles/how-to-edit-sheet-music-digitally.html"
+    },
+    {
+      "slug": "midi-to-pdf-sheet-music",
+      "primary": "MIDI to PDF sheet music",
+      "secondaries": [
+        "print MIDI as score",
+        "MIDI engraving tips"
+      ],
+      "intent": "how-to",
+      "cluster": "score-formats",
+      "parentPillar": "musicxml",
+      "screenshot": "sheet-music-score-editor.jpg",
+      "url": "https://midiaistudio.com/guides/articles/midi-to-pdf-sheet-music.html"
+    },
+    {
+      "slug": "score-editor-workflow",
+      "primary": "MIDI score editor workflow",
+      "secondaries": [
+        "piano roll to notation loop",
+        "score cleanup checklist"
+      ],
+      "intent": "workflow",
+      "cluster": "score-formats",
+      "parentPillar": "musicxml",
+      "screenshot": "sheet-music-score-editor.jpg",
+      "url": "https://midiaistudio.com/guides/articles/score-editor-workflow.html"
+    },
+    {
+      "slug": "youtube-to-midi-converter",
+      "primary": "YouTube piano cover to MIDI",
+      "secondaries": [
+        "convert piano cover videos",
+        "YouTube MIDI practice files"
+      ],
+      "intent": "how-to",
+      "cluster": "youtube-covers",
+      "parentPillar": "youtube-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/youtube-to-midi-converter.html"
+    },
+    {
+      "slug": "convert-youtube-piano-covers-to-midi",
+      "primary": "step-by-step YouTube piano MIDI",
+      "secondaries": [
+        "piano cover transcription steps",
+        "section-by-section convert"
+      ],
+      "intent": "how-to",
+      "cluster": "youtube-covers",
+      "parentPillar": "youtube-to-midi",
+      "screenshot": "ai-midi-converter-home.jpg",
+      "url": "https://midiaistudio.com/guides/articles/convert-youtube-piano-covers-to-midi.html"
+    },
+    {
+      "slug": "piano-learning-from-youtube-midi",
+      "primary": "learn piano with YouTube MIDI",
+      "secondaries": [
+        "slow practice from covers",
+        "hands-separate MIDI practice"
+      ],
+      "intent": "use-case",
+      "cluster": "youtube-covers",
+      "parentPillar": "youtube-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/piano-learning-from-youtube-midi.html"
+    },
+    {
+      "slug": "copyright-and-youtube-to-midi",
+      "primary": "YouTube MIDI copyright basics",
+      "secondaries": [
+        "personal use vs redistribute MIDI",
+        "cover song MIDI rights"
+      ],
+      "intent": "legal-edu",
+      "cluster": "youtube-covers",
+      "parentPillar": "youtube-to-midi",
+      "screenshot": "ai-midi-converter-home.jpg",
+      "url": "https://midiaistudio.com/guides/articles/copyright-and-youtube-to-midi.html"
+    },
+    {
+      "slug": "convert-cover-songs-to-midi-legally",
+      "primary": "legal checklist cover song MIDI",
+      "secondaries": [
+        "cover MIDI publishing risks",
+        "study-only MIDI use"
+      ],
+      "intent": "legal-edu",
+      "cluster": "youtube-covers",
+      "parentPillar": "youtube-to-midi",
+      "screenshot": "midiai-studio-community.jpg",
+      "url": "https://midiaistudio.com/guides/articles/convert-cover-songs-to-midi-legally.html"
+    },
+    {
+      "slug": "midi-for-content-creators",
+      "primary": "MIDI for music content creators",
+      "secondaries": [
+        "tutorial MIDI visuals",
+        "Shorts piano MIDI tips"
+      ],
+      "intent": "use-case",
+      "cluster": "youtube-covers",
+      "parentPillar": "youtube-to-midi",
+      "screenshot": "midiai-studio-community.jpg",
+      "url": "https://midiaistudio.com/guides/articles/midi-for-content-creators.html"
+    },
+    {
+      "slug": "mp3-to-midi-conversion",
+      "primary": "extract MIDI notes from MP3",
+      "secondaries": [
+        "MP3 transcription tips",
+        "compressed audio MIDI limits"
+      ],
+      "intent": "how-to",
+      "cluster": "audio-formats",
+      "parentPillar": "mp3-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/mp3-to-midi-conversion.html"
+    },
+    {
+      "slug": "mp3-piano-to-midi",
+      "primary": "piano MP3 to MIDI transcription",
+      "secondaries": [
+        "solo piano MP3 convert",
+        "piano roll from MP3"
+      ],
+      "intent": "how-to",
+      "cluster": "audio-formats",
+      "parentPillar": "mp3-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/mp3-piano-to-midi.html"
+    },
+    {
+      "slug": "audio-to-midi-ai",
+      "primary": "AI audio transcription to MIDI",
+      "secondaries": [
+        "neural audio-to-MIDI",
+        "recording to MIDI draft"
+      ],
+      "intent": "explainer",
+      "cluster": "audio-formats",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/audio-to-midi-ai.html"
+    },
+    {
+      "slug": "wav-to-midi",
+      "primary": "WAV to MIDI conversion quality",
+      "secondaries": [
+        "lossless audio transcription",
+        "WAV vs MP3 for MIDI"
+      ],
+      "intent": "how-to",
+      "cluster": "audio-formats",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/wav-to-midi.html"
+    },
+    {
+      "slug": "flac-to-midi",
+      "primary": "FLAC to MIDI transcription",
+      "secondaries": [
+        "FLAC source prep",
+        "high-res audio MIDI"
+      ],
+      "intent": "how-to",
+      "cluster": "audio-formats",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-midi-converter-home.jpg",
+      "url": "https://midiaistudio.com/guides/articles/flac-to-midi.html"
+    },
+    {
+      "slug": "best-practices-audio-to-midi",
+      "primary": "audio to MIDI accuracy checklist",
+      "secondaries": [
+        "prep audio for transcription",
+        "gain staging for MIDI AI"
+      ],
+      "intent": "checklist",
+      "cluster": "audio-formats",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/best-practices-audio-to-midi.html"
+    },
+    {
+      "slug": "improve-midi-accuracy",
+      "primary": "improve AI MIDI accuracy",
+      "secondaries": [
+        "fix bad transcriptions",
+        "reduce MIDI note errors"
+      ],
+      "intent": "troubleshooting",
+      "cluster": "audio-formats",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/improve-midi-accuracy.html"
+    },
+    {
+      "slug": "musicxml-explained",
+      "primary": "what is MusicXML format",
+      "secondaries": [
+        "MusicXML definition",
+        "open score exchange format"
+      ],
+      "intent": "explainer",
+      "cluster": "score-formats",
+      "parentPillar": "musicxml",
+      "screenshot": "sheet-music-pdf-musicxml-convert.jpg",
+      "url": "https://midiaistudio.com/guides/articles/musicxml-explained.html"
+    },
+    {
+      "slug": "musicxml-vs-midi",
+      "primary": "MusicXML vs MIDI differences",
+      "secondaries": [
+        "notation vs performance data",
+        "when to use MusicXML"
+      ],
+      "intent": "comparison",
+      "cluster": "score-formats",
+      "parentPillar": "musicxml",
+      "screenshot": "sheet-music-score-editor.jpg",
+      "url": "https://midiaistudio.com/guides/articles/musicxml-vs-midi.html"
+    },
+    {
+      "slug": "musicxml-to-midi",
+      "primary": "MusicXML to MIDI playback",
+      "secondaries": [
+        "realize MusicXML as MIDI",
+        "score to DAW MIDI"
+      ],
+      "intent": "how-to",
+      "cluster": "score-formats",
+      "parentPillar": "musicxml",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/musicxml-to-midi.html"
+    },
+    {
+      "slug": "midi-to-musicxml",
+      "primary": "MIDI to MusicXML notation",
+      "secondaries": [
+        "performance to engraving",
+        "quantize before MusicXML"
+      ],
+      "intent": "how-to",
+      "cluster": "score-formats",
+      "parentPillar": "musicxml",
+      "screenshot": "sheet-music-pdf-musicxml-convert.jpg",
+      "url": "https://midiaistudio.com/guides/articles/midi-to-musicxml.html"
+    },
+    {
+      "slug": "piano-midi-converter",
+      "primary": "piano MIDI conversion tips",
+      "secondaries": [
+        "piano cover MIDI quality",
+        "pedal and polyphony"
+      ],
+      "intent": "how-to",
+      "cluster": "piano-polyphony",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/piano-midi-converter.html"
+    },
+    {
+      "slug": "polyphonic-piano-transcription",
+      "primary": "polyphonic piano transcription",
+      "secondaries": [
+        "chord transcription errors",
+        "dense piano MIDI cleanup"
+      ],
+      "intent": "explainer",
+      "cluster": "piano-polyphony",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/polyphonic-piano-transcription.html"
+    },
+    {
+      "slug": "monophonic-vs-polyphonic-midi",
+      "primary": "monophonic vs polyphonic MIDI",
+      "secondaries": [
+        "melody vs chord transcription",
+        "choose transcription mode"
+      ],
+      "intent": "comparison",
+      "cluster": "piano-polyphony",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/monophonic-vs-polyphonic-midi.html"
+    },
+    {
+      "slug": "transcribe-classical-piano",
+      "primary": "classical piano AI transcription",
+      "secondaries": [
+        "rubato MIDI editing",
+        "classical score from audio"
+      ],
+      "intent": "use-case",
+      "cluster": "piano-polyphony",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "sheet-music-score-editor.jpg",
+      "url": "https://midiaistudio.com/guides/articles/transcribe-classical-piano.html"
+    },
+    {
+      "slug": "jazz-piano-to-midi-challenges",
+      "primary": "jazz piano MIDI transcription",
+      "secondaries": [
+        "swing feel MIDI",
+        "jazz voicing cleanup"
+      ],
+      "intent": "troubleshooting",
+      "cluster": "piano-polyphony",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/jazz-piano-to-midi-challenges.html"
+    },
+    {
+      "slug": "guitar-to-midi",
+      "primary": "guitar audio to MIDI",
+      "secondaries": [
+        "guitar bends MIDI limits",
+        "DI guitar transcription"
+      ],
+      "intent": "how-to",
+      "cluster": "instruments",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/guitar-to-midi.html"
+    },
+    {
+      "slug": "drum-midi-extraction",
+      "primary": "extract drum MIDI from audio",
+      "secondaries": [
+        "drum pattern MIDI",
+        "kit mapping after conversion"
+      ],
+      "intent": "how-to",
+      "cluster": "instruments",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/drum-midi-extraction.html"
+    },
+    {
+      "slug": "vocal-to-midi",
+      "primary": "vocal melody to MIDI",
+      "secondaries": [
+        "sing to MIDI notes",
+        "monophonic vocal transcription"
+      ],
+      "intent": "how-to",
+      "cluster": "instruments",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/vocal-to-midi.html"
+    },
+    {
+      "slug": "instrument-conversion-midi",
+      "primary": "MIDI instrument remapping",
+      "secondaries": [
+        "change MIDI instrument sound",
+        "arrangement remapping"
+      ],
+      "intent": "workflow",
+      "cluster": "instruments",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midiai-studio-license-screen.jpg",
+      "url": "https://midiaistudio.com/guides/articles/instrument-conversion-midi.html"
+    },
+    {
+      "slug": "midi-editing-basics",
+      "primary": "MIDI editing after AI conversion",
+      "secondaries": [
+        "piano roll cleanup basics",
+        "fix AI MIDI drafts"
+      ],
+      "intent": "how-to",
+      "cluster": "midi-editing",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/midi-editing-basics.html"
+    },
+    {
+      "slug": "cleaning-up-ai-generated-midi",
+      "primary": "cleanup checklist AI MIDI",
+      "secondaries": [
+        "remove doubled MIDI notes",
+        "octave error fixes"
+      ],
+      "intent": "checklist",
+      "cluster": "midi-editing",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/cleaning-up-ai-generated-midi.html"
+    },
+    {
+      "slug": "midi-velocity-and-expression",
+      "primary": "MIDI velocity expression editing",
+      "secondaries": [
+        "restore dynamics in MIDI",
+        "CC and expression data"
+      ],
+      "intent": "how-to",
+      "cluster": "midi-editing",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/midi-velocity-and-expression.html"
+    },
+    {
+      "slug": "quantize-midi-after-conversion",
+      "primary": "quantize AI MIDI timing",
+      "secondaries": [
+        "grid quantize vs groove",
+        "when not to quantize"
+      ],
+      "intent": "how-to",
+      "cluster": "midi-editing",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/quantize-midi-after-conversion.html"
+    },
+    {
+      "slug": "daw-workflow-with-converted-midi",
+      "primary": "import converted MIDI to DAW",
+      "secondaries": [
+        "DAW MIDI tempo map",
+        "arrange AI MIDI clips"
+      ],
+      "intent": "workflow",
+      "cluster": "daw-workflows",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-midi-converter-home.jpg",
+      "url": "https://midiaistudio.com/guides/articles/daw-workflow-with-converted-midi.html"
+    },
+    {
+      "slug": "using-midi-in-ableton",
+      "primary": "Ableton Live converted MIDI",
+      "secondaries": [
+        "Ableton piano roll MIDI",
+        "Live instrument racks"
+      ],
+      "intent": "how-to",
+      "cluster": "daw-workflows",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/using-midi-in-ableton.html"
+    },
+    {
+      "slug": "using-midi-in-fl-studio",
+      "primary": "FL Studio piano roll AI MIDI",
+      "secondaries": [
+        "FL Studio MIDI import",
+        "Channel rack MIDI cleanup"
+      ],
+      "intent": "how-to",
+      "cluster": "daw-workflows",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/using-midi-in-fl-studio.html"
+    },
+    {
+      "slug": "using-midi-in-logic-pro",
+      "primary": "Logic Pro converted MIDI scores",
+      "secondaries": [
+        "Logic score editor MIDI",
+        "articulation sets"
+      ],
+      "intent": "how-to",
+      "cluster": "daw-workflows",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "sheet-music-score-editor.jpg",
+      "url": "https://midiaistudio.com/guides/articles/using-midi-in-logic-pro.html"
+    },
+    {
+      "slug": "how-ai-midi-conversion-works",
+      "primary": "how AI MIDI models work",
+      "secondaries": [
+        "onset pitch detection",
+        "transcription model limits"
+      ],
+      "intent": "explainer",
+      "cluster": "ai-concepts",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/how-ai-midi-conversion-works.html"
+    },
+    {
+      "slug": "ai-music-transcription-guide",
+      "primary": "AI music transcription overview",
+      "secondaries": [
+        "transcription expectations",
+        "AI vs manual transcription"
+      ],
+      "intent": "explainer",
+      "cluster": "ai-concepts",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-midi-converter-home.jpg",
+      "url": "https://midiaistudio.com/guides/articles/ai-music-transcription-guide.html"
+    },
+    {
+      "slug": "midi-vs-audio-explained",
+      "primary": "MIDI vs audio explained",
+      "secondaries": [
+        "symbolic vs waveform",
+        "why convert to MIDI"
+      ],
+      "intent": "explainer",
+      "cluster": "ai-concepts",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-midi-converter-home.jpg",
+      "url": "https://midiaistudio.com/guides/articles/midi-vs-audio-explained.html"
+    },
+    {
+      "slug": "beginner-guide-midi-files",
+      "primary": "beginner guide to MIDI files",
+      "secondaries": [
+        "what MIDI files contain",
+        "open MIDI file basics"
+      ],
+      "intent": "explainer",
+      "cluster": "ai-concepts",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midi-editor-piano-roll.jpg",
+      "url": "https://midiaistudio.com/guides/articles/beginner-guide-midi-files.html"
+    },
+    {
+      "slug": "compare-ai-transcription-tools",
+      "primary": "choose AI transcription tool by job",
+      "secondaries": [
+        "OMR vs pitch editor vs converter",
+        "tool category map"
+      ],
+      "intent": "comparison",
+      "cluster": "product-fit",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-midi-converter-home.jpg",
+      "url": "https://midiaistudio.com/guides/articles/compare-ai-transcription-tools.html"
+    },
+    {
+      "slug": "offline-vs-online-midi-converters",
+      "primary": "offline vs online MIDI converters",
+      "secondaries": [
+        "desktop MIDI privacy",
+        "upload converter limits"
+      ],
+      "intent": "comparison",
+      "cluster": "product-fit",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midiai-studio-license-screen.jpg",
+      "url": "https://midiaistudio.com/guides/articles/offline-vs-online-midi-converters.html"
+    },
+    {
+      "slug": "windows-midi-converter-software",
+      "primary": "Windows MIDI converter software checklist",
+      "secondaries": [
+        "Windows MIDI app features",
+        "license and support checklist"
+      ],
+      "intent": "checklist",
+      "cluster": "product-fit",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "midiai-studio-license-screen.jpg",
+      "url": "https://midiaistudio.com/guides/articles/windows-midi-converter-software.html"
+    },
+    {
+      "slug": "midiai-studio-vs-manual-transcription",
+      "primary": "AI MIDI vs manual transcription",
+      "secondaries": [
+        "when to transcribe by ear",
+        "speed vs accuracy tradeoff"
+      ],
+      "intent": "comparison",
+      "cluster": "product-fit",
+      "parentPillar": "audio-to-midi",
+      "screenshot": "ai-audio-to-midi-studio.jpg",
+      "url": "https://midiaistudio.com/guides/articles/midiai-studio-vs-manual-transcription.html"
+    },
+    {
+      "slug": "midi-for-music-teachers",
+      "primary": "MIDI lesson materials for teachers",
+      "secondaries": [
+        "classroom MIDI practice files",
+        "teacher PDF to MIDI"
+      ],
+      "intent": "use-case",
+      "cluster": "education",
+      "parentPillar": "youtube-to-midi",
+      "screenshot": "midiai-studio-community.jpg",
+      "url": "https://midiaistudio.com/guides/articles/midi-for-music-teachers.html"
+    }
+  ]
+}
