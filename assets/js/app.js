@@ -1,4 +1,4 @@
-import { applyGuidesI18n } from './guides-i18n.js?v=20260720-body-full';
+import { applyGuidesI18n } from './guides-i18n.js?v=20260720-drop-zone';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);

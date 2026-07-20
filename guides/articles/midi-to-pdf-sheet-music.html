@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../assets/css/style.css?v=v85-trust-fix">
-  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-trust-fix">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-no-gutter-bleed">
   <script defer src="../../assets/js/analytics.js"></script>
   <script type="application/ld+json">
 {
@@ -217,7 +217,7 @@
 <p>The temptation is to expect a MIDI file to simply become sheet music at the push of a button, and it can, but a naive conversion produces a page cluttered with thirty-second rests and unreadable tuplets. Getting a clean score means making deliberate choices about how loosely-timed performance data should be tidied into notation.</p>
 <p>This guide covers those choices in order, from quantization to layout, so that a MIDI file — whether you recorded it or produced it in MidiAI Studio — comes out the other side as sheet music a musician can actually read at a stand.</p>
 <figure class="seo-figure">
-<img src="../../assets/images/product/sheet-music-score-editor.jpg" alt="MidiAI Studio quantizing a rubato D-minor improvisation and engraving it across a readable grand staff." title="MidiAI Studio quantizing a rubato D-minor improvisation and engraving it across a readable grand staff." width="1280" height="720" loading="lazy" decoding="async">
+<img src="../../assets/images/product/sheet-music-score-editor.gif" alt="MidiAI Studio quantizing a rubato D-minor improvisation and engraving it across a readable grand staff." title="MidiAI Studio quantizing a rubato D-minor improvisation and engraving it across a readable grand staff." width="720" height="387" loading="lazy" decoding="async">
 <figcaption><span class="seo-fig-cap">MidiAI Studio quantizing a rubato D-minor improvisation and engraving it across a readable grand staff.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MIDI to PDF sheet music”</span></figcaption>
 </figure>
 
@@ -284,17 +284,6 @@
 <h2 id="final-layout-measures-per-line-and-page-turns">Final layout: measures per line and page turns</h2>
 <p>Notation also demands information MIDI never stored. A file has no idea it is in D minor or in four-four; those are frames you impose to make the numbers meaningful. Supplying them thoughtfully up front prevents a cascade of downstream oddities in spelling and barring.</p>
 <p>Ultimately, printing from MIDI rewards treating the output as a first engraving rather than a finished score. Expect to do a legibility pass, expect to make a few editorial calls, and the reward is a clean, playable page produced in minutes from data that started life as pure performance.</p>
-
-<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
-<h2>Practice “MIDI to PDF sheet music” in MidiAI Studio</h2>
-<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
-
-<p class="seo-cta-actions">
-<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
-<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
-<a class="ghost" href="https://midiaistudio.com/guides/musicxml.html">Back to pillar guide</a>
-</p>
-</aside>
 <section class="seo-faq" aria-label="FAQ" id="faq">
 <h2>FAQ</h2>
 <p class="seo-faq-intro">Straight answers for musicians researching <strong>MIDI to PDF sheet music</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
@@ -325,19 +314,23 @@
 
     </article>
   </main>
-  <footer class="site-footer legal-footer">
+          <footer class="site-footer legal-footer">
     <div class="footer-main">
-      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-brand"><img src="../../assets/images/symbol.png" alt="MidiAI Studio" width="32" height="32" title="MidiAI Studio"><div><strong>MidiAI Studio</strong><p>AI 기반 MIDI 변환 소프트웨어</p></div></div>
       <div class="footer-links">
-        
-        <a href="../index.html">Guides</a><a href="../../support.html">Support</a>
+        <a href="../../support.html">고객센터</a><a href="../../terms.html">이용약관</a><a href="../../privacy.html">개인정보처리방침</a><a href="../../refund.html">환불정책</a><a href="../../business-info.html">사업자정보</a>
       </div>
+    </div>
+    <div class="business-box">
+      <span>상호: 미디에이아이스튜디오</span><span>대표자: 최정환</span><span>사업자등록번호: 332-22-02381</span>
+      <span>사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호</span><span>대표전화: 010-2166-5563</span>
+      <span>통신판매업: 제2026-창원성산-0312호</span><span>이메일: midiaistudio@gmail.com</span>
     </div>
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
   <script>window.MIDIAI_BASE_PATH='../../';</script>
   <script type="module" src="../../assets/js/config.js"></script>
-  <script type="module" src="../../assets/js/app.js?v=v104-body-full"></script>
+  <script type="module" src="../../assets/js/app.js?v=v106-drop-zone"></script>
 </body>
 </html>

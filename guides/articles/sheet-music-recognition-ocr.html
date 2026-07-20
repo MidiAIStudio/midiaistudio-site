@@ -1,13 +1,13 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Optical Music Recognition Explained: How OCR for Sheet Music Works</title>
-  <meta name="description" content="A clear look at optical music recognition — the sheet-music equivalent of OCR — covering how engines find staves, decode symbols, and where recognition confidence breaks down.">
+  <meta name="description" content="A clear look at optical music recognition ? the sheet-music equivalent of OCR ? covering how engines find staves, decode symbols, and where recognition confidence breaks down.">
   <meta name="keywords" content="optical music recognition OMR, sheet music OCR accuracy, OMR vs audio transcription">
   <meta name="robots" content="index, follow, max-image-preview:large">
-  <meta name="author" content="최정환">
+  <meta name="author" content="����ȯ">
   <meta name="theme-color" content="#0b1020">
   <link rel="canonical" href="https://midiaistudio.com/guides/articles/sheet-music-recognition-ocr.html">
   <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
@@ -16,39 +16,39 @@
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="MidiAI Studio">
   <meta property="og:title" content="Optical Music Recognition Explained: How OCR for Sheet Music Works">
-  <meta property="og:description" content="A clear look at optical music recognition — the sheet-music equivalent of OCR — covering how engines find staves, decode symbols, and where recognition confidence breaks down.">
+  <meta property="og:description" content="A clear look at optical music recognition ? the sheet-music equivalent of OCR ? covering how engines find staves, decode symbols, and where recognition confidence breaks down.">
   <meta property="og:url" content="https://midiaistudio.com/guides/articles/sheet-music-recognition-ocr.html">
   <meta property="og:image" content="https://midiaistudio.com/assets/images/product/sheet-music-pdf-musicxml-convert.jpg">
-  <meta property="article:author" content="최정환">
+  <meta property="article:author" content="����ȯ">
   <meta property="article:modified_time" content="2026-07-20">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Optical Music Recognition Explained: How OCR for Sheet Music Works">
-  <meta name="twitter:description" content="A clear look at optical music recognition — the sheet-music equivalent of OCR — covering how engines find staves, decode symbols, and where recognition confidence breaks down.">
+  <meta name="twitter:description" content="A clear look at optical music recognition ? the sheet-music equivalent of OCR ? covering how engines find staves, decode symbols, and where recognition confidence breaks down.">
   <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/sheet-music-pdf-musicxml-convert.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../assets/css/style.css?v=v85-trust-fix">
-  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-trust-fix">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-no-gutter-bleed">
   <script defer src="../../assets/js/analytics.js"></script>
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
   "headline": "Optical Music Recognition Explained: How OCR for Sheet Music Works",
-  "description": "A clear look at optical music recognition — the sheet-music equivalent of OCR — covering how engines find staves, decode symbols, and where recognition confidence breaks down.",
+  "description": "A clear look at optical music recognition ? the sheet-music equivalent of OCR ? covering how engines find staves, decode symbols, and where recognition confidence breaks down.",
   "datePublished": "2026-07-20",
   "dateModified": "2026-07-20",
   "timeRequired": "PT9M",
   "keywords": "optical music recognition OMR, sheet music OCR accuracy, OMR vs audio transcription",
   "author": {
     "@type": "Person",
-    "name": "최정환",
+    "name": "����ȯ",
     "jobTitle": "Founder & Product Lead",
     "url": "https://midiaistudio.com/about.html",
     "worksFor": {
       "@type": "Organization",
-      "name": "미디에이아이스튜디오",
+      "name": "�̵��̾��̽�Ʃ���",
       "url": "https://midiaistudio.com"
     }
   },
@@ -93,7 +93,7 @@
       "name": "What does a low recognition confidence score actually mean?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "It means the engine found the passage ambiguous — perhaps overlapping symbols or a faint mark — and is flagging it for review. Treat it as a helpful pointer to where your attention is best spent."
+        "text": "It means the engine found the passage ambiguous ? perhaps overlapping symbols or a faint mark ? and is flagging it for review. Treat it as a helpful pointer to where your attention is best spent."
       }
     },
     {
@@ -109,7 +109,7 @@
       "name": "Does recognizing a score give me sound directly?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "No — recognition produces structured data, and a separate playback stage turns that data into audio via MIDI. Keeping the two stages distinct helps you diagnose whether a problem is reading or rendering."
+        "text": "No ? recognition produces structured data, and a separate playback stage turns that data into audio via MIDI. Keeping the two stages distinct helps you diagnose whether a problem is reading or rendering."
       }
     }
   ]
@@ -153,7 +153,7 @@
   <a class="seo-skip" href="#guide-main">Skip to guide content</a>
   <header class="topbar">
     <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
-    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">?</button>
     <nav id="mainNav" aria-label="Primary">
       <a href="../../index.html">Home</a>
       <a href="../../product.html">Product</a>
@@ -168,14 +168,14 @@
   <main class="portal-main" id="guide-main">
     <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
       <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
-<a href="../../index.html">Home</a> ›
-<a href="../index.html">Guides</a> ›
-<a href="../pdf-to-midi.html">PDF to MIDI</a> ›
-<span class="seo-crumb-cluster">Sheet music &amp; OMR</span> ›
+<a href="../../index.html">Home</a> ?
+<a href="../index.html">Guides</a> ?
+<a href="../pdf-to-midi.html">PDF to MIDI</a> ?
+<span class="seo-crumb-cluster">Sheet music &amp; OMR</span> ?
 <span aria-current="page">How Optical Music Recognition Reads a Score</span>
 </nav>
       
-<p class="pill portal-pill" style="display:inline-block">Guide · Sheet music &amp; OMR</p>
+<p class="pill portal-pill" style="display:inline-block">Guide �� Sheet music &amp; OMR</p>
 <h1>How Optical Music Recognition Reads a Score</h1>
 <div class="seo-meta" role="group" aria-label="Article metadata">
   <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
@@ -187,14 +187,14 @@
 <aside class="seo-author" aria-label="About the author">
 <div class="seo-author-mark" aria-hidden="true">M</div>
 <div class="seo-author-copy">
-<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-name"><a href="../../about.html">����ȯ</a> �� Founder &amp; Product Lead</p>
 <p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
 <p class="seo-author-links">
 <a href="../../about.html">About &amp; credentials</a>
-· <a href="../../business-info.html">Business info</a>
-· <a href="../../patch-notes.html">Update history</a>
-· <a href="../../support.html">Support</a>
-· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+�� <a href="../../business-info.html">Business info</a>
+�� <a href="../../patch-notes.html">Update history</a>
+�� <a href="../../support.html">Support</a>
+�� <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
 </p>
 </div>
 </aside>
@@ -213,36 +213,36 @@
 <li><a href="#related-guides">Related guides</a></li>
 </ol>
 </nav>
-<p>Text OCR has a comfortable job: letters sit in neat left-to-right lines and rarely overlap. Optical music recognition, or OMR, faces a far messier page where meaning is encoded in two dimensions at once and symbols routinely touch, stack, and share space. Understanding that difficulty is the key to trusting — and correcting — any conversion.</p>
+<p>Text OCR has a comfortable job: letters sit in neat left-to-right lines and rarely overlap. Optical music recognition, or OMR, faces a far messier page where meaning is encoded in two dimensions at once and symbols routinely touch, stack, and share space. Understanding that difficulty is the key to trusting ? and correcting ? any conversion.</p>
 <p>OMR is the engine underneath every PDF-to-MIDI or scan-to-score tool, including MidiAI Studio, and it quietly makes hundreds of small decisions per measure. When you know what those decisions are, an odd result stops being mysterious and becomes a diagnosable step you can fix.</p>
 <p>This article opens the hood without drowning you in computer-vision jargon. The goal is a working mental model of how a picture of a staff becomes a stream of pitches, and where in that pipeline things most often go wrong.</p>
 <figure class="seo-figure">
 <img src="../../assets/images/product/sheet-music-pdf-musicxml-convert.jpg" alt="Recognition overlay in MidiAI Studio highlighting detected note heads and a low-confidence measure in a Bach chorale." title="Recognition overlay in MidiAI Studio highlighting detected note heads and a low-confidence measure in a Bach chorale." width="1280" height="720" loading="lazy" decoding="async">
-<figcaption><span class="seo-fig-cap">Recognition overlay in MidiAI Studio highlighting detected note heads and a low-confidence measure in a Bach chorale.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “optical music recognition OMR”</span></figcaption>
+<figcaption><span class="seo-fig-cap">Recognition overlay in MidiAI Studio highlighting detected note heads and a low-confidence measure in a Bach chorale.</span> <span class="seo-fig-credit">Screenshot �� MidiAI Studio �� illustrates ��optical music recognition OMR��</span></figcaption>
 </figure>
 
 <h2 id="why-reading-music-is-harder-than-reading-text">Why reading music is harder than reading text</h2>
-<p>Optical music recognition is the automated reading of musical notation from an image, converting note heads, rests, clefs, and other symbols into structured musical data. It is to sheet music what OCR is to a scanned letter — a translation from pixels to meaning.</p>
+<p>Optical music recognition is the automated reading of musical notation from an image, converting note heads, rests, clefs, and other symbols into structured musical data. It is to sheet music what OCR is to a scanned letter ? a translation from pixels to meaning.</p>
 <p>The output of OMR is not sound but structure: a machine-readable representation of pitch, duration, and placement that can then be turned into MIDI for playback or MusicXML for re-engraving. Recognition and playback are separate stages, and confusing them is a common source of misplaced blame when something sounds off.</p>
 
 <h2 id="finding-staff-systems-as-the-first-act-of-recognition">Finding staff systems as the first act of recognition</h2>
 <p>The pipeline begins with staff detection, because everything else is measured relative to the five lines and their spacing. The engine estimates line thickness and the gap between lines, then uses that gap as a unit of measurement for locating every note's vertical position.</p>
-<p>Next comes symbol segmentation, where the image is broken into candidate objects — a filled oval here, a vertical stem there, a beam connecting two flags. This is genuinely hard when symbols collide: a note head touching a slur, or two beamed sixteenths crowding a barline, forces the engine to decide where one object ends and another begins.</p>
+<p>Next comes symbol segmentation, where the image is broken into candidate objects ? a filled oval here, a vertical stem there, a beam connecting two flags. This is genuinely hard when symbols collide: a note head touching a slur, or two beamed sixteenths crowding a barline, forces the engine to decide where one object ends and another begins.</p>
 <p>Finally, semantic reconstruction assembles those objects into music, applying the key signature, honoring accidentals that persist through a measure, and placing events on a time grid. MidiAI Studio tracks a confidence level through this stage, and a low score on a passage is an honest flag that a human should look before that measure is trusted.</p>
 
 <h2 id="segmenting-note-heads-stems-beams-and-flags">Segmenting note heads, stems, beams, and flags</h2>
 <h3>Two scans of the same Bach chorale, one clean and one photocopied</h3>
-<p>Take a Bach four-part chorale — dense, vertical, every beat a full chord — and feed the engine two versions: a crisp publisher PDF and a fifth-generation photocopy from a choir folder. The music is identical; the pixels are not.</p>
+<p>Take a Bach four-part chorale ? dense, vertical, every beat a full chord ? and feed the engine two versions: a crisp publisher PDF and a fifth-generation photocopy from a choir folder. The music is identical; the pixels are not.</p>
 <p>On the clean scan, staff detection nails the line spacing and the chords resolve cleanly, with accidentals correctly carried across each measure. On the photocopy, thickened lines make the engine occasionally merge a note head with its neighbor, and a faint natural sign gets missed, briefly turning an inner voice sharp.</p>
-<p>The lesson is not that OMR is unreliable — it is that OMR reflects its input. Feed MidiAI Studio the clean scan and the chorale comes through nearly perfect; feed it the murky copy and the confidence flags point you straight to the two measures that need eyes.</p>
+<p>The lesson is not that OMR is unreliable ? it is that OMR reflects its input. Feed MidiAI Studio the clean scan and the chorale comes through nearly perfect; feed it the murky copy and the confidence flags point you straight to the two measures that need eyes.</p>
 <figure class="seo-figure seo-figure-mid">
 <img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for optical music recognition OMR" title="Supporting view for optical music recognition OMR" width="1280" height="720" loading="lazy" decoding="async">
-<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “optical music recognition OMR”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for ��optical music recognition OMR��.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
 </figure>
 <aside class="seo-cta-box" data-cta="explainer-mid" aria-label="Call to action">
-<h2>See the concepts behind “optical music recognition OMR” in the product</h2>
+<h2>See the concepts behind ��optical music recognition OMR�� in the product</h2>
 <p>After you understand the idea, try one concrete conversion so theory turns into muscle memory.</p>
-<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article?or jump to a trial conversion while the example is fresh.</p>
 <p class="seo-cta-actions">
 <a class="primary" href="https://midiaistudio.com/product.html">Explore MidiAI Studio</a>
 <a class="secondary" href="https://midiaistudio.com/downloads.html">Try the installer</a>
@@ -252,7 +252,7 @@
 
 <h2 id="resolving-accidentals-against-key-and-prior-measures">Resolving accidentals against key and prior measures</h2>
 <ol class="seo-steps">
-<li><strong>Judge your source the way the engine will.</strong> Before converting, look at your scan at 100% zoom. If you can see broken staff lines or filled-in note heads, the engine sees the same damage — clean the image or find a better source first.</li>
+<li><strong>Judge your source the way the engine will.</strong> Before converting, look at your scan at 100% zoom. If you can see broken staff lines or filled-in note heads, the engine sees the same damage ? clean the image or find a better source first.</li>
 <li><strong>Let staff detection settle before reading pitches.</strong> Confirm the engine found every system and did not skip a cramped one at a page break. A missed staff means an entire line of music silently vanishes from the output.</li>
 <li><strong>Scan the confidence flags first.</strong> Rather than proofreading everything, jump straight to the measures the engine marked as uncertain. That is where recognition and reality are most likely to diverge.</li>
 <li><strong>Check accidental persistence within measures.</strong> A single missed sharp or natural changes every later instance in that bar. Verify the passages with lots of accidentals, since that is where the rules are easiest to trip over.</li>
@@ -279,41 +279,30 @@
 
 <h2 id="scanned-engravings-versus-born-digital-pdfs">Scanned engravings versus born-digital PDFs</h2>
 <p>One reason OMR feels almost magical is that music notation is a shorthand designed for humans who already understand the conventions. A performer knows a courtesy accidental is reassurance, not a change; teaching an engine that same nuance is the frontier where recognition research still lives.</p>
-<p>Errors in OMR are rarely random — they cascade. A misjudged staff spacing at the top of a page nudges every pitch decision below it, which is why the most efficient correction strategy always works top-down. Fix the ruler and many downstream measurements fix themselves.</p>
+<p>Errors in OMR are rarely random ? they cascade. A misjudged staff spacing at the top of a page nudges every pitch decision below it, which is why the most efficient correction strategy always works top-down. Fix the ruler and many downstream measurements fix themselves.</p>
 
 <h2 id="how-recognition-errors-cascade-down-a-page">How recognition errors cascade down a page</h2>
-<p>It is worth appreciating how much context the engine juggles. The identity of a single note depends on its clef, the key signature, any accidental earlier in the bar, and its exact vertical position — four pieces of evidence resolved in an instant. When MidiAI Studio gets a dense chorale right, that is dozens of these micro-judgments landing in a row.</p>
+<p>It is worth appreciating how much context the engine juggles. The identity of a single note depends on its clef, the key signature, any accidental earlier in the bar, and its exact vertical position ? four pieces of evidence resolved in an instant. When MidiAI Studio gets a dense chorale right, that is dozens of these micro-judgments landing in a row.</p>
 <p>The practical takeaway is empowering rather than discouraging: because you understand the pipeline, you can aim your effort precisely. Clean the image, verify the structure, follow the confidence flags, and the vast majority of a page needs no attention at all.</p>
-
-<aside class="seo-cta-box" data-cta="explainer-end" aria-label="Call to action">
-<h2>See the concepts behind “optical music recognition OMR” in the product</h2>
-<p>After you understand the idea, try one concrete conversion so theory turns into muscle memory.</p>
-
-<p class="seo-cta-actions">
-<a class="primary" href="https://midiaistudio.com/product.html">Explore MidiAI Studio</a>
-<a class="secondary" href="https://midiaistudio.com/downloads.html">Try the installer</a>
-<a class="ghost" href="https://midiaistudio.com/guides/midi-converter-faq.html">Read converter FAQ</a>
-</p>
-</aside>
 <section class="seo-faq" aria-label="FAQ" id="faq">
 <h2>FAQ</h2>
-<p class="seo-faq-intro">Straight answers for musicians researching <strong>optical music recognition OMR</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>optical music recognition OMR</strong>. Expand any question?answers stay on this page so you do not bounce away mid-read.</p>
 <details open><summary>Is optical music recognition the same technology as text OCR?</summary><p>They share the idea of reading pixels into meaning, but OMR is far more complex because music is two-dimensional and its symbols overlap. Text flows in lines; notation stacks pitch vertically and time horizontally at once.</p></details>
 <details><summary>Why does the same tool recognize one score perfectly and another poorly?</summary><p>The difference is almost always the source image. Clean, high-contrast engravings give the engine sharp geometry, while faded or skewed scans degrade every stage from staff detection onward.</p></details>
-<details><summary>What does a low recognition confidence score actually mean?</summary><p>It means the engine found the passage ambiguous — perhaps overlapping symbols or a faint mark — and is flagging it for review. Treat it as a helpful pointer to where your attention is best spent.</p></details>
+<details><summary>What does a low recognition confidence score actually mean?</summary><p>It means the engine found the passage ambiguous ? perhaps overlapping symbols or a faint mark ? and is flagging it for review. Treat it as a helpful pointer to where your attention is best spent.</p></details>
 <details><summary>Can OMR read handwritten manuscript scores?</summary><p>Handwriting is the hardest case because symbol shapes vary enormously between writers. Recognition of neat manuscript is possible but expects far more correction than engraved print.</p></details>
-<details><summary>Does recognizing a score give me sound directly?</summary><p>No — recognition produces structured data, and a separate playback stage turns that data into audio via MIDI. Keeping the two stages distinct helps you diagnose whether a problem is reading or rendering.</p></details>
+<details><summary>Does recognizing a score give me sound directly?</summary><p>No ? recognition produces structured data, and a separate playback stage turns that data into audio via MIDI. Keeping the two stages distinct helps you diagnose whether a problem is reading or rendering.</p></details>
 </section>
 <nav class="seo-related" id="related-guides" aria-label="Related guides">
-<h2>Related guides for “optical music recognition OMR”</h2>
-<p class="seo-related-lead">Hand-picked from the <strong>Sheet music &amp; OMR</strong> cluster and nearby intents—not a generic footer dump.</p>
-<a href="../pdf-to-midi.html"><strong>Pillar · PDF to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
-<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">convert PDF sheet music to MIDI · how-to</span></a>
-<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">editable MIDI from PDF scores · how-to</span></a>
-<a href="./how-to-edit-sheet-music-digitally.html"><strong>Editing Sheet Music Digitally: A Practical Approach</strong><br><span class="seo-related-meta">edit sheet music digitally · how-to</span></a>
-<a href="./pdf-to-musicxml.html"><strong>Turning a PDF Into MusicXML You Can Re-Engrave</strong><br><span class="seo-related-meta">PDF to MusicXML conversion · how-to</span></a>
-<a href="./audio-to-midi-ai.html"><strong>How AI Turns Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby · AI audio transcription to MIDI</span></a>
-<a href="./musicxml-explained.html"><strong>What MusicXML Is and Why It Matters</strong><br><span class="seo-related-meta">Nearby · what is MusicXML format</span></a>
+<h2>Related guides for ��optical music recognition OMR��</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>Sheet music &amp; OMR</strong> cluster and nearby intents?not a generic footer dump.</p>
+<a href="../pdf-to-midi.html"><strong>Pillar �� PDF to MIDI</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">convert PDF sheet music to MIDI �� how-to</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">editable MIDI from PDF scores �� how-to</span></a>
+<a href="./how-to-edit-sheet-music-digitally.html"><strong>Editing Sheet Music Digitally: A Practical Approach</strong><br><span class="seo-related-meta">edit sheet music digitally �� how-to</span></a>
+<a href="./pdf-to-musicxml.html"><strong>Turning a PDF Into MusicXML You Can Re-Engrave</strong><br><span class="seo-related-meta">PDF to MusicXML conversion �� how-to</span></a>
+<a href="./audio-to-midi-ai.html"><strong>How AI Turns Audio Into MIDI</strong><br><span class="seo-related-meta">Nearby �� AI audio transcription to MIDI</span></a>
+<a href="./musicxml-explained.html"><strong>What MusicXML Is and Why It Matters</strong><br><span class="seo-related-meta">Nearby �� what is MusicXML format</span></a>
 <a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
 <a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
 </nav>
@@ -324,19 +313,23 @@
 
     </article>
   </main>
-  <footer class="site-footer legal-footer">
+          <footer class="site-footer legal-footer">
     <div class="footer-main">
-      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-brand"><img src="../../assets/images/symbol.png" alt="MidiAI Studio" width="32" height="32" title="MidiAI Studio"><div><strong>MidiAI Studio</strong><p>AI ��� MIDI ��ȯ ����Ʈ����</p></div></div>
       <div class="footer-links">
-        
-        <a href="../index.html">Guides</a><a href="../../support.html">Support</a>
+        <a href="../../support.html">�������</a><a href="../../terms.html">�̿���</a><a href="../../privacy.html">��������ó����ħ</a><a href="../../refund.html">ȯ����å</a><a href="../../business-info.html">���������</a>
       </div>
     </div>
-    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+    <div class="business-box">
+      <span>��ȣ: �̵��̾��̽�Ʃ���</span><span>��ǥ��: ����ȯ</span><span>����ڵ�Ϲ�ȣ: 332-22-02381</span>
+      <span>����� �ּ�: ��󳲵� â���� ���걸 â�����780���� 47, 1101ȣ</span><span>��ǥ��ȭ: 010-2166-5563</span>
+      <span>����Ǹž�: ��2026-â������-0312ȣ</span><span>�̸���: midiaistudio@gmail.com</span>
+    </div>
+    <div class="footer-copy">�� <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
   <script>window.MIDIAI_BASE_PATH='../../';</script>
   <script type="module" src="../../assets/js/config.js"></script>
-  <script type="module" src="../../assets/js/app.js?v=v104-body-full"></script>
+  <script type="module" src="../../assets/js/app.js?v=v106-drop-zone"></script>
 </body>
 </html>

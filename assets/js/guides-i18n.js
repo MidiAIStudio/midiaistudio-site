@@ -2891,6 +2891,11 @@ const PHRASES = {
     en: "Windows MIDI converter software checklist · checklist",
     ja: "Windows MIDI コンバータ・ソフトのチェックリスト · チェックリスト"
   },
+  "Additional practice tip: isolate one musical dimension per listen-pass—pitch only, then rhythm only, then dynamics only. Separating attention reveals different error classes that a single casual listen will miss, especially after dense passages.": {
+    ko: "추가 연습 팁: 한 번의 청취마다 음악적 차원을 하나씩만 분리하세요—음정만, 그다음 리듬만, 그다음 다이내믹만. 주의를 나누면 한 번의 대충 듣기에서는 놓치기 쉬운 서로 다른 오류 유형이 드러납니다. 특히 밀집 패시지 이후에 그렇습니다.",
+    en: "Additional practice tip: isolate one musical dimension per listen-pass—pitch only, then rhythm only, then dynamics only. Separating attention reveals different error classes that a single casual listen will miss, especially after dense passages.",
+    ja: "追加の練習ヒント: 一回の試聴ごとに音楽的な次元を一つだけ切り分けてください—音高だけ、次にリズムだけ、次に強弱だけ。注意を分けると、一度のざっとした試聴では見落とす異なる誤りタイプが見えてきます。特に密集パッセージの後で顕著です。"
+  },
   "Additional practice tip: isolate one musical dimension per listen-pass—pitch only, then rhythm only, then dynamics only. Separating attention reveals different error classes that a single casual listen will miss, especially after 832-note dense passages.": {
     ko: "추가 연습 팁: 한 번의 청취마다 음악적 차원을 하나씩만 분리하세요—음정만, 그다음 리듬만, 그다음 다이내믹만. 주의를 나누면 한 번의 대충 듣기에서는 놓치기 쉬운 서로 다른 오류 유형이 드러납니다. 특히 832음표의 밀집 패시지 이후에 그렇습니다.",
     en: "Additional practice tip: isolate one musical dimension per listen-pass—pitch only, then rhythm only, then dynamics only. Separating attention reveals different error classes that a single casual listen will miss, especially after 832-note dense passages.",
@@ -13355,6 +13360,11 @@ const PHRASES = {
     ko: "지원되는 로컬 형식에는 MP3, WAV 및 관련 오디오 유형이 포함됩니다.",
     en: "Supported local formats include MP3, WAV, and related audio types.",
     ja: "対応するローカル形式には、MP3、WAV、および関連オーディオ種別が含まれます。"
+  },
+  "Drop or select a local file": {
+    ko: "로컬파일을 드롭 또는 선택",
+    en: "Drop or select a local file",
+    ja: "ローカルファイルをドロップまたは選択"
   },
   "Supporting view for Ableton Live converted MIDI": {
     ko: "Ableton Live 변환 MIDI용 보조 보기",

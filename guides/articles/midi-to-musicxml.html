@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -7,7 +7,7 @@
   <meta name="description" content="Going from a MIDI performance to clean MusicXML notation means adding the written meaning MIDI never stored. This guide covers quantization, spelling, and structure for a readable score.">
   <meta name="keywords" content="MIDI to MusicXML notation, performance to engraving, quantize before MusicXML">
   <meta name="robots" content="index, follow, max-image-preview:large">
-  <meta name="author" content="최정환">
+  <meta name="author" content="����ȯ">
   <meta name="theme-color" content="#0b1020">
   <link rel="canonical" href="https://midiaistudio.com/guides/articles/midi-to-musicxml.html">
   <link rel="icon" href="../../assets/images/symbol.png" type="image/png">
@@ -19,7 +19,7 @@
   <meta property="og:description" content="Going from a MIDI performance to clean MusicXML notation means adding the written meaning MIDI never stored. This guide covers quantization, spelling, and structure for a readable score.">
   <meta property="og:url" content="https://midiaistudio.com/guides/articles/midi-to-musicxml.html">
   <meta property="og:image" content="https://midiaistudio.com/assets/images/product/sheet-music-pdf-musicxml-convert.jpg">
-  <meta property="article:author" content="최정환">
+  <meta property="article:author" content="����ȯ">
   <meta property="article:modified_time" content="2026-07-20">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="MIDI to MusicXML: Turning a Performance Into Readable Notation">
@@ -29,7 +29,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../../assets/css/style.css?v=v85-trust-fix">
-  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-trust-fix">
+  <link rel="stylesheet" href="../../assets/css/seo-content.css?v=20260720-no-gutter-bleed">
   <script defer src="../../assets/js/analytics.js"></script>
   <script type="application/ld+json">
 {
@@ -43,12 +43,12 @@
   "keywords": "MIDI to MusicXML notation, performance to engraving, quantize before MusicXML",
   "author": {
     "@type": "Person",
-    "name": "최정환",
+    "name": "����ȯ",
     "jobTitle": "Founder & Product Lead",
     "url": "https://midiaistudio.com/about.html",
     "worksFor": {
       "@type": "Organization",
-      "name": "미디에이아이스튜디오",
+      "name": "�̵��̾��̽�Ʃ���",
       "url": "https://midiaistudio.com"
     }
   },
@@ -77,7 +77,7 @@
       "name": "Why is converting MIDI to MusicXML harder than the other direction?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Because MIDI lacks the written information notation needs — key, spelling, beaming, and voicing — so all of it must be inferred. Going from MusicXML to MIDI merely drops detail, while going to MusicXML must reconstruct it."
+        "text": "Because MIDI lacks the written information notation needs ? key, spelling, beaming, and voicing ? so all of it must be inferred. Going from MusicXML to MIDI merely drops detail, while going to MusicXML must reconstruct it."
       }
     },
     {
@@ -101,7 +101,7 @@
       "name": "Do I need to quantize MIDI before exporting MusicXML?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Effectively yes — performance timing must be rounded to notatable rhythms before it can be written on a staff. Choosing a grid that matches the music's subdivisions keeps the page readable."
+        "text": "Effectively yes ? performance timing must be rounded to notatable rhythms before it can be written on a staff. Choosing a grid that matches the music's subdivisions keeps the page readable."
       }
     },
     {
@@ -109,7 +109,7 @@
       "name": "Will MIDI-to-MusicXML give me a print-ready score immediately?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Usually not quite. Because MIDI omits notation detail, the export is a strong draft that benefits from a short polish pass — confirming voice splits, beams, and spacing — before it reads its best."
+        "text": "Usually not quite. Because MIDI omits notation detail, the export is a strong draft that benefits from a short polish pass ? confirming voice splits, beams, and spacing ? before it reads its best."
       }
     }
   ]
@@ -153,7 +153,7 @@
   <a class="seo-skip" href="#guide-main">Skip to guide content</a>
   <header class="topbar">
     <a class="brand" href="../../index.html"><img class="brand-symbol" src="../../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40" title="MidiAI Studio"><b>MidiAI Studio</b></a>
-    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">☰</button>
+    <button id="menuBtn" class="menu-btn" type="button" aria-label="Open menu">?</button>
     <nav id="mainNav" aria-label="Primary">
       <a href="../../index.html">Home</a>
       <a href="../../product.html">Product</a>
@@ -168,14 +168,14 @@
   <main class="portal-main" id="guide-main">
     <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
       <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
-<a href="../../index.html">Home</a> ›
-<a href="../index.html">Guides</a> ›
-<a href="../musicxml.html">MusicXML</a> ›
-<span class="seo-crumb-cluster">MusicXML &amp; score interchange</span> ›
+<a href="../../index.html">Home</a> ?
+<a href="../index.html">Guides</a> ?
+<a href="../musicxml.html">MusicXML</a> ?
+<span class="seo-crumb-cluster">MusicXML &amp; score interchange</span> ?
 <span aria-current="page">Converting MIDI Into MusicXML Notation</span>
 </nav>
       
-<p class="pill portal-pill" style="display:inline-block">Guide · MusicXML &amp; score interchange</p>
+<p class="pill portal-pill" style="display:inline-block">Guide �� MusicXML &amp; score interchange</p>
 <h1>Converting MIDI Into MusicXML Notation</h1>
 <div class="seo-meta" role="group" aria-label="Article metadata">
   <span><time datetime="2026-07-20">Published 2026-07-20</time></span>
@@ -187,14 +187,14 @@
 <aside class="seo-author" aria-label="About the author">
 <div class="seo-author-mark" aria-hidden="true">M</div>
 <div class="seo-author-copy">
-<p class="seo-author-name"><a href="../../about.html">최정환</a> · Founder &amp; Product Lead</p>
+<p class="seo-author-name"><a href="../../about.html">����ȯ</a> �� Founder &amp; Product Lead</p>
 <p class="seo-author-bio">Builds MidiAI Studio for practical AI MIDI conversion, score workflows, and musician-first editing on Windows.</p>
 <p class="seo-author-links">
 <a href="../../about.html">About &amp; credentials</a>
-· <a href="../../business-info.html">Business info</a>
-· <a href="../../patch-notes.html">Update history</a>
-· <a href="../../support.html">Support</a>
-· <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
+�� <a href="../../business-info.html">Business info</a>
+�� <a href="../../patch-notes.html">Update history</a>
+�� <a href="../../support.html">Support</a>
+�� <a href="mailto:midiaistudio@gmail.com">midiaistudio@gmail.com</a>
 </p>
 </div>
 </aside>
@@ -213,12 +213,12 @@
 <li><a href="#related-guides">Related guides</a></li>
 </ol>
 </nav>
-<p>Converting MIDI to MusicXML is the harder cousin of converting MusicXML to MIDI, and understanding why reveals something fundamental about both formats. MIDI records a performance without the written scaffolding — no key signature, no note spelling, no beaming — so producing notation from it means reconstructing meaning the file never held.</p>
+<p>Converting MIDI to MusicXML is the harder cousin of converting MusicXML to MIDI, and understanding why reveals something fundamental about both formats. MIDI records a performance without the written scaffolding ? no key signature, no note spelling, no beaming ? so producing notation from it means reconstructing meaning the file never held.</p>
 <p>This is the same challenge as printing sheet music from MIDI, but aimed at an interchange file rather than a page. The goal is a MusicXML that opens cleanly in any notation program as a readable score, which requires the conversion to make many written-language decisions the performance data left open.</p>
-<p>This guide walks through those decisions in order, so that a MIDI file — whether recorded or produced by MidiAI Studio — becomes MusicXML you can hand to a notation program and get a legible score rather than a mess of un-spelled, un-beamed notes.</p>
+<p>This guide walks through those decisions in order, so that a MIDI file ? whether recorded or produced by MidiAI Studio ? becomes MusicXML you can hand to a notation program and get a legible score rather than a mess of un-spelled, un-beamed notes.</p>
 <figure class="seo-figure">
 <img src="../../assets/images/product/sheet-music-pdf-musicxml-convert.jpg" alt="MidiAI Studio exporting a quantized, correctly-spelled MusicXML grand staff from a recorded two-hand piano take." title="MidiAI Studio exporting a quantized, correctly-spelled MusicXML grand staff from a recorded two-hand piano take." width="1280" height="720" loading="lazy" decoding="async">
-<figcaption><span class="seo-fig-cap">MidiAI Studio exporting a quantized, correctly-spelled MusicXML grand staff from a recorded two-hand piano take.</span> <span class="seo-fig-credit">Screenshot · MidiAI Studio · illustrates “MIDI to MusicXML notation”</span></figcaption>
+<figcaption><span class="seo-fig-cap">MidiAI Studio exporting a quantized, correctly-spelled MusicXML grand staff from a recorded two-hand piano take.</span> <span class="seo-fig-credit">Screenshot �� MidiAI Studio �� illustrates ��MIDI to MusicXML notation��</span></figcaption>
 </figure>
 
 <h2 id="why-midi-lacks-the-information-notation-needs">Why MIDI lacks the information notation needs</h2>
@@ -234,15 +234,15 @@
 <h3>Notating a recorded two-hand piano take for a student</h3>
 <p>Imagine you recorded a two-hand piano piece to MIDI in D major at a loose 90 BPM, and you want clean notation in MusicXML to give a student. Played literally, the MIDI is expressive but un-notatable, full of timing nuance no reader could parse.</p>
 <p>MidiAI Studio quantizes the timing to a sixteenth-note grid, infers D major and spells the raised leading tone as C-sharp, and splits the take across treble and bass staves. It groups the left-hand chords, beams the right-hand runs, and adds the ties the performance implied across barlines.</p>
-<p>The exported MusicXML opens in the student's notation program as a readable grand-staff score. A short polish pass — confirming one voice split and adjusting a beam grouping — finishes it, turning a personal recording into teaching material.</p>
+<p>The exported MusicXML opens in the student's notation program as a readable grand-staff score. A short polish pass ? confirming one voice split and adjusting a beam grouping ? finishes it, turning a personal recording into teaching material.</p>
 <figure class="seo-figure seo-figure-mid">
 <img src="../../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio detail for MIDI to MusicXML notation" title="Supporting view for MIDI to MusicXML notation" width="1280" height="720" loading="lazy" decoding="async">
-<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for “MIDI to MusicXML notation”.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
+<figcaption><span class="seo-fig-cap">Supporting view while you follow the steps for ��MIDI to MusicXML notation��.</span> <span class="seo-fig-credit">MidiAI Studio UI</span></figcaption>
 </figure>
 <aside class="seo-cta-box" data-cta="how-to-mid" aria-label="Call to action">
-<h2>Practice “MIDI to MusicXML notation” in MidiAI Studio</h2>
+<h2>Practice ��MIDI to MusicXML notation�� in MidiAI Studio</h2>
 <p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
-<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article—or jump to a trial conversion while the example is fresh.</p>
+<p class="seo-cta-note">Quick pause: bookmark this section, then finish the article?or jump to a trial conversion while the example is fresh.</p>
 <p class="seo-cta-actions">
 <a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
 <a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
@@ -278,43 +278,32 @@
 </ul>
 
 <h2 id="exporting-musicxml-your-notation-program-will-love">Exporting MusicXML your notation program will love</h2>
-<p>This conversion is the clearest demonstration of what MIDI deliberately leaves out. Working from a performance to a page, you feel every gap: the ambiguity of every enharmonic pitch, the absence of a key, the missing voice boundaries. Rather than a flaw, this is MIDI being honest about its job — it stores a performance, and notation is a different language it never claimed to speak.</p>
+<p>This conversion is the clearest demonstration of what MIDI deliberately leaves out. Working from a performance to a page, you feel every gap: the ambiguity of every enharmonic pitch, the absence of a key, the missing voice boundaries. Rather than a flaw, this is MIDI being honest about its job ? it stores a performance, and notation is a different language it never claimed to speak.</p>
 <p>Quantization sits at the heart of the difficulty and deserves respect as an editorial act. Deciding that a loosely-played passage is really straight sixteenths, or a triplet feel, is a musical judgment that shapes the entire notated result. MidiAI Studio gives you grid control precisely because the performance alone cannot settle the question; only musical intent can.</p>
 
 <h2 id="the-manual-polish-midi-to-notation-always-needs">The manual polish MIDI-to-notation always needs</h2>
 <p>Spelling is a quietly deep problem because it depends on context a bare pitch number cannot supply. The same MIDI note is a G-sharp in one harmonic context and an A-flat in another, and getting it right means reasoning about the key and the line. When the conversion spells a chromatic passage the way a musician would, that is real musical inference at work, not mere lookup.</p>
-<p>The honest expectation to carry is that MIDI-to-MusicXML produces a first engraving, not a final one. The reconstruction is impressive but inherently incomplete, and a short human polish — confirming voices, adjusting beams, refining spacing — is part of the process rather than a sign of failure. Embracing that final pass is what turns a good conversion into a clean, teachable score.</p>
-
-<aside class="seo-cta-box" data-cta="how-to-end" aria-label="Call to action">
-<h2>Practice “MIDI to MusicXML notation” in MidiAI Studio</h2>
-<p>Open the Windows app, run a short test conversion for this workflow, then edit the draft before you export.</p>
-
-<p class="seo-cta-actions">
-<a class="primary" href="https://midiaistudio.com/downloads.html">Download free trial</a>
-<a class="secondary" href="https://midiaistudio.com/product.html">See product features</a>
-<a class="ghost" href="https://midiaistudio.com/guides/musicxml.html">Back to pillar guide</a>
-</p>
-</aside>
+<p>The honest expectation to carry is that MIDI-to-MusicXML produces a first engraving, not a final one. The reconstruction is impressive but inherently incomplete, and a short human polish ? confirming voices, adjusting beams, refining spacing ? is part of the process rather than a sign of failure. Embracing that final pass is what turns a good conversion into a clean, teachable score.</p>
 <section class="seo-faq" aria-label="FAQ" id="faq">
 <h2>FAQ</h2>
-<p class="seo-faq-intro">Straight answers for musicians researching <strong>MIDI to MusicXML notation</strong>. Expand any question—answers stay on this page so you do not bounce away mid-read.</p>
-<details open><summary>Why is converting MIDI to MusicXML harder than the other direction?</summary><p>Because MIDI lacks the written information notation needs — key, spelling, beaming, and voicing — so all of it must be inferred. Going from MusicXML to MIDI merely drops detail, while going to MusicXML must reconstruct it.</p></details>
+<p class="seo-faq-intro">Straight answers for musicians researching <strong>MIDI to MusicXML notation</strong>. Expand any question?answers stay on this page so you do not bounce away mid-read.</p>
+<details open><summary>Why is converting MIDI to MusicXML harder than the other direction?</summary><p>Because MIDI lacks the written information notation needs ? key, spelling, beaming, and voicing ? so all of it must be inferred. Going from MusicXML to MIDI merely drops detail, while going to MusicXML must reconstruct it.</p></details>
 <details><summary>How does the converter decide how to spell notes from MIDI?</summary><p>It infers the key from the pitch content and spells each note as the sharp or flat a reader would expect in that key. Supplying the key yourself makes this even more reliable.</p></details>
 <details><summary>Can a flat MIDI stream become a proper multi-voice score?</summary><p>Yes, by splitting it across staves and separating independent lines into voices. Clean voicing is what allows correct stems, rests, and beaming in the resulting notation.</p></details>
-<details><summary>Do I need to quantize MIDI before exporting MusicXML?</summary><p>Effectively yes — performance timing must be rounded to notatable rhythms before it can be written on a staff. Choosing a grid that matches the music's subdivisions keeps the page readable.</p></details>
-<details><summary>Will MIDI-to-MusicXML give me a print-ready score immediately?</summary><p>Usually not quite. Because MIDI omits notation detail, the export is a strong draft that benefits from a short polish pass — confirming voice splits, beams, and spacing — before it reads its best.</p></details>
+<details><summary>Do I need to quantize MIDI before exporting MusicXML?</summary><p>Effectively yes ? performance timing must be rounded to notatable rhythms before it can be written on a staff. Choosing a grid that matches the music's subdivisions keeps the page readable.</p></details>
+<details><summary>Will MIDI-to-MusicXML give me a print-ready score immediately?</summary><p>Usually not quite. Because MIDI omits notation detail, the export is a strong draft that benefits from a short polish pass ? confirming voice splits, beams, and spacing ? before it reads its best.</p></details>
 </section>
 <nav class="seo-related" id="related-guides" aria-label="Related guides">
-<h2>Related guides for “MIDI to MusicXML notation”</h2>
-<p class="seo-related-lead">Hand-picked from the <strong>MusicXML &amp; score interchange</strong> cluster and nearby intents—not a generic footer dump.</p>
-<a href="../musicxml.html"><strong>Pillar · MusicXML</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
-<a href="./midi-to-pdf-sheet-music.html"><strong>Turning a MIDI File Into Printable Sheet Music</strong><br><span class="seo-related-meta">MIDI to PDF sheet music · how-to</span></a>
-<a href="./musicxml-to-midi.html"><strong>Converting MusicXML Into a MIDI Performance</strong><br><span class="seo-related-meta">MusicXML to MIDI playback · how-to</span></a>
-<a href="./score-editor-workflow.html"><strong>Building a Reliable Score Editor Workflow</strong><br><span class="seo-related-meta">MIDI score editor workflow · workflow</span></a>
-<a href="./musicxml-explained.html"><strong>What MusicXML Is and Why It Matters</strong><br><span class="seo-related-meta">what is MusicXML format · explainer</span></a>
-<a href="./musicxml-vs-midi.html"><strong>MusicXML vs MIDI: Choosing the Right Format</strong><br><span class="seo-related-meta">MusicXML vs MIDI differences · comparison</span></a>
-<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby · convert PDF sheet music to MIDI</span></a>
-<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby · editable MIDI from PDF scores</span></a>
+<h2>Related guides for ��MIDI to MusicXML notation��</h2>
+<p class="seo-related-lead">Hand-picked from the <strong>MusicXML &amp; score interchange</strong> cluster and nearby intents?not a generic footer dump.</p>
+<a href="../musicxml.html"><strong>Pillar �� MusicXML</strong><br><span class="seo-related-meta">Start here if you need the head-term overview</span></a>
+<a href="./midi-to-pdf-sheet-music.html"><strong>Turning a MIDI File Into Printable Sheet Music</strong><br><span class="seo-related-meta">MIDI to PDF sheet music �� how-to</span></a>
+<a href="./musicxml-to-midi.html"><strong>Converting MusicXML Into a MIDI Performance</strong><br><span class="seo-related-meta">MusicXML to MIDI playback �� how-to</span></a>
+<a href="./score-editor-workflow.html"><strong>Building a Reliable Score Editor Workflow</strong><br><span class="seo-related-meta">MIDI score editor workflow �� workflow</span></a>
+<a href="./musicxml-explained.html"><strong>What MusicXML Is and Why It Matters</strong><br><span class="seo-related-meta">what is MusicXML format �� explainer</span></a>
+<a href="./musicxml-vs-midi.html"><strong>MusicXML vs MIDI: Choosing the Right Format</strong><br><span class="seo-related-meta">MusicXML vs MIDI differences �� comparison</span></a>
+<a href="./pdf-to-midi-complete-guide.html"><strong>Turning a PDF Score Into Playable, Editable MIDI</strong><br><span class="seo-related-meta">Nearby �� convert PDF sheet music to MIDI</span></a>
+<a href="./pdf-sheet-music-to-editable-midi.html"><strong>Making a PDF Score Editable Instead of Just Viewable</strong><br><span class="seo-related-meta">Nearby �� editable MIDI from PDF scores</span></a>
 <a href="../index.html"><strong>All guides hub</strong><br><span class="seo-related-meta">Browse by pillar and cluster</span></a>
 <a href="../topical-map.html"><strong>Topical map</strong><br><span class="seo-related-meta">See primary-keyword ownership</span></a>
 </nav>
@@ -325,19 +314,23 @@
 
     </article>
   </main>
-  <footer class="site-footer legal-footer">
+          <footer class="site-footer legal-footer">
     <div class="footer-main">
-      <div><strong>MidiAI Studio</strong><p>미디에이아이스튜디오</p></div>
+      <div class="footer-brand"><img src="../../assets/images/symbol.png" alt="MidiAI Studio" width="32" height="32" title="MidiAI Studio"><div><strong>MidiAI Studio</strong><p>AI ��� MIDI ��ȯ ����Ʈ����</p></div></div>
       <div class="footer-links">
-        
-        <a href="../index.html">Guides</a><a href="../../support.html">Support</a>
+        <a href="../../support.html">�������</a><a href="../../terms.html">�̿���</a><a href="../../privacy.html">��������ó����ħ</a><a href="../../refund.html">ȯ����å</a><a href="../../business-info.html">���������</a>
       </div>
     </div>
-    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+    <div class="business-box">
+      <span>��ȣ: �̵��̾��̽�Ʃ���</span><span>��ǥ��: ����ȯ</span><span>����ڵ�Ϲ�ȣ: 332-22-02381</span>
+      <span>����� �ּ�: ��󳲵� â���� ���걸 â�����780���� 47, 1101ȣ</span><span>��ǥ��ȭ: 010-2166-5563</span>
+      <span>����Ǹž�: ��2026-â������-0312ȣ</span><span>�̸���: midiaistudio@gmail.com</span>
+    </div>
+    <div class="footer-copy">�� <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
   <script>window.MIDIAI_BASE_PATH='../../';</script>
   <script type="module" src="../../assets/js/config.js"></script>
-  <script type="module" src="../../assets/js/app.js?v=v104-body-full"></script>
+  <script type="module" src="../../assets/js/app.js?v=v106-drop-zone"></script>
 </body>
 </html>
