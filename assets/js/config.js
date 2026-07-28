@@ -26,11 +26,13 @@ window.MIDIAI_CONFIG = {
   priceValueGlobal: "65.00",
   priceDisplayGlobal: "$65 USD",
   plan: "lifetime",
+  // PortOne V2 client keys (browser-safe channel keys only — NEVER put API Secret here).
+  // Go-live: replace the KakaoPay channel key below with your live channel key from PortOne Console,
+  // then set portoneMode to "live". Keep storeId unless PortOne issues a different store.
   portoneStoreId: "store-034b6f5a-1dd6-4ee9-a83d-4fe7d8dfb6dd",
-  // Test KakaoPay channel only — do NOT use channel-key-a7bc78b0-... (production) in this stage
-  portoneKakaoPayChannelKey: "channel-key-5aa0d34c-c202-45d8-87b3-1426db3fa31f",
-  portoneInicisChannelKey: "channel-key-52136d4d-abc7-4640-9107-5d4cae4a8e24",
-  portoneMode: "test",
+  portoneKakaoPayChannelKey: "channel-key-a7bc78b0-3724-42cd-a049-25f54563e2b6",
+  portoneInicisChannelKey: "channel-key-52136d4d-abc7-4640-9107-5d4cae4a8e24", // test (optional)
+  portoneMode: "live", // "test" | "live"
   portoneProductId: "midiai-lifetime",
   portoneOrderName: "MidiAI Studio Lifetime License",
   supportDiscordUrl: ""

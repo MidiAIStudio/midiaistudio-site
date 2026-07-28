@@ -930,7 +930,7 @@ function renderPurchasePaymentTags(){
   const box = $('purchasePaymentMethod');
   if(!box) return;
   if(isKoreanCheckout()){
-    box.innerHTML = '<span class="checkout-pay-chip">신용/체크카드</span><span class="checkout-pay-chip is-kakao">카카오페이</span>';
+    box.innerHTML = '<span class="checkout-pay-chip is-kakao">카카오페이</span>';
   } else {
     box.innerHTML = '<span class="checkout-pay-chip is-paypal">PayPal</span>';
   }
@@ -2997,12 +2997,6 @@ async function requestKakaoPayPayment(){
     paypalStatus('PortOne 카카오페이 채널키가 없습니다.', 'err');
     return;
   }
-  // Never apply production channel key in this stage.
-  if(String(CONFIG.portoneKakaoPayChannelKey).includes('a7bc78b0-3724-42cd-a049-25f54563e2b6')){
-    paypalStatus('운영 채널키가 감지되어 결제를 중단했습니다. 테스트 채널을 유지하세요.', 'err');
-    alert('운영 채널키가 감지되어 결제를 중단했습니다.');
-    return;
-  }
   const productId = CONFIG.portoneProductId || 'midiai-lifetime';
   const orderName = CONFIG.portoneOrderName || 'MidiAI Studio Lifetime License';
   const totalAmount = Number(CONFIG.priceValueKr || 90000);
@@ -3241,24 +3235,20 @@ window.midiaiInicisPay = requestInicisCardPayment;
 function renderKoreanPaymentButtons(){
   const box = $('paypalButtons');
   if(!box) return;
-  const t = purchaseLocaleText();
   box.innerHTML = `
     <div class="purchase-payment-actions">
-      <button id="inicisCardPayBtn" class="primary purchase-card-btn" type="button" onclick="window.midiaiInicisPay && window.midiaiInicisPay()">
-        <span class="payment-card-mark">CARD</span><strong>신용/체크카드 결제</strong>
-      </button>
       <button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" onclick="window.midiaiKakaoPay && window.midiaiKakaoPay()">
-        <span class="kakao-mark">pay</span><strong>${esc(t.kakaoButton || '카카오페이로 구매')}</strong>
+        <span class="kakao-mark">pay</span><strong>카카오페이로 구매</strong>
       </button>
     </div>
-    <p class="muted small purchase-test-payment-note">카카오페이는 테스트 결제 후 서버 검증을 거쳐 로그인 계정에 Lifetime 라이선스가 자동 등록됩니다. (운영 채널 미적용)</p>`;
+    <p class="muted small purchase-payment-note">결제 완료 후 서버 검증을 거쳐 현재 로그인한 Google 계정에 Lifetime 라이선스가 자동 등록됩니다.</p>`;
   applyPurchaseLifetimeGate();
 }
 function initPayPal(){
   if(!$('paypalButtons')) return;
   try{
     updatePurchaseAccountBox();
-    if(isKoreanCheckout() && (CONFIG.portoneKakaoPayChannelKey || CONFIG.portoneInicisChannelKey)){
+    if(isKoreanCheckout() && CONFIG.portoneKakaoPayChannelKey){
       renderKoreanPaymentButtons();
       return;
     }

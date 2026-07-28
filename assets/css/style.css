@@ -1289,7 +1289,7 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 .purchase-payment-actions{display:grid;gap:10px}
 .purchase-card-btn,.purchase-kakao-btn{width:100%;min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px}
 .payment-card-mark{font-size:11px;font-weight:800;letter-spacing:.06em;padding:4px 7px;border:1px solid currentColor;border-radius:5px}
-.purchase-test-payment-note{margin:10px 0 0;text-align:center}
+.purchase-test-payment-note,.purchase-payment-note{margin:10px 0 0;text-align:center}
 
 
 /* KG Inicis buyer phone */
