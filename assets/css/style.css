@@ -1174,6 +1174,23 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 .purchase-checkout-row strong{color:#fff;font-size:14px;line-height:1.4}
 .purchase-pro-card .purchase-paypal-box{margin:0;padding:0!important;border:0!important;background:transparent!important}
 .purchase-pro-card #paypalStatus{margin:10px 0 0;text-align:center}
+.purchase-result-box{margin-top:14px}
+.purchase-result-box.hidden{display:none!important}
+.purchase-success-card{
+  padding:16px 18px;
+  border-radius:16px;
+  border:1px solid rgba(54,211,153,.35);
+  background:linear-gradient(180deg,rgba(54,211,153,.12),rgba(255,255,255,.04));
+}
+.purchase-success-card h3{margin:0 0 8px;font-size:16px;letter-spacing:-.02em;color:#d8ffe9}
+.purchase-success-card p{margin:0 0 8px;font-size:13px;line-height:1.55;color:var(--muted)}
+.purchase-success-meta{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.purchase-success-meta li{
+  display:flex;justify-content:space-between;gap:12px;align-items:flex-start;
+  padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.2);border:1px solid rgba(255,255,255,.08);
+}
+.purchase-success-meta span{color:var(--muted);font-size:12px;font-weight:700;white-space:nowrap}
+.purchase-success-meta strong{color:#fff;font-size:13px;font-weight:800;text-align:right;word-break:break-all}
 .purchase-side{display:grid;gap:12px}
 .purchase-side-card{padding:16px 18px!important;border-radius:20px!important}
 .purchase-side-card h3{margin:0 0 10px!important;font-size:16px!important;letter-spacing:-.02em}

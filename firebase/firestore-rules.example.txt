@@ -26,6 +26,8 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
+      // Users may read their own orders (PayPal auto-id or PortOne paymentId).
+      // Writes are Admin SDK (Cloud Functions) or admin role only — never client license/order writes.
       allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow write: if isAdmin();
     }

@@ -587,6 +587,57 @@ function paymentId(prefix='midiai'){
   return `${prefix}-${rand}`.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40);
 }
 
+/** Unique PortOne paymentId — no email/PII; safe as Firestore doc id. */
+function makeKakaoPaymentId(uid){
+  const uidPart = String(uid || 'user').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8) || 'user';
+  const ts = Date.now().toString(36);
+  const rand = (window.crypto?.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2))
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .slice(0, 8);
+  return `midiai-kakao-${uidPart}-${ts}-${rand}`.slice(0, 64);
+}
+
+function maskEmail(email){
+  const s = String(email || '');
+  const at = s.indexOf('@');
+  if(at <= 1) return s ? '***' : '';
+  const name = s.slice(0, at);
+  const domain = s.slice(at);
+  const keep = Math.min(2, name.length);
+  return `${name.slice(0, keep)}${'*'.repeat(Math.max(1, name.length - keep))}${domain}`;
+}
+
+function requirePurchaseAuth(){
+  if(!auth || !currentUser || !currentUser.uid){
+    return { ok:false, message: purchaseLocaleText().loginAlert || 'Google 로그인 후 결제해주세요.' };
+  }
+  if(!currentUser.email){
+    return { ok:false, message: 'Google 계정 이메일을 확인할 수 없습니다. 다시 로그인해 주세요.' };
+  }
+  return { ok:true };
+}
+
+function renderPurchaseSuccess(result){
+  const box = $('purchaseResultBox');
+  if(!box) return;
+  const amount = Number(result?.amount || CONFIG.priceValueKr || 90000);
+  const amountText = amount.toLocaleString('ko-KR') + '원';
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <div class="purchase-success-card">
+      <h3>결제 및 라이선스 등록이 완료되었습니다.</h3>
+      <p>현재 로그인한 Google 계정에 MidiAI Studio 평생 라이선스가 등록되었습니다.</p>
+      <p class="muted">프로그램에서 같은 Google 계정으로 로그인하면 FULL LICENSE가 자동 적용됩니다.</p>
+      <ul class="purchase-success-meta">
+        <li><span>주문번호</span><strong>${esc(result?.paymentId || '-')}</strong></li>
+        <li><span>결제수단</span><strong>카카오페이</strong></li>
+        <li><span>결제금액</span><strong>${esc(amountText)}</strong></li>
+        <li><span>라이선스 상태</span><strong>활성화 완료</strong></li>
+        <li><span>계정</span><strong>${esc(maskEmail(result?.email || currentUser?.email || ''))}</strong></li>
+      </ul>
+    </div>`;
+}
+
 function purchaseLocaleText(){
   if(lang === 'en') return {
     saleUntil:'Until July 31',
@@ -620,7 +671,10 @@ function purchaseLocaleText(){
     kakaoReady:'KakaoPay checkout is available for Korean checkout.',
     kakaoButton:'Pay with KakaoPay',
     kakaoPreparing:'Opening KakaoPay checkout...',
-    kakaoComplete:'KakaoPay payment completed.',
+    kakaoVerifying:'Verifying payment and assigning your license...',
+    kakaoComplete:'Payment and license registration complete.',
+    kakaoCancel:'Payment was canceled.',
+    kakaoVerifyFail:'Payment completed, but license confirmation is required. Please keep your payment ID.',
     loginAlert:'Please sign in with Google before purchasing.',
     paypalAccount:(id)=>`Payment account: ${id}`,
     creating:'Creating PayPal order...',
@@ -662,7 +716,10 @@ function purchaseLocaleText(){
     kakaoReady:'KakaoPay決済が利用できます。',
     kakaoButton:'KakaoPayで決済',
     kakaoPreparing:'KakaoPay決済画面を開いています...',
-    kakaoComplete:'KakaoPay決済が完了しました。',
+    kakaoVerifying:'決済を確認し、ライセンスを付与しています...',
+    kakaoComplete:'決済とライセンス登録が完了しました。',
+    kakaoCancel:'決済がキャンセルされました。',
+    kakaoVerifyFail:'決済は完了しましたが、ライセンス確認が必要です。paymentIdを控えてください。',
     loginAlert:'Googleログイン後に決済してください。',
     paypalAccount:(id)=>`決済アカウント: ${id}`,
     creating:'PayPal注文を作成しています...',
@@ -704,7 +761,10 @@ function purchaseLocaleText(){
     kakaoReady:'카카오페이 결제를 사용할 수 있습니다.',
     kakaoButton:'카카오페이로 구매',
     kakaoPreparing:'카카오페이 결제창을 여는 중입니다...',
-    kakaoComplete:'카카오페이 결제가 완료되었습니다.',
+    kakaoVerifying:'결제를 검증하고 라이선스를 등록하는 중입니다...',
+    kakaoComplete:'결제 및 라이선스 등록이 완료되었습니다.',
+    kakaoCancel:'결제가 취소되었습니다.',
+    kakaoVerifyFail:'결제는 완료되었으나 라이선스 확인이 필요합니다. 주문번호를 보관해 주세요.',
     loginAlert:'Google 로그인 후 결제해주세요.',
     paypalAccount:(id)=>`결제 계정: ${id}`,
     creating:'PayPal 주문을 생성하는 중입니다...',
@@ -988,7 +1048,9 @@ async function loadLicense(uid){
     if($('accountMeta')){
       $('accountMeta').innerHTML=[
         metaCard('UID',uid), metaCard('Email',currentUser.email), metaCard('Display Name',currentUser.displayName),
-        metaCard('Plan',d?.plan), metaCard('Status',d?.status), metaCard('Role',isAdminUser?'admin':'user')
+        metaCard('Plan',d?.plan), metaCard('Status',d?.status),
+        metaCard('Method',d?.method),
+        metaCard('Role',isAdminUser?'admin':'user')
       ].join('');
     }
   } catch(e) {
@@ -2811,10 +2873,10 @@ async function loadPortOneSdk(){
   return sdk;
 }
 async function requestKakaoPayPayment(){
-  if(!currentUser){
-    const msg = purchaseLocaleText().loginAlert || 'Google 로그인 후 결제할 수 있습니다.';
-    paypalStatus(msg, 'err');
-    alert(msg);
+  const authCheck = requirePurchaseAuth();
+  if(!authCheck.ok){
+    paypalStatus(authCheck.message, 'err');
+    alert(authCheck.message);
     return;
   }
   if(!CONFIG.portoneStoreId || String(CONFIG.portoneStoreId).startsWith('PASTE_')){
@@ -2826,16 +2888,26 @@ async function requestKakaoPayPayment(){
     paypalStatus('PortOne 카카오페이 채널키가 없습니다.', 'err');
     return;
   }
+  // Never apply production channel key in this stage.
+  if(String(CONFIG.portoneKakaoPayChannelKey).includes('a7bc78b0-3724-42cd-a049-25f54563e2b6')){
+    paypalStatus('운영 채널키가 감지되어 결제를 중단했습니다. 테스트 채널을 유지하세요.', 'err');
+    alert('운영 채널키가 감지되어 결제를 중단했습니다.');
+    return;
+  }
   const t = purchaseLocaleText();
+  const productId = CONFIG.portoneProductId || 'midiai-lifetime';
+  const orderName = CONFIG.portoneOrderName || 'MidiAI Studio Lifetime License';
+  const totalAmount = Number(CONFIG.priceValueKr || 90000);
+  const paymentIdValue = makeKakaoPaymentId(currentUser.uid);
   try{
     paypalStatus(t.kakaoPreparing || 'Opening KakaoPay checkout...');
     const PortOne = await loadPortOneSdk();
     const result = await PortOne.requestPayment({
       storeId: CONFIG.portoneStoreId,
       channelKey: CONFIG.portoneKakaoPayChannelKey,
-      paymentId: paymentId('midiai-kakao-test'),
-      orderName: 'MidiAI Studio Lifetime 디지털 라이선스',
-      totalAmount: Number(CONFIG.priceValueKr || 90000),
+      paymentId: paymentIdValue,
+      orderName,
+      totalAmount,
       currency: 'CURRENCY_KRW',
       payMethod: 'EASY_PAY',
       customer: {
@@ -2846,19 +2918,55 @@ async function requestKakaoPayPayment(){
       customData: {
         uid: currentUser.uid,
         plan: CONFIG.plan || 'lifetime',
+        productId,
         mode: CONFIG.portoneMode || 'test'
       }
     });
     if(result?.code){
-      paypalStatus(`${result.message || result.code}`, 'err');
+      const code = String(result.code || '');
+      const cancelled = /CANCEL|USER_CANCEL|FAILURE_TYPE_PG/i.test(code) || /취소|cancel/i.test(String(result.message || ''));
+      paypalStatus(cancelled ? (t.kakaoCancel || '결제가 취소되었습니다.') : `${result.message || result.code}`, 'err');
       return;
     }
-    paypalStatus(t.kakaoComplete || 'KakaoPay payment complete.', 'ok');
-    alert(t.kakaoComplete || 'KakaoPay payment complete.');
+
+    paypalStatus(t.kakaoVerifying || t.verifying || 'Verifying payment...');
+    let verified;
+    try{
+      verified = await callFunctionJson('verifyPortOnePaymentAndIssueLicense', {
+        paymentId: paymentIdValue,
+        productId,
+        transactionType: result?.transactionType || result?.type || undefined
+      });
+    }catch(verifyErr){
+      console.error('PortOne verify failed', verifyErr);
+      paypalStatus(`${t.kakaoVerifyFail || 'License confirmation required.'} (paymentId: ${paymentIdValue})`, 'err');
+      alert(`${t.kakaoVerifyFail || '결제는 완료되었으나 라이선스 확인이 필요합니다.'}\n\npaymentId: ${paymentIdValue}`);
+      return;
+    }
+
+    if(!verified?.ok || !verified?.licenseGranted){
+      paypalStatus(`${t.kakaoVerifyFail || 'License confirmation required.'} (paymentId: ${paymentIdValue})`, 'err');
+      alert(`${t.kakaoVerifyFail || '결제는 완료되었으나 라이선스 확인이 필요합니다.'}\n\npaymentId: ${paymentIdValue}`);
+      return;
+    }
+
+    renderPurchaseSuccess({
+      paymentId: paymentIdValue,
+      email: verified.email || currentUser.email,
+      amount: verified.amount || totalAmount
+    });
+    paypalStatus(t.kakaoComplete || t.complete || 'Payment complete.', 'ok');
+    await loadLicense(currentUser.uid);
+    updatePurchaseAccountBox();
   }catch(err){
     console.error('PortOne KakaoPay error', err);
-    paypalStatus('카카오페이 결제 오류: ' + (err?.message || err), 'err');
-    alert('카카오페이 결제 오류: ' + (err?.message || err));
+    const msg = String(err?.message || err || '');
+    if(/cancel|취소/i.test(msg)){
+      paypalStatus(t.kakaoCancel || '결제가 취소되었습니다.', 'err');
+      return;
+    }
+    paypalStatus('카카오페이 결제 오류: ' + msg, 'err');
+    alert('카카오페이 결제 오류: ' + msg);
   }
 }
 window.midiaiKakaoPay = requestKakaoPayPayment;
@@ -2971,7 +3079,7 @@ function renderKoreanPaymentButtons(){
         <span class="kakao-mark">pay</span><strong>${esc(t.kakaoButton || '카카오페이로 구매')}</strong>
       </button>
     </div>
-    <p class="muted small purchase-test-payment-note">카카오페이와 카드결제는 현재 심사용 테스트 모드입니다.</p>`;
+    <p class="muted small purchase-test-payment-note">카카오페이는 테스트 결제 후 서버 검증을 거쳐 로그인 계정에 Lifetime 라이선스가 자동 등록됩니다. (운영 채널 미적용)</p>`;
 }
 function initPayPal(){
   if(!$('paypalButtons')) return;

@@ -27,8 +27,11 @@ window.MIDIAI_CONFIG = {
   priceDisplayGlobal: "$65 USD",
   plan: "lifetime",
   portoneStoreId: "store-034b6f5a-1dd6-4ee9-a83d-4fe7d8dfb6dd",
+  // Test KakaoPay channel only — do NOT use channel-key-a7bc78b0-... (production) in this stage
   portoneKakaoPayChannelKey: "channel-key-5aa0d34c-c202-45d8-87b3-1426db3fa31f",
   portoneInicisChannelKey: "channel-key-52136d4d-abc7-4640-9107-5d4cae4a8e24",
   portoneMode: "test",
+  portoneProductId: "midiai-lifetime",
+  portoneOrderName: "MidiAI Studio Lifetime License",
   supportDiscordUrl: ""
 };

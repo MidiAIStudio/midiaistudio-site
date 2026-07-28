@@ -79,6 +79,81 @@ function serverProduct() {
   };
 }
 
+/** KakaoPay / PortOne KR product — server is source of truth (never trust client amounts). */
+function serverKrProduct() {
+  return {
+    plan: cfg('PORTONE_PLAN', cfg('PAYPAL_PLAN', 'lifetime')),
+    amount: Number(cfg('PORTONE_KR_AMOUNT', '90000')),
+    currency: String(cfg('PORTONE_KR_CURRENCY', 'KRW')).toUpperCase().replace(/^CURRENCY_/, ''),
+    productId: cfg('PORTONE_PRODUCT_ID', 'midiai-lifetime'),
+    orderName: cfg('PORTONE_ORDER_NAME', 'MidiAI Studio Lifetime License'),
+    /** Accept legacy Korean orderName used by older client builds */
+    allowedOrderNames: [
+      cfg('PORTONE_ORDER_NAME', 'MidiAI Studio Lifetime License'),
+      'MidiAI Studio Lifetime 디지털 라이선스'
+    ]
+  };
+}
+
+function normalizeCurrency(value) {
+  return String(value || '')
+    .toUpperCase()
+    .replace(/^CURRENCY_/, '')
+    .trim();
+}
+
+function parsePortOneCustomData(raw) {
+  if (!raw) return {};
+  if (typeof raw === 'object') return raw;
+  try {
+    const parsed = JSON.parse(String(raw));
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+/**
+ * Shared lifetime license write — same fields PayPal uses so the desktop app
+ * keeps reading licenses/{uid}.licensed + status === 'active'.
+ */
+function lifetimeLicensePayload({ user, plan, method, memo, extra = {} }) {
+  return {
+    email: user.email || '',
+    displayName: user.name || user.displayName || '',
+    licensed: true,
+    plan: plan || 'lifetime',
+    status: 'active',
+    method,
+    memo: memo || '',
+    ...extra,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+}
+
+async function fetchPortOnePayment(paymentId) {
+  const secret = cfg('PORTONE_API_SECRET');
+  if (!secret) {
+    throw Object.assign(new Error('PORTONE_API_SECRET 환경변수가 없습니다.'), { status: 500 });
+  }
+  const storeId = cfg('PORTONE_STORE_ID', '');
+  const qs = storeId ? `?storeId=${encodeURIComponent(storeId)}` : '';
+  const res = await fetch(`https://api.portone.io/payments/${encodeURIComponent(paymentId)}${qs}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `PortOne ${secret}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data.message || data.type || `PortOne 결제 조회 실패 (${res.status})`;
+    throw Object.assign(new Error(msg), { status: res.status === 404 ? 404 : 400, detail: data });
+  }
+  return data;
+}
+
 exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
   if (cors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
@@ -187,25 +262,263 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       rawStatus: data.status
     }, { merge: true });
-    batch.set(db.collection('licenses').doc(user.uid), {
-      email: user.email || existing.email || '',
-      displayName: user.name || '',
-      licensed: true,
-      plan: product.plan,
-      status: 'active',
-      method: 'paypal',
-      memo: `PayPal 자동 지급 · order ${orderId}`,
-      paypalOrderId: orderId,
-      paypalCaptureId: capture.id || '',
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    batch.set(
+      db.collection('licenses').doc(user.uid),
+      lifetimeLicensePayload({
+        user: { email: user.email || existing.email || '', name: user.name || '' },
+        plan: product.plan,
+        method: 'paypal',
+        memo: `PayPal 자동 지급 · order ${orderId}`,
+        extra: {
+          paypalOrderId: orderId,
+          paypalCaptureId: capture.id || ''
+        }
+      }),
+      { merge: true }
+    );
     await batch.commit();
 
     return res.json({ ok: true, orderId, captureId: capture.id || '', licenseGranted: true });
   } catch (err) {
     console.error('capturePayPalOrder', err);
     return res.status(err.status || 500).json({ ok: false, message: err.message || 'capturePayPalOrder failed' });
+  }
+});
+
+/**
+ * Verify PortOne (KakaoPay test/live) payment server-side and issue licenses/{uid}
+ * using the same schema as PayPal. Client must never write licenses.
+ *
+ * Body: { paymentId, productId? }
+ * Auth: Bearer Firebase ID token
+ */
+exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (req, res) => {
+  if (cors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
+  try {
+    const user = await requireUser(req);
+    if (!user.uid) {
+      return res.status(401).json({ ok: false, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
+    }
+
+    const { paymentId, productId } = req.body || {};
+    if (!paymentId || typeof paymentId !== 'string') {
+      return res.status(400).json({ ok: false, message: 'paymentId가 없습니다.' });
+    }
+    if (!/^[a-zA-Z0-9_-]{8,80}$/.test(paymentId)) {
+      return res.status(400).json({ ok: false, message: 'paymentId 형식이 올바르지 않습니다.' });
+    }
+
+    const product = serverKrProduct();
+    if (productId && productId !== product.productId) {
+      return res.status(400).json({ ok: false, message: '상품 정보가 일치하지 않습니다.' });
+    }
+
+    const environment = cfg('PORTONE_ENVIRONMENT', 'test');
+    const orderRef = db.collection('orders').doc(paymentId);
+
+    // Idempotent fast-path before calling PortOne
+    const existingSnap = await orderRef.get();
+    if (existingSnap.exists) {
+      const existing = existingSnap.data() || {};
+      if (existing.uid && existing.uid !== user.uid) {
+        return res.status(403).json({
+          ok: false,
+          message: '이미 다른 계정에서 처리된 결제입니다.',
+          paymentId
+        });
+      }
+      if (
+        existing.status === 'completed' &&
+        existing.verificationStatus === 'verified' &&
+        existing.licenseIssued === true
+      ) {
+        return res.json({
+          ok: true,
+          alreadyCompleted: true,
+          paymentId,
+          licenseGranted: true,
+          email: user.email || existing.email || '',
+          amount: existing.amount || product.amount,
+          currency: existing.currency || product.currency,
+          paymentMethod: existing.paymentMethod || 'kakaopay',
+          environment: existing.environment || environment
+        });
+      }
+    }
+
+    const payment = await fetchPortOnePayment(paymentId);
+    const status = String(payment.status || '');
+    if (status !== 'PAID') {
+      return res.status(400).json({
+        ok: false,
+        message: status === 'CANCELLED' || status === 'PARTIAL_CANCELLED'
+          ? '결제가 취소되었습니다.'
+          : '결제 확인 중 오류가 발생했습니다.',
+        paymentId,
+        code: 'PAYMENT_NOT_PAID'
+      });
+    }
+
+    const paidAmount = Number(payment.amount?.total);
+    const paidCurrency = normalizeCurrency(payment.currency);
+    if (!Number.isFinite(paidAmount) || paidAmount !== Number(product.amount)) {
+      console.warn('PortOne amount mismatch', {
+        paymentId,
+        paidAmount,
+        expected: product.amount,
+        uid: String(user.uid).slice(0, 6)
+      });
+      return res.status(400).json({
+        ok: false,
+        message: '결제 확인 중 오류가 발생했습니다.',
+        paymentId,
+        code: 'AMOUNT_MISMATCH'
+      });
+    }
+    if (paidCurrency !== product.currency) {
+      return res.status(400).json({
+        ok: false,
+        message: '결제 확인 중 오류가 발생했습니다.',
+        paymentId,
+        code: 'CURRENCY_MISMATCH'
+      });
+    }
+
+    const orderName = String(payment.orderName || '');
+    if (!product.allowedOrderNames.includes(orderName)) {
+      console.warn('PortOne orderName mismatch', { paymentId, orderName });
+      return res.status(400).json({
+        ok: false,
+        message: '결제 확인 중 오류가 발생했습니다.',
+        paymentId,
+        code: 'ORDER_NAME_MISMATCH'
+      });
+    }
+
+    const custom = parsePortOneCustomData(payment.customData);
+    if (custom.productId && custom.productId !== product.productId) {
+      return res.status(400).json({
+        ok: false,
+        message: '결제 확인 중 오류가 발생했습니다.',
+        paymentId,
+        code: 'PRODUCT_MISMATCH'
+      });
+    }
+    // Client may include uid in customData; never trust it for issuance.
+    if (custom.uid && custom.uid !== user.uid) {
+      console.warn('PortOne customData uid differs from auth uid', {
+        paymentId,
+        authUid: String(user.uid).slice(0, 6)
+      });
+    }
+
+    const configuredStoreId = cfg('PORTONE_STORE_ID', '');
+    if (configuredStoreId && payment.storeId && payment.storeId !== configuredStoreId) {
+      return res.status(400).json({
+        ok: false,
+        message: '결제 확인 중 오류가 발생했습니다.',
+        paymentId,
+        code: 'STORE_MISMATCH'
+      });
+    }
+
+    const now = admin.firestore.FieldValue.serverTimestamp();
+    let issued = false;
+
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(orderRef);
+      if (snap.exists) {
+        const existing = snap.data() || {};
+        if (existing.uid && existing.uid !== user.uid) {
+          throw Object.assign(new Error('이미 다른 계정에서 처리된 결제입니다.'), { status: 403 });
+        }
+        if (
+          existing.status === 'completed' &&
+          existing.verificationStatus === 'verified' &&
+          existing.licenseIssued === true
+        ) {
+          issued = false;
+          return;
+        }
+      }
+
+      tx.set(orderRef, {
+        paymentId,
+        uid: user.uid,
+        email: user.email || '',
+        provider: 'portone',
+        paymentMethod: 'kakaopay',
+        environment,
+        productId: product.productId,
+        orderName,
+        amount: product.amount,
+        currency: product.currency,
+        plan: product.plan,
+        status: 'completed',
+        verificationStatus: 'verified',
+        licenseIssued: true,
+        portoneTransactionId: payment.transactionId || '',
+        rawStatus: status,
+        createdAt: snap.exists ? (snap.data().createdAt || now) : now,
+        verifiedAt: now,
+        issuedAt: now,
+        completedAt: now,
+        updatedAt: now
+      }, { merge: true });
+
+      tx.set(
+        db.collection('licenses').doc(user.uid),
+        lifetimeLicensePayload({
+          user,
+          plan: product.plan,
+          method: 'kakaopay',
+          memo: `KakaoPay 자동 지급 · payment ${paymentId}`,
+          extra: {
+            portonePaymentId: paymentId,
+            portoneTransactionId: payment.transactionId || ''
+          }
+        }),
+        { merge: true }
+      );
+      issued = true;
+    });
+
+    console.log('TEST PAYMENT verified', {
+      paymentId,
+      uid: String(user.uid).slice(0, 6),
+      environment,
+      issued
+    });
+
+    return res.json({
+      ok: true,
+      paymentId,
+      alreadyCompleted: !issued,
+      licenseGranted: true,
+      email: user.email || '',
+      amount: product.amount,
+      currency: product.currency,
+      paymentMethod: 'kakaopay',
+      environment,
+      plan: product.plan
+    });
+  } catch (err) {
+    console.error('verifyPortOnePaymentAndIssueLicense', err);
+    const status = err.status || 500;
+    const userMessage =
+      status === 401
+        ? '로그인이 만료되었습니다. 다시 로그인해 주세요.'
+        : status === 403
+          ? err.message
+          : status === 404
+            ? '결제 확인 중 오류가 발생했습니다.'
+            : '결제는 완료되었으나 라이선스 확인이 필요합니다.';
+    return res.status(status).json({
+      ok: false,
+      message: userMessage,
+      paymentId: (req.body && req.body.paymentId) || undefined
+    });
   }
 });
 
