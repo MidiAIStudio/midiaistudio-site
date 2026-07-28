@@ -154,6 +154,173 @@ async function fetchPortOnePayment(paymentId) {
   return data;
 }
 
+function isActiveLifetimeLicense(data) {
+  if (!data || typeof data !== 'object') return false;
+  return data.licensed === true
+    && String(data.status || '').toLowerCase() === 'active'
+    && String(data.plan || '').toLowerCase() === 'lifetime';
+}
+
+async function readUserLicense(uid) {
+  const snap = await db.collection('licenses').doc(uid).get();
+  return snap.exists ? (snap.data() || {}) : null;
+}
+
+async function cancelPortOnePayment(paymentId, reason, amount) {
+  const secret = cfg('PORTONE_API_SECRET');
+  if (!secret) {
+    throw Object.assign(new Error('PORTONE_API_SECRET 환경변수가 없습니다.'), { status: 500 });
+  }
+  const body = { reason: reason || 'Duplicate lifetime license purchase' };
+  if (Number.isFinite(Number(amount))) {
+    body.amount = Number(amount);
+    body.currentCancellableAmount = Number(amount);
+  }
+  const storeId = cfg('PORTONE_STORE_ID', '');
+  if (storeId) body.storeId = storeId;
+
+  const res = await fetch(`https://api.portone.io/payments/${encodeURIComponent(paymentId)}/cancel`, {
+    method: 'POST',
+    headers: {
+      Authorization: `PortOne ${secret}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data.message || data.type || `PortOne 결제 취소 실패 (${res.status})`;
+    throw Object.assign(new Error(msg), { status: 400, detail: data });
+  }
+  return data;
+}
+
+const PURCHASE_LOCK_TTL_MS = 15 * 60 * 1000;
+
+async function acquirePurchaseLock(uid, paymentId) {
+  const lockRef = db.collection('purchaseLocks').doc(uid);
+  const nowMs = Date.now();
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(lockRef);
+    if (snap.exists) {
+      const d = snap.data() || {};
+      const expiresAtMs = Number(d.expiresAtMs || 0);
+      const active = d.status === 'pending' && expiresAtMs > nowMs;
+      if (active && d.paymentId && d.paymentId !== paymentId) {
+        throw Object.assign(new Error('이미 진행 중인 결제가 있습니다. 잠시 후 다시 시도해 주세요.'), {
+          status: 409,
+          code: 'PURCHASE_IN_PROGRESS'
+        });
+      }
+    }
+    tx.set(lockRef, {
+      uid,
+      paymentId,
+      status: 'pending',
+      createdAtMs: nowMs,
+      expiresAtMs: nowMs + PURCHASE_LOCK_TTL_MS,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  });
+}
+
+async function releasePurchaseLock(uid, paymentId, finalStatus = 'released') {
+  const lockRef = db.collection('purchaseLocks').doc(uid);
+  await db.runTransaction(async (tx) => {
+    const snap = await tx.get(lockRef);
+    if (!snap.exists) return;
+    const d = snap.data() || {};
+    if (paymentId && d.paymentId && d.paymentId !== paymentId) return;
+    tx.set(lockRef, {
+      status: finalStatus,
+      releasedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  });
+}
+
+/**
+ * Pre-check before opening PortOne checkout.
+ * Auth uid only — never trusts client license flags.
+ * Body: { paymentId, productId? }
+ */
+exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) => {
+  if (cors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
+  try {
+    const user = await requireUser(req);
+    if (!user.uid) {
+      return res.status(401).json({ ok: false, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
+    }
+    const { paymentId, productId } = req.body || {};
+    const product = serverKrProduct();
+    if (productId && productId !== product.productId) {
+      return res.status(400).json({ ok: false, eligible: false, message: '상품 정보가 일치하지 않습니다.' });
+    }
+
+    const license = await readUserLicense(user.uid);
+    if (isActiveLifetimeLicense(license)) {
+      return res.json({
+        ok: true,
+        eligible: false,
+        hasLifetime: true,
+        plan: license.plan || 'lifetime',
+        status: license.status || 'active',
+        message: '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.'
+      });
+    }
+
+    if (paymentId) {
+      if (!/^[a-zA-Z0-9_-]{8,80}$/.test(String(paymentId))) {
+        return res.status(400).json({ ok: false, eligible: false, message: 'paymentId 형식이 올바르지 않습니다.' });
+      }
+      try {
+        await acquirePurchaseLock(user.uid, String(paymentId));
+      } catch (lockErr) {
+        return res.status(lockErr.status || 409).json({
+          ok: false,
+          eligible: false,
+          code: lockErr.code || 'PURCHASE_IN_PROGRESS',
+          message: lockErr.message || '이미 진행 중인 결제가 있습니다.'
+        });
+      }
+    }
+
+    return res.json({
+      ok: true,
+      eligible: true,
+      hasLifetime: false,
+      paymentId: paymentId || null,
+      message: '구매 가능'
+    });
+  } catch (err) {
+    console.error('checkPurchaseEligibility', err);
+    return res.status(err.status || 500).json({
+      ok: false,
+      eligible: false,
+      message: err.message || '구매 가능 여부 확인에 실패했습니다.'
+    });
+  }
+});
+
+/**
+ * Release purchase lock after cancel/close (optional client call).
+ * Body: { paymentId? }
+ */
+exports.releasePurchaseLock = functions.https.onRequest(async (req, res) => {
+  if (cors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
+  try {
+    const user = await requireUser(req);
+    const { paymentId } = req.body || {};
+    await releasePurchaseLock(user.uid, paymentId || null, 'released');
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error('releasePurchaseLock', err);
+    return res.status(err.status || 500).json({ ok: false, message: err.message || 'lock release failed' });
+  }
+});
+
 exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
   if (cors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
@@ -295,8 +462,10 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
 exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (req, res) => {
   if (cors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
+  let authUid = '';
   try {
     const user = await requireUser(req);
+    authUid = user.uid || '';
     if (!user.uid) {
       return res.status(401).json({ ok: false, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
     }
@@ -316,6 +485,7 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
 
     const environment = cfg('PORTONE_ENVIRONMENT', 'test');
     const orderRef = db.collection('orders').doc(paymentId);
+    const licenseRef = db.collection('licenses').doc(user.uid);
 
     // Idempotent fast-path before calling PortOne
     const existingSnap = await orderRef.get();
@@ -333,6 +503,7 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
         existing.verificationStatus === 'verified' &&
         existing.licenseIssued === true
       ) {
+        await releasePurchaseLock(user.uid, paymentId, 'completed').catch(() => {});
         return res.json({
           ok: true,
           alreadyCompleted: true,
@@ -345,11 +516,53 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
           environment: existing.environment || environment
         });
       }
+      if (existing.status === 'duplicate_refunded') {
+        await releasePurchaseLock(user.uid, paymentId, 'released').catch(() => {});
+        return res.json({
+          ok: false,
+          alreadyCompleted: true,
+          duplicate: true,
+          refunded: true,
+          paymentId,
+          licenseGranted: false,
+          code: 'DUPLICATE_LICENSE',
+          message: '이미 Lifetime 라이선스를 보유하고 있어 중복 결제가 자동 취소되었습니다.'
+        });
+      }
+      if (existing.status === 'duplicate_refund_failed') {
+        await releasePurchaseLock(user.uid, paymentId, 'released').catch(() => {});
+        return res.status(409).json({
+          ok: false,
+          alreadyCompleted: true,
+          duplicate: true,
+          refunded: false,
+          paymentId,
+          licenseGranted: false,
+          code: 'DUPLICATE_REFUND_FAILED',
+          message: '이미 Lifetime 라이선스가 있습니다. 중복 결제 자동 취소에 실패해 관리자 확인이 필요합니다.'
+        });
+      }
     }
 
     const payment = await fetchPortOnePayment(paymentId);
     const status = String(payment.status || '');
     if (status !== 'PAID') {
+      // Already cancelled duplicate path may re-check
+      if (status === 'CANCELLED' || status === 'PARTIAL_CANCELLED') {
+        const existingAfter = (await orderRef.get()).data() || {};
+        if (existingAfter.status === 'duplicate_refunded') {
+          await releasePurchaseLock(user.uid, paymentId, 'released').catch(() => {});
+          return res.json({
+            ok: false,
+            duplicate: true,
+            refunded: true,
+            paymentId,
+            licenseGranted: false,
+            code: 'DUPLICATE_LICENSE',
+            message: '이미 Lifetime 라이선스를 보유하고 있어 중복 결제가 자동 취소되었습니다.'
+          });
+        }
+      }
       return res.status(400).json({
         ok: false,
         message: status === 'CANCELLED' || status === 'PARTIAL_CANCELLED'
@@ -423,11 +636,105 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
       });
     }
 
+    // Duplicate lifetime guard — never overwrite an existing active lifetime license.
+    const existingLicense = await readUserLicense(user.uid);
+    if (isActiveLifetimeLicense(existingLicense)) {
+      const now = admin.firestore.FieldValue.serverTimestamp();
+      let cancelResult = null;
+      let cancelError = null;
+      try {
+        cancelResult = await cancelPortOnePayment(
+          paymentId,
+          'Duplicate lifetime license — automatic full refund',
+          paidAmount
+        );
+      } catch (cancelErr) {
+        cancelError = {
+          message: cancelErr.message || 'cancel failed',
+          detail: cancelErr.detail || null
+        };
+        console.error('duplicate lifetime cancel failed', {
+          paymentId,
+          uid: String(user.uid).slice(0, 6),
+          cancelError
+        });
+      }
+
+      const refundOk = !cancelError;
+      await orderRef.set({
+        paymentId,
+        uid: user.uid,
+        email: user.email || '',
+        provider: 'portone',
+        paymentMethod: 'kakaopay',
+        environment,
+        productId: product.productId,
+        orderName,
+        amount: product.amount,
+        currency: product.currency,
+        plan: product.plan,
+        status: refundOk ? 'duplicate_refunded' : 'duplicate_refund_failed',
+        verificationStatus: 'verified_duplicate',
+        licenseIssued: false,
+        existingLicenseUid: user.uid,
+        existingLicensePlan: existingLicense.plan || 'lifetime',
+        existingLicenseStatus: existingLicense.status || 'active',
+        portoneTransactionId: payment.transactionId || '',
+        rawStatus: payment.status || status,
+        refundReason: 'duplicate_lifetime',
+        refundAt: now,
+        refundResult: refundOk
+          ? {
+              cancellationId: cancelResult?.cancellation?.id || cancelResult?.cancellation?.pgCancellationId || '',
+              status: cancelResult?.cancellation?.status || 'SUCCEEDED'
+            }
+          : null,
+        refundError: cancelError,
+        createdAt: existingSnap.exists ? (existingSnap.data().createdAt || now) : now,
+        updatedAt: now
+      }, { merge: true });
+
+      // Do NOT touch licenses/{uid}
+      await releasePurchaseLock(user.uid, paymentId, 'released').catch(() => {});
+
+      if (refundOk) {
+        return res.json({
+          ok: false,
+          duplicate: true,
+          refunded: true,
+          paymentId,
+          licenseGranted: false,
+          code: 'DUPLICATE_LICENSE',
+          message: '이미 Lifetime 라이선스를 보유하고 있어 중복 결제가 자동 취소(전액 환불)되었습니다.'
+        });
+      }
+      return res.status(409).json({
+        ok: false,
+        duplicate: true,
+        refunded: false,
+        paymentId,
+        licenseGranted: false,
+        code: 'DUPLICATE_REFUND_FAILED',
+        message: '이미 Lifetime 라이선스가 있습니다. 중복 결제 자동 취소에 실패해 관리자 확인이 필요합니다. paymentId를 보관해 주세요.'
+      });
+    }
+
     const now = admin.firestore.FieldValue.serverTimestamp();
     let issued = false;
 
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(orderRef);
+      const licenseSnap = await tx.get(licenseRef);
+      const licenseData = licenseSnap.exists ? (licenseSnap.data() || {}) : null;
+
+      // Re-check inside transaction to avoid race with concurrent verify calls.
+      if (isActiveLifetimeLicense(licenseData)) {
+        throw Object.assign(new Error('DUPLICATE_LICENSE_RACE'), {
+          status: 409,
+          code: 'DUPLICATE_LICENSE_RACE'
+        });
+      }
+
       if (snap.exists) {
         const existing = snap.data() || {};
         if (existing.uid && existing.uid !== user.uid) {
@@ -468,7 +775,7 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
       }, { merge: true });
 
       tx.set(
-        db.collection('licenses').doc(user.uid),
+        licenseRef,
         lifetimeLicensePayload({
           user,
           plan: product.plan,
@@ -491,6 +798,8 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
       issued
     });
 
+    await releasePurchaseLock(user.uid, paymentId, 'completed').catch(() => {});
+
     return res.json({
       ok: true,
       paymentId,
@@ -505,6 +814,79 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
     });
   } catch (err) {
     console.error('verifyPortOnePaymentAndIssueLicense', err);
+    if (err.code === 'DUPLICATE_LICENSE_RACE') {
+      // Concurrent verify: another payment already issued the license. Cancel this one.
+      const racePaymentId = String((req.body && req.body.paymentId) || '').trim();
+      const product = serverKrProduct();
+      const environment = cfg('PORTONE_ENVIRONMENT', 'test');
+      let cancelError = null;
+      let cancelResult = null;
+      try {
+        cancelResult = await cancelPortOnePayment(
+          racePaymentId,
+          'Duplicate lifetime license race — automatic full refund',
+          product.amount
+        );
+      } catch (cancelErr) {
+        cancelError = {
+          message: cancelErr.message || 'cancel failed',
+          detail: cancelErr.detail || null
+        };
+      }
+      const now = admin.firestore.FieldValue.serverTimestamp();
+      const refundOk = !cancelError;
+      if (racePaymentId) {
+        await db.collection('orders').doc(racePaymentId).set({
+          paymentId: racePaymentId,
+          uid: authUid,
+          provider: 'portone',
+          paymentMethod: 'kakaopay',
+          environment,
+          productId: product.productId,
+          amount: product.amount,
+          currency: product.currency,
+          plan: product.plan,
+          status: refundOk ? 'duplicate_refunded' : 'duplicate_refund_failed',
+          verificationStatus: 'verified_duplicate',
+          licenseIssued: false,
+          existingLicenseUid: authUid,
+          refundReason: 'duplicate_lifetime_race',
+          refundAt: now,
+          refundResult: refundOk
+            ? {
+                cancellationId: cancelResult?.cancellation?.id || '',
+                status: cancelResult?.cancellation?.status || 'SUCCEEDED'
+              }
+            : null,
+          refundError: cancelError,
+          updatedAt: now,
+          createdAt: now
+        }, { merge: true });
+        if (authUid) {
+          await releasePurchaseLock(authUid, racePaymentId, 'released').catch(() => {});
+        }
+      }
+      if (refundOk) {
+        return res.json({
+          ok: false,
+          duplicate: true,
+          refunded: true,
+          paymentId: racePaymentId || undefined,
+          licenseGranted: false,
+          code: 'DUPLICATE_LICENSE',
+          message: '이미 Lifetime 라이선스를 보유하고 있어 중복 결제가 자동 취소(전액 환불)되었습니다.'
+        });
+      }
+      return res.status(409).json({
+        ok: false,
+        duplicate: true,
+        refunded: false,
+        paymentId: racePaymentId || undefined,
+        licenseGranted: false,
+        code: 'DUPLICATE_REFUND_FAILED',
+        message: '이미 Lifetime 라이선스가 있습니다. 중복 결제 자동 취소에 실패해 관리자 확인이 필요합니다.'
+      });
+    }
     const status = err.status || 500;
     const userMessage =
       status === 401

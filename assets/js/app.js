@@ -393,6 +393,8 @@ function noticeAuthor(){ return BRAND_AUTHOR; }
 
 const authorLicenseCache = new Map();
 let currentLicenseActive = false;
+let currentLicenseLifetime = false;
+let kakaoPayInFlight = false;
 
 function authorKind(x){
   if(isAdminAuthor(x) || contentAuthor(x) === BRAND_AUTHOR) return 'admin';
@@ -638,6 +640,54 @@ function renderPurchaseSuccess(result){
     </div>`;
 }
 
+function renderPurchaseOwnedNotice(){
+  const box = $('purchaseResultBox');
+  if(!box) return;
+  const t = purchaseLocaleText();
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <div class="purchase-owned-card">
+      <h3>${esc(t.alreadyOwnedTitle || 'Lifetime 라이선스 보유')}</h3>
+      <p>${esc(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.')}</p>
+    </div>`;
+}
+
+function applyPurchaseLifetimeGate(){
+  if(!isPurchasePage) return;
+  const kakaoBtn = $('kakaoPayBtn');
+  const cardBtn = $('inicisCardPayBtn');
+  const t = purchaseLocaleText();
+  if(currentLicenseLifetime){
+    if(kakaoBtn){
+      kakaoBtn.disabled = true;
+      kakaoBtn.setAttribute('aria-disabled', 'true');
+      kakaoBtn.classList.add('is-disabled');
+      const label = kakaoBtn.querySelector('strong');
+      if(label) label.textContent = t.alreadyOwnedButton || t.kakaoButton || '카카오페이로 구매';
+    }
+    if(cardBtn){
+      cardBtn.disabled = true;
+      cardBtn.setAttribute('aria-disabled', 'true');
+      cardBtn.classList.add('is-disabled');
+    }
+    renderPurchaseOwnedNotice();
+    paypalStatus(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.', 'ok');
+    return;
+  }
+  if(kakaoBtn){
+    kakaoBtn.disabled = false;
+    kakaoBtn.removeAttribute('aria-disabled');
+    kakaoBtn.classList.remove('is-disabled');
+    const label = kakaoBtn.querySelector('strong');
+    if(label) label.textContent = t.kakaoButton || '카카오페이로 구매';
+  }
+  if(cardBtn){
+    cardBtn.disabled = false;
+    cardBtn.removeAttribute('aria-disabled');
+    cardBtn.classList.remove('is-disabled');
+  }
+}
+
 function purchaseLocaleText(){
   if(lang === 'en') return {
     saleUntil:'Until July 31',
@@ -675,6 +725,12 @@ function purchaseLocaleText(){
     kakaoComplete:'Payment and license registration complete.',
     kakaoCancel:'Payment was canceled.',
     kakaoVerifyFail:'Payment completed, but license confirmation is required. Please keep your payment ID.',
+    alreadyOwned:'You already have a Lifetime license. No additional payment is needed.',
+    alreadyOwnedTitle:'Lifetime license already owned',
+    alreadyOwnedButton:'Already purchased',
+    duplicateRefunded:'You already have a Lifetime license. The duplicate payment was automatically canceled and refunded.',
+    duplicateRefundFailed:'You already have a Lifetime license. Automatic refund failed — please contact support with your payment ID.',
+    purchaseInProgress:'A checkout is already in progress. Please wait a moment and try again.',
     loginAlert:'Please sign in with Google before purchasing.',
     paypalAccount:(id)=>`Payment account: ${id}`,
     creating:'Creating PayPal order...',
@@ -720,6 +776,12 @@ function purchaseLocaleText(){
     kakaoComplete:'決済とライセンス登録が完了しました。',
     kakaoCancel:'決済がキャンセルされました。',
     kakaoVerifyFail:'決済は完了しましたが、ライセンス確認が必要です。paymentIdを控えてください。',
+    alreadyOwned:'すでにLifetimeライセンスを保有しています。追加の決済は不要です。',
+    alreadyOwnedTitle:'Lifetimeライセンス保有中',
+    alreadyOwnedButton:'購入済み',
+    duplicateRefunded:'すでにLifetimeライセンスを保有しているため、重複決済は自動キャンセル（全額返金）されました。',
+    duplicateRefundFailed:'すでにLifetimeライセンスがあります。自動キャンセルに失敗したため、管理者確認が必要です。paymentIdを控えてください。',
+    purchaseInProgress:'別の決済が進行中です。しばらくしてから再度お試しください。',
     loginAlert:'Googleログイン後に決済してください。',
     paypalAccount:(id)=>`決済アカウント: ${id}`,
     creating:'PayPal注文を作成しています...',
@@ -765,6 +827,12 @@ function purchaseLocaleText(){
     kakaoComplete:'결제 및 라이선스 등록이 완료되었습니다.',
     kakaoCancel:'결제가 취소되었습니다.',
     kakaoVerifyFail:'결제는 완료되었으나 라이선스 확인이 필요합니다. 주문번호를 보관해 주세요.',
+    alreadyOwned:'이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.',
+    alreadyOwnedTitle:'Lifetime 라이선스 보유',
+    alreadyOwnedButton:'구매 완료',
+    duplicateRefunded:'이미 Lifetime 라이선스를 보유하고 있어 중복 결제가 자동 취소(전액 환불)되었습니다.',
+    duplicateRefundFailed:'이미 Lifetime 라이선스가 있습니다. 중복 결제 자동 취소에 실패해 관리자 확인이 필요합니다. 주문번호를 보관해 주세요.',
+    purchaseInProgress:'이미 진행 중인 결제가 있습니다. 잠시 후 다시 시도해 주세요.',
     loginAlert:'Google 로그인 후 결제해주세요.',
     paypalAccount:(id)=>`결제 계정: ${id}`,
     creating:'PayPal 주문을 생성하는 중입니다...',
@@ -933,6 +1001,7 @@ function setAdminNavVisible(show){
 function setAuthUiSignedOut(){
   currentUser = null; currentUserDoc = null; isAdminUser = false;
   currentLicenseActive = false;
+  currentLicenseLifetime = false;
   setAdminNavVisible(false);
   $('loginBtn')?.classList.remove('hidden');
   $('logoutBtn')?.classList.add('hidden');
@@ -953,6 +1022,14 @@ function setAuthUiSignedOut(){
   if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='admin.html') setAdminGate(`<p>${tr('need_login')}</p><p class="muted">Google 로그인 후 role=admin 계정만 접근할 수 있습니다.</p>`);
   updateBoardPinnedUi();
+  if(isPurchasePage){
+    const resultBox = $('purchaseResultBox');
+    if(resultBox && resultBox.querySelector('.purchase-owned-card')){
+      resultBox.classList.add('hidden');
+      resultBox.innerHTML = '';
+    }
+    applyPurchaseLifetimeGate();
+  }
   updatePurchaseAccountBox();
   updateSupportFormUi();
 }
@@ -1039,7 +1116,9 @@ async function loadLicense(uid){
     const snap=await getDoc(doc(db,'licenses',uid));
     const d=snap.exists()?snap.data():null;
     const active=!!(d && d.licensed===true && String(d.status||'').toLowerCase()==='active');
+    const lifetime=!!(active && String(d?.plan||'').toLowerCase()==='lifetime');
     currentLicenseActive = active;
+    currentLicenseLifetime = lifetime;
     if(uid) authorLicenseCache.set(uid, active);
     const licenseClass=active?'active':'none';
     const licenseText=active?tr('active'):tr('none');
@@ -1053,8 +1132,10 @@ async function loadLicense(uid){
         metaCard('Role',isAdminUser?'admin':'user')
       ].join('');
     }
+    applyPurchaseLifetimeGate();
   } catch(e) {
     console.error(e);
+    currentLicenseLifetime = false;
     if(badge){ badge.className='badge none'; badge.textContent=tr('check_failed'); }
     if(sideBadge){ sideBadge.className='badge sidebar-license-badge none'; sideBadge.textContent=tr('check_failed'); }
   }
@@ -2843,7 +2924,7 @@ function initForms(){
     }catch(err){ alert(err.message); }
   });
 }
-async function callFunctionJson(name, payload){
+async function callFunctionJsonRaw(name, payload){
   const base = String(CONFIG.functionsBaseUrl || '').replace(/\/$/, '');
   if(!base || base.includes('PASTE_')) throw new Error('Functions URL이 설정되지 않았습니다. assets/js/config.js의 functionsBaseUrl을 확인하세요.');
   if(!currentUser) throw new Error('Google 로그인 후 결제할 수 있습니다.');
@@ -2859,8 +2940,17 @@ async function callFunctionJson(name, payload){
   const text = await res.text();
   let data = null;
   try { data = text ? JSON.parse(text) : {}; } catch(_) { data = {raw:text}; }
-  if(!res.ok) throw new Error(data && data.message ? data.message : `Function ${name} failed (${res.status})`);
-  return data || {};
+  return { ok: res.ok, status: res.status, data: data || {} };
+}
+async function callFunctionJson(name, payload){
+  const result = await callFunctionJsonRaw(name, payload);
+  if(!result.ok){
+    throw Object.assign(
+      new Error(result.data && result.data.message ? result.data.message : `Function ${name} failed (${result.status})`),
+      { status: result.status, data: result.data, code: result.data && result.data.code }
+    );
+  }
+  return result.data;
 }
 async function loadPortOneSdk(){
   if(window.PortOneSdk) return window.PortOneSdk;
@@ -2872,11 +2962,30 @@ async function loadPortOneSdk(){
   window.PortOneSdk = sdk;
   return sdk;
 }
+async function releaseKakaoPurchaseLock(paymentId){
+  if(!paymentId || !currentUser) return;
+  try{
+    await callFunctionJson('releasePurchaseLock', { paymentId });
+  }catch(err){
+    console.warn('releasePurchaseLock', err);
+  }
+}
+
 async function requestKakaoPayPayment(){
   const authCheck = requirePurchaseAuth();
   if(!authCheck.ok){
     paypalStatus(authCheck.message, 'err');
     alert(authCheck.message);
+    return;
+  }
+  const t = purchaseLocaleText();
+  if(currentLicenseLifetime){
+    applyPurchaseLifetimeGate();
+    alert(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.');
+    return;
+  }
+  if(kakaoPayInFlight){
+    paypalStatus(t.purchaseInProgress || '이미 진행 중인 결제가 있습니다.', 'err');
     return;
   }
   if(!CONFIG.portoneStoreId || String(CONFIG.portoneStoreId).startsWith('PASTE_')){
@@ -2894,13 +3003,38 @@ async function requestKakaoPayPayment(){
     alert('운영 채널키가 감지되어 결제를 중단했습니다.');
     return;
   }
-  const t = purchaseLocaleText();
   const productId = CONFIG.portoneProductId || 'midiai-lifetime';
   const orderName = CONFIG.portoneOrderName || 'MidiAI Studio Lifetime License';
   const totalAmount = Number(CONFIG.priceValueKr || 90000);
   const paymentIdValue = makeKakaoPaymentId(currentUser.uid);
+  kakaoPayInFlight = true;
+  const kakaoBtn = $('kakaoPayBtn');
+  if(kakaoBtn) kakaoBtn.disabled = true;
   try{
     paypalStatus(t.kakaoPreparing || 'Opening KakaoPay checkout...');
+    let eligibility;
+    try{
+      eligibility = await callFunctionJson('checkPurchaseEligibility', {
+        paymentId: paymentIdValue,
+        productId
+      });
+    }catch(eligErr){
+      const msg = eligErr?.message || t.purchaseInProgress || '구매 가능 여부 확인에 실패했습니다.';
+      paypalStatus(msg, 'err');
+      alert(msg);
+      return;
+    }
+    if(!eligibility?.eligible){
+      if(eligibility?.hasLifetime){
+        currentLicenseLifetime = true;
+        applyPurchaseLifetimeGate();
+      }
+      const msg = eligibility?.message || t.alreadyOwned || '구매할 수 없습니다.';
+      paypalStatus(msg, eligibility?.hasLifetime ? 'ok' : 'err');
+      alert(msg);
+      return;
+    }
+
     const PortOne = await loadPortOneSdk();
     const result = await PortOne.requestPayment({
       storeId: CONFIG.portoneStoreId,
@@ -2925,6 +3059,7 @@ async function requestKakaoPayPayment(){
     if(result?.code){
       const code = String(result.code || '');
       const cancelled = /CANCEL|USER_CANCEL|FAILURE_TYPE_PG/i.test(code) || /취소|cancel/i.test(String(result.message || ''));
+      await releaseKakaoPurchaseLock(paymentIdValue);
       paypalStatus(cancelled ? (t.kakaoCancel || '결제가 취소되었습니다.') : `${result.message || result.code}`, 'err');
       return;
     }
@@ -2939,8 +3074,34 @@ async function requestKakaoPayPayment(){
       });
     }catch(verifyErr){
       console.error('PortOne verify failed', verifyErr);
+      const data = verifyErr?.data || {};
+      if(data.code === 'DUPLICATE_REFUND_FAILED' || data.duplicate && data.refunded === false){
+        paypalStatus(`${t.duplicateRefundFailed || data.message} (paymentId: ${paymentIdValue})`, 'err');
+        alert(`${t.duplicateRefundFailed || data.message || '관리자 확인이 필요합니다.'}\n\npaymentId: ${paymentIdValue}`);
+        await loadLicense(currentUser.uid);
+        return;
+      }
+      if(data.code === 'DUPLICATE_LICENSE' || data.duplicate){
+        paypalStatus(`${t.duplicateRefunded || data.message} (paymentId: ${paymentIdValue})`, 'ok');
+        alert(`${t.duplicateRefunded || data.message}\n\npaymentId: ${paymentIdValue}`);
+        await loadLicense(currentUser.uid);
+        return;
+      }
       paypalStatus(`${t.kakaoVerifyFail || 'License confirmation required.'} (paymentId: ${paymentIdValue})`, 'err');
       alert(`${t.kakaoVerifyFail || '결제는 완료되었으나 라이선스 확인이 필요합니다.'}\n\npaymentId: ${paymentIdValue}`);
+      return;
+    }
+
+    // Success path may also return ok:false for duplicate_refunded (HTTP 200).
+    if(verified?.duplicate){
+      if(verified.refunded){
+        paypalStatus(`${t.duplicateRefunded || verified.message} (paymentId: ${paymentIdValue})`, 'ok');
+        alert(`${t.duplicateRefunded || verified.message}\n\npaymentId: ${paymentIdValue}`);
+      } else {
+        paypalStatus(`${t.duplicateRefundFailed || verified.message} (paymentId: ${paymentIdValue})`, 'err');
+        alert(`${t.duplicateRefundFailed || verified.message}\n\npaymentId: ${paymentIdValue}`);
+      }
+      await loadLicense(currentUser.uid);
       return;
     }
 
@@ -2960,6 +3121,7 @@ async function requestKakaoPayPayment(){
     updatePurchaseAccountBox();
   }catch(err){
     console.error('PortOne KakaoPay error', err);
+    await releaseKakaoPurchaseLock(paymentIdValue);
     const msg = String(err?.message || err || '');
     if(/cancel|취소/i.test(msg)){
       paypalStatus(t.kakaoCancel || '결제가 취소되었습니다.', 'err');
@@ -2967,6 +3129,10 @@ async function requestKakaoPayPayment(){
     }
     paypalStatus('카카오페이 결제 오류: ' + msg, 'err');
     alert('카카오페이 결제 오류: ' + msg);
+  }finally{
+    kakaoPayInFlight = false;
+    if(!currentLicenseLifetime && kakaoBtn) kakaoBtn.disabled = false;
+    applyPurchaseLifetimeGate();
   }
 }
 window.midiaiKakaoPay = requestKakaoPayPayment;
@@ -3007,6 +3173,12 @@ async function requestInicisCardPayment(){
     const msg = purchaseLocaleText().loginAlert || 'Google 로그인 후 결제할 수 있습니다.';
     paypalStatus(msg, 'err');
     alert(msg);
+    return;
+  }
+  const t = purchaseLocaleText();
+  if(currentLicenseLifetime){
+    applyPurchaseLifetimeGate();
+    alert(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.');
     return;
   }
   if(!CONFIG.portoneStoreId || String(CONFIG.portoneStoreId).startsWith('PASTE_')){
@@ -3080,6 +3252,7 @@ function renderKoreanPaymentButtons(){
       </button>
     </div>
     <p class="muted small purchase-test-payment-note">카카오페이는 테스트 결제 후 서버 검증을 거쳐 로그인 계정에 Lifetime 라이선스가 자동 등록됩니다. (운영 채널 미적용)</p>`;
+  applyPurchaseLifetimeGate();
 }
 function initPayPal(){
   if(!$('paypalButtons')) return;
@@ -3107,6 +3280,11 @@ function initPayPal(){
     window.paypal.Buttons({
       onClick:()=>{
         if(!currentUser){ alert(purchaseLocaleText().loginAlert); return false; }
+        if(currentLicenseLifetime){
+          applyPurchaseLifetimeGate();
+          alert(purchaseLocaleText().alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다.');
+          return false;
+        }
         paypalStatus(purchaseLocaleText().paypalAccount(currentUser.email || currentUser.uid));
         return true;
       },

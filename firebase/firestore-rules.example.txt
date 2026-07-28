@@ -32,6 +32,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Server-only purchase concurrency lock (Cloud Functions Admin SDK).
+    match /purchaseLocks/{uid} {
+      allow read, write: if false;
+    }
+
     match /announcements/{postId} {
       allow read: if resource.data.visible == true || isAdmin();
       allow write: if isAdmin();
