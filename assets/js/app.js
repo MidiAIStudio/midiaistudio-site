@@ -47,6 +47,8 @@ try{ adminCrmRecentFeed = JSON.parse(localStorage.getItem('midiai_admin_crm_feed
 let activeBoardPost = null;
 let activeBoardComments = [];
 let likedActivePost = false;
+let latestDownloadData = null;
+let downloadAdminExpanded = false;
 
 const textOriginals = new WeakMap();
 const attrOriginals = new WeakMap();
@@ -393,6 +395,14 @@ function tr(k){
 
 function fmtDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); return d ? d.toLocaleString(lang==='ja'?'ja-JP':lang==='en'?'en-US':'ko-KR') : ''; } catch { return ''; } }
 function fmtListDate(v){ try{ const d=v?.toDate?v.toDate():(v?new Date(v):null); if(!d)return '-'; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`; }catch{return '';} }
+function fmtCompactDateTime(v){
+  try{
+    const d=v?.toDate?v.toDate():(v?new Date(v):null);
+    if(!d||Number.isNaN(d.getTime())) return '-';
+    const pad=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }catch{ return '-'; }
+}
 function fmtShortDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); if(!d)return ''; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; } catch { return fmtDate(v); } }
 function isAdminAuthor(x){ return !!(x && (x.authorRole === 'admin' || x.role === 'admin')); }
 function contentAuthor(x){
@@ -1171,6 +1181,8 @@ function setAuthUiSignedOut(){
   if (page==='my-tickets.html' && $('myTicketList')) $('myTicketList').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='admin.html') setAdminGate(`<p>${tr('need_login')}</p><p class="muted">Google 로그인 후 role=admin 계정만 접근할 수 있습니다.</p>`);
+  downloadAdminExpanded = false;
+  refreshDownloadCard(true);
   updateBoardPinnedUi();
   syncBoardAdminUi();
   if(isPurchasePage){
@@ -1236,6 +1248,7 @@ async function setAuthUiSignedIn(user){
   }
   updateBoardPinnedUi();
   syncBoardAdminUi();
+  refreshDownloadCard(true);
   updatePurchaseAccountBox();
   updateSupportFormUi();
 }
@@ -1389,11 +1402,53 @@ function routeLoadPublic(){
   if(page==='board-post.html') listenBoardPostDetail();
   if(page==='board-write.html') initBoardPostEditor();
 }
-function renderDownload(d){
+function downloadAdminPanelHtml(d){
+  if(!isAdminUser) return '';
+  const toggleLabel = downloadAdminExpanded ? '닫기' : tr('edit');
+  const toggle = `<button type="button" class="secondary mini-btn download-admin-toggle" data-dl-admin="toggle">${esc(toggleLabel)}</button>`;
+  if(!downloadAdminExpanded) return `<div class="download-admin-bar">${toggle}</div>`;
+  const v = d||{};
+  return `<div class="download-admin-bar">${toggle}</div>
+  <div class="download-admin-panel" role="region" aria-label="다운로드 설정 수정">
+    <p class="download-admin-hint">관리자만 보입니다. 저장하면 모든 사용자에게 바로 반영됩니다.</p>
+    <div class="download-admin-grid">
+      <label class="download-admin-field"><span>버전</span><input id="dlAdminVersion" type="text" value="${esc(v.version||'')}" placeholder="예: 1.5.7" autocomplete="off"></label>
+      <label class="download-admin-field"><span>파일명</span><input id="dlAdminFilename" type="text" value="${esc(v.filename||'')}" placeholder="MidiAI Installer.exe" autocomplete="off"></label>
+      <label class="download-admin-field download-admin-field-full"><span>다운로드 URL</span><input id="dlAdminUrl" type="url" value="${esc(v.url||'')}" placeholder="https://..." autocomplete="off"></label>
+      <label class="download-admin-field download-admin-field-full"><span>업데이트 설명</span><textarea id="dlAdminNotes" rows="3" placeholder="업데이트 설명">${esc(v.notes||v.description||'')}</textarea></label>
+      <label class="check download-admin-check"><input id="dlAdminMandatory" type="checkbox" ${v.mandatory?'checked':''}> 필수 업데이트</label>
+    </div>
+    <div class="download-admin-actions">
+      <button type="button" class="primary" data-dl-admin="save">${tt('저장')}</button>
+      <button type="button" class="secondary" data-dl-admin="cancel">취소</button>
+    </div>
+  </div>`;
+}
+function bindDownloadAdminUi(box){
+  if(!box || !isAdminUser) return;
+  box.querySelector('[data-dl-admin="toggle"]')?.addEventListener('click',()=>{
+    downloadAdminExpanded = !downloadAdminExpanded;
+    refreshDownloadCard(true);
+  });
+  box.querySelector('[data-dl-admin="cancel"]')?.addEventListener('click',()=>{
+    downloadAdminExpanded = false;
+    refreshDownloadCard(true);
+  });
+  box.querySelector('[data-dl-admin="save"]')?.addEventListener('click',()=>saveDownloadFromInline());
+}
+function refreshDownloadCard(force=false){
+  if(!$('downloadBox')) return;
+  renderDownload(latestDownloadData, {force});
+}
+function renderDownload(d, opts={}){
   const box=$('downloadBox'); if(!box)return;
+  latestDownloadData = d || null;
+  if(downloadAdminExpanded && !opts.force && box.querySelector('.download-admin-panel')) return;
   const t = downloadLocaleText();
+  const adminHtml = downloadAdminPanelHtml(d);
   if(!d){
-    box.innerHTML=`<div class="portal-download-inner download-card-pro portal-download-empty"><div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div class="portal-download-meta"><h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p></div><div class="portal-download-actions"><a class="secondary" href="./purchase.html">${esc(t.buyLicense)}</a></div></div>`;
+    box.innerHTML=`<div class="portal-download-inner download-card-pro portal-download-empty"><div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div class="portal-download-meta"><h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p></div><div class="portal-download-actions"><a class="secondary" href="./purchase.html">${esc(t.buyLicense)}</a></div></div>${adminHtml}`;
+    bindDownloadAdminUi(box);
     return;
   }
   const mandatory = d.mandatory ? `<span class="portal-mandatory-pill">${esc(t.mandatory)}</span>` : '';
@@ -1417,9 +1472,49 @@ function renderDownload(d){
       ${d.url?`<a class="primary download-cta" href="${esc(d.url)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>${tr('download')}</span></a>`:''}
       <a class="secondary" href="./patch-notes.html">${esc(t.patchNotes)}</a>
     </div>
-  </div>`;
+  </div>${adminHtml}`;
+  bindDownloadAdminUi(box);
 }
 function listenDownload(){ if(!$('downloadBox')) return; listenDoc('downloads','latest',renderDownload); }
+async function persistDownloadLatest({version, filename, url, notes, mandatory}){
+  if(!isAdminUser) throw new Error(tr('no_permission'));
+  const {doc,setDoc,serverTimestamp}=firestoreApi;
+  await setDoc(doc(db,'downloads','latest'),{
+    version:String(version||'').trim(),
+    filename:String(filename||'').trim(),
+    url:String(url||'').trim(),
+    notes:String(notes||'').trim(),
+    mandatory:!!mandatory,
+    releaseDate:serverTimestamp(),
+    updatedAt:serverTimestamp()
+  },{merge:true});
+  if($('adminDownloadVersion')) $('adminDownloadVersion').value=String(version||'').trim();
+  if($('adminDownloadFilename')) $('adminDownloadFilename').value=String(filename||'').trim();
+  if($('adminDownloadUrl')) $('adminDownloadUrl').value=String(url||'').trim();
+  if($('adminDownloadNotes')) $('adminDownloadNotes').value=String(notes||'').trim();
+  if($('adminDownloadMandatory')) $('adminDownloadMandatory').checked=!!mandatory;
+}
+async function saveDownloadFromInline(){
+  if(!isAdminUser) return alert(tr('no_permission'));
+  const btn = document.querySelector('[data-dl-admin="save"]');
+  if(btn){ btn.disabled=true; btn.textContent='저장 중...'; }
+  try{
+    await persistDownloadLatest({
+      version:$('dlAdminVersion')?.value||'',
+      filename:$('dlAdminFilename')?.value||'',
+      url:$('dlAdminUrl')?.value||'',
+      notes:$('dlAdminNotes')?.value||'',
+      mandatory:!!$('dlAdminMandatory')?.checked
+    });
+    downloadAdminExpanded = false;
+    refreshDownloadCard(true);
+    alert(tr('saved'));
+  }catch(e){
+    alert(e.message||e);
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=tt('저장'); }
+  }
+}
 function renderHomeUpdates(rows, err){
   const box=$('homeUpdates'); if(!box) return;
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
@@ -2761,13 +2856,14 @@ function renderAdminCrmOrders(uid, showAll){
   const all = adminOrdersForUid(uid);
   const rows = showAll ? all : all.slice(0, 5);
   if(!rows.length){ box.innerHTML=`<p class="muted small">주문 기록이 없습니다.</p>`; return; }
-  box.innerHTML = `<table class="admin-table crm-mini-table"><thead><tr><th>주문번호</th><th>수단</th><th>금액</th><th>결제일</th><th>상태</th></tr></thead><tbody>${rows.map(o=>{
-    const id=o.paymentId||o.paypalOrderId||o.id||'-';
+  box.innerHTML = `<table class="admin-table crm-mini-table"><colgroup><col class="crm-col-id"><col class="crm-col-method"><col class="crm-col-amount"><col class="crm-col-date"><col class="crm-col-status"></colgroup><thead><tr><th>주문번호</th><th>수단</th><th>금액</th><th>결제일</th><th>상태</th></tr></thead><tbody>${rows.map(o=>{
+    const id=String(o.paymentId||o.paypalOrderId||o.id||'-');
     const method=o.paymentMethod||o.provider||o.method||'-';
-    const amount=o.amount!=null ? `${Number(o.amount).toLocaleString('ko-KR')} ${esc(o.currency||'KRW')}` : '-';
-    const when=fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
+    const amount=o.amount!=null ? `${Number(o.amount).toLocaleString('ko-KR')} ${o.currency||'KRW'}` : '-';
+    const when=fmtCompactDateTime(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
     const key=o.id || o.paymentId || o.paypalOrderId || '';
-    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0"><td class="mono">${esc(id)}</td><td>${esc(method)}</td><td>${amount}</td><td>${esc(when)}</td><td>${esc(o.status||'-')}</td></tr>`;
+    const shortId = id.length>24 ? `${id.slice(0,12)}…${id.slice(-6)}` : id;
+    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="mono crm-td-id">${esc(shortId)}</td><td class="crm-td-method">${esc(method)}</td><td class="crm-td-amount">${esc(amount)}</td><td class="crm-td-date">${esc(when)}</td><td class="crm-td-status">${esc(o.status||'-')}</td></tr>`;
   }).join('')}</tbody></table>${(!showAll && all.length>5) ? `<p class="muted small">외 ${all.length-5}건 · 더보기로 전체 표시</p>` : ''}`;
   box.querySelectorAll('[data-order-id]').forEach(row=>{
     if(row.dataset.bound) return;
@@ -3163,8 +3259,13 @@ async function loadAdminDownloadSettings(){
 async function saveAdminDownloadSettings(){
   if(!isAdminUser)return alert(tr('no_permission'));
   try{
-    const {doc,setDoc,serverTimestamp}=firestoreApi;
-    await setDoc(doc(db,'downloads','latest'),{version:$('adminDownloadVersion').value.trim(),filename:$('adminDownloadFilename').value.trim(),url:$('adminDownloadUrl').value.trim(),notes:$('adminDownloadNotes').value.trim(),mandatory:$('adminDownloadMandatory').checked,releaseDate:serverTimestamp(),updatedAt:serverTimestamp()},{merge:true});
+    await persistDownloadLatest({
+      version:$('adminDownloadVersion')?.value||'',
+      filename:$('adminDownloadFilename')?.value||'',
+      url:$('adminDownloadUrl')?.value||'',
+      notes:$('adminDownloadNotes')?.value||'',
+      mandatory:!!$('adminDownloadMandatory')?.checked
+    });
     adminFlash(`${tr('saved')} · downloads/latest`);
   }catch(e){ alert(e.message); }
 }
