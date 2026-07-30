@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v92-admin-crm-ux">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v93-enterprise-crm">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -112,26 +112,45 @@
                 <div class="admin-crm-stats" id="adminCrmStats" aria-label="회원 통계"></div>
                 <div class="admin-crm-toolbar">
                   <input id="adminUserSearch" class="search-input compact" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
-                  <div class="admin-crm-filter-row">
-                    <select id="adminUserLicenseStatus" aria-label="라이선스 필터">
-                      <option value="all">전체</option>
+                  <div class="admin-crm-filter-grid">
+                    <select id="adminUserLicenseStatus" aria-label="License">
+                      <option value="all">License: 전체</option>
                       <option value="lifetime">Lifetime</option>
                       <option value="trial">Trial</option>
                       <option value="expired">Expired</option>
                       <option value="suspended">Suspended</option>
-                      <option value="none">라이선스 없음</option>
-                      <option value="active">활성(전체)</option>
-                      <option value="joined_today">오늘 가입</option>
-                      <option value="joined_7d">최근 7일 가입</option>
-                      <option value="idle_30d">30일 미접속</option>
-                      <option value="has_orders">주문 있음</option>
-                      <option value="no_orders">주문 없음</option>
-                      <option value="has_tickets">문의 있음</option>
-                      <option value="no_tickets">문의 없음</option>
-                      <option value="role_admin">Role: Admin</option>
-                      <option value="role_staff">Role: Staff</option>
-                      <option value="role_user">Role: User</option>
+                      <option value="none">없음</option>
+                      <option value="active">활성</option>
                       <option value="favorites">★ 즐겨찾기</option>
+                    </select>
+                    <select id="adminCrmFilterRole" aria-label="Role">
+                      <option value="all">Role: 전체</option>
+                      <option value="admin">Admin</option>
+                      <option value="staff">Staff</option>
+                      <option value="user">User</option>
+                    </select>
+                    <select id="adminCrmFilterLogin" aria-label="최근 로그인">
+                      <option value="all">로그인: 전체</option>
+                      <option value="today">오늘</option>
+                      <option value="7d">7일</option>
+                      <option value="30d">30일</option>
+                      <option value="idle_30d">30일+</option>
+                    </select>
+                    <select id="adminCrmFilterJoined" aria-label="가입일">
+                      <option value="all">가입: 전체</option>
+                      <option value="today">오늘</option>
+                      <option value="7d">7일</option>
+                      <option value="30d">30일</option>
+                    </select>
+                    <select id="adminCrmFilterOrders" aria-label="결제">
+                      <option value="all">결제: 전체</option>
+                      <option value="has">있음</option>
+                      <option value="none">없음</option>
+                    </select>
+                    <select id="adminCrmFilterTickets" aria-label="문의">
+                      <option value="all">문의: 전체</option>
+                      <option value="has">있음</option>
+                      <option value="none">없음</option>
                     </select>
                     <select id="adminUserSort" aria-label="정렬">
                       <option value="lastLogin">최근 로그인</option>
@@ -161,29 +180,42 @@
                 <div class="admin-crm-empty" id="adminCrmEmpty">
                   <p>왼쪽에서 회원을 선택하면 상세 정보가 표시됩니다.</p>
                 </div>
+                <div class="admin-crm-skeleton is-hidden" id="adminCrmSkeleton" aria-hidden="true">
+                  <div class="crm-skel crm-skel-head"></div>
+                  <div class="crm-skel crm-skel-line"></div>
+                  <div class="crm-skel crm-skel-line short"></div>
+                  <div class="crm-skel crm-skel-block"></div>
+                  <div class="crm-skel crm-skel-block"></div>
+                </div>
                 <div class="admin-crm-detail is-hidden" id="adminCrmDetailBody">
                   <header class="admin-crm-detail-head">
                     <div class="admin-crm-profile">
                       <img id="adminCrmAvatar" class="admin-crm-avatar" alt="" width="56" height="56">
-                      <div>
-                        <h2 id="adminCrmName">-</h2>
+                      <div class="admin-crm-profile-main">
+                        <div class="admin-crm-title-row">
+                          <h2 id="adminCrmName">-</h2>
+                          <span id="adminCrmRoleBadge"></span>
+                          <span id="adminCrmHeaderLicense"></span>
+                        </div>
                         <p id="adminCrmEmail" class="muted"></p>
                         <p class="mono small" id="adminCrmUid"></p>
+                        <div class="admin-crm-header-meta" id="adminCrmHeaderMeta"></div>
                       </div>
                     </div>
                     <div class="admin-crm-head-actions">
                       <button type="button" class="ghost admin-crm-fav-btn" id="adminCrmFavBtn" data-crm-action="toggle-fav" title="즐겨찾기">☆</button>
                       <div class="admin-crm-menu-wrap">
-                        <button type="button" class="ghost admin-crm-menu-btn" id="adminCrmMenuBtn" aria-haspopup="true" aria-expanded="false" title="더보기">⋮</button>
+                        <button type="button" class="secondary mini-btn admin-crm-menu-btn" id="adminCrmMenuBtn" aria-haspopup="true" aria-expanded="false">Quick Actions</button>
                         <div class="admin-crm-menu" id="adminCrmMenu" hidden role="menu">
-                          <button type="button" role="menuitem" data-crm-action="focus-license">라이선스 변경</button>
                           <button type="button" role="menuitem" data-crm-action="hwid-reset">HWID 초기화</button>
-                          <button type="button" role="menuitem" data-crm-action="grant-trial">Trial 지급</button>
-                          <button type="button" role="menuitem" data-crm-action="grant-lifetime">Lifetime 지급</button>
-                          <button type="button" role="menuitem" data-crm-action="suspend">계정 정지</button>
-                          <button type="button" role="menuitem" data-crm-action="activate">계정 활성화</button>
+                          <button type="button" role="menuitem" data-crm-action="mail">메일 보내기</button>
+                          <button type="button" role="menuitem" data-crm-action="google-profile">Google 프로필</button>
+                          <button type="button" role="menuitem" data-crm-action="discord">Discord 프로필</button>
                           <button type="button" role="menuitem" data-crm-action="orders">주문 보기</button>
                           <button type="button" role="menuitem" data-crm-action="tickets">문의 보기</button>
+                          <button type="button" role="menuitem" data-crm-action="suspend">계정 정지</button>
+                          <button type="button" role="menuitem" data-crm-action="activate">계정 활성화</button>
+                          <button type="button" role="menuitem" data-crm-action="focus-license">라이선스 변경</button>
                           <button type="button" role="menuitem" class="is-danger" data-crm-action="delete">회원 삭제</button>
                         </div>
                       </div>
@@ -193,16 +225,9 @@
                   <div class="admin-crm-quick" id="adminCrmQuick">
                     <button type="button" class="primary mini-btn" data-crm-action="grant-lifetime">Lifetime 지급</button>
                     <button type="button" class="secondary mini-btn" data-crm-action="grant-trial">Trial 지급</button>
-                    <button type="button" class="secondary mini-btn" data-crm-action="hwid-reset">HWID 초기화</button>
-                    <button type="button" class="secondary mini-btn" data-crm-action="mail">메일 보내기</button>
-                    <button type="button" class="secondary mini-btn" data-crm-action="google-profile">Google 프로필</button>
-                    <button type="button" class="secondary mini-btn" data-crm-action="discord">Discord 보기</button>
-                    <button type="button" class="secondary mini-btn" data-crm-action="orders">주문 내역</button>
-                    <button type="button" class="secondary mini-btn" data-crm-action="tickets">문의 내역</button>
                   </div>
 
                   <div class="admin-crm-summary" id="adminCrmSummary"></div>
-                  <div class="admin-crm-meta-grid" id="adminCrmMeta"></div>
 
                   <div class="admin-crm-card" id="adminCrmHwidCard">
                     <div class="admin-crm-card-head"><h3>HWID</h3></div>
@@ -234,7 +259,7 @@
                       </div>
                       <div class="admin-crm-license-meta" id="adminCrmLicenseMeta"></div>
                       <textarea id="adminLicenseMemo" rows="2" placeholder="라이선스 메모 (licenses.memo)"></textarea>
-                      <button class="primary admin-crm-save-license" type="submit">Save License Changes</button>
+                      <button class="primary admin-crm-save-license" type="submit" id="adminCrmSaveLicenseInline">Save License Changes</button>
                     </form>
                   </div>
 
@@ -248,17 +273,26 @@
                     <div id="adminCrmTickets" class="admin-crm-table-wrap"></div>
                   </div>
 
-                  <div class="admin-crm-card">
+                  <div class="admin-crm-card" id="adminCrmMemoCard">
                     <div class="admin-crm-card-head"><h3>관리자 메모</h3><span class="muted small" id="adminCrmMemoStatus"></span></div>
-                    <textarea id="adminCrmUserMemo" rows="4" placeholder="예: VIP 고객 / 원격지원 완료 / HWID 초기화 1회 / 환불 진행 중"></textarea>
+                    <textarea id="adminCrmUserMemo" rows="4" placeholder="예: VIP / 원격지원 완료 / HWID 초기화 2회 / 환불 진행중"></textarea>
                     <button type="button" class="secondary admin-crm-save-memo" data-crm-action="save-memo">Save Memo</button>
+                    <div class="admin-crm-memo-history" id="adminCrmMemoHistory"></div>
                   </div>
 
-                  <div class="admin-crm-card">
-                    <div class="admin-crm-card-head"><h3>Timeline</h3></div>
-                    <div id="adminCrmTimeline" class="admin-crm-timeline"></div>
+                  <div class="admin-crm-bottom-grid">
+                    <div class="admin-crm-card">
+                      <div class="admin-crm-card-head"><h3>Timeline</h3></div>
+                      <div id="adminCrmTimeline" class="admin-crm-timeline"></div>
+                    </div>
+                    <div class="admin-crm-card admin-crm-feed-card">
+                      <div class="admin-crm-card-head"><h3>Recent Activity</h3></div>
+                      <div id="adminCrmRecentFeed" class="admin-crm-recent-feed"></div>
+                    </div>
                   </div>
                 </div>
+
+                <button type="button" class="admin-crm-float-save is-disabled" id="adminCrmFloatSave" hidden disabled>Save Changes</button>
               </section>
 
               <div class="admin-crm-drawer" id="adminCrmOrderDrawer" hidden>
@@ -381,7 +415,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=v92-admin-crm-ux"></script>
-  <script type="module" src="./assets/js/app.js?v=v92-admin-crm-ux"></script>
+  <script type="module" src="./assets/js/config.js?v=v93-enterprise-crm"></script>
+  <script type="module" src="./assets/js/app.js?v=v93-enterprise-crm"></script>
 </body>
 </html>
