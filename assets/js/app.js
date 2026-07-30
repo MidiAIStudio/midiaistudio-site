@@ -37,7 +37,7 @@ let adminCrmScrollTop = 0;
 let adminCrmSearchTimer = null;
 let adminCrmMemoTimer = null;
 let adminCrmExpandedHwid = new Set();
-const ADMIN_CRM_ROW_H = 40;
+const ADMIN_CRM_ROW_H = 48;
 let adminCrmHwidRevealed = false;
 let adminCrmDirty = false;
 let adminCrmBaseline = null;
@@ -2315,14 +2315,14 @@ function adminLicenseKind(lic){
 function adminLicenseBadgeHtml(kind, lic){
   const plan = lic?.plan || kind;
   const status = lic?.status || kind;
-  if(kind==='lifetime') return `<span class="crm-badge is-lifetime">🟢 Lifetime</span>`;
-  if(kind==='trial') return `<span class="crm-badge is-trial">🟡 Trial</span>`;
-  if(kind==='developer') return `<span class="crm-badge is-dev">🟣 Developer</span>`;
-  if(kind==='admin') return `<span class="crm-badge is-admin">🔵 Admin</span>`;
-  if(kind==='suspended') return `<span class="crm-badge is-suspended">🔴 Suspended</span>`;
-  if(kind==='expired') return `<span class="crm-badge is-expired">⚪ Expired</span>`;
-  if(kind==='active') return `<span class="crm-badge is-active">🟢 ${esc(plan)} · ${esc(status)}</span>`;
-  return `<span class="crm-badge is-none">None</span>`;
+  if(kind==='lifetime') return `<span class="crm-badge is-lifetime"><i></i>Lifetime</span>`;
+  if(kind==='trial') return `<span class="crm-badge is-trial"><i></i>Trial</span>`;
+  if(kind==='developer') return `<span class="crm-badge is-dev"><i></i>Developer</span>`;
+  if(kind==='admin') return `<span class="crm-badge is-admin"><i></i>Admin</span>`;
+  if(kind==='suspended') return `<span class="crm-badge is-suspended"><i></i>Suspended</span>`;
+  if(kind==='expired') return `<span class="crm-badge is-expired"><i></i>Expired</span>`;
+  if(kind==='active') return `<span class="crm-badge is-active"><i></i>${esc(plan)}</span>`;
+  return `<span class="crm-badge is-none"><i></i>None</span>`;
 }
 function adminLastPaymentSec(uid){
   const o = adminOrdersForUid(uid)[0];
@@ -2339,18 +2339,18 @@ function saveAdminCrmFavorites(set){
 let adminCrmFavorites = loadAdminCrmFavorites();
 function adminRoleBadgeHtml(role){
   const r=String(role||'user').toLowerCase();
-  if(r==='admin') return `<span class="crm-role is-admin">🟣 ADMIN</span>`;
-  if(r==='staff') return `<span class="crm-role is-staff">🔵 STAFF</span>`;
-  return `<span class="crm-role is-user">🟢 USER</span>`;
+  if(r==='admin') return `<span class="crm-role is-admin"><i></i>ADMIN</span>`;
+  if(r==='staff') return `<span class="crm-role is-staff"><i></i>STAFF</span>`;
+  return `<span class="crm-role is-user"><i></i>USER</span>`;
 }
 function adminActivityBadgeHtml(user){
   const t=adminTsSec(user?.lastLogin||user?.lastSeenAt);
-  if(!t) return `<span class="crm-activity is-offline">⚪ Offline</span>`;
+  if(!t) return `<span class="crm-activity is-offline"><i></i>Offline</span>`;
   const age=(Date.now()/1000)-t;
-  if(age < 86400) return `<span class="crm-activity is-online">🟢 Online</span>`;
-  if(age < 7*86400) return `<span class="crm-activity is-active">🔵 Active</span>`;
-  if(age < 30*86400) return `<span class="crm-activity is-idle">🟡 Idle</span>`;
-  return `<span class="crm-activity is-offline">⚪ Offline</span>`;
+  if(age < 86400) return `<span class="crm-activity is-online"><i></i>Online</span>`;
+  if(age < 7*86400) return `<span class="crm-activity is-active"><i></i>Active</span>`;
+  if(age < 30*86400) return `<span class="crm-activity is-idle"><i></i>Idle</span>`;
+  return `<span class="crm-activity is-offline"><i></i>Offline</span>`;
 }
 function fmtRelative(v){
   const t=adminTsSec(v);
@@ -2467,14 +2467,14 @@ function renderAdminCrmStats(rows){
   const idle7=adminUserRows.filter(u=>{ const t=adminTsSec(u.lastLogin||u.lastSeenAt); return t>0 && now-t > 7*86400; }).length;
   const idle30=adminUserRows.filter(u=>{ const t=adminTsSec(u.lastLogin||u.lastSeenAt); return t>0 && now-t > 30*86400; }).length;
   box.innerHTML=`
-    <div class="crm-stat"><b>${all}</b><span>전체</span></div>
-    <div class="crm-stat"><b>${active}</b><span>활성</span></div>
-    <div class="crm-stat"><b>${trial}</b><span>Trial</span></div>
+    <div class="crm-stat"><b>${all}</b><span>Members</span></div>
+    <div class="crm-stat"><b>${active}</b><span>Active</span></div>
     <div class="crm-stat"><b>${lifetime}</b><span>Lifetime</span></div>
-    <div class="crm-stat"><b>${todayJoin}</b><span>오늘 가입</span></div>
-    <div class="crm-stat"><b>${idle7}</b><span>7일 미접속</span></div>
-    <div class="crm-stat"><b>${idle30}</b><span>30일 미접속</span></div>
-    <div class="crm-stat"><b>${rows.length}</b><span>필터 결과</span></div>`;
+    <div class="crm-stat"><b>${trial}</b><span>Trial</span></div>
+    <div class="crm-stat"><b>${todayJoin}</b><span>Today</span></div>
+    <div class="crm-stat"><b>${idle7}</b><span>Idle 7d</span></div>
+    <div class="crm-stat"><b>${idle30}</b><span>Idle 30d</span></div>
+    <div class="crm-stat is-accent"><b>${rows.length}</b><span>Filtered</span></div>`;
 }
 function renderAdminUserTable(){
   const box=$('adminUserList'); if(!box || !isAdminUser) return;
@@ -2534,7 +2534,7 @@ function adminCrmMemberCardHtml(u){
   const uid=u.uid;
   const selected = selectedAdminUid===uid ? ' is-selected' : '';
   const checked = adminCrmSelected.has(uid) ? 'checked' : '';
-  const fav = u.isFav ? '★' : '';
+  const fav = u.isFav ? '<span class="crm-fav-mark" aria-hidden="true">★</span>' : '';
   const avatar = u.photoURL
     ? `<img class="admin-crm-card-avatar" src="${esc(u.photoURL)}" alt="" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">`
     : `<span class="admin-crm-card-avatar is-fallback">${esc((u.displayName||u.email||'?').slice(0,1).toUpperCase())}</span>`;
@@ -2543,13 +2543,13 @@ function adminCrmMemberCardHtml(u){
     ${avatar}
     <div class="admin-crm-member-main">
       <div class="admin-crm-member-top">
-        <b>${fav?`<span class="crm-fav-mark">${fav}</span>`:''}${esc(u.displayName||'Google User')}</b>
+        <b>${fav}${esc(u.displayName||'Google User')}</b>
         ${adminLicenseBadgeHtml(u.licenseKind, u.license)}
       </div>
       <div class="admin-crm-member-meta">
-        <span>${esc(fmtRelative(u.lastLogin||u.lastSeenAt))}</span>
-        <span>주문 ${Number(u.orderCount||0)}</span>
-        <span>문의 ${Number(u.ticketCount||0)}</span>
+        <span class="crm-meta-login">${esc(fmtRelative(u.lastLogin||u.lastSeenAt))}</span>
+        <span class="crm-meta-num">주문 ${Number(u.orderCount||0)}</span>
+        <span class="crm-meta-num">문의 ${Number(u.ticketCount||0)}</span>
       </div>
     </div>
   </article>`;
@@ -2839,7 +2839,7 @@ function renderAdminCrmTimeline(uid, user, lic){
   box.innerHTML = events.slice(0, 30).map(ev=>{
     const d = ev.t ? new Date(ev.t*1000) : null;
     const day = d && !Number.isNaN(d.getTime()) ? `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}` : '-';
-    return `<div class="admin-crm-timeline-item"><span class="admin-crm-timeline-dot" aria-hidden="true"></span><div><b>● ${esc(ev.label)}</b><time>${esc(day)}</time><span>${esc(ev.detail||'')}</span></div></div>`;
+    return `<div class="admin-crm-timeline-item"><span class="admin-crm-timeline-dot" aria-hidden="true"></span><div><b>${esc(ev.label)}</b><time>${esc(day)}</time><span>${esc(ev.detail||'')}</span></div></div>`;
   }).join('');
 }
 function bindAdminUserFilters(){
