@@ -37,7 +37,8 @@ let adminCrmScrollTop = 0;
 let adminCrmSearchTimer = null;
 let adminCrmMemoTimer = null;
 let adminCrmExpandedHwid = new Set();
-const ADMIN_CRM_ROW_H = 92;
+const ADMIN_CRM_ROW_H = 56;
+let adminCrmHwidRevealed = false;
 let activeBoardPost = null;
 let activeBoardComments = [];
 let likedActivePost = false;
@@ -2319,10 +2320,41 @@ function adminLastPaymentSec(uid){
   const o = adminOrdersForUid(uid)[0];
   return o ? adminTsSec(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt) : 0;
 }
+function adminCrmFavKey(){ return 'midiai_admin_crm_favs'; }
+function loadAdminCrmFavorites(){
+  try{ return new Set(JSON.parse(localStorage.getItem(adminCrmFavKey())||'[]')); }
+  catch{ return new Set(); }
+}
+function saveAdminCrmFavorites(set){
+  localStorage.setItem(adminCrmFavKey(), JSON.stringify([...set]));
+}
+let adminCrmFavorites = loadAdminCrmFavorites();
+function adminRoleBadgeHtml(role){
+  const r=String(role||'user').toLowerCase();
+  if(r==='admin') return `<span class="crm-role is-admin">🟣 ADMIN</span>`;
+  if(r==='staff') return `<span class="crm-role is-staff">🔵 STAFF</span>`;
+  return `<span class="crm-role is-user">🟢 USER</span>`;
+}
+function adminActivityBadgeHtml(user){
+  const t=adminTsSec(user?.lastLogin||user?.lastSeenAt);
+  if(!t) return `<span class="crm-activity is-idle">⚪ Idle</span>`;
+  const age=(Date.now()/1000)-t;
+  if(age < 86400) return `<span class="crm-activity is-online">🟢 Online</span>`;
+  if(age < 7*86400) return `<span class="crm-activity is-active">🔵 Active</span>`;
+  if(age >= 30*86400) return `<span class="crm-activity is-idle">⚪ Idle</span>`;
+  return `<span class="crm-activity is-active">🔵 Active</span>`;
+}
+function maskAdminHwid(hwid){
+  const s=String(hwid||'');
+  if(!s) return '(없음)';
+  if(s.length<=10) return `${s.slice(0,2)}${'*'.repeat(Math.max(4,s.length-2))}`;
+  return `${s.slice(0,5)}${'*'.repeat(14)}${s.slice(-4)}`;
+}
 function getAdminCrmRows(){
   const q=($('adminUserSearch')?.value||'').trim().toLowerCase();
   const st=$('adminUserLicenseStatus')?.value || 'all';
   const sort=$('adminUserSort')?.value || 'lastLogin';
+  const now=Date.now()/1000;
   let rows = adminUserRows.map(u=>{
     const uid=adminUserUid(u);
     const license=licenseForUid(uid);
@@ -2333,7 +2365,8 @@ function getAdminCrmRows(){
       licenseKind: adminLicenseKind(license),
       orderCount: adminOrdersForUid(uid).length,
       ticketCount: adminTicketsForUid(uid).length,
-      lastPaymentSec: adminLastPaymentSec(uid)
+      lastPaymentSec: adminLastPaymentSec(uid),
+      isFav: adminCrmFavorites.has(uid)
     };
   }).filter(u=>{
     const kind=u.licenseKind;
@@ -2341,6 +2374,9 @@ function getAdminCrmRows(){
     const status=String(lic?.status||'').toLowerCase();
     const plan=String(lic?.plan||'').toLowerCase();
     const active=lic && lic.licensed===true && status==='active';
+    const role=String(u.role||'user').toLowerCase();
+    const created=adminTsSec(u.createdAt);
+    const last=adminTsSec(u.lastLogin||u.lastSeenAt);
     if(st==='lifetime' && !(active && plan==='lifetime')) return false;
     else if(st==='trial' && !(active && plan==='trial')) return false;
     else if(st==='expired' && kind!=='expired') return false;
@@ -2348,11 +2384,22 @@ function getAdminCrmRows(){
     else if(st==='none' && lic) return false;
     else if(st==='active' && !active) return false;
     else if(st==='banned' && kind!=='suspended') return false;
-    else if(st!=='all' && !['lifetime','trial','expired','suspended','none','active','banned'].includes(st)) return true;
-    const hay=[u.email,u.displayName,u.uid,u.id,u.hwid,lic?.hwid,lic?.plan,lic?.status].join(' ').toLowerCase();
+    else if(st==='joined_today' && !(created && now-created < 86400)) return false;
+    else if(st==='joined_7d' && !(created && now-created < 7*86400)) return false;
+    else if(st==='idle_30d' && !((!last && created) || (last && now-last > 30*86400))) return false;
+    else if(st==='has_orders' && !(u.orderCount>0)) return false;
+    else if(st==='no_orders' && u.orderCount>0) return false;
+    else if(st==='has_tickets' && !(u.ticketCount>0)) return false;
+    else if(st==='no_tickets' && u.ticketCount>0) return false;
+    else if(st==='role_admin' && role!=='admin') return false;
+    else if(st==='role_staff' && role!=='staff') return false;
+    else if(st==='role_user' && (role==='admin'||role==='staff')) return false;
+    else if(st==='favorites' && !u.isFav) return false;
+    const hay=[u.email,u.displayName,u.uid,u.id,u.hwid,lic?.hwid,lic?.plan,lic?.status,role].join(' ').toLowerCase();
     return !q || hay.includes(q);
   });
   rows.sort((a,b)=>{
+    if(a.isFav!==b.isFav) return a.isFav ? -1 : 1;
     if(sort==='name') return String(a.displayName||a.email||'').localeCompare(String(b.displayName||b.email||''),'ko');
     if(sort==='createdAt') return adminTsSec(b.createdAt)-adminTsSec(a.createdAt);
     if(sort==='lastPayment') return (b.lastPaymentSec||0)-(a.lastPaymentSec||0);
@@ -2442,26 +2489,26 @@ function adminCrmMemberCardHtml(u){
   const uid=u.uid;
   const selected = selectedAdminUid===uid ? ' is-selected' : '';
   const checked = adminCrmSelected.has(uid) ? 'checked' : '';
+  const fav = u.isFav ? '★' : '';
   const avatar = u.photoURL
-    ? `<img class="admin-crm-card-avatar" src="${esc(u.photoURL)}" alt="" width="40" height="40" loading="lazy" referrerpolicy="no-referrer">`
+    ? `<img class="admin-crm-card-avatar" src="${esc(u.photoURL)}" alt="" width="32" height="32" loading="lazy" referrerpolicy="no-referrer">`
     : `<span class="admin-crm-card-avatar is-fallback">${esc((u.displayName||u.email||'?').slice(0,1).toUpperCase())}</span>`;
-  const hwid = u.hwid || u.license?.hwid || '';
-  const hwidOpen = adminCrmExpandedHwid.has(uid);
   return `<article class="admin-crm-member${selected}" data-admin-uid="${esc(uid)}" style="min-height:${ADMIN_CRM_ROW_H}px">
     <label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-check="${esc(uid)}" ${checked}></label>
     ${avatar}
     <div class="admin-crm-member-main">
-      <div class="admin-crm-member-top"><b>${esc(u.displayName||'Google User')}</b>${adminLicenseBadgeHtml(u.licenseKind, u.license)}</div>
-      <div class="muted small">${esc(u.email||'')}</div>
-      <div class="admin-crm-member-meta">
-        <span>로그인 ${esc(fmtListDate(u.lastLogin||u.lastSeenAt))}</span>
-        <span>가입 ${esc(fmtListDate(u.createdAt))}</span>
-        <span>주문 ${Number(u.orderCount||0)}</span>
-        <span>문의 ${Number(u.ticketCount||0)}</span>
+      <div class="admin-crm-member-top">
+        <b>${fav?`<span class="crm-fav-mark">${fav}</span>`:''}${esc(u.displayName||'Google User')}</b>
+        ${adminLicenseBadgeHtml(u.licenseKind, u.license)}
+        ${adminActivityBadgeHtml(u)}
       </div>
-      <div class="admin-crm-hwid-row">
-        <button type="button" class="ghost mini-btn" data-crm-hwid-toggle="${esc(uid)}">HWID</button>
-        ${hwidOpen ? `<code class="mono small">${esc(hwid||'(없음)')}</code>` : ''}
+      <div class="admin-crm-member-sub">
+        <span class="muted small">${esc(u.email||'')}</span>
+        <span class="admin-crm-member-meta">
+          <span>로그인 ${esc(fmtListDate(u.lastLogin||u.lastSeenAt))}</span>
+          <span>주문 ${Number(u.orderCount||0)}</span>
+          <span>문의 ${Number(u.ticketCount||0)}</span>
+        </span>
       </div>
     </div>
   </article>`;
@@ -2472,14 +2519,6 @@ function onAdminCrmListClick(e){
     const uid = check.getAttribute('data-crm-check');
     if(check.checked) adminCrmSelected.add(uid); else adminCrmSelected.delete(uid);
     updateAdminCrmBulkbar();
-    return;
-  }
-  const hwidBtn = e.target.closest('[data-crm-hwid-toggle]');
-  if(hwidBtn){
-    e.stopPropagation();
-    const uid = hwidBtn.getAttribute('data-crm-hwid-toggle');
-    if(adminCrmExpandedHwid.has(uid)) adminCrmExpandedHwid.delete(uid); else adminCrmExpandedHwid.add(uid);
-    paintAdminCrmVirtualList();
     return;
   }
   const card = e.target.closest('[data-admin-uid]');
@@ -2501,11 +2540,24 @@ function updateAdminCrmBulkbar(){
 function selectAdminCrmUser(uid){
   if(!uid || !isAdminUser) return;
   selectedAdminUid = uid;
+  adminCrmHwidRevealed = false;
   paintAdminCrmVirtualList();
   renderAdminCrmDetail(uid);
 }
 function refreshAdminCrmDetail(){
   if(selectedAdminUid) renderAdminCrmDetail(selectedAdminUid);
+}
+function renderAdminCrmHwidBox(user, lic){
+  const box=$('adminCrmHwidBox'); if(!box) return;
+  const hwid = user.hwid || lic?.hwid || '';
+  const shown = adminCrmHwidRevealed ? (hwid || '(없음)') : maskAdminHwid(hwid);
+  box.innerHTML = `
+    <code class="mono admin-crm-hwid-value">${esc(shown)}</code>
+    <div class="admin-crm-hwid-actions">
+      <button type="button" class="secondary mini-btn" data-crm-action="hwid-reveal">${adminCrmHwidRevealed?'숨기기':'보기'}</button>
+      <button type="button" class="secondary mini-btn" data-crm-action="hwid-copy" ${hwid?'':'disabled'}>복사</button>
+      <button type="button" class="secondary mini-btn danger-btn" data-crm-action="hwid-reset">초기화</button>
+    </div>`;
 }
 function renderAdminCrmDetail(uid){
   const empty=$('adminCrmEmpty');
@@ -2529,14 +2581,20 @@ function renderAdminCrmDetail(uid){
 
   const lic = licenseForUid(uid);
   const kind = adminLicenseKind(lic);
+  const orders = adminOrdersForUid(uid);
+  const tickets = adminTicketsForUid(uid);
+  const lastOrder = orders[0];
+  const lastTicket = tickets[0];
   const avatar=$('adminCrmAvatar');
   if(avatar){
     if(user.photoURL){ avatar.src=user.photoURL; avatar.classList.remove('is-fallback'); }
     else { avatar.removeAttribute('src'); avatar.classList.add('is-fallback'); avatar.alt=(user.displayName||'?').slice(0,1); }
   }
-  $('adminCrmName') && ($('adminCrmName').textContent = user.displayName || 'Google User');
+  $('adminCrmName') && ($('adminCrmName').innerHTML = `${esc(user.displayName || 'Google User')} ${adminRoleBadgeHtml(user.role)}`);
   $('adminCrmEmail') && ($('adminCrmEmail').textContent = user.email || '');
   $('adminCrmUid') && ($('adminCrmUid').textContent = `UID ${uid}`);
+  const favBtn=$('adminCrmFavBtn');
+  if(favBtn) favBtn.textContent = adminCrmFavorites.has(uid) ? '★' : '☆';
   $('adminLicenseUid') && ($('adminLicenseUid').value = uid);
   if($('adminLicensePlan')){
     const plan=String(lic?.plan||'lifetime');
@@ -2557,14 +2615,28 @@ function renderAdminCrmDetail(uid){
     <div><span>만료일</span><b>${esc(lic?.expiresAt ? fmtDate(lic.expiresAt) : (String(lic?.plan||'')==='lifetime'?'없음':'-'))}</b></div>
     <div><span>변경일</span><b>${esc(fmtDate(lic?.updatedAt || lic?.createdAt))}</b></div>
     <div><span>Method</span><b>${esc(lic?.method || '-')}</b></div>`);
+  $('adminCrmSummary') && ($('adminCrmSummary').innerHTML = `
+    <div class="admin-crm-summary-card">
+      <span>주문</span>
+      <b>${orders.length}건</b>
+      <small>최근 결제 ${esc(lastOrder ? fmtListDate(lastOrder.completedAt||lastOrder.verifiedAt||lastOrder.createdAt) : '없음')}</small>
+    </div>
+    <div class="admin-crm-summary-card">
+      <span>문의</span>
+      <b>${tickets.length}건</b>
+      <small>최근 문의 ${esc(lastTicket ? fmtListDate(lastTicket.createdAt) : '없음')}</small>
+    </div>
+    <div class="admin-crm-summary-card">
+      <span>활동</span>
+      <b>${adminActivityBadgeHtml(user)}</b>
+      <small>최근 로그인 ${esc(fmtListDate(user.lastLogin||user.lastSeenAt))}</small>
+    </div>`);
   $('adminCrmMeta') && ($('adminCrmMeta').innerHTML = `
     <div><span>가입일</span><b>${esc(fmtDate(user.createdAt))}</b></div>
     <div><span>최근 로그인</span><b>${esc(fmtDate(user.lastLogin||user.lastSeenAt))}</b></div>
-    <div><span>Discord</span><b>${user.discordId || user.discord ? '연동됨' : '미연동'}</b></div>
-    <div><span>HWID</span><b class="mono">${esc(user.hwid || lic?.hwid || '-')}</b></div>
-    <div><span>Role</span><b>${esc(user.role || 'user')}</b></div>
-    <div><span>주문/문의</span><b>${adminOrdersForUid(uid).length} / ${adminTicketsForUid(uid).length}</b></div>`);
-
+    <div><span>Discord</span><b>${user.discordId || user.discord || user.discordUsername ? '연동됨' : '미연동'}</b></div>
+    <div><span>Role</span><b>${adminRoleBadgeHtml(user.role)}</b></div>`);
+  renderAdminCrmHwidBox(user, lic);
   renderAdminCrmOrders(uid, false);
   renderAdminCrmTickets(uid);
   renderAdminCrmTimeline(uid, user, lic);
@@ -2579,8 +2651,47 @@ function renderAdminCrmOrders(uid, showAll){
     const method=o.paymentMethod||o.provider||o.method||'-';
     const amount=o.amount!=null ? `${Number(o.amount).toLocaleString('ko-KR')} ${esc(o.currency||'KRW')}` : '-';
     const when=fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
-    return `<tr><td class="mono">${esc(id)}</td><td>${esc(method)}</td><td>${amount}</td><td>${esc(when)}</td><td>${esc(o.status||'-')}</td></tr>`;
+    const key=o.id || o.paymentId || o.paypalOrderId || '';
+    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0"><td class="mono">${esc(id)}</td><td>${esc(method)}</td><td>${amount}</td><td>${esc(when)}</td><td>${esc(o.status||'-')}</td></tr>`;
   }).join('')}</tbody></table>${(!showAll && all.length>5) ? `<p class="muted small">외 ${all.length-5}건 · 더보기로 전체 표시</p>` : ''}`;
+  box.querySelectorAll('[data-order-id]').forEach(row=>{
+    if(row.dataset.bound) return;
+    row.dataset.bound='1';
+    row.addEventListener('click',()=>openAdminCrmOrderDrawer(uid, row.getAttribute('data-order-id')));
+    row.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openAdminCrmOrderDrawer(uid, row.getAttribute('data-order-id')); }});
+  });
+}
+function openAdminCrmOrderDrawer(uid, orderKey){
+  const drawer=$('adminCrmOrderDrawer');
+  const body=$('adminCrmOrderDrawerBody');
+  if(!drawer||!body) return;
+  const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+  if(!o){ body.innerHTML=`<p class="muted">주문을 찾을 수 없습니다.</p>`; drawer.hidden=false; return; }
+  const licIssued = o.licenseIssued===true || o.status==='completed' || !!o.issuedAt;
+  body.innerHTML = `
+    <dl class="admin-crm-order-dl">
+      <div><dt>주문번호</dt><dd class="mono">${esc(o.paymentId||o.paypalOrderId||o.id||'-')}</dd></div>
+      <div><dt>PG</dt><dd>${esc(o.provider||o.pg||'-')}</dd></div>
+      <div><dt>결제수단</dt><dd>${esc(o.paymentMethod||o.method||'-')}</dd></div>
+      <div><dt>결제금액</dt><dd>${o.amount!=null?`${Number(o.amount).toLocaleString('ko-KR')} ${esc(o.currency||'')}`:'-'}</dd></div>
+      <div><dt>상태</dt><dd>${esc(o.status||'-')}</dd></div>
+      <div><dt>웹훅/검증</dt><dd>${esc(o.verificationStatus||o.rawStatus||o.webhookStatus||'-')}</dd></div>
+      <div><dt>Payment ID</dt><dd class="mono">${esc(o.paymentId||o.portoneTransactionId||o.paypalCaptureId||'-')}</dd></div>
+      <div><dt>라이선스 지급</dt><dd>${licIssued?'지급됨':'미지급/해당없음'}</dd></div>
+      <div><dt>메모</dt><dd>${esc(o.memo||o.refundReason||'-')}</dd></div>
+      <div><dt>결제일</dt><dd>${esc(fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt))}</dd></div>
+    </dl>`;
+  drawer.hidden=false;
+}
+function closeAdminCrmOrderDrawer(){
+  const drawer=$('adminCrmOrderDrawer');
+  if(drawer) drawer.hidden=true;
+}
+if(typeof window!=='undefined' && !window.__adminCrmEscBound){
+  window.__adminCrmEscBound=true;
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape') closeAdminCrmOrderDrawer();
+  });
 }
 function renderAdminCrmTickets(uid){
   const box=$('adminCrmTickets'); if(!box) return;
@@ -2604,8 +2715,8 @@ function renderAdminCrmTimeline(uid, user, lic){
   if(!events.length){ box.innerHTML=`<p class="muted small">활동 기록이 없습니다.</p>`; return; }
   box.innerHTML = events.slice(0, 30).map(ev=>{
     const d = ev.t ? new Date(ev.t*1000) : null;
-    const day = d && !Number.isNaN(d.getTime()) ? d.toISOString().slice(0,10) : '-';
-    return `<div class="admin-crm-timeline-item"><time>${esc(day)}</time><div><b>${esc(ev.label)}</b><span>${esc(ev.detail||'')}</span></div></div>`;
+    const day = d && !Number.isNaN(d.getTime()) ? `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}` : '-';
+    return `<div class="admin-crm-timeline-item"><span class="admin-crm-timeline-dot" aria-hidden="true"></span><div><b>● ${esc(ev.label)}</b><time>${esc(day)}</time><span>${esc(ev.detail||'')}</span></div></div>`;
   }).join('');
 }
 function bindAdminUserFilters(){
@@ -2679,8 +2790,8 @@ function bindAdminUserFilters(){
   bindAdminCrmMemoAutosave();
 }
 function bindAdminCrmDetailActions(){
-  const root=$('adminCrmDetail'); if(!root || root.dataset.bound) return;
-  root.dataset.bound='1';
+  const root=$('adminCrm'); if(!root || root.dataset.actionsBound) return;
+  root.dataset.actionsBound='1';
   const menuBtn=$('adminCrmMenuBtn');
   const menu=$('adminCrmMenu');
   menuBtn?.addEventListener('click', e=>{
@@ -2693,18 +2804,49 @@ function bindAdminCrmDetailActions(){
   root.addEventListener('click', async e=>{
     const btn=e.target.closest('[data-crm-action]'); if(!btn) return;
     const action=btn.getAttribute('data-crm-action');
+    if(action==='close-order-drawer'){ closeAdminCrmOrderDrawer(); return; }
     const uid=selectedAdminUid;
     if(!uid) return;
+    const user = adminUserRows.find(u=>adminUserUid(u)===uid);
+    const lic = licenseForUid(uid);
     if(action==='focus-license'){ $('adminCrmLicenseCard')?.scrollIntoView({behavior:'smooth',block:'start'}); $('adminLicensePlan')?.focus(); }
     else if(action==='hwid-reset') await adminResetHwid(uid);
+    else if(action==='hwid-reveal'){ adminCrmHwidRevealed=!adminCrmHwidRevealed; renderAdminCrmHwidBox(user, lic); }
+    else if(action==='hwid-copy'){
+      const hwid=user?.hwid||lic?.hwid||'';
+      if(!hwid) return;
+      try{ await navigator.clipboard.writeText(hwid); adminFlash('HWID 복사됨'); }catch{ alert(hwid); }
+    }
     else if(action==='grant-trial') await adminQuickLicense(`${uid}:trial:active`);
     else if(action==='grant-lifetime') await adminQuickLicense(`${uid}:lifetime:active`);
-    else if(action==='suspend'){ const lic=licenseForUid(uid); await adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:suspended`); }
-    else if(action==='activate'){ const lic=licenseForUid(uid); await adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:active`); }
+    else if(action==='suspend'){ await adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:suspended`); }
+    else if(action==='activate'){ await adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:active`); }
     else if(action==='orders'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(action==='orders-more'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); renderAdminCrmOrders(uid, true); }
     else if(action==='tickets'){ $('adminCrmTicketsCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(action==='tickets-tab'){ document.querySelector('[data-admin-tab="tickets"]')?.click(); }
+    else if(action==='mail'){
+      if(!user?.email) return alert('이메일이 없습니다.');
+      location.href=`mailto:${encodeURIComponent(user.email)}?subject=${encodeURIComponent('[MidiAI Studio]')}`;
+    }
+    else if(action==='google-profile'){
+      if(user?.photoURL) window.open(user.photoURL, '_blank', 'noopener');
+      else if(user?.email) window.open(`https://www.google.com/search?q=${encodeURIComponent(user.email)}`, '_blank', 'noopener');
+      else alert('Google 프로필 정보가 없습니다.');
+    }
+    else if(action==='discord'){
+      const d=user?.discordId||user?.discord||user?.discordUsername;
+      if(!d) return alert('Discord 연동 정보가 없습니다.');
+      if(String(d).match(/^\d+$/)) window.open(`https://discord.com/users/${encodeURIComponent(d)}`, '_blank', 'noopener');
+      else alert(`Discord: ${d}`);
+    }
+    else if(action==='toggle-fav'){
+      if(adminCrmFavorites.has(uid)) adminCrmFavorites.delete(uid); else adminCrmFavorites.add(uid);
+      saveAdminCrmFavorites(adminCrmFavorites);
+      renderAdminUserTable();
+      renderAdminCrmDetail(uid);
+    }
+    else if(action==='save-memo') await saveAdminCrmUserMemo();
     else if(action==='delete') await adminDeleteUser(uid);
   });
 }

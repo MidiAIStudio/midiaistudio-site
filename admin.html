@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v91-admin-crm">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v92-admin-crm-ux">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -112,21 +112,34 @@
                 <div class="admin-crm-stats" id="adminCrmStats" aria-label="회원 통계"></div>
                 <div class="admin-crm-toolbar">
                   <input id="adminUserSearch" class="search-input compact" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
-                  <select id="adminUserLicenseStatus" aria-label="라이선스 필터">
-                    <option value="all">전체</option>
-                    <option value="lifetime">Lifetime</option>
-                    <option value="trial">Trial</option>
-                    <option value="expired">Expired</option>
-                    <option value="suspended">Suspended</option>
-                    <option value="none">라이선스 없음</option>
-                    <option value="active">활성(전체)</option>
-                  </select>
-                  <select id="adminUserSort" aria-label="정렬">
-                    <option value="lastLogin">최근 로그인</option>
-                    <option value="createdAt">가입일</option>
-                    <option value="name">이름</option>
-                    <option value="lastPayment">최근 결제</option>
-                  </select>
+                  <div class="admin-crm-filter-row">
+                    <select id="adminUserLicenseStatus" aria-label="라이선스 필터">
+                      <option value="all">전체</option>
+                      <option value="lifetime">Lifetime</option>
+                      <option value="trial">Trial</option>
+                      <option value="expired">Expired</option>
+                      <option value="suspended">Suspended</option>
+                      <option value="none">라이선스 없음</option>
+                      <option value="active">활성(전체)</option>
+                      <option value="joined_today">오늘 가입</option>
+                      <option value="joined_7d">최근 7일 가입</option>
+                      <option value="idle_30d">30일 미접속</option>
+                      <option value="has_orders">주문 있음</option>
+                      <option value="no_orders">주문 없음</option>
+                      <option value="has_tickets">문의 있음</option>
+                      <option value="no_tickets">문의 없음</option>
+                      <option value="role_admin">Role: Admin</option>
+                      <option value="role_staff">Role: Staff</option>
+                      <option value="role_user">Role: User</option>
+                      <option value="favorites">★ 즐겨찾기</option>
+                    </select>
+                    <select id="adminUserSort" aria-label="정렬">
+                      <option value="lastLogin">최근 로그인</option>
+                      <option value="createdAt">가입일</option>
+                      <option value="name">이름</option>
+                      <option value="lastPayment">최근 결제</option>
+                    </select>
+                  </div>
                 </div>
                 <div class="admin-crm-bulkbar" id="adminCrmBulkbar" hidden>
                   <span id="adminCrmBulkCount">0명 선택</span>
@@ -159,6 +172,7 @@
                       </div>
                     </div>
                     <div class="admin-crm-head-actions">
+                      <button type="button" class="ghost admin-crm-fav-btn" id="adminCrmFavBtn" data-crm-action="toggle-fav" title="즐겨찾기">☆</button>
                       <div class="admin-crm-menu-wrap">
                         <button type="button" class="ghost admin-crm-menu-btn" id="adminCrmMenuBtn" aria-haspopup="true" aria-expanded="false" title="더보기">⋮</button>
                         <div class="admin-crm-menu" id="adminCrmMenu" hidden role="menu">
@@ -180,11 +194,20 @@
                     <button type="button" class="primary mini-btn" data-crm-action="grant-lifetime">Lifetime 지급</button>
                     <button type="button" class="secondary mini-btn" data-crm-action="grant-trial">Trial 지급</button>
                     <button type="button" class="secondary mini-btn" data-crm-action="hwid-reset">HWID 초기화</button>
-                    <button type="button" class="secondary mini-btn" data-crm-action="tickets">문의 보기</button>
-                    <button type="button" class="secondary mini-btn" data-crm-action="orders">주문 보기</button>
+                    <button type="button" class="secondary mini-btn" data-crm-action="mail">메일 보내기</button>
+                    <button type="button" class="secondary mini-btn" data-crm-action="google-profile">Google 프로필</button>
+                    <button type="button" class="secondary mini-btn" data-crm-action="discord">Discord 보기</button>
+                    <button type="button" class="secondary mini-btn" data-crm-action="orders">주문 내역</button>
+                    <button type="button" class="secondary mini-btn" data-crm-action="tickets">문의 내역</button>
                   </div>
 
+                  <div class="admin-crm-summary" id="adminCrmSummary"></div>
                   <div class="admin-crm-meta-grid" id="adminCrmMeta"></div>
+
+                  <div class="admin-crm-card" id="adminCrmHwidCard">
+                    <div class="admin-crm-card-head"><h3>HWID</h3></div>
+                    <div class="admin-crm-hwid-box" id="adminCrmHwidBox"></div>
+                  </div>
 
                   <div class="admin-crm-card" id="adminCrmLicenseCard">
                     <div class="admin-crm-card-head"><h3>라이선스</h3><span id="adminCrmLicenseBadge"></span></div>
@@ -211,7 +234,7 @@
                       </div>
                       <div class="admin-crm-license-meta" id="adminCrmLicenseMeta"></div>
                       <textarea id="adminLicenseMemo" rows="2" placeholder="라이선스 메모 (licenses.memo)"></textarea>
-                      <button class="primary" type="submit">Save</button>
+                      <button class="primary admin-crm-save-license" type="submit">Save License Changes</button>
                     </form>
                   </div>
 
@@ -227,7 +250,8 @@
 
                   <div class="admin-crm-card">
                     <div class="admin-crm-card-head"><h3>관리자 메모</h3><span class="muted small" id="adminCrmMemoStatus"></span></div>
-                    <textarea id="adminCrmUserMemo" rows="4" placeholder="회원별 관리자 메모 (자동 저장)"></textarea>
+                    <textarea id="adminCrmUserMemo" rows="4" placeholder="예: VIP 고객 / 원격지원 완료 / HWID 초기화 1회 / 환불 진행 중"></textarea>
+                    <button type="button" class="secondary admin-crm-save-memo" data-crm-action="save-memo">Save Memo</button>
                   </div>
 
                   <div class="admin-crm-card">
@@ -236,6 +260,17 @@
                   </div>
                 </div>
               </section>
+
+              <div class="admin-crm-drawer" id="adminCrmOrderDrawer" hidden>
+                <div class="admin-crm-drawer-backdrop" data-crm-action="close-order-drawer"></div>
+                <aside class="admin-crm-drawer-panel" role="dialog" aria-modal="true" aria-label="주문 상세">
+                  <header class="admin-crm-drawer-head">
+                    <h3>주문 상세</h3>
+                    <button type="button" class="ghost mini-btn" data-crm-action="close-order-drawer">닫기</button>
+                  </header>
+                  <div id="adminCrmOrderDrawerBody" class="admin-crm-drawer-body"></div>
+                </aside>
+              </div>
             </div>
           </section>
 
@@ -346,7 +381,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=v91-admin-crm"></script>
-  <script type="module" src="./assets/js/app.js?v=v91-admin-crm"></script>
+  <script type="module" src="./assets/js/config.js?v=v92-admin-crm-ux"></script>
+  <script type="module" src="./assets/js/app.js?v=v92-admin-crm-ux"></script>
 </body>
 </html>
