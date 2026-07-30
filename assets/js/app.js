@@ -1241,7 +1241,7 @@ async function setAuthUiSignedIn(user){
   if (page==='admin.html') {
     if (isAdminUser) {
       unlockAdminPanel();
-      listenAdminDashboard(); listenAdminUsers(); listenAdminTickets(); listenAdminPostManager(); bindAdminBoardFilters(); loadAdminDownloadSettings();
+      listenAdminUsers(); listenAdminTickets();
     } else {
       setAdminGate(`<p>${tr('no_permission')}</p><p class="muted">${tr('admin_required')}</p>`);
     }
@@ -1488,11 +1488,6 @@ async function persistDownloadLatest({version, filename, url, notes, mandatory})
     releaseDate:serverTimestamp(),
     updatedAt:serverTimestamp()
   },{merge:true});
-  if($('adminDownloadVersion')) $('adminDownloadVersion').value=String(version||'').trim();
-  if($('adminDownloadFilename')) $('adminDownloadFilename').value=String(filename||'').trim();
-  if($('adminDownloadUrl')) $('adminDownloadUrl').value=String(url||'').trim();
-  if($('adminDownloadNotes')) $('adminDownloadNotes').value=String(notes||'').trim();
-  if($('adminDownloadMandatory')) $('adminDownloadMandatory').checked=!!mandatory;
 }
 async function saveDownloadFromInline(){
   if(!isAdminUser) return alert(tr('no_permission'));
@@ -3235,41 +3230,12 @@ async function adminDeleteUser(uid, silent=false){
 function listenAdminUsers(){
   if(!isAdminUser || !$('adminUserList')) return;
   bindAdminUserFilters();
-  if(!$('dashUsers')){
-    const {collection,onSnapshot}=firestoreApi;
-    addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-    addUnsub(onSnapshot(collection(db,'licenses'), snap=>{ adminLicenseRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-    addUnsub(onSnapshot(collection(db,'orders'), snap=>{ adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-    addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{ adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-  }
+  const {collection,onSnapshot}=firestoreApi;
+  addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
+  addUnsub(onSnapshot(collection(db,'licenses'), snap=>{ adminLicenseRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
+  addUnsub(onSnapshot(collection(db,'orders'), snap=>{ adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
+  addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{ adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
 }
-
-async function loadAdminDownloadSettings(){
-  if(!isAdminUser || !$('adminDownloadSave')) return;
-  try{
-    const {doc,getDoc}=firestoreApi; const snap=await getDoc(doc(db,'downloads','latest')); const d=snap.exists()?snap.data():{};
-    if($('adminDownloadVersion')) $('adminDownloadVersion').value=d.version||'';
-    if($('adminDownloadFilename')) $('adminDownloadFilename').value=d.filename||'';
-    if($('adminDownloadUrl')) $('adminDownloadUrl').value=d.url||'';
-    if($('adminDownloadNotes')) $('adminDownloadNotes').value=d.notes||d.description||'';
-    if($('adminDownloadMandatory')) $('adminDownloadMandatory').checked=!!d.mandatory;
-  }catch(e){ console.error(e); }
-  const btn=$('adminDownloadSave'); if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',saveAdminDownloadSettings);
-}
-async function saveAdminDownloadSettings(){
-  if(!isAdminUser)return alert(tr('no_permission'));
-  try{
-    await persistDownloadLatest({
-      version:$('adminDownloadVersion')?.value||'',
-      filename:$('adminDownloadFilename')?.value||'',
-      url:$('adminDownloadUrl')?.value||'',
-      notes:$('adminDownloadNotes')?.value||'',
-      mandatory:!!$('adminDownloadMandatory')?.checked
-    });
-    adminFlash(`${tr('saved')} · downloads/latest`);
-  }catch(e){ alert(e.message); }
-}
-
 
 function isOwnerRecord(x){ return !!(currentUser && x && (x.uid === currentUser.uid || x.authorUid === currentUser.uid)); }
 function canManageRecord(x){ return isAdminUser || isOwnerRecord(x); }
@@ -4005,30 +3971,6 @@ function adminFlash(html){
 }
 function initForms(){
   $('ticketForm')?.addEventListener('submit',createTicket);
-  $('adminNoticeForm')?.addEventListener('submit',async e=>{
-    e.preventDefault();
-    try{
-      const id=await adminAdd('announcements',{title:$('adminNoticeTitle').value.trim(),content:$('adminNoticeContent').value.trim(),pinned:$('adminNoticePinned').checked,viewCount:0,email:currentUser?.email||''});
-      e.target.reset();
-      if(id) adminFlash(`${tr('saved')} · <a href="./notice.html?id=${encodeURIComponent(id)}">상세 보기</a> · <a href="./notices.html">공지사항 목록</a>`);
-    }catch(err){ alert(err.message); }
-  });
-  $('adminPatchForm')?.addEventListener('submit',async e=>{
-    e.preventDefault();
-    try{
-      const id=await adminAdd('patchNotes',{version:$('adminPatchVersion').value.trim(),title:$('adminPatchTitle').value.trim(),content:$('adminPatchContent').value.trim(),viewCount:0,email:currentUser?.email||''});
-      e.target.reset();
-      if(id) adminFlash(`${tr('saved')} · <a href="./patch-note.html?id=${encodeURIComponent(id)}">상세 보기</a> · <a href="./patch-notes.html">패치노트 목록</a>`);
-    }catch(err){ alert(err.message); }
-  });
-  $('adminFaqForm')?.addEventListener('submit',async e=>{
-    e.preventDefault();
-    try{
-      const id=await adminAdd('faq',{question:$('adminFaqQuestion').value.trim(),answer:$('adminFaqAnswer').value.trim(),order:Number($('adminFaqOrder').value||1)});
-      e.target.reset();
-      if(id) adminFlash(`${tr('saved')} · <a href="./faq.html">FAQ 확인</a>`);
-    }catch(err){ alert(err.message); }
-  });
   $('adminLicenseForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!isAdminUser)return;
