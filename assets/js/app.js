@@ -529,7 +529,10 @@ function patchDetailHtml(d, nav=null){
   return `<article class="hub-post-detail hub-patch-detail">
     <header class="patch-toolbar">
       <a class="patch-back-link" href="./patch-notes.html">← ${esc(tt('패치노트'))}</a>
-      <button type="button" class="ghost mini-btn" data-share-patch>${esc(tt('공유'))}</button>
+      <div class="patch-toolbar-actions">
+        <button type="button" class="ghost mini-btn" data-share-patch>${esc(tt('공유'))}</button>
+        ${hubAdminManageHtml('patchNotes', d.id)}
+      </div>
     </header>
     <div class="patch-head">
       <div class="patch-head-main">
@@ -549,6 +552,7 @@ function patchDetailHtml(d, nav=null){
   </article>`;
 }
 function bindPatchDetailActions(root=document){
+  bindAdminPostActions(root);
   const shareBtn=root.querySelector('[data-share-patch]');
   if(shareBtn && !shareBtn.dataset.bound){
     shareBtn.dataset.bound='1';
@@ -997,6 +1001,138 @@ function setAdminNavVisible(show){
     el.hidden = !show;
     el.setAttribute('aria-hidden', show ? 'false' : 'true');
   });
+  syncBoardAdminUi();
+}
+
+function hubAdminLabels(){
+  if(lang==='en') return { write:'Write', edit:'Edit', del:'Delete', writeNotice:'New notice', writePatch:'New patch note', writeFaq:'New FAQ' };
+  if(lang==='ja') return { write:'作成', edit:'編集', del:'削除', writeNotice:'お知らせ作成', writePatch:'パッチノート作成', writeFaq:'FAQ作成' };
+  return { write:'글쓰기', edit:'수정', del:'삭제', writeNotice:'공지 작성', writePatch:'패치노트 작성', writeFaq:'FAQ 작성' };
+}
+
+function ensureHubAdminTools(toolbar){
+  if(!toolbar) return null;
+  let tools = toolbar.querySelector('.hub-tools');
+  if(tools) return tools;
+  tools = document.createElement('div');
+  tools.className = 'hub-tools';
+  [...toolbar.children].forEach(child=>{
+    if(child.tagName === 'H2') return;
+    tools.appendChild(child);
+  });
+  toolbar.appendChild(tools);
+  return tools;
+}
+
+function syncBoardAdminUi(){
+  if(syncBoardAdminUi._busy) return;
+  syncBoardAdminUi._busy = true;
+  try{
+  const labels = hubAdminLabels();
+  const configs = [
+    { match: page==='notices.html', kind:'announcements', label: labels.writeNotice || labels.write, toolbarSel:'.hub-toolbar' },
+    { match: page==='patch-notes.html', kind:'patchNotes', label: labels.writePatch || labels.write, toolbarSel:'.hub-toolbar' },
+    { match: page==='faq.html', kind:'faq', label: labels.writeFaq || labels.write, toolbarSel:'.hub-card, .hub-topline' }
+  ];
+  configs.forEach(cfg=>{
+    const existing = document.getElementById(`hubAdminWrite_${cfg.kind}`);
+    if(!cfg.match){
+      existing?.remove();
+      return;
+    }
+    if(!isAdminUser){
+      existing?.remove();
+      return;
+    }
+    if(existing) return;
+    let host = null;
+    if(cfg.kind === 'faq'){
+      const card = document.querySelector('.hub-card');
+      if(card){
+        let bar = card.querySelector('.hub-toolbar');
+        if(!bar){
+          bar = document.createElement('div');
+          bar.className = 'hub-toolbar';
+          bar.innerHTML = `<h2>FAQ</h2>`;
+          card.prepend(bar);
+        }
+        host = ensureHubAdminTools(bar);
+      }
+    } else {
+      host = ensureHubAdminTools(document.querySelector(cfg.toolbarSel));
+    }
+    if(!host) return;
+    const btn = document.createElement('button');
+    btn.id = `hubAdminWrite_${cfg.kind}`;
+    btn.type = 'button';
+    btn.className = 'primary';
+    btn.textContent = cfg.label;
+    btn.addEventListener('click', ()=>createHubAdminPost(cfg.kind));
+    host.appendChild(btn);
+  });
+
+  // Re-render detail/list manage actions after auth resolves
+  if(page==='notice.html' && window.__lastNoticeDetail) renderNoticeDetail(window.__lastNoticeDetail);
+  if(page==='patch-note.html' && window.__lastPatchDetail) renderPatchDetail(window.__lastPatchDetail);
+  if(page==='faq.html' && Array.isArray(window.__lastFaqRows)) renderFaq(window.__lastFaqRows);
+  if(page==='board-post.html' && activeBoardPost) renderBoardPost(activeBoardPost);
+
+  // Re-bind manage buttons if detail/list already rendered
+  bindAdminPostActions(document);
+  } finally {
+    syncBoardAdminUi._busy = false;
+  }
+}
+
+function hubAdminManageHtml(collectionName, id){
+  if(!isAdminUser || !id) return '';
+  const labels = hubAdminLabels();
+  return `<div class="hub-admin-actions post-actions">
+    <button type="button" class="post-action-btn post-edit-btn secondary mini-btn" data-admin-edit="${esc(collectionName)}:${esc(id)}">${esc(labels.edit)}</button>
+    <button type="button" class="post-action-btn post-delete-btn ghost mini-btn danger-btn" data-admin-delete="${esc(collectionName)}:${esc(id)}">${esc(labels.del)}</button>
+  </div>`;
+}
+
+async function createHubAdminPost(kind){
+  if(!isAdminUser) return alert(tr('no_permission'));
+  try{
+    let data = null;
+    if(kind==='announcements'){
+      data = await openEditModal(hubAdminLabels().writeNotice, [
+        {name:'title', label:'제목', value:'', required:true},
+        {name:'content', label:'내용', type:'textarea', rows:9, value:'', required:true},
+        {name:'pinned', label:'상단 고정', type:'checkbox', value:false}
+      ]);
+      if(!data) return;
+      const id = await adminAdd('announcements',{title:data.title, content:data.content, pinned:!!data.pinned, viewCount:0, email:currentUser?.email||''});
+      if(id) location.href = `./notice.html?id=${encodeURIComponent(id)}`;
+      return;
+    }
+    if(kind==='patchNotes'){
+      data = await openEditModal(hubAdminLabels().writePatch, [
+        {name:'version', label:'버전', value:'', required:true},
+        {name:'title', label:'제목', value:'', required:true},
+        {name:'content', label:'내용', type:'textarea', rows:9, value:'', required:true}
+      ]);
+      if(!data) return;
+      const id = await adminAdd('patchNotes',{version:data.version, title:data.title, content:data.content, viewCount:0, email:currentUser?.email||''});
+      if(id) location.href = `./patch-note.html?id=${encodeURIComponent(id)}`;
+      return;
+    }
+    if(kind==='faq'){
+      data = await openEditModal(hubAdminLabels().writeFaq, [
+        {name:'question', label:'질문', value:'', required:true},
+        {name:'answer', label:'답변', type:'textarea', rows:8, value:'', required:true},
+        {name:'order', label:'순서', type:'number', value:1}
+      ]);
+      if(!data) return;
+      await adminAdd('faq',{question:data.question, answer:data.answer, order:Number(data.order||1)});
+      adminFlash(tr('saved'));
+      return;
+    }
+  }catch(e){
+    alert(e.message || e);
+  }
 }
 function setAuthUiSignedOut(){
   currentUser = null; currentUserDoc = null; isAdminUser = false;
@@ -1022,6 +1158,7 @@ function setAuthUiSignedOut(){
   if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='admin.html') setAdminGate(`<p>${tr('need_login')}</p><p class="muted">Google 로그인 후 role=admin 계정만 접근할 수 있습니다.</p>`);
   updateBoardPinnedUi();
+  syncBoardAdminUi();
   if(isPurchasePage){
     const resultBox = $('purchaseResultBox');
     if(resultBox && resultBox.querySelector('.purchase-owned-card')){
@@ -1084,6 +1221,7 @@ async function setAuthUiSignedIn(user){
     }
   }
   updateBoardPinnedUi();
+  syncBoardAdminUi();
   updatePurchaseAccountBox();
   updateSupportFormUi();
 }
@@ -1329,7 +1467,9 @@ function renderNoticeDetail(d,err){
   const box=$('noticeDetail'); if(!box)return;
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span><span><em>${esc(tt('조회'))}</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div></article>`;
+  window.__lastNoticeDetail = d;
+  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span><span><em>${esc(tt('조회'))}</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div>${hubAdminManageHtml('announcements', d.id)}</article>`;
+  bindAdminPostActions(box);
 }
 async function incrementNoticeViewOnce(id){
   const key='midiai_notice_view_'+id;
@@ -1368,6 +1508,7 @@ function renderPatchDetail(d,err){
   const box=$('patchDetail'); if(!box)return;
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  window.__lastPatchDetail = d;
   const nav=patchNeighbors(d.id);
   box.innerHTML = patchDetailHtml({...d,id:d.id}, nav);
   bindPatchDetailActions(box);
@@ -1388,9 +1529,12 @@ function listenPatchDetail(){
 function renderFaq(rows,err){
   const list=$('faqList'); if(!list)return;
   if(err){ list.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
-  if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  window.__lastFaqRows = rows || [];
+  if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; syncBoardAdminUi(); return; }
   rows.sort((a,b)=>Number(a.order||999)-Number(b.order||999));
-  list.innerHTML=rows.map(x=>`<article class="faq-item"><h3>${esc(x.question)}</h3><div class="content">${nl2br(x.answer)}</div></article>`).join('');
+  list.innerHTML=rows.map(x=>`<article class="faq-item" data-faq-id="${esc(x.id)}"><h3>${esc(x.question)}</h3><div class="content">${nl2br(x.answer)}</div>${hubAdminManageHtml('faq', x.id)}</article>`).join('');
+  bindAdminPostActions(list);
+  syncBoardAdminUi();
 }
 function listenFaq(){ if($('faqList')) listenVisibleDocs('faq',renderFaq,'order','asc'); }
 function bindSearch(list){ const input=$('boardSearch'); if(!input || input.dataset.bound) return; input.dataset.bound='1'; input.addEventListener('input',()=>{ const q=input.value.trim().toLowerCase(); list.querySelectorAll('.hub-list-row, .list-item').forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q)?'':'none'}); }); }
@@ -2073,7 +2217,13 @@ async function deleteAdminPost(raw){
   if(!isAdminUser)return alert(tr('no_permission'));
   if(!confirm(tr('confirm_delete')))return;
   const [collectionName,id]=String(raw).split(':');
-  try{ const {doc,deleteDoc}=firestoreApi; await deleteDoc(doc(db,collectionName,id)); adminFlash(tr('deleted')); }catch(e){ alert(e.message); }
+  try{
+    const {doc,deleteDoc}=firestoreApi;
+    await deleteDoc(doc(db,collectionName,id));
+    adminFlash(tr('deleted'));
+    if(page==='notice.html' && collectionName==='announcements') location.href='./notices.html';
+    else if(page==='patch-note.html' && collectionName==='patchNotes') location.href='./patch-notes.html';
+  }catch(e){ alert(e.message); }
 }
 function listenAdminTickets(){
   const list=$('adminTicketList'); if(!list||!isAdminUser)return;
@@ -2670,6 +2820,7 @@ async function initBoardPostEditor(){
         $('boardPostContent').value=d.content||'';
         existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : [];
         renderBoardAttachmentPreview();
+        form._editingPost = d;
         if(isAdminUser && $('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned;
         form.querySelector('button[type="submit"]').disabled=false;
         if($('boardPostMsg')) $('boardPostMsg').textContent='';
@@ -2684,8 +2835,21 @@ async function initBoardPostEditor(){
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
-    const data={uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),title:$('boardPostTitle').value.trim(),content:$('boardPostContent').value.trim(),visible:true,deleted:false,edited:!!id,category:'free',authorLicensed:isAdminUser?false:!!currentLicenseActive,updatedAt:serverTimestamp()};
-    if(isAdminUser){ data.authorRole='admin'; data.pinned=!!$('boardPostPinned')?.checked; }
+    const editing = form._editingPost || {};
+    const data={title:$('boardPostTitle').value.trim(),content:$('boardPostContent').value.trim(),visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
+    if(!id){
+      data.uid=currentUser.uid;
+      data.email=boardEmail();
+      data.displayName=boardDisplayName();
+      data.authorLicensed=isAdminUser?false:!!currentLicenseActive;
+      if(isAdminUser) data.authorRole='admin';
+    } else if(isOwnerRecord(editing)){
+      data.email=boardEmail();
+      data.displayName=boardDisplayName();
+      data.authorLicensed=isAdminUser?false:!!currentLicenseActive;
+      if(isAdminUser) data.authorRole='admin';
+    }
+    if(isAdminUser) data.pinned=!!$('boardPostPinned')?.checked;
     try{
       let postId=id;
       if(id){
@@ -2886,7 +3050,18 @@ async function adminAdd(collectionName,data){
   const ref=await addDoc(collection(db,collectionName),{...data,visible:true,authorUid:currentUser.uid,authorRole:'admin',displayName:BRAND_AUTHOR,uid:currentUser.uid,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
   return ref.id;
 }
-function adminFlash(html){ let box=$('adminSaveMsg'); if(!box){ box=document.createElement('div'); box.id='adminSaveMsg'; box.className='admin-flash'; $('admin')?.querySelector('.admin-panel')?.prepend(box); } box.innerHTML=html; box.classList.remove('hidden'); }
+function adminFlash(html){
+  let box=$('adminSaveMsg');
+  if(!box){
+    box=document.createElement('div');
+    box.id='adminSaveMsg';
+    box.className='admin-flash';
+    const host=$('admin')?.querySelector('.admin-panel') || document.querySelector('.hub-shell') || document.body;
+    host.prepend(box);
+  }
+  box.innerHTML=html;
+  box.classList.remove('hidden');
+}
 function initForms(){
   $('ticketForm')?.addEventListener('submit',createTicket);
   $('adminNoticeForm')?.addEventListener('submit',async e=>{
