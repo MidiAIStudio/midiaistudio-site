@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=v111-crm-wide">
+  <link rel="stylesheet" href="./assets/css/style.css?v=v115-crm-posts">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -248,6 +248,21 @@
                     </div>
                   </div>
 
+                  <div class="admin-crm-card admin-crm-card-dense" id="adminCrmPostsCard">
+                    <div class="admin-crm-card-head">
+                      <h3>작성글</h3>
+                      <span class="muted small" id="adminCrmPostsCount"></span>
+                    </div>
+                    <div class="admin-crm-posts-toolbar">
+                      <label class="admin-crm-check"><input type="checkbox" id="adminCrmPostsSelectAll" aria-label="작성글 전체 선택"><span>전체 선택</span></label>
+                      <div class="admin-crm-posts-actions">
+                        <button type="button" class="secondary mini-btn danger-btn" data-crm-action="posts-delete-selected" disabled id="adminCrmPostsDeleteSelected">선택 삭제</button>
+                        <button type="button" class="secondary mini-btn danger-btn" data-crm-action="posts-delete-all" id="adminCrmPostsDeleteAll">전체 삭제</button>
+                      </div>
+                    </div>
+                    <div id="adminCrmPosts" class="admin-crm-table-wrap admin-crm-posts-wrap"></div>
+                  </div>
+
                   <div class="admin-crm-card admin-crm-card-dense" id="adminCrmMemoCard">
                     <div class="admin-crm-card-head"><h3>관리자 메모</h3><span class="muted small" id="adminCrmMemoStatus"></span></div>
                     <textarea id="adminCrmUserMemo" rows="2" placeholder="예: VIP / 원격지원 완료 / HWID 초기화 2회 / 환불 진행중"></textarea>
@@ -281,7 +296,7 @@
               </div>
             </div>
 
-            <section class="form-card admin-tickets admin-table-card admin-block admin-tickets-section" id="adminTicketsSection">
+            <section class="admin-tickets-section" id="adminTicketsSection">
               <div class="admin-section-head"><h3>전체 문의</h3><span id="adminTicketCount" class="muted"></span></div>
               <div class="admin-list-toolbar">
                 <input id="adminTicketSearch" class="search-input compact" placeholder="문의 검색">
@@ -309,7 +324,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=v110-admin-merge"></script>
-  <script type="module" src="./assets/js/app.js?v=v110-admin-merge"></script>
+  <script type="module" src="./assets/js/config.js?v=v115-crm-posts"></script>
+  <script type="module" src="./assets/js/app.js?v=v115-crm-posts"></script>
 </body>
 </html>

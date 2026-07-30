@@ -457,15 +457,26 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .review-help,.purchase-service-period{display:none!important}
 
 /* V32.2 Admin compact layout */
-.admin-page .admin-shell{width:min(1760px,calc(100% - 24px));padding:18px 0 36px}
+.admin-page .admin-shell{width:min(1520px,calc(100% - 40px));padding:18px 0 36px}
 .admin-page .admin-topline{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px;flex-wrap:wrap}
 .admin-page .admin-topline h1{margin:6px 0 0;font-size:clamp(26px,3.2vw,36px);letter-spacing:-.04em;line-height:1}
 .admin-page .admin-topline .eyebrow{padding:6px 10px;font-size:11px}
 .admin-page .admin-topline-note{margin:0;color:var(--muted);font-size:13px;line-height:1.5;max-width:360px;text-align:right}
 .admin-page #admin.content-card{padding:14px;border-radius:22px}
-.admin-page .admin-workspace{display:grid;gap:16px}
-.admin-page .admin-tickets-section{margin:0}
-.admin-page .admin-tickets-section .admin-table-wrap{max-height:min(420px,48vh)}
+.admin-page .admin-workspace{display:grid;gap:10px}
+.admin-page .admin-tickets-section{
+  margin:0!important;padding:14px 14px 12px!important;border-radius:14px!important;
+  border:1px solid rgba(255,255,255,.07)!important;
+  background:linear-gradient(180deg,rgba(12,16,28,.72),rgba(8,11,22,.82))!important;
+  box-shadow:none!important;gap:8px!important
+}
+.admin-page .admin-tickets-section .admin-section-head{margin-bottom:6px}
+.admin-page .admin-tickets-section .admin-section-head h3{
+  margin:0;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8b93b3
+}
+.admin-page .admin-tickets-section .admin-table-wrap{
+  max-height:min(360px,42vh);border-radius:10px;border-color:rgba(255,255,255,.06);background:rgba(0,0,0,.16)
+}
 .admin-page .admin-tabs{display:none!important}
 .admin-page .admin-tab-panel{display:block}
 .admin-page .admin-dashboard{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 12px}
@@ -489,6 +500,35 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .form-card input,.admin-page .form-card textarea,.admin-page .form-card select{padding:9px 11px;border-radius:12px;font-size:13px}
 .admin-page .form-card textarea{min-height:72px}
 .admin-page .primary,.admin-page .secondary{padding:10px 14px;border-radius:12px;font-size:13px}
+.admin-page .secondary,
+.admin-page .ghost,
+.admin-page button.secondary,
+.admin-page button.ghost,
+.admin-page .mini-btn{
+  color:#eef1ff!important;
+  background:rgba(255,255,255,.08)!important;
+  border:1px solid rgba(255,255,255,.16)!important
+}
+.admin-page .secondary:hover,
+.admin-page .ghost:hover,
+.admin-page .mini-btn:hover{
+  color:#fff!important;
+  background:rgba(255,255,255,.14)!important;
+  border-color:rgba(255,255,255,.24)!important
+}
+.admin-page .danger-btn,
+.admin-page button.danger-btn,
+.admin-page .secondary.danger-btn{
+  color:#ffb4c0!important;
+  border-color:rgba(251,113,133,.5)!important;
+  background:rgba(251,113,133,.12)!important
+}
+.admin-page .danger-btn:hover,
+.admin-page .secondary.danger-btn:hover{
+  color:#ffd0d7!important;
+  background:rgba(251,113,133,.2)!important
+}
+.admin-page .primary{color:#fff!important}
 .admin-page .admin-section-head{margin-bottom:8px}
 .admin-page .admin-section-head h3{font-size:15px}
 .admin-page .admin-list-toolbar{gap:8px;margin-bottom:8px}
@@ -516,7 +556,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   --crm-line:rgba(255,255,255,.07);
   --crm-soft:rgba(255,255,255,.035);
   --crm-accent:#7aa2ff;
-  display:grid;grid-template-columns:minmax(420px,44%) minmax(0,1fr);gap:14px;min-height:72vh;align-items:stretch;position:relative
+  display:grid;grid-template-columns:minmax(380px,40%) minmax(0,1fr);gap:12px;min-height:72vh;align-items:stretch;position:relative
 }
 .admin-page .admin-crm-list-pane,.admin-page .admin-crm-detail-pane{
   border:1px solid var(--crm-line);border-radius:var(--crm-radius);
@@ -561,15 +601,19 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 }
 .admin-page .admin-crm-check{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
 .admin-page .admin-crm-virtual{flex:1;overflow:auto;min-height:520px;max-height:calc(100vh - 190px)}
+.admin-page .admin-crm-virtual-inner{display:block}
 .admin-page .admin-crm-member{
   display:grid;grid-template-columns:16px 28px minmax(0,1fr);gap:10px;align-items:center;
-  padding:8px var(--crm-pad);border-bottom:1px solid rgba(255,255,255,.035);
-  cursor:pointer;transition:background .15s ease,box-shadow .15s ease
+  margin:0;padding:9px 12px;border:0;border-bottom:1px solid rgba(255,255,255,.06);
+  border-radius:0!important;background:transparent;box-shadow:none;
+  cursor:pointer;transition:background .12s ease
 }
-.admin-page .admin-crm-member:hover{background:rgba(122,162,255,.05)}
+.admin-page .admin-crm-member:last-child{border-bottom-color:transparent}
+.admin-page .admin-crm-member:hover{background:rgba(122,162,255,.045)}
 .admin-page .admin-crm-member.is-selected{
-  background:rgba(122,162,255,.08);
-  box-shadow:inset 2px 0 0 var(--crm-accent)
+  background:rgba(122,162,255,.07);
+  box-shadow:inset 2px 0 0 var(--crm-accent);
+  border-radius:0!important
 }
 .admin-page .admin-crm-card-avatar{
   width:28px;height:28px;border-radius:8px;object-fit:cover;background:rgba(255,255,255,.08);
@@ -678,7 +722,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   background:rgba(255,255,255,.03);border:1px solid var(--crm-line);font-size:11px;color:#d7dcf2
 }
 .admin-page .crm-chip em{font-style:normal;color:#6f7694;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}
-.admin-page .admin-crm-split-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.admin-page .admin-crm-split-cards{display:grid;grid-template-columns:1fr;gap:8px}
 .admin-page .admin-crm-memo-history{margin-top:8px}
 .admin-page .admin-crm-memo-hist-item{
   display:grid;grid-template-columns:56px minmax(0,1fr);gap:8px;padding:5px 0;
@@ -687,6 +731,12 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-crm-memo-hist-item time{color:#6f7694;font-variant-numeric:tabular-nums}
 .admin-page .admin-crm-bottom-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:8px}
 .admin-page .admin-crm-recent-feed,.admin-page .admin-crm-timeline{display:flex;flex-direction:column}
+.admin-page .admin-crm-timeline{
+  max-height:calc(3 * 58px);overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.18) transparent
+}
+.admin-page .admin-crm-timeline::-webkit-scrollbar{width:6px}
+.admin-page .admin-crm-timeline::-webkit-scrollbar-thumb{background:rgba(255,255,255,.16);border-radius:99px}
 .admin-page .admin-crm-feed-item{
   display:grid;grid-template-columns:40px minmax(0,1fr);gap:8px;padding:7px 0;
   border-bottom:1px solid rgba(255,255,255,.04);font-size:11px
@@ -696,7 +746,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-crm-feed-item span{color:#6f7694}
 .admin-page .admin-crm-timeline-item{
   display:grid;grid-template-columns:10px minmax(0,1fr);gap:10px;padding:8px 0;
-  border-bottom:1px solid rgba(255,255,255,.04)
+  border-bottom:1px solid rgba(255,255,255,.04);min-height:58px;box-sizing:border-box
 }
 .admin-page .admin-crm-timeline-dot{
   width:7px;height:7px;margin-top:5px;border-radius:50%;background:var(--crm-accent);
@@ -718,6 +768,21 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);color:inherit;text-decoration:none;font-size:12px
 }
 .admin-page .admin-crm-ticket-row>b.crm-slide{min-width:0;font-weight:700}
+.admin-page .admin-crm-posts-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  padding:0 0 8px;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:4px
+}
+.admin-page .admin-crm-posts-actions{display:flex;gap:5px;flex-wrap:wrap}
+.admin-page .admin-crm-posts-wrap{max-height:220px;overflow:auto}
+.admin-page .admin-crm-post-row{
+  display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:8px;align-items:center;
+  padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)
+}
+.admin-page .admin-crm-post-main{min-width:0;display:grid;gap:3px;color:inherit;text-decoration:none}
+.admin-page .admin-crm-post-main b{font-size:12px;font-weight:650;color:#eef1ff}
+.admin-page .admin-crm-post-meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:11px;color:#8b93b3}
+.admin-page .admin-crm-post-meta .badge{margin:0;padding:2px 6px;font-size:10px}
+.admin-page .crm-post-pin{margin-right:4px}
 .admin-page .crm-mini-table{min-width:0!important;width:100%;table-layout:fixed;border-collapse:collapse}
 .admin-page .crm-mini-table col.crm-col-id{width:30%}
 .admin-page .crm-mini-table col.crm-col-method{width:14%}
@@ -762,9 +827,9 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-crm-order-dl>div{padding:9px 11px;border-radius:10px;background:var(--crm-soft);border:1px solid var(--crm-line)}
 .admin-page .admin-crm-order-dl dt{font-size:10px;color:#6f7694;margin:0 0 3px;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
 .admin-page .admin-crm-order-dl dd{margin:0;font-size:12px;word-break:break-all;color:#e8ebf8}
-@media(max-width:1600px){.admin-page .admin-crm{grid-template-columns:minmax(380px,42%) minmax(0,1fr)}}
-@media(max-width:1440px){.admin-page .admin-crm-bottom-grid,.admin-page .admin-crm-split-cards{grid-template-columns:1fr}.admin-page .admin-crm-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-page .admin-crm{grid-template-columns:minmax(360px,44%) minmax(0,1fr)}}
-@media(max-width:1280px){.admin-page .admin-crm-summary{grid-template-columns:1fr}.admin-page .admin-crm{grid-template-columns:minmax(320px,46%) minmax(0,1fr)}.admin-page .admin-crm-filter-primary{grid-template-columns:1fr 1fr}}
+@media(max-width:1600px){.admin-page .admin-crm{grid-template-columns:minmax(360px,40%) minmax(0,1fr)}}
+@media(max-width:1440px){.admin-page .admin-crm-bottom-grid,.admin-page .admin-crm-split-cards{grid-template-columns:1fr}.admin-page .admin-crm-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-page .admin-crm{grid-template-columns:minmax(340px,42%) minmax(0,1fr)}}
+@media(max-width:1280px){.admin-page .admin-crm-summary{grid-template-columns:1fr}.admin-page .admin-crm{grid-template-columns:minmax(320px,44%) minmax(0,1fr)}.admin-page .admin-crm-filter-primary{grid-template-columns:1fr 1fr}}
 @media(max-width:1100px){.admin-page .admin-crm{grid-template-columns:1fr}.admin-page .admin-crm-virtual{max-height:400px;min-height:320px}}
 @media(max-width:680px){.admin-page .admin-crm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-page .admin-crm-filter-grid,.admin-page .admin-crm-filter-primary{grid-template-columns:1fr}.admin-page .admin-crm-member-meta{grid-template-columns:1fr 1fr 1fr}}
 
@@ -992,7 +1057,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .portal-page .page-grid{display:block!important}
 .portal-page .side-card{display:none!important}
 .portal-page .portal-preview-row.out{background:rgba(34,211,238,.08);border-color:rgba(34,211,238,.22)}
-.portal-page.admin-page .admin-shell{width:min(1760px,calc(100% - 24px))}
+.portal-page.admin-page .admin-shell{width:min(1520px,calc(100% - 40px))}
 .portal-page .purchase-final-hero{margin-bottom:18px}
 @media(max-width:980px){.portal-page .portal-hero-grid{grid-template-columns:1fr}.portal-page .portal-hero-panel{order:-1}.portal-page .portal-preview{max-width:none}.portal-page .portal-tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.portal-page .portal-tile-grid{grid-template-columns:1fr}.portal-page .portal-download-inner{display:grid}.portal-page .portal-account-grid{grid-template-columns:1fr}.portal-page .portal-cta .primary,.portal-page .portal-cta .secondary,.portal-page .portal-cta .ghost{width:100%;justify-content:center}}

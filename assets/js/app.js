@@ -32,6 +32,7 @@ let adminOrderRows = [];
 let adminBoardRows = [];
 let selectedAdminUid = null;
 let adminCrmSelected = new Set();
+let adminCrmPostSelected = new Set();
 let adminCrmFilteredRows = [];
 let adminCrmScrollTop = 0;
 let adminCrmSearchTimer = null;
@@ -2369,6 +2370,12 @@ function adminTicketsForUid(uid){
   return (adminTicketRows||[]).filter(t=>String(t.uid||'')===String(uid))
     .sort((a,b)=>adminTsSec(b.createdAt||b.updatedAt)-adminTsSec(a.createdAt||a.updatedAt));
 }
+function adminBoardPostsForUid(uid){
+  return (adminBoardRows||[])
+    .filter(p=>p.deleted!==true)
+    .filter(p=>String(p.uid||p.authorUid||'')===String(uid))
+    .sort((a,b)=>adminTsSec(b.createdAt||b.updatedAt)-adminTsSec(a.createdAt||a.updatedAt));
+}
 function adminLicenseKind(lic){
   if(!lic) return 'none';
   const status = String(lic.status||'').toLowerCase();
@@ -2655,6 +2662,7 @@ function selectAdminCrmUser(uid){
   if(selectedAdminUid===uid){ renderAdminCrmDetail(uid); return; }
   selectedAdminUid = uid;
   adminCrmHwidRevealed = false;
+  adminCrmPostSelected.clear();
   paintAdminCrmVirtualList();
   showAdminCrmSkeleton(true);
   clearTimeout(adminCrmDetailTimer);
@@ -2823,6 +2831,7 @@ function renderAdminCrmDetail(uid){
   renderAdminCrmHwidBox(user, lic);
   renderAdminCrmOrders(uid, false);
   renderAdminCrmTickets(uid);
+  renderAdminCrmPosts(uid);
   renderAdminCrmTimeline(uid, user, lic);
   renderAdminCrmMemoHistory(user);
   renderAdminCrmRecentFeed();
@@ -2910,6 +2919,78 @@ function renderAdminCrmTickets(uid){
   if(!rows.length){ box.innerHTML=`<p class="muted small">문의 기록이 없습니다.</p>`; return; }
   box.innerHTML = rows.map(t=>`<a class="admin-crm-ticket-row" href="./ticket.html?id=${encodeURIComponent(t.id)}"><b class="crm-slide"><span class="crm-slide-text">${esc(t.title||'(제목 없음)')}</span></b><span class="badge ${esc(String(t.status||'open'))}">${esc(t.status||'open')}</span><small>${esc(fmtListDate(t.createdAt))}</small></a>`).join('');
   bindCrmTextSlides(box);
+}
+function renderAdminCrmPosts(uid){
+  const box=$('adminCrmPosts'); if(!box) return;
+  const rows = adminBoardPostsForUid(uid);
+  const countEl=$('adminCrmPostsCount');
+  if(countEl) countEl.textContent = rows.length ? `${rows.length}건` : '';
+  const delSel=$('adminCrmPostsDeleteSelected');
+  const delAll=$('adminCrmPostsDeleteAll');
+  const selectAll=$('adminCrmPostsSelectAll');
+  if(delAll) delAll.disabled = !rows.length;
+  if(!rows.length){
+    adminCrmPostSelected.clear();
+    if(selectAll){ selectAll.checked=false; selectAll.disabled=true; }
+    if(delSel){ delSel.disabled=true; delSel.textContent='선택 삭제'; }
+    box.innerHTML=`<p class="muted small">작성한 게시글이 없습니다.</p>`;
+    return;
+  }
+  if(selectAll) selectAll.disabled=false;
+  const validIds = new Set(rows.map(r=>r.id));
+  [...adminCrmPostSelected].forEach(id=>{ if(!validIds.has(id)) adminCrmPostSelected.delete(id); });
+  box.innerHTML = rows.map(p=>{
+    const checked = adminCrmPostSelected.has(p.id) ? 'checked' : '';
+    const hidden = p.visible===false ? '<span class="badge none">숨김</span>' : '';
+    const pinned = p.pinned ? '<span class="crm-post-pin">📌</span>' : '';
+    return `<div class="admin-crm-post-row" data-post-id="${esc(p.id)}">
+      <label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-post-check="${esc(p.id)}" ${checked}></label>
+      <a class="admin-crm-post-main" href="${boardPostUrl(p.id)}" target="_blank" rel="noopener">
+        <b class="crm-slide"><span class="crm-slide-text">${pinned}${esc(p.title||'(제목 없음)')}</span></b>
+        <span class="admin-crm-post-meta">
+          ${hidden}
+          <small>조회 ${Number(p.viewCount||0)}</small>
+          <small>댓글 ${Number(p.commentCount||0)}</small>
+          <small>${esc(fmtListDate(p.createdAt))}</small>
+        </span>
+      </a>
+      <button type="button" class="secondary mini-btn danger-btn" data-crm-action="posts-delete-one" data-post-id="${esc(p.id)}">삭제</button>
+    </div>`;
+  }).join('');
+  bindCrmTextSlides(box);
+  updateAdminCrmPostsToolbar();
+  if(selectAll && !selectAll.dataset.bound){
+    selectAll.dataset.bound='1';
+    selectAll.addEventListener('change',()=>{
+      const uid=selectedAdminUid; if(!uid) return;
+      const list=adminBoardPostsForUid(uid);
+      if(selectAll.checked) list.forEach(p=>adminCrmPostSelected.add(p.id));
+      else adminCrmPostSelected.clear();
+      renderAdminCrmPosts(uid);
+    });
+  }
+  box.querySelectorAll('[data-crm-post-check]').forEach(inp=>{
+    inp.addEventListener('change',()=>{
+      const id=inp.getAttribute('data-crm-post-check');
+      if(inp.checked) adminCrmPostSelected.add(id); else adminCrmPostSelected.delete(id);
+      updateAdminCrmPostsToolbar();
+    });
+  });
+}
+function updateAdminCrmPostsToolbar(){
+  const n=adminCrmPostSelected.size;
+  const delSel=$('adminCrmPostsDeleteSelected');
+  const selectAll=$('adminCrmPostsSelectAll');
+  const uid=selectedAdminUid;
+  const total = uid ? adminBoardPostsForUid(uid).length : 0;
+  if(delSel){
+    delSel.disabled = n===0;
+    delSel.textContent = n ? `선택 삭제 (${n})` : '선택 삭제';
+  }
+  if(selectAll && total){
+    selectAll.checked = n>0 && n===total;
+    selectAll.indeterminate = n>0 && n<total;
+  }
 }
 function renderAdminCrmTimeline(uid, user, lic){
   const box=$('adminCrmTimeline'); if(!box) return;
@@ -3065,6 +3146,26 @@ function bindAdminCrmDetailActions(){
     else if(action==='orders-more'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); renderAdminCrmOrders(uid, true); }
     else if(action==='tickets'){ $('adminCrmTicketsCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(action==='tickets-tab'){ $('adminTicketsSection')?.scrollIntoView({behavior:'smooth',block:'start'}); }
+    else if(action==='posts-delete-one'){
+      const postId=btn.getAttribute('data-post-id');
+      if(!postId) return;
+      await adminDeleteBoardPosts([postId]);
+      renderAdminCrmPosts(uid);
+    }
+    else if(action==='posts-delete-selected'){
+      const ids=[...adminCrmPostSelected];
+      if(!ids.length) return;
+      await adminDeleteBoardPosts(ids);
+      adminCrmPostSelected.clear();
+      renderAdminCrmPosts(uid);
+    }
+    else if(action==='posts-delete-all'){
+      const ids=adminBoardPostsForUid(uid).map(p=>p.id);
+      if(!ids.length) return;
+      await adminDeleteBoardPosts(ids, `${ids.length}개의 작성글을 모두 삭제할까요?`);
+      adminCrmPostSelected.clear();
+      renderAdminCrmPosts(uid);
+    }
     else if(action==='mail'){
       if(!user?.email) return alert('이메일이 없습니다.');
       location.href=`mailto:${encodeURIComponent(user.email)}?subject=${encodeURIComponent('[MidiAI Studio]')}`;
@@ -3239,6 +3340,7 @@ function listenAdminUsers(){
   addUnsub(onSnapshot(collection(db,'licenses'), snap=>{ adminLicenseRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'orders'), snap=>{ adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{ adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
+  addUnsub(onSnapshot(collection(db,'boardPosts'), snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); if(selectedAdminUid) renderAdminCrmPosts(selectedAdminUid); }));
 }
 
 function isOwnerRecord(x){ return !!(currentUser && x && (x.uid === currentUser.uid || x.authorUid === currentUser.uid)); }
@@ -3944,12 +4046,26 @@ function renderAdminBoardTable(){
 async function adminDeleteBoardPost(id){
   if(!isAdminUser) return alert(tr('no_permission'));
   if(!confirm(tr('confirm_delete'))) return;
+  await adminDeleteBoardPosts([id], null, true);
+}
+async function adminDeleteBoardPosts(ids, confirmMsg, skipConfirm=false){
+  if(!isAdminUser) return alert(tr('no_permission'));
+  const list=(ids||[]).filter(Boolean);
+  if(!list.length) return;
+  if(!skipConfirm){
+    const msg = confirmMsg || (list.length===1 ? tr('confirm_delete') : `선택한 ${list.length}개 글을 삭제할까요?`);
+    if(!confirm(msg)) return;
+  }
   try{
     const {doc,setDoc,collection,getDocs,serverTimestamp}=firestoreApi;
-    const commentsSnap=await getDocs(collection(db,'boardPosts',id,'comments'));
-    await Promise.all(commentsSnap.docs.map(d=>setDoc(d.ref,{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true})));
-    await setDoc(doc(db,'boardPosts',id),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true});
-    adminFlash(tr('deleted'));
+    for(const id of list){
+      const commentsSnap=await getDocs(collection(db,'boardPosts',id,'comments'));
+      await Promise.all(commentsSnap.docs.map(d=>setDoc(d.ref,{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true})));
+      await setDoc(doc(db,'boardPosts',id),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true});
+      adminCrmPostSelected.delete(id);
+    }
+    adminFlash(list.length===1 ? tr('deleted') : `삭제 완료 · ${list.length}건`);
+    pushAdminCrmFeed('작성글 삭제', `${list.length}건`);
   }catch(e){ alert(e.message); }
 }
 async function adminPinBoardPost(id,pinned){ try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',id),{pinned,updatedAt:serverTimestamp()},{merge:true}); }catch(e){ alert(e.message); } }
