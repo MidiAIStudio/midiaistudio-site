@@ -518,6 +518,75 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 @media(max-width:900px){.admin-page .admin-dashboard{grid-template-columns:repeat(3,minmax(0,1fr))}.admin-page .admin-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-page .admin-content-grid{grid-template-columns:1fr}}
 @media(max-width:680px){.admin-page .admin-topline{align-items:flex-start}.admin-page .admin-topline-note{text-align:left}.admin-page .admin-tabs{top:64px}.admin-page .admin-dashboard{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-page .admin-actions{grid-template-columns:1fr}.admin-page .admin-tabs{overflow:auto;flex-wrap:nowrap}.admin-page .admin-tab{white-space:nowrap}}
 
+/* Admin CRM (users tab) */
+.admin-page .admin-crm{display:grid;grid-template-columns:minmax(280px,35%) minmax(0,1fr);gap:16px;min-height:72vh;align-items:stretch}
+.admin-page .admin-crm-list-pane,.admin-page .admin-crm-detail-pane{border:1px solid var(--line);border-radius:20px;background:rgba(8,12,24,.55);backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);overflow:hidden;display:flex;flex-direction:column;min-height:0}
+.admin-page .admin-crm-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px;border-bottom:1px solid var(--line)}
+.admin-page .crm-stat{padding:10px 8px;border-radius:14px;background:rgba(255,255,255,.03);text-align:center}
+.admin-page .crm-stat b{display:block;font-size:16px;letter-spacing:-.02em}
+.admin-page .crm-stat span{display:block;margin-top:2px;font-size:10px;color:var(--muted)}
+.admin-page .admin-crm-toolbar{display:grid;grid-template-columns:1fr;gap:8px;padding:12px;border-bottom:1px solid var(--line)}
+.admin-page .admin-crm-toolbar select,.admin-page .admin-crm-license-form select,.admin-page .admin-crm-license-form textarea,.admin-page #adminCrmUserMemo{width:100%;font:inherit}
+.admin-page .admin-crm-bulkbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid rgba(251,113,133,.25);background:rgba(251,113,133,.06)}
+.admin-page .admin-crm-bulk-actions{display:flex;flex-wrap:wrap;gap:6px}
+.admin-page .admin-crm-list-head{padding:8px 12px;border-bottom:1px solid var(--line)}
+.admin-page .admin-crm-check{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.admin-page .admin-crm-virtual{flex:1;overflow:auto;min-height:420px;max-height:calc(100vh - 280px)}
+.admin-page .admin-crm-member{display:grid;grid-template-columns:auto 40px minmax(0,1fr);gap:10px;align-items:start;padding:12px;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .15s ease}
+.admin-page .admin-crm-member:hover,.admin-page .admin-crm-member.is-selected{background:rgba(99,140,255,.08)}
+.admin-page .admin-crm-member.is-selected{box-shadow:inset 3px 0 0 #7aa2ff}
+.admin-page .admin-crm-card-avatar{width:40px;height:40px;border-radius:12px;object-fit:cover;background:rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-weight:800}
+.admin-page .admin-crm-member-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.admin-page .admin-crm-member-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;font-size:11px;color:var(--muted)}
+.admin-page .admin-crm-hwid-row{display:flex;gap:8px;align-items:center;margin-top:6px}
+.admin-page .crm-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:800;border:1px solid rgba(255,255,255,.08)}
+.admin-page .crm-badge.is-lifetime{background:rgba(34,197,94,.12);color:#86efac}
+.admin-page .crm-badge.is-trial{background:rgba(250,204,21,.12);color:#fde047}
+.admin-page .crm-badge.is-suspended{background:rgba(248,113,113,.12);color:#fca5a5}
+.admin-page .crm-badge.is-expired,.admin-page .crm-badge.is-none{background:rgba(148,163,184,.12);color:#cbd5e1}
+.admin-page .crm-badge.is-dev,.admin-page .crm-badge.is-admin,.admin-page .crm-badge.is-active{background:rgba(96,165,250,.12);color:#93c5fd}
+.admin-page .admin-crm-detail-pane{padding:0;position:relative}
+.admin-page .admin-crm-empty{display:flex;align-items:center;justify-content:center;min-height:420px;padding:24px;color:var(--muted);text-align:center}
+.admin-page .admin-crm-empty.is-hidden,.admin-page .admin-crm-detail.is-hidden{display:none!important}
+.admin-page .admin-crm-detail{padding:18px;overflow:auto;max-height:calc(100vh - 180px);opacity:0;transform:translateY(6px);transition:opacity .18s ease,transform .18s ease}
+.admin-page .admin-crm-detail.is-fading{opacity:1;transform:none}
+.admin-page .admin-crm-detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px}
+.admin-page .admin-crm-profile{display:flex;gap:12px;align-items:center;min-width:0}
+.admin-page .admin-crm-avatar{width:56px;height:56px;border-radius:16px;object-fit:cover;background:rgba(255,255,255,.08)}
+.admin-page .admin-crm-avatar.is-fallback{display:inline-flex;align-items:center;justify-content:center;font-size:22px;font-weight:900}
+.admin-page .admin-crm-menu-wrap{position:relative}
+.admin-page .admin-crm-menu-btn{width:40px;height:40px;border-radius:12px;font-size:20px;line-height:1}
+.admin-page .admin-crm-menu{position:absolute;right:0;top:44px;min-width:180px;padding:8px;border-radius:14px;border:1px solid var(--line);background:rgba(10,14,28,.96);box-shadow:0 18px 40px rgba(0,0,0,.35);z-index:5;display:flex;flex-direction:column;gap:2px}
+.admin-page .admin-crm-menu[hidden]{display:none!important}
+.admin-page .admin-crm-menu button{border:0;background:transparent;color:inherit;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer;font:inherit}
+.admin-page .admin-crm-menu button:hover{background:rgba(255,255,255,.06)}
+.admin-page .admin-crm-menu button.is-danger{color:#fda4af}
+.admin-page .admin-crm-quick{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.admin-page .admin-crm-meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.admin-page .admin-crm-meta-grid>div,.admin-page .admin-crm-license-meta{padding:12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04)}
+.admin-page .admin-crm-meta-grid span,.admin-page .admin-crm-license-meta span{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.admin-page .admin-crm-license-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+.admin-page .admin-crm-card{margin-bottom:14px;padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.18)}
+.admin-page .admin-crm-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.admin-page .admin-crm-card-head h3{margin:0;font-size:15px}
+.admin-page .admin-crm-ticket-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);color:inherit;text-decoration:none}
+.admin-page .admin-crm-timeline{display:flex;flex-direction:column;gap:0}
+.admin-page .admin-crm-timeline-item{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.admin-page .admin-crm-timeline-item time{font-size:12px;color:var(--muted)}
+.admin-page .admin-crm-timeline-item b{display:block;margin-bottom:2px}
+.admin-page .admin-crm-timeline-item span{font-size:12px;color:var(--muted)}
+.admin-page .crm-mini-table{min-width:0;width:100%}
+@media(max-width:1100px){
+  .admin-page .admin-crm{grid-template-columns:1fr}
+  .admin-page .admin-crm-virtual{max-height:420px}
+  .admin-page .admin-crm-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .admin-page .admin-crm-meta-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:680px){
+  .admin-page .admin-crm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .admin-page .admin-crm-meta-grid{grid-template-columns:1fr}
+}
+
 /* V33 Hub board unified layout */
 .hub-page .hub-main{padding-bottom:48px}
 .hub-page .hub-shell{width:min(1180px,calc(100% - 28px));padding:20px 0 0}
