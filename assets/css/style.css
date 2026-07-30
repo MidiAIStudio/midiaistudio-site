@@ -540,8 +540,10 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-crm-member.is-selected{background:linear-gradient(90deg,rgba(99,140,255,.18),rgba(99,140,255,.04));box-shadow:inset 0 0 0 1px rgba(122,162,255,.65),0 0 20px rgba(99,140,255,.22);transform:translateX(2px)}
 .admin-page .admin-crm-card-avatar{width:28px;height:28px;border-radius:9px;object-fit:cover;background:rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
 .admin-page .admin-crm-member-top{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;line-height:1.15;min-width:0}
-.admin-page .admin-crm-member-top b{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.admin-page .admin-crm-member-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:10px;color:var(--muted);margin-top:1px}
+.admin-page .admin-crm-member-top b{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.admin-page .admin-crm-member-meta{display:flex;flex-wrap:wrap;gap:6px 8px;color:var(--muted);margin-top:2px;line-height:1.25}
+.admin-page .admin-crm-member-meta span{font-size:11px!important;font-weight:500;line-height:1.25;color:var(--muted)}
+.admin-page article.admin-crm-member .crm-badge{font-size:10px!important}
 .admin-page .crm-fav-mark{color:#fbbf24;margin-right:2px}
 .admin-page .crm-badge,.admin-page .crm-activity,.admin-page .crm-role{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:800;border:1px solid rgba(255,255,255,.08);white-space:nowrap}
 .admin-page .crm-badge.is-lifetime{background:rgba(34,197,94,.12);color:#86efac}
