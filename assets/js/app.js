@@ -2612,7 +2612,10 @@ function renderAdminCrmHwidBox(user, lic){
   const hwid = user.hwid || lic?.hwid || '';
   const shown = adminCrmHwidRevealed ? (hwid || '(없음)') : maskAdminHwid(hwid);
   box.innerHTML = `
-    <code class="mono admin-crm-hwid-value${adminCrmHwidRevealed?' is-revealed':''}">${esc(shown)}</code>
+    <div class="admin-crm-hwid-inline">
+      <span class="admin-crm-hwid-label">HWID</span>
+      <code class="mono admin-crm-hwid-value${adminCrmHwidRevealed?' is-revealed':''}">${esc(shown)}</code>
+    </div>
     <div class="admin-crm-hwid-actions">
       <button type="button" class="secondary mini-btn" data-crm-action="hwid-reveal">${adminCrmHwidRevealed?'숨기기':'보기'}</button>
       <button type="button" class="secondary mini-btn" data-crm-action="hwid-copy" ${hwid?'':'disabled'}>복사</button>
@@ -2651,11 +2654,12 @@ function checkAdminCrmDirty(){
 }
 function renderAdminCrmMemoHistory(user){
   const box=$('adminCrmMemoHistory'); if(!box) return;
-  const hist = Array.isArray(user?.adminMemoHistory) ? user.adminMemoHistory.slice(0, 8) : [];
-  if(!hist.length){ box.innerHTML=`<p class="muted small">메모 변경 이력이 없습니다.</p>`; return; }
+  const hist = Array.isArray(user?.adminMemoHistory) ? user.adminMemoHistory.slice(0, 5) : [];
+  if(!hist.length){ box.innerHTML=''; return; }
   box.innerHTML = `<div class="admin-crm-memo-hist-list">${hist.map(h=>{
     const when = h?.at?.seconds ? fmtRelative(h.at) : (h?.atMs ? fmtRelative({seconds:Math.floor(Number(h.atMs)/1000)}) : '-');
-    return `<div class="admin-crm-memo-hist-item"><time>${esc(when)}</time><span>${esc(h?.text||'')}</span></div>`;
+    const text = String(h?.text||'').slice(0,80);
+    return `<div class="admin-crm-memo-hist-item"><time>${esc(when)}</time><span>${esc(text)}</span></div>`;
   }).join('')}</div>`;
 }
 function renderAdminCrmRecentFeed(){
@@ -2726,27 +2730,23 @@ function renderAdminCrmDetail(uid){
   }
   $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML = adminLicenseBadgeHtml(kind, lic));
   $('adminCrmLicenseMeta') && ($('adminCrmLicenseMeta').innerHTML = `
-    <div><span>상태</span><b>${esc(lic?.status || '-')}</b></div>
-    <div><span>만료일</span><b>${esc(lic?.expiresAt ? fmtDate(lic.expiresAt) : (String(lic?.plan||'')==='lifetime'?'없음':'-'))}</b></div>
-    <div><span>변경일</span><b>${esc(fmtDate(lic?.updatedAt || lic?.createdAt))}</b></div>
-    <div><span>Method</span><b>${esc(lic?.method || '-')}</b></div>`);
+    <span class="crm-chip"><em>상태</em>${esc(lic?.status || '-')}</span>
+    <span class="crm-chip"><em>만료</em>${esc(lic?.expiresAt ? fmtListDate(lic.expiresAt) : (String(lic?.plan||'')==='lifetime'?'없음':'-'))}</span>
+    <span class="crm-chip"><em>변경</em>${esc(fmtListDate(lic?.updatedAt || lic?.createdAt))}</span>
+    <span class="crm-chip"><em>Method</em>${esc(lic?.method || '-')}</span>`);
   const lastAmount = lastOrder?.amount!=null ? `${Number(lastOrder.amount).toLocaleString('ko-KR')} ${lastOrder.currency||'KRW'}` : '';
   $('adminCrmSummary') && ($('adminCrmSummary').innerHTML = `
+    <button type="button" class="admin-crm-summary-card" data-crm-action="orders">
+      <span>주문 <b>${orders.length}</b></span>
+      <small>${esc(lastOrder ? `${fmtListDate(lastOrder.completedAt||lastOrder.verifiedAt||lastOrder.createdAt)}${lastAmount?` · ${lastAmount}`:''}` : '최근 결제 없음')}</small>
+    </button>
+    <button type="button" class="admin-crm-summary-card" data-crm-action="tickets">
+      <span>문의 <b>${tickets.length}</b></span>
+      <small>${lastTicket ? `최근 ${esc(fmtListDate(lastTicket.createdAt))}` : '최근 문의 없음'}</small>
+    </button>
     <div class="admin-crm-summary-card">
-      <span>주문</span>
-      <b>${orders.length}건</b>
-      <small>최근 결제 ${esc(lastOrder ? fmtListDate(lastOrder.completedAt||lastOrder.verifiedAt||lastOrder.createdAt) : '없음')}</small>
-      ${lastAmount?`<small class="crm-amount">${esc(lastAmount)}</small>`:''}
-    </div>
-    <div class="admin-crm-summary-card">
-      <span>문의</span>
-      <b>${tickets.length}건</b>
-      <small>${lastTicket ? `최근 문의 ${esc(fmtListDate(lastTicket.createdAt))}` : '최근 문의 없음'}</small>
-    </div>
-    <div class="admin-crm-summary-card">
-      <span>활동</span>
-      <b class="crm-summary-badge">${adminActivityBadgeHtml(user)}</b>
-      <small>최근 로그인 ${esc(fmtRelative(user.lastLogin||user.lastSeenAt))}</small>
+      <span>활동 ${adminActivityBadgeHtml(user)}</span>
+      <small>${esc(fmtRelative(user.lastLogin||user.lastSeenAt))}</small>
     </div>`);
   renderAdminCrmHwidBox(user, lic);
   renderAdminCrmOrders(uid, false);
@@ -2853,9 +2853,25 @@ function bindAdminUserFilters(){
   }
   ['adminUserLicenseStatus','adminUserSort','adminCrmFilterRole','adminCrmFilterLogin','adminCrmFilterJoined','adminCrmFilterOrders','adminCrmFilterTickets'].forEach(id=>{
     const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1';
-    el.addEventListener('change',()=>{ adminCrmScrollTop=0; const box=$('adminUserList'); if(box) box.scrollTop=0; renderAdminUserTable(); });
+    el.addEventListener('change',()=>{
+      adminCrmScrollTop=0; const box=$('adminUserList'); if(box) box.scrollTop=0;
+      updateAdminCrmFilterToggleState();
+      renderAdminUserTable();
+    });
   });
   bindAdminCrmDirtyWatchers();
+  const filterToggle=$('adminCrmFilterToggle');
+  const filterAdvanced=$('adminCrmFilterAdvanced');
+  if(filterToggle && filterAdvanced && !filterToggle.dataset.bound){
+    filterToggle.dataset.bound='1';
+    filterToggle.addEventListener('click',()=>{
+      const open = filterAdvanced.hidden;
+      filterAdvanced.hidden = !open;
+      filterToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      filterToggle.textContent = open ? '필터 닫기' : '고급 필터';
+      updateAdminCrmFilterToggleState();
+    });
+  }
   const floatSave=$('adminCrmFloatSave');
   if(floatSave && !floatSave.dataset.bound){
     floatSave.dataset.bound='1';
@@ -2978,6 +2994,23 @@ function bindAdminCrmDetailActions(){
     else if(action==='save-memo') await saveAdminCrmUserMemo();
     else if(action==='delete') await adminDeleteUser(uid);
   });
+}
+function updateAdminCrmFilterToggleState(){
+  const btn=$('adminCrmFilterToggle'); if(!btn) return;
+  const vals=[
+    $('adminCrmFilterRole')?.value,
+    $('adminCrmFilterLogin')?.value,
+    $('adminCrmFilterJoined')?.value,
+    $('adminCrmFilterOrders')?.value,
+    $('adminCrmFilterTickets')?.value
+  ].filter(v=>v && v!=='all');
+  if(vals.length){
+    btn.classList.add('is-active');
+    if($('adminCrmFilterAdvanced')?.hidden) btn.textContent = `고급 필터 · ${vals.length}`;
+  }else{
+    btn.classList.remove('is-active');
+    if($('adminCrmFilterAdvanced')?.hidden) btn.textContent = '고급 필터';
+  }
 }
 function bindAdminCrmDirtyWatchers(){
   ['adminLicensePlan','adminLicenseStatus','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
