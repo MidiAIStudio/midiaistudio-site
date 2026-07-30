@@ -991,24 +991,6 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
-  bindAdminTabs();
-}
-function bindAdminTabs(){
-  const root=$('admin');
-  if(!root || root.dataset.tabsBound) return;
-  root.dataset.tabsBound='1';
-  const tabs=root.querySelectorAll('[data-admin-tab]');
-  const panels=root.querySelectorAll('[data-admin-panel]');
-  const activate=(name)=>{
-    tabs.forEach(t=>t.classList.toggle('is-active', t.dataset.adminTab===name));
-    panels.forEach(p=>p.classList.toggle('is-active', p.dataset.adminPanel===name));
-  };
-  tabs.forEach(tab=>{
-    tab.addEventListener('click',()=>activate(tab.dataset.adminTab));
-  });
-  root.querySelectorAll('[data-admin-tab-jump]').forEach(btn=>{
-    btn.addEventListener('click',()=>activate(btn.dataset.adminTabJump));
-  });
 }
 
 function updateBoardPinnedUi(){
@@ -2846,6 +2828,27 @@ function renderAdminCrmDetail(uid){
   renderAdminCrmRecentFeed();
   captureAdminCrmBaseline();
 }
+function crmSlideHtml(text){
+  return `<span class="crm-slide"><span class="crm-slide-text">${esc(text)}</span></span>`;
+}
+function bindCrmTextSlides(root){
+  if(!root) return;
+  const measure=()=>{
+    root.querySelectorAll('.crm-slide').forEach(el=>{
+      const text=el.querySelector('.crm-slide-text');
+      if(!text) return;
+      text.style.removeProperty('--crm-slide');
+      text.style.removeProperty('--crm-slide-dur');
+      el.classList.remove('is-overflow');
+      const overflow=text.scrollWidth - el.clientWidth;
+      if(overflow<=1) return;
+      el.classList.add('is-overflow');
+      text.style.setProperty('--crm-slide', `${overflow}px`);
+      text.style.setProperty('--crm-slide-dur', `${Math.max(4, Math.min(14, overflow/28))}s`);
+    });
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(measure));
+}
 function renderAdminCrmOrders(uid, showAll){
   const box=$('adminCrmOrders'); if(!box) return;
   const all = adminOrdersForUid(uid);
@@ -2857,9 +2860,9 @@ function renderAdminCrmOrders(uid, showAll){
     const amount=o.amount!=null ? `${Number(o.amount).toLocaleString('ko-KR')} ${o.currency||'KRW'}` : '-';
     const when=fmtCompactDateTime(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
     const key=o.id || o.paymentId || o.paypalOrderId || '';
-    const shortId = id.length>24 ? `${id.slice(0,12)}…${id.slice(-6)}` : id;
-    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="mono crm-td-id">${esc(shortId)}</td><td class="crm-td-method">${esc(method)}</td><td class="crm-td-amount">${esc(amount)}</td><td class="crm-td-date">${esc(when)}</td><td class="crm-td-status">${esc(o.status||'-')}</td></tr>`;
+    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="mono crm-td-id">${crmSlideHtml(id)}</td><td class="crm-td-method">${crmSlideHtml(method)}</td><td class="crm-td-amount">${crmSlideHtml(amount)}</td><td class="crm-td-date">${crmSlideHtml(when)}</td><td class="crm-td-status">${crmSlideHtml(o.status||'-')}</td></tr>`;
   }).join('')}</tbody></table>${(!showAll && all.length>5) ? `<p class="muted small">외 ${all.length-5}건 · 더보기로 전체 표시</p>` : ''}`;
+  bindCrmTextSlides(box);
   box.querySelectorAll('[data-order-id]').forEach(row=>{
     if(row.dataset.bound) return;
     row.dataset.bound='1';
@@ -2905,7 +2908,8 @@ function renderAdminCrmTickets(uid){
   const box=$('adminCrmTickets'); if(!box) return;
   const rows = adminTicketsForUid(uid).slice(0, 5);
   if(!rows.length){ box.innerHTML=`<p class="muted small">문의 기록이 없습니다.</p>`; return; }
-  box.innerHTML = rows.map(t=>`<a class="admin-crm-ticket-row" href="./ticket.html?id=${encodeURIComponent(t.id)}"><b>${esc(t.title||'(제목 없음)')}</b><span class="badge ${esc(String(t.status||'open'))}">${esc(t.status||'open')}</span><small>${esc(fmtListDate(t.createdAt))}</small></a>`).join('');
+  box.innerHTML = rows.map(t=>`<a class="admin-crm-ticket-row" href="./ticket.html?id=${encodeURIComponent(t.id)}"><b class="crm-slide"><span class="crm-slide-text">${esc(t.title||'(제목 없음)')}</span></b><span class="badge ${esc(String(t.status||'open'))}">${esc(t.status||'open')}</span><small>${esc(fmtListDate(t.createdAt))}</small></a>`).join('');
+  bindCrmTextSlides(box);
 }
 function renderAdminCrmTimeline(uid, user, lic){
   const box=$('adminCrmTimeline'); if(!box) return;
@@ -3060,7 +3064,7 @@ function bindAdminCrmDetailActions(){
     else if(action==='orders'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(action==='orders-more'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); renderAdminCrmOrders(uid, true); }
     else if(action==='tickets'){ $('adminCrmTicketsCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
-    else if(action==='tickets-tab'){ document.querySelector('[data-admin-tab="tickets"]')?.click(); }
+    else if(action==='tickets-tab'){ $('adminTicketsSection')?.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(action==='mail'){
       if(!user?.email) return alert('이메일이 없습니다.');
       location.href=`mailto:${encodeURIComponent(user.email)}?subject=${encodeURIComponent('[MidiAI Studio]')}`;

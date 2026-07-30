@@ -463,12 +463,11 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-topline .eyebrow{padding:6px 10px;font-size:11px}
 .admin-page .admin-topline-note{margin:0;color:var(--muted);font-size:13px;line-height:1.5;max-width:360px;text-align:right}
 .admin-page #admin.content-card{padding:14px;border-radius:22px}
-.admin-page .admin-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;padding:6px;border:1px solid var(--line);border-radius:16px;background:rgba(0,0,0,.18);position:sticky;top:72px;z-index:4}
-.admin-page .admin-tab{border:1px solid transparent;border-radius:12px;background:transparent;color:#b8bdd8;padding:8px 14px;font:inherit;font-size:13px;font-weight:900;cursor:pointer}
-.admin-page .admin-tab:hover{color:#fff;background:rgba(255,255,255,.06)}
-.admin-page .admin-tab.is-active{color:#fff;border-color:rgba(139,92,246,.45);background:linear-gradient(135deg,rgba(139,92,246,.28),rgba(34,211,238,.14))}
-.admin-page .admin-tab-panel{display:none}
-.admin-page .admin-tab-panel.is-active{display:block}
+.admin-page .admin-workspace{display:grid;gap:16px}
+.admin-page .admin-tickets-section{margin:0}
+.admin-page .admin-tickets-section .admin-table-wrap{max-height:min(420px,48vh)}
+.admin-page .admin-tabs{display:none!important}
+.admin-page .admin-tab-panel{display:block}
 .admin-page .admin-dashboard{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:0 0 12px}
 .admin-page .dash-card{min-height:78px;padding:10px 12px;border-radius:16px}
 .admin-page .dash-card span{font-size:18px}
@@ -718,21 +717,37 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;
   padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);color:inherit;text-decoration:none;font-size:12px
 }
-.admin-page .crm-mini-table{min-width:0;width:100%;table-layout:fixed;border-collapse:collapse}
-.admin-page .crm-mini-table col.crm-col-id{width:34%}
+.admin-page .admin-crm-ticket-row>b.crm-slide{min-width:0;font-weight:700}
+.admin-page .crm-mini-table{min-width:0!important;width:100%;table-layout:fixed;border-collapse:collapse}
+.admin-page .crm-mini-table col.crm-col-id{width:30%}
 .admin-page .crm-mini-table col.crm-col-method{width:14%}
 .admin-page .crm-mini-table col.crm-col-amount{width:18%}
-.admin-page .crm-mini-table col.crm-col-date{width:20%}
-.admin-page .crm-mini-table col.crm-col-status{width:14%}
+.admin-page .crm-mini-table col.crm-col-date{width:22%}
+.admin-page .crm-mini-table col.crm-col-status{width:16%}
 .admin-page .crm-mini-table th,.admin-page .crm-mini-table td{
-  padding:8px 8px;font-size:11px;vertical-align:middle!important;white-space:nowrap;
-  border-bottom:1px solid rgba(255,255,255,.05);line-height:1.25;text-align:left
+  padding:8px 6px;font-size:11px;vertical-align:middle!important;white-space:nowrap;
+  border-bottom:1px solid rgba(255,255,255,.05);line-height:1.25;text-align:left;
+  overflow:hidden;max-width:0
 }
-.admin-page .crm-mini-table th{color:#6f7694;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:10px}
-.admin-page .crm-mini-table .crm-td-id{overflow:hidden;text-overflow:ellipsis;color:#d7dcf2;text-decoration:none}
+.admin-page .crm-mini-table th{color:#6f7694;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:10px;overflow:hidden;text-overflow:ellipsis}
+.admin-page .crm-mini-table .crm-td-id{color:#d7dcf2;text-decoration:none}
 .admin-page .crm-mini-table .crm-td-amount{font-variant-numeric:tabular-nums}
 .admin-page .crm-mini-table .crm-td-date{font-variant-numeric:tabular-nums;color:#aeb4d0}
 .admin-page .crm-mini-table .crm-td-status{color:#c7cbe4}
+.admin-page .crm-slide{display:block;overflow:hidden;width:100%;min-width:0}
+.admin-page .crm-slide-text{display:inline-block;white-space:nowrap;max-width:none;will-change:transform}
+.admin-page .crm-slide.is-overflow .crm-slide-text{
+  animation:crmTextSlide var(--crm-slide-dur,6s) ease-in-out infinite alternate;
+  padding-right:12px
+}
+.admin-page .crm-slide.is-overflow:hover .crm-slide-text{animation-play-state:paused}
+@keyframes crmTextSlide{
+  0%,12%{transform:translateX(0)}
+  88%,100%{transform:translateX(calc(-1 * var(--crm-slide,0px)))}
+}
+@media (prefers-reduced-motion:reduce){
+  .admin-page .crm-slide.is-overflow .crm-slide-text{animation:none}
+}
 .admin-page .admin-crm-order-row{cursor:pointer}
 .admin-page .admin-crm-order-row:hover td{background:rgba(122,162,255,.06)}
 .admin-page .admin-crm-order-row:focus{outline:none}
