@@ -252,14 +252,58 @@ export function mountEditableFeatureList(container, {
   container.appendChild(addBtn);
 }
 
+const MEDIA_WIDTHS = ['full', 'md', 'sm'];
+const WIDTH_LABEL = { full: '전체', md: '중간', sm: '작게' };
+
+export function normalizeMediaWidth(w) {
+  return MEDIA_WIDTHS.includes(w) ? w : 'full';
+}
+
+export function normalizeMediaOverlays(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((raw, i) => {
+    if (!raw || typeof raw !== 'object') return null;
+    const id = String(raw.id || `ov-${i}-${Math.random().toString(36).slice(2, 7)}`);
+    const type = raw.type === 'bubble' ? 'bubble' : raw.type === 'rect' ? 'rect' : '';
+    if (!type) return null;
+    const clamp = (n, lo = 0, hi = 100) => Math.min(hi, Math.max(lo, Number(n) || 0));
+    if (type === 'rect') {
+      return {
+        id,
+        type: 'rect',
+        x: clamp(raw.x),
+        y: clamp(raw.y),
+        w: clamp(raw.w, 2, 100),
+        h: clamp(raw.h, 2, 100),
+        label: String(raw.label || '').slice(0, 80)
+      };
+    }
+    return {
+      id,
+      type: 'bubble',
+      x: clamp(raw.x),
+      y: clamp(raw.y),
+      text: String(raw.text || '').slice(0, 120),
+      side: raw.side === 'right' ? 'right' : 'left'
+    };
+  }).filter(Boolean);
+}
+
+function newOverlayId() {
+  return `ov-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+}
+
 /**
- * Media frame that never collapses. Supports image / upload video / youtube.
+ * Media frame that never collapses. Supports image / upload video / youtube,
+ * plus mediaWidth + mediaOverlays (rect / speech bubble) on images.
  */
 export function mountEditableMedia(container, {
   mediaType = '',
   mediaUrl = '',
   posterUrl = '',
   mediaFit = 'cover',
+  mediaWidth = 'full',
+  mediaOverlays = [],
   editMode = false,
   isAdmin = false,
   videoClass = 'product-video',
@@ -270,12 +314,42 @@ export function mountEditableMedia(container, {
   container.classList.add('vcms-media-slot', 'product-feature-media');
   container.classList.toggle('is-empty', !mediaUrl);
 
-  const fitClass = mediaFit === 'contain' ? 'fit-contain' : mediaFit === 'center' ? 'fit-center' : 'fit-cover';
-  container.classList.add(fitClass);
+  let overlays = normalizeMediaOverlays(mediaOverlays);
+  let width = normalizeMediaWidth(mediaWidth);
+  let selectedId = null;
+  let tool = null; // 'rect' | 'bubble' | null
+  let drawState = null;
+
+  const emit = () => {
+    onChange?.({
+      mediaType,
+      mediaUrl,
+      posterUrl,
+      mediaFit,
+      mediaWidth: width,
+      mediaOverlays: overlays.map((o) => ({ ...o }))
+    });
+  };
+
+  const applyChromeClasses = () => {
+    container.classList.remove('fit-cover', 'fit-contain', 'fit-center', 'width-full', 'width-md', 'width-sm');
+    container.classList.add(
+      mediaFit === 'contain' ? 'fit-contain' : mediaFit === 'center' ? 'fit-center' : 'fit-cover'
+    );
+    container.classList.add(`width-${width}`);
+    container.classList.toggle('is-annotating', !!tool);
+  };
+  applyChromeClasses();
+
+  const body = document.createElement('div');
+  body.className = 'vcms-media-body';
+  container.appendChild(body);
+
+  const annotLayer = document.createElement('div');
+  annotLayer.className = 'vcms-media-annots';
+  container.appendChild(annotLayer);
 
   const paintContent = () => {
-    const body = container.querySelector('.vcms-media-body') || document.createElement('div');
-    body.className = 'vcms-media-body';
     body.innerHTML = '';
     if (mediaType === 'youtube' && mediaUrl) {
       const id = youtubeId(mediaUrl) || mediaUrl;
@@ -297,14 +371,93 @@ export function mountEditableMedia(container, {
       img.loading = 'lazy';
       body.appendChild(img);
     } else {
-      body.innerHTML = `<div class="vcms-media-placeholder"><span>사진 또는 영상 추가</span></div>`;
+      body.innerHTML = `<div class="vcms-media-placeholder"><span>${editMode && isAdmin ? '사진 또는 영상 추가' : ''}</span></div>`;
     }
-    if (!container.contains(body)) container.appendChild(body);
+    container.classList.toggle('is-empty', !mediaUrl);
+  };
+
+  const pctFromEvent = (e) => {
+    const rect = annotLayer.getBoundingClientRect();
+    if (!rect.width || !rect.height) return { x: 0, y: 0 };
+    return {
+      x: Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100)),
+      y: Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100))
+    };
+  };
+
+  const paintOverlays = () => {
+    const canEdit = editMode && isAdmin && mediaType === 'image' && !!mediaUrl;
+    annotLayer.classList.toggle('is-editable', canEdit);
+    annotLayer.innerHTML = '';
+    overlays.forEach((ov) => {
+      const el = document.createElement('div');
+      el.className = `vcms-annot vcms-annot-${ov.type}${selectedId === ov.id ? ' is-selected' : ''}`;
+      el.dataset.id = ov.id;
+      if (ov.type === 'rect') {
+        el.style.left = `${ov.x}%`;
+        el.style.top = `${ov.y}%`;
+        el.style.width = `${ov.w}%`;
+        el.style.height = `${ov.h}%`;
+        if (ov.label) {
+          const lab = document.createElement('span');
+          lab.className = 'vcms-annot-label';
+          lab.textContent = ov.label;
+          el.appendChild(lab);
+        }
+        if (canEdit && selectedId === ov.id) {
+          ['nw', 'ne', 'sw', 'se'].forEach((h) => {
+            const handle = document.createElement('i');
+            handle.className = `vcms-annot-handle vcms-annot-handle-${h}`;
+            handle.dataset.handle = h;
+            el.appendChild(handle);
+          });
+        }
+      } else {
+        el.classList.add(ov.side === 'right' ? 'side-right' : 'side-left');
+        el.style.left = `${ov.x}%`;
+        el.style.top = `${ov.y}%`;
+        const bubble = document.createElement('div');
+        bubble.className = 'vcms-bubble-text';
+        bubble.textContent = ov.text || '말풍선';
+        el.appendChild(bubble);
+      }
+      annotLayer.appendChild(el);
+    });
   };
 
   paintContent();
+  paintOverlays();
 
+  // Public / preview: overlays only
   if (!editMode || !isAdmin) return;
+
+  const annotBar = document.createElement('div');
+  annotBar.className = 'vcms-annot-toolbar';
+  annotBar.innerHTML = `
+    <button type="button" class="vcms-hover-btn" data-annot="width">크기: ${WIDTH_LABEL[width]}</button>
+    <button type="button" class="vcms-hover-btn" data-annot="rect">영역</button>
+    <button type="button" class="vcms-hover-btn" data-annot="bubble">말풍선</button>
+    <button type="button" class="vcms-hover-btn" data-annot="side" hidden>꼬리</button>
+    <button type="button" class="vcms-hover-btn" data-annot="edit-text" hidden>텍스트</button>
+    <button type="button" class="vcms-hover-btn is-danger" data-annot="delete" hidden>삭제</button>`;
+  container.appendChild(annotBar);
+
+  const syncAnnotBar = () => {
+    const sel = overlays.find((o) => o.id === selectedId);
+    const hasImage = mediaType === 'image' && !!mediaUrl;
+    annotBar.querySelector('[data-annot="rect"]').hidden = !hasImage;
+    annotBar.querySelector('[data-annot="bubble"]').hidden = !hasImage;
+    annotBar.querySelector('[data-annot="width"]').textContent = `크기: ${WIDTH_LABEL[width]}`;
+    annotBar.querySelector('[data-annot="rect"]').classList.toggle('is-active', tool === 'rect');
+    annotBar.querySelector('[data-annot="bubble"]').classList.toggle('is-active', tool === 'bubble');
+    annotBar.querySelector('[data-annot="side"]').hidden = !(sel && sel.type === 'bubble');
+    annotBar.querySelector('[data-annot="edit-text"]').hidden = !sel;
+    annotBar.querySelector('[data-annot="delete"]').hidden = !sel;
+    if (sel?.type === 'bubble') {
+      annotBar.querySelector('[data-annot="side"]').textContent = sel.side === 'right' ? '꼬리: 우' : '꼬리: 좌';
+    }
+  };
+  syncAnnotBar();
 
   const overlay = document.createElement('div');
   overlay.className = 'vcms-media-overlay';
@@ -338,19 +491,254 @@ export function mountEditableMedia(container, {
     const order = ['cover', 'contain', 'center'];
     const next = order[(order.indexOf(mediaFit) + 1) % order.length];
     mediaFit = next;
-    container.classList.remove('fit-cover', 'fit-contain', 'fit-center');
-    container.classList.add(next === 'contain' ? 'fit-contain' : next === 'center' ? 'fit-center' : 'fit-cover');
-    onChange?.({ mediaType, mediaUrl, posterUrl, mediaFit });
+    applyChromeClasses();
+    emit();
   };
 
   const setMedia = (type, url, poster = '') => {
     mediaType = type;
     mediaUrl = url;
     posterUrl = poster;
-    container.classList.toggle('is-empty', !url);
+    if (type !== 'image') {
+      overlays = [];
+      selectedId = null;
+      tool = null;
+    }
     paintContent();
-    onChange?.({ mediaType, mediaUrl, posterUrl, mediaFit });
+    paintOverlays();
+    applyChromeClasses();
+    syncAnnotBar();
+    emit();
   };
+
+  const editSelectedText = () => {
+    const sel = overlays.find((o) => o.id === selectedId);
+    if (!sel) return;
+    if (sel.type === 'rect') {
+      const next = prompt('영역 라벨', sel.label || '');
+      if (next == null) return;
+      sel.label = String(next).slice(0, 80);
+    } else {
+      const next = prompt('말풍선 텍스트', sel.text || '');
+      if (next == null) return;
+      sel.text = String(next).slice(0, 120);
+    }
+    paintOverlays();
+    emit();
+  };
+
+  annotBar.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-annot]');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const act = btn.dataset.annot;
+    if (act === 'width') {
+      width = MEDIA_WIDTHS[(MEDIA_WIDTHS.indexOf(width) + 1) % MEDIA_WIDTHS.length];
+      applyChromeClasses();
+      syncAnnotBar();
+      emit();
+      return;
+    }
+    if (act === 'rect' || act === 'bubble') {
+      tool = tool === act ? null : act;
+      selectedId = null;
+      applyChromeClasses();
+      paintOverlays();
+      syncAnnotBar();
+      return;
+    }
+    if (act === 'side') {
+      const sel = overlays.find((o) => o.id === selectedId);
+      if (!sel || sel.type !== 'bubble') return;
+      sel.side = sel.side === 'right' ? 'left' : 'right';
+      paintOverlays();
+      syncAnnotBar();
+      emit();
+      return;
+    }
+    if (act === 'edit-text') {
+      editSelectedText();
+      return;
+    }
+    if (act === 'delete') {
+      if (!selectedId) return;
+      overlays = overlays.filter((o) => o.id !== selectedId);
+      selectedId = null;
+      paintOverlays();
+      syncAnnotBar();
+      emit();
+    }
+  });
+
+  // Annotation interactions
+  annotLayer.addEventListener('mousedown', (e) => {
+    if (!(editMode && isAdmin && mediaType === 'image' && mediaUrl)) return;
+    const handle = e.target.closest('[data-handle]');
+    const annotEl = e.target.closest('.vcms-annot');
+    if (handle && annotEl) {
+      e.preventDefault();
+      e.stopPropagation();
+      const ov = overlays.find((o) => o.id === annotEl.dataset.id);
+      if (!ov || ov.type !== 'rect') return;
+      selectedId = ov.id;
+      tool = null;
+      const start = pctFromEvent(e);
+      const orig = { x: ov.x, y: ov.y, w: ov.w, h: ov.h };
+      const corner = handle.dataset.handle;
+      const onMove = (ev) => {
+        const p = pctFromEvent(ev);
+        let x1 = orig.x;
+        let y1 = orig.y;
+        let x2 = orig.x + orig.w;
+        let y2 = orig.y + orig.h;
+        if (corner.includes('w')) x1 = p.x;
+        if (corner.includes('e')) x2 = p.x;
+        if (corner.includes('n')) y1 = p.y;
+        if (corner.includes('s')) y2 = p.y;
+        ov.x = Math.min(x1, x2);
+        ov.y = Math.min(y1, y2);
+        ov.w = Math.max(2, Math.abs(x2 - x1));
+        ov.h = Math.max(2, Math.abs(y2 - y1));
+        paintOverlays();
+      };
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        emit();
+        syncAnnotBar();
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      paintOverlays();
+      syncAnnotBar();
+      return;
+    }
+    if (annotEl && !tool) {
+      e.preventDefault();
+      e.stopPropagation();
+      const ov = overlays.find((o) => o.id === annotEl.dataset.id);
+      if (!ov) return;
+      selectedId = ov.id;
+      const start = pctFromEvent(e);
+      const origX = ov.x;
+      const origY = ov.y;
+      const onMove = (ev) => {
+        const p = pctFromEvent(ev);
+        const dx = p.x - start.x;
+        const dy = p.y - start.y;
+        if (ov.type === 'rect') {
+          ov.x = Math.min(100 - ov.w, Math.max(0, origX + dx));
+          ov.y = Math.min(100 - ov.h, Math.max(0, origY + dy));
+        } else {
+          ov.x = Math.min(100, Math.max(0, origX + dx));
+          ov.y = Math.min(100, Math.max(0, origY + dy));
+        }
+        paintOverlays();
+      };
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        emit();
+        syncAnnotBar();
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      paintOverlays();
+      syncAnnotBar();
+      return;
+    }
+    if (tool === 'rect') {
+      e.preventDefault();
+      e.stopPropagation();
+      const start = pctFromEvent(e);
+      const id = newOverlayId();
+      drawState = { id, x0: start.x, y0: start.y };
+      const draft = { id, type: 'rect', x: start.x, y: start.y, w: 2, h: 2, label: '' };
+      overlays = [...overlays.filter((o) => o.id !== id), draft];
+      selectedId = id;
+      const onMove = (ev) => {
+        const p = pctFromEvent(ev);
+        draft.x = Math.min(drawState.x0, p.x);
+        draft.y = Math.min(drawState.y0, p.y);
+        draft.w = Math.max(2, Math.abs(p.x - drawState.x0));
+        draft.h = Math.max(2, Math.abs(p.y - drawState.y0));
+        paintOverlays();
+      };
+      const onUp = () => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        tool = null;
+        applyChromeClasses();
+        paintOverlays();
+        syncAnnotBar();
+        emit();
+        const label = prompt('영역 라벨 (선택)', '');
+        if (label != null && label.trim()) {
+          draft.label = String(label).slice(0, 80);
+          paintOverlays();
+          emit();
+        }
+      };
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+      paintOverlays();
+      syncAnnotBar();
+      return;
+    }
+    if (tool === 'bubble') {
+      e.preventDefault();
+      e.stopPropagation();
+      const p = pctFromEvent(e);
+      const text = prompt('말풍선 텍스트', '여기');
+      if (text == null) return;
+      const ov = {
+        id: newOverlayId(),
+        type: 'bubble',
+        x: p.x,
+        y: p.y,
+        text: String(text).slice(0, 120) || '말풍선',
+        side: 'left'
+      };
+      overlays = [...overlays, ov];
+      selectedId = ov.id;
+      tool = null;
+      applyChromeClasses();
+      paintOverlays();
+      syncAnnotBar();
+      emit();
+    }
+  });
+
+  annotLayer.addEventListener('dblclick', (e) => {
+    const annotEl = e.target.closest('.vcms-annot');
+    if (!annotEl) return;
+    selectedId = annotEl.dataset.id;
+    syncAnnotBar();
+    editSelectedText();
+  });
+
+  const onKey = (e) => {
+    if (!container.isConnected) {
+      window.removeEventListener('keydown', onKey);
+      return;
+    }
+    if (e.key === 'Escape') {
+      tool = null;
+      selectedId = null;
+      applyChromeClasses();
+      paintOverlays();
+      syncAnnotBar();
+    }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && document.activeElement === document.body) {
+      overlays = overlays.filter((o) => o.id !== selectedId);
+      selectedId = null;
+      paintOverlays();
+      syncAnnotBar();
+      emit();
+    }
+  };
+  window.addEventListener('keydown', onKey);
 
   toolbar.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-action]');
@@ -383,12 +771,14 @@ export function mountEditableMedia(container, {
     if (act === 'fit') applyFitCycle();
     if (act === 'clear') {
       if (!confirmDelete('미디어를 비울까요? (프레임은 유지됩니다)')) return;
+      overlays = [];
+      selectedId = null;
+      tool = null;
       setMedia('', '');
       onFile?.({ kind: 'clear', file: null });
     }
   });
 
-  // drag & drop images/videos
   container.addEventListener('dragover', (e) => {
     e.preventDefault();
     container.classList.add('dragover');

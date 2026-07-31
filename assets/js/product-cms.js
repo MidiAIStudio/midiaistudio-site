@@ -13,7 +13,7 @@ import {
   waitForAdmin,
   onAuthAdmin,
   uploadToStorage
-} from './visual-cms.js?v=md-cms-1';
+} from './visual-cms.js?v=media-annot-1';
 import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';
@@ -139,7 +139,11 @@ let saveTimer = null;
 const AUTOSAVE_MS = 1500;
 
 function cloneSections(rows) {
-  return rows.map((s) => ({ ...s, features: [...(s.features || [])] }));
+  return rows.map((s) => ({
+    ...s,
+    features: [...(s.features || [])],
+    mediaOverlays: Array.isArray(s.mediaOverlays) ? s.mediaOverlays.map((o) => ({ ...o })) : []
+  }));
 }
 
 function markDirty() {
@@ -274,6 +278,8 @@ function featureSectionEl(sec, idx) {
     mediaUrl: sec.mediaUrl || '',
     posterUrl: sec.posterUrl || '',
     mediaFit: sec.mediaFit || 'cover',
+    mediaWidth: sec.mediaWidth || 'full',
+    mediaOverlays: sec.mediaOverlays || [],
     editMode, isAdmin,
     onChange: (m) => {
       Object.assign(draft[idx], m);
@@ -316,6 +322,8 @@ function cardEl(sec, idx) {
       mediaUrl: sec.mediaUrl || '',
       posterUrl: sec.posterUrl || '',
       mediaFit: sec.mediaFit || 'cover',
+      mediaWidth: sec.mediaWidth || 'full',
+      mediaOverlays: sec.mediaOverlays || [],
       editMode, isAdmin,
       videoClass: 'product-video product-card-video',
       onChange: (m) => { Object.assign(draft[idx], m); if (m.mediaUrl) draft[idx].iconOnly = false; markDirty(); },
@@ -429,6 +437,8 @@ async function saveAll() {
         mediaUrl: sec.mediaUrl || '',
         posterUrl: sec.posterUrl || '',
         mediaFit: sec.mediaFit || 'cover',
+        mediaWidth: sec.mediaWidth || 'full',
+        mediaOverlays: Array.isArray(sec.mediaOverlays) ? sec.mediaOverlays : [],
         order: sec.order || 0,
         published: sec.published !== false,
         iconOnly: !!sec.iconOnly,
@@ -481,6 +491,8 @@ function addFeatureCard() {
     mediaUrl: '',
     posterUrl: '',
     mediaFit: 'cover',
+    mediaWidth: 'full',
+    mediaOverlays: [],
     order: maxOrder + 10,
     published: true
   });

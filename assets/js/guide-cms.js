@@ -11,7 +11,7 @@ import {
   mountEditableFeatureList,
   mountEditableMedia,
   uploadToStorage
-} from './visual-cms.js?v=md-cms-1';
+} from './visual-cms.js?v=media-annot-1';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 
@@ -55,7 +55,9 @@ function emptyProductSection(layout = 'normal') {
     mediaType: '',
     mediaUrl: '',
     posterUrl: '',
-    mediaFit: 'cover'
+    mediaFit: 'cover',
+    mediaWidth: 'full',
+    mediaOverlays: []
   };
 }
 
@@ -71,7 +73,9 @@ function getSections(g) {
       mediaType: s.mediaType || '',
       mediaUrl: s.mediaUrl || '',
       posterUrl: s.posterUrl || '',
-      mediaFit: s.mediaFit || 'cover'
+      mediaFit: s.mediaFit || 'cover',
+      mediaWidth: s.mediaWidth || 'full',
+      mediaOverlays: Array.isArray(s.mediaOverlays) ? s.mediaOverlays.map((o) => ({ ...o })) : []
     }));
   }
   return (g?.steps || []).map((s, i) => ({
@@ -83,7 +87,9 @@ function getSections(g) {
     mediaType: s.video ? (s.videoType === 'youtube' ? 'youtube' : 'video') : (s.image ? 'image' : ''),
     mediaUrl: s.video || s.image || '',
     posterUrl: '',
-    mediaFit: 'cover'
+    mediaFit: 'cover',
+    mediaWidth: 'full',
+    mediaOverlays: []
   }));
 }
 
@@ -198,6 +204,7 @@ function refreshAdminChrome() {
     if (act === 'add-section') btn.classList.toggle('hidden', !(isGuideDetailPage() && editMode));
   });
   document.body.classList.toggle('guide-cms-editing', editMode && isAdmin);
+  document.body.classList.toggle('vcms-editing', editMode && isAdmin);
 }
 
 async function ensureSeed() {
@@ -849,17 +856,16 @@ function mountGuideSections(root, sections, editing) {
           : '';
       }
       if (media) {
-        media.className = 'product-feature-media';
-        if (sec.mediaType === 'youtube' && sec.mediaUrl) {
-          const id = ytId(sec.mediaUrl);
-          media.innerHTML = id ? `<iframe src="https://www.youtube.com/embed/${esc(id)}" title="video" allowfullscreen loading="lazy"></iframe>` : '';
-        } else if (sec.mediaType === 'video' && sec.mediaUrl) {
-          media.innerHTML = `<video class="product-video" src="${esc(sec.mediaUrl)}" ${sec.posterUrl ? `poster="${esc(sec.posterUrl)}"` : ''} muted loop playsinline autoplay></video>`;
-        } else if (sec.mediaUrl) {
-          media.innerHTML = `<img src="${esc(sec.mediaUrl)}" alt="" loading="lazy" decoding="async">`;
-        } else {
-          media.innerHTML = `<div class="vcms-media-placeholder"><span></span></div>`;
-        }
+        mountEditableMedia(media, {
+          mediaType: sec.mediaType || '',
+          mediaUrl: sec.mediaUrl || '',
+          posterUrl: sec.posterUrl || '',
+          mediaFit: sec.mediaFit || 'cover',
+          mediaWidth: sec.mediaWidth || 'full',
+          mediaOverlays: sec.mediaOverlays || [],
+          editMode: false,
+          isAdmin: false
+        });
       }
       return;
     }
@@ -896,6 +902,8 @@ function mountGuideSections(root, sections, editing) {
       mediaUrl: sec.mediaUrl || '',
       posterUrl: sec.posterUrl || '',
       mediaFit: sec.mediaFit || 'cover',
+      mediaWidth: sec.mediaWidth || 'full',
+      mediaOverlays: sec.mediaOverlays || [],
       editMode: true, isAdmin: true,
       onChange: (m) => { Object.assign(currentGuide.sections[i], m); scheduleSave(); },
       onFile: (f) => {
