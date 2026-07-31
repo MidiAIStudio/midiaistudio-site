@@ -242,11 +242,41 @@ async function fetchPortOnePayment(paymentId) {
   return data;
 }
 
-function isActiveLifetimeLicense(data) {
+function licenseTsMs(v) {
+  if (v == null || v === '') return 0;
+  if (typeof v === 'number' && Number.isFinite(v)) return v > 1e12 ? v : v * 1000;
+  if (typeof v?.toMillis === 'function') return v.toMillis();
+  if (typeof v?.toDate === 'function') {
+    const t = v.toDate().getTime();
+    return Number.isFinite(t) ? t : 0;
+  }
+  const sec = Number(v?.seconds || v?._seconds || 0);
+  return sec ? sec * 1000 : 0;
+}
+
+function licenseDateBoundsActive(data, nowMs = Date.now()) {
+  if (!data) return false;
+  const startMs = licenseTsMs(data.startsAt);
+  const endMs = licenseTsMs(data.expiresAt);
+  if (startMs && nowMs < startMs) return false;
+  if (endMs && nowMs > endMs) return false;
+  return true;
+}
+
+/** Active full license (any plan) within optional startsAt~expiresAt window. */
+function isLicenseCurrentlyActive(data) {
   if (!data || typeof data !== 'object') return false;
-  return data.licensed === true
-    && String(data.status || '').toLowerCase() === 'active'
-    && String(data.plan || '').toLowerCase() === 'lifetime';
+  if (data.licensed !== true) return false;
+  if (String(data.status || '').toLowerCase() !== 'active') return false;
+  return licenseDateBoundsActive(data);
+}
+
+function isActiveLifetimeLicense(data) {
+  if (!isLicenseCurrentlyActive(data)) return false;
+  if (String(data.plan || '').toLowerCase() !== 'lifetime') return false;
+  // Timed "lifetime" grants with expiresAt are not purchase blockers once expired
+  // (already handled by isLicenseCurrentlyActive). While valid with expiresAt, still block repurchase.
+  return true;
 }
 
 async function readUserLicense(uid) {
@@ -1143,4 +1173,41 @@ exports.boardFileProxy = functions.https.onRequest(async (req, res) => {
     console.error('boardFileProxy', err);
     res.status(500).send(err.message || 'proxy error');
   }
+});
+
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+
+/**
+ * Auto-revoke timed licenses after expiresAt.
+ * Runs hourly; also soft-checked on read paths via isLicenseCurrentlyActive.
+ */
+exports.expireTimedLicenses = onSchedule({
+  schedule: 'every 60 minutes',
+  timeZone: 'Asia/Seoul',
+}, async () => {
+  const now = admin.firestore.Timestamp.now();
+  let expired = 0;
+  while (true) {
+    const snap = await db.collection('licenses')
+      .where('status', '==', 'active')
+      .where('expiresAt', '<=', now)
+      .limit(400)
+      .get();
+    if (snap.empty) break;
+    const batch = db.batch();
+    snap.docs.forEach((docSnap) => {
+      batch.set(docSnap.ref, {
+        licensed: false,
+        status: 'expired',
+        expiredAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        expireReason: 'auto_expiresAt'
+      }, { merge: true });
+    });
+    await batch.commit();
+    expired += snap.size;
+    if (snap.size < 400) break;
+  }
+  console.log('expireTimedLicenses done', { expired });
+  return null;
 });

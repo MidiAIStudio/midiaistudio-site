@@ -422,6 +422,60 @@ function tr(k){
 
 function fmtDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); return d ? d.toLocaleString(lang==='ja'?'ja-JP':lang==='en'?'en-US':'ko-KR') : ''; } catch { return ''; } }
 function fmtListDate(v){ try{ const d=v?.toDate?v.toDate():(v?new Date(v):null); if(!d)return '-'; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`; }catch{return '';} }
+function licenseTsMs(v){
+  if(v==null || v==='') return 0;
+  if(typeof v==='number' && Number.isFinite(v)) return v>1e12 ? v : v*1000;
+  if(typeof v?.toMillis==='function') return v.toMillis();
+  if(typeof v?.toDate==='function'){ const t=v.toDate().getTime(); return Number.isFinite(t)?t:0; }
+  const sec=Number(v?.seconds||v?._seconds||0);
+  if(sec) return sec*1000;
+  const d=new Date(v);
+  return Number.isFinite(d.getTime()) ? d.getTime() : 0;
+}
+function licenseDateBoundsActive(d, nowMs=Date.now()){
+  if(!d) return false;
+  const startMs=licenseTsMs(d.startsAt);
+  const endMs=licenseTsMs(d.expiresAt);
+  if(startMs && nowMs < startMs) return false;
+  if(endMs && nowMs > endMs) return false;
+  return true;
+}
+/** Full license is active only when licensed+active and within optional startsAt~expiresAt. */
+function isLicenseCurrentlyActive(d){
+  if(!d || d.licensed!==true) return false;
+  if(String(d.status||'').toLowerCase()!=='active') return false;
+  return licenseDateBoundsActive(d);
+}
+function toDateInputValue(v){
+  const ms=licenseTsMs(v);
+  if(!ms) return '';
+  const d=new Date(ms);
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function dateInputToStartTimestamp(yyyyMmDd){
+  if(!yyyyMmDd || !firestoreApi?.Timestamp) return null;
+  const d=new Date(`${yyyyMmDd}T00:00:00`);
+  if(!Number.isFinite(d.getTime())) return null;
+  return firestoreApi.Timestamp.fromDate(d);
+}
+function dateInputToEndTimestamp(yyyyMmDd){
+  if(!yyyyMmDd || !firestoreApi?.Timestamp) return null;
+  const d=new Date(`${yyyyMmDd}T23:59:59.999`);
+  if(!Number.isFinite(d.getTime())) return null;
+  return firestoreApi.Timestamp.fromDate(d);
+}
+function buildAdminLicenseDateFields(){
+  const {deleteField}=firestoreApi;
+  const startVal=$('adminLicenseStartsAt')?.value||'';
+  const endVal=$('adminLicenseExpiresAt')?.value||'';
+  const startsAt=dateInputToStartTimestamp(startVal);
+  const expiresAt=dateInputToEndTimestamp(endVal);
+  return {
+    startsAt: startsAt || deleteField(),
+    expiresAt: expiresAt || deleteField()
+  };
+}
 function fmtCompactDateTime(v){
   try{
     const d=v?.toDate?v.toDate():(v?new Date(v):null);
@@ -486,7 +540,7 @@ async function fetchAuthorLicenses(uids){
     try{
       const snap=await getDoc(doc(db,'licenses',uid));
       const d=snap.exists()?snap.data():null;
-      const active=!!(d && d.licensed===true && String(d.status||'').toLowerCase()==='active');
+      const active=isLicenseCurrentlyActive(d);
       authorLicenseCache.set(uid, active);
     }catch(_){
       authorLicenseCache.set(uid, false);
@@ -1350,8 +1404,8 @@ async function loadLicense(uid){
     const {doc,getDoc}=firestoreApi;
     const snap=await getDoc(doc(db,'licenses',uid));
     const d=snap.exists()?snap.data():null;
-    const active=!!(d && d.licensed===true && String(d.status||'').toLowerCase()==='active');
-    const lifetime=!!(active && String(d?.plan||'').toLowerCase()==='lifetime');
+    const active=isLicenseCurrentlyActive(d);
+    const lifetime=!!(active && String(d?.plan||'').toLowerCase()==='lifetime' && !licenseTsMs(d?.expiresAt));
     currentLicenseActive = active;
     currentLicenseLifetime = lifetime;
     if(uid) authorLicenseCache.set(uid, active);
@@ -1360,9 +1414,12 @@ async function loadLicense(uid){
     if(badge){ badge.className='badge '+licenseClass; badge.textContent=licenseText; }
     if(sideBadge){ sideBadge.className='badge sidebar-license-badge '+licenseClass; sideBadge.textContent=licenseText; }
     if($('accountMeta')){
+      const validFrom=d?.startsAt ? fmtListDate(d.startsAt) : '-';
+      const validTo=d?.expiresAt ? fmtListDate(d.expiresAt) : (String(d?.plan||'')==='lifetime'?'무기한':'-');
       $('accountMeta').innerHTML=[
         metaCard('UID',uid), metaCard('Email',currentUser.email), metaCard('Display Name',currentUser.displayName),
         metaCard('Plan',d?.plan), metaCard('Status',d?.status),
+        metaCard('Valid', `${validFrom} ~ ${validTo}`),
         metaCard('Method',d?.method),
         metaCard('Role',isAdminUser?'admin':'user')
       ].join('');
@@ -2598,8 +2655,10 @@ function adminLicenseKind(lic){
   if(status==='banned' || status==='suspended') return 'suspended';
   if(status==='expired' || status==='refunded') return 'expired';
   if(lic.licensed===true && status==='active'){
+    if(!licenseDateBoundsActive(lic)) return 'expired';
     if(plan==='trial') return 'trial';
-    if(plan==='lifetime') return 'lifetime';
+    if(plan==='lifetime' && !licenseTsMs(lic.expiresAt)) return 'lifetime';
+    if(plan==='lifetime') return 'active';
     if(plan==='developer') return 'developer';
     if(plan==='admin') return 'admin';
     return 'active';
@@ -2921,6 +2980,8 @@ function captureAdminCrmBaseline(){
   adminCrmBaseline = {
     plan: $('adminLicensePlan')?.value || '',
     status: $('adminLicenseStatus')?.value || '',
+    startsAt: $('adminLicenseStartsAt')?.value || '',
+    expiresAt: $('adminLicenseExpiresAt')?.value || '',
     licenseMemo: $('adminLicenseMemo')?.value || '',
     userMemo: $('adminCrmUserMemo')?.value || ''
   };
@@ -2941,6 +3002,8 @@ function checkAdminCrmDirty(){
   const cur={
     plan: $('adminLicensePlan')?.value || '',
     status: $('adminLicenseStatus')?.value || '',
+    startsAt: $('adminLicenseStartsAt')?.value || '',
+    expiresAt: $('adminLicenseExpiresAt')?.value || '',
     licenseMemo: $('adminLicenseMemo')?.value || '',
     userMemo: $('adminCrmUserMemo')?.value || ''
   };
@@ -3019,6 +3082,8 @@ function renderAdminCrmDetail(uid){
     const st=String(lic?.status||'active').toLowerCase();
     $('adminLicenseStatus').value = ['active','expired','suspended','banned'].includes(st) ? st : 'active';
   }
+  if($('adminLicenseStartsAt')) $('adminLicenseStartsAt').value = toDateInputValue(lic?.startsAt);
+  if($('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value = toDateInputValue(lic?.expiresAt);
   if($('adminLicenseMemo')) $('adminLicenseMemo').value = lic?.memo || '';
   if($('adminCrmUserMemo') && document.activeElement !== $('adminCrmUserMemo')){
     $('adminCrmUserMemo').value = user.adminMemo || '';
@@ -3026,6 +3091,7 @@ function renderAdminCrmDetail(uid){
   $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML = adminLicenseBadgeHtml(kind, lic));
   $('adminCrmLicenseMeta') && ($('adminCrmLicenseMeta').innerHTML = `
     <span class="crm-chip"><em>상태</em>${esc(lic?.status || '-')}</span>
+    <span class="crm-chip"><em>시작</em>${esc(lic?.startsAt ? fmtListDate(lic.startsAt) : '-')}</span>
     <span class="crm-chip"><em>만료</em>${esc(lic?.expiresAt ? fmtListDate(lic.expiresAt) : (String(lic?.plan||'')==='lifetime'?'없음':'-'))}</span>
     <span class="crm-chip"><em>변경</em>${esc(fmtListDate(lic?.updatedAt || lic?.createdAt))}</span>
     <span class="crm-chip"><em>Method</em>${esc(lic?.method || '-')}</span>`);
@@ -3353,8 +3419,23 @@ function bindAdminCrmDetailActions(){
       if(!hwid) return;
       try{ await navigator.clipboard.writeText(hwid); adminFlash('HWID 복사됨'); }catch{ alert(hwid); }
     }
-    else if(action==='grant-trial') await adminQuickLicense(`${uid}:trial:active`);
-    else if(action==='grant-lifetime') await adminQuickLicense(`${uid}:lifetime:active`);
+    else if(action==='grant-trial') await adminQuickLicense(`${uid}:trial:active`, false, { days: 7 });
+    else if(action==='grant-lifetime') await adminQuickLicense(`${uid}:lifetime:active`, false, { clearDates: true });
+    else if(action==='grant-timed'){
+      $('adminCrmLicenseCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+      const startEl=$('adminLicenseStartsAt');
+      const endEl=$('adminLicenseExpiresAt');
+      if(startEl && !startEl.value) startEl.value = toDateInputValue(new Date());
+      if(endEl && !endEl.value){
+        const end=new Date(); end.setDate(end.getDate()+30);
+        endEl.value = toDateInputValue(end);
+      }
+      if($('adminLicensePlan')) $('adminLicensePlan').value='lifetime';
+      if($('adminLicenseStatus')) $('adminLicenseStatus').value='active';
+      checkAdminCrmDirty();
+      endEl?.focus();
+      adminFlash('시작일·만료일 확인 후 Save Changes로 저장하세요');
+    }
     else if(action==='suspend'){ await adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:suspended`); }
     else if(action==='activate'){ await adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:active`); }
     else if(action==='orders'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
@@ -3424,7 +3505,7 @@ function updateAdminCrmFilterToggleState(){
   }
 }
 function bindAdminCrmDirtyWatchers(){
-  ['adminLicensePlan','adminLicenseStatus','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
+  ['adminLicensePlan','adminLicenseStatus','adminLicenseStartsAt','adminLicenseExpiresAt','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
     const el=$(id); if(!el||el.dataset.dirtyBound) return;
     el.dataset.dirtyBound='1';
     el.addEventListener('input', checkAdminCrmDirty);
@@ -3437,22 +3518,29 @@ async function saveAdminCrmAllChanges(){
   const plan=$('adminLicensePlan')?.value;
   const status=$('adminLicenseStatus')?.value;
   const licenseMemo=$('adminLicenseMemo')?.value||'';
+  const startsAt=$('adminLicenseStartsAt')?.value||'';
+  const expiresAt=$('adminLicenseExpiresAt')?.value||'';
   const baseline=adminCrmBaseline||{};
   try{
     const {doc,setDoc,serverTimestamp}=firestoreApi;
-    const licChanged = baseline.plan!==plan || baseline.status!==status || baseline.licenseMemo!==licenseMemo;
+    const licChanged = baseline.plan!==plan || baseline.status!==status || baseline.licenseMemo!==licenseMemo
+      || baseline.startsAt!==startsAt || baseline.expiresAt!==expiresAt;
     const memoChanged = baseline.userMemo!==($('adminCrmUserMemo')?.value||'');
     if(licChanged){
+      if(startsAt && expiresAt && startsAt > expiresAt){
+        return alert('시작일이 만료일보다 늦을 수 없습니다.');
+      }
       await setDoc(doc(db,'licenses',uid),{
         licensed: status==='active',
         plan,
         status,
         method:'manual',
         memo:licenseMemo,
+        ...buildAdminLicenseDateFields(),
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
-      pushAdminCrmFeed(`${plan} 저장`, status);
+      pushAdminCrmFeed(`${plan} 저장`, expiresAt ? `${status} · ~${expiresAt}` : status);
     }
     if(memoChanged) await saveAdminCrmUserMemo();
     if(licChanged || memoChanged){
@@ -3502,24 +3590,39 @@ function bindAdminUserActions(root=document){
   root.querySelectorAll('[data-user-license]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',()=>adminQuickLicense(btn.dataset.userLicense)); });
   root.querySelectorAll('[data-user-hwid-reset]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.addEventListener('click',()=>adminResetHwid(btn.dataset.userHwidReset)); });
 }
-async function adminQuickLicense(raw, silent=false){
+async function adminQuickLicense(raw, silent=false, opts={}){
   if(!isAdminUser)return alert(tr('no_permission'));
   const [uid,plan,status]=String(raw).split(':');
   if(!uid)return;
   try{
-    const {doc,setDoc,serverTimestamp}=firestoreApi;
+    const {doc,setDoc,serverTimestamp,Timestamp,deleteField}=firestoreApi;
     const licensed = status==='active';
-    await setDoc(doc(db,'licenses',uid),{
+    const payload={
       licensed,
       plan,
       status,
       method:'admin',
       updatedAt:serverTimestamp(),
       createdAt:serverTimestamp()
-    },{merge:true});
+    };
+    if(opts.clearDates){
+      payload.startsAt = deleteField();
+      payload.expiresAt = deleteField();
+    } else if(opts.days!=null){
+      const days=Math.max(1, Number(opts.days)||1);
+      const start=new Date(); start.setHours(0,0,0,0);
+      const end=new Date(start); end.setDate(end.getDate()+days); end.setHours(23,59,59,999);
+      payload.startsAt = Timestamp.fromDate(start);
+      payload.expiresAt = Timestamp.fromDate(end);
+    } else if(opts.startsAt || opts.expiresAt){
+      payload.startsAt = opts.startsAt || deleteField();
+      payload.expiresAt = opts.expiresAt || deleteField();
+    }
+    await setDoc(doc(db,'licenses',uid), payload, {merge:true});
     if(!silent){
-      adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(plan)} / ${esc(status)}`);
-      pushAdminCrmFeed(plan==='lifetime'?'Lifetime 지급':(plan==='trial'?'Trial 지급':`${plan} 지급`), status);
+      const range = opts.days!=null ? ` · ${opts.days}일` : (opts.clearDates ? ' · 무기한' : '');
+      adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(plan)} / ${esc(status)}${range}`);
+      pushAdminCrmFeed(plan==='lifetime'?'Lifetime 지급':(plan==='trial'?'Trial 지급':`${plan} 지급`), status + range);
     }
     if(selectedAdminUid===uid) refreshAdminCrmDetail();
   }catch(e){ alert(e.message); }
@@ -4357,16 +4460,22 @@ function initForms(){
       if(!uid) return alert('회원을 선택해 주세요.');
       const status=$('adminLicenseStatus').value;
       const plan=$('adminLicensePlan').value;
+      const startsAt=$('adminLicenseStartsAt')?.value||'';
+      const expiresAt=$('adminLicenseExpiresAt')?.value||'';
+      if(startsAt && expiresAt && startsAt > expiresAt){
+        return alert('시작일이 만료일보다 늦을 수 없습니다.');
+      }
       await setDoc(doc(db,'licenses',uid),{
         licensed: status==='active',
         plan,
         status,
         method:'manual',
         memo:$('adminLicenseMemo').value,
+        ...buildAdminLicenseDateFields(),
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
-      pushAdminCrmFeed(`${plan} 저장`, status);
+      pushAdminCrmFeed(`${plan} 저장`, expiresAt ? `${status} · ~${expiresAt}` : status);
       adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(plan)} / ${esc(status)}`);
       if(selectedAdminUid===uid) refreshAdminCrmDetail();
       else captureAdminCrmBaseline();
