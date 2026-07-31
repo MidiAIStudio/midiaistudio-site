@@ -71,28 +71,116 @@ async function paypalAccessToken() {
   return data.access_token;
 }
 
-function serverProduct() {
+const DEFAULT_PRODUCT_DOC = 'lifetime';
+
+function envPayPalFallback() {
   return {
     plan: cfg('PAYPAL_PLAN', 'lifetime'),
     amount: cfg('PAYPAL_PRICE_VALUE', '65.00'),
-    currency: cfg('PAYPAL_CURRENCY', 'USD')
+    currency: cfg('PAYPAL_CURRENCY', 'USD'),
+    productDocId: DEFAULT_PRODUCT_DOC,
+    productName: 'Lifetime License',
+    region: 'Global',
+    pricingVersion: 0,
+    status: 'active'
   };
 }
 
-/** KakaoPay / PortOne KR product — server is source of truth (never trust client amounts). */
-function serverKrProduct() {
+function envKrFallback() {
   return {
     plan: cfg('PORTONE_PLAN', cfg('PAYPAL_PLAN', 'lifetime')),
     amount: Number(cfg('PORTONE_KR_AMOUNT', '90000')),
     currency: String(cfg('PORTONE_KR_CURRENCY', 'KRW')).toUpperCase().replace(/^CURRENCY_/, ''),
     productId: cfg('PORTONE_PRODUCT_ID', 'midiai-lifetime'),
     orderName: cfg('PORTONE_ORDER_NAME', 'MidiAI Studio Lifetime License'),
-    /** Accept legacy Korean orderName used by older client builds */
     allowedOrderNames: [
       cfg('PORTONE_ORDER_NAME', 'MidiAI Studio Lifetime License'),
       'MidiAI Studio Lifetime 디지털 라이선스'
-    ]
+    ],
+    productDocId: DEFAULT_PRODUCT_DOC,
+    productName: 'Lifetime License',
+    region: 'KR',
+    pricingVersion: 0,
+    status: 'active'
   };
+}
+
+function formatChargeAmount(salePrice, currency) {
+  const cur = String(currency || 'USD').toUpperCase();
+  const n = Number(salePrice);
+  if (!Number.isFinite(n)) throw new Error('판매가가 올바르지 않습니다.');
+  if (cur === 'JPY' || cur === 'KRW') return String(Math.round(n));
+  return n.toFixed(2);
+}
+
+/**
+ * Load product + region pricing from Firestore (Admin SDK).
+ * Never trusts client-sent amounts. Falls back to env if doc missing.
+ */
+async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) {
+  const snap = await db.collection('products').doc(productDocId).get();
+  if (!snap.exists) {
+    return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
+  }
+  const data = snap.data() || {};
+  if (data.status === 'paused') {
+    const err = new Error('현재 일시 판매중지된 상품입니다.');
+    err.status = 403;
+    err.code = 'PRODUCT_PAUSED';
+    throw err;
+  }
+  const regions = data.regions || {};
+  const region = regions[regionCode] || (regionCode === 'KR' ? null : regions.Global) || regions.KR;
+  if (!region) {
+    return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
+  }
+  const currency = String(region.currency || (regionCode === 'KR' ? 'KRW' : 'USD')).toUpperCase();
+  const salePrice = Number(region.salePrice);
+  if (!Number.isFinite(salePrice) || salePrice <= 0) {
+    return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
+  }
+  const orderName = region.orderName || data.name || 'MidiAI Studio Lifetime License';
+  const productId = region.portoneProductId || cfg('PORTONE_PRODUCT_ID', productDocId);
+  const base = {
+    plan: data.plan || 'lifetime',
+    productDocId,
+    productName: data.name || 'Lifetime License',
+    region: regionCode,
+    pricingVersion: Number(data.pricingVersion) || 1,
+    status: data.status || 'active',
+    listPrice: Number(region.listPrice) || salePrice,
+    payment: region.payment || (regionCode === 'KR' ? 'portone' : 'paypal'),
+    orderName,
+    currency
+  };
+  if (regionCode === 'KR' || region.payment === 'portone') {
+    return {
+      ...base,
+      amount: Math.round(salePrice),
+      productId,
+      allowedOrderNames: Array.from(new Set([
+        orderName,
+        'MidiAI Studio Lifetime License',
+        'MidiAI Studio Lifetime 디지털 라이선스',
+        cfg('PORTONE_ORDER_NAME', orderName)
+      ]))
+    };
+  }
+  return {
+    ...base,
+    amount: formatChargeAmount(salePrice, currency),
+    productId
+  };
+}
+
+/** @deprecated sync name kept as async wrapper — PayPal Global region */
+async function serverProduct() {
+  return loadRegionCharge('Global', DEFAULT_PRODUCT_DOC);
+}
+
+/** KakaoPay / PortOne KR — Firestore salePrice (never trust client). */
+async function serverKrProduct() {
+  return loadRegionCharge('KR', DEFAULT_PRODUCT_DOC);
 }
 
 function normalizeCurrency(value) {
@@ -253,7 +341,17 @@ exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) =>
       return res.status(401).json({ ok: false, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
     }
     const { paymentId, productId } = req.body || {};
-    const product = serverKrProduct();
+    let product;
+    try {
+      product = await serverKrProduct();
+    } catch (prodErr) {
+      return res.status(prodErr.status || 400).json({
+        ok: false,
+        eligible: false,
+        code: prodErr.code || 'PRODUCT_UNAVAILABLE',
+        message: prodErr.message || '상품을 구매할 수 없습니다.'
+      });
+    }
     if (productId && productId !== product.productId) {
       return res.status(400).json({ ok: false, eligible: false, message: '상품 정보가 일치하지 않습니다.' });
     }
@@ -291,7 +389,17 @@ exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) =>
       eligible: true,
       hasLifetime: false,
       paymentId: paymentId || null,
-      message: '구매 가능'
+      message: '구매 가능',
+      pricing: {
+        amount: product.amount,
+        currency: product.currency,
+        orderName: product.orderName,
+        productId: product.productId,
+        productDocId: product.productDocId,
+        region: product.region,
+        pricingVersion: product.pricingVersion,
+        listPrice: product.listPrice
+      }
     });
   } catch (err) {
     console.error('checkPurchaseEligibility', err);
@@ -326,7 +434,16 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
   try {
     const user = await requireUser(req);
-    const product = serverProduct();
+    let product;
+    try {
+      product = await serverProduct();
+    } catch (prodErr) {
+      return res.status(prodErr.status || 400).json({
+        ok: false,
+        code: prodErr.code || 'PRODUCT_UNAVAILABLE',
+        message: prodErr.message || '상품을 구매할 수 없습니다.'
+      });
+    }
     const accessToken = await paypalAccessToken();
     const orderRef = db.collection('orders').doc();
     const payload = {
@@ -337,7 +454,7 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
         description: `MidiAI Studio ${product.plan} license`,
         amount: {
           currency_code: product.currency,
-          value: product.amount
+          value: String(product.amount)
         }
       }],
       application_context: {
@@ -365,6 +482,10 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
       amount: Number(product.amount),
       currency: product.currency,
       plan: product.plan,
+      productId: product.productDocId || DEFAULT_PRODUCT_DOC,
+      productName: product.productName || 'Lifetime License',
+      region: product.region || 'Global',
+      pricingVersion: product.pricingVersion || 0,
       provider: 'paypal',
       status: 'created',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -385,7 +506,16 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
     const user = await requireUser(req);
     const { orderId } = req.body || {};
     if (!orderId) return res.status(400).json({ ok: false, message: 'orderId가 없습니다.' });
-    const product = serverProduct();
+    let product;
+    try {
+      product = await serverProduct();
+    } catch (prodErr) {
+      return res.status(prodErr.status || 400).json({
+        ok: false,
+        code: prodErr.code || 'PRODUCT_UNAVAILABLE',
+        message: prodErr.message || '상품을 구매할 수 없습니다.'
+      });
+    }
     const accessToken = await paypalAccessToken();
 
     const orderQuery = await db.collection('orders')
@@ -478,7 +608,16 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
       return res.status(400).json({ ok: false, message: 'paymentId 형식이 올바르지 않습니다.' });
     }
 
-    const product = serverKrProduct();
+    let product;
+    try {
+      product = await serverKrProduct();
+    } catch (prodErr) {
+      return res.status(prodErr.status || 400).json({
+        ok: false,
+        code: prodErr.code || 'PRODUCT_UNAVAILABLE',
+        message: prodErr.message || '상품을 구매할 수 없습니다.'
+      });
+    }
     if (productId && productId !== product.productId) {
       return res.status(400).json({ ok: false, message: '상품 정보가 일치하지 않습니다.' });
     }
@@ -758,6 +897,10 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
         paymentMethod: 'kakaopay',
         environment,
         productId: product.productId,
+        productDocId: product.productDocId || DEFAULT_PRODUCT_DOC,
+        productName: product.productName || 'Lifetime License',
+        region: product.region || 'KR',
+        pricingVersion: product.pricingVersion || 0,
         orderName,
         amount: product.amount,
         currency: product.currency,
@@ -817,7 +960,7 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
     if (err.code === 'DUPLICATE_LICENSE_RACE') {
       // Concurrent verify: another payment already issued the license. Cancel this one.
       const racePaymentId = String((req.body && req.body.paymentId) || '').trim();
-      const product = serverKrProduct();
+      const product = await serverKrProduct().catch(() => envKrFallback());
       const environment = cfg('PORTONE_ENVIRONMENT', 'test');
       let cancelError = null;
       let cancelResult = null;

@@ -26,13 +26,10 @@ service cloud.firestore {
     }
 
     match /orders/{orderId} {
-      // Users may read their own orders (PayPal auto-id or PortOne paymentId).
-      // Writes are Admin SDK (Cloud Functions) or admin role only — never client license/order writes.
       allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
       allow write: if isAdmin();
     }
 
-    // Server-only purchase concurrency lock (Cloud Functions Admin SDK).
     match /purchaseLocks/{uid} {
       allow read, write: if false;
     }
@@ -57,18 +54,27 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Product usage Guide CMS (Visual CMS on /guide/)
     match /guides/{guideId} {
-      allow get: if isAdmin() || resource == null || resource.data.published == true;
-      allow list: if isAdmin() || resource.data.published == true;
+      allow get: if isAdmin()
+        || resource == null
+        || resource.data.published == true;
+      allow list: if isAdmin()
+        || resource.data.published == true;
       allow create, update, delete: if isAdmin();
     }
 
+    // Product page Visual CMS
     match /productSections/{sectionId} {
-      allow get: if isAdmin() || resource == null || resource.data.published == true;
-      allow list: if isAdmin() || resource.data.published == true;
+      allow get: if isAdmin()
+        || resource == null
+        || resource.data.published == true;
+      allow list: if isAdmin()
+        || resource.data.published == true;
       allow create, update, delete: if isAdmin();
     }
 
+    // Pricing CMS — public read (display); admin write only
     match /products/{productId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
@@ -132,6 +138,5 @@ service cloud.firestore {
         allow update: if false;
       }
     }
-
   }
 }

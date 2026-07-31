@@ -2,11 +2,17 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return signedIn()
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
 
-    // 자유게시판 사진/영상/MIDI + 미리듣기(WAV)
     match /board/{userId}/{allPaths=**} {
       allow read: if true;
-      allow write: if request.auth != null
+      allow write: if signedIn()
         && request.auth.uid == userId
         && request.resource.size < 50 * 1024 * 1024
         && request.resource.contentType.matches(
@@ -14,34 +20,37 @@ service firebase.storage {
         );
     }
 
+    match /support/{userId}/{allPaths=**} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.size < 50 * 1024 * 1024;
+    }
+
     match /guide-images/{slug}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      allow write: if isAdmin()
         && request.resource.size < 15 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
 
     match /guide-videos/{slug}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      allow write: if isAdmin()
         && request.resource.size < 80 * 1024 * 1024
         && request.resource.contentType.matches('video/.*');
     }
 
     match /product-images/{sectionId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      allow write: if isAdmin()
         && request.resource.size < 15 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
 
     match /product-videos/{sectionId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      allow write: if isAdmin()
         && request.resource.size < 80 * 1024 * 1024
         && request.resource.contentType.matches('video/.*');
     }

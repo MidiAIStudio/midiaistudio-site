@@ -1,4 +1,11 @@
 import { applyGuidesI18n } from './guides-i18n.js?v=20260720-drop-zone';
+import {
+  ensurePricing,
+  checkoutContext,
+  isSelling,
+  formatMoney,
+  getDefaultProduct
+} from './pricing.js?v=pricing-cms-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -212,6 +219,16 @@ function resolveTopbarPageTitle(){
   if(page === 'support.html') return supportLocaleText().title;
   if(page === 'downloads.html') return downloadLocaleText().title;
   const path = location.pathname.replace(/\\/g,'/').toLowerCase();
+  if(/\/guide\/?(index\.html)?$/.test(path) || path.endsWith('/guide/index.html')) return tt('가이드');
+  if(page === 'guide.html'){
+    const h1 = document.querySelector('#guideDetail h1')?.textContent?.trim();
+    if(h1) return h1.length > 34 ? `${h1.slice(0,32)}…` : h1;
+    return tt('가이드');
+  }
+  if(path.includes('/workflow')){
+    const h1 = document.querySelector('.workflow-seo h1')?.textContent?.trim();
+    if(h1) return h1.length > 34 ? `${h1.slice(0,32)}…` : h1;
+  }
   if(path.includes('/guides')){
     if(/\/guides\/?$/.test(path) || path.endsWith('/guides/index.html')) return tt('가이드');
     const h1 = document.querySelector('.seo-prose h1')?.textContent?.trim();
@@ -603,15 +620,48 @@ function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}
 function isKoreanCheckout(){
   return isPurchasePage && (isRootKoreanPurchasePage || pathLang === 'ko');
 }
+function purchaseCheckout(){
+  const uiLang = isKoreanCheckout() ? 'ko' : (pathLang || lang || 'en');
+  return checkoutContext(uiLang, isKoreanCheckout());
+}
 function purchaseDisplayPrice(){
-  if(isKoreanCheckout()) return CONFIG.priceDisplayKr || '90,000원';
-  return CONFIG.priceDisplayGlobal || CONFIG.priceDisplay || '$65 USD';
+  return purchaseCheckout().displaySale || (isKoreanCheckout() ? (CONFIG.priceDisplayKr || '90,000원') : (CONFIG.priceDisplayGlobal || '$65 USD'));
 }
 function purchaseAmountValue(){
-  return isKoreanCheckout() ? Number(CONFIG.priceValueKr || CONFIG.priceValue || 90000) : String(CONFIG.priceValueGlobal || CONFIG.priceValue || '65.00');
+  const ctx = purchaseCheckout();
+  if(isKoreanCheckout() || ctx.currency === 'KRW') return Number(ctx.salePrice || CONFIG.priceValueKr || 90000);
+  if(ctx.currency === 'JPY') return String(Math.round(Number(ctx.salePrice)));
+  return Number(ctx.salePrice).toFixed(2);
 }
 function purchaseCurrency(){
-  return isKoreanCheckout() ? 'KRW' : (CONFIG.currencyGlobal || CONFIG.currency || 'USD');
+  return purchaseCheckout().currency || (isKoreanCheckout() ? 'KRW' : (CONFIG.currencyGlobal || 'USD'));
+}
+function applyPurchaseSellGate(){
+  if(!isPurchasePage) return;
+  const selling = isSelling(getDefaultProduct());
+  const ctx = purchaseCheckout();
+  const pausedMsg = lang==='en' ? 'Temporarily unavailable' : lang==='ja' ? '一時販売停止' : '일시 판매중지';
+  const kakao = $('kakaoPayBtn');
+  const paypal = $('paypalButtons');
+  const badge = document.querySelector('.purchase-badge.sale');
+  if(badge && ctx.badge) badge.textContent = ctx.badge;
+  const title = document.querySelector('.purchase-price-row h2');
+  if(title && ctx.name) title.textContent = ctx.name;
+  if(!selling){
+    if(kakao){ kakao.disabled = true; kakao.textContent = pausedMsg; }
+    if(paypal) paypal.classList.add('is-paused');
+    let note = $('purchasePausedNote');
+    if(!note){
+      note = document.createElement('p');
+      note.id = 'purchasePausedNote';
+      note.className = 'purchase-paused-note';
+      document.querySelector('.purchase-checkout')?.prepend(note);
+    }
+    if(note) note.textContent = lang==='en' ? 'This product is temporarily unavailable for purchase.' : lang==='ja' ? '現在この商品は一時的に販売を停止しています。' : '현재 이 상품은 일시 판매중지 상태입니다. 결제가 차단됩니다.';
+  } else {
+    $('purchasePausedNote')?.remove();
+    paypal?.classList.remove('is-paused');
+  }
 }
 function paymentId(prefix='midiai'){
   const rand = (window.crypto?.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2)));
@@ -937,6 +987,7 @@ function updatePurchaseI18n(){
     if(onlyPrep && (/준비|Preparing|準備|Client ID/.test(txt))) paypal.innerHTML = `<p>${esc(t.preparingPayment || t.paypalReady)}</p>`;
   }
   updatePurchaseAccountBox();
+  applyPurchaseSellGate();
 }
 
 function updatePurchaseAccountBox(){
@@ -992,6 +1043,9 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
+  import('./pricing-admin.js?v=pricing-cms-1').then((m)=>{
+    m.initPricingAdmin({ db, firestoreApi, isAdmin: true });
+  }).catch((e)=>console.warn('pricing-admin', e));
 }
 
 function updateBoardPinnedUi(){
@@ -1372,10 +1426,23 @@ function listenVisibleDocs(collectionName, render, orderField='createdAt', direc
     }
   ));
 }
+function isGuideCmsListPath(){
+  const path = location.pathname.replace(/\\/g,'/').toLowerCase();
+  return /\/guide\/?(index\.html)?$/.test(path) || path.endsWith('/guide/index.html');
+}
+async function refreshPricingUi(){
+  if(!db || !firestoreApi) return;
+  try{
+    await ensurePricing(db, firestoreApi);
+    updatePurchaseI18n();
+    applyPurchaseSellGate();
+  }catch(e){ console.warn('refreshPricingUi', e); }
+}
 function routeLoadPublic(){
   if(!db) return;
+  refreshPricingUi();
   if(['downloads.html','purchase.html'].includes(page) || (page==='index.html' && $('downloadBox')) || (page==='' && $('downloadBox'))) listenDownload();
-  if(page==='' || page==='index.html') initHomePage();
+  if((page==='' || page==='index.html') && !isGuideCmsListPath()) initHomePage();
   if(page==='notices.html') listenAnnouncements();
   if(page==='notice.html') listenNoticeDetail();
   if(page==='patch-notes.html') listenPatchNotes();
@@ -1558,10 +1625,40 @@ function renderNoticeDetail(d,err){
   box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span><span><em>${esc(tt('조회'))}</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div>${hubAdminManageHtml('announcements', d.id)}</article>`;
   bindAdminPostActions(box);
 }
+function markContentViewOnce(kind, id){
+  const postId=String(id||'').trim();
+  if(!postId) return false;
+  const memKey=kind+':'+postId;
+  if(!window.__midiaiViewed) window.__midiaiViewed=new Set();
+  if(window.__midiaiViewed.has(memKey)) return false;
+  const storageKey='midiai_views_'+kind;
+  try{
+    const raw=localStorage.getItem(storageKey);
+    const arr=raw?JSON.parse(raw):[];
+    const set=new Set(Array.isArray(arr)?arr:[]);
+    try{
+      const legacy={
+        board:'midiai_view_'+postId,
+        notice:'midiai_notice_view_'+postId,
+        patch:'midiai_patch_view_'+postId
+      }[kind];
+      if(legacy && sessionStorage.getItem(legacy)) set.add(postId);
+    }catch{}
+    if(set.has(postId)){
+      window.__midiaiViewed.add(memKey);
+      return false;
+    }
+    set.add(postId);
+    let out=[...set];
+    if(out.length>800) out=out.slice(-800);
+    localStorage.setItem(storageKey, JSON.stringify(out));
+  }catch{}
+  window.__midiaiViewed.add(memKey);
+  return true;
+}
+
 async function incrementNoticeViewOnce(id){
-  const key='midiai_notice_view_'+id;
-  if(sessionStorage.getItem(key))return;
-  sessionStorage.setItem(key,'1');
+  if(!markContentViewOnce('notice', id)) return;
   try{ const {doc,updateDoc,increment}=firestoreApi; await updateDoc(doc(db,'announcements',id),{viewCount:increment(1)}); }catch(e){ console.warn('notice view increment failed',e); }
 }
 function listenNoticeDetail(){ const box=$('noticeDetail'); if(!box)return; const id=getParam('id'); if(!id){box.innerHTML=`<p class="muted">${tr('empty')}</p>`;return} incrementNoticeViewOnce(id); listenDoc('announcements',id,renderNoticeDetail); }
@@ -1601,9 +1698,7 @@ function renderPatchDetail(d,err){
   bindPatchDetailActions(box);
 }
 async function incrementPatchViewOnce(id){
-  const key='midiai_patch_view_'+id;
-  if(sessionStorage.getItem(key))return;
-  sessionStorage.setItem(key,'1');
+  if(!markContentViewOnce('patch', id)) return;
   try{ const {doc,updateDoc,increment}=firestoreApi; await updateDoc(doc(db,'patchNotes',id),{viewCount:increment(1)}); }catch(e){ console.warn('patch view increment failed',e); }
 }
 function listenPatchDetail(){
@@ -3920,9 +4015,7 @@ function renderBoardPost(d,err){
   }
 }
 async function incrementViewOnce(postId){
-  const key='midiai_view_'+postId;
-  if(sessionStorage.getItem(key))return;
-  sessionStorage.setItem(key,'1');
+  if(!markContentViewOnce('board', postId)) return;
   try{ const {doc,updateDoc,increment}=firestoreApi; await updateDoc(doc(db,'boardPosts',postId),{viewCount:increment(1)}); }catch(e){ console.warn('view increment failed',e); }
 }
 function listenBoardPostDetail(){
@@ -4189,9 +4282,16 @@ async function requestKakaoPayPayment(){
     paypalStatus('PortOne 카카오페이 채널키가 없습니다.', 'err');
     return;
   }
-  const productId = CONFIG.portoneProductId || 'midiai-lifetime';
-  const orderName = CONFIG.portoneOrderName || 'MidiAI Studio Lifetime License';
-  const totalAmount = Number(CONFIG.priceValueKr || 90000);
+  const ctx = purchaseCheckout();
+  if(!isSelling(getDefaultProduct())){
+    const msg = lang==='en' ? 'Temporarily unavailable' : '일시 판매중지된 상품입니다.';
+    paypalStatus(msg, 'err');
+    alert(msg);
+    return;
+  }
+  let productId = ctx.portoneProductId || CONFIG.portoneProductId || 'midiai-lifetime';
+  let orderName = ctx.orderName || CONFIG.portoneOrderName || 'MidiAI Studio Lifetime License';
+  let totalAmount = Number(ctx.salePrice || CONFIG.priceValueKr || 90000);
   const paymentIdValue = makeKakaoPaymentId(currentUser.uid);
   kakaoPayInFlight = true;
   const kakaoBtn = $('kakaoPayBtn');
@@ -4219,6 +4319,11 @@ async function requestKakaoPayPayment(){
       paypalStatus(msg, eligibility?.hasLifetime ? 'ok' : 'err');
       alert(msg);
       return;
+    }
+    if(eligibility?.pricing){
+      totalAmount = Number(eligibility.pricing.amount || totalAmount);
+      orderName = eligibility.pricing.orderName || orderName;
+      productId = eligibility.pricing.productId || productId;
     }
 
     const PortOne = await loadPortOneSdk();
@@ -4471,9 +4576,14 @@ function initPayPal(){
         return true;
       },
       createOrder: async()=>{
+        if(!isSelling(getDefaultProduct())){
+          const msg = lang==='en' ? 'Temporarily unavailable' : '일시 판매중지된 상품입니다.';
+          paypalStatus(msg, 'err');
+          throw new Error(msg);
+        }
         paypalStatus(purchaseLocaleText().creating);
         const result = await callFunctionJson('createPayPalOrder', {
-          plan: CONFIG.plan || 'lifetime',
+          plan: purchaseCheckout().plan || CONFIG.plan || 'lifetime',
           amount: purchaseAmountValue(),
           currency: currency
         });
@@ -4616,7 +4726,7 @@ function initSidebarLayout(){
   nav.id='mainNav';
   nav.className='sidebar-nav';
   nav.setAttribute('aria-label','사이트 메뉴');
-  nav.innerHTML=`<div class="sidebar-primary"><a href="${base}index.html" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}guides/index.html" data-nav="guides">${navIcon('guide')}<span>가이드</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${base}purchase.html" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" hidden aria-hidden="true" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
+  nav.innerHTML=`<div class="sidebar-primary"><a href="${base}index.html" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}guide/index.html" data-nav="guides">${navIcon('guide')}<span>가이드</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${base}purchase.html" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" hidden aria-hidden="true" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
   sidebar.appendChild(nav);
   const backdrop=document.createElement('div');
   backdrop.className='sidebar-backdrop';
@@ -4657,17 +4767,17 @@ function bindSidebar(){
   document.querySelectorAll('#mainNav a').forEach(a=>a.addEventListener('click',()=>{ if(window.matchMedia('(max-width:980px)').matches) close(); }));
 }
 function initSidebarNav(){
-  const parentPage={'notice.html':'notices.html','patch-note.html':'patch-notes.html','board-post.html':'board.html','board-write.html':'board.html','ticket.html':'my-tickets.html'};
+  const parentPage={'notice.html':'notices.html','patch-note.html':'patch-notes.html','board-post.html':'board.html','board-write.html':'board.html','ticket.html':'my-tickets.html','guide.html':'guide/index.html'};
   const file=parentPage[page]||page||'index.html';
   const path=location.pathname.replace(/\\/g,'/').toLowerCase();
-  const inGuides=path.includes('/guides');
+  const inGuideCms=page==='guide.html' || /\/guide\/(index\.html)?$/.test(path) || path.endsWith('/guide/');
   document.querySelectorAll('#mainNav a[href]').forEach(a=>{
     const href=a.getAttribute('href')||'';
     const target=href.split('/').pop()?.split('?')[0]||'';
-    const isGuidesLink=a.getAttribute('data-nav')==='guides' || href.includes('/guides/') || href.includes('guides/index');
+    const isGuideCmsLink=a.getAttribute('data-nav')==='guides';
     let active=false;
-    if(inGuides) active = isGuidesLink;
-    else active = target===file && !isGuidesLink;
+    if(inGuideCms) active = isGuideCmsLink;
+    else active = target===file && !isGuideCmsLink;
     a.classList.toggle('active', active);
   });
 }
@@ -4676,35 +4786,39 @@ const SALE_PROMO_END = '2026-07-31';
 const SALE_PROMO_HIDE_KEY = 'midiai_sale_promo_hide_day';
 
 function salePromoCopy(){
+  const ctx = checkoutContext('ko', true);
+  const was = ctx.displayList || '130,000원';
+  const now = ctx.displaySale || '90,000원';
+  const badge = ctx.badge || 'Final Sale';
   if(lang==='en') return {
-    badge:'Final Sale',
+    badge,
     title:'Lifetime License Discount',
     lead:'Get MidiAI Studio Lifetime at a special price until July 31.',
     until:'Until July 31',
-    was:'₩130,000',
-    now:'₩90,000',
+    was,
+    now,
     cta:'Buy license',
     hideToday:"Don't show again today",
     close:'Close'
   };
   if(lang==='ja') return {
-    badge:'Final Sale',
+    badge,
     title:'Lifetimeライセンス割引',
     lead:'7月31日まで、MidiAI Studio Lifetimeをお得な価格でご購入いただけます。',
     until:'7月31日まで',
-    was:'₩130,000',
-    now:'₩90,000',
+    was,
+    now,
     cta:'ライセンス購入',
     hideToday:'今日は表示しない',
     close:'閉じる'
   };
   return {
-    badge:'Final Sale',
+    badge,
     title:'Lifetime 라이선스 할인',
     lead:'7월 31일까지 MidiAI Studio Lifetime을 특별가로 구매할 수 있습니다.',
     until:'7월 31일까지',
-    was:'130,000원',
-    now:'90,000원',
+    was,
+    now,
     cta:'라이선스 구매',
     hideToday:'오늘 하루 보지 않기',
     close:'닫기'

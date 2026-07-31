@@ -1,4 +1,11 @@
 {
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
   "functions": [
     {
       "source": "functions",
@@ -25,6 +32,14 @@
       "**/_probe-community/**",
       "README.txt",
       "firebase/**"
+    ],
+    "rewrites": [
+      { "source": "/workflow/audio-to-midi", "destination": "/workflow/audio-to-midi.html" },
+      { "source": "/workflow/youtube-to-midi", "destination": "/workflow/youtube-to-midi.html" },
+      { "source": "/workflow/pdf-to-midi", "destination": "/workflow/pdf-to-midi.html" },
+      { "source": "/workflow/midi-editor", "destination": "/workflow/midi-editor.html" },
+      { "source": "/guide", "destination": "/guide/index.html" },
+      { "source": "/guide/", "destination": "/guide/index.html" }
     ],
     "headers": [
       {

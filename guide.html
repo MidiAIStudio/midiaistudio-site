@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Guide — MidiAI Studio</title>
+  <meta name="description" content="MidiAI Studio 프로그램 사용 가이드 상세.">
+  <meta name="robots" content="index,follow">
+  <link rel="icon" href="./assets/images/logo.png">
+  <link rel="stylesheet" href="./assets/css/style.css?v=guide-cms-1">
+  <script defer src="./assets/js/analytics.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+  <header class="topbar">
+    <a class="brand" href="./index.html"><img src="./assets/images/logo.png" alt=""><span>MidiAI Studio</span></a>
+    <nav id="mainNav" aria-label="주요 메뉴"></nav>
+    <div class="actions"><button id="langBtn" class="ghost" type="button">EN</button><button id="loginBtn" class="login" type="button"><span>G</span><em>Google 로그인</em></button><button id="logoutBtn" class="ghost hidden" type="button">로그아웃</button></div>
+  </header>
+  <main id="main" class="portal-main">
+    <div id="guideCmsBar" class="guide-cms-bar hidden wrap" role="toolbar" aria-label="가이드 관리">
+      <button type="button" class="secondary mini-btn" data-cms="edit">편집</button>
+      <button type="button" class="secondary mini-btn hidden" data-cms="preview">미리보기</button>
+      <button type="button" class="primary mini-btn" data-cms="save" disabled>저장</button>
+      <button type="button" class="ghost mini-btn" data-cms="delete">삭제</button>
+      <span id="guideCmsStatus" class="guide-cms-status is-saved">✓ 저장 완료</span>
+      <a class="ghost mini-btn" href="./guide/index.html">목록</a>
+    </div>
+    <div id="guideDetail" aria-live="polite">
+      <div class="wrap empty-card">가이드를 불러오는 중…</div>
+    </div>
+  </main>
+  <footer class="footer">
+    <div class="wrap footer-grid">
+      <div><strong>MidiAI Studio</strong><p class="muted">제품 사용 가이드</p></div>
+      <div class="footer-links">
+        <a href="./guide/index.html">가이드 목록</a>
+        <a href="./product.html">제품</a>
+        <a href="./downloads.html">다운로드</a>
+      </div>
+    </div>
+  </footer>
+  <script>window.MIDIAI_BASE_PATH='./';</script>
+  <script type="module" src="./assets/js/config.js"></script>
+  <script type="module" src="./assets/js/app.js?v=guide-cms-1"></script>
+  <script type="module" src="./assets/js/guide-cms.js?v=guide-cms-1"></script>
+</body>
+</html>
