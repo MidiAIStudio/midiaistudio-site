@@ -5,9 +5,10 @@ import {
   DEFAULT_PRODUCT_ID,
   FALLBACK_PRODUCT,
   FALLBACK_LANG_MAP,
+  FALLBACK_PROMO,
   discountPercent,
   formatMoney
-} from './pricing.js?v=pricing-cms-2';
+} from './pricing.js?v=pricing-promo-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
@@ -19,6 +20,7 @@ let fs = null;
 let isAdmin = false;
 let products = [];
 let langMap = { ...FALLBACK_LANG_MAP };
+let promoDraft = { ...FALLBACK_PROMO };
 let selectedId = null;
 let draft = null;
 let booted = false;
@@ -89,17 +91,10 @@ function bindTabs() {
       const tickets = $('adminTicketsSection');
       if (crm) crm.hidden = tab !== 'crm';
       if (pricing) pricing.hidden = tab !== 'pricing';
-      if (tickets) tickets.hidden = tab !== 'tickets' && tab !== 'crm';
-      if (tab === 'crm' && tickets) tickets.hidden = false;
-      if (tab === 'pricing') {
-        if (tickets) tickets.hidden = true;
-        if (!products.length) loadAll().catch(console.error);
-      }
+      if (tickets) tickets.hidden = tab !== 'tickets';
+      if (tab === 'pricing' && !products.length) loadAll().catch(console.error);
       if (tab === 'tickets') {
-        if (crm) crm.hidden = true;
-        if (pricing) pricing.hidden = true;
-        if (tickets) tickets.hidden = false;
-        tickets?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
   });
@@ -116,6 +111,7 @@ function bindEditor() {
   bindOnce('pricingSaveBtn', () => saveDraft().catch((e) => alert(e.message || e)));
   bindOnce('pricingAddRegion', () => addRegionRow());
   bindOnce('pricingSaveLangMap', () => saveLangMap().catch((e) => alert(e.message || e)));
+  bindOnce('pricingSavePromoBtn', () => savePromo().catch((e) => alert(e.message || e)));
 }
 
 async function ensureSeed() {
@@ -139,6 +135,7 @@ async function ensureSeed() {
   await setDoc(doc(db, 'pricingConfig', 'main'), {
     defaultProductId: DEFAULT_PRODUCT_ID,
     langRegionMap: FALLBACK_LANG_MAP,
+    promo: { ...FALLBACK_PROMO },
     updatedAt: serverTimestamp()
   }, { merge: true });
   return true;
@@ -174,10 +171,12 @@ async function loadAll() {
       if (cfg.exists()) {
         const data = cfg.data() || {};
         langMap = { ...FALLBACK_LANG_MAP, ...(data.langRegionMap || {}) };
+        promoDraft = { ...FALLBACK_PROMO, ...(data.promo || {}) };
       }
     } catch (cfgErr) {
       console.warn('pricingConfig', cfgErr);
     }
+    fillPromoForm();
 
     if (!products.length) {
       // Seed failed (likely rules) — show local fallback so admin can still edit after deploy
@@ -271,6 +270,81 @@ function renderLangMap() {
   if (ko) ko.value = langMap.ko || 'KR';
   if (en) en.value = langMap.en || 'Global';
   if (ja) ja.value = langMap.ja || 'Global';
+}
+
+function fillPromoForm() {
+  const p = promoDraft || FALLBACK_PROMO;
+  const set = (id, val) => { const el = $(id); if (el) el.value = val ?? ''; };
+  const setCheck = (id, on) => { const el = $(id); if (el) el.checked = !!on; };
+  setCheck('promoEnabled', p.enabled !== false);
+  set('promoDiscountStartsAt', p.discountStartsAt || '');
+  set('promoDiscountEndsAt', p.discountEndsAt || '');
+  setCheck('promoBadgeEnabled', p.badgeEnabled !== false);
+  set('promoBadgeKo', p.badgeKo || '');
+  set('promoBadgeEn', p.badgeEn || '');
+  set('promoBadgeJa', p.badgeJa || '');
+  setCheck('promoPopupEnabled', !!p.popupEnabled);
+  set('promoPopupStartsAt', p.popupStartsAt || p.discountStartsAt || '');
+  set('promoPopupEndsAt', p.popupEndsAt || p.discountEndsAt || '');
+  set('promoPopupTitleKo', p.popupTitleKo || '');
+  set('promoPopupTitleEn', p.popupTitleEn || '');
+  set('promoPopupTitleJa', p.popupTitleJa || '');
+  set('promoPopupBodyKo', p.popupBodyKo || '');
+  set('promoPopupBodyEn', p.popupBodyEn || '');
+  set('promoPopupBodyJa', p.popupBodyJa || '');
+  set('promoPopupCtaKo', p.popupCtaKo || '');
+  set('promoPopupCtaEn', p.popupCtaEn || '');
+  set('promoPopupCtaJa', p.popupCtaJa || '');
+}
+
+function collectPromoFromForm() {
+  promoDraft = {
+    enabled: !!$('promoEnabled')?.checked,
+    discountStartsAt: $('promoDiscountStartsAt')?.value || '',
+    discountEndsAt: $('promoDiscountEndsAt')?.value || '',
+    badgeEnabled: !!$('promoBadgeEnabled')?.checked,
+    badgeKo: $('promoBadgeKo')?.value?.trim() || '',
+    badgeEn: $('promoBadgeEn')?.value?.trim() || '',
+    badgeJa: $('promoBadgeJa')?.value?.trim() || '',
+    popupEnabled: !!$('promoPopupEnabled')?.checked,
+    popupStartsAt: $('promoPopupStartsAt')?.value || '',
+    popupEndsAt: $('promoPopupEndsAt')?.value || '',
+    popupTitleKo: $('promoPopupTitleKo')?.value?.trim() || '',
+    popupTitleEn: $('promoPopupTitleEn')?.value?.trim() || '',
+    popupTitleJa: $('promoPopupTitleJa')?.value?.trim() || '',
+    popupBodyKo: $('promoPopupBodyKo')?.value?.trim() || '',
+    popupBodyEn: $('promoPopupBodyEn')?.value?.trim() || '',
+    popupBodyJa: $('promoPopupBodyJa')?.value?.trim() || '',
+    popupCtaKo: $('promoPopupCtaKo')?.value?.trim() || '',
+    popupCtaEn: $('promoPopupCtaEn')?.value?.trim() || '',
+    popupCtaJa: $('promoPopupCtaJa')?.value?.trim() || ''
+  };
+  return promoDraft;
+}
+
+async function savePromo() {
+  if (!isAdmin || !db || !fs) throw new Error('권한이 없거나 Firestore가 준비되지 않았습니다.');
+  const promo = collectPromoFromForm();
+  if (promo.discountStartsAt && promo.discountEndsAt && promo.discountStartsAt > promo.discountEndsAt) {
+    alert('할인 시작일이 종료일보다 늦을 수 없습니다.');
+    return;
+  }
+  if (promo.popupStartsAt && promo.popupEndsAt && promo.popupStartsAt > promo.popupEndsAt) {
+    alert('팝업 시작일이 종료일보다 늦을 수 없습니다.');
+    return;
+  }
+  const { doc, setDoc, serverTimestamp } = fs;
+  await setDoc(doc(db, 'pricingConfig', 'main'), {
+    promo,
+    defaultProductId: DEFAULT_PRODUCT_ID,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  const msg = $('pricingSaveMsg');
+  if (msg) {
+    msg.textContent = '✓ 할인·팝업 설정 저장 완료 — 홈/구매에 즉시 반영됩니다.';
+    msg.classList.remove('hidden');
+    setTimeout(() => msg.classList.add('hidden'), 4000);
+  }
 }
 
 function renderEditor() {

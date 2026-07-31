@@ -4,8 +4,12 @@ import {
   checkoutContext,
   isSelling,
   formatMoney,
-  getDefaultProduct
-} from './pricing.js?v=pricing-cms-2';
+  getDefaultProduct,
+  isDiscountCampaignActive,
+  isPromoPopupActive,
+  promoBadgeText,
+  promoPopupCopy
+} from './pricing.js?v=pricing-promo-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -50,10 +54,11 @@ let selectedAdminUid = null;
 let adminCrmSelected = new Set();
 let adminCrmPostSelected = new Set();
 let adminCrmFilteredRows = [];
-let adminCrmScrollTop = 0;
+let adminCrmPage = 1;
 let adminCrmSearchTimer = null;
 let adminCrmMemoTimer = null;
 let adminCrmExpandedHwid = new Set();
+const ADMIN_CRM_PAGE_SIZE = 5;
 const ADMIN_CRM_ROW_H = 48;
 let adminCrmHwidRevealed = false;
 let adminCrmDirty = false;
@@ -730,8 +735,18 @@ function applyPurchaseSellGate(){
   const pausedMsg = lang==='en' ? 'Temporarily unavailable' : lang==='ja' ? '一時販売停止' : '일시 판매중지';
   const kakao = $('kakaoPayBtn');
   const paypal = $('paypalButtons');
+  const discountOn = isDiscountCampaignActive();
   const badge = document.querySelector('.purchase-badge.sale');
-  if(badge && ctx.badge) badge.textContent = ctx.badge;
+  if(badge){
+    badge.hidden = !discountOn;
+    if(discountOn && ctx.badge) badge.textContent = ctx.badge;
+  }
+  const untilEl = $('purchaseSaleUntil');
+  if(untilEl){
+    const untilTxt = promoBadgeText(isKoreanCheckout() ? 'ko' : (pathLang || lang || 'en'));
+    untilEl.hidden = !discountOn || !untilTxt;
+    if(untilTxt) untilEl.textContent = untilTxt;
+  }
   const title = document.querySelector('.purchase-price-row h2');
   if(title && ctx.name) title.textContent = ctx.name;
   if(!selling){
@@ -1014,7 +1029,15 @@ function updatePurchaseI18n(){
   const t = purchaseLocaleText();
   if($('purchasePrice')) $('purchasePrice').textContent = purchaseDisplayPrice();
   updatePurchaseReviewPanel();
-  if($('purchaseSaleUntil')) $('purchaseSaleUntil').textContent = t.saleUntil;
+  {
+    const discountOn = isDiscountCampaignActive();
+    const untilTxt = promoBadgeText(isKoreanCheckout() ? 'ko' : (pathLang || lang || 'en')) || t.saleUntil;
+    if($('purchaseSaleUntil')){
+      $('purchaseSaleUntil').hidden = !discountOn || !untilTxt;
+      if(untilTxt) $('purchaseSaleUntil').textContent = untilTxt;
+    }
+    document.querySelectorAll('.purchase-badge.sale').forEach(el=>{ el.hidden = !discountOn; });
+  }
   if($('purchaseBenefitList')) $('purchaseBenefitList').innerHTML = t.benefits.map(x=>`<li>${esc(x)}</li>`).join('');
   if($('purchaseAccountTitle')) $('purchaseAccountTitle').textContent = t.accountTitle;
   const bank = $('bankTransferNotice');
@@ -1130,7 +1153,7 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
-  import('./pricing-admin.js?v=pricing-cms-2').then((m)=>{
+  import('./pricing-admin.js?v=pricing-promo-1').then((m)=>{
     m.initPricingAdmin({ db, firestoreApi, isAdmin: true });
   }).catch((e)=>console.warn('pricing-admin', e));
 }
@@ -1526,6 +1549,7 @@ async function refreshPricingUi(){
     await ensurePricing(db, firestoreApi);
     updatePurchaseI18n();
     applyPurchaseSellGate();
+    maybeShowSalePromo();
   }catch(e){ console.warn('refreshPricingUi', e); }
 }
 function routeLoadPublic(){
@@ -2859,29 +2883,57 @@ function renderAdminUserTable(){
   updateAdminCrmBulkbar();
   if(!adminCrmFilteredRows.length){
     box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`;
-    box.onscroll = null;
+    const pager=$('adminCrmPager');
+    if(pager){ pager.hidden=true; pager.innerHTML=''; }
     return;
   }
-  if(!box.dataset.virtualBound){
-    box.dataset.virtualBound='1';
-    box.addEventListener('scroll',()=>{
-      adminCrmScrollTop = box.scrollTop;
-      paintAdminCrmVirtualList();
-    }, {passive:true});
+  if(!box.dataset.pageBound){
+    box.dataset.pageBound='1';
     box.addEventListener('click', onAdminCrmListClick);
   }
-  paintAdminCrmVirtualList();
+  const pager=$('adminCrmPager');
+  if(pager && !pager.dataset.bound){
+    pager.dataset.bound='1';
+    pager.addEventListener('click', onAdminCrmPagerClick);
+  }
+  paintAdminCrmPagedList();
 }
-function paintAdminCrmVirtualList(){
+function adminCrmTotalPages(){
+  return Math.max(1, Math.ceil(adminCrmFilteredRows.length / ADMIN_CRM_PAGE_SIZE));
+}
+function paintAdminCrmPagedList(){
   const box=$('adminUserList'); if(!box || !adminCrmFilteredRows.length) return;
   const total = adminCrmFilteredRows.length;
-  const viewH = box.clientHeight || 560;
-  const start = Math.max(0, Math.floor(adminCrmScrollTop / ADMIN_CRM_ROW_H) - 6);
-  const end = Math.min(total, start + Math.ceil(viewH / ADMIN_CRM_ROW_H) + 12);
-  const slice = adminCrmFilteredRows.slice(start, end);
-  const padTop = start * ADMIN_CRM_ROW_H;
-  const padBot = Math.max(0, (total - end) * ADMIN_CRM_ROW_H);
-  box.innerHTML = `<div class="admin-crm-virtual-inner" style="padding-top:${padTop}px;padding-bottom:${padBot}px">${slice.map(u=>adminCrmMemberCardHtml(u)).join('')}</div>`;
+  const pages = adminCrmTotalPages();
+  if(adminCrmPage > pages) adminCrmPage = pages;
+  if(adminCrmPage < 1) adminCrmPage = 1;
+  const start = (adminCrmPage - 1) * ADMIN_CRM_PAGE_SIZE;
+  const slice = adminCrmFilteredRows.slice(start, start + ADMIN_CRM_PAGE_SIZE);
+  box.innerHTML = `<div class="admin-crm-page-list">${slice.map(u=>adminCrmMemberCardHtml(u)).join('')}</div>`;
+  renderAdminCrmPager(pages, total);
+}
+function renderAdminCrmPager(pages, total){
+  const pager=$('adminCrmPager'); if(!pager) return;
+  pager.hidden = false;
+  const from = (adminCrmPage - 1) * ADMIN_CRM_PAGE_SIZE + 1;
+  const to = Math.min(total, adminCrmPage * ADMIN_CRM_PAGE_SIZE);
+  pager.innerHTML = `
+    <button type="button" class="ghost mini-btn" data-crm-page="prev" ${adminCrmPage<=1?'disabled':''}>이전</button>
+    <span class="admin-crm-pager-info">${adminCrmPage} / ${pages}</span>
+    <button type="button" class="ghost mini-btn" data-crm-page="next" ${adminCrmPage>=pages?'disabled':''}>다음</button>
+    <span class="admin-crm-pager-info muted">${from}–${to} · ${total}명</span>`;
+}
+function onAdminCrmPagerClick(e){
+  const btn=e.target.closest('[data-crm-page]'); if(!btn || btn.disabled) return;
+  const act=btn.getAttribute('data-crm-page');
+  const pages=adminCrmTotalPages();
+  if(act==='prev' && adminCrmPage>1) adminCrmPage -= 1;
+  else if(act==='next' && adminCrmPage<pages) adminCrmPage += 1;
+  else return;
+  paintAdminCrmPagedList();
+}
+function paintAdminCrmVirtualList(){
+  paintAdminCrmPagedList();
 }
 function adminCrmMemberCardHtml(u){
   const uid=u.uid;
@@ -3305,13 +3357,13 @@ function bindAdminUserFilters(){
     search.dataset.bound='1';
     search.addEventListener('input',()=>{
       clearTimeout(adminCrmSearchTimer);
-      adminCrmSearchTimer=setTimeout(()=>{ adminCrmScrollTop=0; const box=$('adminUserList'); if(box) box.scrollTop=0; renderAdminUserTable(); }, 220);
+      adminCrmSearchTimer=setTimeout(()=>{ adminCrmPage=1; renderAdminUserTable(); }, 220);
     });
   }
   ['adminUserLicenseStatus','adminUserSort','adminCrmFilterRole','adminCrmFilterLogin','adminCrmFilterJoined','adminCrmFilterOrders','adminCrmFilterTickets'].forEach(id=>{
     const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1';
     el.addEventListener('change',()=>{
-      adminCrmScrollTop=0; const box=$('adminUserList'); if(box) box.scrollTop=0;
+      adminCrmPage=1;
       updateAdminCrmFilterToggleState();
       renderAdminUserTable();
     });
@@ -3441,7 +3493,11 @@ function bindAdminCrmDetailActions(){
     else if(action==='orders'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(action==='orders-more'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); renderAdminCrmOrders(uid, true); }
     else if(action==='tickets'){ $('adminCrmTicketsCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
-    else if(action==='tickets-tab'){ $('adminTicketsSection')?.scrollIntoView({behavior:'smooth',block:'start'}); }
+    else if(action==='tickets-tab'){
+      const tabBtn=document.querySelector('[data-admin-tab="tickets"]');
+      if(tabBtn) tabBtn.click();
+      else $('adminTicketsSection')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }
     else if(action==='posts-delete-one'){
       const postId=btn.getAttribute('data-post-id');
       if(!postId) return;
@@ -5055,53 +5111,12 @@ function initSidebarNav(){
   });
 }
 
-const SALE_PROMO_END = '2026-07-31';
 const SALE_PROMO_HIDE_KEY = 'midiai_sale_promo_hide_day';
 
 function salePromoCopy(){
-  const ctx = checkoutContext('ko', true);
-  const was = ctx.displayList || '130,000원';
-  const now = ctx.displaySale || '90,000원';
-  const badge = ctx.badge || 'Final Sale';
-  if(lang==='en') return {
-    badge,
-    title:'Lifetime License Discount',
-    lead:'Get MidiAI Studio Lifetime at a special price until July 31.',
-    until:'Until July 31',
-    was,
-    now,
-    cta:'Buy license',
-    hideToday:"Don't show again today",
-    close:'Close'
-  };
-  if(lang==='ja') return {
-    badge,
-    title:'Lifetimeライセンス割引',
-    lead:'7月31日まで、MidiAI Studio Lifetimeをお得な価格でご購入いただけます。',
-    until:'7月31日まで',
-    was,
-    now,
-    cta:'ライセンス購入',
-    hideToday:'今日は表示しない',
-    close:'閉じる'
-  };
-  return {
-    badge,
-    title:'Lifetime 라이선스 할인',
-    lead:'7월 31일까지 MidiAI Studio Lifetime을 특별가로 구매할 수 있습니다.',
-    until:'7월 31일까지',
-    was,
-    now,
-    cta:'라이선스 구매',
-    hideToday:'오늘 하루 보지 않기',
-    close:'닫기'
-  };
-}
-
-function isSalePromoActive(){
-  const now=new Date();
-  const y=now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0'), d=String(now.getDate()).padStart(2,'0');
-  return `${y}-${m}-${d}` <= SALE_PROMO_END;
+  const uiLang = lang === 'en' || lang === 'ja' ? lang : 'ko';
+  const ctx = checkoutContext(uiLang, uiLang === 'ko');
+  return promoPopupCopy(uiLang, ctx);
 }
 
 function todayKey(){
@@ -5110,7 +5125,7 @@ function todayKey(){
 }
 
 function shouldShowSalePromo(){
-  if(!isSalePromoActive()) return false;
+  if(!isPromoPopupActive()) return false;
   const home = !page || page==='index.html' || page==='';
   if(!home) return false;
   try{ if(localStorage.getItem(SALE_PROMO_HIDE_KEY)===todayKey()) return false; }catch(_){}
@@ -5165,7 +5180,11 @@ function openSalePromoPopup(){
 }
 
 function initSalePromoPopup(){
+  maybeShowSalePromo();
+}
+function maybeShowSalePromo(){
   if(!shouldShowSalePromo()) return;
+  if(document.querySelector('.sale-promo-backdrop')) return;
   setTimeout(openSalePromoPopup, 600);
 }
 
@@ -5178,7 +5197,7 @@ applyStaticI18n();
 applyGuidesI18n(lang);
 initSidebarNav();
 setAuthUiSignedOut();
-initSalePromoPopup();
+// Sale popup waits for ensurePricing via refreshPricingUi / maybeShowSalePromo
 
 initForms();
 initAuth();
