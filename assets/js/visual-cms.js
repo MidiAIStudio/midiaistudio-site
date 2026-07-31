@@ -253,10 +253,22 @@ export function mountEditableFeatureList(container, {
 }
 
 const MEDIA_WIDTHS = ['full', 'md', 'sm'];
-const WIDTH_LABEL = { full: '전체', md: '중간', sm: '작게' };
+const WIDTH_PCT = { full: 100, md: 72, sm: 48 };
 
 export function normalizeMediaWidth(w) {
   return MEDIA_WIDTHS.includes(w) ? w : 'full';
+}
+
+export function normalizeMediaWidthPct(pct, legacyWidth) {
+  const n = Number(pct);
+  if (Number.isFinite(n) && n > 0) return Math.min(100, Math.max(28, n));
+  return WIDTH_PCT[normalizeMediaWidth(legacyWidth)] || 100;
+}
+
+export function normalizeMediaAspect(a) {
+  const n = Number(a);
+  if (Number.isFinite(n) && n > 0) return Math.min(3.5, Math.max(0.4, n));
+  return 1.6;
 }
 
 export function normalizeMediaOverlays(list) {
@@ -299,6 +311,8 @@ export function mountEditableMedia(container, {
   posterUrl = '',
   mediaFit = 'cover',
   mediaWidth = 'full',
+  mediaWidthPct,
+  mediaAspect,
   mediaOverlays = [],
   editMode = false,
   isAdmin = false,
@@ -307,12 +321,19 @@ export function mountEditableMedia(container, {
   onFile
 }) {
   container.innerHTML = '';
-  container.classList.add('vcms-media-slot', 'product-feature-media');
+  container.classList.add('vcms-media-slot', 'product-feature-media', 'is-free-size');
   container.classList.toggle('is-empty', !mediaUrl);
 
   let overlays = normalizeMediaOverlays(mediaOverlays);
-  let width = normalizeMediaWidth(mediaWidth);
+  let widthPct = normalizeMediaWidthPct(mediaWidthPct, mediaWidth);
+  let aspect = normalizeMediaAspect(mediaAspect);
   let pendingImageFile = null;
+
+  const nearestWidthToken = () => {
+    if (widthPct >= 90) return 'full';
+    if (widthPct >= 60) return 'md';
+    return 'sm';
+  };
 
   const emit = () => {
     onChange?.({
@@ -320,7 +341,9 @@ export function mountEditableMedia(container, {
       mediaUrl,
       posterUrl,
       mediaFit,
-      mediaWidth: width,
+      mediaWidth: nearestWidthToken(),
+      mediaWidthPct: widthPct,
+      mediaAspect: aspect,
       mediaOverlays: overlays.map((o) => ({ ...o }))
     });
   };
@@ -330,8 +353,11 @@ export function mountEditableMedia(container, {
     container.classList.add(
       mediaFit === 'contain' ? 'fit-contain' : mediaFit === 'center' ? 'fit-center' : 'fit-cover'
     );
-    container.classList.add(`width-${width}`);
     container.classList.toggle('has-media', !!mediaUrl);
+    container.style.width = `${widthPct}%`;
+    container.style.maxWidth = '100%';
+    container.style.aspectRatio = String(aspect);
+    container.style.marginInline = widthPct < 99.5 ? 'auto' : '0';
   };
   applyChromeClasses();
 
@@ -409,23 +435,51 @@ export function mountEditableMedia(container, {
   const annotBar = document.createElement('div');
   annotBar.className = 'vcms-annot-toolbar';
   annotBar.innerHTML = `
-    <button type="button" class="vcms-hover-btn" data-annot="width">창 폭: ${WIDTH_LABEL[width]}</button>
     <button type="button" class="vcms-hover-btn" data-annot="edit" hidden>사진 편집</button>
-    <button type="button" class="vcms-hover-btn is-danger" data-annot="clear-media" hidden>사진 제거</button>`;
+    <button type="button" class="vcms-hover-btn is-danger" data-annot="clear-media" hidden>사진 제거</button>
+    <span class="muted small" data-annot="size-hint">우하단 핸들로 창 크기</span>`;
   container.appendChild(annotBar);
+
+  const slotSe = document.createElement('i');
+  slotSe.className = 'vcms-slot-se';
+  slotSe.title = '창 크기 조절';
+  container.appendChild(slotSe);
 
   const syncAnnotBar = () => {
     const hasMedia = !!mediaUrl;
     const hasImage = mediaType === 'image' && hasMedia;
     container.classList.toggle('has-media', hasMedia);
-    annotBar.querySelector('[data-annot="width"]').hidden = !hasMedia;
-    annotBar.querySelector('[data-annot="width"]').textContent = `창 폭: ${WIDTH_LABEL[width]}`;
     annotBar.querySelector('[data-annot="edit"]').hidden = !hasImage;
     annotBar.querySelector('[data-annot="clear-media"]').hidden = !hasMedia;
     annotBar.querySelector('[data-annot="clear-media"]').textContent =
       mediaType === 'video' || mediaType === 'youtube' ? '영상 제거' : '사진 제거';
+    slotSe.hidden = !hasMedia;
   };
   syncAnnotBar();
+
+  slotSe.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const parent = container.parentElement;
+    if (!parent) return;
+    const parentW = parent.getBoundingClientRect().width || 1;
+    const startBox = container.getBoundingClientRect();
+    const start = { x: e.clientX, y: e.clientY, w: widthPct, a: aspect };
+    const onMove = (ev) => {
+      const nextWpx = Math.max(120, startBox.width + (ev.clientX - start.x));
+      const nextHpx = Math.max(80, startBox.height + (ev.clientY - start.y));
+      widthPct = normalizeMediaWidthPct((nextWpx / parentW) * 100);
+      aspect = normalizeMediaAspect(nextWpx / nextHpx);
+      applyChromeClasses();
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      emit();
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
 
   const overlay = document.createElement('div');
   overlay.className = 'vcms-media-overlay';
@@ -482,8 +536,12 @@ export function mountEditableMedia(container, {
   };
 
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
-    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-5');
-    const result = await openMediaAnnotEditor({ imageUrl: url, overlays: seedOverlays });
+    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-8');
+    const result = await openMediaAnnotEditor({
+      imageUrl: url,
+      overlays: seedOverlays,
+      frameAspect: aspect
+    });
     if (!result) {
       if (file && url.startsWith('blob:')) URL.revokeObjectURL(url);
       return false;
@@ -493,6 +551,10 @@ export function mountEditableMedia(container, {
     const nextFile = result.file || file;
     if (file && url.startsWith('blob:') && url !== nextUrl) URL.revokeObjectURL(url);
     pendingImageFile = nextFile || null;
+    if (Number.isFinite(Number(result.frameAspect))) {
+      aspect = normalizeMediaAspect(result.frameAspect);
+      applyChromeClasses();
+    }
     setMedia('image', nextUrl, '', result.overlays);
     if (nextFile) onFile?.({ kind: 'image', file: nextFile });
     else onFile?.({ kind: 'image-edit', file: null });
@@ -512,13 +574,6 @@ export function mountEditableMedia(container, {
     e.preventDefault();
     e.stopPropagation();
     const act = btn.dataset.annot;
-    if (act === 'width') {
-      width = MEDIA_WIDTHS[(MEDIA_WIDTHS.indexOf(width) + 1) % MEDIA_WIDTHS.length];
-      applyChromeClasses();
-      syncAnnotBar();
-      emit();
-      return;
-    }
     if (act === 'edit') {
       if (mediaType === 'image' && mediaUrl) await openImageEditor(mediaUrl, pendingImageFile, overlays);
       return;

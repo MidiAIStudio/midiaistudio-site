@@ -120,10 +120,10 @@ async function bakeToFile(sourceUrl, region, outW, outH) {
 }
 
 /**
- * @param {{ imageUrl: string, overlays?: any[] }} opts
- * @returns {Promise<{ overlays: any[], file: File, imageUrl: string } | null>}
+ * @param {{ imageUrl: string, overlays?: any[], frameAspect?: number }} opts
+ * @returns {Promise<{ overlays: any[], file: File, imageUrl: string, frameAspect: number } | null>}
  */
-export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
+export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: seedAspect = 1.6 }) {
   return new Promise((resolve) => {
     let list = normalizeMediaOverlays(overlays).map((o) => ({ ...o }));
     let selectedId = null;
@@ -132,8 +132,9 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
     let zoom = 1.15;
     let panX = 0.5;
     let panY = 0.5;
-    let crop = { x: 8, y: 8, w: 84, h: 84 }; // % of natural image
+    let crop = { x: 10, y: 10, w: 80, h: 80 }; // % of natural image
     let natural = { w: 0, h: 0 };
+    let frameAspect = clamp(Number(seedAspect) || 1.6, 0.45, 3.2);
 
     const root = document.createElement('div');
     root.className = 'vcms-annot-modal';
@@ -146,22 +147,29 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
           <div>
             <p class="eyebrow">Image editor</p>
             <h3>사진 편집</h3>
-            <p class="muted small">창은 고정입니다. 우하단으로 크기 조절·드래그로 위치, 잘라내기로 자유 크롭 후 적용하세요. (저장은 페이지 저장 버튼)</p>
+            <p class="muted small">우하단으로 미리보기 창·사진 크기를 조절하고, 잘라내기는 기본 크롭 스킨으로 영역을 잡은 뒤 적용하세요. (저장은 페이지 저장 버튼)</p>
           </div>
           <button type="button" class="ghost mini-btn" data-editor="cancel">취소</button>
         </header>
         <div class="vcms-annot-stage">
-          <div class="vcms-annot-workspace">
+          <div class="vcms-annot-workspace" data-workspace>
             <div class="vcms-annot-frame" data-frame>
               <img class="vcms-annot-source" alt="${esc('편집 이미지')}" draggable="false">
               <div class="vcms-media-annots is-editable" data-annots></div>
-              <i class="vcms-annot-frame-se" data-se title="크기 조절"></i>
+              <i class="vcms-annot-frame-se" data-se title="창·사진 크기"></i>
             </div>
             <div class="vcms-annot-crop-layer" data-crop-layer hidden>
               <img class="vcms-annot-crop-source" alt="" draggable="false">
-              <div class="vcms-annot-crop-dim"></div>
               <div class="vcms-annot-crop-box" data-crop-box>
-                <i class="vcms-annot-frame-se" data-crop-se title="크롭 크기"></i>
+                <div class="vcms-crop-grid" aria-hidden="true"></div>
+                <i class="vcms-crop-h" data-crop-h="nw"></i>
+                <i class="vcms-crop-h" data-crop-h="n"></i>
+                <i class="vcms-crop-h" data-crop-h="ne"></i>
+                <i class="vcms-crop-h" data-crop-h="e"></i>
+                <i class="vcms-crop-h" data-crop-h="se"></i>
+                <i class="vcms-crop-h" data-crop-h="s"></i>
+                <i class="vcms-crop-h" data-crop-h="sw"></i>
+                <i class="vcms-crop-h" data-crop-h="w"></i>
               </div>
             </div>
           </div>
@@ -180,6 +188,7 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
         </div>
       </div>`;
 
+    const workspace = root.querySelector('[data-workspace]');
     const frame = root.querySelector('[data-frame]');
     const img = root.querySelector('.vcms-annot-source');
     const layer = root.querySelector('[data-annots]');
@@ -187,10 +196,14 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
     const cropLayer = root.querySelector('[data-crop-layer]');
     const cropImg = root.querySelector('.vcms-annot-crop-source');
     const cropBox = root.querySelector('[data-crop-box]');
-    const cropSe = root.querySelector('[data-crop-se]');
     const bar = root.querySelector('.vcms-annot-modal-toolbar');
     img.src = imageUrl;
     cropImg.src = imageUrl;
+
+    const applyWorkspaceAspect = () => {
+      workspace.style.aspectRatio = String(clamp(frameAspect, 0.45, 3.2));
+    };
+    applyWorkspaceAspect();
 
     const onResize = () => {
       layoutImage();
@@ -245,6 +258,7 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
       se.hidden = cropping || !!tool;
       root.classList.toggle('is-cropping', cropping);
       root.classList.toggle('is-annotating', !!tool && !cropping);
+      root.classList.toggle('is-panning-mode', uiMode === 'transform' && !tool && !cropping);
       bar.querySelector('[data-editor="transform"]').classList.toggle('is-active', uiMode === 'transform' && !tool);
       bar.querySelector('[data-editor="crop"]').classList.toggle('is-active', uiMode === 'crop');
       bar.querySelector('[data-editor="rect"]').classList.toggle('is-active', tool === 'rect');
@@ -356,7 +370,8 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
         finish({
           overlays: nextOverlays,
           file: baked.file,
-          imageUrl: baked.imageUrl
+          imageUrl: baked.imageUrl,
+          frameAspect
         });
       } catch (err) {
         console.error(err);
@@ -409,32 +424,46 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
       }
     });
 
-    // Pan image
-    img.addEventListener('mousedown', (e) => {
-      if (uiMode !== 'transform' || tool) return;
+    // Pan: annot layer sits above the image, so drag on empty frame/layer space.
+    const beginPan = (e) => {
+      if (uiMode !== 'transform' || tool) return false;
       e.preventDefault();
+      e.stopPropagation();
       const startX = e.clientX;
       const startY = e.clientY;
       const origPanX = panX;
       const origPanY = panY;
       const fr = frame.getBoundingClientRect();
       const vis = visibleSourceRect(natural.w, natural.h, fr.width, fr.height, zoom, panX, panY);
+      // Allow a little pan even near cover by ensuring zoom headroom.
+      if (zoom < 1.02) zoom = 1.08;
+      const dispW = Math.max(1, vis.dispW);
+      const dispH = Math.max(1, vis.dispH);
+      frame.classList.add('is-panning');
       const onMove = (ev) => {
         const dx = ev.clientX - startX;
         const dy = ev.clientY - startY;
-        panX = clamp(origPanX - dx / vis.dispW, 0, 1);
-        panY = clamp(origPanY - dy / vis.dispH, 0, 1);
+        panX = clamp(origPanX - dx / dispW, 0, 1);
+        panY = clamp(origPanY - dy / dispH, 0, 1);
         layoutImage();
       };
       const onUp = () => {
+        frame.classList.remove('is-panning');
         window.removeEventListener('mousemove', onMove);
         window.removeEventListener('mouseup', onUp);
       };
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onUp);
+      return true;
+    };
+
+    frame.addEventListener('mousedown', (e) => {
+      if (e.target.closest('[data-se]')) return;
+      if (e.target.closest('.vcms-annot')) return;
+      beginPan(e);
     });
 
-    // SE zoom
+    // SE: free window aspect + image zoom
     se.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -443,9 +472,19 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
       const startX = e.clientX;
       const startY = e.clientY;
       const startZoom = zoom;
+      const startAspect = frameAspect;
+      const box = workspace.getBoundingClientRect();
       const onMove = (ev) => {
-        const delta = ((ev.clientX - startX) + (ev.clientY - startY)) / 180;
-        zoom = clamp(startZoom + delta, 1, 5);
+        const zoomDelta = ((ev.clientX - startX) + (ev.clientY - startY)) / 220;
+        zoom = clamp(startZoom + zoomDelta, 1, 5);
+        const nextW = Math.max(160, box.width + (ev.clientX - startX));
+        const nextH = Math.max(100, box.height + (ev.clientY - startY));
+        frameAspect = clamp(nextW / nextH, 0.45, 3.2);
+        // blend: prefer drag direction — if mostly vertical, aspect from startAspect * ratio
+        if (Math.abs(ev.clientY - startY) > 8 || Math.abs(ev.clientX - startX) > 8) {
+          frameAspect = clamp(startAspect * (nextW / box.width) / (nextH / box.height), 0.45, 3.2);
+        }
+        applyWorkspaceAspect();
         layoutImage();
       };
       const onUp = () => {
@@ -457,40 +496,58 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
       paintAnnots();
     });
 
-    // Crop box move
+    // Classic crop: move + 8-handle resize
     cropBox.addEventListener('mousedown', (e) => {
-      if (e.target.closest('[data-crop-se]')) return;
+      const handle = e.target.closest('[data-crop-h]');
+      const host = cropImg.getBoundingClientRect();
+      if (!host.width || !host.height) return;
       e.preventDefault();
+      e.stopPropagation();
       const start = { x: e.clientX, y: e.clientY };
       const orig = { ...crop };
-      const host = cropImg.getBoundingClientRect();
+
+      if (handle) {
+        const corner = handle.dataset.cropH;
+        const onMove = (ev) => {
+          const dx = ((ev.clientX - start.x) / host.width) * 100;
+          const dy = ((ev.clientY - start.y) / host.height) * 100;
+          let x1 = orig.x;
+          let y1 = orig.y;
+          let x2 = orig.x + orig.w;
+          let y2 = orig.y + orig.h;
+          if (corner.includes('w')) x1 = orig.x + dx;
+          if (corner.includes('e')) x2 = orig.x + orig.w + dx;
+          if (corner.includes('n')) y1 = orig.y + dy;
+          if (corner.includes('s')) y2 = orig.y + orig.h + dy;
+          // edge-only handles
+          if (corner === 'n' || corner === 's') { /* x unchanged */ }
+          if (corner === 'e' || corner === 'w') { /* y unchanged via only one axis */ }
+          x1 = clamp(x1, 0, 95);
+          y1 = clamp(y1, 0, 95);
+          x2 = clamp(x2, 5, 100);
+          y2 = clamp(y2, 5, 100);
+          crop.x = Math.min(x1, x2);
+          crop.y = Math.min(y1, y2);
+          crop.w = Math.max(5, Math.abs(x2 - x1));
+          crop.h = Math.max(5, Math.abs(y2 - y1));
+          if (crop.x + crop.w > 100) crop.w = 100 - crop.x;
+          if (crop.y + crop.h > 100) crop.h = 100 - crop.y;
+          layoutCrop();
+        };
+        const onUp = () => {
+          window.removeEventListener('mousemove', onMove);
+          window.removeEventListener('mouseup', onUp);
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        return;
+      }
+
       const onMove = (ev) => {
         const dx = ((ev.clientX - start.x) / host.width) * 100;
         const dy = ((ev.clientY - start.y) / host.height) * 100;
         crop.x = clamp(orig.x + dx, 0, 100 - orig.w);
         crop.y = clamp(orig.y + dy, 0, 100 - orig.h);
-        layoutCrop();
-      };
-      const onUp = () => {
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
-      };
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
-    });
-
-    // Crop SE resize
-    cropSe.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const start = { x: e.clientX, y: e.clientY };
-      const orig = { ...crop };
-      const host = cropImg.getBoundingClientRect();
-      const onMove = (ev) => {
-        const dx = ((ev.clientX - start.x) / host.width) * 100;
-        const dy = ((ev.clientY - start.y) / host.height) * 100;
-        crop.w = clamp(orig.w + dx, 5, 100 - orig.x);
-        crop.h = clamp(orig.h + dy, 5, 100 - orig.y);
         layoutCrop();
       };
       const onUp = () => {
@@ -625,6 +682,8 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [] }) {
         return;
       }
 
+      // Empty space: pan the photo (layer covers the image).
+      if (beginPan(e)) return;
       if (selectedId) {
         selectedId = null;
         paintAnnots();

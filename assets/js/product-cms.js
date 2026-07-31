@@ -13,7 +13,7 @@ import {
   waitForAdmin,
   onAuthAdmin,
   uploadToStorage
-} from './visual-cms.js?v=media-annot-5';
+} from './visual-cms.js?v=media-annot-8';
 import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';
@@ -274,6 +274,8 @@ function featureSectionEl(sec, idx) {
     posterUrl: sec.posterUrl || '',
     mediaFit: sec.mediaFit || 'cover',
     mediaWidth: sec.mediaWidth || 'full',
+    mediaWidthPct: sec.mediaWidthPct,
+    mediaAspect: sec.mediaAspect,
     mediaOverlays: sec.mediaOverlays || [],
     editMode, isAdmin,
     onChange: (m) => {
@@ -318,6 +320,8 @@ function cardEl(sec, idx) {
       posterUrl: sec.posterUrl || '',
       mediaFit: sec.mediaFit || 'cover',
       mediaWidth: sec.mediaWidth || 'full',
+      mediaWidthPct: sec.mediaWidthPct,
+      mediaAspect: sec.mediaAspect,
       mediaOverlays: sec.mediaOverlays || [],
       editMode, isAdmin,
       videoClass: 'product-video product-card-video',
@@ -433,6 +437,8 @@ async function saveAll() {
         posterUrl: sec.posterUrl || '',
         mediaFit: sec.mediaFit || 'cover',
         mediaWidth: sec.mediaWidth || 'full',
+        mediaWidthPct: Number.isFinite(Number(sec.mediaWidthPct)) ? Number(sec.mediaWidthPct) : undefined,
+        mediaAspect: Number.isFinite(Number(sec.mediaAspect)) ? Number(sec.mediaAspect) : undefined,
         mediaOverlays: Array.isArray(sec.mediaOverlays) ? sec.mediaOverlays : [],
         order: sec.order || 0,
         published: sec.published !== false,

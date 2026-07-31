@@ -11,7 +11,7 @@ import {
   mountEditableFeatureList,
   mountEditableMedia,
   uploadToStorage
-} from './visual-cms.js?v=media-annot-6';
+} from './visual-cms.js?v=media-annot-8';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 
@@ -56,6 +56,8 @@ function emptyProductSection(layout = 'normal') {
     posterUrl: '',
     mediaFit: 'cover',
     mediaWidth: 'full',
+    mediaWidthPct: 100,
+    mediaAspect: 1.6,
     mediaOverlays: []
   };
 }
@@ -74,6 +76,8 @@ function getSections(g) {
       posterUrl: s.posterUrl || '',
       mediaFit: s.mediaFit || 'cover',
       mediaWidth: s.mediaWidth || 'full',
+      mediaWidthPct: s.mediaWidthPct,
+      mediaAspect: s.mediaAspect,
       mediaOverlays: Array.isArray(s.mediaOverlays) ? s.mediaOverlays.map((o) => ({ ...o })) : []
     }));
   }
@@ -88,6 +92,8 @@ function getSections(g) {
     posterUrl: '',
     mediaFit: 'cover',
     mediaWidth: 'full',
+    mediaWidthPct: 100,
+    mediaAspect: 1.6,
     mediaOverlays: []
   }));
 }
@@ -918,6 +924,8 @@ function mountGuideSections(root, sections, editing) {
           posterUrl: sec.posterUrl || '',
           mediaFit: sec.mediaFit || 'cover',
           mediaWidth: sec.mediaWidth || 'full',
+          mediaWidthPct: sec.mediaWidthPct,
+          mediaAspect: sec.mediaAspect,
           mediaOverlays: sec.mediaOverlays || [],
           editMode: false,
           isAdmin: false
@@ -959,6 +967,8 @@ function mountGuideSections(root, sections, editing) {
       posterUrl: sec.posterUrl || '',
       mediaFit: sec.mediaFit || 'cover',
       mediaWidth: sec.mediaWidth || 'full',
+      mediaWidthPct: sec.mediaWidthPct,
+      mediaAspect: sec.mediaAspect,
       mediaOverlays: sec.mediaOverlays || [],
       editMode: true, isAdmin: true,
       onChange: (m) => { Object.assign(currentGuide.sections[i], m); scheduleSave(); },
