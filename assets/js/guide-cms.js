@@ -37,8 +37,7 @@ const SEED_GUIDES = [
   { slug: 'ai-assistant', title: 'AI Assistant', category: '기능', summary: '변환·편집 중 AI 도움으로 품질을 다듬습니다.', order: 70, features: ['검토 제안', '작업 힌트'], steps: [{ title: '제안 열기', body: '편집 화면에서 AI 검토를 실행합니다.' }, { title: '적용', body: '제안 항목을 확인한 뒤 반영합니다.' }], faq: [{ q: '항상 정확한가요?', a: '제안은 보조입니다. 최종 판단은 연주·청취로 확인하세요.' }], tips: '피치 점프·겹침 음표 위주로 먼저 확인하세요.', relatedGuides: ['score-editor', 'midi-editor'] },
   { slug: 'library', title: 'Library', category: '관리', summary: '변환·편집한 MIDI를 모아 다시 엽니다.', order: 80, features: ['프로젝트 목록', '다시 열기'], steps: [{ title: '저장', body: '작업물을 라이브러리에 저장합니다.' }, { title: '다시 열기', body: '목록에서 선택해 Editor로 이어갑니다.' }], faq: [{ q: '클라우드 동기화인가요?', a: '라이브러리는 앱 로컬 저장을 기준으로 합니다. 버전별 동작은 패치노트를 확인하세요.' }], tips: '파일명에 곡명·날짜를 넣으면 찾기 쉽습니다.', relatedGuides: ['midi-editor', 'getting-started'] },
   { slug: 'license', title: 'License', category: '계정', summary: '라이선스 구매·활성화·기기 정보를 확인합니다.', order: 90, features: ['Google 로그인', '평생 라이선스', 'HWID'], steps: [{ title: '구매', body: '구매 페이지에서 라이선스를 결제합니다.' }, { title: '활성화', body: '앱에서 Google 로그인하면 라이선스가 연결됩니다.' }], faq: [{ q: '기기를 바꾸면?', a: '계정 기준으로 관리됩니다. 문제가 있으면 1:1 문의로 HWID를 알려주세요.' }], tips: 'Installer의 Show HWID로 기기 정보를 확인할 수 있습니다.', relatedGuides: ['getting-started', 'troubleshooting'] },
-  { slug: 'faq', title: 'FAQ', category: '도움말', summary: '자주 묻는 사용 질문과 답변입니다.', order: 100, features: ['변환', '편집', '라이선스'], steps: [{ title: '질문 확인', body: '아래 FAQ에서 관련 항목을 찾아보세요.' }], faq: [{ q: '변환이 느려요', a: '구간을 짧게 하고, 다른 무거운 앱을 닫은 뒤 다시 시도하세요.' }, { q: '결과가 부정확해요', a: '단선·피아노 소스에 가깝게 구간을 고르고 Editor에서 양자화·수동 보정하세요.' }], tips: '사이트 FAQ·1:1 문의도 함께 이용할 수 있습니다.', relatedGuides: ['troubleshooting', 'getting-started'] },
-  { slug: 'troubleshooting', title: 'Troubleshooting', category: '도움말', summary: '설치·변환·로그인 문제를 해결합니다.', order: 110, features: ['설치 복구', '로그인', '변환 실패'], steps: [{ title: 'Installer 복구', body: 'Installer에서 Install/Update로 복구를 실행합니다.' }, { title: '로그 확인', body: 'System Check 결과를 저장해 둡니다.' }, { title: '문의', body: '1:1 문의에 로그·HWID를 첨부합니다.' }], faq: [{ q: '로그인이 안 돼요', a: '인앱 브라우저가 아닌 Chrome/Edge에서 포털에 로그인해 보세요.' }], tips: '지원 티켓에 버전·HWID·오류 메시지를 함께 보내면 해결이 빠릅니다.', relatedGuides: ['license', 'faq'] }
+  { slug: 'troubleshooting', title: 'Troubleshooting', category: '도움말', summary: '설치·변환·로그인 문제를 해결합니다.', order: 110, features: ['설치 복구', '로그인', '변환 실패'], steps: [{ title: 'Installer 복구', body: 'Installer에서 Install/Update로 복구를 실행합니다.' }, { title: '로그 확인', body: 'System Check 결과를 저장해 둡니다.' }, { title: '문의', body: '1:1 문의에 로그·HWID를 첨부합니다.' }], faq: [{ q: '로그인이 안 돼요', a: '인앱 브라우저가 아닌 Chrome/Edge에서 포털에 로그인해 보세요.' }], tips: '지원 티켓에 버전·HWID·오류 메시지를 함께 보내면 해결이 빠릅니다.', relatedGuides: ['license', 'getting-started'] }
 ];
 
 const pathBase = () => window.MIDIAI_BASE_PATH || './';
@@ -681,7 +680,6 @@ function renderDetail(g) {
   const sections = getSections(g);
   currentGuide = { ...g, sections };
   const faq = g.faq || [];
-  const related = g.relatedGuides || [];
 
   const adminMeta = editing ? `<div class="guide-admin-meta">
     <label><input type="checkbox" id="guidePublished" ${g.published !== false ? 'checked' : ''}> 공개</label>
@@ -730,20 +728,6 @@ function renderDetail(g) {
       </div>`
     : `<details class="guide-faq-item"><summary>${esc(item.q || '')}</summary><div data-faq-a class="guide-md-slot"></div></details>`).join('');
 
-  const relatedPicker = editing
-    ? `<div class="guide-related-picker">${allGuides.filter((x) => x.slug !== g.slug && x.id !== g.id).map((x) => {
-        const val = x.slug || x.id;
-        const checked = related.includes(val) || related.includes(x.id) ? 'checked' : '';
-        return `<label><input type="checkbox" data-related value="${esc(val)}" ${checked}> ${esc(x.title || val)}</label>`;
-      }).join('')}</div>`
-    : '';
-
-  const relatedLinks = related.map((slug) => {
-    const hit = allGuides.find((x) => x.slug === slug || x.id === slug);
-    const title = hit?.title || slug;
-    return `<a class="product-card guide-card product-card-text" href="${pathBase()}guide.html?slug=${encodeURIComponent(slug)}"><div class="product-card-icon" aria-hidden="true">→</div><div><h3>${esc(title)}</h3></div></a>`;
-  }).join('');
-
   root.innerHTML = `
     <section class="wrap product-hero guide-hero">
       <p class="pill portal-pill" data-field="category"${ce}>${esc(g.category || 'Guide')}</p>
@@ -764,7 +748,6 @@ function renderDetail(g) {
     </div>` : ''}
     ${(g.tips || editing) ? `<section class="wrap guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>` : ''}
     <section class="wrap guide-faq"><h2>FAQ</h2>${faqBlocks}${editing ? '<button type="button" class="secondary mini-btn" data-add-faq>FAQ 추가</button>' : ''}</section>
-    <section class="wrap guide-related"><h2>관련 가이드</h2>${relatedPicker}<div class="product-grid">${relatedLinks}</div></section>
     ${workflow ? `<div class="wrap workflow-seo-cta"><a class="secondary" href="${pathBase()}${workflow.replace(/^\//, '')}">기술적인 Workflow 설명 보기</a></div>` : ''}
     ${updated ? `<p class="wrap muted guide-updated">업데이트: ${updated.toLocaleDateString('ko-KR')}</p>` : ''}
   `;

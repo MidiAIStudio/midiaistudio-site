@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=license-period-fix">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-ticket-inline-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -166,11 +166,11 @@
                   <input id="adminUserSearch" class="search-input compact" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
                   <div class="admin-crm-filter-primary">
                     <select id="adminUserLicenseStatus" aria-label="License">
-                      <option value="all">License: 전체</option>
-                      <option value="lifetime">Lifetime</option>
-                      <option value="trial">Trial</option>
-                      <option value="expired">Expired</option>
-                      <option value="suspended">Suspended</option>
+                      <option value="all">라이선스: 전체</option>
+                      <option value="lifetime">평생</option>
+                      <option value="trial">체험판</option>
+                      <option value="expired">만료</option>
+                      <option value="suspended">정지</option>
                       <option value="none">없음</option>
                       <option value="active">활성</option>
                       <option value="favorites">★ 즐겨찾기</option>
@@ -185,10 +185,10 @@
                   </div>
                   <div class="admin-crm-filter-grid is-collapsed" id="adminCrmFilterAdvanced" hidden>
                     <select id="adminCrmFilterRole" aria-label="Role">
-                      <option value="all">Role: 전체</option>
-                      <option value="admin">Admin</option>
-                      <option value="staff">Staff</option>
-                      <option value="user">User</option>
+                      <option value="all">역할: 전체</option>
+                      <option value="admin">관리자</option>
+                      <option value="staff">스태프</option>
+                      <option value="user">일반 사용자</option>
                     </select>
                     <select id="adminCrmFilterLogin" aria-label="최근 로그인">
                       <option value="all">로그인: 전체</option>
@@ -218,8 +218,8 @@
                 <div class="admin-crm-bulkbar" id="adminCrmBulkbar" hidden>
                   <span id="adminCrmBulkCount">0명 선택</span>
                   <div class="admin-crm-bulk-actions">
-                    <button type="button" class="secondary mini-btn" data-bulk="trial">일괄 Trial</button>
-                    <button type="button" class="secondary mini-btn" data-bulk="lifetime">일괄 Lifetime</button>
+                    <button type="button" class="secondary mini-btn" data-bulk="trial">일괄 체험판</button>
+                    <button type="button" class="secondary mini-btn" data-bulk="lifetime">일괄 평생</button>
                     <button type="button" class="secondary mini-btn danger-btn" data-bulk="suspend">일괄 정지</button>
                     <button type="button" class="secondary mini-btn" data-bulk="mail">일괄 메일</button>
                     <button type="button" class="secondary mini-btn danger-btn" data-bulk="delete">일괄 삭제</button>
@@ -259,8 +259,8 @@
                       </div>
                     </div>
                     <div class="admin-crm-head-actions">
-                      <button type="button" class="primary mini-btn" data-crm-action="grant-lifetime">Lifetime</button>
-                      <button type="button" class="secondary mini-btn" data-crm-action="grant-trial">Trial 7일</button>
+                      <button type="button" class="primary mini-btn" data-crm-action="grant-lifetime">평생 지급</button>
+                      <button type="button" class="secondary mini-btn" data-crm-action="grant-trial">체험판 7일</button>
                       <button type="button" class="secondary mini-btn" data-crm-action="grant-timed">기간 지급</button>
                       <button type="button" class="ghost admin-crm-fav-btn" id="adminCrmFavBtn" data-crm-action="toggle-fav" title="즐겨찾기">☆</button>
                       <div class="admin-crm-menu-wrap">
@@ -292,22 +292,22 @@
                     <form id="adminLicenseForm" class="admin-crm-license-form">
                       <input type="hidden" id="adminLicenseUid" required>
                       <div class="form-split">
-                        <label>Type
+                        <label>유형
                           <select id="adminLicensePlan">
-                            <option value="trial">Trial</option>
-                            <option value="lifetime">Lifetime</option>
+                            <option value="trial">체험판</option>
+                            <option value="lifetime">평생</option>
                             <option value="period">기간제</option>
-                            <option value="developer">Developer</option>
-                            <option value="admin">Admin</option>
-                            <option value="monthly">Monthly</option>
+                            <option value="developer">개발자</option>
+                            <option value="admin">관리자</option>
+                            <option value="monthly">월간</option>
                           </select>
                         </label>
-                        <label>Status
+                        <label>상태
                           <select id="adminLicenseStatus">
-                            <option value="active">Active</option>
-                            <option value="expired">Expired</option>
-                            <option value="suspended">Suspended</option>
-                            <option value="banned">Banned</option>
+                            <option value="active">활성</option>
+                            <option value="expired">만료</option>
+                            <option value="suspended">정지</option>
+                            <option value="banned">차단</option>
                           </select>
                         </label>
                       </div>
@@ -319,7 +319,7 @@
                           <input type="date" id="adminLicenseExpiresAt">
                         </label>
                       </div>
-                      <p class="muted small" style="margin:.25rem 0 .5rem">Lifetime는 만료일 없음(무기한). 기간 지급·만료일이 있으면 Type은 기간제입니다. 만료일 지나면 자동 해제됩니다.</p>
+                      <p class="muted small" style="margin:.25rem 0 .5rem">평생은 만료일 없음(무기한). 기간 지급·만료일이 있으면 유형은 기간제입니다. 만료일 지나면 자동 해제됩니다.</p>
                       <div class="admin-crm-license-meta" id="adminCrmLicenseMeta"></div>
                       <textarea id="adminLicenseMemo" rows="2" placeholder="라이선스 메모"></textarea>
                     </form>
@@ -417,7 +417,7 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=license-period-fix"></script>
-  <script type="module" src="./assets/js/app.js?v=license-period-fix"></script>
+  <script type="module" src="./assets/js/app.js?v=admin-ticket-inline-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=license-period-fix"></script>
 </body>
 </html>

@@ -18,7 +18,7 @@ import {
   openMarkdownPreview,
   ensureMarkdownCss,
   pickMarkdownSource
-} from './markdown/index.js';
+} from './markdown/index.js?v=md-placeholder-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -1748,16 +1748,102 @@ async function initHomePage(){
     }
   }
 }
+const HUB_LIST_PAGE_SIZE = 10;
+const hubListPage = { board: 1, notices: 1 };
+
+function hubPaginate(rows, kind){
+  const list = Array.isArray(rows) ? rows : [];
+  const pages = Math.max(1, Math.ceil(list.length / HUB_LIST_PAGE_SIZE));
+  let page = Number(hubListPage[kind] || 1);
+  if(page > pages) page = pages;
+  if(page < 1) page = 1;
+  hubListPage[kind] = page;
+  const start = (page - 1) * HUB_LIST_PAGE_SIZE;
+  return { list, page, pages, start, slice: list.slice(start, start + HUB_LIST_PAGE_SIZE), total: list.length };
+}
+function hubListRowNo(fullList, globalIndex, item){
+  if(item?.pinned) return null;
+  const totalNormal = fullList.filter(x=>!x.pinned).length;
+  const before = fullList.slice(0, globalIndex).filter(x=>!x.pinned).length;
+  return totalNormal - before;
+}
+function hubPagerHtml(kind, page, pages, total){
+  if(pages <= 1) return '';
+  const maxButtons = 7;
+  let from = Math.max(1, page - Math.floor(maxButtons / 2));
+  let to = Math.min(pages, from + maxButtons - 1);
+  from = Math.max(1, to - maxButtons + 1);
+  const nums = [];
+  for(let i = from; i <= to; i++) nums.push(i);
+  return `<div class="hub-list-pager" data-hub-pager="${esc(kind)}">
+    <button type="button" class="ghost mini-btn" data-hub-page="prev" ${page<=1?'disabled':''}>이전</button>
+    ${nums.map(n=>`<button type="button" class="ghost mini-btn${n===page?' is-active':''}" data-hub-page="${n}">${n}</button>`).join('')}
+    <button type="button" class="ghost mini-btn" data-hub-page="next" ${page>=pages?'disabled':''}>다음</button>
+    <span class="hub-list-pager-info muted">${esc(String((page-1)*HUB_LIST_PAGE_SIZE+1))}–${esc(String(Math.min(total, page*HUB_LIST_PAGE_SIZE)))} · ${esc(String(total))}</span>
+  </div>`;
+}
+function bindHubPager(root, kind, onPage){
+  const pager = root?.querySelector?.(`[data-hub-pager="${kind}"]`);
+  if(!pager || pager.dataset.bound) return;
+  pager.dataset.bound = '1';
+  pager.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-hub-page]');
+    if(!btn || btn.disabled) return;
+    const act = btn.getAttribute('data-hub-page');
+    const pages = Math.max(1, Number(pager.dataset.pages) || Math.ceil((Number(pager.dataset.total)||0) / HUB_LIST_PAGE_SIZE));
+    let next = hubListPage[kind] || 1;
+    if(act === 'prev') next -= 1;
+    else if(act === 'next') next += 1;
+    else next = Number(act) || next;
+    next = Math.min(pages, Math.max(1, next));
+    if(next === hubListPage[kind]) return;
+    hubListPage[kind] = next;
+    onPage?.();
+  });
+}
+
+function noticeFilteredSorted(rows){
+  const q=($('boardSearch')?.value||'').trim().toLowerCase();
+  let out=(rows||[]).filter(x=>x.visible!==false);
+  out.sort((a,b)=>(b.pinned===true)-(a.pinned===true)||((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
+  if(!q) return out;
+  return out.filter(x=>{
+    const hay=[x.title,x.content,noticeAuthor(x),x.email].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+}
 function renderAnnouncements(rows, err){
   const list=$('announcementList'); if(!list)return;
   if(err){ list.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
-  if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  rows.sort((a,b)=>(b.pinned===true)-(a.pinned===true)||((b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)));
-  let normalNo=rows.filter(x=>!x.pinned).length;
-  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
-  bindSearch(list);
+  if(rows) window.__noticeRows = rows;
+  const filtered = noticeFilteredSorted(window.__noticeRows || []);
+  if(!filtered.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  const { page, pages, start, slice, total } = hubPaginate(filtered, 'notices');
+  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${slice.map((x,i)=>{
+    const globalIndex = start + i;
+    const rowNo = hubListRowNo(filtered, globalIndex, x);
+    const no = x.pinned
+      ? `<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`
+      : `<div class="hub-col-no">${rowNo}</div>`;
+    return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
+  }).join('')}</div>${hubPagerHtml('notices', page, pages, total)}`;
+  const pager = list.querySelector('[data-hub-pager="notices"]');
+  if(pager){ pager.dataset.total = String(total); pager.dataset.pages = String(pages); }
+  bindHubPager(list, 'notices', ()=>renderAnnouncements());
+  const search=$('boardSearch');
+  if(search && !search.dataset.noticeBound){
+    search.dataset.noticeBound='1';
+    search.addEventListener('input',()=>{ hubListPage.notices = 1; renderAnnouncements(); });
+  }
 }
-function listenAnnouncements(){ if($('announcementList')) listenVisibleDocs('announcements',renderAnnouncements); }
+function listenAnnouncements(){
+  if(!$('announcementList')) return;
+  listenVisibleDocs('announcements',(rows,err)=>{
+    window.__noticeRows = rows || [];
+    hubListPage.notices = 1;
+    renderAnnouncements(window.__noticeRows, err);
+  });
+}
 function renderNoticeDetail(d,err){
   const box=$('noticeDetail'); if(!box)return;
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
@@ -2511,7 +2597,8 @@ async function ticketReply(e){
   e.preventDefault();
   if(!currentUser)return;
   const form=e.currentTarget;
-  const input=form.querySelector('input');
+  const input=form.querySelector('textarea,input');
+  if(!input)return;
   const content=input.value.trim();
   const ticketId=form.dataset.ticket;
   if(!content)return;
@@ -2563,25 +2650,62 @@ function getAdminTicketFilteredRows(){
   return filterRows(adminTicketRows,'adminTicketSearch','adminTicketStatus',['title','content','email','uid','category'])
     .sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
 }
+let adminTicketReplyUnsub = null;
+function stopAdminTicketReplies(){
+  if(typeof adminTicketReplyUnsub === 'function'){
+    try{ adminTicketReplyUnsub(); }catch(_){}
+  }
+  adminTicketReplyUnsub = null;
+}
+function mountAdminTicketExpandPanel(box){
+  stopAdminTicketReplies();
+  if(!box) return;
+  const openId = box.dataset.openTicketId || '';
+  if(!openId) return;
+  const replyBox = box.querySelector(`[data-replies="${CSS.escape(openId)}"]`);
+  if(!replyBox) return;
+  const {collection,query,orderBy,onSnapshot}=firestoreApi;
+  const q=query(collection(db,'supportTickets',openId,'replies'),orderBy('createdAt','asc'));
+  adminTicketReplyUnsub = onSnapshot(q, snap => {
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    replyBox.innerHTML = rows.length
+      ? rows.map(r=>`<div class="admin-ticket-reply ${r.role==='admin'?'is-admin':''}"><b>${esc(r.role==='admin'?BRAND_AUTHOR:(r.displayName||r.email||'user'))} · ${esc(fmtDate(r.createdAt))}</b><p>${nl2br(r.content||'')}</p></div>`).join('')
+      : `<p class="muted">아직 답변이 없습니다.</p>`;
+  }, err => {
+    console.error('admin replies', err);
+    replyBox.innerHTML = `<p class="muted">${esc(err.message||String(err))}</p>`;
+  });
+  bindReplyForms(box);
+}
 function renderAdminTicketTable(){
   const box=$('adminTicketList'); if(!box||!isAdminUser)return;
   const rows=getAdminTicketFilteredRows();
   $('adminTicketCount') && ($('adminTicketCount').textContent = `${rows.length} / ${adminTicketRows.length}`);
-  if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  if(!rows.length){
+    stopAdminTicketReplies();
+    box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`;
+    return;
+  }
   const openId = box.dataset.openTicketId || '';
+  const draftEl = openId ? box.querySelector(`[data-ticket="${CSS.escape(openId)}"] textarea, [data-ticket="${CSS.escape(openId)}"] input`) : null;
+  const draftReply = draftEl ? String(draftEl.value || '') : '';
   box.innerHTML = `<table class="admin-table admin-ticket-table"><thead><tr>
     <th style="width:36px"><label class="admin-ticket-check"><input type="checkbox" id="adminTicketSelectAll" aria-label="전체 선택"></label></th>
     <th>유형</th><th>제목</th><th>사용자</th><th>상태</th><th>수정일</th>
   </tr></thead><tbody>${rows.map(t=>{
     const open = openId===t.id;
-    const preview = esc((t.content||'').slice(0,80))+((t.content||'').length>80?'...':'');
+    const metaBits=[
+      t.category?`<span><em>유형</em>${esc(ticketCategoryLabel(t.category))}</span>`:'',
+      t.appVersion?`<span><em>버전</em>${esc(t.appVersion)}</span>`:'',
+      t.os?`<span><em>OS</em>${esc(ticketOsLabel(t.os))}</span>`:'',
+      t.email?`<span><em>이메일</em>${esc(t.email)}</span>`:''
+    ].filter(Boolean).join('');
     return `<tr class="admin-ticket-row${open?' is-open':''}" data-ticket-row="${esc(t.id)}">
       <td><label class="admin-ticket-check" onclick="event.stopPropagation()"><input type="checkbox" data-ticket-check="${esc(t.id)}"></label></td>
       <td>${esc(ticketCategoryLabel(t.category))}</td>
       <td>
         <button type="button" class="admin-ticket-title-btn" data-ticket-expand="${esc(t.id)}" aria-expanded="${open?'true':'false'}">
           <b>${esc(t.title||'-')}</b>
-          <small>${preview}</small>
         </button>
       </td>
       <td><span class="mono">${esc(t.email||t.uid||'')}</span></td>
@@ -2590,12 +2714,29 @@ function renderAdminTicketTable(){
     </tr>
     <tr class="admin-ticket-expand" data-ticket-panel="${esc(t.id)}" ${open?'':'hidden'}>
       <td colspan="6"><div class="admin-ticket-expand-inner">
-        <a class="secondary mini-btn" href="./ticket.html?id=${encodeURIComponent(t.id)}">상세/답변</a>
-        <button type="button" class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button>
+        <div class="admin-ticket-meta">${metaBits}</div>
+        <div class="admin-ticket-body">${nl2br(t.content||'') || '<span class="muted">내용 없음</span>'}</div>
+        ${ticketAttachmentsHtml(t.attachments)}
+        <div class="admin-ticket-replies-block">
+          <h4>답변</h4>
+          <div class="admin-ticket-replies" data-replies="${esc(t.id)}"></div>
+          <form class="reply-form admin-ticket-reply-form" data-ticket="${esc(t.id)}">
+            <textarea rows="3" placeholder="${esc(tr('reply_placeholder'))}" required></textarea>
+            <div class="admin-ticket-reply-actions">
+              <button class="primary mini-btn" type="submit">답변 등록</button>
+              <button type="button" class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button>
+            </div>
+          </form>
+        </div>
       </div></td>
     </tr>`;
   }).join('')}</tbody></table>`;
+  if(draftReply){
+    const nextDraft = box.querySelector(`[data-ticket="${CSS.escape(openId)}"] textarea, [data-ticket="${CSS.escape(openId)}"] input`);
+    if(nextDraft) nextDraft.value = draftReply;
+  }
   bindAdminTicketTable(box);
+  mountAdminTicketExpandPanel(box);
 }
 function bindAdminTicketTable(box){
   if(!box) return;
@@ -2824,6 +2965,75 @@ async function maybeHealExpiredLicense(uid, lic){
     }
   }catch(e){ console.warn('heal expired license', e); }
 }
+
+/** Admin CRM display labels only — never use these for storage/compare/API. */
+const ADMIN_LICENSE_TYPE_LABELS = {
+  trial: '체험판',
+  lifetime: '평생',
+  period: '기간제',
+  monthly: '월간',
+  developer: '개발자',
+  admin: '관리자',
+  active: '활성',
+  none: '없음'
+};
+const ADMIN_LICENSE_STATUS_LABELS = {
+  active: '활성',
+  expired: '만료',
+  suspended: '정지',
+  banned: '차단',
+  inactive: '비활성',
+  refunded: '환불',
+  none: '없음'
+};
+const ADMIN_ROLE_LABELS = {
+  admin: '관리자',
+  staff: '스태프',
+  user: '일반 사용자',
+  developer: '개발자'
+};
+const ADMIN_ACTIVITY_LABELS = {
+  online: '온라인',
+  active: '활성',
+  idle: '유휴',
+  offline: '오프라인'
+};
+const ADMIN_PAYMENT_STATUS_LABELS = {
+  completed: '결제 완료',
+  pending: '결제 대기',
+  failed: '결제 실패',
+  cancelled: '결제 취소',
+  canceled: '결제 취소',
+  refunded: '환불',
+  paid: '결제 완료',
+  open: '접수',
+  answered: '답변 완료',
+  closed: '종료'
+};
+const ADMIN_PAYMENT_METHOD_LABELS = {
+  admin: '관리자 지급',
+  manual: '수동 저장',
+  kakao: '카카오페이',
+  kakaopay: '카카오페이',
+  inicis: '카드 결제',
+  inicis_v2: '카드 결제',
+  card: '카드 결제',
+  paypal: 'PayPal',
+  google: 'Google'
+};
+function adminUiLabel(map, value, fallback){
+  const raw = value == null ? '' : String(value).trim();
+  if(!raw || raw === '-') return fallback != null ? fallback : '-';
+  const hit = map[raw.toLowerCase()];
+  return hit != null ? hit : (fallback != null ? fallback : raw);
+}
+function adminLicenseTypeLabel(v){ return adminUiLabel(ADMIN_LICENSE_TYPE_LABELS, v); }
+function adminLicenseStatusLabel(v){ return adminUiLabel(ADMIN_LICENSE_STATUS_LABELS, v); }
+function adminRoleLabel(v){ return adminUiLabel(ADMIN_ROLE_LABELS, v, '일반 사용자'); }
+function adminActivityLabel(v){ return adminUiLabel(ADMIN_ACTIVITY_LABELS, v); }
+function adminPaymentStatusLabel(v){ return adminUiLabel(ADMIN_PAYMENT_STATUS_LABELS, v); }
+function adminPaymentMethodLabel(v){ return adminUiLabel(ADMIN_PAYMENT_METHOD_LABELS, v); }
+
 function adminEffectivePlan(lic){
   const plan = String(lic?.plan||'').toLowerCase();
   // Legacy: timed grants were saved as lifetime + expiresAt
@@ -2839,6 +3049,11 @@ function adminEffectiveStatus(lic){
   if(status==='active' && lic.licensed!==true && licenseTsMs(lic.expiresAt) && !licenseDateBoundsActive(lic)) return 'expired';
   return status || 'none';
 }
+
+function adminLicenseMethodLabel(method){
+  return adminPaymentMethodLabel(method);
+}
+
 function adminLicenseKind(lic){
   if(!lic) return 'none';
   const status = adminEffectiveStatus(lic);
@@ -2857,15 +3072,16 @@ function adminLicenseKind(lic){
 }
 function adminLicenseBadgeHtml(kind, lic){
   const plan = adminEffectivePlan(lic) || lic?.plan || kind;
-  if(kind==='lifetime') return `<span class="crm-badge is-lifetime"><i></i>Lifetime</span>`;
-  if(kind==='trial') return `<span class="crm-badge is-trial"><i></i>Trial</span>`;
-  if(kind==='period') return `<span class="crm-badge is-active"><i></i>기간제</span>`;
-  if(kind==='developer') return `<span class="crm-badge is-dev"><i></i>Developer</span>`;
-  if(kind==='admin') return `<span class="crm-badge is-admin"><i></i>Admin</span>`;
-  if(kind==='suspended') return `<span class="crm-badge is-suspended"><i></i>Suspended</span>`;
-  if(kind==='expired') return `<span class="crm-badge is-expired"><i></i>Expired</span>`;
-  if(kind==='active') return `<span class="crm-badge is-active"><i></i>${esc(plan)}</span>`;
-  return `<span class="crm-badge is-none"><i></i>None</span>`;
+  const typeLabel = adminLicenseTypeLabel(plan);
+  if(kind==='lifetime') return `<span class="crm-badge is-lifetime"><i></i>${esc(adminLicenseTypeLabel('lifetime'))}</span>`;
+  if(kind==='trial') return `<span class="crm-badge is-trial"><i></i>${esc(adminLicenseTypeLabel('trial'))}</span>`;
+  if(kind==='period') return `<span class="crm-badge is-active"><i></i>${esc(adminLicenseTypeLabel('period'))}</span>`;
+  if(kind==='developer') return `<span class="crm-badge is-dev"><i></i>${esc(adminLicenseTypeLabel('developer'))}</span>`;
+  if(kind==='admin') return `<span class="crm-badge is-admin"><i></i>${esc(adminLicenseTypeLabel('admin'))}</span>`;
+  if(kind==='suspended') return `<span class="crm-badge is-suspended"><i></i>${esc(adminLicenseStatusLabel('suspended'))}</span>`;
+  if(kind==='expired') return `<span class="crm-badge is-expired"><i></i>${esc(adminLicenseStatusLabel('expired'))}</span>`;
+  if(kind==='active') return `<span class="crm-badge is-active"><i></i>${esc(typeLabel)}</span>`;
+  return `<span class="crm-badge is-none"><i></i>${esc(adminLicenseTypeLabel('none'))}</span>`;
 }
 function adminLastPaymentSec(uid){
   const o = adminOrdersForUid(uid)[0];
@@ -2882,18 +3098,19 @@ function saveAdminCrmFavorites(set){
 let adminCrmFavorites = loadAdminCrmFavorites();
 function adminRoleBadgeHtml(role){
   const r=String(role||'user').toLowerCase();
-  if(r==='admin') return `<span class="crm-role is-admin"><i></i>ADMIN</span>`;
-  if(r==='staff') return `<span class="crm-role is-staff"><i></i>STAFF</span>`;
-  return `<span class="crm-role is-user"><i></i>USER</span>`;
+  const label = adminRoleLabel(r);
+  if(r==='admin') return `<span class="crm-role is-admin"><i></i>${esc(label)}</span>`;
+  if(r==='staff') return `<span class="crm-role is-staff"><i></i>${esc(label)}</span>`;
+  return `<span class="crm-role is-user"><i></i>${esc(label)}</span>`;
 }
 function adminActivityBadgeHtml(user){
   const t=adminTsSec(user?.lastLogin||user?.lastSeenAt);
-  if(!t) return `<span class="crm-activity is-offline"><i></i>Offline</span>`;
+  if(!t) return `<span class="crm-activity is-offline"><i></i>${esc(adminActivityLabel('offline'))}</span>`;
   const age=(Date.now()/1000)-t;
-  if(age < 86400) return `<span class="crm-activity is-online"><i></i>Online</span>`;
-  if(age < 7*86400) return `<span class="crm-activity is-active"><i></i>Active</span>`;
-  if(age < 30*86400) return `<span class="crm-activity is-idle"><i></i>Idle</span>`;
-  return `<span class="crm-activity is-offline"><i></i>Offline</span>`;
+  if(age < 86400) return `<span class="crm-activity is-online"><i></i>${esc(adminActivityLabel('online'))}</span>`;
+  if(age < 7*86400) return `<span class="crm-activity is-active"><i></i>${esc(adminActivityLabel('active'))}</span>`;
+  if(age < 30*86400) return `<span class="crm-activity is-idle"><i></i>${esc(adminActivityLabel('idle'))}</span>`;
+  return `<span class="crm-activity is-offline"><i></i>${esc(adminActivityLabel('offline'))}</span>`;
 }
 function fmtRelative(v){
   const t=adminTsSec(v);
@@ -3010,14 +3227,14 @@ function renderAdminCrmStats(rows){
   const idle7=adminUserRows.filter(u=>{ const t=adminTsSec(u.lastLogin||u.lastSeenAt); return t>0 && now-t > 7*86400; }).length;
   const idle30=adminUserRows.filter(u=>{ const t=adminTsSec(u.lastLogin||u.lastSeenAt); return t>0 && now-t > 30*86400; }).length;
   box.innerHTML=`
-    <div class="crm-stat"><b>${all}</b><span>Members</span></div>
-    <div class="crm-stat"><b>${active}</b><span>Active</span></div>
-    <div class="crm-stat"><b>${lifetime}</b><span>Lifetime</span></div>
-    <div class="crm-stat"><b>${trial}</b><span>Trial</span></div>
-    <div class="crm-stat"><b>${todayJoin}</b><span>Today</span></div>
-    <div class="crm-stat"><b>${idle7}</b><span>Idle 7d</span></div>
-    <div class="crm-stat"><b>${idle30}</b><span>Idle 30d</span></div>
-    <div class="crm-stat is-accent"><b>${rows.length}</b><span>Filtered</span></div>`;
+    <div class="crm-stat"><b>${all}</b><span>전체 회원</span></div>
+    <div class="crm-stat"><b>${active}</b><span>활성</span></div>
+    <div class="crm-stat"><b>${lifetime}</b><span>평생</span></div>
+    <div class="crm-stat"><b>${trial}</b><span>체험판</span></div>
+    <div class="crm-stat"><b>${todayJoin}</b><span>오늘 가입</span></div>
+    <div class="crm-stat"><b>${idle7}</b><span>7일 미접속</span></div>
+    <div class="crm-stat"><b>${idle30}</b><span>30일 미접속</span></div>
+    <div class="crm-stat is-accent"><b>${rows.length}</b><span>필터 결과</span></div>`;
 }
 function renderAdminUserTable(){
   const box=$('adminUserList'); if(!box || !isAdminUser) return;
@@ -3308,12 +3525,12 @@ function renderAdminCrmDetail(uid){
   }
   $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML = adminLicenseBadgeHtml(kind, lic));
   $('adminCrmLicenseMeta') && ($('adminCrmLicenseMeta').innerHTML = `
-    <span class="crm-chip"><em>상태</em>${esc(adminEffectiveStatus(lic) || lic?.status || '-')}</span>
-    <span class="crm-chip"><em>Type</em>${esc(adminEffectivePlan(lic) || lic?.plan || '-')}</span>
+    <span class="crm-chip"><em>상태</em>${esc(adminLicenseStatusLabel(adminEffectiveStatus(lic) || lic?.status || '-'))}</span>
+    <span class="crm-chip"><em>유형</em>${esc(adminLicenseTypeLabel(adminEffectivePlan(lic) || lic?.plan || '-'))}</span>
     <span class="crm-chip"><em>시작</em>${esc(lic?.startsAt ? fmtListDate(lic.startsAt) : '-')}</span>
     <span class="crm-chip"><em>만료</em>${esc(lic?.expiresAt ? fmtListDate(lic.expiresAt) : (adminEffectivePlan(lic)==='lifetime'?'없음':'-'))}</span>
     <span class="crm-chip"><em>변경</em>${esc(fmtListDate(lic?.updatedAt || lic?.createdAt))}</span>
-    <span class="crm-chip"><em>Method</em>${esc(lic?.method || '-')}</span>`);
+    <span class="crm-chip"><em>발급</em>${esc(adminLicenseMethodLabel(lic?.method))}</span>`);
   const lastAmount = lastOrder?.amount!=null ? `${Number(lastOrder.amount).toLocaleString('ko-KR')} ${lastOrder.currency||'KRW'}` : '';
   $('adminCrmSummary') && ($('adminCrmSummary').innerHTML = `
     <button type="button" class="admin-crm-summary-card" data-crm-action="orders">
@@ -3370,7 +3587,7 @@ function renderAdminCrmOrders(uid, showAll){
     const amount=o.amount!=null ? `${Number(o.amount).toLocaleString('ko-KR')} ${o.currency||'KRW'}` : '-';
     const when=fmtCompactDateTime(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
     const key=o.id || o.paymentId || o.paypalOrderId || '';
-    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="mono crm-td-id">${crmSlideHtml(id)}</td><td class="crm-td-method">${crmSlideHtml(method)}</td><td class="crm-td-amount">${crmSlideHtml(amount)}</td><td class="crm-td-date">${crmSlideHtml(when)}</td><td class="crm-td-status">${crmSlideHtml(o.status||'-')}</td></tr>`;
+    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="mono crm-td-id">${crmSlideHtml(id)}</td><td class="crm-td-method">${crmSlideHtml(adminPaymentMethodLabel(method))}</td><td class="crm-td-amount">${crmSlideHtml(amount)}</td><td class="crm-td-date">${crmSlideHtml(when)}</td><td class="crm-td-status">${crmSlideHtml(adminPaymentStatusLabel(o.status||'-'))}</td></tr>`;
   }).join('')}</tbody></table>${(!showAll && all.length>5) ? `<p class="muted small">외 ${all.length-5}건 · 더보기로 전체 표시</p>` : ''}`;
   bindCrmTextSlides(box);
   box.querySelectorAll('[data-order-id]').forEach(row=>{
@@ -3393,9 +3610,9 @@ function openAdminCrmOrderDrawer(uid, orderKey){
       <div><dt>주문번호</dt><dd class="mono">${esc(o.paymentId||o.paypalOrderId||o.id||'-')}</dd></div>
       <div><dt>Payment ID</dt><dd class="mono">${esc(o.paymentId||o.portoneTransactionId||o.paypalCaptureId||'-')}</dd></div>
       <div><dt>PG</dt><dd>${esc(o.provider||o.pg||'-')}</dd></div>
-      <div><dt>결제수단</dt><dd>${esc(o.paymentMethod||o.method||'-')}</dd></div>
+      <div><dt>결제수단</dt><dd>${esc(adminPaymentMethodLabel(o.paymentMethod||o.method||'-'))}</dd></div>
       <div><dt>결제금액</dt><dd>${o.amount!=null?`${Number(o.amount).toLocaleString('ko-KR')} ${esc(o.currency||'')}`:'-'}</dd></div>
-      <div><dt>상태</dt><dd>${esc(o.status||'-')}</dd></div>
+      <div><dt>상태</dt><dd>${esc(adminPaymentStatusLabel(o.status||'-'))}</dd></div>
       <div><dt>결제시간</dt><dd>${esc(fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt))}</dd></div>
       <div><dt>웹훅 결과</dt><dd>${esc(o.verificationStatus||o.rawStatus||o.webhookStatus||'-')}</dd></div>
       <div><dt>자동 라이선스 지급</dt><dd>${licIssued?'지급됨':'미지급/해당없음'}</dd></div>
@@ -3418,7 +3635,7 @@ function renderAdminCrmTickets(uid){
   const box=$('adminCrmTickets'); if(!box) return;
   const rows = adminTicketsForUid(uid).slice(0, 5);
   if(!rows.length){ box.innerHTML=`<p class="muted small">문의 기록이 없습니다.</p>`; return; }
-  box.innerHTML = rows.map(t=>`<a class="admin-crm-ticket-row" href="./ticket.html?id=${encodeURIComponent(t.id)}"><b class="crm-slide"><span class="crm-slide-text">${esc(t.title||'(제목 없음)')}</span></b><span class="badge ${esc(String(t.status||'open'))}">${esc(t.status||'open')}</span><small>${esc(fmtListDate(t.createdAt))}</small></a>`).join('');
+  box.innerHTML = rows.map(t=>`<a class="admin-crm-ticket-row" href="./ticket.html?id=${encodeURIComponent(t.id)}"><b class="crm-slide"><span class="crm-slide-text">${esc(t.title||'(제목 없음)')}</span></b><span class="badge ${esc(String(t.status||'open'))}">${esc(adminPaymentStatusLabel(t.status||'open'))}</span><small>${esc(fmtListDate(t.createdAt))}</small></a>`).join('');
   bindCrmTextSlides(box);
 }
 function renderAdminCrmPosts(uid){
@@ -3910,9 +4127,18 @@ function renderBoardPosts(rows, err){
   if(err){ box.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   const list=boardFilteredSorted(rows||[]);
   if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  let normalNo=list.filter(x=>!x.pinned).length;
-  box.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${list.map(x=>{ const no=x.pinned?`<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`:`<div class="hub-col-no">${normalNo--}</div>`; return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`; }).join('')}</div>`;
-  bindSearch(box);
+  const { page, pages, start, slice, total } = hubPaginate(list, 'board');
+  box.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${slice.map((x,i)=>{
+    const globalIndex = start + i;
+    const rowNo = hubListRowNo(list, globalIndex, x);
+    const no = x.pinned
+      ? `<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`
+      : `<div class="hub-col-no">${rowNo}</div>`;
+    return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
+  }).join('')}</div>${hubPagerHtml('board', page, pages, total)}`;
+  const pager = box.querySelector('[data-hub-pager="board"]');
+  if(pager){ pager.dataset.total = String(total); pager.dataset.pages = String(pages); }
+  bindHubPager(box, 'board', ()=>renderBoardPosts(window.__boardRows||[]));
 }
 function listenBoardPosts(){
   if(!$('boardPostList')) return;
@@ -3920,11 +4146,13 @@ function listenBoardPosts(){
   if(search && !search.dataset.boardBound){
     search.dataset.boardBound='1';
     search.addEventListener('input',()=>{
+      hubListPage.board = 1;
       if(window.__boardRows) renderBoardPosts(window.__boardRows);
     });
   }
   listenVisibleDocs('boardPosts',(rows,err)=>{
     window.__boardRows=rows||[];
+    hubListPage.board = 1;
     renderBoardPosts(window.__boardRows,err);
     if(!err && rows?.length){
       enrichRowsWithAuthorLicense(rows).then(enriched=>{
@@ -4311,7 +4539,10 @@ function renderBoardEmojiPicker(activeId){
   const picker=$('boardEmojiPicker');
   if(!picker) return;
   const group=BOARD_EMOJI_GROUPS.find(g=>g.id===activeId)||BOARD_EMOJI_GROUPS[0];
-  picker.innerHTML=`<div class="board-emoji-tabs">${BOARD_EMOJI_GROUPS.map(g=>`<button type="button" class="board-emoji-tab ${g.id===group.id?'is-active':''}" data-emoji-tab="${g.id}" aria-label="${g.id}">${g.icon}</button>`).join('')}</div><div class="board-emoji-grid">${group.items.map(e=>`<button type="button" class="board-emoji-item" data-emoji="${e}" title="${e}">${e}</button>`).join('')}</div><p class="board-emoji-hint">이모티콘을 눌러 내용에 삽입합니다.</p>`;
+  picker.dataset.activeTab = group.id;
+  picker.innerHTML=`<div class="board-emoji-tabs" role="tablist" aria-label="이모티콘 카테고리">${BOARD_EMOJI_GROUPS.map(g=>`<button type="button" class="board-emoji-tab ${g.id===group.id?'is-active':''}" role="tab" aria-selected="${g.id===group.id?'true':'false'}" data-emoji-tab="${g.id}" aria-label="${g.id}">${g.icon}</button>`).join('')}</div><div class="board-emoji-panel"><div class="board-emoji-grid" data-emoji-grid>${group.items.map(e=>`<button type="button" class="board-emoji-item" data-emoji="${e}" title="${e}">${e}</button>`).join('')}</div></div><p class="board-emoji-hint">이모티콘을 눌러 내용에 삽입합니다.</p>`;
+  const panel = picker.querySelector('.board-emoji-panel');
+  if(panel) panel.scrollTop = 0;
 }
 
 function setBoardEmojiPickerOpen(open){
@@ -4320,9 +4551,11 @@ function setBoardEmojiPickerOpen(open){
   if(!picker||!btn) return;
   picker.classList.toggle('hidden',!open);
   btn.setAttribute('aria-expanded', open?'true':'false');
-  if(open && !picker.dataset.ready){
-    renderBoardEmojiPicker('smile');
-    picker.dataset.ready='1';
+  if(open){
+    if(!picker.dataset.ready){
+      renderBoardEmojiPicker(picker.dataset.activeTab || 'smile');
+      picker.dataset.ready='1';
+    }
   }
 }
 
@@ -4336,26 +4569,32 @@ function bindBoardEmojiPicker(){
     e.stopPropagation();
     setBoardEmojiPickerOpen(picker.classList.contains('hidden'));
   });
+  // Category tabs filter only — keep picker open. stopPropagation avoids the
+  // document outside-click handler seeing a detached target after innerHTML refresh.
   picker.addEventListener('click',e=>{
+    e.stopPropagation();
     const tab=e.target.closest('[data-emoji-tab]');
     if(tab){
       e.preventDefault();
-      renderBoardEmojiPicker(tab.getAttribute('data-emoji-tab'));
+      const id=tab.getAttribute('data-emoji-tab');
+      if(id && id !== picker.dataset.activeTab) renderBoardEmojiPicker(id);
       return;
     }
     const item=e.target.closest('[data-emoji]');
     if(item){
       e.preventDefault();
       insertBoardEmoji(item.getAttribute('data-emoji')||'');
+      setBoardEmojiPickerOpen(false);
     }
   });
+  picker.addEventListener('mousedown',e=>e.stopPropagation());
   document.addEventListener('click',e=>{
     if(picker.classList.contains('hidden')) return;
     if(picker.contains(e.target)||btn.contains(e.target)) return;
     setBoardEmojiPickerOpen(false);
   });
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape') setBoardEmojiPickerOpen(false);
+    if(e.key==='Escape' && !picker.classList.contains('hidden')) setBoardEmojiPickerOpen(false);
   });
 }
 

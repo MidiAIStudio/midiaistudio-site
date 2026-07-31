@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=md-cms-2">
+  <link rel="stylesheet" href="./assets/css/style.css?v=hub-search-all-1">
   <link rel="stylesheet" href="./assets/css/markdown-cms.css?v=md-cms-2">
   <script defer src="./assets/js/analytics.js"></script>
 
@@ -67,7 +67,10 @@
         <a href="./board.html" data-hub="board">자유게시판</a><a href="./support.html" data-hub="support">문의 작성</a><a href="./my-tickets.html" data-hub="tickets">나의 문의</a>
       </nav>
       <div class="hub-card">
-        <div class="hub-toolbar"><h2>패치노트 목록</h2><input id="boardSearch" class="search-input" placeholder="검색"></div>
+        <div class="hub-toolbar">
+          <h2>패치노트 목록</h2>
+          <div class="hub-tools"><input id="boardSearch" class="search-input" placeholder="검색"></div>
+        </div>
         <div id="patchList"><p class="muted">불러오는 중...</p></div>
       </div>
     </section>

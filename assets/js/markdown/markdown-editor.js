@@ -182,7 +182,7 @@ export async function mountMarkdownEditor(host, options = {}) {
     onCancel,
     onComplete,
     onPreview,
-    placeholder = 'Markdown으로 작성하세요…',
+    placeholder = '내용을 입력하세요.',
     // Default false: reliable textarea. Toast used when explicitly enabled + healthy.
     preferToast = false
   } = options;
