@@ -48,6 +48,10 @@
           {
             "key": "Content-Type",
             "value": "text/html; charset=utf-8"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
           }
         ]
       },

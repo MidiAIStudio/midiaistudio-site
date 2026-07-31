@@ -8,7 +8,7 @@ import {
   FALLBACK_PROMO,
   discountPercent,
   formatMoney
-} from './pricing.js?v=pricing-promo-1';
+} from './pricing.js?v=sale-fix-4';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
@@ -276,10 +276,10 @@ function fillPromoForm() {
   const p = promoDraft || FALLBACK_PROMO;
   const set = (id, val) => { const el = $(id); if (el) el.value = val ?? ''; };
   const setCheck = (id, on) => { const el = $(id); if (el) el.checked = !!on; };
-  setCheck('promoEnabled', p.enabled !== false);
+  setCheck('promoEnabled', p.enabled === true);
   set('promoDiscountStartsAt', p.discountStartsAt || '');
   set('promoDiscountEndsAt', p.discountEndsAt || '');
-  setCheck('promoBadgeEnabled', p.badgeEnabled !== false);
+  setCheck('promoBadgeEnabled', p.badgeEnabled === true);
   set('promoBadgeKo', p.badgeKo || '');
   set('promoBadgeEn', p.badgeEn || '');
   set('promoBadgeJa', p.badgeJa || '');

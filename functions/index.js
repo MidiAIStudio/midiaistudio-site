@@ -76,7 +76,7 @@ const DEFAULT_PRODUCT_DOC = 'lifetime';
 function envPayPalFallback() {
   return {
     plan: cfg('PAYPAL_PLAN', 'lifetime'),
-    amount: cfg('PAYPAL_PRICE_VALUE', '65.00'),
+    amount: cfg('PAYPAL_PRICE_VALUE', '89.00'),
     currency: cfg('PAYPAL_CURRENCY', 'USD'),
     productDocId: DEFAULT_PRODUCT_DOC,
     productName: 'Lifetime License',
@@ -89,7 +89,7 @@ function envPayPalFallback() {
 function envKrFallback() {
   return {
     plan: cfg('PORTONE_PLAN', cfg('PAYPAL_PLAN', 'lifetime')),
-    amount: Number(cfg('PORTONE_KR_AMOUNT', '90000')),
+    amount: Number(cfg('PORTONE_KR_AMOUNT', '130000')),
     currency: String(cfg('PORTONE_KR_CURRENCY', 'KRW')).toUpperCase().replace(/^CURRENCY_/, ''),
     productId: cfg('PORTONE_PRODUCT_ID', 'midiai-lifetime'),
     orderName: cfg('PORTONE_ORDER_NAME', 'MidiAI Studio Lifetime License'),
@@ -117,6 +117,29 @@ function formatChargeAmount(salePrice, currency) {
  * Load product + region pricing from Firestore (Admin SDK).
  * Never trusts client-sent amounts. Falls back to env if doc missing.
  */
+function dayKey(d = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function inDateRange(start, end, now = new Date()) {
+  const k = dayKey(now);
+  if (start && k < String(start)) return false;
+  if (end && k > String(end)) return false;
+  return true;
+}
+
+async function isDiscountCampaignActiveServer() {
+  try {
+    const snap = await db.collection('pricingConfig').doc('main').get();
+    const promo = snap.exists ? (snap.data() || {}).promo : null;
+    if (!promo || promo.enabled !== true) return false;
+    return inDateRange(promo.discountStartsAt || '', promo.discountEndsAt || '');
+  } catch (e) {
+    console.warn('promo check failed', e);
+    return false;
+  }
+}
+
 async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) {
   const snap = await db.collection('products').doc(productDocId).get();
   if (!snap.exists) {
@@ -135,7 +158,12 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
   }
   const currency = String(region.currency || (regionCode === 'KR' ? 'KRW' : 'USD')).toUpperCase();
-  const salePrice = Number(region.salePrice);
+  const listPrice = Number(region.listPrice);
+  const rawSale = Number(region.salePrice);
+  const campaignOn = await isDiscountCampaignActiveServer();
+  const salePrice = campaignOn && Number.isFinite(rawSale) && rawSale > 0
+    ? rawSale
+    : (Number.isFinite(listPrice) && listPrice > 0 ? listPrice : rawSale);
   if (!Number.isFinite(salePrice) || salePrice <= 0) {
     return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
   }
@@ -148,7 +176,7 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     region: regionCode,
     pricingVersion: Number(data.pricingVersion) || 1,
     status: data.status || 'active',
-    listPrice: Number(region.listPrice) || salePrice,
+    listPrice: Number.isFinite(listPrice) && listPrice > 0 ? listPrice : salePrice,
     payment: region.payment || (regionCode === 'KR' ? 'portone' : 'paypal'),
     orderName,
     currency
@@ -274,8 +302,8 @@ function isLicenseCurrentlyActive(data) {
 function isActiveLifetimeLicense(data) {
   if (!isLicenseCurrentlyActive(data)) return false;
   if (String(data.plan || '').toLowerCase() !== 'lifetime') return false;
-  // Timed "lifetime" grants with expiresAt are not purchase blockers once expired
-  // (already handled by isLicenseCurrentlyActive). While valid with expiresAt, still block repurchase.
+  // Lifetime means unlimited — timed grants must not count as lifetime
+  if (licenseTsMs(data.expiresAt)) return false;
   return true;
 }
 
@@ -1196,13 +1224,17 @@ exports.expireTimedLicenses = onSchedule({
     if (snap.empty) break;
     const batch = db.batch();
     snap.docs.forEach((docSnap) => {
-      batch.set(docSnap.ref, {
+      const prevPlan = String(docSnap.data()?.plan || '').toLowerCase();
+      const patch = {
         licensed: false,
         status: 'expired',
         expiredAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         expireReason: 'auto_expiresAt'
-      }, { merge: true });
+      };
+      // Timed grants mistakenly stored as lifetime → normalize to period
+      if (prevPlan === 'lifetime') patch.plan = 'period';
+      batch.set(docSnap.ref, patch, { merge: true });
     });
     await batch.commit();
     expired += snap.size;

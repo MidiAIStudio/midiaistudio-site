@@ -20,7 +20,7 @@ const FALLBACK_PRODUCT = {
       payment: 'portone',
       currency: 'KRW',
       listPrice: 130000,
-      salePrice: 90000,
+      salePrice: 130000,
       orderName: 'MidiAI Studio Lifetime License',
       portoneProductId: 'midiai-lifetime'
     },
@@ -28,7 +28,7 @@ const FALLBACK_PRODUCT = {
       payment: 'paypal',
       currency: 'USD',
       listPrice: 89,
-      salePrice: 65,
+      salePrice: 89,
       orderName: 'MidiAI Studio Lifetime License'
     }
   }
@@ -38,16 +38,16 @@ const FALLBACK_LANG_MAP = { ko: 'KR', en: 'Global', ja: 'Global' };
 
 /** Site-wide discount campaign + popup (pricingConfig/main.promo) */
 const FALLBACK_PROMO = {
-  enabled: true,
-  discountStartsAt: '2026-07-01',
-  discountEndsAt: '2026-07-31',
-  badgeEnabled: true,
+  enabled: false,
+  discountStartsAt: '',
+  discountEndsAt: '',
+  badgeEnabled: false,
   badgeKo: '7월 31일까지',
   badgeEn: 'Until July 31',
   badgeJa: '7月31日まで',
-  popupEnabled: true,
-  popupStartsAt: '2026-07-01',
-  popupEndsAt: '2026-07-31',
+  popupEnabled: false,
+  popupStartsAt: '',
+  popupEndsAt: '',
   popupTitleKo: 'Lifetime 라이선스 할인',
   popupTitleEn: 'Lifetime License Discount',
   popupTitleJa: 'Lifetimeライセンス割引',
@@ -127,9 +127,10 @@ function inDateRange(start, end, now = new Date()) {
 
 function normalizePromo(raw) {
   const p = { ...FALLBACK_PROMO, ...(raw && typeof raw === 'object' ? raw : {}) };
-  p.enabled = p.enabled !== false;
-  p.badgeEnabled = p.badgeEnabled !== false;
-  p.popupEnabled = !!p.popupEnabled;
+  // Explicit booleans only — missing/null must not default to "on"
+  p.enabled = p.enabled === true;
+  p.badgeEnabled = p.badgeEnabled === true;
+  p.popupEnabled = p.popupEnabled === true;
   return p;
 }
 
@@ -192,8 +193,10 @@ export function checkoutContext(lang, preferKoreanPath = false) {
   const product = getDefaultProduct();
   const rp = getRegionPricing(product, region);
   const list = Number(rp.listPrice);
-  const sale = Number(rp.salePrice);
+  const rawSale = Number(rp.salePrice);
   const discountOn = isDiscountCampaignActive();
+  // Campaign off: sell at listPrice so leftover promo salePrice does not linger
+  const sale = discountOn && Number.isFinite(rawSale) ? rawSale : (Number.isFinite(list) && list > 0 ? list : rawSale);
   return {
     product,
     region,
@@ -203,7 +206,7 @@ export function checkoutContext(lang, preferKoreanPath = false) {
     salePrice: sale,
     displaySale: formatMoney(sale, rp.currency, lang),
     displayList: formatMoney(list, rp.currency, lang),
-    discount: discountPercent(list, sale),
+    discount: discountOn ? discountPercent(list, rawSale) : 0,
     discountCampaignActive: discountOn,
     saleUntil: promoBadgeText(lang),
     orderName: rp.orderName || product.name || 'MidiAI Studio Lifetime License',
