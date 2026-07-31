@@ -1963,6 +1963,8 @@ body.guide-cms-editing [contenteditable=true]:focus{outline-color:#22d3ee;backgr
 body.vcms-editing .vcms-text-slot [contenteditable=true],body.vcms-editing .vcms-feature-row [contenteditable=true]{outline:1px dashed rgba(34,211,238,.4);outline-offset:2px;border-radius:4px;min-width:2ch}
 body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing .vcms-feature-row [contenteditable=true]:focus{outline-color:#22d3ee;background:rgba(34,211,238,.06)}
 .product-cms-bar{position:sticky;top:8px;z-index:20}
+.guide-template-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px auto 24px}
+.guide-sections{display:grid;gap:0}
 
 /* Admin pricing CMS */
 .admin-nav-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;padding:0 0 12px;border-bottom:1px solid var(--site-stroke)}

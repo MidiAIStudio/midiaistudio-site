@@ -7,7 +7,8 @@ import {
   FALLBACK_LANG_MAP,
   discountPercent,
   formatMoney
-} from './pricing.js?v=pricing-cms-1';
+} from './pricing.js?v=pricing-cms-2';
+import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -20,43 +21,66 @@ let products = [];
 let langMap = { ...FALLBACK_LANG_MAP };
 let selectedId = null;
 let draft = null;
+let booted = false;
+let loading = false;
 
 function $(id) { return document.getElementById(id); }
 
-let booted = false;
-
-export function initPricingAdmin(api) {
-  db = api.db;
-  fs = api.firestoreApi;
-  isAdmin = !!api.isAdmin;
-  if (!booted) {
-    bindTabs();
-    bindEditor();
-    booted = true;
-  }
-  if (isAdmin) loadAll().catch(console.error);
+function setListStatus(html) {
+  const root = $('pricingProductList');
+  if (root) root.innerHTML = html;
 }
 
-// Tabs work even before auth resolves
-if ((location.pathname.split('/').pop() || '') === 'admin.html') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => { bindTabs(); bindEditor(); booted = true; });
-  } else {
-    bindTabs();
-    bindEditor();
-    booted = true;
-  }
+export function initPricingAdmin(api = {}) {
+  if (api.db) db = api.db;
+  if (api.firestoreApi) fs = api.firestoreApi;
+  if (api.isAdmin != null) isAdmin = !!api.isAdmin;
+  ensureBoot();
+  if (isAdmin && db && fs) loadAll().catch((e) => console.error(e));
+  else bootstrapSelf();
 }
 
 export function setPricingAdminAuth({ isAdmin: admin, db: nextDb, firestoreApi }) {
   isAdmin = !!admin;
   if (nextDb) db = nextDb;
   if (firestoreApi) fs = firestoreApi;
-  if (isAdmin && db) loadAll().catch(console.error);
+  ensureBoot();
+  if (isAdmin && db) loadAll().catch((e) => console.error(e));
+}
+
+async function bootstrapSelf() {
+  if ((location.pathname.split('/').pop() || '') !== 'admin.html') return;
+  ensureBoot();
+  setListStatus('<p class="muted">권한·Firestore 연결 중…</p>');
+  try {
+    const fb = await getFirebase();
+    db = fb.db;
+    fs = fb.fs;
+    const { isAdmin: admin } = await waitForAdmin();
+    isAdmin = admin;
+    if (!isAdmin) {
+      setListStatus('<p class="muted">관리자 계정으로 로그인한 뒤 다시 열어주세요.</p>');
+      return;
+    }
+    await loadAll();
+  } catch (e) {
+    console.error('pricing-admin bootstrap', e);
+    setListStatus(`<p class="muted">초기화 실패: ${esc(e.message || e)}<br><button type="button" class="secondary mini-btn" id="pricingRetryBtn">다시 시도</button></p>`);
+    $('pricingRetryBtn')?.addEventListener('click', () => bootstrapSelf());
+  }
+}
+
+function ensureBoot() {
+  if (booted) return;
+  bindTabs();
+  bindEditor();
+  booted = true;
 }
 
 function bindTabs() {
   document.querySelectorAll('[data-admin-tab]').forEach((btn) => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
     btn.addEventListener('click', () => {
       const tab = btn.getAttribute('data-admin-tab');
       document.querySelectorAll('[data-admin-tab]').forEach((b) => b.classList.toggle('active', b === btn));
@@ -66,9 +90,11 @@ function bindTabs() {
       if (crm) crm.hidden = tab !== 'crm';
       if (pricing) pricing.hidden = tab !== 'pricing';
       if (tickets) tickets.hidden = tab !== 'tickets' && tab !== 'crm';
-      // CRM tab shows tickets below as before
       if (tab === 'crm' && tickets) tickets.hidden = false;
-      if (tab === 'pricing' && tickets) tickets.hidden = true;
+      if (tab === 'pricing') {
+        if (tickets) tickets.hidden = true;
+        if (!products.length) loadAll().catch(console.error);
+      }
       if (tab === 'tickets') {
         if (crm) crm.hidden = true;
         if (pricing) pricing.hidden = true;
@@ -80,16 +106,22 @@ function bindTabs() {
 }
 
 function bindEditor() {
-  $('pricingAddProduct')?.addEventListener('click', () => addProduct());
-  $('pricingSaveBtn')?.addEventListener('click', () => saveDraft().catch((e) => alert(e.message || e)));
-  $('pricingAddRegion')?.addEventListener('click', () => addRegionRow());
-  $('pricingSaveLangMap')?.addEventListener('click', () => saveLangMap().catch((e) => alert(e.message || e)));
+  const bindOnce = (id, fn) => {
+    const el = $(id);
+    if (!el || el.dataset.bound === '1') return;
+    el.dataset.bound = '1';
+    el.addEventListener('click', fn);
+  };
+  bindOnce('pricingAddProduct', () => addProduct().catch((e) => alert(e.message || e)));
+  bindOnce('pricingSaveBtn', () => saveDraft().catch((e) => alert(e.message || e)));
+  bindOnce('pricingAddRegion', () => addRegionRow());
+  bindOnce('pricingSaveLangMap', () => saveLangMap().catch((e) => alert(e.message || e)));
 }
 
 async function ensureSeed() {
   const { collection, getDocs, doc, setDoc, serverTimestamp } = fs;
   const snap = await getDocs(collection(db, 'products'));
-  if (!snap.empty) return;
+  if (!snap.empty) return false;
   const payload = {
     name: FALLBACK_PRODUCT.name,
     status: 'active',
@@ -109,30 +141,102 @@ async function ensureSeed() {
     langRegionMap: FALLBACK_LANG_MAP,
     updatedAt: serverTimestamp()
   }, { merge: true });
+  return true;
 }
 
 async function loadAll() {
-  if (!db || !fs || !isAdmin) return;
-  await ensureSeed();
-  const { collection, getDocs, doc, getDoc } = fs;
-  const snap = await getDocs(collection(db, 'products'));
-  products = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
-  const cfg = await getDoc(doc(db, 'pricingConfig', 'main'));
-  if (cfg.exists()) {
-    const data = cfg.data() || {};
-    langMap = { ...FALLBACK_LANG_MAP, ...(data.langRegionMap || {}) };
+  if (loading) return;
+  if (!db || !fs) {
+    setListStatus('<p class="muted">Firestore 연결 대기 중…</p>');
+    return;
   }
-  renderList();
-  renderLangMap();
-  if (!selectedId && products[0]) selectProduct(products[0].id);
-  else if (selectedId) selectProduct(selectedId);
+  if (!isAdmin) {
+    setListStatus('<p class="muted">관리자 권한이 필요합니다.</p>');
+    return;
+  }
+
+  loading = true;
+  setListStatus('<p class="muted">불러오는 중…</p>');
+  try {
+    try {
+      await ensureSeed();
+    } catch (seedErr) {
+      console.warn('pricing seed', seedErr);
+      // continue — maybe docs already exist or rules block write only
+    }
+
+    const { collection, getDocs, doc, getDoc } = fs;
+    const snap = await getDocs(collection(db, 'products'));
+    products = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    try {
+      const cfg = await getDoc(doc(db, 'pricingConfig', 'main'));
+      if (cfg.exists()) {
+        const data = cfg.data() || {};
+        langMap = { ...FALLBACK_LANG_MAP, ...(data.langRegionMap || {}) };
+      }
+    } catch (cfgErr) {
+      console.warn('pricingConfig', cfgErr);
+    }
+
+    if (!products.length) {
+      // Seed failed (likely rules) — show local fallback so admin can still edit after deploy
+      products = [{ id: DEFAULT_PRODUCT_ID, ...FALLBACK_PRODUCT }];
+      setListStatus(`
+        <p class="muted" style="margin-bottom:8px">Firestore에 상품이 없습니다. 규칙 미배포 시 쓰기가 거부될 수 있습니다.</p>
+        <p class="muted mono small" style="margin-bottom:8px">firebase deploy --only firestore:rules</p>
+      `);
+      // still render fallback item below
+      const root = $('pricingProductList');
+      if (root) {
+        root.insertAdjacentHTML('beforeend', products.map((p) => {
+          const kr = p.regions?.KR;
+          const gl = p.regions?.Global;
+          return `<button type="button" class="pricing-product-item is-active" data-product-id="${esc(p.id)}">
+            <strong>${esc(p.name || p.id)}</strong>
+            <span class="muted">로컬 시드(미저장)</span>
+            <span class="mono small">${kr ? `KRW ${Number(kr.salePrice).toLocaleString('ko-KR')}` : '-'} · ${gl ? `USD ${gl.salePrice}` : '-'}</span>
+          </button>`;
+        }).join(''));
+        root.querySelectorAll('[data-product-id]').forEach((btn) => {
+          btn.addEventListener('click', () => selectProduct(btn.getAttribute('data-product-id')));
+        });
+      }
+      selectedId = DEFAULT_PRODUCT_ID;
+      draft = JSON.parse(JSON.stringify(products[0]));
+      renderLangMap();
+      renderEditor();
+      return;
+    }
+
+    renderList();
+    renderLangMap();
+    if (!selectedId && products[0]) selectProduct(products[0].id);
+    else if (selectedId) selectProduct(selectedId);
+  } catch (e) {
+    console.error('pricing loadAll', e);
+    const code = e.code || '';
+    const hint = /permission|insufficient/i.test(String(code) + String(e.message || ''))
+      ? '<br>Firestore 규칙에 <code>products</code> 읽기/관리자 쓰기를 배포했는지 확인하세요.<br><code>firebase deploy --only firestore:rules</code>'
+      : '';
+    setListStatus(`
+      <p class="muted">불러오기 실패: ${esc(e.message || e)}${hint}</p>
+      <button type="button" class="secondary mini-btn" id="pricingRetryBtn">다시 시도</button>
+    `);
+    $('pricingRetryBtn')?.addEventListener('click', () => {
+      loading = false;
+      loadAll().catch(console.error);
+    });
+  } finally {
+    loading = false;
+  }
 }
 
 function renderList() {
   const root = $('pricingProductList');
   if (!root) return;
   if (!products.length) {
-    root.innerHTML = '<p class="muted">상품이 없습니다.</p>';
+    root.innerHTML = '<p class="muted">상품이 없습니다. [상품 추가]를 눌러주세요.</p>';
     return;
   }
   root.innerHTML = products.map((p) => {
@@ -274,20 +378,6 @@ function wireDraftInputs() {
   $('pfStatus')?.addEventListener('change', (e) => { draft.status = e.target.value; });
 }
 
-function collectDraftFromForm() {
-  if (!draft) return;
-  draft.name = $('pfName')?.value?.trim() || draft.name;
-  draft.status = $('pfStatus')?.value || draft.status;
-  draft.badge = $('pfBadge')?.value || '';
-  draft.promoText = $('pfPromo')?.value || '';
-  draft.buttonText = $('pfButton')?.value || '';
-  draft.plan = $('pfPlan')?.value || 'lifetime';
-  draft.order = Number($('pfOrder')?.value || 0);
-  document.querySelectorAll('#pricingRegionRows .pricing-region-card').forEach((wrap) => {
-    collectRegion(wrap.dataset.region, wrap);
-  });
-}
-
 function addRegionRow() {
   if (!draft) return;
   const code = prompt('Region 코드 (예: JP, EU, US)', 'JP');
@@ -314,6 +404,7 @@ function addRegionRow() {
 }
 
 async function addProduct() {
+  if (!isAdmin || !db || !fs) throw new Error('관리자 권한이 없거나 Firestore가 준비되지 않았습니다.');
   const id = prompt('새 상품 ID (영문-케밥)', 'pro-plan');
   if (!id || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {
     alert('상품 ID 형식이 올바르지 않습니다.');
@@ -346,7 +437,8 @@ async function addProduct() {
 }
 
 async function saveDraft() {
-  if (!draft || !isAdmin) return;
+  if (!draft || !isAdmin) throw new Error('저장할 상품이 없거나 권한이 없습니다.');
+  if (!db || !fs) throw new Error('Firestore가 준비되지 않았습니다.');
   collectDraftFromForm();
   if (!draft.regions || !Object.keys(draft.regions).length) {
     alert('판매 영역이 하나 이상 필요합니다.');
@@ -368,7 +460,7 @@ async function saveDraft() {
     order: Number(draft.order) || 0,
     plan: draft.plan || 'lifetime',
     regions: draft.regions,
-    pricingVersion: increment(1),
+    pricingVersion: typeof increment === 'function' ? increment(1) : (Number(draft.pricingVersion) || 0) + 1,
     updatedAt: serverTimestamp()
   };
   await setDoc(doc(db, 'products', draft.id), payload, { merge: true });
@@ -381,7 +473,22 @@ async function saveDraft() {
   await loadAll();
 }
 
+function collectDraftFromForm() {
+  if (!draft) return;
+  draft.name = $('pfName')?.value?.trim() || draft.name;
+  draft.status = $('pfStatus')?.value || draft.status;
+  draft.badge = $('pfBadge')?.value || '';
+  draft.promoText = $('pfPromo')?.value || '';
+  draft.buttonText = $('pfButton')?.value || '';
+  draft.plan = $('pfPlan')?.value || 'lifetime';
+  draft.order = Number($('pfOrder')?.value || 0);
+  document.querySelectorAll('#pricingRegionRows .pricing-region-card').forEach((wrap) => {
+    collectRegion(wrap.dataset.region, wrap);
+  });
+}
+
 async function saveLangMap() {
+  if (!isAdmin || !db || !fs) throw new Error('권한이 없거나 Firestore가 준비되지 않았습니다.');
   langMap = {
     ko: $('pricingLangKo')?.value?.trim() || 'KR',
     en: $('pricingLangEn')?.value?.trim() || 'Global',
@@ -394,4 +501,13 @@ async function saveLangMap() {
     updatedAt: serverTimestamp()
   }, { merge: true });
   alert('언어 → Region 매핑이 저장되었습니다.');
+}
+
+// Auto-start on admin page (does not rely only on app.js dynamic import)
+if ((location.pathname.split('/').pop() || '') === 'admin.html') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => bootstrapSelf());
+  } else {
+    bootstrapSelf();
+  }
 }
