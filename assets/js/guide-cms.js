@@ -243,12 +243,19 @@ async function loadGuideBySlug(slug) {
   const { collection, query, where, getDocs, doc, getDoc } = fs;
   try {
     const byId = await getDoc(doc(db, COLLECTION, slug));
-    if (byId.exists()) return { id: byId.id, ...byId.data() };
+    if (byId.exists()) {
+      const data = { id: byId.id, ...byId.data() };
+      if (!isAdmin && data.published === false) return null;
+      return data;
+    }
   } catch (e) {
     console.warn('guide getById', e);
   }
   try {
-    const q = query(collection(db, COLLECTION), where('slug', '==', slug));
+    // Guests must constrain published for list rules; admins may search all.
+    const q = isAdmin
+      ? query(collection(db, COLLECTION), where('slug', '==', slug))
+      : query(collection(db, COLLECTION), where('slug', '==', slug), where('published', '==', true));
     const snap = await getDocs(q);
     if (snap.empty) return null;
     const d = snap.docs[0];

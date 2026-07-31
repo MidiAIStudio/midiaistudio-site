@@ -187,16 +187,23 @@
 .md-task-item{list-style:none;margin-left:-1.1em}
 .md-task-check{margin-right:.45em;accent-color:#22d3ee}
 
-/* Editor shell */
+/* Editor shell — never collapse editing surface */
 .md-editor-shell{
-  display:flex;flex-direction:column;gap:10px;
+  display:flex;flex-direction:column;gap:0;
   min-height:320px;
   border:1px solid rgba(255,255,255,.14);
   border-radius:18px;
-  background:rgba(8,10,24,.72);
+  background:rgba(8,10,24,.92);
   overflow:hidden;
+  position:relative;
+  z-index:1;
 }
-.md-editor-host{flex:1;min-height:280px}
+.md-editor-host{
+  flex:1 1 auto;
+  min-height:280px;
+  position:relative;
+  z-index:1;
+}
 .md-editor-host .toastui-editor-defaultUI{
   border:0 !important;
   background:transparent !important;
@@ -212,39 +219,72 @@
 .md-editor-host .toastui-editor-md-code,
 .md-editor-host .CodeMirror{
   color:#eef0ff !important;
-  background:transparent !important;
+  background:rgba(0,0,0,.15) !important;
   font-size:15px !important;
   line-height:1.65 !important;
+  min-height:240px !important;
 }
-/* Hide live split preview — on-demand preview modal only */
-.md-editor-shell.md-no-split .toastui-editor-md-splitter,
-.md-editor-shell.md-no-split .toastui-editor-md-preview,
-.md-editor-shell.md-no-split .toastui-editor-mode-switch,
-.md-editor-shell.md-no-split .toastui-editor-md-preview-wrapper{display:none !important;width:0 !important}
-.md-editor-shell.md-no-split .toastui-editor-md-container .CodeMirror,
-.md-editor-shell.md-no-split .toastui-editor .toastui-editor-md-container{width:100% !important}
+.md-editor-host .CodeMirror-scroll{min-height:240px !important}
+/* Hide Toast Write/Preview tab only — do NOT zero-width the editor pane */
+.md-editor-shell.md-hide-toast-preview-tab .toastui-editor-md-tab-container,
+.md-editor-shell.md-hide-toast-preview-tab .toastui-editor-mode-switch{display:none !important}
+.md-editor-shell.md-hide-toast-preview-tab .toastui-editor-md-preview{
+  display:none !important;
+}
+.md-editor-shell.md-hide-toast-preview-tab .toastui-editor-md-container{
+  display:block !important;
+  width:100% !important;
+}
+.md-editor-shell.md-hide-toast-preview-tab .toastui-editor-md-container .CodeMirror{
+  width:100% !important;
+  display:block !important;
+}
 .md-editor-fallback{
-  width:100%;min-height:280px;resize:vertical;
-  background:transparent;border:0;color:#eef0ff;
-  padding:16px;font:inherit;line-height:1.65;outline:none;
+  display:block;
+  width:100%;
+  min-height:280px;
+  resize:vertical;
+  background:rgba(0,0,0,.2);
+  border:0;
+  color:#eef0ff;
+  padding:16px;
+  font:inherit;
+  line-height:1.65;
+  outline:none;
+  caret-color:#67e8f9;
+  pointer-events:auto;
+  position:relative;
+  z-index:2;
 }
+.md-editor-toolbar-basic,
 .md-editor-toolbar-extra{
   display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;
   border-bottom:1px solid rgba(255,255,255,.1);
   background:rgba(255,255,255,.03);
+  flex-shrink:0;
 }
+.md-editor-toolbar-basic button,
 .md-editor-toolbar-extra button{
   appearance:none;border:1px solid rgba(255,255,255,.12);
   background:rgba(255,255,255,.05);color:#d5d9ef;
   border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;
 }
-.md-editor-toolbar-extra button:hover{background:rgba(34,211,238,.14);border-color:rgba(34,211,238,.35);color:#fff}
+.md-editor-toolbar-basic button:hover,
+.md-editor-toolbar-extra button:hover{
+  background:rgba(34,211,238,.14);border-color:rgba(34,211,238,.35);color:#fff;
+}
 .md-editor-actions{
   display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;
   padding:10px 12px;border-top:1px solid rgba(255,255,255,.1);
   background:rgba(0,0,0,.18);
+  flex-shrink:0;
 }
-.md-editor-status{font-size:12px;color:#a9aec8;padding:0 12px 10px}
+.md-editor-status{font-size:12px;color:#a9aec8;padding:6px 12px 10px;flex-shrink:0}
+.edit-modal.md-edit-modal{overflow:hidden;display:flex;flex-direction:column;max-height:min(92vh,900px)}
+.edit-modal.md-edit-modal .edit-modal-body{overflow:auto;min-height:0;flex:1}
+.edit-field-markdown{min-width:0}
+.board-md-editor,.board-compose-box .md-editor-shell{min-height:360px}
+.board-compose-box{position:relative;z-index:1}
 
 /* Modal */
 .md-modal-backdrop{

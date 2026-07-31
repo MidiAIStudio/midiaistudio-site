@@ -1,5 +1,5 @@
 window.MIDIAI_CONFIG = {
-  buildTag: "v120-md-cms-1",
+  buildTag: "v121-md-cms-2",
   seo: {
     // Paste Google Search Console HTML tag verification code value here
     googleSiteVerification: "",

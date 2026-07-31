@@ -55,22 +55,18 @@ service cloud.firestore {
     }
 
     // Product usage Guide CMS (Visual CMS on /guide/)
+    // Public may read published docs (missing published => treated as published).
+    // List queries for guests must include where('published','==',true).
     match /guides/{guideId} {
-      allow get: if isAdmin()
-        || resource == null
-        || resource.data.published == true;
-      allow list: if isAdmin()
-        || resource.data.published == true;
+      allow read: if isAdmin()
+        || resource.data.get('published', true) == true;
       allow create, update, delete: if isAdmin();
     }
 
     // Product page Visual CMS
     match /productSections/{sectionId} {
-      allow get: if isAdmin()
-        || resource == null
-        || resource.data.published == true;
-      allow list: if isAdmin()
-        || resource.data.published == true;
+      allow read: if isAdmin()
+        || resource.data.get('published', true) == true;
       allow create, update, delete: if isAdmin();
     }
 

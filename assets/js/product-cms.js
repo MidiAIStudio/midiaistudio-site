@@ -163,9 +163,22 @@ async function ensureSeed() {
 
 async function loadSections() {
   const { db, fs } = await getFirebase();
-  const { collection, getDocs } = fs;
-  const snap = await getDocs(collection(db, COLLECTION));
-  const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const { collection, getDocs, query, where } = fs;
+  let snap;
+  if (isAdmin) {
+    snap = await getDocs(collection(db, COLLECTION));
+  } else {
+    try {
+      snap = await getDocs(query(collection(db, COLLECTION), where('published', '==', true)));
+    } catch (e) {
+      // Older rules or missing index: fall back to full read only if rules allow.
+      console.warn('productSections published query failed', e);
+      snap = await getDocs(collection(db, COLLECTION));
+    }
+  }
+  const rows = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((s) => isAdmin || s.published !== false);
   rows.sort((a, b) => (a.order || 0) - (b.order || 0));
   return rows;
 }

@@ -12,7 +12,8 @@ import {
   bindMarkdownInteractions,
   mountMarkdownEditor,
   openMarkdownPreview,
-  ensureMarkdownCss
+  ensureMarkdownCss,
+  pickMarkdownSource
 } from './markdown/index.js';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
@@ -516,8 +517,7 @@ function isMarkdownContent(srcOrDoc){
 }
 function mdBodyHtml(src, className=''){
   ensureMarkdownCss();
-  const html = renderMarkdown(src || '');
-  // renderMarkdown already wraps .md-prose; unwrap outer if we need class on parent
+  const html = renderMarkdown(pickMarkdownSource(src) || '');
   return className ? html.replace('class="md-prose"', `class="md-prose ${className}"`) : html;
 }
 function bindMdIn(root){
@@ -1198,7 +1198,7 @@ async function createHubAdminPost(kind){
         {name:'pinned', label:'상단 고정', type:'checkbox', value:false}
       ]);
       if(!data) return;
-      const id = await adminAdd('announcements',{title:data.title, content:data.content, contentFormat:'markdown', pinned:!!data.pinned, viewCount:0, email:currentUser?.email||''});
+      const id = await adminAdd('announcements',{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', pinned:!!data.pinned, viewCount:0, email:currentUser?.email||''});
       if(id) location.href = `./notice.html?id=${encodeURIComponent(id)}`;
       return;
     }
@@ -1209,7 +1209,7 @@ async function createHubAdminPost(kind){
         {name:'content', label:'내용', type:'markdown', value:'', required:true, draftKey:'hub:patchNotes:new'}
       ]);
       if(!data) return;
-      const id = await adminAdd('patchNotes',{version:data.version, title:data.title, content:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||''});
+      const id = await adminAdd('patchNotes',{version:data.version, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||''});
       if(id) location.href = `./patch-note.html?id=${encodeURIComponent(id)}`;
       return;
     }
@@ -1220,7 +1220,7 @@ async function createHubAdminPost(kind){
         {name:'order', label:'순서', type:'number', value:1}
       ]);
       if(!data) return;
-      await adminAdd('faq',{question:data.question, answer:data.answer, contentFormat:'markdown', order:Number(data.order||1)});
+      await adminAdd('faq',{question:data.question, answer:data.answer, contentMarkdown:data.answer, contentFormat:'markdown', order:Number(data.order||1)});
       adminFlash(tr('saved'));
       return;
     }
@@ -2205,7 +2205,10 @@ function openEditModal(title, fields){
       : `<button type="button" class="secondary" data-cancel>취소</button><button type="submit" class="primary">저장</button>`;
     form.innerHTML = `<div class="edit-modal-head"><h3>${esc(title)}</h3><button type="button" class="edit-modal-x" aria-label="close">×</button></div><div class="edit-modal-body"></div><div class="edit-modal-actions">${actionHtml}</div>`;
     const body = form.querySelector('.edit-modal-body');
+    const mdHosts = {};
     const mdEditors = {};
+
+    // Build DOM first (including markdown hosts) — mount editors only after visible
     for (const f of fields) {
       const row = document.createElement(f.type === 'markdown' ? 'div' : 'label');
       row.className = 'edit-field' + (f.type === 'markdown' ? ' edit-field-markdown' : '');
@@ -2214,16 +2217,10 @@ function openEditModal(title, fields){
       if (f.type === 'markdown') {
         const host = document.createElement('div');
         host.dataset.mdField = f.name;
+        host.className = 'md-modal-editor-host';
         row.appendChild(host);
         body.appendChild(row);
-        const uid = currentUser?.uid || 'anon';
-        mdEditors[f.name] = await mountMarkdownEditor(host, {
-          value: f.value || '',
-          height: '360px',
-          draftKey: f.draftKey || `modal:${f.name}`,
-          storagePrefix: `cms-md/${uid}/hub`,
-          showActions: false
-        });
+        mdHosts[f.name] = { host, field: f };
         continue;
       } else if (f.type === 'textarea') {
         input = document.createElement('textarea');
@@ -2253,8 +2250,37 @@ function openEditModal(title, fields){
       row.appendChild(input);
       body.appendChild(row);
     }
+
+    overlay.appendChild(form);
+    document.body.appendChild(overlay);
+
+    // Wait until modal is painted, then mount editors
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    const uid = currentUser?.uid || 'anon';
+    for (const name of Object.keys(mdHosts)) {
+      const { host, field } = mdHosts[name];
+      try {
+        if (host._mdApi) host._mdApi.destroy();
+        mdEditors[name] = await mountMarkdownEditor(host, {
+          value: pickMarkdownSource(field.value),
+          height: 380,
+          draftKey: field.draftKey || `modal:${name}`,
+          storagePrefix: `cms-md/${uid}/hub`,
+          showActions: false,
+          preferToast: false
+        });
+        mdEditors[name].setMarkdown(pickMarkdownSource(field.value));
+        mdEditors[name].refreshLayout();
+      } catch (e) {
+        console.error('markdown mount failed', e);
+        alert('본문 편집기를 열 수 없습니다: ' + (e.message || e));
+      }
+    }
+
     const close = (value) => {
       Object.values(mdEditors).forEach(ed => { try { ed.destroy(); } catch (_) {} });
+      Object.keys(mdEditors).forEach(k => { delete mdEditors[k]; });
       overlay._cleanup && overlay._cleanup();
       overlay.remove();
       resolve(value);
@@ -2263,7 +2289,9 @@ function openEditModal(title, fields){
       const data = {};
       fields.forEach(f => {
         if (f.type === 'markdown') {
-          data[f.name] = String(mdEditors[f.name]?.getValue() || '').trim();
+          const ed = mdEditors[f.name];
+          data[f.name] = String(ed?.getMarkdown?.() || ed?.getValue?.() || '').trim();
+          data.contentMarkdown = data[f.name];
           return;
         }
         const input = form.elements[f.name];
@@ -2276,28 +2304,40 @@ function openEditModal(title, fields){
     };
     form.addEventListener('submit', e => {
       e.preventDefault();
-      const data = collect();
-      if (hasMarkdown) {
-        const mdField = fields.find(f => f.type === 'markdown' && f.required);
-        if (mdField && !data[mdField.name]) { alert('내용을 입력하세요.'); return; }
+      try {
+        const data = collect();
+        if (hasMarkdown) {
+          const mdField = fields.find(f => f.type === 'markdown' && f.required);
+          if (mdField && !data[mdField.name]) { alert('내용을 입력하세요.'); return; }
+          if (mdField && !mdEditors[mdField.name]) { alert('편집기가 준비되지 않았습니다.'); return; }
+        }
+        close(data);
+      } catch (err) {
+        console.error(err);
+        alert(err.message || String(err));
       }
-      close(data);
     });
     form.querySelector('[data-cancel]').addEventListener('click', () => close(null));
     form.querySelector('.edit-modal-x').addEventListener('click', () => close(null));
     form.querySelector('[data-preview]')?.addEventListener('click', async () => {
       const mdField = fields.find(f => f.type === 'markdown');
-      const md = mdField ? (mdEditors[mdField.name]?.getValue() || '') : '';
+      const ed = mdField ? mdEditors[mdField.name] : null;
+      const md = ed ? (ed.getMarkdown?.() || ed.getValue?.() || '') : '';
       await openMarkdownPreview({ markdown: md, title: '미리보기' });
+      ed?.refreshLayout?.();
+      ed?.focus?.();
     });
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
-    overlay.appendChild(form);
-    document.body.appendChild(overlay);
     modalEscapeClose(overlay, close);
-    const first = form.querySelector('input,textarea,select');
+    const first = form.querySelector('input:not([type=checkbox]),textarea,select');
     if (first) setTimeout(() => first.focus(), 40);
+    else {
+      const firstMd = Object.values(mdEditors)[0];
+      setTimeout(() => { firstMd?.refreshLayout?.(); firstMd?.focus?.(); }, 80);
+    }
   });
 }
+
 
 async function editTicket(ticketId){
   if(!currentUser)return;
@@ -2439,32 +2479,35 @@ async function editAdminPost(raw){
     if(collectionName==='announcements'){
       data = await openEditModal('공지 수정', [
         {name:'title', label:'제목', value:d.title||'', required:true},
-        {name:'content', label:'내용', type:'markdown', rows:9, value:d.content||'', required:true, draftKey:`hub:announcements:${id}`},
+        {name:'content', label:'내용', type:'markdown', value:pickMarkdownSource(d), required:true, draftKey:`hub:announcements:${id}`},
         {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false},
         {name:'pinned', label:'상단 고정', type:'checkbox', value:!!d.pinned}
       ]);
       if(!data)return;
       data.contentFormat='markdown';
+      data.contentMarkdown=data.content;
       data.updatedAt=serverTimestamp();
     } else if(collectionName==='patchNotes'){
       data = await openEditModal('패치노트 수정', [
         {name:'version', label:'버전', value:d.version||'', required:true},
         {name:'title', label:'제목', value:d.title||'', required:true},
-        {name:'content', label:'내용', type:'markdown', rows:9, value:d.content||'', required:true, draftKey:`hub:patchNotes:${id}`},
+        {name:'content', label:'내용', type:'markdown', value:pickMarkdownSource(d), required:true, draftKey:`hub:patchNotes:${id}`},
         {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
       ]);
       if(!data)return;
       data.contentFormat='markdown';
+      data.contentMarkdown=data.content;
       data.updatedAt=serverTimestamp();
     } else if(collectionName==='faq'){
       data = await openEditModal('FAQ 수정', [
         {name:'question', label:'질문', value:d.question||'', required:true},
-        {name:'answer', label:'답변', type:'markdown', rows:8, value:d.answer||'', required:true, draftKey:`hub:faq:${id}`},
+        {name:'answer', label:'답변', type:'markdown', value:pickMarkdownSource(d), required:true, draftKey:`hub:faq:${id}`},
         {name:'order', label:'순서', type:'number', value:d.order||1},
         {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
       ]);
       if(!data)return;
       data.contentFormat='markdown';
+      data.contentMarkdown=data.answer;
       data.order=Number(data.order||1);
       data.updatedAt=serverTimestamp();
     }
@@ -3988,28 +4031,24 @@ function bindBoardEmojiPicker(){
 async function initBoardPostEditor(){
   const form=$('boardPostForm'); if(!form) return;
   updateBoardPinnedUi();
-  if(!form._mdEditor){
-    const host=$('boardPostEditor')||$('boardPostContent');
-    if(host){
-      ensureMarkdownCss();
-      if(host.tagName==='TEXTAREA'){
-        const wrap=document.createElement('div');
-        wrap.id='boardPostEditor';
-        host.replaceWith(wrap);
-      }
-      const editorHost=$('boardPostEditor');
-      const uid=currentUser?.uid||'anon';
-      const draftId=getParam('id')||'new';
-      form._mdEditor=await mountMarkdownEditor(editorHost,{
-        value:'',
-        height:'420px',
-        draftKey:`board:${draftId}`,
-        storagePrefix:`cms-md/${uid}/board`,
-        showActions:false
-      });
-    }
-  }
   const id=getParam('id');
+  ensureMarkdownCss();
+  let editorHost=$('boardPostEditor')||$('boardPostContent');
+  if(editorHost && editorHost.tagName==='TEXTAREA'){
+    const wrap=document.createElement('div');
+    wrap.id='boardPostEditor';
+    editorHost.replaceWith(wrap);
+    editorHost=wrap;
+  }
+  editorHost=$('boardPostEditor');
+  const uid=currentUser?.uid||'anon';
+  const draftId=id||'new';
+  // Always remount when opening write/edit page so previous instance cannot block input
+  if(form._mdEditor){
+    try{ form._mdEditor.destroy(); }catch(_){}
+    form._mdEditor=null;
+  }
+  let initialMd='';
   const {doc,getDoc,setDoc,addDoc,collection,serverTimestamp}=firestoreApi;
   if(id && !form.dataset.editLoaded){
     try{
@@ -4021,6 +4060,7 @@ async function initBoardPostEditor(){
       } else if(!currentUser){
         $('boardPostMsg').textContent=tr('need_login');
         form.querySelector('button[type="submit"]').disabled=true;
+        form.dataset.editLoaded='1';
       } else if(!canManageRecord(d)){
         $('boardPostMsg').textContent=tr('no_permission');
         form.querySelector('button[type="submit"]').disabled=true;
@@ -4028,7 +4068,7 @@ async function initBoardPostEditor(){
       } else {
         $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정');
         $('boardPostTitle').value=d.title||'';
-        if(form._mdEditor) form._mdEditor.setValue(d.content||''); else if($('boardPostContent')) $('boardPostContent').value=d.content||'';
+        initialMd=pickMarkdownSource(d);
         existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : [];
         renderBoardAttachmentPreview();
         form._editingPost = d;
@@ -4039,11 +4079,25 @@ async function initBoardPostEditor(){
       }
     }catch(e){ $('boardPostMsg').textContent=e.message; }
   }
+  if(editorHost){
+    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    form._mdEditor=await mountMarkdownEditor(editorHost,{
+      value: initialMd,
+      height: 420,
+      draftKey: `board:${draftId}`,
+      storagePrefix: `cms-md/${uid}/board`,
+      showActions: false,
+      preferToast: false
+    });
+    if(initialMd) form._mdEditor.setMarkdown(initialMd);
+    form._mdEditor.refreshLayout();
+    setTimeout(()=>form._mdEditor?.focus?.(), 80);
+  }
   if(form.dataset.bound) return;
   bindBoardAttachmentPicker();
   bindBoardEmojiPicker();
   $('boardMdPreview')?.addEventListener('click', async () => {
-    const md = form._mdEditor ? form._mdEditor.getValue() : ($('boardPostContent')?.value || '');
+    const md = form._mdEditor ? (form._mdEditor.getMarkdown?.() || form._mdEditor.getValue?.() || '') : ($('boardPostContent')?.value || '');
     await openMarkdownPreview({ markdown: md, title: '미리보기' });
   });
   form.dataset.bound='1';
@@ -4051,8 +4105,9 @@ async function initBoardPostEditor(){
     e.preventDefault();
     if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
     const editing = form._editingPost || {};
-    const mdContent=(form._mdEditor?form._mdEditor.getValue():($('boardPostContent')?.value||'')).trim();
-    const data={title:$('boardPostTitle').value.trim(),content:mdContent,contentFormat:'markdown',visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
+    const mdContent=(form._mdEditor?(form._mdEditor.getMarkdown?.()||form._mdEditor.getValue?.()||''):($('boardPostContent')?.value||'')).trim();
+    if(form._mdEditor && !form._mdEditor.getMarkdown && !form._mdEditor.getValue){ $('boardPostMsg').textContent='편집기가 준비되지 않았습니다.'; return; }
+    const data={title:$('boardPostTitle').value.trim(),content:mdContent,contentMarkdown:mdContent,contentFormat:'markdown',visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
     if(!id){
       data.uid=currentUser.uid;
       data.email=boardEmail();

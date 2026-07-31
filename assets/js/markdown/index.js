@@ -9,7 +9,8 @@ export {
   mountMarkdownEditor,
   openMarkdownEditorModal,
   openMarkdownPreview,
-  mountMarkdownField
+  mountMarkdownField,
+  pickMarkdownSource
 } from './markdown-editor.js';
 
 export {
