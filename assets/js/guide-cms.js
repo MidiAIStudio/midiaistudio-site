@@ -347,10 +347,40 @@ function collectFromDom() {
   };
 }
 
-async function uploadFile(path, file) {
+function guessContentType(file, kind) {
+  const t = String(file?.type || '').trim();
+  if (t) return t;
+  const name = String(file?.name || '').toLowerCase();
+  if (kind === 'video' || /\.(mp4|webm|mov|m4v|ogg)$/.test(name)) {
+    if (name.endsWith('.webm')) return 'video/webm';
+    if (name.endsWith('.mov')) return 'video/quicktime';
+    return 'video/mp4';
+  }
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.webp')) return 'image/webp';
+  if (name.endsWith('.gif')) return 'image/gif';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  return kind === 'video' ? 'video/mp4' : 'image/jpeg';
+}
+
+function isVideoFile(file) {
+  if (!file) return false;
+  if (String(file.type || '').startsWith('video/')) return true;
+  return /\.(mp4|webm|mov|m4v|ogg)$/i.test(file.name || '');
+}
+
+async function uploadFile(path, file, kind = 'image') {
   const { ref, uploadBytes, getDownloadURL } = st;
-  const r = ref(storage, path);
-  await uploadBytes(r, file, { contentType: file.type || 'application/octet-stream' });
+  const contentType = guessContentType(file, kind);
+  const ext = contentType.includes('png') ? '.png'
+    : contentType.includes('webp') ? '.webp'
+      : contentType.includes('gif') ? '.gif'
+        : contentType.includes('webm') ? '.webm'
+          : contentType.startsWith('video/') ? '.mp4'
+            : '.jpg';
+  const fullPath = /\.[a-z0-9]+$/i.test(path) ? path : `${path}${ext}`;
+  const r = ref(storage, fullPath);
+  await uploadBytes(r, file, { contentType });
   return getDownloadURL(r);
 }
 
@@ -363,18 +393,18 @@ async function saveGuide() {
   if (btn) btn.disabled = true;
   try {
     if (pendingHeroFile) {
-      const isVid = pendingHeroFile.type.startsWith('video/');
+      const isVid = isVideoFile(pendingHeroFile);
       const path = isVid ? `guide-videos/${slug}/hero_${Date.now()}` : `guide-images/${slug}/hero_${Date.now()}`;
-      const url = await uploadFile(path, pendingHeroFile);
+      const url = await uploadFile(path, pendingHeroFile, isVid ? 'video' : 'image');
       if (isVid) { data.heroVideo = url; data.heroVideoType = 'upload'; }
       else { data.heroImage = url; }
       pendingHeroFile = null;
     }
     for (const [idx, file] of Object.entries(pendingStepFiles)) {
       const i = Number(idx);
-      const isVid = file.type.startsWith('video/');
+      const isVid = isVideoFile(file);
       const path = isVid ? `guide-videos/${slug}/step-${i}_${Date.now()}` : `guide-images/${slug}/step-${i}_${Date.now()}`;
-      const url = await uploadFile(path, file);
+      const url = await uploadFile(path, file, isVid ? 'video' : 'image');
       if (!data.steps[i]) continue;
       if (isVid) { data.steps[i].video = url; data.steps[i].videoType = 'upload'; }
       else { data.steps[i].image = url; }
@@ -384,11 +414,11 @@ async function saveGuide() {
     for (const [idx, file] of Object.entries(pendingSectionFiles)) {
       const i = Number(idx);
       if (!data.sections[i] || !file) continue;
-      const isVid = file.type.startsWith('video/');
+      const isVid = isVideoFile(file);
       const path = isVid
         ? `guide-videos/${slug}/section-${i}_${Date.now()}`
         : `guide-images/${slug}/section-${i}_${Date.now()}`;
-      const url = await uploadFile(path, file);
+      const url = await uploadFile(path, file, isVid ? 'video' : 'image');
       if (isVid) {
         data.sections[i].mediaType = 'video';
         data.sections[i].mediaUrl = url;

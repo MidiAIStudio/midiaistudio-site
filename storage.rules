@@ -10,6 +10,16 @@ service firebase.storage {
         && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isImage() {
+      return request.resource.contentType.matches('image/.*')
+        || request.resource.contentType == 'application/octet-stream';
+    }
+
+    function isVideo() {
+      return request.resource.contentType.matches('video/.*')
+        || request.resource.contentType == 'application/octet-stream';
+    }
+
     match /board/{userId}/{allPaths=**} {
       allow read: if true;
       allow write: if signedIn()
@@ -30,29 +40,29 @@ service firebase.storage {
     match /guide-images/{slug}/{fileName} {
       allow read: if true;
       allow write: if isAdmin()
-        && request.resource.size < 15 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.size < 20 * 1024 * 1024
+        && isImage();
     }
 
     match /guide-videos/{slug}/{fileName} {
       allow read: if true;
       allow write: if isAdmin()
         && request.resource.size < 80 * 1024 * 1024
-        && request.resource.contentType.matches('video/.*');
+        && isVideo();
     }
 
     match /product-images/{sectionId}/{fileName} {
       allow read: if true;
       allow write: if isAdmin()
-        && request.resource.size < 15 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.size < 20 * 1024 * 1024
+        && isImage();
     }
 
     match /product-videos/{sectionId}/{fileName} {
       allow read: if true;
       allow write: if isAdmin()
         && request.resource.size < 80 * 1024 * 1024
-        && request.resource.contentType.matches('video/.*');
+        && isVideo();
     }
 
     // Markdown CMS media (images / videos / attachments)
