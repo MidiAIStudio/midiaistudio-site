@@ -676,18 +676,20 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .crm-badge i,.admin-page .crm-activity i,.admin-page .crm-role i{
   width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9;flex:none
 }
-.admin-page .crm-badge.is-lifetime{background:rgba(52,211,153,.1);color:#6ee7b7;border-color:rgba(52,211,153,.18)}
-.admin-page .crm-badge.is-trial{background:rgba(251,191,36,.1);color:#fcd34d;border-color:rgba(251,191,36,.18)}
-.admin-page .crm-badge.is-suspended{background:rgba(251,113,133,.1);color:#fda4af;border-color:rgba(251,113,133,.18)}
+.admin-page .crm-badge.is-lifetime{background:rgba(167,139,250,.12);color:#c4b5fd;border-color:rgba(167,139,250,.28)}
+.admin-page .crm-badge.is-trial{background:rgba(251,191,36,.12);color:#fcd34d;border-color:rgba(251,191,36,.28)}
+.admin-page .crm-badge.is-period{background:rgba(251,146,60,.12);color:#fdba74;border-color:rgba(251,146,60,.28)}
+.admin-page .crm-badge.is-banned,.admin-page .crm-badge.is-suspended{background:rgba(251,113,133,.12);color:#fda4af;border-color:rgba(251,113,133,.28)}
 .admin-page .crm-badge.is-expired,.admin-page .crm-badge.is-none{background:rgba(148,163,184,.08);color:#94a3b8;border-color:rgba(148,163,184,.14)}
-.admin-page .crm-badge.is-dev,.admin-page .crm-badge.is-admin,.admin-page .crm-badge.is-active{background:rgba(96,165,250,.1);color:#93c5fd;border-color:rgba(96,165,250,.18)}
+.admin-page .crm-badge.is-active{background:rgba(52,211,153,.1);color:#6ee7b7;border-color:rgba(52,211,153,.2)}
 .admin-page .crm-activity.is-online{background:rgba(52,211,153,.1);color:#6ee7b7}
 .admin-page .crm-activity.is-active{background:rgba(96,165,250,.1);color:#93c5fd}
 .admin-page .crm-activity.is-idle{background:rgba(251,191,36,.1);color:#fcd34d}
 .admin-page .crm-activity.is-offline{background:rgba(148,163,184,.08);color:#94a3b8}
-.admin-page .crm-role.is-admin{background:rgba(167,139,250,.12);color:#c4b5fd}
-.admin-page .crm-role.is-staff{background:rgba(96,165,250,.1);color:#93c5fd}
-.admin-page .crm-role.is-user{background:rgba(52,211,153,.08);color:#6ee7b7}
+.admin-page .crm-role.is-admin{background:rgba(251,113,133,.14);color:#fda4af;border-color:rgba(251,113,133,.28)}
+.admin-page .crm-role.is-user{background:rgba(52,211,153,.12);color:#6ee7b7;border-color:rgba(52,211,153,.25)}
+.admin-page article.admin-crm-member .admin-crm-member-top{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.admin-page article.admin-crm-member .crm-role{font-size:10px!important}
 .admin-page article.admin-crm-member .crm-badge{font-size:10px!important;flex:none}
 .admin-page .admin-crm-detail-pane{position:relative}
 .admin-page .admin-crm-empty{display:flex;align-items:center;justify-content:center;min-height:420px;padding:24px;color:#8b93b3;text-align:center;font-size:13px}
@@ -1111,6 +1113,39 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .portal-page .portal-account-head p{margin:0 0 8px;color:var(--muted);font-size:13px}
 .portal-page .portal-account-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .portal-page .portal-account-grid .stat-card{padding:12px 14px;border-radius:16px}
+/* Account page dashboard */
+.account-page .account-profile-card .portal-account-head{margin-bottom:0;padding-bottom:0;border-bottom:0;flex-wrap:wrap}
+.account-page .account-profile-meta{flex:1;min-width:180px}
+.account-page .account-profile-cta{margin-left:auto}
+.account-page .portal-avatar{overflow:hidden;padding:0;display:grid;place-items:center}
+.account-page .portal-avatar.has-photo{background:transparent}
+.account-page .portal-avatar img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+.account-page .account-dashboard{margin-top:14px}
+.account-page .account-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
+.account-page .account-panel{display:flex;flex-direction:column;min-height:220px;padding:18px!important}
+.account-page .account-panel-full{grid-column:1/-1;min-height:0}
+.account-page .account-panel-head{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.account-page .account-panel-head h2{margin:0;font-size:15px;font-weight:800;letter-spacing:.02em;color:rgba(231,233,251,.92)}
+.account-page .account-panel-icon{font-size:18px;line-height:1}
+.account-page .account-panel-body{display:grid;gap:12px;flex:1}
+.account-page .account-license-title{margin:0 0 2px;font-size:22px;font-weight:900;letter-spacing:-.03em;color:#fff}
+.account-page .account-field{display:grid;gap:4px}
+.account-page .account-field-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.account-page .account-field-value{font-size:15px;font-weight:800;color:#f3f4ff;letter-spacing:-.01em;word-break:break-word}
+.account-page .account-panel-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.account-page .account-support-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start}
+.account-page .account-support-link{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#e7e9fb;font-size:13px;font-weight:800;text-decoration:none;transition:border-color .15s ease,background .15s ease,transform .15s ease}
+.account-page .account-support-link:hover{border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.12);transform:translateY(-1px)}
+.account-page .account-dev-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.account-page .account-panel-developer{border-color:rgba(251,191,36,.28)!important;background:linear-gradient(180deg,rgba(251,191,36,.08),rgba(255,255,255,.03))!important}
+.account-page .account-login-card{padding:24px;text-align:center}
+@media(max-width:720px){
+  .account-page .account-dashboard-grid,.account-page .account-support-grid,.account-page .account-dev-grid{grid-template-columns:1fr}
+  .account-page .account-profile-cta{width:100%;margin-left:0}
+  .account-page .account-profile-cta .mini-btn{width:100%;justify-content:center}
+  .account-page .account-panel{min-height:0}
+}
+
 .portal-page .hub-card{border:1px solid var(--final-stroke)!important;background:var(--final-card)!important;box-shadow:var(--final-shadow)!important;border-radius:22px!important}
 .portal-page.hub-page .hub-card{padding:16px}
 .portal-page .page-grid{display:block!important}
@@ -1966,11 +2001,37 @@ article .board-attachment-item figcaption b{
 .workflow-seo-body p,.workflow-seo-body ul{margin:0;color:var(--muted);font-size:14px;line-height:1.75}
 .workflow-seo-body ul{padding-left:1.2em}
 .workflow-seo-cta{display:flex;flex-wrap:wrap;gap:10px;margin:24px 0 8px}
-.guide-cms-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px auto 0;padding:12px 14px;border:1px solid var(--site-stroke);border-radius:14px;background:rgba(0,0,0,.28)}
-.guide-cms-bar.hidden{display:none!important}
-.guide-cms-status{font-size:12px;font-weight:800;color:var(--muted)}
+.guide-cms-bar,.product-cms-bar{
+  position:fixed;top:50%;right:16px;transform:translateY(-50%);z-index:55;
+  display:grid;gap:8px;align-content:start;
+  width:158px;max-width:calc(100vw - 28px);margin:0;padding:12px;
+  border:1px solid rgba(255,255,255,.12);border-radius:16px;
+  background:linear-gradient(180deg,rgba(14,18,34,.96),rgba(8,11,22,.98));
+  box-shadow:0 16px 40px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06);
+  backdrop-filter:blur(14px)
+}
+.guide-cms-bar.wrap,.product-cms-bar.wrap{width:158px;max-width:calc(100vw - 28px);margin:0;padding:12px}
+.guide-cms-bar.hidden,.product-cms-bar.hidden{display:none!important}
+.guide-cms-bar .mini-btn,.product-cms-bar .mini-btn,
+.guide-cms-bar .primary,.product-cms-bar .primary,
+.guide-cms-bar .secondary,.product-cms-bar .secondary,
+.guide-cms-bar .ghost,.product-cms-bar .ghost,
+.guide-cms-bar a.mini-btn,.product-cms-bar a.mini-btn{
+  width:100%;justify-content:center;text-align:center;box-sizing:border-box;
+  padding:7px 10px!important;border-radius:10px!important;font-size:12px!important;line-height:1.2!important;min-height:0!important
+}
+.guide-cms-status{display:block;text-align:center;font-size:11px;font-weight:800;color:var(--muted);line-height:1.35;padding:2px 0}
 .guide-cms-status.is-dirty{color:#fbbf24}
 .guide-cms-status.is-saved{color:#6ee7b7}
+@media(max-width:980px){
+  .guide-cms-bar,.product-cms-bar{
+    top:auto;bottom:12px;right:12px;left:12px;transform:none;
+    width:auto;max-width:none;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));
+    align-items:stretch;gap:6px;padding:10px
+  }
+  .guide-cms-bar.wrap,.product-cms-bar.wrap{width:auto;max-width:none;margin:0;padding:10px}
+  .guide-cms-status{grid-column:1/-1}
+}
 .guide-list-hero{margin-bottom:8px}
 .guide-grid{margin-top:8px}
 a.guide-card{text-decoration:none;color:inherit;transition:transform .2s ease,border-color .2s ease}
@@ -2178,7 +2239,6 @@ body.vcms-annot-modal-open{overflow:hidden}
 .product-card-media-host .vcms-media-body img,.product-card-media-host .vcms-media-body video{aspect-ratio:16/10;object-fit:cover;object-position:top}
 body.vcms-editing .vcms-text-slot [contenteditable=true],body.vcms-editing .vcms-feature-row [contenteditable=true]{outline:1px dashed rgba(34,211,238,.4);outline-offset:2px;border-radius:4px;min-width:2ch}
 body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing .vcms-feature-row [contenteditable=true]:focus{outline-color:#22d3ee;background:rgba(34,211,238,.06)}
-.product-cms-bar{position:sticky;top:8px;z-index:20}
 .guide-template-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px auto 24px}
 .guide-sections{display:grid;gap:0}
 
@@ -2266,3 +2326,4 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .purchase-paused-note{margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.1);color:#fde68a;font-size:13px;font-weight:700}
 #paypalButtons.is-paused{opacity:.45;pointer-events:none}
 @media(max-width:900px){.pricing-layout,.pricing-form-grid{grid-template-columns:1fr}}
+.admin-page .admin-crm-role-spacer{visibility:hidden;pointer-events:none}

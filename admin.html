@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-ticket-inline-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=license-system-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -167,12 +167,12 @@
                   <div class="admin-crm-filter-primary">
                     <select id="adminUserLicenseStatus" aria-label="License">
                       <option value="all">라이선스: 전체</option>
-                      <option value="lifetime">평생</option>
                       <option value="trial">체험판</option>
-                      <option value="expired">만료</option>
-                      <option value="suspended">정지</option>
-                      <option value="none">없음</option>
+                      <option value="lifetime">평생</option>
+                      <option value="period">기간제</option>
                       <option value="active">활성</option>
+                      <option value="expired">만료</option>
+                      <option value="banned">차단</option>
                       <option value="favorites">★ 즐겨찾기</option>
                     </select>
                     <select id="adminUserSort" aria-label="정렬">
@@ -185,10 +185,9 @@
                   </div>
                   <div class="admin-crm-filter-grid is-collapsed" id="adminCrmFilterAdvanced" hidden>
                     <select id="adminCrmFilterRole" aria-label="Role">
-                      <option value="all">역할: 전체</option>
+                      <option value="all">권한: 전체</option>
+                      <option value="user">사용자</option>
                       <option value="admin">관리자</option>
-                      <option value="staff">스태프</option>
-                      <option value="user">일반 사용자</option>
                     </select>
                     <select id="adminCrmFilterLogin" aria-label="최근 로그인">
                       <option value="all">로그인: 전체</option>
@@ -220,7 +219,7 @@
                   <div class="admin-crm-bulk-actions">
                     <button type="button" class="secondary mini-btn" data-bulk="trial">일괄 체험판</button>
                     <button type="button" class="secondary mini-btn" data-bulk="lifetime">일괄 평생</button>
-                    <button type="button" class="secondary mini-btn danger-btn" data-bulk="suspend">일괄 정지</button>
+                    <button type="button" class="secondary mini-btn danger-btn" data-bulk="ban">일괄 차단</button>
                     <button type="button" class="secondary mini-btn" data-bulk="mail">일괄 메일</button>
                     <button type="button" class="secondary mini-btn danger-btn" data-bulk="delete">일괄 삭제</button>
                   </div>
@@ -272,7 +271,7 @@
                           <button type="button" role="menuitem" data-crm-action="discord">Discord 프로필</button>
                           <button type="button" role="menuitem" data-crm-action="orders">주문 보기</button>
                           <button type="button" role="menuitem" data-crm-action="tickets">문의 보기</button>
-                          <button type="button" role="menuitem" data-crm-action="suspend">계정 정지</button>
+                          <button type="button" role="menuitem" data-crm-action="ban">계정 차단</button>
                           <button type="button" role="menuitem" data-crm-action="activate">계정 활성화</button>
                           <button type="button" role="menuitem" data-crm-action="focus-license">라이선스 변경</button>
                           <button type="button" role="menuitem" class="is-danger" data-crm-action="delete">회원 삭제</button>
@@ -292,24 +291,29 @@
                     <form id="adminLicenseForm" class="admin-crm-license-form">
                       <input type="hidden" id="adminLicenseUid" required>
                       <div class="form-split">
-                        <label>유형
+                        <label>권한
+                          <select id="adminUserRole">
+                            <option value="user">사용자</option>
+                            <option value="admin">관리자</option>
+                          </select>
+                        </label>
+                        <label>라이선스
                           <select id="adminLicensePlan">
                             <option value="trial">체험판</option>
                             <option value="lifetime">평생</option>
                             <option value="period">기간제</option>
-                            <option value="developer">개발자</option>
-                            <option value="admin">관리자</option>
-                            <option value="monthly">월간</option>
                           </select>
                         </label>
+                      </div>
+                      <div class="form-split">
                         <label>상태
                           <select id="adminLicenseStatus">
                             <option value="active">활성</option>
                             <option value="expired">만료</option>
-                            <option value="suspended">정지</option>
                             <option value="banned">차단</option>
                           </select>
                         </label>
+                        <label class="admin-crm-role-spacer" aria-hidden="true">&nbsp;<span></span></label>
                       </div>
                       <div class="form-split">
                         <label>시작일
@@ -417,7 +421,7 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=license-period-fix"></script>
-  <script type="module" src="./assets/js/app.js?v=admin-ticket-inline-1"></script>
+  <script type="module" src="./assets/js/app.js?v=license-system-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=license-period-fix"></script>
 </body>
 </html>
