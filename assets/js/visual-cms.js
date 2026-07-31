@@ -468,3 +468,9 @@ export async function uploadToStorage(path, file) {
   await uploadBytes(r, file, { contentType: file.type || 'application/octet-stream' });
   return getDownloadURL(r);
 }
+
+/** Long-body Markdown field (hybrid Visual CMS). Lazy-loaded to avoid cycles. */
+export async function mountMarkdownField(container, options) {
+  const { mountMarkdownField: mount } = await import('./markdown/markdown-editor.js');
+  return mount(container, options);
+}

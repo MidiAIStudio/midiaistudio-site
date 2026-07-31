@@ -6,6 +6,14 @@ import {
   formatMoney,
   getDefaultProduct
 } from './pricing.js?v=pricing-cms-2';
+import {
+  renderMarkdown,
+  renderMarkdownInto,
+  bindMarkdownInteractions,
+  mountMarkdownEditor,
+  openMarkdownPreview,
+  ensureMarkdownCss
+} from './markdown/index.js';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -497,6 +505,25 @@ async function enrichRowsWithAuthorLicense(rows){
 }
 function esc(s){ return String(s ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function nl2br(s){ return esc(s).replace(/\n/g,'<br>'); }
+function isMarkdownContent(srcOrDoc){
+  if(srcOrDoc && typeof srcOrDoc === 'object'){
+    if(srcOrDoc.contentFormat === 'markdown') return true;
+    return isMarkdownContent(srcOrDoc.content ?? srcOrDoc.answer ?? '');
+  }
+  const s = String(srcOrDoc || '');
+  if(!s.trim()) return false;
+  return /(^#{1,6}\s)|```|>\s*\[!|\|\||^:::|^\|.+\|/m.test(s) || /(\*\*|__|`[^`]|\[.+\]\()/m.test(s);
+}
+function mdBodyHtml(src, className=''){
+  ensureMarkdownCss();
+  const html = renderMarkdown(src || '');
+  // renderMarkdown already wraps .md-prose; unwrap outer if we need class on parent
+  return className ? html.replace('class="md-prose"', `class="md-prose ${className}"`) : html;
+}
+function bindMdIn(root){
+  if(!root) return;
+  bindMarkdownInteractions(root);
+}
 function patchChangeType(text){
   const t = String(text || '');
   if(/추가|신규|도입|새로운|새 |new|added?/i.test(t)) return { key:'new', label: tt('신규') };
@@ -564,10 +591,16 @@ function patchNavHtml(nav){
 }
 function patchDetailHtml(d, nav=null){
   const version = d.version ? esc(d.version) : '';
-  const parsed = parsePatchContent(d.content);
-  const { sections } = parsed;
-  const bodyHtml = sections.length ? patchContentHtml(sections) : `<div class="patch-prose">${nl2br(d.content || '')}</div>`;
-  const toc = patchTocHtml(sections);
+  let bodyHtml = '';
+  let toc = '';
+  if(isMarkdownContent(d)){
+    bodyHtml = `<div class="patch-prose">${mdBodyHtml(d.content || '')}</div>`;
+  } else {
+    const parsed = parsePatchContent(d.content);
+    const { sections } = parsed;
+    bodyHtml = sections.length ? patchContentHtml(sections) : `<div class="patch-prose">${mdBodyHtml(d.content || '')}</div>`;
+    toc = patchTocHtml(sections);
+  }
   return `<article class="hub-post-detail hub-patch-detail">
     <header class="patch-toolbar">
       <a class="patch-back-link" href="./patch-notes.html">← ${esc(tt('패치노트'))}</a>
@@ -1161,11 +1194,11 @@ async function createHubAdminPost(kind){
     if(kind==='announcements'){
       data = await openEditModal(hubAdminLabels().writeNotice, [
         {name:'title', label:'제목', value:'', required:true},
-        {name:'content', label:'내용', type:'textarea', rows:9, value:'', required:true},
+        {name:'content', label:'내용', type:'markdown', value:'', required:true, draftKey:'hub:announcements:new'},
         {name:'pinned', label:'상단 고정', type:'checkbox', value:false}
       ]);
       if(!data) return;
-      const id = await adminAdd('announcements',{title:data.title, content:data.content, pinned:!!data.pinned, viewCount:0, email:currentUser?.email||''});
+      const id = await adminAdd('announcements',{title:data.title, content:data.content, contentFormat:'markdown', pinned:!!data.pinned, viewCount:0, email:currentUser?.email||''});
       if(id) location.href = `./notice.html?id=${encodeURIComponent(id)}`;
       return;
     }
@@ -1173,21 +1206,21 @@ async function createHubAdminPost(kind){
       data = await openEditModal(hubAdminLabels().writePatch, [
         {name:'version', label:'버전', value:'', required:true},
         {name:'title', label:'제목', value:'', required:true},
-        {name:'content', label:'내용', type:'textarea', rows:9, value:'', required:true}
+        {name:'content', label:'내용', type:'markdown', value:'', required:true, draftKey:'hub:patchNotes:new'}
       ]);
       if(!data) return;
-      const id = await adminAdd('patchNotes',{version:data.version, title:data.title, content:data.content, viewCount:0, email:currentUser?.email||''});
+      const id = await adminAdd('patchNotes',{version:data.version, title:data.title, content:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||''});
       if(id) location.href = `./patch-note.html?id=${encodeURIComponent(id)}`;
       return;
     }
     if(kind==='faq'){
       data = await openEditModal(hubAdminLabels().writeFaq, [
         {name:'question', label:'질문', value:'', required:true},
-        {name:'answer', label:'답변', type:'textarea', rows:8, value:'', required:true},
+        {name:'answer', label:'답변', type:'markdown', value:'', required:true, draftKey:'hub:faq:new'},
         {name:'order', label:'순서', type:'number', value:1}
       ]);
       if(!data) return;
-      await adminAdd('faq',{question:data.question, answer:data.answer, order:Number(data.order||1)});
+      await adminAdd('faq',{question:data.question, answer:data.answer, contentFormat:'markdown', order:Number(data.order||1)});
       adminFlash(tr('saved'));
       return;
     }
@@ -1622,7 +1655,8 @@ function renderNoticeDetail(d,err){
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
   window.__lastNoticeDetail = d;
-  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span><span><em>${esc(tt('조회'))}</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content)}</div>${hubAdminManageHtml('announcements', d.id)}</article>`;
+  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span><span><em>${esc(tt('조회'))}</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${mdBodyHtml(d.content)}</div>${hubAdminManageHtml('announcements', d.id)}</article>`;
+  bindMdIn(box);
   bindAdminPostActions(box);
 }
 function markContentViewOnce(kind, id){
@@ -1695,6 +1729,7 @@ function renderPatchDetail(d,err){
   window.__lastPatchDetail = d;
   const nav=patchNeighbors(d.id);
   box.innerHTML = patchDetailHtml({...d,id:d.id}, nav);
+  bindMdIn(box);
   bindPatchDetailActions(box);
 }
 async function incrementPatchViewOnce(id){
@@ -1714,7 +1749,8 @@ function renderFaq(rows,err){
   window.__lastFaqRows = rows || [];
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; syncBoardAdminUi(); return; }
   rows.sort((a,b)=>Number(a.order||999)-Number(b.order||999));
-  list.innerHTML=rows.map(x=>`<article class="faq-item" data-faq-id="${esc(x.id)}"><h3>${esc(x.question)}</h3><div class="content">${nl2br(x.answer)}</div>${hubAdminManageHtml('faq', x.id)}</article>`).join('');
+  list.innerHTML=rows.map(x=>`<article class="faq-item" data-faq-id="${esc(x.id)}"><h3>${esc(x.question)}</h3><div class="content">${mdBodyHtml(x.answer)}</div>${hubAdminManageHtml('faq', x.id)}</article>`).join('');
+  bindMdIn(list);
   bindAdminPostActions(list);
   syncBoardAdminUi();
 }
@@ -2157,19 +2193,39 @@ function modalEscapeClose(root, handler){
   root._cleanup = () => document.removeEventListener('keydown', onKey);
 }
 function openEditModal(title, fields){
-  return new Promise(resolve => {
+  const hasMarkdown = fields.some(f => f.type === 'markdown');
+  return new Promise(async resolve => {
+    ensureMarkdownCss();
     const overlay = document.createElement('div');
     overlay.className = 'edit-modal-backdrop';
     const form = document.createElement('form');
-    form.className = 'edit-modal';
-    form.innerHTML = `<div class="edit-modal-head"><h3>${esc(title)}</h3><button type="button" class="edit-modal-x" aria-label="close">×</button></div><div class="edit-modal-body"></div><div class="edit-modal-actions"><button type="button" class="secondary" data-cancel>취소</button><button type="submit" class="primary">저장</button></div>`;
+    form.className = 'edit-modal' + (hasMarkdown ? ' md-edit-modal' : '');
+    const actionHtml = hasMarkdown
+      ? `<button type="button" class="secondary" data-cancel>취소</button><button type="button" class="secondary" data-preview>미리보기</button><button type="submit" class="primary">완료</button>`
+      : `<button type="button" class="secondary" data-cancel>취소</button><button type="submit" class="primary">저장</button>`;
+    form.innerHTML = `<div class="edit-modal-head"><h3>${esc(title)}</h3><button type="button" class="edit-modal-x" aria-label="close">×</button></div><div class="edit-modal-body"></div><div class="edit-modal-actions">${actionHtml}</div>`;
     const body = form.querySelector('.edit-modal-body');
-    fields.forEach(f => {
-      const row = document.createElement('label');
-      row.className = 'edit-field';
+    const mdEditors = {};
+    for (const f of fields) {
+      const row = document.createElement(f.type === 'markdown' ? 'div' : 'label');
+      row.className = 'edit-field' + (f.type === 'markdown' ? ' edit-field-markdown' : '');
       row.innerHTML = `<span>${esc(f.label || f.name)}</span>`;
       let input;
-      if (f.type === 'textarea') {
+      if (f.type === 'markdown') {
+        const host = document.createElement('div');
+        host.dataset.mdField = f.name;
+        row.appendChild(host);
+        body.appendChild(row);
+        const uid = currentUser?.uid || 'anon';
+        mdEditors[f.name] = await mountMarkdownEditor(host, {
+          value: f.value || '',
+          height: '360px',
+          draftKey: f.draftKey || `modal:${f.name}`,
+          storagePrefix: `cms-md/${uid}/hub`,
+          showActions: false
+        });
+        continue;
+      } else if (f.type === 'textarea') {
         input = document.createElement('textarea');
         input.rows = f.rows || 7;
         input.value = f.value || '';
@@ -2196,26 +2252,44 @@ function openEditModal(title, fields){
       if (f.required) input.required = true;
       row.appendChild(input);
       body.appendChild(row);
-    });
+    }
     const close = (value) => {
+      Object.values(mdEditors).forEach(ed => { try { ed.destroy(); } catch (_) {} });
       overlay._cleanup && overlay._cleanup();
       overlay.remove();
       resolve(value);
     };
-    form.addEventListener('submit', e => {
-      e.preventDefault();
+    const collect = () => {
       const data = {};
       fields.forEach(f => {
+        if (f.type === 'markdown') {
+          data[f.name] = String(mdEditors[f.name]?.getValue() || '').trim();
+          return;
+        }
         const input = form.elements[f.name];
         if (!input) return;
         if (f.type === 'checkbox') data[f.name] = !!input.checked;
         else if (f.type === 'number') data[f.name] = Number(input.value || 0);
         else data[f.name] = String(input.value || '').trim();
       });
+      return data;
+    };
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = collect();
+      if (hasMarkdown) {
+        const mdField = fields.find(f => f.type === 'markdown' && f.required);
+        if (mdField && !data[mdField.name]) { alert('내용을 입력하세요.'); return; }
+      }
       close(data);
     });
     form.querySelector('[data-cancel]').addEventListener('click', () => close(null));
     form.querySelector('.edit-modal-x').addEventListener('click', () => close(null));
+    form.querySelector('[data-preview]')?.addEventListener('click', async () => {
+      const mdField = fields.find(f => f.type === 'markdown');
+      const md = mdField ? (mdEditors[mdField.name]?.getValue() || '') : '';
+      await openMarkdownPreview({ markdown: md, title: '미리보기' });
+    });
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
     overlay.appendChild(form);
     document.body.appendChild(overlay);
@@ -2365,29 +2439,32 @@ async function editAdminPost(raw){
     if(collectionName==='announcements'){
       data = await openEditModal('공지 수정', [
         {name:'title', label:'제목', value:d.title||'', required:true},
-        {name:'content', label:'내용', type:'textarea', rows:9, value:d.content||'', required:true},
+        {name:'content', label:'내용', type:'markdown', rows:9, value:d.content||'', required:true, draftKey:`hub:announcements:${id}`},
         {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false},
         {name:'pinned', label:'상단 고정', type:'checkbox', value:!!d.pinned}
       ]);
       if(!data)return;
+      data.contentFormat='markdown';
       data.updatedAt=serverTimestamp();
     } else if(collectionName==='patchNotes'){
       data = await openEditModal('패치노트 수정', [
         {name:'version', label:'버전', value:d.version||'', required:true},
         {name:'title', label:'제목', value:d.title||'', required:true},
-        {name:'content', label:'내용', type:'textarea', rows:9, value:d.content||'', required:true},
+        {name:'content', label:'내용', type:'markdown', rows:9, value:d.content||'', required:true, draftKey:`hub:patchNotes:${id}`},
         {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
       ]);
       if(!data)return;
+      data.contentFormat='markdown';
       data.updatedAt=serverTimestamp();
     } else if(collectionName==='faq'){
       data = await openEditModal('FAQ 수정', [
         {name:'question', label:'질문', value:d.question||'', required:true},
-        {name:'answer', label:'답변', type:'textarea', rows:8, value:d.answer||'', required:true},
+        {name:'answer', label:'답변', type:'markdown', rows:8, value:d.answer||'', required:true, draftKey:`hub:faq:${id}`},
         {name:'order', label:'순서', type:'number', value:d.order||1},
         {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
       ]);
       if(!data)return;
+      data.contentFormat='markdown';
       data.order=Number(data.order||1);
       data.updatedAt=serverTimestamp();
     }
@@ -3838,6 +3915,11 @@ const BOARD_EMOJI_GROUPS = [
 ];
 
 function insertBoardEmoji(emoji){
+  const form=$('boardPostForm');
+  if(form?._mdEditor){
+    form._mdEditor.insertMarkdown(emoji);
+    return;
+  }
   const ta=$('boardPostContent');
   if(!ta) return;
   const start=typeof ta.selectionStart==='number'?ta.selectionStart:ta.value.length;
@@ -3906,6 +3988,27 @@ function bindBoardEmojiPicker(){
 async function initBoardPostEditor(){
   const form=$('boardPostForm'); if(!form) return;
   updateBoardPinnedUi();
+  if(!form._mdEditor){
+    const host=$('boardPostEditor')||$('boardPostContent');
+    if(host){
+      ensureMarkdownCss();
+      if(host.tagName==='TEXTAREA'){
+        const wrap=document.createElement('div');
+        wrap.id='boardPostEditor';
+        host.replaceWith(wrap);
+      }
+      const editorHost=$('boardPostEditor');
+      const uid=currentUser?.uid||'anon';
+      const draftId=getParam('id')||'new';
+      form._mdEditor=await mountMarkdownEditor(editorHost,{
+        value:'',
+        height:'420px',
+        draftKey:`board:${draftId}`,
+        storagePrefix:`cms-md/${uid}/board`,
+        showActions:false
+      });
+    }
+  }
   const id=getParam('id');
   const {doc,getDoc,setDoc,addDoc,collection,serverTimestamp}=firestoreApi;
   if(id && !form.dataset.editLoaded){
@@ -3925,7 +4028,7 @@ async function initBoardPostEditor(){
       } else {
         $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정');
         $('boardPostTitle').value=d.title||'';
-        $('boardPostContent').value=d.content||'';
+        if(form._mdEditor) form._mdEditor.setValue(d.content||''); else if($('boardPostContent')) $('boardPostContent').value=d.content||'';
         existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : [];
         renderBoardAttachmentPreview();
         form._editingPost = d;
@@ -3939,12 +4042,17 @@ async function initBoardPostEditor(){
   if(form.dataset.bound) return;
   bindBoardAttachmentPicker();
   bindBoardEmojiPicker();
+  $('boardMdPreview')?.addEventListener('click', async () => {
+    const md = form._mdEditor ? form._mdEditor.getValue() : ($('boardPostContent')?.value || '');
+    await openMarkdownPreview({ markdown: md, title: '미리보기' });
+  });
   form.dataset.bound='1';
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
     const editing = form._editingPost || {};
-    const data={title:$('boardPostTitle').value.trim(),content:$('boardPostContent').value.trim(),visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
+    const mdContent=(form._mdEditor?form._mdEditor.getValue():($('boardPostContent')?.value||'')).trim();
+    const data={title:$('boardPostTitle').value.trim(),content:mdContent,contentFormat:'markdown',visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
     if(!id){
       data.uid=currentUser.uid;
       data.email=boardEmail();
@@ -3997,7 +4105,8 @@ function renderBoardPost(d,err){
   const likeLabel = esc(labels.like);
   const editIcon = `<svg class="post-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
   const delIcon = `<svg class="post-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
-  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author meta-author-badge"><span class="author-badge is-${aKind}" title="${esc(authorKindLabel(aKind))}" aria-label="${esc(authorKindLabel(aKind))}">${authorKindIcon(aKind)}</span><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${nl2br(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="like-btn" type="button" aria-pressed="false">${boardLikeBtnInner(likeLabel,false)}</button>${manage?`<a class="post-action-btn post-edit-btn" href="${boardEditUrl(d.id)}">${editIcon}<span>${esc(labels.edit)}</span></a><button id="postDeleteBtn" class="post-action-btn post-delete-btn" type="button">${delIcon}<span>${esc(labels.del)}</span></button>`:''}</div>`;
+  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid"><span class="meta-author meta-author-badge"><span class="author-badge is-${aKind}" title="${esc(authorKindLabel(aKind))}" aria-label="${esc(authorKindLabel(aKind))}">${authorKindIcon(aKind)}</span><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${mdBodyHtml(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="like-btn" type="button" aria-pressed="false">${boardLikeBtnInner(likeLabel,false)}</button>${manage?`<a class="post-action-btn post-edit-btn" href="${boardEditUrl(d.id)}">${editIcon}<span>${esc(labels.edit)}</span></a><button id="postDeleteBtn" class="post-action-btn post-delete-btn" type="button">${delIcon}<span>${esc(labels.del)}</span></button>`:''}</div>`;
+  bindMdIn(box);
   hydrateBoardMidiPlayers(box);
   refreshBoardPostActions();
   if(!isAdminAuthor(d) && (d.uid||d.authorUid)){

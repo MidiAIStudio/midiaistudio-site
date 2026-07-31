@@ -55,6 +55,17 @@ service firebase.storage {
         && request.resource.contentType.matches('video/.*');
     }
 
+    // Markdown CMS media (images / videos / attachments)
+    match /cms-md/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.size < 50 * 1024 * 1024
+        && request.resource.contentType.matches(
+          'image/.*|video/.*|application/pdf|application/zip|application/x-zip-compressed|application/octet-stream'
+        );
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

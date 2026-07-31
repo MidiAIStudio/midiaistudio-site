@@ -11,7 +11,8 @@ import {
   mountEditableFeatureList,
   mountEditableMedia,
   uploadToStorage
-} from './visual-cms.js?v=guide-templates-1';
+} from './visual-cms.js?v=md-cms-1';
+import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 
 const CONFIG = window.MIDIAI_CONFIG || {};
@@ -297,19 +298,26 @@ function collectFromDom() {
   const title = root.querySelector('[data-field="title"]')?.textContent?.trim() || currentGuide.title;
   const category = root.querySelector('[data-field="category"]')?.textContent?.trim() || currentGuide.category;
   const summary = root.querySelector('[data-field="summary"]')?.textContent?.trim() || currentGuide.summary;
-  const tips = root.querySelector('[data-field="tips"]')?.textContent?.trim() || '';
+  const tipsEl = root.querySelector('[data-field="tips"]');
+  const tips = (tipsEl?._mdField?.getValue?.() ?? tipsEl?.textContent ?? currentGuide.tips ?? '').toString().trim();
   const features = [...root.querySelectorAll('[data-feature]')].map((el) => el.textContent.trim()).filter(Boolean);
-  const steps = [...root.querySelectorAll('[data-step]')].map((el) => ({
-    title: el.querySelector('[data-step-title]')?.textContent?.trim() || '',
-    body: el.querySelector('[data-step-body]')?.textContent?.trim() || '',
-    image: el.dataset.image || '',
-    video: el.dataset.video || '',
-    videoType: el.dataset.videoType || ''
-  }));
-  const faq = [...root.querySelectorAll('[data-faq]')].map((el) => ({
-    q: el.querySelector('[data-faq-q]')?.textContent?.trim() || '',
-    a: el.querySelector('[data-faq-a]')?.textContent?.trim() || ''
-  }));
+  const steps = [...root.querySelectorAll('[data-step]')].map((el) => {
+    const bodyEl = el.querySelector('[data-step-body]');
+    return {
+      title: el.querySelector('[data-step-title]')?.textContent?.trim() || '',
+      body: String(bodyEl?._mdField?.getValue?.() ?? bodyEl?.textContent ?? '').trim(),
+      image: el.dataset.image || '',
+      video: el.dataset.video || '',
+      videoType: el.dataset.videoType || ''
+    };
+  });
+  const faq = [...root.querySelectorAll('[data-faq]')].map((el) => {
+    const aEl = el.querySelector('[data-faq-a]');
+    return {
+      q: el.querySelector('[data-faq-q]')?.textContent?.trim() || '',
+      a: String(aEl?._mdField?.getValue?.() ?? aEl?.textContent ?? '').trim()
+    };
+  });
   const related = [...root.querySelectorAll('[data-related]:checked')].map((el) => el.value);
   const published = root.querySelector('#guidePublished')?.checked ?? currentGuide.published !== false;
   const order = Number(root.querySelector('#guideOrder')?.value ?? currentGuide.order) || 0;
@@ -682,9 +690,9 @@ function renderDetail(g) {
           <button type="button" data-remove="faq" data-remove-idx="${i}">삭제</button>
         </div>
         <h3 data-faq-q${ce}>${esc(item.q || '')}</h3>
-        <p data-faq-a${ce}>${esc(item.a || '')}</p>
+        <div data-faq-a class="guide-md-slot"></div>
       </div>`
-    : `<details class="guide-faq-item"><summary>${esc(item.q || '')}</summary><p>${esc(item.a || '')}</p></details>`).join('');
+    : `<details class="guide-faq-item"><summary>${esc(item.q || '')}</summary><div data-faq-a class="guide-md-slot"></div></details>`).join('');
 
   const relatedPicker = editing
     ? `<div class="guide-related-picker">${allGuides.filter((x) => x.slug !== g.slug && x.id !== g.id).map((x) => {
@@ -718,7 +726,7 @@ function renderDetail(g) {
       <button type="button" class="primary mini-btn" data-cms-inline="add-section">+ 제품 카드 템플릿 추가</button>
       <span class="muted small">제품 메뉴와 동일한 레이아웃(카테고리·제목·설명·기능·사진/영상)</span>
     </div>` : ''}
-    ${(g.tips || editing) ? `<section class="wrap guide-tips"><h2>팁</h2><p data-field="tips"${ce}>${esc(g.tips || (editing ? '팁을 입력하세요.' : ''))}</p></section>` : ''}
+    ${(g.tips || editing) ? `<section class="wrap guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>` : ''}
     <section class="wrap guide-faq"><h2>FAQ</h2>${faqBlocks}${editing ? '<button type="button" class="secondary mini-btn" data-add-faq>FAQ 추가</button>' : ''}</section>
     <section class="wrap guide-related"><h2>관련 가이드</h2>${relatedPicker}<div class="product-grid">${relatedLinks}</div></section>
     ${workflow ? `<div class="wrap workflow-seo-cta"><a class="secondary" href="${pathBase()}${workflow.replace(/^\//, '')}">기술적인 Workflow 설명 보기</a></div>` : ''}
@@ -728,7 +736,49 @@ function renderDetail(g) {
   document.title = `${g.title || 'Guide'} — MidiAI Studio`;
   bindEditable(root);
   mountGuideSections(root, sections, editing);
+  mountGuideMarkdownFields(root, g, editing);
   root.querySelector('[data-cms-inline="add-section"]')?.addEventListener('click', () => addSectionTemplate());
+}
+
+function mountGuideMarkdownFields(root, g, editing) {
+  ensureMarkdownCss();
+  const uid = auth?.currentUser?.uid || 'anon';
+  const prefix = `cms-md/${uid}/guide/${g.slug || g.id || 'draft'}`;
+  const tipsSlot = root.querySelector('[data-field="tips"]');
+  if (tipsSlot) {
+    mountMarkdownField(tipsSlot, {
+      value: g.tips || '',
+      placeholder: '팁 본문 작성',
+      editMode: editing,
+      isAdmin: editing,
+      draftKey: `guide:${g.id || g.slug}:tips`,
+      storagePrefix: prefix,
+      onChange: (v) => { currentGuide.tips = v; scheduleSave(); },
+      onClear: () => { currentGuide.tips = ''; scheduleSave(); }
+    });
+  }
+  (g.faq || []).forEach((item, i) => {
+    const slot = root.querySelectorAll('[data-faq-a]')[i];
+    if (!slot) return;
+    mountMarkdownField(slot, {
+      value: item.a || '',
+      placeholder: 'FAQ 답변 작성',
+      editMode: editing,
+      isAdmin: editing,
+      draftKey: `guide:${g.id || g.slug}:faq:${i}`,
+      storagePrefix: prefix,
+      onChange: (v) => {
+        if (!currentGuide.faq[i]) return;
+        currentGuide.faq[i].a = v;
+        scheduleSave();
+      },
+      onClear: () => {
+        if (!currentGuide.faq[i]) return;
+        currentGuide.faq[i].a = '';
+        scheduleSave();
+      }
+    });
+  });
 }
 
 function mountGuideSections(root, sections, editing) {
@@ -748,7 +798,13 @@ function mountGuideSections(root, sections, editing) {
         else cat.innerHTML = '';
       }
       if (title) title.innerHTML = sec.title ? `<h2>${esc(sec.title)}</h2>` : '';
-      if (body) body.innerHTML = sec.body ? `<p>${esc(sec.body)}</p>` : '';
+      if (body) {
+        if (sec.body) {
+          mountMarkdownField(body, { value: sec.body, editMode: false, isAdmin: false });
+        } else {
+          body.innerHTML = '';
+        }
+      }
       const fl = (sec.features || []).filter((f) => String(f || '').trim());
       if (feats) {
         feats.innerHTML = fl.length
@@ -783,9 +839,13 @@ function mountGuideSections(root, sections, editing) {
       onChange: (v) => { currentGuide.sections[i].title = v; scheduleSave(); },
       onClear: () => { currentGuide.sections[i].title = ''; scheduleSave(); }
     });
-    mountEditableText(body, {
-      tag: 'p', value: sec.body || '', placeholder: '설명 작성',
-      editMode: true, isAdmin: true, multiline: true,
+    mountMarkdownField(body, {
+      value: sec.body || '',
+      placeholder: '설명 작성',
+      editMode: true,
+      isAdmin: true,
+      draftKey: `guide:${currentGuide.id || currentGuide.slug}:sec:${i}:body`,
+      storagePrefix: `cms-md/${(typeof auth !== 'undefined' && auth?.currentUser?.uid) || 'anon'}/guide/${currentGuide.slug || currentGuide.id || 'draft'}`,
       onChange: (v) => { currentGuide.sections[i].body = v; scheduleSave(); },
       onClear: () => { currentGuide.sections[i].body = ''; scheduleSave(); }
     });

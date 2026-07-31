@@ -13,7 +13,8 @@ import {
   waitForAdmin,
   onAuthAdmin,
   uploadToStorage
-} from './visual-cms.js?v=product-cms-1';
+} from './visual-cms.js?v=md-cms-1';
+import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';
 const PAGE = (location.pathname.split('/').pop() || '') === 'product.html';
@@ -128,6 +129,7 @@ const SEED = [
 ];
 
 let isAdmin = false;
+let authUid = "anon";
 let editMode = false;
 let sections = [];
 let draft = [];
@@ -239,11 +241,13 @@ function featureSectionEl(sec, idx) {
     onChange: (v) => { draft[idx].title = v; markDirty(); },
     onClear: () => { draft[idx].title = ''; markDirty(); }
   });
-  mountEditableText(bodySlot, {
-    tag: 'p',
+  mountMarkdownField(bodySlot, {
     value: sec.body || '',
     placeholder: '설명 작성',
-    editMode, isAdmin, multiline: true,
+    editMode,
+    isAdmin,
+    draftKey: `product:${sec.id || idx}:body`,
+    storagePrefix: `cms-md/${authUid}/product`,
     onChange: (v) => { draft[idx].body = v; markDirty(); },
     onClear: () => { draft[idx].body = ''; markDirty(); }
   });
@@ -326,11 +330,13 @@ function cardEl(sec, idx) {
     onChange: (v) => { draft[idx].title = v; markDirty(); },
     onClear: () => { draft[idx].title = ''; markDirty(); }
   });
-  mountEditableText(bodySlot, {
-    tag: 'p',
+  mountMarkdownField(bodySlot, {
     value: sec.body || '',
     placeholder: '설명 작성',
-    editMode, isAdmin, multiline: true,
+    editMode,
+    isAdmin,
+    draftKey: `product:${sec.id || idx}:body`,
+    storagePrefix: `cms-md/${authUid}/product`,
     onChange: (v) => { draft[idx].body = v; markDirty(); },
     onClear: () => { draft[idx].body = ''; markDirty(); }
   });
@@ -505,6 +511,7 @@ async function initProductCms() {
   try {
     const first = await waitForAdmin();
     isAdmin = first.isAdmin;
+    authUid = first.user?.uid || "anon";
     if (isAdmin) await ensureSeed();
     sections = await loadSections();
     if (!sections.length) sections = cloneSections(SEED);
@@ -516,8 +523,9 @@ async function initProductCms() {
     refreshChrome();
     render();
 
-    onAuthAdmin(async ({ isAdmin: admin }) => {
+    onAuthAdmin(async ({ user, isAdmin: admin }) => {
       isAdmin = admin;
+      authUid = user?.uid || "anon";
       if (!admin) editMode = false;
       if (admin) {
         await ensureSeed();
