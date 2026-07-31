@@ -11,14 +11,13 @@ import {
   mountEditableFeatureList,
   mountEditableMedia,
   uploadToStorage
-} from './visual-cms.js?v=media-annot-3';
+} from './visual-cms.js?v=media-annot-6';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const FB = 'https://www.gstatic.com/firebasejs/10.12.5';
 const COLLECTION = 'guides';
-const AUTOSAVE_MS = 1500;
 
 /** slug → technical workflow SEO path (null = hide CTA) */
 export const GUIDE_WORKFLOW_MAP = {
@@ -108,7 +107,6 @@ let db, auth, storage, fs, st;
 let isAdmin = false;
 let editMode = false;
 let dirty = false;
-let saveTimer = null;
 let currentGuide = null;
 let allGuides = [];
 let pendingHeroFile = null;
@@ -182,11 +180,10 @@ function setDirty(v) {
   el.classList.toggle('is-saved', !dirty);
 }
 
+/** Mark draft dirty only — persist happens on explicit Save. */
 function scheduleSave() {
   if (!editMode || !isAdmin || !currentGuide) return;
   setDirty(true);
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => saveGuide().catch(console.error), AUTOSAVE_MS);
 }
 
 function refreshAdminChrome() {
@@ -403,8 +400,15 @@ async function saveGuide() {
       const isVid = isVideoFile(pendingHeroFile);
       const path = isVid ? `guide-videos/${slug}/hero_${Date.now()}` : `guide-images/${slug}/hero_${Date.now()}`;
       const url = await uploadFile(path, pendingHeroFile, isVid ? 'video' : 'image');
-      if (isVid) { data.heroVideo = url; data.heroVideoType = 'upload'; }
-      else { data.heroImage = url; }
+      if (isVid) {
+        data.heroVideo = url;
+        data.heroVideoType = 'upload';
+        data.heroImage = '';
+      } else {
+        data.heroImage = url;
+        data.heroVideo = '';
+        data.heroVideoType = '';
+      }
       pendingHeroFile = null;
     }
     for (const [idx, file] of Object.entries(pendingStepFiles)) {
@@ -558,41 +562,23 @@ function bindEditable(root) {
   });
   root.querySelector('#guidePublished')?.addEventListener('change', () => scheduleSave());
   root.querySelector('#guideOrder')?.addEventListener('input', () => scheduleSave());
-  root.querySelector('#guideHeroYoutube')?.addEventListener('change', () => scheduleSave());
   root.querySelectorAll('[data-related]').forEach((el) => el.addEventListener('change', () => scheduleSave()));
 
-  const heroDrop = root.querySelector('[data-hero-media]');
-  if (heroDrop) {
-    const pick = () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*,video/*';
-      input.onchange = () => {
-        const f = input.files?.[0];
-        if (!f) return;
-        pendingHeroFile = f;
-        scheduleSave();
-        const url = URL.createObjectURL(f);
-        if (f.type.startsWith('video/')) heroDrop.innerHTML = `<video src="${url}" controls playsinline></video>`;
-        else heroDrop.innerHTML = `<img src="${url}" alt="">`;
-      };
-      input.click();
-    };
-    heroDrop.addEventListener('click', pick);
-    heroDrop.addEventListener('dragover', (e) => { e.preventDefault(); heroDrop.classList.add('dragover'); });
-    heroDrop.addEventListener('dragleave', () => heroDrop.classList.remove('dragover'));
-    heroDrop.addEventListener('drop', (e) => {
-      e.preventDefault();
-      heroDrop.classList.remove('dragover');
-      const f = e.dataTransfer?.files?.[0];
-      if (!f) return;
-      pendingHeroFile = f;
-      scheduleSave();
-      const url = URL.createObjectURL(f);
-      if (f.type.startsWith('video/')) heroDrop.innerHTML = `<video src="${url}" controls playsinline></video>`;
-      else heroDrop.innerHTML = `<img src="${url}" alt="">`;
-    });
-  }
+  root.querySelector('#guideHeroYoutube')?.addEventListener('change', () => {
+    const v = root.querySelector('#guideHeroYoutube')?.value?.trim() || '';
+    if (!currentGuide) return;
+    if (v) {
+      currentGuide.heroVideo = v;
+      currentGuide.heroVideoType = 'youtube';
+      currentGuide.heroImage = '';
+      pendingHeroFile = null;
+    } else if (currentGuide.heroVideoType === 'youtube') {
+      currentGuide.heroVideo = '';
+      currentGuide.heroVideoType = '';
+    }
+    scheduleSave();
+    mountHeroMedia(root, currentGuide, true);
+  });
 
   root.querySelectorAll('[data-step]').forEach((stepEl) => {
     const idx = Number(stepEl.dataset.step);
@@ -758,7 +744,7 @@ function renderDetail(g) {
       <h1 data-field="title"${ce}>${esc(g.title || '')}</h1>
       <p class="portal-lead" data-field="summary"${ce}>${esc(g.summary || '')}</p>
       ${adminMeta}
-      <div class="guide-hero-media" data-hero-media>${mediaHtml(g.heroImage, g.heroVideo, g.heroVideoType, { className: 'guide-media', editable: editing }) || (editing ? '<div class="guide-media guide-media-empty"><span>Hero 이미지/영상</span></div>' : '')}</div>
+      <div class="guide-hero-media" data-hero-media></div>
     </section>
     ${(features.length || editing) ? `<section class="wrap guide-features">
       <h2>주요 기능</h2>
@@ -778,10 +764,80 @@ function renderDetail(g) {
   `;
 
   document.title = `${g.title || 'Guide'} — MidiAI Studio`;
+  mountHeroMedia(root, g, editing);
   bindEditable(root);
   mountGuideSections(root, sections, editing);
   mountGuideMarkdownFields(root, g, editing);
   root.querySelector('[data-cms-inline="add-section"]')?.addEventListener('click', () => addSectionTemplate());
+}
+
+function heroMediaState(g) {
+  if (g.heroVideoType === 'youtube' && g.heroVideo) {
+    return { mediaType: 'youtube', mediaUrl: g.heroVideo };
+  }
+  if (g.heroVideoType === 'upload' && g.heroVideo) {
+    return { mediaType: 'video', mediaUrl: g.heroVideo };
+  }
+  if (g.heroImage) {
+    return { mediaType: 'image', mediaUrl: g.heroImage };
+  }
+  return { mediaType: '', mediaUrl: '' };
+}
+
+function mountHeroMedia(root, g, editing) {
+  const host = root.querySelector('[data-hero-media]');
+  if (!host) return;
+  if (!editing) {
+    host.classList.remove('vcms-media-slot', 'product-feature-media', 'has-media', 'is-empty');
+    host.innerHTML = mediaHtml(g.heroImage, g.heroVideo, g.heroVideoType, { className: 'guide-media' }) || '';
+    return;
+  }
+  const { mediaType, mediaUrl } = heroMediaState(g);
+  mountEditableMedia(host, {
+    mediaType,
+    mediaUrl,
+    mediaFit: 'cover',
+    mediaWidth: 'full',
+    mediaOverlays: [],
+    editMode: true,
+    isAdmin: true,
+    videoClass: 'product-video',
+    onChange: (m) => {
+      if (!currentGuide) return;
+      if (m.mediaType === 'image') {
+        currentGuide.heroImage = m.mediaUrl || '';
+        currentGuide.heroVideo = '';
+        currentGuide.heroVideoType = '';
+        const yt = document.getElementById('guideHeroYoutube');
+        if (yt) yt.value = '';
+      } else if (m.mediaType === 'video') {
+        currentGuide.heroVideo = m.mediaUrl || '';
+        currentGuide.heroVideoType = 'upload';
+        currentGuide.heroImage = '';
+        const yt = document.getElementById('guideHeroYoutube');
+        if (yt) yt.value = '';
+      } else if (m.mediaType === 'youtube') {
+        currentGuide.heroVideo = m.mediaUrl || '';
+        currentGuide.heroVideoType = 'youtube';
+        currentGuide.heroImage = '';
+        const yt = document.getElementById('guideHeroYoutube');
+        if (yt) yt.value = m.mediaUrl || '';
+      } else {
+        currentGuide.heroImage = '';
+        currentGuide.heroVideo = '';
+        currentGuide.heroVideoType = '';
+        pendingHeroFile = null;
+        const yt = document.getElementById('guideHeroYoutube');
+        if (yt) yt.value = '';
+      }
+      scheduleSave();
+    },
+    onFile: (f) => {
+      if (f.kind === 'clear' || f.kind === 'youtube') pendingHeroFile = null;
+      else if (f.file) pendingHeroFile = f.file;
+      scheduleSave();
+    }
+  });
 }
 
 function mountGuideMarkdownFields(root, g, editing) {

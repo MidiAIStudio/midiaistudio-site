@@ -409,7 +409,7 @@ export function mountEditableMedia(container, {
   const annotBar = document.createElement('div');
   annotBar.className = 'vcms-annot-toolbar';
   annotBar.innerHTML = `
-    <button type="button" class="vcms-hover-btn" data-annot="width">크기: ${WIDTH_LABEL[width]}</button>
+    <button type="button" class="vcms-hover-btn" data-annot="width">창 폭: ${WIDTH_LABEL[width]}</button>
     <button type="button" class="vcms-hover-btn" data-annot="edit" hidden>사진 편집</button>
     <button type="button" class="vcms-hover-btn is-danger" data-annot="clear-media" hidden>사진 제거</button>`;
   container.appendChild(annotBar);
@@ -419,7 +419,7 @@ export function mountEditableMedia(container, {
     const hasImage = mediaType === 'image' && hasMedia;
     container.classList.toggle('has-media', hasMedia);
     annotBar.querySelector('[data-annot="width"]').hidden = !hasMedia;
-    annotBar.querySelector('[data-annot="width"]').textContent = `크기: ${WIDTH_LABEL[width]}`;
+    annotBar.querySelector('[data-annot="width"]').textContent = `창 폭: ${WIDTH_LABEL[width]}`;
     annotBar.querySelector('[data-annot="edit"]').hidden = !hasImage;
     annotBar.querySelector('[data-annot="clear-media"]').hidden = !hasMedia;
     annotBar.querySelector('[data-annot="clear-media"]').textContent =
@@ -482,15 +482,19 @@ export function mountEditableMedia(container, {
   };
 
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
-    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-3');
+    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-5');
     const result = await openMediaAnnotEditor({ imageUrl: url, overlays: seedOverlays });
     if (!result) {
       if (file && url.startsWith('blob:')) URL.revokeObjectURL(url);
       return false;
     }
-    pendingImageFile = file;
-    setMedia('image', url, '', result.overlays);
-    if (file) onFile?.({ kind: 'image', file });
+    // Editor always returns a local baked file — staged until explicit Save.
+    const nextUrl = result.imageUrl || url;
+    const nextFile = result.file || file;
+    if (file && url.startsWith('blob:') && url !== nextUrl) URL.revokeObjectURL(url);
+    pendingImageFile = nextFile || null;
+    setMedia('image', nextUrl, '', result.overlays);
+    if (nextFile) onFile?.({ kind: 'image', file: nextFile });
     else onFile?.({ kind: 'image-edit', file: null });
     return true;
   };

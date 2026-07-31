@@ -13,7 +13,7 @@ import {
   waitForAdmin,
   onAuthAdmin,
   uploadToStorage
-} from './visual-cms.js?v=media-annot-3';
+} from './visual-cms.js?v=media-annot-5';
 import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';
@@ -135,8 +135,6 @@ let sections = [];
 let draft = [];
 let pendingFiles = {}; // id -> { kind, file }
 let status;
-let saveTimer = null;
-const AUTOSAVE_MS = 1500;
 
 function cloneSections(rows) {
   return rows.map((s) => ({
@@ -146,12 +144,9 @@ function cloneSections(rows) {
   }));
 }
 
+/** Mark draft dirty only — persist happens on explicit Save. */
 function markDirty() {
   status?.setDirty(true);
-  clearTimeout(saveTimer);
-  if (editMode && isAdmin) {
-    saveTimer = setTimeout(() => saveAll().catch(console.error), AUTOSAVE_MS);
-  }
 }
 
 async function ensureSeed() {
