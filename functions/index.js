@@ -1206,8 +1206,8 @@ exports.boardFileProxy = functions.https.onRequest(async (req, res) => {
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 
 /**
- * Auto-revoke timed licenses after expiresAt.
- * Runs hourly; also soft-checked on read paths via isLicenseCurrentlyActive.
+ * When a timed license reaches expiresAt, keep status active and
+ * convert plan to trial (clear date bounds) instead of status=expired.
  */
 exports.expireTimedLicenses = onSchedule({
   schedule: 'every 60 minutes',
@@ -1224,22 +1224,22 @@ exports.expireTimedLicenses = onSchedule({
     if (snap.empty) break;
     const batch = db.batch();
     snap.docs.forEach((docSnap) => {
-      const prevPlan = String(docSnap.data()?.plan || '').toLowerCase();
       const patch = {
-        licensed: false,
-        status: 'expired',
+        plan: 'trial',
+        licensed: true,
+        status: 'active',
+        startsAt: admin.firestore.FieldValue.delete(),
+        expiresAt: admin.firestore.FieldValue.delete(),
         expiredAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        expireReason: 'auto_expiresAt'
+        expireReason: 'auto_period_to_trial'
       };
-      // Timed grants mistakenly stored as lifetime → normalize to period
-      if (prevPlan === 'lifetime') patch.plan = 'period';
       batch.set(docSnap.ref, patch, { merge: true });
     });
     await batch.commit();
     expired += snap.size;
     if (snap.size < 400) break;
   }
-  console.log('expireTimedLicenses done', { expired });
+  console.log('expireTimedLicenses done', { convertedToTrial: expired });
   return null;
 });

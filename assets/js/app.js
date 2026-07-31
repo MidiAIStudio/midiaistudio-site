@@ -499,6 +499,21 @@ function defaultTrialLicensePayload(serverTimestamp){
     updatedAt:serverTimestamp()
   };
 }
+function defaultAdminLifetimePayload(serverTimestamp, deleteField){
+  const payload = {
+    licensed:true,
+    plan:'lifetime',
+    status:'active',
+    method:'admin',
+    updatedAt:serverTimestamp(),
+    createdAt:serverTimestamp()
+  };
+  if(deleteField){
+    payload.startsAt = deleteField();
+    payload.expiresAt = deleteField();
+  }
+  return payload;
+}
 function toDateInputValue(v){
   const ms=licenseTsMs(v);
   if(!ms) return '';
@@ -959,8 +974,9 @@ function purchaseLocaleText(){
     preparingPayment:'Preparing payment buttons.',
     licenseGuide:[
       {title:'Full-song MIDI conversion',desc:'Convert entire YouTube links or audio files to MIDI with AI.'},
-      {title:'Instrument conversion',desc:'Generate MIDI for piano, guitar, bass, and other instruments.'},
+      {title:'Orchestra conversion',desc:'Generate MIDI for piano, guitar, bass, and other instruments.'},
       {title:'MIDI Editor PRO',desc:'Edit multi-track piano rolls with velocity and CC parameters.'},
+      {title:'AI Assistant',desc:'Refine MIDI quality with AI suggestions during conversion and editing.'},
       {title:'Score conversion',desc:'Convert MIDI to PDF/MusicXML and PDF scores back to MIDI.'},
       {title:'Score editor',desc:'Edit converted scores and apply AI review suggestions.'}
     ],
@@ -1010,8 +1026,9 @@ function purchaseLocaleText(){
     preparingPayment:'決済ボタンを準備しています。',
     licenseGuide:[
       {title:'全曲MIDI変換',desc:'YouTubeリンクやオーディオファイルをAIでMIDIに変換します。'},
-      {title:'楽器変換',desc:'ピアノ・ギター・ベースなど希望の楽器でMIDIを生成します。'},
+      {title:'オーケストラ変換',desc:'ピアノ・ギター・ベースなど希望の楽器でMIDIを生成します。'},
       {title:'MIDI編集 PRO',desc:'マルチトラックピアノロールでベロシティやCCを編集できます。'},
+      {title:'AIアシスタント',desc:'変換・編集中にAI提案でMIDI品質を素早く整えられます。'},
       {title:'楽譜変換',desc:'MIDI → PDF/MusicXML、PDF → MIDI変換に対応します。'},
       {title:'楽譜エディター',desc:'変換した楽譜を編集し、AIレビュー提案を反映できます。'}
     ],
@@ -1061,8 +1078,9 @@ function purchaseLocaleText(){
     preparingPayment:'결제 버튼을 준비하고 있습니다.',
     licenseGuide:[
       {title:'전체 구간 MIDI 변환',desc:'YouTube 링크·오디오 파일 전체를 AI로 MIDI로 변환합니다.'},
-      {title:'악기 변환',desc:'피아노·기타·베이스 등 원하는 악기로 MIDI를 생성합니다.'},
+      {title:'오케스트라 변환',desc:'피아노·기타·베이스 등 원하는 악기로 MIDI를 생성합니다.'},
       {title:'MIDI 편집 PRO',desc:'멀티트랙 피아노 롤에서 벨로시티·CC 파라미터를 편집합니다.'},
+      {title:'AI 어시스턴트',desc:'변환·편집 중 AI 제안으로 MIDI 품질을 빠르게 다듬습니다.'},
       {title:'악보 변환',desc:'MIDI → PDF/MusicXML, PDF → MIDI 변환을 지원합니다.'},
       {title:'악보 편집기',desc:'변환된 악보를 바로 수정하고 AI 검토 제안을 반영합니다.'}
     ],
@@ -1398,6 +1416,7 @@ function setAuthUiSignedOut(){
   if ($('userName')) $('userName').textContent=tr('guest');
   if ($('userEmail')) $('userEmail').textContent=tr('guest_desc');
   if ($('licenseBadge')) { $('licenseBadge').className='badge pending'; $('licenseBadge').textContent=tr('license_wait'); }
+  updateAccountProfileBadges(null);
   if ($('accountMeta')) renderAccountDashboard('', null, null);
   if (page==='my-tickets.html' && $('myTicketList')) $('myTicketList').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
   if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
@@ -1454,6 +1473,13 @@ function accountLicensePlanLabel(d){
   return lang==='en' ? 'Trial' : lang==='ja' ? '体験版' : '체험판';
 }
 
+function accountLicensePlanTitle(d){
+  const plan=normalizePlan(d);
+  if(plan==='lifetime') return 'Lifetime License';
+  if(plan==='period') return lang==='en' ? 'Period License' : lang==='ja' ? '期間ライセンス' : 'Period License';
+  return 'Trial License';
+}
+
 function accountLicenseStatusLabel(d){
   const status=normalizeStatus(d);
   if(status==='banned') return lang==='en' ? 'Banned' : lang==='ja' ? 'ブロック' : '차단';
@@ -1467,35 +1493,62 @@ function accountRoleLabel(){
   return lang==='en' ? 'User' : lang==='ja' ? 'ユーザー' : '사용자';
 }
 
-function accountPurchaseDate(d){
-  const src = d?.startsAt || d?.purchasedAt || d?.createdAt || d?.updatedAt;
+function accountDateValue(d){
+  const src = d?.startsAt || d?.purchasedAt || d?.createdAt || currentUserDoc?.createdAt || d?.updatedAt;
   return src ? fmtListDate(src) : '-';
 }
 
-function accountExpiryValue(d, lifetime){
-  if(lifetime || (String(d?.plan||'').toLowerCase()==='lifetime' && !licenseTsMs(d?.expiresAt))){
-    return lang==='en' ? 'Lifetime' : lang==='ja' ? '無期限' : '평생 이용';
-  }
-  if(d?.expiresAt){
-    const date = fmtListDate(d.expiresAt);
-    return lang==='en' ? `Expires ${date}` : lang==='ja' ? `期限 ${date}` : date;
-  }
+function accountExpiryValue(d){
+  const plan=normalizePlan(d);
+  if(plan==='lifetime') return lang==='en' ? 'Lifetime' : lang==='ja' ? '無期限' : '평생 이용';
+  if(d?.expiresAt) return fmtListDate(d.expiresAt);
   return '-';
 }
 
-function updateAccountCtas({lifetime, downloadUrl}){
-  const ctaText = lifetime
-    ? (lang==='en' ? 'Download latest' : lang==='ja' ? '最新版をダウンロード' : '최신 버전 다운로드')
-    : (lang==='en' ? 'Buy Lifetime license' : lang==='ja' ? 'Lifetime ライセンス購入' : 'Lifetime 라이선스 구매');
-  const ctaHref = lifetime ? (downloadUrl || './downloads.html') : './purchase.html';
-  const ctaTarget = lifetime && downloadUrl ? '_blank' : '';
-  ['accountHeroCta','accountProfileCta'].forEach(id=>{
-    const el=$(id); if(!el) return;
-    el.textContent = ctaText;
-    el.setAttribute('href', ctaHref);
-    if(ctaTarget){ el.setAttribute('target', ctaTarget); el.setAttribute('rel','noopener'); }
-    else { el.removeAttribute('target'); el.removeAttribute('rel'); }
-  });
+function accountDateLabel(d){
+  const plan=normalizePlan(d);
+  if(plan==='trial') return lang==='en' ? 'Joined' : lang==='ja' ? '登録日' : '가입일';
+  return lang==='en' ? 'Purchased' : lang==='ja' ? '購入日' : '구매일';
+}
+
+function accountProfileBadgesHtml(d){
+  const status=normalizeStatus(d);
+  const plan=normalizePlan(d);
+  const statusLabel=accountLicenseStatusLabel(d);
+  const planLabel=accountLicensePlanLabel(d);
+  return `<span class="account-chip is-status-${esc(status)}">${esc(statusLabel)}</span><span class="account-chip is-plan-${esc(plan)}">${esc(planLabel)}</span>`;
+}
+
+function updateAccountProfileBadges(d){
+  const box=$('accountProfileBadges');
+  if(!box) return;
+  if(!currentUser || !d){
+    box.innerHTML = `<span class="account-chip is-pending">${esc(tr('license_wait'))}</span>`;
+    return;
+  }
+  box.innerHTML = accountProfileBadgesHtml(d);
+}
+
+function updateAccountCtas({plan, lifetime, downloadUrl}){
+  const el=$('accountHeroCta'); if(!el) return;
+  el.classList.remove('hidden');
+  el.removeAttribute('target');
+  el.removeAttribute('rel');
+  if(isAdminUser){
+    el.textContent = lang==='en' ? 'Admin page' : lang==='ja' ? '管理ページ' : '관리자 페이지';
+    el.setAttribute('href', './admin.html');
+    return;
+  }
+  if(lifetime || plan==='lifetime'){
+    el.textContent = lang==='en' ? 'Download latest' : lang==='ja' ? '最新版をダウンロード' : '최신 버전 다운로드';
+    const href = downloadUrl || './downloads.html';
+    el.setAttribute('href', href);
+    if(downloadUrl){ el.setAttribute('target','_blank'); el.setAttribute('rel','noopener'); }
+    return;
+  }
+  // trial / period → purchase
+  el.textContent = lang==='en' ? 'Buy Lifetime license' : lang==='ja' ? 'Lifetime ライセンス購入' : 'Lifetime 라이선스 구매';
+  el.setAttribute('href', './purchase.html');
 }
 
 function accountSupportDiscordHref(){
@@ -1507,34 +1560,36 @@ function renderAccountDashboard(uid, d, downloadData){
   const box = $('accountMeta'); if(!box) return;
   if(!currentUser){
     box.innerHTML = `<div class="account-login-card hub-card"><p class="muted">${esc(tr('need_login'))}</p></div>`;
-    updateAccountCtas({lifetime:false, downloadUrl:''});
+    updateAccountCtas({plan:'trial', lifetime:false, downloadUrl:''});
+    updateAccountProfileBadges(null);
     return;
   }
-  const active = isLicenseCurrentlyActive(d);
-  const lifetime = isLifetimeLicense(d);
+  const plan = normalizePlan(d);
+  const lifetime = isLifetimeLicense(d) || (plan==='lifetime' && normalizeStatus(d)==='active');
   const latestVersion = downloadData?.version ? `v${downloadData.version}` : '-';
   const downloadUrl = downloadData?.url || '';
   const installedVersion = lang==='en' ? 'Check in app' : lang==='ja' ? 'アプリで確認' : '앱에서 확인';
-  const planLabel = accountLicensePlanLabel(d);
+  const planTitle = accountLicensePlanTitle(d);
   const statusLabel = accountLicenseStatusLabel(d);
   const roleLabel = accountRoleLabel();
-  const purchaseDate = accountPurchaseDate(d);
-  const expiryValue = accountExpiryValue(d, lifetime);
+  const dateLabel = accountDateLabel(d);
+  const dateValue = accountDateValue(d);
+  const expiryValue = accountExpiryValue(d);
   const name = currentUser.displayName || 'Google User';
   const email = currentUser.email || '-';
   const loginMethod = accountLoginMethodLabel();
   const discordHref = accountSupportDiscordHref();
 
-  updateAccountCtas({lifetime, downloadUrl});
+  updateAccountCtas({plan, lifetime, downloadUrl});
+  updateAccountProfileBadges(d);
 
   const licenseCard = `<article class="hub-card account-panel account-panel-license">
     <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">🎖</span><h2>License</h2></header>
     <div class="account-panel-body">
-      <p class="account-license-title">${esc(planLabel)}</p>
+      <p class="account-license-title is-plan-${esc(plan)}">${esc(planTitle)}</p>
       ${accountField(lang==='en'?'Role':lang==='ja'?'権限':'권한', roleLabel)}
-      ${accountField(lang==='en'?'Plan':lang==='ja'?'ライセンス':'라이선스', planLabel)}
       ${accountField(lang==='en'?'Status':lang==='ja'?'状態':'상태', statusLabel)}
-      ${accountField(lang==='en'?'Purchased':lang==='ja'?'購入日':'구매일', purchaseDate)}
+      ${accountField(dateLabel, dateValue)}
       ${accountField(lang==='en'?'Expires':lang==='ja'?'有効期限':'만료일', expiryValue)}
     </div>
   </article>`;
@@ -1545,7 +1600,6 @@ function renderAccountDashboard(uid, d, downloadData){
       ${accountField(lang==='en'?'Name':lang==='ja'?'名前':'이름', name)}
       ${accountField(lang==='en'?'Email':lang==='ja'?'メール':'이메일', email)}
       ${accountField(lang==='en'?'Sign-in':lang==='ja'?'ログイン方式':'로그인 방식', loginMethod)}
-      ${accountField(lang==='en'?'Role':lang==='ja'?'権限':'권한', roleLabel)}
     </div>
   </article>`;
 
@@ -1582,8 +1636,9 @@ function renderAccountDashboard(uid, d, downloadData){
   if(isAdminUser){
     const syncAt = currentUserDoc?.lastLogin || currentUserDoc?.lastSeenAt || d?.updatedAt || '';
     const syncLabel = lang==='en'?'Last sync':lang==='ja'?'最終同期':'마지막 동기화';
+    const devTitle = lang==='en' ? 'Developer Console' : lang==='ja' ? 'Developer Console' : '관리자 전용 정보';
     developerCard = `<article class="hub-card account-panel account-panel-developer account-panel-full">
-      <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">🛠</span><h2>Developer Information</h2></header>
+      <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">🛠</span><h2>${esc(devTitle)}</h2></header>
       <div class="account-panel-body account-dev-grid">
         ${accountField('UID', uid)}
         ${accountField('Role', normalizeRole(currentUserDoc?.role || 'admin'))}
@@ -1681,25 +1736,51 @@ async function upsertUser(user){
     currentUserDoc={...old,...data};
     isAdminUser=normalizeRole(data.role || old.role)==='admin';
     setAdminNavVisible(isAdminUser);
-    await ensureUserLicenseDoc(user.uid);
+    await ensureUserLicenseDoc(user.uid, { role: data.role || old.role || 'user' });
   } catch(e) {
     console.error('user upsert',e);
     isAdminUser=false;
     setAdminNavVisible(false);
   }
 }
-async function ensureUserLicenseDoc(uid){
+async function ensureUserLicenseDoc(uid, opts={}){
   if(!uid || !firestoreApi || !db) return null;
   try{
-    const {doc,getDoc,setDoc,serverTimestamp}=firestoreApi;
+    const {doc,getDoc,setDoc,serverTimestamp,deleteField}=firestoreApi;
+    let roleHint = opts.role;
+    if(roleHint == null && uid===currentUser?.uid) roleHint = currentUserDoc?.role || (isAdminUser?'admin':'user');
+    if(roleHint == null && typeof adminUserRows!=='undefined' && Array.isArray(adminUserRows)){
+      const row = adminUserRows.find(u=>(u.uid||u.id)===uid);
+      if(row) roleHint = row.role;
+    }
+    const role = normalizeRole(roleHint || 'user');
     const ref=doc(db,'licenses',uid);
     const snap=await getDoc(ref);
     if(!snap.exists()){
-      const payload=defaultTrialLicensePayload(serverTimestamp);
+      const payload = role==='admin'
+        ? defaultAdminLifetimePayload(serverTimestamp, deleteField)
+        : defaultTrialLicensePayload(serverTimestamp);
       await setDoc(ref, payload, {merge:true});
       return payload;
     }
     const lic=snap.data();
+    // Timed license ended → trial + active (status stays active)
+    if(licenseShouldConvertExpiredPeriod(lic) && role!=='admin'){
+      const patch=periodExpiredToTrialPatch(serverTimestamp, deleteField);
+      await setDoc(ref, patch, {merge:true});
+      return {...lic, plan:'trial', licensed:true, status:'active', startsAt:undefined, expiresAt:undefined};
+    }
+    // Admins default to lifetime + active (운영 정책)
+    if(role==='admin'){
+      const plan=normalizePlan(lic);
+      const status=normalizeStatus(lic);
+      if(plan!=='lifetime' || status!=='active' || lic.licensed!==true || licenseTsMs(lic.expiresAt)){
+        const patch=defaultAdminLifetimePayload(serverTimestamp, deleteField);
+        await setDoc(ref, patch, {merge:true});
+        return {...lic, ...patch, plan:'lifetime', status:'active', licensed:true};
+      }
+      if(!licenseNeedsMigration(lic)) return lic;
+    }
     if(!licenseNeedsMigration(lic)) return lic;
     const plan=normalizePlan(lic);
     const status=normalizeStatus(lic);
@@ -1745,6 +1826,7 @@ async function loadLicense(uid){
     const licenseText=adminLicenseStatusLabel(statusKey);
     if(badge){ badge.className='badge '+licenseClass; badge.textContent=licenseText; }
     if(sideBadge){ sideBadge.className='badge sidebar-license-badge '+licenseClass; sideBadge.textContent=licenseText; }
+    updateAccountProfileBadges(d);
     if($('accountMeta')){
       const downloadData = await fetchAccountDownloadData();
       renderAccountDashboard(uid, d, downloadData);
@@ -3210,33 +3292,57 @@ function adminBoardPostsForUid(uid){
     .sort((a,b)=>adminTsSec(b.createdAt||b.updatedAt)-adminTsSec(a.createdAt||a.updatedAt));
 }
 
+/** Past expiresAt → keep status active, convert plan to trial and clear dates. */
+function periodExpiredToTrialPatch(serverTimestamp, deleteField){
+  return {
+    plan:'trial',
+    licensed:true,
+    status:'active',
+    startsAt: deleteField(),
+    expiresAt: deleteField(),
+    expiredAt: serverTimestamp(),
+    expireReason:'period_to_trial',
+    updatedAt: serverTimestamp()
+  };
+}
+function licenseShouldConvertExpiredPeriod(lic){
+  if(!lic) return false;
+  const endMs=licenseTsMs(lic.expiresAt);
+  if(endMs && Date.now() > endMs) return true;
+  // legacy rows that were already marked expired
+  if(String(lic.status||'').toLowerCase()==='expired') return true;
+  return false;
+}
 async function maybeHealExpiredLicense(uid, lic){
   if(!uid || !lic || !firestoreApi) return;
-  if(!licenseTsMs(lic.expiresAt)) return;
-  const dbStatus=String(lic.status||'').toLowerCase();
-  const dateExpired=!licenseDateBoundsActive(lic);
-  const needsExpire = dateExpired && dbStatus==='active';
-  const needsPlanFix = String(lic.plan||'').toLowerCase()==='lifetime';
-  if(!needsExpire && !needsPlanFix) return;
+  const needsPlanFix = String(lic.plan||'').toLowerCase()==='lifetime' && licenseTsMs(lic.expiresAt) && licenseDateBoundsActive(lic);
+  const needsToTrial = licenseShouldConvertExpiredPeriod(lic);
+  if(!needsToTrial && !needsPlanFix) return;
   try{
-    const {doc,setDoc,serverTimestamp}=firestoreApi;
-    const plan = adminEffectivePlan(lic);
-    const patch={ plan, updatedAt:serverTimestamp() };
-    if(needsExpire){
-      patch.licensed=false;
-      patch.status='expired';
-      patch.expiredAt=serverTimestamp();
-      patch.expireReason='crm_soft_heal';
+    const {doc,setDoc,serverTimestamp,deleteField}=firestoreApi;
+    let patch;
+    if(needsToTrial){
+      patch = periodExpiredToTrialPatch(serverTimestamp, deleteField);
+    } else {
+      patch = { plan:'period', updatedAt:serverTimestamp() };
     }
     await setDoc(doc(db,'licenses',uid), patch, {merge:true});
-    lic.plan=plan;
-    if(needsExpire){ lic.licensed=false; lic.status='expired'; }
+    Object.assign(lic, {
+      plan: patch.plan,
+      licensed: patch.licensed!=null ? patch.licensed : lic.licensed,
+      status: patch.status || lic.status
+    });
+    if(needsToTrial){
+      delete lic.expiresAt;
+      delete lic.startsAt;
+    }
     if(selectedAdminUid===uid){
-      if($('adminLicensePlan')) $('adminLicensePlan').value=plan;
-      if(needsExpire && $('adminLicenseStatus')) $('adminLicenseStatus').value='expired';
+      if($('adminLicensePlan')) $('adminLicensePlan').value=lic.plan||'trial';
+      if($('adminLicenseStartsAt')) $('adminLicenseStartsAt').value='';
+      if($('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value='';
       const kind=adminLicenseKind(lic);
-      $('adminCrmHeaderLicense') && ($('adminCrmHeaderLicense').innerHTML=adminLicenseBadgeHtml(kind, lic));
-      $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML=adminLicenseBadgeHtml(kind, lic));
+      $('adminCrmHeaderLicense') && ($('adminCrmHeaderLicense').innerHTML=adminPlanBadgeHtml(lic));
+      $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML=adminPlanBadgeHtml(lic));
       captureAdminCrmBaseline();
     }
   }catch(e){ console.warn('heal expired license', e); }
@@ -3405,13 +3511,9 @@ function maskAdminHwid(hwid){
 function getAdminCrmRows(){
   const q=($('adminUserSearch')?.value||'').trim().toLowerCase();
   const st=$('adminUserLicenseStatus')?.value || 'all';
-  const roleF=$('adminCrmFilterRole')?.value || 'all';
-  const loginF=$('adminCrmFilterLogin')?.value || 'all';
-  const joinedF=$('adminCrmFilterJoined')?.value || 'all';
   const ordersF=$('adminCrmFilterOrders')?.value || 'all';
   const ticketsF=$('adminCrmFilterTickets')?.value || 'all';
   const sort=$('adminUserSort')?.value || 'lastLogin';
-  const now=Date.now()/1000;
   let rows = adminUserRows.map(u=>{
     const uid=adminUserUid(u);
     const license=licenseForUid(uid);
@@ -3432,8 +3534,6 @@ function getAdminCrmRows(){
     const plan=normalizePlan(lic);
     const active=status==='active';
     const role=normalizeRole(u.role);
-    const created=adminTsSec(u.createdAt);
-    const last=adminTsSec(u.lastLogin||u.lastSeenAt);
     if(st==='lifetime' && !(active && plan==='lifetime')) return false;
     else if(st==='trial' && !(active && plan==='trial')) return false;
     else if(st==='period' && !(active && plan==='period')) return false;
@@ -3441,15 +3541,6 @@ function getAdminCrmRows(){
     else if(st==='banned' || st==='suspended'){ if(kind!=='banned') return false; }
     else if(st==='active' && !active) return false;
     else if(st==='favorites' && !u.isFav) return false;
-    if(roleF==='admin' && role!=='admin') return false;
-    if(roleF==='user' && role!=='user') return false;
-    if(loginF==='today' && !(last && now-last < 86400)) return false;
-    if(loginF==='7d' && !(last && now-last < 7*86400)) return false;
-    if(loginF==='30d' && !(last && now-last < 30*86400)) return false;
-    if(loginF==='idle_30d' && !((!last && created) || (last && now-last >= 30*86400))) return false;
-    if(joinedF==='today' && !(created && now-created < 86400)) return false;
-    if(joinedF==='7d' && !(created && now-created < 7*86400)) return false;
-    if(joinedF==='30d' && !(created && now-created < 30*86400)) return false;
     if(ordersF==='has' && !(u.orderCount>0)) return false;
     if(ordersF==='none' && u.orderCount>0) return false;
     if(ticketsF==='has' && !(u.ticketCount>0)) return false;
@@ -3672,7 +3763,6 @@ function captureAdminCrmBaseline(){
   adminCrmBaseline = {
     role: $('adminUserRole')?.value || 'user',
     plan: $('adminLicensePlan')?.value || '',
-    status: $('adminLicenseStatus')?.value || '',
     startsAt: $('adminLicenseStartsAt')?.value || '',
     expiresAt: $('adminLicenseExpiresAt')?.value || '',
     licenseMemo: $('adminLicenseMemo')?.value || '',
@@ -3695,7 +3785,6 @@ function checkAdminCrmDirty(){
   const cur={
     role: $('adminUserRole')?.value || 'user',
     plan: $('adminLicensePlan')?.value || '',
-    status: $('adminLicenseStatus')?.value || '',
     startsAt: $('adminLicenseStartsAt')?.value || '',
     expiresAt: $('adminLicenseExpiresAt')?.value || '',
     licenseMemo: $('adminLicenseMemo')?.value || '',
@@ -3777,10 +3866,6 @@ function renderAdminCrmDetail(uid){
     if([...$('adminLicensePlan').options].some(o=>o.value===plan)) $('adminLicensePlan').value=plan;
     else $('adminLicensePlan').value='trial';
   }
-  if($('adminLicenseStatus')){
-    const st=normalizeStatus(lic);
-    $('adminLicenseStatus').value = ['active','expired','banned'].includes(st) ? st : 'active';
-  }
   if($('adminLicenseStartsAt')) $('adminLicenseStartsAt').value = toDateInputValue(lic?.startsAt);
   if($('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value = toDateInputValue(lic?.expiresAt);
   if($('adminLicenseMemo')) $('adminLicenseMemo').value = lic?.memo || '';
@@ -3789,7 +3874,6 @@ function renderAdminCrmDetail(uid){
   }
   $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML = adminPlanBadgeHtml(lic));
   $('adminCrmLicenseMeta') && ($('adminCrmLicenseMeta').innerHTML = `
-    <span class="crm-chip"><em>상태</em>${esc(adminLicenseStatusLabel(adminEffectiveStatus(lic) || lic?.status || '-'))}</span>
     <span class="crm-chip"><em>유형</em>${esc(adminLicenseTypeLabel(adminEffectivePlan(lic) || lic?.plan || '-'))}</span>
     <span class="crm-chip"><em>시작</em>${esc(lic?.startsAt ? fmtListDate(lic.startsAt) : '-')}</span>
     <span class="crm-chip"><em>만료</em>${esc(lic?.expiresAt ? fmtListDate(lic.expiresAt) : (adminEffectivePlan(lic)==='lifetime'?'없음':'-'))}</span>
@@ -4009,7 +4093,7 @@ function bindAdminUserFilters(){
       adminCrmSearchTimer=setTimeout(()=>{ adminCrmPage=1; renderAdminUserTable(); }, 220);
     });
   }
-  ['adminUserLicenseStatus','adminUserSort','adminCrmFilterRole','adminCrmFilterLogin','adminCrmFilterJoined','adminCrmFilterOrders','adminCrmFilterTickets'].forEach(id=>{
+  ['adminUserLicenseStatus','adminUserSort','adminCrmFilterOrders','adminCrmFilterTickets'].forEach(id=>{
     const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1';
     el.addEventListener('change',()=>{
       adminCrmPage=1;
@@ -4132,7 +4216,6 @@ function bindAdminCrmDetailActions(){
         endEl.value = toDateInputValue(end);
       }
       if($('adminLicensePlan')) $('adminLicensePlan').value='period';
-      if($('adminLicenseStatus')) $('adminLicenseStatus').value='active';
       checkAdminCrmDirty();
       endEl?.focus();
       adminFlash('기간제 Type · 시작일·만료일 확인 후 Save Changes로 저장하세요');
@@ -4195,9 +4278,6 @@ function bindAdminCrmDetailActions(){
 function updateAdminCrmFilterToggleState(){
   const btn=$('adminCrmFilterToggle'); if(!btn) return;
   const vals=[
-    $('adminCrmFilterRole')?.value,
-    $('adminCrmFilterLogin')?.value,
-    $('adminCrmFilterJoined')?.value,
     $('adminCrmFilterOrders')?.value,
     $('adminCrmFilterTickets')?.value
   ].filter(v=>v && v!=='all');
@@ -4210,7 +4290,7 @@ function updateAdminCrmFilterToggleState(){
   }
 }
 function bindAdminCrmDirtyWatchers(){
-  ['adminUserRole','adminLicensePlan','adminLicenseStatus','adminLicenseStartsAt','adminLicenseExpiresAt','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
+  ['adminUserRole','adminLicensePlan','adminLicenseStartsAt','adminLicenseExpiresAt','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
     const el=$(id); if(!el||el.dataset.dirtyBound) return;
     el.dataset.dirtyBound='1';
     el.addEventListener('input', checkAdminCrmDirty);
@@ -4222,8 +4302,7 @@ async function saveAdminCrmAllChanges(){
   const uid=selectedAdminUid;
   const role=normalizeRole($('adminUserRole')?.value||'user');
   const plan=$('adminLicensePlan')?.value;
-  const statusRaw=$('adminLicenseStatus')?.value||'active';
-  const saveStatus=['active','expired','banned'].includes(statusRaw)?statusRaw:(statusRaw==='suspended'?'banned':'active');
+  const saveStatus='active';
   const licenseMemo=$('adminLicenseMemo')?.value||'';
   const startsAt=$('adminLicenseStartsAt')?.value||'';
   const expiresAt=$('adminLicenseExpiresAt')?.value||'';
@@ -4231,7 +4310,7 @@ async function saveAdminCrmAllChanges(){
   try{
     const {doc,setDoc,serverTimestamp}=firestoreApi;
     const roleChanged = baseline.role!==role;
-    const licChanged = baseline.plan!==plan || baseline.status!==saveStatus || baseline.licenseMemo!==licenseMemo
+    const licChanged = baseline.plan!==plan || baseline.licenseMemo!==licenseMemo
       || baseline.startsAt!==startsAt || baseline.expiresAt!==expiresAt;
     const memoChanged = baseline.userMemo!==($('adminCrmUserMemo')?.value||'');
     if(roleChanged){
@@ -4249,9 +4328,8 @@ async function saveAdminCrmAllChanges(){
       if(savePlan==='lifetime' && $('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value='';
       if(savePlan==='lifetime' && $('adminLicenseStartsAt')) $('adminLicenseStartsAt').value='';
       if($('adminLicensePlan')) $('adminLicensePlan').value=savePlan;
-      if($('adminLicenseStatus')) $('adminLicenseStatus').value=saveStatus;
       await setDoc(doc(db,'licenses',uid),{
-        licensed: saveStatus==='active',
+        licensed: true,
         plan: savePlan,
         status: saveStatus,
         method:'manual',
@@ -4260,7 +4338,7 @@ async function saveAdminCrmAllChanges(){
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
-      pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `${saveStatus} · ~${expiresAt}` : saveStatus);
+      pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active');
     }
     if(memoChanged) await saveAdminCrmUserMemo();
     if(roleChanged || licChanged || memoChanged){
@@ -5207,9 +5285,7 @@ function initForms(){
       const uid=$('adminLicenseUid').value.trim();
       if(!uid) return alert('회원을 선택해 주세요.');
       const role=normalizeRole($('adminUserRole')?.value||'user');
-      let status=$('adminLicenseStatus').value;
-      if(status==='suspended') status='banned';
-      if(!['active','expired','banned'].includes(status)) status='active';
+      const status='active';
       const plan=$('adminLicensePlan').value;
       const startsAt=$('adminLicenseStartsAt')?.value||'';
       const expiresAt=$('adminLicenseExpiresAt')?.value||'';
@@ -5223,12 +5299,11 @@ function initForms(){
         if($('adminLicenseStartsAt')) $('adminLicenseStartsAt').value='';
       }
       if($('adminLicensePlan')) $('adminLicensePlan').value=savePlan;
-      if($('adminLicenseStatus')) $('adminLicenseStatus').value=status;
       await setDoc(doc(db,'users',uid),{ role, updatedAt:serverTimestamp() },{merge:true});
       const row=adminUserRows.find(u=>adminUserUid(u)===uid);
       if(row) row.role=role;
       await setDoc(doc(db,'licenses',uid),{
-        licensed: status==='active',
+        licensed: true,
         plan: savePlan,
         status,
         method:'manual',
@@ -5237,8 +5312,8 @@ function initForms(){
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
-      pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `${status} · ~${expiresAt}` : status);
-      adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(role)} / ${esc(savePlan)} / ${esc(status)}`);
+      pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active');
+      adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(role)} / ${esc(savePlan)}`);
       if(selectedAdminUid===uid) refreshAdminCrmDetail();
       else captureAdminCrmBaseline();
     }catch(err){ alert(err.message); }

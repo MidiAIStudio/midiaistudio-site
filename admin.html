@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=license-system-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-filter-rm-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -184,24 +184,6 @@
                     <button type="button" class="ghost mini-btn admin-crm-filter-toggle" id="adminCrmFilterToggle" aria-expanded="false">고급 필터</button>
                   </div>
                   <div class="admin-crm-filter-grid is-collapsed" id="adminCrmFilterAdvanced" hidden>
-                    <select id="adminCrmFilterRole" aria-label="Role">
-                      <option value="all">권한: 전체</option>
-                      <option value="user">사용자</option>
-                      <option value="admin">관리자</option>
-                    </select>
-                    <select id="adminCrmFilterLogin" aria-label="최근 로그인">
-                      <option value="all">로그인: 전체</option>
-                      <option value="today">오늘</option>
-                      <option value="7d">7일</option>
-                      <option value="30d">30일</option>
-                      <option value="idle_30d">30일+</option>
-                    </select>
-                    <select id="adminCrmFilterJoined" aria-label="가입일">
-                      <option value="all">가입: 전체</option>
-                      <option value="today">오늘</option>
-                      <option value="7d">7일</option>
-                      <option value="30d">30일</option>
-                    </select>
                     <select id="adminCrmFilterOrders" aria-label="결제">
                       <option value="all">결제: 전체</option>
                       <option value="has">있음</option>
@@ -304,16 +286,6 @@
                             <option value="period">기간제</option>
                           </select>
                         </label>
-                      </div>
-                      <div class="form-split">
-                        <label>상태
-                          <select id="adminLicenseStatus">
-                            <option value="active">활성</option>
-                            <option value="expired">만료</option>
-                            <option value="banned">차단</option>
-                          </select>
-                        </label>
-                        <label class="admin-crm-role-spacer" aria-hidden="true">&nbsp;<span></span></label>
                       </div>
                       <div class="form-split">
                         <label>시작일
@@ -421,7 +393,7 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=license-period-fix"></script>
-  <script type="module" src="./assets/js/app.js?v=license-system-1"></script>
+  <script type="module" src="./assets/js/app.js?v=admin-status-rm-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=license-period-fix"></script>
 </body>
 </html>
