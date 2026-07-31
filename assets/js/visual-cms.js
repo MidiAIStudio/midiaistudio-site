@@ -289,13 +289,9 @@ export function normalizeMediaOverlays(list) {
   }).filter(Boolean);
 }
 
-function newOverlayId() {
-  return `ov-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-}
-
 /**
  * Media frame that never collapses. Supports image / upload video / youtube,
- * plus mediaWidth + mediaOverlays (rect / speech bubble) on images.
+ * plus mediaWidth + mediaOverlays. Image pick/change opens annotation editor first.
  */
 export function mountEditableMedia(container, {
   mediaType = '',
@@ -316,9 +312,7 @@ export function mountEditableMedia(container, {
 
   let overlays = normalizeMediaOverlays(mediaOverlays);
   let width = normalizeMediaWidth(mediaWidth);
-  let selectedId = null;
-  let tool = null; // 'rect' | 'bubble' | null
-  let drawState = null;
+  let pendingImageFile = null;
 
   const emit = () => {
     onChange?.({
@@ -337,7 +331,7 @@ export function mountEditableMedia(container, {
       mediaFit === 'contain' ? 'fit-contain' : mediaFit === 'center' ? 'fit-center' : 'fit-cover'
     );
     container.classList.add(`width-${width}`);
-    container.classList.toggle('is-annotating', !!tool);
+    container.classList.toggle('has-media', !!mediaUrl);
   };
   applyChromeClasses();
 
@@ -376,22 +370,12 @@ export function mountEditableMedia(container, {
     container.classList.toggle('is-empty', !mediaUrl);
   };
 
-  const pctFromEvent = (e) => {
-    const rect = annotLayer.getBoundingClientRect();
-    if (!rect.width || !rect.height) return { x: 0, y: 0 };
-    return {
-      x: Math.min(100, Math.max(0, ((e.clientX - rect.left) / rect.width) * 100)),
-      y: Math.min(100, Math.max(0, ((e.clientY - rect.top) / rect.height) * 100))
-    };
-  };
-
   const paintOverlays = () => {
-    const canEdit = editMode && isAdmin && mediaType === 'image' && !!mediaUrl;
-    annotLayer.classList.toggle('is-editable', canEdit);
+    annotLayer.classList.remove('is-editable');
     annotLayer.innerHTML = '';
     overlays.forEach((ov) => {
       const el = document.createElement('div');
-      el.className = `vcms-annot vcms-annot-${ov.type}${selectedId === ov.id ? ' is-selected' : ''}`;
+      el.className = `vcms-annot vcms-annot-${ov.type}`;
       el.dataset.id = ov.id;
       if (ov.type === 'rect') {
         el.style.left = `${ov.x}%`;
@@ -403,14 +387,6 @@ export function mountEditableMedia(container, {
           lab.className = 'vcms-annot-label';
           lab.textContent = ov.label;
           el.appendChild(lab);
-        }
-        if (canEdit && selectedId === ov.id) {
-          ['nw', 'ne', 'sw', 'se'].forEach((h) => {
-            const handle = document.createElement('i');
-            handle.className = `vcms-annot-handle vcms-annot-handle-${h}`;
-            handle.dataset.handle = h;
-            el.appendChild(handle);
-          });
         }
       } else {
         el.classList.add(ov.side === 'right' ? 'side-right' : 'side-left');
@@ -428,34 +404,26 @@ export function mountEditableMedia(container, {
   paintContent();
   paintOverlays();
 
-  // Public / preview: overlays only
   if (!editMode || !isAdmin) return;
 
   const annotBar = document.createElement('div');
   annotBar.className = 'vcms-annot-toolbar';
   annotBar.innerHTML = `
     <button type="button" class="vcms-hover-btn" data-annot="width">크기: ${WIDTH_LABEL[width]}</button>
-    <button type="button" class="vcms-hover-btn" data-annot="rect">영역</button>
-    <button type="button" class="vcms-hover-btn" data-annot="bubble">말풍선</button>
-    <button type="button" class="vcms-hover-btn" data-annot="side" hidden>꼬리</button>
-    <button type="button" class="vcms-hover-btn" data-annot="edit-text" hidden>텍스트</button>
-    <button type="button" class="vcms-hover-btn is-danger" data-annot="delete" hidden>삭제</button>`;
+    <button type="button" class="vcms-hover-btn" data-annot="edit" hidden>사진 편집</button>
+    <button type="button" class="vcms-hover-btn is-danger" data-annot="clear-media" hidden>사진 제거</button>`;
   container.appendChild(annotBar);
 
   const syncAnnotBar = () => {
-    const sel = overlays.find((o) => o.id === selectedId);
-    const hasImage = mediaType === 'image' && !!mediaUrl;
-    annotBar.querySelector('[data-annot="rect"]').hidden = !hasImage;
-    annotBar.querySelector('[data-annot="bubble"]').hidden = !hasImage;
+    const hasMedia = !!mediaUrl;
+    const hasImage = mediaType === 'image' && hasMedia;
+    container.classList.toggle('has-media', hasMedia);
+    annotBar.querySelector('[data-annot="width"]').hidden = !hasMedia;
     annotBar.querySelector('[data-annot="width"]').textContent = `크기: ${WIDTH_LABEL[width]}`;
-    annotBar.querySelector('[data-annot="rect"]').classList.toggle('is-active', tool === 'rect');
-    annotBar.querySelector('[data-annot="bubble"]').classList.toggle('is-active', tool === 'bubble');
-    annotBar.querySelector('[data-annot="side"]').hidden = !(sel && sel.type === 'bubble');
-    annotBar.querySelector('[data-annot="edit-text"]').hidden = !sel;
-    annotBar.querySelector('[data-annot="delete"]').hidden = !sel;
-    if (sel?.type === 'bubble') {
-      annotBar.querySelector('[data-annot="side"]').textContent = sel.side === 'right' ? '꼬리: 우' : '꼬리: 좌';
-    }
+    annotBar.querySelector('[data-annot="edit"]').hidden = !hasImage;
+    annotBar.querySelector('[data-annot="clear-media"]').hidden = !hasMedia;
+    annotBar.querySelector('[data-annot="clear-media"]').textContent =
+      mediaType === 'video' || mediaType === 'youtube' ? '영상 제거' : '사진 제거';
   };
   syncAnnotBar();
 
@@ -471,16 +439,17 @@ export function mountEditableMedia(container, {
     : mediaType === 'image'
       ? [
         { label: '사진 변경', action: 'add-image' },
+        { label: '사진 편집', action: 'edit-image' },
         { label: '영상으로 변경', action: 'add-video' },
         { label: 'YouTube', action: 'add-youtube' },
         { label: '맞춤', action: 'fit' },
-        { label: '삭제', action: 'clear', danger: true }
+        { label: '사진 제거', action: 'clear', danger: true }
       ]
       : [
         { label: '영상 변경', action: mediaType === 'youtube' ? 'add-youtube' : 'add-video' },
         { label: '사진으로 변경', action: 'add-image' },
         { label: mediaType === 'youtube' ? 'URL 변경' : '맞춤', action: mediaType === 'youtube' ? 'add-youtube' : 'fit' },
-        { label: '삭제', action: 'clear', danger: true }
+        { label: '영상 제거', action: 'clear', danger: true }
       ];
 
   const toolbar = adminHoverToolbar(buttons);
@@ -495,14 +464,15 @@ export function mountEditableMedia(container, {
     emit();
   };
 
-  const setMedia = (type, url, poster = '') => {
+  const setMedia = (type, url, poster = '', nextOverlays = null) => {
     mediaType = type;
     mediaUrl = url;
     posterUrl = poster;
     if (type !== 'image') {
       overlays = [];
-      selectedId = null;
-      tool = null;
+      pendingImageFile = null;
+    } else if (Array.isArray(nextOverlays)) {
+      overlays = normalizeMediaOverlays(nextOverlays);
     }
     paintContent();
     paintOverlays();
@@ -511,23 +481,28 @@ export function mountEditableMedia(container, {
     emit();
   };
 
-  const editSelectedText = () => {
-    const sel = overlays.find((o) => o.id === selectedId);
-    if (!sel) return;
-    if (sel.type === 'rect') {
-      const next = prompt('영역 라벨', sel.label || '');
-      if (next == null) return;
-      sel.label = String(next).slice(0, 80);
-    } else {
-      const next = prompt('말풍선 텍스트', sel.text || '');
-      if (next == null) return;
-      sel.text = String(next).slice(0, 120);
+  const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
+    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-3');
+    const result = await openMediaAnnotEditor({ imageUrl: url, overlays: seedOverlays });
+    if (!result) {
+      if (file && url.startsWith('blob:')) URL.revokeObjectURL(url);
+      return false;
     }
-    paintOverlays();
-    emit();
+    pendingImageFile = file;
+    setMedia('image', url, '', result.overlays);
+    if (file) onFile?.({ kind: 'image', file });
+    else onFile?.({ kind: 'image-edit', file: null });
+    return true;
   };
 
-  annotBar.addEventListener('click', (e) => {
+  const pickAndEditImage = async () => {
+    const file = await pickFile('image/*');
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    await openImageEditor(preview, file, []);
+  };
+
+  annotBar.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-annot]');
     if (!btn) return;
     e.preventDefault();
@@ -540,205 +515,20 @@ export function mountEditableMedia(container, {
       emit();
       return;
     }
-    if (act === 'rect' || act === 'bubble') {
-      tool = tool === act ? null : act;
-      selectedId = null;
-      applyChromeClasses();
-      paintOverlays();
-      syncAnnotBar();
+    if (act === 'edit') {
+      if (mediaType === 'image' && mediaUrl) await openImageEditor(mediaUrl, pendingImageFile, overlays);
       return;
     }
-    if (act === 'side') {
-      const sel = overlays.find((o) => o.id === selectedId);
-      if (!sel || sel.type !== 'bubble') return;
-      sel.side = sel.side === 'right' ? 'left' : 'right';
-      paintOverlays();
-      syncAnnotBar();
-      emit();
-      return;
-    }
-    if (act === 'edit-text') {
-      editSelectedText();
-      return;
-    }
-    if (act === 'delete') {
-      if (!selectedId) return;
-      overlays = overlays.filter((o) => o.id !== selectedId);
-      selectedId = null;
-      paintOverlays();
-      syncAnnotBar();
-      emit();
+    if (act === 'clear-media') {
+      if (!mediaUrl) return;
+      const label = mediaType === 'video' || mediaType === 'youtube' ? '영상을 제거할까요?' : '사진을 제거할까요?';
+      if (!confirmDelete(`${label} (프레임은 유지됩니다)`)) return;
+      overlays = [];
+      pendingImageFile = null;
+      setMedia('', '');
+      onFile?.({ kind: 'clear', file: null });
     }
   });
-
-  // Annotation interactions
-  annotLayer.addEventListener('mousedown', (e) => {
-    if (!(editMode && isAdmin && mediaType === 'image' && mediaUrl)) return;
-    const handle = e.target.closest('[data-handle]');
-    const annotEl = e.target.closest('.vcms-annot');
-    if (handle && annotEl) {
-      e.preventDefault();
-      e.stopPropagation();
-      const ov = overlays.find((o) => o.id === annotEl.dataset.id);
-      if (!ov || ov.type !== 'rect') return;
-      selectedId = ov.id;
-      tool = null;
-      const start = pctFromEvent(e);
-      const orig = { x: ov.x, y: ov.y, w: ov.w, h: ov.h };
-      const corner = handle.dataset.handle;
-      const onMove = (ev) => {
-        const p = pctFromEvent(ev);
-        let x1 = orig.x;
-        let y1 = orig.y;
-        let x2 = orig.x + orig.w;
-        let y2 = orig.y + orig.h;
-        if (corner.includes('w')) x1 = p.x;
-        if (corner.includes('e')) x2 = p.x;
-        if (corner.includes('n')) y1 = p.y;
-        if (corner.includes('s')) y2 = p.y;
-        ov.x = Math.min(x1, x2);
-        ov.y = Math.min(y1, y2);
-        ov.w = Math.max(2, Math.abs(x2 - x1));
-        ov.h = Math.max(2, Math.abs(y2 - y1));
-        paintOverlays();
-      };
-      const onUp = () => {
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
-        emit();
-        syncAnnotBar();
-      };
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
-      paintOverlays();
-      syncAnnotBar();
-      return;
-    }
-    if (annotEl && !tool) {
-      e.preventDefault();
-      e.stopPropagation();
-      const ov = overlays.find((o) => o.id === annotEl.dataset.id);
-      if (!ov) return;
-      selectedId = ov.id;
-      const start = pctFromEvent(e);
-      const origX = ov.x;
-      const origY = ov.y;
-      const onMove = (ev) => {
-        const p = pctFromEvent(ev);
-        const dx = p.x - start.x;
-        const dy = p.y - start.y;
-        if (ov.type === 'rect') {
-          ov.x = Math.min(100 - ov.w, Math.max(0, origX + dx));
-          ov.y = Math.min(100 - ov.h, Math.max(0, origY + dy));
-        } else {
-          ov.x = Math.min(100, Math.max(0, origX + dx));
-          ov.y = Math.min(100, Math.max(0, origY + dy));
-        }
-        paintOverlays();
-      };
-      const onUp = () => {
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
-        emit();
-        syncAnnotBar();
-      };
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
-      paintOverlays();
-      syncAnnotBar();
-      return;
-    }
-    if (tool === 'rect') {
-      e.preventDefault();
-      e.stopPropagation();
-      const start = pctFromEvent(e);
-      const id = newOverlayId();
-      drawState = { id, x0: start.x, y0: start.y };
-      const draft = { id, type: 'rect', x: start.x, y: start.y, w: 2, h: 2, label: '' };
-      overlays = [...overlays.filter((o) => o.id !== id), draft];
-      selectedId = id;
-      const onMove = (ev) => {
-        const p = pctFromEvent(ev);
-        draft.x = Math.min(drawState.x0, p.x);
-        draft.y = Math.min(drawState.y0, p.y);
-        draft.w = Math.max(2, Math.abs(p.x - drawState.x0));
-        draft.h = Math.max(2, Math.abs(p.y - drawState.y0));
-        paintOverlays();
-      };
-      const onUp = () => {
-        window.removeEventListener('mousemove', onMove);
-        window.removeEventListener('mouseup', onUp);
-        tool = null;
-        applyChromeClasses();
-        paintOverlays();
-        syncAnnotBar();
-        emit();
-        const label = prompt('영역 라벨 (선택)', '');
-        if (label != null && label.trim()) {
-          draft.label = String(label).slice(0, 80);
-          paintOverlays();
-          emit();
-        }
-      };
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
-      paintOverlays();
-      syncAnnotBar();
-      return;
-    }
-    if (tool === 'bubble') {
-      e.preventDefault();
-      e.stopPropagation();
-      const p = pctFromEvent(e);
-      const text = prompt('말풍선 텍스트', '여기');
-      if (text == null) return;
-      const ov = {
-        id: newOverlayId(),
-        type: 'bubble',
-        x: p.x,
-        y: p.y,
-        text: String(text).slice(0, 120) || '말풍선',
-        side: 'left'
-      };
-      overlays = [...overlays, ov];
-      selectedId = ov.id;
-      tool = null;
-      applyChromeClasses();
-      paintOverlays();
-      syncAnnotBar();
-      emit();
-    }
-  });
-
-  annotLayer.addEventListener('dblclick', (e) => {
-    const annotEl = e.target.closest('.vcms-annot');
-    if (!annotEl) return;
-    selectedId = annotEl.dataset.id;
-    syncAnnotBar();
-    editSelectedText();
-  });
-
-  const onKey = (e) => {
-    if (!container.isConnected) {
-      window.removeEventListener('keydown', onKey);
-      return;
-    }
-    if (e.key === 'Escape') {
-      tool = null;
-      selectedId = null;
-      applyChromeClasses();
-      paintOverlays();
-      syncAnnotBar();
-    }
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId && document.activeElement === document.body) {
-      overlays = overlays.filter((o) => o.id !== selectedId);
-      selectedId = null;
-      paintOverlays();
-      syncAnnotBar();
-      emit();
-    }
-  };
-  window.addEventListener('keydown', onKey);
 
   toolbar.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-action]');
@@ -746,12 +536,9 @@ export function mountEditableMedia(container, {
     e.preventDefault();
     e.stopPropagation();
     const act = btn.dataset.action;
-    if (act === 'add-image') {
-      const file = await pickFile('image/*');
-      if (!file) return;
-      const preview = URL.createObjectURL(file);
-      setMedia('image', preview);
-      onFile?.({ kind: 'image', file });
+    if (act === 'add-image') await pickAndEditImage();
+    if (act === 'edit-image') {
+      if (mediaType === 'image' && mediaUrl) await openImageEditor(mediaUrl, pendingImageFile, overlays);
     }
     if (act === 'add-video') {
       const file = await pickFile('video/*');
@@ -772,8 +559,7 @@ export function mountEditableMedia(container, {
     if (act === 'clear') {
       if (!confirmDelete('미디어를 비울까요? (프레임은 유지됩니다)')) return;
       overlays = [];
-      selectedId = null;
-      tool = null;
+      pendingImageFile = null;
       setMedia('', '');
       onFile?.({ kind: 'clear', file: null });
     }
@@ -789,13 +575,13 @@ export function mountEditableMedia(container, {
     container.classList.remove('dragover');
     const file = e.dataTransfer?.files?.[0];
     if (!file) return;
-    const preview = URL.createObjectURL(file);
     if (file.type.startsWith('video/')) {
+      const preview = URL.createObjectURL(file);
       setMedia('video', preview);
       onFile?.({ kind: 'video', file });
     } else if (file.type.startsWith('image/')) {
-      setMedia('image', preview);
-      onFile?.({ kind: 'image', file });
+      const preview = URL.createObjectURL(file);
+      await openImageEditor(preview, file, []);
     }
   });
 }

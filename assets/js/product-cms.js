@@ -13,7 +13,7 @@ import {
   waitForAdmin,
   onAuthAdmin,
   uploadToStorage
-} from './visual-cms.js?v=media-annot-1';
+} from './visual-cms.js?v=media-annot-3';
 import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';

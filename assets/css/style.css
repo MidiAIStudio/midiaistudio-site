@@ -1975,9 +1975,10 @@ body.guide-cms-editing [contenteditable=true]:focus{outline-color:#22d3ee;backgr
 .vcms-placeholder-text:before{content:attr(data-placeholder);color:var(--muted);opacity:.7;pointer-events:none}
 .vcms-placeholder-text:focus:before{content:none}
 .vcms-media-slot{position:relative;min-height:180px;aspect-ratio:16/10;overflow:hidden}
-.vcms-media-slot.width-full{width:100%;max-width:none;margin-inline:0}
-.vcms-media-slot.width-md{width:min(100%,72%);max-width:720px;margin-inline:auto}
-.vcms-media-slot.width-sm{width:min(100%,48%);max-width:480px;margin-inline:auto}
+.vcms-media-slot.width-full{width:100%;max-width:none;margin-inline:0;justify-self:stretch}
+.vcms-media-slot.width-md{width:min(100%,72%);max-width:720px;margin-inline:auto;justify-self:center}
+.vcms-media-slot.width-sm{width:min(100%,48%);max-width:480px;margin-inline:auto;justify-self:center}
+.product-feature .vcms-media-slot.width-md,.product-feature .vcms-media-slot.width-sm{max-width:100%}
 .vcms-media-body,.vcms-media-body img,.vcms-media-body video,.vcms-media-body iframe{display:block;width:100%;height:100%;min-height:180px}
 .vcms-media-slot.fit-cover .vcms-media-body img,.vcms-media-slot.fit-cover .vcms-media-body video{object-fit:cover;object-position:center}
 .vcms-media-slot.fit-contain .vcms-media-body img,.vcms-media-slot.fit-contain .vcms-media-body video{object-fit:contain;object-position:center;background:rgba(0,0,0,.35)}
@@ -1991,9 +1992,24 @@ body.guide-cms-editing [contenteditable=true]:focus{outline-color:#22d3ee;backgr
 .vcms-media-annots.is-editable{pointer-events:auto;cursor:crosshair}
 .vcms-media-slot.is-annotating .vcms-media-overlay{display:none!important}
 .vcms-annot{position:absolute;box-sizing:border-box;pointer-events:auto}
-.vcms-annot-rect{border:2px solid rgba(34,211,238,.95);background:rgba(34,211,238,.12);border-radius:4px}
-.vcms-annot-rect.is-selected{border-color:#fff;box-shadow:0 0 0 1px rgba(34,211,238,.8)}
-.vcms-annot-label{position:absolute;left:0;top:0;transform:translateY(-100%);margin-top:-2px;padding:2px 6px;font-size:11px;font-weight:800;line-height:1.3;color:#061018;background:rgba(34,211,238,.95);border-radius:4px 4px 0 0;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.vcms-annot-rect{
+  border:2px solid transparent;border-radius:6px;
+  background:
+    linear-gradient(rgba(8,12,24,.18),rgba(8,12,24,.18)) padding-box,
+    linear-gradient(135deg,#ff8a65 0%,#ffd54f 32%,#80deea 68%,#ce93d8 100%) border-box;
+  background-origin:border-box;
+  background-clip:padding-box,border-box;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08), inset 0 0 18px rgba(255,213,79,.08)
+}
+.vcms-annot-rect.is-selected{
+  background:
+    linear-gradient(rgba(8,12,24,.28),rgba(8,12,24,.28)) padding-box,
+    linear-gradient(135deg,#ffe082 0%,#80cbc4 45%,#f48fb1 100%) border-box;
+  background-origin:border-box;
+  background-clip:padding-box,border-box;
+  box-shadow:0 0 0 1px rgba(255,255,255,.22), 0 0 16px rgba(255,213,79,.22)
+}
+.vcms-annot-label{position:absolute;left:0;top:0;transform:translateY(-100%);margin-top:-2px;padding:2px 7px;font-size:11px;font-weight:800;line-height:1.3;color:#1a1420;background:linear-gradient(135deg,#ffe082,#80deea);border-radius:5px 5px 0 0;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
 .vcms-annot-handle{position:absolute;width:10px;height:10px;border-radius:2px;background:#fff;border:1px solid #22d3ee;z-index:1}
 .vcms-annot-handle-nw{left:-5px;top:-5px;cursor:nwse-resize}
 .vcms-annot-handle-ne{right:-5px;top:-5px;cursor:nesw-resize}
@@ -2005,11 +2021,56 @@ body.guide-cms-editing [contenteditable=true]:focus{outline-color:#22d3ee;backgr
 .vcms-annot-bubble.side-left .vcms-bubble-text::after{left:14px}
 .vcms-annot-bubble.side-right .vcms-bubble-text::after{right:14px;left:auto}
 .vcms-annot-bubble.is-selected .vcms-bubble-text{outline:2px solid #22d3ee}
-.vcms-annot-toolbar{position:absolute;left:8px;right:8px;bottom:8px;z-index:4;display:none;flex-wrap:wrap;gap:6px;justify-content:center;padding:6px;border-radius:12px;background:rgba(6,8,16,.72);backdrop-filter:blur(8px)}
+.vcms-annot-toolbar{position:absolute;left:8px;right:8px;bottom:8px;z-index:5;display:none;flex-wrap:wrap;gap:6px;justify-content:center;padding:6px;border-radius:12px;background:rgba(6,8,16,.78);backdrop-filter:blur(8px);pointer-events:auto}
+/* 미디어가 있으면 편집 모드에서 크기/제거 툴바를 항상 표시 */
+.vcms-editing .vcms-media-slot.has-media>.vcms-annot-toolbar,
+.product-cms-editing .vcms-media-slot.has-media>.vcms-annot-toolbar,
+.guide-cms-editing .vcms-media-slot.has-media>.vcms-annot-toolbar,
 .vcms-editing .vcms-media-slot:hover>.vcms-annot-toolbar,.vcms-editing .vcms-media-slot.is-annotating>.vcms-annot-toolbar,
 .product-cms-editing .vcms-media-slot:hover>.vcms-annot-toolbar,.product-cms-editing .vcms-media-slot.is-annotating>.vcms-annot-toolbar,
 .guide-cms-editing .vcms-media-slot:hover>.vcms-annot-toolbar,.guide-cms-editing .vcms-media-slot.is-annotating>.vcms-annot-toolbar{display:flex}
 .vcms-annot-toolbar .vcms-hover-btn.is-active{background:rgba(34,211,238,.28);border-color:rgba(34,211,238,.55)}
+body.vcms-annot-modal-open{overflow:hidden}
+.vcms-annot-modal{
+  position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:18px;
+  background:rgba(4,8,16,.72);backdrop-filter:blur(10px)
+}
+.vcms-annot-modal-panel{
+  width:min(1080px,100%);max-height:min(92vh,920px);display:grid;grid-template-rows:auto 1fr auto;
+  border-radius:20px;border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg,rgba(16,20,36,.98),rgba(8,11,22,.99));
+  box-shadow:0 28px 80px rgba(0,0,0,.5);overflow:hidden
+}
+.vcms-annot-modal-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:16px 18px 12px;border-bottom:1px solid rgba(255,255,255,.08)
+}
+.vcms-annot-modal-head h3{margin:2px 0 4px;font-size:20px}
+.vcms-annot-modal-head .eyebrow{margin:0;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#8b93b3;font-weight:800}
+.vcms-annot-modal-head .muted{margin:0}
+.vcms-annot-stage{
+  min-height:240px;overflow:auto;padding:14px 18px;display:grid;place-items:center;
+  background:
+    radial-gradient(ellipse at 20% 0%,rgba(255,213,79,.08),transparent 45%),
+    radial-gradient(ellipse at 90% 100%,rgba(128,222,234,.08),transparent 40%),
+    rgba(0,0,0,.28)
+}
+.vcms-annot-canvas{position:relative;max-width:100%;max-height:min(68vh,720px);line-height:0;border-radius:12px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35)}
+.vcms-annot-source{display:block;max-width:100%;max-height:min(68vh,720px);width:auto;height:auto;user-select:none;-webkit-user-drag:none}
+.vcms-annot-canvas .vcms-media-annots{inset:0}
+.vcms-annot-modal.is-annotating .vcms-media-annots{cursor:crosshair}
+.vcms-annot-modal-toolbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 18px;
+  border-top:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.22)
+}
+.vcms-annot-modal-spacer{flex:1 1 12px}
+.vcms-annot-modal-toolbar .vcms-hover-btn.is-active{background:rgba(255,213,79,.22);border-color:rgba(255,213,79,.45)}
+@media(max-width:720px){
+  .vcms-annot-modal{padding:8px}
+  .vcms-annot-modal-panel{max-height:96vh;border-radius:16px}
+  .vcms-annot-modal-head{padding:12px}
+  .vcms-annot-stage{padding:10px}
+}
 .vcms-card-settings{margin-bottom:6px}
 .vcms-card-settings-abs{position:absolute;top:8px;left:8px;z-index:4}
 .product-card{position:relative}
