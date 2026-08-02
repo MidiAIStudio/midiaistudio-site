@@ -502,6 +502,8 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-ticket-reply.is-admin{border-color:rgba(34,211,238,.28);background:rgba(34,211,238,.07)}
 .admin-page .admin-ticket-reply b{display:block;font-size:11px;color:#9aa3c7;margin-bottom:4px}
 .admin-page .admin-ticket-reply p{margin:0;font-size:13px;line-height:1.55;color:#eef0ff}
+.admin-page .admin-ticket-reply .ticket-reply-actions,
+.hub-page .hub-reply-list .reply .ticket-reply-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .admin-page .admin-ticket-reply-form{display:grid;gap:8px}
 .admin-page .admin-ticket-reply-form textarea{width:100%;min-height:78px;resize:vertical;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.28);color:var(--text);font:inherit;font-size:13px;line-height:1.5}
 .admin-page .admin-ticket-reply-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}

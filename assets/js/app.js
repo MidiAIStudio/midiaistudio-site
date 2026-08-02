@@ -2737,10 +2737,73 @@ function listenReplies(ticketId, container){
   const q=query(collection(db,'supportTickets',ticketId,'replies'),orderBy('createdAt','asc'));
   return addUnsub(onSnapshot(q, snap => {
     const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    container.innerHTML=rows.map(r=>`<div class="reply"><b>${esc(r.role==='admin'?BRAND_AUTHOR:(r.displayName||r.email||'user'))} · ${fmtDate(r.createdAt)}</b><p>${nl2br(r.content)}</p></div>`).join('');
+    container.innerHTML=rows.length
+      ? rows.map(r=>ticketReplyItemHtml(r, ticketId, {adminView:false})).join('')
+      : '';
+    bindTicketReplyActions(container);
   }, err => { console.error('replies',err); container.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
-function bindReplyForms(root=document){ root.querySelectorAll('.reply-form').forEach(f=>{ if(f.dataset.bound) return; f.dataset.bound='1'; f.addEventListener('submit',ticketReply); }); bindTicketActions(root); }
+function ticketReplyItemHtml(r, ticketId, {adminView=false}={}){
+  const author = r.role==='admin' ? BRAND_AUTHOR : (r.displayName||r.email||'user');
+  const when = fmtDate(r.createdAt);
+  const edited = r.edited ? ' · 수정됨' : '';
+  const manage = isAdminUser
+    ? `<div class="ticket-reply-actions"><button type="button" class="secondary mini-btn" data-reply-edit data-ticket="${esc(ticketId)}" data-reply="${esc(r.id)}">${tr('edit')}</button><button type="button" class="secondary mini-btn danger-btn" data-reply-delete data-ticket="${esc(ticketId)}" data-reply="${esc(r.id)}">${tr('del')}</button></div>`
+    : '';
+  if(adminView){
+    return `<div class="admin-ticket-reply ${r.role==='admin'?'is-admin':''}" data-reply-id="${esc(r.id)}"><b>${esc(author)} · ${esc(when)}${edited}</b><p>${nl2br(r.content||'')}</p>${manage}</div>`;
+  }
+  return `<div class="reply ${r.role==='admin'?'is-admin':''}" data-reply-id="${esc(r.id)}"><b>${esc(author)} · ${esc(when)}${edited}</b><p>${nl2br(r.content||'')}</p>${manage}</div>`;
+}
+function bindTicketReplyActions(root=document){
+  root.querySelectorAll('[data-reply-edit]').forEach(btn=>{
+    if(btn.dataset.bound) return;
+    btn.dataset.bound='1';
+    btn.addEventListener('click', ()=>editTicketReply(btn.dataset.ticket, btn.dataset.reply));
+  });
+  root.querySelectorAll('[data-reply-delete]').forEach(btn=>{
+    if(btn.dataset.bound) return;
+    btn.dataset.bound='1';
+    btn.addEventListener('click', ()=>deleteTicketReply(btn.dataset.ticket, btn.dataset.reply));
+  });
+}
+async function editTicketReply(ticketId, replyId){
+  if(!currentUser || !isAdminUser){ alert(tr('no_permission')); return; }
+  if(!ticketId || !replyId) return;
+  try{
+    const {doc,getDoc,updateDoc,serverTimestamp}=firestoreApi;
+    const ref=doc(db,'supportTickets',ticketId,'replies',replyId);
+    const snap=await getDoc(ref);
+    if(!snap.exists()){ alert(tr('empty')); return; }
+    const r=snap.data()||{};
+    const data=await openEditModal('답변 수정', [
+      {name:'content', label:'내용', type:'textarea', value:r.content||'', required:true, rows:8}
+    ]);
+    if(!data) return;
+    const content=String(data.content||'').trim();
+    if(!content) return;
+    await updateDoc(ref,{content, edited:true, updatedAt:serverTimestamp()});
+    await updateDoc(doc(db,'supportTickets',ticketId),{updatedAt:serverTimestamp()});
+  }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
+}
+async function deleteTicketReply(ticketId, replyId){
+  if(!currentUser || !isAdminUser){ alert(tr('no_permission')); return; }
+  if(!ticketId || !replyId) return;
+  if(!confirm(tr('confirm_delete'))) return;
+  try{
+    const {doc,getDoc,deleteDoc,updateDoc,collection,getDocs,query,orderBy,serverTimestamp}=firestoreApi;
+    await deleteDoc(doc(db,'supportTickets',ticketId,'replies',replyId));
+    const ticketRef=doc(db,'supportTickets',ticketId);
+    const ticketSnap=await getDoc(ticketRef);
+    const curStatus=ticketSnap.exists() ? (ticketSnap.data()?.status || 'open') : 'open';
+    const snap=await getDocs(query(collection(db,'supportTickets',ticketId,'replies'),orderBy('createdAt','asc')));
+    const hasAdminReply=snap.docs.some(d=>(d.data()?.role)==='admin');
+    const patch={updatedAt:serverTimestamp()};
+    if(curStatus!=='closed') patch.status = hasAdminReply ? 'answered' : 'open';
+    await updateDoc(ticketRef, patch);
+  }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
+}
+function bindReplyForms(root=document){ root.querySelectorAll('.reply-form').forEach(f=>{ if(f.dataset.bound) return; f.dataset.bound='1'; f.addEventListener('submit',ticketReply); }); bindTicketActions(root); bindTicketReplyActions(root); }
 function bindTicketActions(root=document){
   root.querySelectorAll('[data-ticket-edit]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>editTicket(btn.dataset.ticketEdit)); });
   root.querySelectorAll('[data-ticket-delete]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>deleteTicket(btn.dataset.ticketDelete)); });
@@ -3035,8 +3098,9 @@ function mountAdminTicketExpandPanel(box){
   adminTicketReplyUnsub = onSnapshot(q, snap => {
     const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
     replyBox.innerHTML = rows.length
-      ? rows.map(r=>`<div class="admin-ticket-reply ${r.role==='admin'?'is-admin':''}"><b>${esc(r.role==='admin'?BRAND_AUTHOR:(r.displayName||r.email||'user'))} · ${esc(fmtDate(r.createdAt))}</b><p>${nl2br(r.content||'')}</p></div>`).join('')
+      ? rows.map(r=>ticketReplyItemHtml(r, openId, {adminView:true})).join('')
       : `<p class="muted">아직 답변이 없습니다.</p>`;
+    bindTicketReplyActions(replyBox);
   }, err => {
     console.error('admin replies', err);
     replyBox.innerHTML = `<p class="muted">${esc(err.message||String(err))}</p>`;
