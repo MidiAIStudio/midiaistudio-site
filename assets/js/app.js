@@ -4105,23 +4105,10 @@ function bindAdminUserFilters(){
     const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1';
     el.addEventListener('change',()=>{
       adminCrmPage=1;
-      updateAdminCrmFilterToggleState();
       renderAdminUserTable();
     });
   });
   bindAdminCrmDirtyWatchers();
-  const filterToggle=$('adminCrmFilterToggle');
-  const filterAdvanced=$('adminCrmFilterAdvanced');
-  if(filterToggle && filterAdvanced && !filterToggle.dataset.bound){
-    filterToggle.dataset.bound='1';
-    filterToggle.addEventListener('click',()=>{
-      const open = filterAdvanced.hidden;
-      filterAdvanced.hidden = !open;
-      filterToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-      filterToggle.textContent = open ? '필터 닫기' : '고급 필터';
-      updateAdminCrmFilterToggleState();
-    });
-  }
   const floatSave=$('adminCrmFloatSave');
   if(floatSave && !floatSave.dataset.bound){
     floatSave.dataset.bound='1';
@@ -4282,20 +4269,6 @@ function bindAdminCrmDetailActions(){
     else if(action==='save-memo') await saveAdminCrmUserMemo();
     else if(action==='delete') await adminDeleteUser(uid);
   });
-}
-function updateAdminCrmFilterToggleState(){
-  const btn=$('adminCrmFilterToggle'); if(!btn) return;
-  const vals=[
-    $('adminCrmFilterOrders')?.value,
-    $('adminCrmFilterTickets')?.value
-  ].filter(v=>v && v!=='all');
-  if(vals.length){
-    btn.classList.add('is-active');
-    if($('adminCrmFilterAdvanced')?.hidden) btn.textContent = `고급 필터 · ${vals.length}`;
-  }else{
-    btn.classList.remove('is-active');
-    if($('adminCrmFilterAdvanced')?.hidden) btn.textContent = '고급 필터';
-  }
 }
 function bindAdminCrmDirtyWatchers(){
   ['adminUserRole','adminLicensePlan','adminLicenseStartsAt','adminLicenseExpiresAt','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
