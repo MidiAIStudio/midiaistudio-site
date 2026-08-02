@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=support-compact-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=support-select-dark-1">
   <script defer src="./assets/js/analytics.js"></script>
   <script type="application/ld+json">
   {
@@ -96,9 +96,9 @@
           <b id="supportAccountName">-</b>
           <span id="supportAccountEmail" class="muted">-</span>
         </div>
-        <form id="ticketForm" class="hub-form-card support-form is-disabled">
+        <form id="ticketForm" class="hub-form-card support-form">
           <label for="ticketCategory">문의 유형</label>
-          <select id="ticketCategory" required disabled>
+          <select id="ticketCategory" required>
             <option value="login">로그인/계정</option>
             <option value="license">라이선스</option>
             <option value="payment">결제/환불</option>
@@ -107,23 +107,23 @@
             <option value="other">기타</option>
           </select>
           <label for="ticketTitle">제목</label>
-          <input id="ticketTitle" required disabled placeholder="로그인 오류 / 라이선스 문의">
+          <input id="ticketTitle" required placeholder="로그인 오류 / 라이선스 문의">
           <label for="ticketContent">내용</label>
-          <textarea id="ticketContent" rows="6" required disabled placeholder="문의 내용을 자세히 적어주세요. 오류의 경우 재현 방법, 메시지, 스크린샷 설명을 포함해주세요."></textarea>
+          <textarea id="ticketContent" rows="6" required placeholder="문의 내용을 자세히 적어주세요. 오류의 경우 재현 방법, 메시지, 스크린샷 설명을 포함해주세요."></textarea>
           <div class="board-upload-box support-upload-box">
             <label for="ticketAttachments">첨부파일</label>
-            <input id="ticketAttachments" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,application/pdf,text/plain,text/csv,text/log,application/zip,application/x-zip-compressed" multiple disabled>
+            <input id="ticketAttachments" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,application/pdf,text/plain,text/csv,text/log,application/zip,application/x-zip-compressed" multiple>
             <p class="muted small-copy">스크린샷·영상·PDF·로그·ZIP · 파일당 20MB · 최대 5개</p>
             <div id="ticketAttachmentPreview" class="board-attachment-preview"><p class="muted">첨부한 파일이 없습니다.</p></div>
           </div>
           <div class="support-form-grid">
             <div>
               <label for="ticketAppVersion">앱 버전 <span class="muted">(선택)</span></label>
-              <input id="ticketAppVersion" disabled placeholder="예: 1.5.7">
+              <input id="ticketAppVersion" placeholder="예: 1.5.7">
             </div>
             <div>
               <label for="ticketOs">운영체제 <span class="muted">(선택)</span></label>
-              <select id="ticketOs" disabled>
+              <select id="ticketOs">
                 <option value="">선택</option>
                 <option value="windows11">Windows 11</option>
                 <option value="windows10">Windows 10</option>
@@ -134,10 +134,10 @@
           <label for="ticketEmail">연락 이메일</label>
           <input id="ticketEmail" disabled placeholder="Google 로그인 후 자동 입력">
           <label class="support-check">
-            <input id="ticketPrivacy" type="checkbox" required disabled>
+            <input id="ticketPrivacy" type="checkbox" required>
             <span><a href="./privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>에 따라 문의 처리를 위한 정보 수집·이용에 동의합니다.</span>
           </label>
-          <button class="primary" type="submit" disabled>문의 등록</button>
+          <button class="primary" type="submit">문의 등록</button>
           <p id="ticketFormMsg" class="form-msg"></p>
         </form>
       </div>
@@ -159,6 +159,6 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=v47-support-i18n-20260713"></script>
-  <script type="module" src="./assets/js/app.js?v=v103-i18n-patch"></script>
+  <script type="module" src="./assets/js/app.js?v=v104-support-draft"></script>
 </body>
 </html>

@@ -2647,13 +2647,16 @@ function updateSupportFormUi(){
   if(!currentUser){
     gate?.classList.remove('hidden');
     account?.classList.add('hidden');
-    form.classList.add('is-disabled');
-    fields.forEach(el=>{ el.disabled=true; });
-    resetTicketAttachments();
+    form.classList.remove('is-disabled');
+    fields.forEach(el=>{
+      if(el.id==='ticketEmail'){ el.value=''; el.disabled=true; return; }
+      el.disabled=false;
+    });
     if(loginBtn && !loginBtn.dataset.bound){
       loginBtn.dataset.bound='1';
       loginBtn.addEventListener('click',()=>$('loginBtn')?.click());
     }
+    bindTicketAttachmentPicker();
     return;
   }
   gate?.classList.add('hidden');
@@ -2670,7 +2673,12 @@ function updateSupportFormUi(){
 
 async function createTicket(e){
   e.preventDefault();
-  if(!currentUser){ showFormMsg('need_login',false); return; }
+  if(!currentUser){
+    showFormMsg('need_login',false);
+    $('supportLoginBtn')?.focus();
+    $('loginBtn')?.click();
+    return;
+  }
   if(!$('ticketPrivacy')?.checked){ showFormMsg('privacy_required',false); return; }
   const title=$('ticketTitle').value.trim();
   const content=$('ticketContent').value.trim();
