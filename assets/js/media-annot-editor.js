@@ -136,28 +136,15 @@ async function prepareDisplaySource({ imageUrl, sourceFile = null }) {
   let bakeFile = sourceFile instanceof Blob ? sourceFile : null;
   let revokeUrl = null;
 
-  // Always prefer a fresh object URL from local bytes — avoids revoked blob: URLs
-  // and Firebase CORS failures on <img crossOrigin>.
+  // Local bytes → fresh object URL (avoids revoked blob: URLs).
   if (bakeFile) {
     displayUrl = URL.createObjectURL(bakeFile);
     revokeUrl = displayUrl;
     return { displayUrl, bakeFile, revokeUrl };
   }
 
-  if (!displayUrl || displayUrl.startsWith('blob:') || displayUrl.startsWith('data:')) {
-    return { displayUrl, bakeFile: null, revokeUrl: null };
-  }
-
-  try {
-    const res = await fetch(displayUrl, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
-    if (res.ok) {
-      bakeFile = await res.blob();
-      displayUrl = URL.createObjectURL(bakeFile);
-      revokeUrl = displayUrl;
-      return { displayUrl, bakeFile, revokeUrl };
-    }
-  } catch (_) { /* fall through — display HTTPS without CORS */ }
-
+  // Remote HTTPS: show as-is without crossOrigin. Do not block on fetch/getBlob
+  // (Storage CORS is missing; getBlob can hang indefinitely).
   return { displayUrl, bakeFile: null, revokeUrl: null };
 }
 

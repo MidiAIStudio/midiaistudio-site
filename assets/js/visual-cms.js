@@ -301,18 +301,10 @@ export function normalizeMediaOverlays(list) {
   }).filter(Boolean);
 }
 
-function storagePathFromDownloadUrl(url) {
-  try {
-    const u = new URL(String(url || ''));
-    const m = u.pathname.match(/\/o\/([^?]+)/);
-    if (m) return decodeURIComponent(m[1]);
-  } catch (_) { /* ignore */ }
-  return '';
-}
-
 /**
- * Turn a saved Firebase/HTTPS image into a local blob for the editor.
- * Avoids broken previews from <img crossOrigin> when Storage CORS is missing.
+ * Prefer a local File/Blob when we already have one.
+ * Do NOT call Storage getBlob here — it often hangs (no timeout) and freezes the
+ * "사진 편집" click. Plain HTTPS URLs display fine without crossOrigin.
  */
 async function resolveImageSourceForEditor(url, file = null) {
   if (file instanceof Blob) {
@@ -323,45 +315,7 @@ async function resolveImageSourceForEditor(url, file = null) {
       revokeUrl: displayUrl
     };
   }
-  if (!url || url.startsWith('blob:') || url.startsWith('data:')) {
-    return { imageUrl: url, sourceFile: null, revokeUrl: null };
-  }
-
-  const { storage, st } = await getFirebase().catch(() => ({ storage: null, st: null }));
-  const tryGetBlob = async (refArg) => {
-    if (!storage || !st?.getBlob || !st?.ref) return null;
-    try {
-      return await st.getBlob(st.ref(storage, refArg));
-    } catch (err) {
-      console.warn('storage getBlob failed', refArg, err);
-      return null;
-    }
-  };
-
-  // Full download URL first (Firebase modular supports https refs), then /o/ path.
-  let blob = await tryGetBlob(url);
-  if (!blob) {
-    const path = storagePathFromDownloadUrl(url);
-    if (path) blob = await tryGetBlob(path);
-  }
-  if (blob) {
-    const obj = URL.createObjectURL(blob);
-    return { imageUrl: obj, sourceFile: blob, revokeUrl: obj };
-  }
-
-  try {
-    const res = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
-    if (res.ok) {
-      const fetched = await res.blob();
-      const obj = URL.createObjectURL(fetched);
-      return { imageUrl: obj, sourceFile: fetched, revokeUrl: obj };
-    }
-  } catch (err) {
-    console.warn('fetch for editor failed', err);
-  }
-
-  // Last resort: plain URL without crossOrigin (page preview already shows this).
-  return { imageUrl: url, sourceFile: null, revokeUrl: null };
+  return { imageUrl: url || '', sourceFile: null, revokeUrl: null };
 }
 
 /**
@@ -603,7 +557,7 @@ export function mountEditableMedia(container, {
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
     let revokeHydrated = null;
     try {
-      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-img-fix-18');
+      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-img-fix-19');
       const previewImg = body.querySelector('img');
       const pageSrc = previewImg?.currentSrc || previewImg?.getAttribute('src') || url;
       const resolved = await resolveImageSourceForEditor(pageSrc || url, file);
