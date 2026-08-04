@@ -15,7 +15,7 @@ import {
   uploadToStorage,
   normalizeMediaWidthPct,
   normalizeMediaAspect
-} from './visual-cms.js?v=annot-align-20';
+} from './visual-cms.js?v=slot-scale-22';
 import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';

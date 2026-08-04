@@ -486,12 +486,12 @@ export function mountEditableMedia(container, {
   annotBar.innerHTML = `
     <button type="button" class="vcms-hover-btn" data-annot="edit" hidden>사진 편집</button>
     <button type="button" class="vcms-hover-btn is-danger" data-annot="clear-media" hidden>사진 제거</button>
-    <span class="muted small" data-annot="size-hint">우하단 핸들로 창 크기</span>`;
+    <span class="muted small" data-annot="size-hint">우하단: 창 크기 (사진 비율 고정)</span>`;
   container.appendChild(annotBar);
 
   const slotSe = document.createElement('i');
   slotSe.className = 'vcms-slot-se';
-  slotSe.title = '창 크기 조절';
+  slotSe.title = '창 크기 조절 (사진 편집 비율·확대는 유지)';
   container.appendChild(slotSe);
 
   const syncAnnotBar = () => {
@@ -509,16 +509,14 @@ export function mountEditableMedia(container, {
   slotSe.addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const parent = container.parentElement;
-    if (!parent) return;
-    const parentW = parent.getBoundingClientRect().width || 1;
     const startBox = container.getBoundingClientRect();
-    const start = { x: e.clientX, y: e.clientY, w: widthPct, a: aspect };
+    const startW = widthPct;
+    // Keep photo-editor aspect locked; only scale the outer window uniformly.
     const onMove = (ev) => {
-      const nextWpx = Math.max(120, startBox.width + (ev.clientX - start.x));
-      const nextHpx = Math.max(80, startBox.height + (ev.clientY - start.y));
-      widthPct = normalizeMediaWidthPct((nextWpx / parentW) * 100);
-      aspect = normalizeMediaAspect(nextWpx / nextHpx);
+      const scaleX = (startBox.width + (ev.clientX - e.clientX)) / Math.max(1, startBox.width);
+      const scaleY = (startBox.height + (ev.clientY - e.clientY)) / Math.max(1, startBox.height);
+      const scale = Math.max(0.35, Math.min(2.5, Math.max(scaleX, scaleY)));
+      widthPct = normalizeMediaWidthPct(startW * scale);
       applyChromeClasses();
     };
     const onUp = () => {
