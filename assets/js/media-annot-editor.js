@@ -161,19 +161,27 @@ export function openMediaAnnotEditor(opts) {
   }));
 }
 
-function openMediaAnnotEditorUi({ imageUrl, overlays = [], frameAspect: seedAspect = 1.6, sourceFile = null, _revokeUrl = null }) {
+function openMediaAnnotEditorUi({
+  imageUrl,
+  overlays = [],
+  frameAspect: seedAspect = 1.6,
+  sourceFile = null,
+  hydrateBakeFile = null,
+  _revokeUrl = null
+}) {
   return new Promise((resolve) => {
     let list = normalizeMediaOverlays(overlays).map((o) => ({ ...o }));
     let selectedId = null;
     let tool = null; // 'rect' | 'bubble' | null
     let uiMode = 'transform'; // 'transform' | 'crop'
-    let zoom = 1.15;
+    // zoom=1 matches page object-fit:cover; >1 was causing box/photo drift after save
+    let zoom = 1;
     let panX = 0.5;
     let panY = 0.5;
     let crop = { x: 10, y: 10, w: 80, h: 80 }; // % of natural image
     let natural = { w: 0, h: 0 };
     let frameAspect = clamp(Number(seedAspect) || 1.6, 0.45, 3.2);
-    const bakeSourceFile = sourceFile instanceof Blob ? sourceFile : null;
+    let bakeSourceFile = sourceFile instanceof Blob ? sourceFile : null;
 
     const root = document.createElement('div');
     root.className = 'vcms-annot-modal';
@@ -394,12 +402,26 @@ function openMediaAnnotEditorUi({ imageUrl, overlays = [], frameAspect: seedAspe
       try {
         const nextOverlays = uiMode === 'crop' ? [] : list.map((o) => ({ ...o }));
 
-        // Annotations / frame aspect must never depend on canvas bake (CORS breaks Firebase URLs).
-        // Only crop rewrites pixels; transform bake is optional when a local file exists.
+        // Lock framing into pixels so page object-fit:cover matches the editor.
+        // Annotations are % of frame and stay valid on the baked (or cover) view.
         if (uiMode !== 'crop') {
           let outFile = bakeSourceFile || null;
           let outUrl = imageUrl;
-          if (bakeSourceFile && natural.w && natural.h) {
+          const framingChanged =
+            Math.abs(zoom - 1) > 0.01 ||
+            Math.abs(panX - 0.5) > 0.01 ||
+            Math.abs(panY - 0.5) > 0.01;
+
+          if (!bakeSourceFile && typeof hydrateBakeFile === 'function') {
+            try {
+              const hydrated = await hydrateBakeFile(imageUrl);
+              if (hydrated instanceof Blob) bakeSourceFile = hydrated;
+            } catch (hydErr) {
+              console.warn('hydrateBakeFile skipped', hydErr);
+            }
+          }
+
+          if (natural.w && natural.h) {
             try {
               const fr = frame.getBoundingClientRect();
               if (fr.width > 2 && fr.height > 2) {
@@ -415,7 +437,10 @@ function openMediaAnnotEditorUi({ imageUrl, overlays = [], frameAspect: seedAspe
                 outUrl = baked.imageUrl;
               }
             } catch (bakeErr) {
-              console.warn('optional framing bake skipped', bakeErr);
+              console.warn('framing bake skipped', bakeErr);
+              if (framingChanged) {
+                alert('사진 위치/확대를 이미지에 반영하지 못했습니다.\n주석(박스·말풍선)과 창 비율만 저장됩니다.\n위치를 고정하려면 사진을 다시 선택한 뒤 적용해 주세요.');
+              }
             }
           }
           finish({

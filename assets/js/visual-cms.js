@@ -301,10 +301,25 @@ export function normalizeMediaOverlays(list) {
   }).filter(Boolean);
 }
 
+function storagePathFromDownloadUrl(url) {
+  try {
+    const u = new URL(String(url || ''));
+    const m = u.pathname.match(/\/o\/([^?]+)/);
+    if (m) return decodeURIComponent(m[1]);
+  } catch (_) { /* ignore */ }
+  return '';
+}
+
+function withTimeout(promise, ms, label = 'timeout') {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(label)), ms))
+  ]);
+}
+
 /**
  * Prefer a local File/Blob when we already have one.
- * Do NOT call Storage getBlob here — it often hangs (no timeout) and freezes the
- * "사진 편집" click. Plain HTTPS URLs display fine without crossOrigin.
+ * Opening the editor must stay instant — never await Storage getBlob here.
  */
 async function resolveImageSourceForEditor(url, file = null) {
   if (file instanceof Blob) {
@@ -316,6 +331,21 @@ async function resolveImageSourceForEditor(url, file = null) {
     };
   }
   return { imageUrl: url || '', sourceFile: null, revokeUrl: null };
+}
+
+/** Best-effort bytes for apply/bake only (short timeout — must not hang UI). */
+async function hydrateBakeFile(url) {
+  if (!url || url.startsWith('blob:') || url.startsWith('data:')) return null;
+  const path = storagePathFromDownloadUrl(url);
+  if (!path) return null;
+  try {
+    const { storage, st } = await getFirebase();
+    if (!st?.getBlob || !st?.ref) return null;
+    return await withTimeout(st.getBlob(st.ref(storage, path)), 2500, 'getBlob timeout');
+  } catch (err) {
+    console.warn('hydrateBakeFile failed', err);
+    return null;
+  }
 }
 
 /**
@@ -557,7 +587,7 @@ export function mountEditableMedia(container, {
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
     let revokeHydrated = null;
     try {
-      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-img-fix-19');
+      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-align-20');
       const previewImg = body.querySelector('img');
       const pageSrc = previewImg?.currentSrc || previewImg?.getAttribute('src') || url;
       const resolved = await resolveImageSourceForEditor(pageSrc || url, file);
@@ -566,7 +596,8 @@ export function mountEditableMedia(container, {
         imageUrl: resolved.imageUrl,
         overlays: seedOverlays,
         frameAspect: aspect,
-        sourceFile: resolved.sourceFile || null
+        sourceFile: resolved.sourceFile || null,
+        hydrateBakeFile
       });
       if (!result) {
         if (revokeHydrated) URL.revokeObjectURL(revokeHydrated);

@@ -13,7 +13,7 @@ import {
   uploadToStorage,
   normalizeMediaWidthPct,
   normalizeMediaAspect
-} from './visual-cms.js?v=annot-img-fix-19';
+} from './visual-cms.js?v=annot-align-20';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 
