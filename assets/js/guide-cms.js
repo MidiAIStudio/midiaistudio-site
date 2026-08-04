@@ -221,6 +221,7 @@ async function ensureSeed() {
       heroImage: '',
       heroVideo: '',
       heroVideoType: '',
+      heroOverlays: [],
       published: true,
       createdAt: now,
       updatedAt: now
@@ -352,7 +353,8 @@ function collectFromDom() {
     relatedGuides: related.length ? related : (currentGuide.relatedGuides || []),
     published, order,
     heroImage: currentGuide.heroImage || '',
-    heroVideo, heroVideoType
+    heroVideo, heroVideoType,
+    heroOverlays: Array.isArray(currentGuide.heroOverlays) ? currentGuide.heroOverlays : []
   };
 }
 
@@ -409,6 +411,7 @@ async function saveGuide() {
         data.heroVideo = url;
         data.heroVideoType = 'upload';
         data.heroImage = '';
+        data.heroOverlays = [];
       } else {
         data.heroImage = url;
         data.heroVideo = '';
@@ -455,6 +458,7 @@ async function saveGuide() {
       heroImage: data.heroImage || '',
       heroVideo: data.heroVideo || '',
       heroVideoType: data.heroVideoType || '',
+      heroOverlays: Array.isArray(data.heroOverlays) ? data.heroOverlays : [],
       features: data.features || [],
       steps: data.steps || [],
       sections: data.sections || [],
@@ -502,6 +506,7 @@ async function addGuide() {
     heroImage: '',
     heroVideo: '',
     heroVideoType: '',
+    heroOverlays: [],
     features: ['기능 1'],
     steps: sectionsToSteps([section]),
     sections: [section],
@@ -535,6 +540,7 @@ async function addProductTemplateGuide() {
     heroImage: '',
     heroVideo: '',
     heroVideoType: '',
+    heroOverlays: [],
     features: [],
     sections: [s1, s2],
     steps: sectionsToSteps([s1, s2]),
@@ -776,45 +782,49 @@ function heroMediaState(g) {
 function mountHeroMedia(root, g, editing) {
   const host = root.querySelector('[data-hero-media]');
   if (!host) return;
-  if (!editing) {
+  const { mediaType, mediaUrl } = heroMediaState(g);
+  if (!editing && !mediaUrl) {
     host.classList.remove('vcms-media-slot', 'product-feature-media', 'has-media', 'is-empty');
-    host.innerHTML = mediaHtml(g.heroImage, g.heroVideo, g.heroVideoType, { className: 'guide-media' }) || '';
+    host.innerHTML = '';
     return;
   }
-  const { mediaType, mediaUrl } = heroMediaState(g);
   mountEditableMedia(host, {
     mediaType,
     mediaUrl,
     mediaFit: 'cover',
     mediaWidth: 'full',
-    mediaOverlays: [],
-    editMode: true,
-    isAdmin: true,
+    mediaOverlays: Array.isArray(g.heroOverlays) ? g.heroOverlays : [],
+    editMode: !!editing,
+    isAdmin: !!editing,
     videoClass: 'product-video',
     onChange: (m) => {
-      if (!currentGuide) return;
+      if (!currentGuide || !editing) return;
       if (m.mediaType === 'image') {
         currentGuide.heroImage = m.mediaUrl || '';
         currentGuide.heroVideo = '';
         currentGuide.heroVideoType = '';
+        currentGuide.heroOverlays = Array.isArray(m.mediaOverlays) ? m.mediaOverlays : [];
         const yt = document.getElementById('guideHeroYoutube');
         if (yt) yt.value = '';
       } else if (m.mediaType === 'video') {
         currentGuide.heroVideo = m.mediaUrl || '';
         currentGuide.heroVideoType = 'upload';
         currentGuide.heroImage = '';
+        currentGuide.heroOverlays = [];
         const yt = document.getElementById('guideHeroYoutube');
         if (yt) yt.value = '';
       } else if (m.mediaType === 'youtube') {
         currentGuide.heroVideo = m.mediaUrl || '';
         currentGuide.heroVideoType = 'youtube';
         currentGuide.heroImage = '';
+        currentGuide.heroOverlays = [];
         const yt = document.getElementById('guideHeroYoutube');
         if (yt) yt.value = m.mediaUrl || '';
       } else {
         currentGuide.heroImage = '';
         currentGuide.heroVideo = '';
         currentGuide.heroVideoType = '';
+        currentGuide.heroOverlays = [];
         pendingHeroFile = null;
         const yt = document.getElementById('guideHeroYoutube');
         if (yt) yt.value = '';
@@ -822,6 +832,7 @@ function mountHeroMedia(root, g, editing) {
       scheduleSave();
     },
     onFile: (f) => {
+      if (!editing) return;
       if (f.kind === 'clear' || f.kind === 'youtube') pendingHeroFile = null;
       else if (f.file) pendingHeroFile = f.file;
       scheduleSave();
