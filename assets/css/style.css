@@ -2064,8 +2064,9 @@ a.guide-card{text-decoration:none;color:inherit;transition:transform .2s ease,bo
 a.guide-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18)}
 .guide-card-cat{display:inline-block;margin-top:4px;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#9af2ff}
 .guide-draft-badge{margin-left:8px;font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.12);color:#fbbf24;vertical-align:middle}
-.guide-hero-media{margin-top:18px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
-.guide-hero-media.vcms-media-slot{min-height:160px}
+.guide-hero-media{margin-top:18px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);max-width:100%}
+.guide-hero-media.vcms-media-slot{min-height:160px;width:var(--vcms-w,100%);aspect-ratio:var(--vcms-ar,16/10)}
+.guide-hero-media.vcms-media-slot.is-free-size{justify-self:center}
 .guide-hero-media.vcms-media-slot .vcms-media-body img,
 .guide-hero-media.vcms-media-slot .vcms-media-body video,
 .guide-hero-media.vcms-media-slot .vcms-media-body iframe{min-height:160px;object-fit:cover}

@@ -13,7 +13,7 @@ import {
   uploadToStorage,
   normalizeMediaWidthPct,
   normalizeMediaAspect
-} from './visual-cms.js?v=save-undef-14';
+} from './visual-cms.js?v=hero-size-15';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 
@@ -356,7 +356,9 @@ function collectFromDom() {
     published, order,
     heroImage: currentGuide.heroImage || '',
     heroVideo, heroVideoType,
-    heroOverlays: Array.isArray(currentGuide.heroOverlays) ? currentGuide.heroOverlays : []
+    heroOverlays: Array.isArray(currentGuide.heroOverlays) ? currentGuide.heroOverlays : [],
+    heroMediaWidthPct: normalizeMediaWidthPct(currentGuide.heroMediaWidthPct, 'full'),
+    heroMediaAspect: normalizeMediaAspect(currentGuide.heroMediaAspect)
   };
 }
 
@@ -461,6 +463,8 @@ async function saveGuide() {
       heroVideo: data.heroVideo || '',
       heroVideoType: data.heroVideoType || '',
       heroOverlays: Array.isArray(data.heroOverlays) ? data.heroOverlays : [],
+      heroMediaWidthPct: normalizeMediaWidthPct(data.heroMediaWidthPct, 'full'),
+      heroMediaAspect: normalizeMediaAspect(data.heroMediaAspect),
       features: data.features || [],
       steps: data.steps || [],
       sections: data.sections || [],
@@ -795,12 +799,16 @@ function mountHeroMedia(root, g, editing) {
     mediaUrl,
     mediaFit: 'cover',
     mediaWidth: 'full',
+    mediaWidthPct: g.heroMediaWidthPct,
+    mediaAspect: g.heroMediaAspect,
     mediaOverlays: Array.isArray(g.heroOverlays) ? g.heroOverlays : [],
     editMode: !!editing,
     isAdmin: !!editing,
     videoClass: 'product-video',
     onChange: (m) => {
       if (!currentGuide || !editing) return;
+      currentGuide.heroMediaWidthPct = normalizeMediaWidthPct(m.mediaWidthPct, m.mediaWidth);
+      currentGuide.heroMediaAspect = normalizeMediaAspect(m.mediaAspect);
       if (m.mediaType === 'image') {
         currentGuide.heroImage = m.mediaUrl || '';
         currentGuide.heroVideo = '';

@@ -357,6 +357,8 @@ export function mountEditableMedia(container, {
     container.style.width = `${widthPct}%`;
     container.style.maxWidth = '100%';
     container.style.aspectRatio = String(aspect);
+    container.style.setProperty('--vcms-w', `${widthPct}%`);
+    container.style.setProperty('--vcms-ar', String(aspect));
     container.style.marginInline = widthPct < 99.5 ? 'auto' : '0';
   };
   applyChromeClasses();
