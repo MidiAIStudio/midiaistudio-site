@@ -131,11 +131,50 @@ async function bakeToFile(sourceUrl, region, outW, outH, sourceFile = null) {
   return { file, imageUrl };
 }
 
+async function prepareDisplaySource({ imageUrl, sourceFile = null }) {
+  let displayUrl = String(imageUrl || '');
+  let bakeFile = sourceFile instanceof Blob ? sourceFile : null;
+  let revokeUrl = null;
+
+  // Always prefer a fresh object URL from local bytes — avoids revoked blob: URLs
+  // and Firebase CORS failures on <img crossOrigin>.
+  if (bakeFile) {
+    displayUrl = URL.createObjectURL(bakeFile);
+    revokeUrl = displayUrl;
+    return { displayUrl, bakeFile, revokeUrl };
+  }
+
+  if (!displayUrl || displayUrl.startsWith('blob:') || displayUrl.startsWith('data:')) {
+    return { displayUrl, bakeFile: null, revokeUrl: null };
+  }
+
+  try {
+    const res = await fetch(displayUrl, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+    if (res.ok) {
+      bakeFile = await res.blob();
+      displayUrl = URL.createObjectURL(bakeFile);
+      revokeUrl = displayUrl;
+      return { displayUrl, bakeFile, revokeUrl };
+    }
+  } catch (_) { /* fall through — display HTTPS without CORS */ }
+
+  return { displayUrl, bakeFile: null, revokeUrl: null };
+}
+
 /**
  * @param {{ imageUrl: string, overlays?: any[], frameAspect?: number, sourceFile?: Blob|null }} opts
  * @returns {Promise<{ overlays: any[], file: File|null, imageUrl: string, frameAspect: number } | null>}
  */
-export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: seedAspect = 1.6, sourceFile = null }) {
+export function openMediaAnnotEditor(opts) {
+  return prepareDisplaySource(opts).then((prepared) => openMediaAnnotEditorUi({
+    ...opts,
+    imageUrl: prepared.displayUrl,
+    sourceFile: prepared.bakeFile || opts.sourceFile || null,
+    _revokeUrl: prepared.revokeUrl
+  }));
+}
+
+function openMediaAnnotEditorUi({ imageUrl, overlays = [], frameAspect: seedAspect = 1.6, sourceFile = null, _revokeUrl = null }) {
   return new Promise((resolve) => {
     let list = normalizeMediaOverlays(overlays).map((o) => ({ ...o }));
     let selectedId = null;
@@ -231,6 +270,9 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
       window.removeEventListener('resize', onResize);
       root.remove();
       document.body.classList.remove('vcms-annot-modal-open');
+      if (_revokeUrl && (!value || value.imageUrl !== _revokeUrl)) {
+        try { URL.revokeObjectURL(_revokeUrl); } catch (_) { /* ignore */ }
+      }
       resolve(value);
     };
 

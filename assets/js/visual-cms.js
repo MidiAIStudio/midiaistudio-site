@@ -316,44 +316,51 @@ function storagePathFromDownloadUrl(url) {
  */
 async function resolveImageSourceForEditor(url, file = null) {
   if (file instanceof Blob) {
-    const displayUrl = typeof url === 'string' && url.startsWith('blob:')
-      ? url
-      : URL.createObjectURL(file);
+    const displayUrl = URL.createObjectURL(file);
     return {
       imageUrl: displayUrl,
       sourceFile: file,
-      revokeUrl: displayUrl !== url ? displayUrl : null
+      revokeUrl: displayUrl
     };
   }
   if (!url || url.startsWith('blob:') || url.startsWith('data:')) {
     return { imageUrl: url, sourceFile: null, revokeUrl: null };
   }
 
-  const path = storagePathFromDownloadUrl(url);
-  if (path) {
+  const { storage, st } = await getFirebase().catch(() => ({ storage: null, st: null }));
+  const tryGetBlob = async (refArg) => {
+    if (!storage || !st?.getBlob || !st?.ref) return null;
     try {
-      const { storage, st } = await getFirebase();
-      if (typeof st.getBlob === 'function') {
-        const blob = await st.getBlob(st.ref(storage, path));
-        const obj = URL.createObjectURL(blob);
-        return { imageUrl: obj, sourceFile: blob, revokeUrl: obj };
-      }
+      return await st.getBlob(st.ref(storage, refArg));
     } catch (err) {
-      console.warn('storage getBlob for editor failed', err);
+      console.warn('storage getBlob failed', refArg, err);
+      return null;
     }
+  };
+
+  // Full download URL first (Firebase modular supports https refs), then /o/ path.
+  let blob = await tryGetBlob(url);
+  if (!blob) {
+    const path = storagePathFromDownloadUrl(url);
+    if (path) blob = await tryGetBlob(path);
+  }
+  if (blob) {
+    const obj = URL.createObjectURL(blob);
+    return { imageUrl: obj, sourceFile: blob, revokeUrl: obj };
   }
 
   try {
     const res = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
     if (res.ok) {
-      const blob = await res.blob();
-      const obj = URL.createObjectURL(blob);
-      return { imageUrl: obj, sourceFile: blob, revokeUrl: obj };
+      const fetched = await res.blob();
+      const obj = URL.createObjectURL(fetched);
+      return { imageUrl: obj, sourceFile: fetched, revokeUrl: obj };
     }
   } catch (err) {
     console.warn('fetch for editor failed', err);
   }
 
+  // Last resort: plain URL without crossOrigin (page preview already shows this).
   return { imageUrl: url, sourceFile: null, revokeUrl: null };
 }
 
@@ -596,9 +603,11 @@ export function mountEditableMedia(container, {
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
     let revokeHydrated = null;
     try {
-      const resolved = await resolveImageSourceForEditor(url, file);
+      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-img-fix-18');
+      const previewImg = body.querySelector('img');
+      const pageSrc = previewImg?.currentSrc || previewImg?.getAttribute('src') || url;
+      const resolved = await resolveImageSourceForEditor(pageSrc || url, file);
       revokeHydrated = resolved.revokeUrl;
-      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-apply-14');
       const result = await openMediaAnnotEditor({
         imageUrl: resolved.imageUrl,
         overlays: seedOverlays,

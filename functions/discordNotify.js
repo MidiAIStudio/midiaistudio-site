@@ -21,6 +21,8 @@ const TICKET_CATEGORY_LABELS = {
 };
 
 function env(name) {
+  // defineSecret injects process.env[NAME] when bound via function secrets.
+  // Prefer that; fall back to .value() only if a SecretParam object is reachable.
   return String(process.env[name] || '').trim();
 }
 

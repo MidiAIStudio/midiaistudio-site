@@ -1256,11 +1256,13 @@ const {
   isLicenseGrantedOrder
 } = require('./discordNotify');
 
+const functionsV1 = require('firebase-functions/v1');
+
 /**
  * New 1:1 support ticket → Discord inquiry channel.
  * Uses DISCORD_INQUIRY_WEBHOOK secret. Never blocks the client create path.
  */
-exports.notifyDiscordOnInquiryCreate = functions
+exports.notifyDiscordOnInquiryCreate = functionsV1
   .runWith({ secrets: [discordInquiryWebhook], timeoutSeconds: 30, memory: '256MB' })
   .firestore.document('supportTickets/{ticketId}')
   .onCreate(async (snap, context) => {
@@ -1280,7 +1282,7 @@ exports.notifyDiscordOnInquiryCreate = functions
  * Order completed + license issued → Discord payment channel.
  * Uses DISCORD_PAYMENT_WEBHOOK secret. Ignores created/cancelled/failed orders.
  */
-exports.notifyDiscordOnOrderCompleted = functions
+exports.notifyDiscordOnOrderCompleted = functionsV1
   .runWith({ secrets: [discordPaymentWebhook], timeoutSeconds: 30, memory: '256MB' })
   .firestore.document('orders/{orderId}')
   .onWrite(async (change, context) => {
