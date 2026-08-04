@@ -536,17 +536,18 @@ export function mountEditableMedia(container, {
   };
 
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
-    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-8');
+    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-9');
     const result = await openMediaAnnotEditor({
       imageUrl: url,
       overlays: seedOverlays,
-      frameAspect: aspect
+      frameAspect: aspect,
+      sourceFile: file || null
     });
     if (!result) {
       if (file && url.startsWith('blob:')) URL.revokeObjectURL(url);
       return false;
     }
-    // Editor always returns a local baked file — staged until explicit Save.
+    // Editor returns a local baked file when possible; otherwise overlays-only on existing URL.
     const nextUrl = result.imageUrl || url;
     const nextFile = result.file || file;
     if (file && url.startsWith('blob:') && url !== nextUrl) URL.revokeObjectURL(url);
@@ -556,7 +557,8 @@ export function mountEditableMedia(container, {
       applyChromeClasses();
     }
     setMedia('image', nextUrl, '', result.overlays);
-    if (nextFile) onFile?.({ kind: 'image', file: nextFile });
+    if (result.file) onFile?.({ kind: 'image', file: result.file });
+    else if (nextFile) onFile?.({ kind: 'image', file: nextFile });
     else onFile?.({ kind: 'image-edit', file: null });
     return true;
   };

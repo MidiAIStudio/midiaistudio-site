@@ -54,10 +54,10 @@ function pctFromEl(el, e) {
   };
 }
 
-function loadImage(url) {
+function loadImage(url, withCors = true) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    if (withCors && /^https?:/i.test(url)) img.crossOrigin = 'anonymous';
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error('image load failed'));
     img.src = url;
@@ -89,41 +89,53 @@ function visibleSourceRect(nw, nh, fw, fh, zoom, panX, panY) {
   return { sx, sy, sw, sh, left, top, dispW, dispH, scale };
 }
 
-async function sourceBitmap(sourceUrl) {
-  try {
-    const res = await fetch(sourceUrl);
-    if (!res.ok) throw new Error('fetch failed');
-    return createImageBitmap(await res.blob());
-  } catch {
-    const img = await loadImage(sourceUrl);
+async function sourceBitmap(sourceUrl, sourceFile = null) {
+  if (sourceFile instanceof Blob) {
+    return createImageBitmap(sourceFile);
+  }
+  if (sourceUrl.startsWith('blob:') || sourceUrl.startsWith('data:')) {
+    const img = await loadImage(sourceUrl, false);
     return createImageBitmap(img);
+  }
+  try {
+    const res = await fetch(sourceUrl, { mode: 'cors', credentials: 'omit', cache: 'reload' });
+    if (!res.ok) throw new Error(`fetch ${res.status}`);
+    return createImageBitmap(await res.blob());
+  } catch (fetchErr) {
+    try {
+      const img = await loadImage(sourceUrl, true);
+      return createImageBitmap(img);
+    } catch (_) {
+      throw new Error(`이미지를 읽을 수 없습니다. (CORS/네트워크: ${fetchErr.message || fetchErr})`);
+    }
   }
 }
 
-async function bakeToFile(sourceUrl, region, outW, outH) {
-  const bmp = await sourceBitmap(sourceUrl);
+async function bakeToFile(sourceUrl, region, outW, outH, sourceFile = null) {
+  const bmp = await sourceBitmap(sourceUrl, sourceFile);
   const canvas = document.createElement('canvas');
   const w = Math.max(2, Math.round(outW));
   const h = Math.max(2, Math.round(outH));
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('canvas unavailable');
   ctx.drawImage(bmp, region.sx, region.sy, region.sw, region.sh, 0, 0, w, h);
   bmp.close?.();
   const blob = await new Promise((resolve) => {
     canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92);
   });
-  if (!blob) throw new Error('canvas bake failed');
+  if (!blob) throw new Error('canvas bake failed (possibly CORS-tainted)');
   const file = new File([blob], `media-${Date.now()}.jpg`, { type: 'image/jpeg' });
   const imageUrl = URL.createObjectURL(blob);
   return { file, imageUrl };
 }
 
 /**
- * @param {{ imageUrl: string, overlays?: any[], frameAspect?: number }} opts
- * @returns {Promise<{ overlays: any[], file: File, imageUrl: string, frameAspect: number } | null>}
+ * @param {{ imageUrl: string, overlays?: any[], frameAspect?: number, sourceFile?: Blob|null }} opts
+ * @returns {Promise<{ overlays: any[], file: File|null, imageUrl: string, frameAspect: number } | null>}
  */
-export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: seedAspect = 1.6 }) {
+export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: seedAspect = 1.6, sourceFile = null }) {
   return new Promise((resolve) => {
     let list = normalizeMediaOverlays(overlays).map((o) => ({ ...o }));
     let selectedId = null;
@@ -135,6 +147,7 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
     let crop = { x: 10, y: 10, w: 80, h: 80 }; // % of natural image
     let natural = { w: 0, h: 0 };
     let frameAspect = clamp(Number(seedAspect) || 1.6, 0.45, 3.2);
+    const bakeSourceFile = sourceFile instanceof Blob ? sourceFile : null;
 
     const root = document.createElement('div');
     root.className = 'vcms-annot-modal';
@@ -197,6 +210,10 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
     const cropImg = root.querySelector('.vcms-annot-crop-source');
     const cropBox = root.querySelector('[data-crop-box]');
     const bar = root.querySelector('.vcms-annot-modal-toolbar');
+    if (/^https?:/i.test(imageUrl)) {
+      img.crossOrigin = 'anonymous';
+      cropImg.crossOrigin = 'anonymous';
+    }
     img.src = imageUrl;
     cropImg.src = imageUrl;
 
@@ -341,8 +358,8 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
     };
 
     const applyAsync = async () => {
+      const applyBtn = bar.querySelector('[data-editor="apply"]');
       try {
-        const applyBtn = bar.querySelector('[data-editor="apply"]');
         applyBtn.disabled = true;
         applyBtn.textContent = '적용 중…';
         let region;
@@ -364,7 +381,21 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
           outW = Math.min(1600, Math.round(fr.width * 2));
           outH = Math.min(1600, Math.round(fr.height * 2));
         }
-        const baked = await bakeToFile(imageUrl, region, outW, outH);
+        let baked = null;
+        try {
+          baked = await bakeToFile(imageUrl, region, outW, outH, bakeSourceFile);
+        } catch (bakeErr) {
+          console.warn('bake failed, overlays-only fallback', bakeErr);
+          if (uiMode === 'crop') throw bakeErr;
+          // Keep remote/original image; still apply annotation overlays.
+          finish({
+            overlays: list.map((o) => ({ ...o })),
+            file: null,
+            imageUrl,
+            frameAspect
+          });
+          return;
+        }
         // Free crop changes aspect — drop overlays that were framed for 16:10.
         const nextOverlays = uiMode === 'crop' ? [] : list.map((o) => ({ ...o }));
         finish({
@@ -375,8 +406,7 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
         });
       } catch (err) {
         console.error(err);
-        alert('이미지 적용에 실패했습니다. 다시 시도해 주세요.');
-        const applyBtn = bar.querySelector('[data-editor="apply"]');
+        alert(`이미지 적용에 실패했습니다.\n${err?.message || err}`);
         applyBtn.disabled = false;
         applyBtn.textContent = '적용';
       }

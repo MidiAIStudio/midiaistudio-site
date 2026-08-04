@@ -11,7 +11,7 @@ import {
   mountEditableFeatureList,
   mountEditableMedia,
   uploadToStorage
-} from './visual-cms.js?v=media-annot-8';
+} from './visual-cms.js?v=media-annot-9';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 
