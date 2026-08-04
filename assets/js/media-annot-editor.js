@@ -23,7 +23,7 @@ function normalizeMediaOverlays(list) {
         y: clamp(raw.y),
         w: clamp(raw.w, 2, 100),
         h: clamp(raw.h, 2, 100),
-        label: String(raw.label || '').slice(0, 80)
+        label: String(raw.label || '').slice(0, 500)
       };
     }
     return {
@@ -31,7 +31,7 @@ function normalizeMediaOverlays(list) {
       type: 'bubble',
       x: clamp(raw.x),
       y: clamp(raw.y),
-      text: String(raw.text || '').slice(0, 120),
+      text: String(raw.text || '').slice(0, 500),
       side: raw.side === 'right' ? 'right' : 'left'
     };
   }).filter(Boolean);
@@ -294,7 +294,7 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
       }
       if (sel) {
         bar.querySelector('[data-editor="edit-text"]').textContent =
-          sel.type === 'rect' ? '라벨 수정' : '텍스트 수정';
+          sel.type === 'rect' ? '설명 수정' : '텍스트 수정';
       }
       syncModeUi();
     };
@@ -346,13 +346,13 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
       const sel = list.find((o) => o.id === selectedId);
       if (!sel) return;
       if (sel.type === 'rect') {
-        const next = prompt('영역 라벨', sel.label || '');
+        const next = prompt('영역 설명', sel.label || '');
         if (next == null) return;
-        sel.label = String(next).slice(0, 80);
+        sel.label = String(next).slice(0, 500);
       } else {
         const next = prompt('말풍선 텍스트', sel.text || '');
         if (next == null) return;
-        sel.text = String(next).slice(0, 120);
+        sel.text = String(next).slice(0, 500);
       }
       paintAnnots();
     };
@@ -362,6 +362,21 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
       try {
         applyBtn.disabled = true;
         applyBtn.textContent = '적용 중…';
+        const nextOverlays = uiMode === 'crop' ? [] : list.map((o) => ({ ...o }));
+
+        // Remote HTTPS images often fail canvas export (CORS). For annotate/transform,
+        // apply overlays against the existing URL instead of rebaking.
+        const remoteOnly = !bakeSourceFile && /^https?:/i.test(imageUrl) && !imageUrl.startsWith('blob:');
+        if (uiMode !== 'crop' && remoteOnly) {
+          finish({
+            overlays: nextOverlays,
+            file: null,
+            imageUrl,
+            frameAspect
+          });
+          return;
+        }
+
         let region;
         let outW;
         let outH;
@@ -381,29 +396,27 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
           outW = Math.min(1600, Math.round(fr.width * 2));
           outH = Math.min(1600, Math.round(fr.height * 2));
         }
-        let baked = null;
+
         try {
-          baked = await bakeToFile(imageUrl, region, outW, outH, bakeSourceFile);
+          const baked = await bakeToFile(imageUrl, region, outW, outH, bakeSourceFile);
+          finish({
+            overlays: nextOverlays,
+            file: baked.file,
+            imageUrl: baked.imageUrl,
+            frameAspect
+          });
         } catch (bakeErr) {
           console.warn('bake failed, overlays-only fallback', bakeErr);
-          if (uiMode === 'crop') throw bakeErr;
-          // Keep remote/original image; still apply annotation overlays.
+          if (uiMode === 'crop') {
+            throw new Error('잘라내기 적용에 실패했습니다. 이미지를 다시 업로드한 뒤 시도해 주세요.');
+          }
           finish({
-            overlays: list.map((o) => ({ ...o })),
+            overlays: nextOverlays,
             file: null,
             imageUrl,
             frameAspect
           });
-          return;
         }
-        // Free crop changes aspect — drop overlays that were framed for 16:10.
-        const nextOverlays = uiMode === 'crop' ? [] : list.map((o) => ({ ...o }));
-        finish({
-          overlays: nextOverlays,
-          file: baked.file,
-          imageUrl: baked.imageUrl,
-          frameAspect
-        });
       } catch (err) {
         console.error(err);
         alert(`이미지 적용에 실패했습니다.\n${err?.message || err}`);
@@ -681,9 +694,9 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
           window.removeEventListener('mouseup', onUp);
           tool = null;
           paintAnnots();
-          const label = prompt('영역 라벨 (선택)', '');
+          const label = prompt('영역 설명 (선택)', '');
           if (label != null && label.trim()) {
-            draft.label = String(label).slice(0, 80);
+            draft.label = String(label).slice(0, 500);
             paintAnnots();
           }
         };
@@ -703,7 +716,7 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
           type: 'bubble',
           x: p.x,
           y: p.y,
-          text: String(text).slice(0, 120) || '말풍선',
+          text: String(text).slice(0, 500) || '말풍선',
           side: 'left'
         }];
         selectedId = list[list.length - 1].id;

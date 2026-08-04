@@ -287,7 +287,7 @@ export function normalizeMediaOverlays(list) {
         y: clamp(raw.y),
         w: clamp(raw.w, 2, 100),
         h: clamp(raw.h, 2, 100),
-        label: String(raw.label || '').slice(0, 80)
+        label: String(raw.label || '').slice(0, 500)
       };
     }
     return {
@@ -295,7 +295,7 @@ export function normalizeMediaOverlays(list) {
       type: 'bubble',
       x: clamp(raw.x),
       y: clamp(raw.y),
-      text: String(raw.text || '').slice(0, 120),
+      text: String(raw.text || '').slice(0, 500),
       side: raw.side === 'right' ? 'right' : 'left'
     };
   }).filter(Boolean);
@@ -536,7 +536,7 @@ export function mountEditableMedia(container, {
   };
 
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
-    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-9');
+    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-10');
     const result = await openMediaAnnotEditor({
       imageUrl: url,
       overlays: seedOverlays,

@@ -610,6 +610,7 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
     const batch = db.batch();
     batch.set(orderDoc.ref, {
       status: 'completed',
+      licenseIssued: true,
       paypalCaptureId: capture.id || '',
       payerEmail: data.payer?.email_address || '',
       payerName: [data.payer?.name?.surname, data.payer?.name?.given_name].filter(Boolean).join(' '),
@@ -1243,3 +1244,51 @@ exports.expireTimedLicenses = onSchedule({
   console.log('expireTimedLicenses done', { convertedToTrial: expired });
   return null;
 });
+
+const {
+  notifyInquiryCreated,
+  notifyPaymentCompleted,
+  isLicenseGrantedOrder
+} = require('./discordNotify');
+
+/**
+ * New 1:1 support ticket → Discord inquiry channel.
+ * Uses DISCORD_INQUIRY_WEBHOOK. Never blocks the client create path.
+ */
+exports.notifyDiscordOnInquiryCreate = functions.firestore
+  .document('supportTickets/{ticketId}')
+  .onCreate(async (snap, context) => {
+    const ticketId = context.params.ticketId;
+    try {
+      await notifyInquiryCreated(ticketId, snap.data() || {}, snap.ref);
+    } catch (err) {
+      console.error('notifyDiscordOnInquiryCreate', {
+        ticketId,
+        message: err && err.message ? err.message : String(err)
+      });
+    }
+    return null;
+  });
+
+/**
+ * Order completed + license issued → Discord payment channel.
+ * Uses DISCORD_PAYMENT_WEBHOOK. Ignores created/cancelled/failed orders.
+ */
+exports.notifyDiscordOnOrderCompleted = functions.firestore
+  .document('orders/{orderId}')
+  .onWrite(async (change, context) => {
+    const orderId = context.params.orderId;
+    try {
+      if (!change.after.exists) return null;
+      const after = change.after.data() || {};
+      if (after.discordNotified === true) return null;
+      if (!isLicenseGrantedOrder(after)) return null;
+      await notifyPaymentCompleted(orderId, after, change.after.ref);
+    } catch (err) {
+      console.error('notifyDiscordOnOrderCompleted', {
+        orderId,
+        message: err && err.message ? err.message : String(err)
+      });
+    }
+    return null;
+  });

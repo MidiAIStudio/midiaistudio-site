@@ -2147,7 +2147,16 @@ body.guide-cms-editing [contenteditable=true]:focus{outline-color:#22d3ee;backgr
 }
 .vcms-annot-modal .vcms-annot{cursor:move}
 .vcms-annot-modal .vcms-annot-handle{cursor:inherit}
-.vcms-annot-label{position:absolute;left:0;top:0;transform:translateY(-100%);margin-top:-2px;padding:2px 7px;font-size:11px;font-weight:800;line-height:1.3;color:#1a1420;background:linear-gradient(135deg,#ffe082,#80deea);border-radius:5px 5px 0 0;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.vcms-annot-label{
+  position:absolute;left:0;right:0;bottom:0;top:auto;transform:none;margin:0;
+  padding:7px 9px;font-size:11px;font-weight:700;line-height:1.45;letter-spacing:-.01em;
+  color:#fff;background:rgba(12,16,28,.82);border-radius:0 0 4px 4px;
+  white-space:normal;word-break:keep-all;overflow-wrap:anywhere;
+  max-width:none;overflow:visible;text-overflow:clip;z-index:2
+}
+.vcms-annot-bubble .vcms-bubble-text{
+  white-space:normal;word-break:keep-all;overflow-wrap:anywhere;max-width:min(280px,56vw)
+}
 .vcms-annot-handle{position:absolute;width:10px;height:10px;border-radius:2px;background:#fff;border:1px solid #22d3ee;z-index:1}
 .vcms-annot-handle-nw{left:-5px;top:-5px;cursor:nwse-resize}
 .vcms-annot-handle-ne{right:-5px;top:-5px;cursor:nesw-resize}
