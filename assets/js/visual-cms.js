@@ -287,7 +287,7 @@ export function normalizeMediaOverlays(list) {
         y: clamp(raw.y),
         w: clamp(raw.w, 2, 100),
         h: clamp(raw.h, 2, 100),
-        label: String(raw.label || '').slice(0, 500)
+        label: String(raw.label || '')
       };
     }
     return {
@@ -295,7 +295,7 @@ export function normalizeMediaOverlays(list) {
       type: 'bubble',
       x: clamp(raw.x),
       y: clamp(raw.y),
-      text: String(raw.text || '').slice(0, 500),
+      text: String(raw.text || ''),
       side: raw.side === 'right' ? 'right' : 'left'
     };
   }).filter(Boolean);
@@ -536,31 +536,38 @@ export function mountEditableMedia(container, {
   };
 
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
-    const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=media-annot-10');
-    const result = await openMediaAnnotEditor({
-      imageUrl: url,
-      overlays: seedOverlays,
-      frameAspect: aspect,
-      sourceFile: file || null
-    });
-    if (!result) {
+    try {
+      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-apply-13');
+      const result = await openMediaAnnotEditor({
+        imageUrl: url,
+        overlays: seedOverlays,
+        frameAspect: aspect,
+        sourceFile: file || null
+      });
+      if (!result) {
+        if (file && url.startsWith('blob:')) URL.revokeObjectURL(url);
+        return false;
+      }
+      // Editor returns a local baked file when possible; otherwise overlays-only on existing URL.
+      const nextUrl = result.imageUrl || url;
+      const nextFile = result.file || file || null;
+      if (file && url.startsWith('blob:') && url !== nextUrl) URL.revokeObjectURL(url);
+      pendingImageFile = nextFile || null;
+      if (Number.isFinite(Number(result.frameAspect))) {
+        aspect = normalizeMediaAspect(result.frameAspect);
+        applyChromeClasses();
+      }
+      setMedia('image', nextUrl, '', Array.isArray(result.overlays) ? result.overlays : []);
+      if (result.file) onFile?.({ kind: 'image', file: result.file });
+      else if (nextFile) onFile?.({ kind: 'image', file: nextFile });
+      else onFile?.({ kind: 'image-edit', file: null });
+      return true;
+    } catch (err) {
+      console.error(err);
+      alert(`이미지 편집기를 열 수 없습니다.\n${err?.message || err}`);
       if (file && url.startsWith('blob:')) URL.revokeObjectURL(url);
       return false;
     }
-    // Editor returns a local baked file when possible; otherwise overlays-only on existing URL.
-    const nextUrl = result.imageUrl || url;
-    const nextFile = result.file || file;
-    if (file && url.startsWith('blob:') && url !== nextUrl) URL.revokeObjectURL(url);
-    pendingImageFile = nextFile || null;
-    if (Number.isFinite(Number(result.frameAspect))) {
-      aspect = normalizeMediaAspect(result.frameAspect);
-      applyChromeClasses();
-    }
-    setMedia('image', nextUrl, '', result.overlays);
-    if (result.file) onFile?.({ kind: 'image', file: result.file });
-    else if (nextFile) onFile?.({ kind: 'image', file: nextFile });
-    else onFile?.({ kind: 'image-edit', file: null });
-    return true;
   };
 
   const pickAndEditImage = async () => {

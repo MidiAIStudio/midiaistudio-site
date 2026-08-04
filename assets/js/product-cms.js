@@ -12,12 +12,23 @@ import {
   getFirebase,
   waitForAdmin,
   onAuthAdmin,
-  uploadToStorage
-} from './visual-cms.js?v=media-annot-10';
+  uploadToStorage,
+  normalizeMediaWidthPct,
+  normalizeMediaAspect
+} from './visual-cms.js?v=save-undef-14';
 import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';
 const PAGE = (location.pathname.split('/').pop() || '') === 'product.html';
+
+/** Firestore rejects `undefined` field values. */
+function omitUndefined(obj) {
+  const out = {};
+  Object.entries(obj || {}).forEach(([k, v]) => {
+    if (v !== undefined) out[k] = v;
+  });
+  return out;
+}
 
 const SEED = [
   {
@@ -425,7 +436,7 @@ async function saveAll() {
         sec.mediaType = isVid ? 'video' : 'image';
         if (isVid) sec.posterUrl = sec.posterUrl || '';
       }
-      const payload = {
+      const payload = omitUndefined({
         kind: sec.kind || 'feature',
         layout: sec.layout || 'normal',
         category: sec.category || '',
@@ -437,14 +448,14 @@ async function saveAll() {
         posterUrl: sec.posterUrl || '',
         mediaFit: sec.mediaFit || 'cover',
         mediaWidth: sec.mediaWidth || 'full',
-        mediaWidthPct: Number.isFinite(Number(sec.mediaWidthPct)) ? Number(sec.mediaWidthPct) : undefined,
-        mediaAspect: Number.isFinite(Number(sec.mediaAspect)) ? Number(sec.mediaAspect) : undefined,
+        mediaWidthPct: normalizeMediaWidthPct(sec.mediaWidthPct, sec.mediaWidth),
+        mediaAspect: normalizeMediaAspect(sec.mediaAspect),
         mediaOverlays: Array.isArray(sec.mediaOverlays) ? sec.mediaOverlays : [],
         order: sec.order || 0,
         published: sec.published !== false,
         iconOnly: !!sec.iconOnly,
         updatedAt: serverTimestamp()
-      };
+      });
       await setDoc(doc(db, COLLECTION, sec.id), payload, { merge: true });
     }
 

@@ -66,8 +66,8 @@ function formatAmount(order) {
 }
 
 /**
- * Claim notification slot. Returns true once per document.
- * Does not log secret values.
+ * Claim notification slot after a successful Discord post.
+ * Returns true once per document so retries stay possible until success.
  */
 async function claimDiscordNotify(ref) {
   const db = admin.firestore();
@@ -82,6 +82,11 @@ async function claimDiscordNotify(ref) {
     }, { merge: true });
     return true;
   });
+}
+
+async function alreadyNotified(ref) {
+  const snap = await ref.get();
+  return !!(snap.exists && snap.data()?.discordNotified === true);
 }
 
 /**
@@ -175,36 +180,44 @@ async function notifyInquiryCreated(ticketId, data, ref) {
   const webhook = env('DISCORD_INQUIRY_WEBHOOK');
   if (!webhook) {
     console.warn('DISCORD_INQUIRY_WEBHOOK not set; inquiry notify skipped', { ticketId });
-    return;
+    return false;
   }
   try {
-    const claimed = await claimDiscordNotify(ref);
-    if (!claimed) return;
-    await postDiscordWebhook(webhook, buildInquiryEmbed(ticketId, data || {}));
+    if (await alreadyNotified(ref)) return true;
+    const ok = await postDiscordWebhook(webhook, buildInquiryEmbed(ticketId, data || {}));
+    if (!ok) return false;
+    await claimDiscordNotify(ref);
+    console.log('Discord inquiry notify sent', { ticketId });
+    return true;
   } catch (err) {
     console.error('notifyInquiryCreated failed', {
       ticketId,
       message: err && err.message ? err.message : String(err)
     });
+    return false;
   }
 }
 
 async function notifyPaymentCompleted(orderId, data, ref) {
-  if (!isLicenseGrantedOrder(data)) return;
+  if (!isLicenseGrantedOrder(data)) return false;
   const webhook = env('DISCORD_PAYMENT_WEBHOOK');
   if (!webhook) {
     console.warn('DISCORD_PAYMENT_WEBHOOK not set; payment notify skipped', { orderId });
-    return;
+    return false;
   }
   try {
-    const claimed = await claimDiscordNotify(ref);
-    if (!claimed) return;
-    await postDiscordWebhook(webhook, buildPaymentEmbed(orderId, data || {}));
+    if (await alreadyNotified(ref)) return true;
+    const ok = await postDiscordWebhook(webhook, buildPaymentEmbed(orderId, data || {}));
+    if (!ok) return false;
+    await claimDiscordNotify(ref);
+    console.log('Discord payment notify sent', { orderId });
+    return true;
   } catch (err) {
     console.error('notifyPaymentCompleted failed', {
       orderId,
       message: err && err.message ? err.message : String(err)
     });
+    return false;
   }
 }
 

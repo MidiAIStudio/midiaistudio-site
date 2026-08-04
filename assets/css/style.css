@@ -2134,11 +2134,12 @@ body.guide-cms-editing [contenteditable=true]:focus{outline-color:#22d3ee;backgr
 .vcms-media-annots{position:absolute;inset:0;z-index:2;pointer-events:none}
 .vcms-media-annots.is-editable{pointer-events:auto;cursor:crosshair}
 .vcms-media-slot.is-annotating .vcms-media-overlay{display:none!important}
-.vcms-annot{position:absolute;box-sizing:border-box;pointer-events:auto}
+.vcms-annot{position:absolute;box-sizing:border-box;pointer-events:auto;overflow:visible}
 .vcms-annot-rect{
   border:2.5px solid #ffb74d;border-radius:6px;
   background:transparent;
-  box-shadow:none
+  box-shadow:none;
+  overflow:visible
 }
 .vcms-annot-rect.is-selected{
   border-color:#ffe082;
@@ -2148,14 +2149,42 @@ body.guide-cms-editing [contenteditable=true]:focus{outline-color:#22d3ee;backgr
 .vcms-annot-modal .vcms-annot{cursor:move}
 .vcms-annot-modal .vcms-annot-handle{cursor:inherit}
 .vcms-annot-label{
-  position:absolute;left:0;right:0;bottom:0;top:auto;transform:none;margin:0;
-  padding:7px 9px;font-size:11px;font-weight:700;line-height:1.45;letter-spacing:-.01em;
-  color:#fff;background:rgba(12,16,28,.82);border-radius:0 0 4px 4px;
-  white-space:normal;word-break:keep-all;overflow-wrap:anywhere;
-  max-width:none;overflow:visible;text-overflow:clip;z-index:2
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:0!important;
+  bottom:auto!important;
+  transform:none!important;
+  margin:0!important;
+  width:auto!important;
+  max-width:none!important;
+  padding:7px 9px!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  line-height:1.45!important;
+  letter-spacing:-.01em;
+  color:#f7f8ff!important;
+  background:rgba(12,16,28,.9)!important;
+  border:0!important;
+  border-radius:4px 4px 0 0!important;
+  white-space:normal!important;
+  word-break:keep-all!important;
+  overflow-wrap:anywhere!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  -webkit-line-clamp:unset!important;
+  line-clamp:unset!important;
+  display:block!important;
+  z-index:5
 }
-.vcms-annot-bubble .vcms-bubble-text{
-  white-space:normal;word-break:keep-all;overflow-wrap:anywhere;max-width:min(280px,56vw)
+.vcms-annot-bubble .vcms-bubble-text,
+.vcms-bubble-text{
+  white-space:normal!important;
+  word-break:keep-all!important;
+  overflow-wrap:anywhere!important;
+  text-overflow:clip!important;
+  overflow:visible!important;
+  max-width:min(320px,70vw)!important
 }
 .vcms-annot-handle{position:absolute;width:10px;height:10px;border-radius:2px;background:#fff;border:1px solid #22d3ee;z-index:1}
 .vcms-annot-handle-nw{left:-5px;top:-5px;cursor:nwse-resize}

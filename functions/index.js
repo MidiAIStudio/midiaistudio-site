@@ -1,8 +1,13 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const { defineSecret } = require('firebase-functions/params');
 
 admin.initializeApp();
 const db = admin.firestore();
+
+/** Discord webhooks — set via Secret Manager / `firebase functions:secrets:set` */
+const discordInquiryWebhook = defineSecret('DISCORD_INQUIRY_WEBHOOK');
+const discordPaymentWebhook = defineSecret('DISCORD_PAYMENT_WEBHOOK');
 
 function cfg(name, fallback = '') {
   return process.env[name] || fallback;
@@ -1253,10 +1258,11 @@ const {
 
 /**
  * New 1:1 support ticket → Discord inquiry channel.
- * Uses DISCORD_INQUIRY_WEBHOOK. Never blocks the client create path.
+ * Uses DISCORD_INQUIRY_WEBHOOK secret. Never blocks the client create path.
  */
-exports.notifyDiscordOnInquiryCreate = functions.firestore
-  .document('supportTickets/{ticketId}')
+exports.notifyDiscordOnInquiryCreate = functions
+  .runWith({ secrets: [discordInquiryWebhook], timeoutSeconds: 30, memory: '256MB' })
+  .firestore.document('supportTickets/{ticketId}')
   .onCreate(async (snap, context) => {
     const ticketId = context.params.ticketId;
     try {
@@ -1272,10 +1278,11 @@ exports.notifyDiscordOnInquiryCreate = functions.firestore
 
 /**
  * Order completed + license issued → Discord payment channel.
- * Uses DISCORD_PAYMENT_WEBHOOK. Ignores created/cancelled/failed orders.
+ * Uses DISCORD_PAYMENT_WEBHOOK secret. Ignores created/cancelled/failed orders.
  */
-exports.notifyDiscordOnOrderCompleted = functions.firestore
-  .document('orders/{orderId}')
+exports.notifyDiscordOnOrderCompleted = functions
+  .runWith({ secrets: [discordPaymentWebhook], timeoutSeconds: 30, memory: '256MB' })
+  .firestore.document('orders/{orderId}')
   .onWrite(async (change, context) => {
     const orderId = context.params.orderId;
     try {

@@ -10,8 +10,10 @@ import {
   mountEditableText,
   mountEditableFeatureList,
   mountEditableMedia,
-  uploadToStorage
-} from './visual-cms.js?v=media-annot-10';
+  uploadToStorage,
+  normalizeMediaWidthPct,
+  normalizeMediaAspect
+} from './visual-cms.js?v=save-undef-14';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 
@@ -75,8 +77,8 @@ function getSections(g) {
       posterUrl: s.posterUrl || '',
       mediaFit: s.mediaFit || 'cover',
       mediaWidth: s.mediaWidth || 'full',
-      mediaWidthPct: s.mediaWidthPct,
-      mediaAspect: s.mediaAspect,
+      mediaWidthPct: normalizeMediaWidthPct(s.mediaWidthPct, s.mediaWidth),
+      mediaAspect: normalizeMediaAspect(s.mediaAspect),
       mediaOverlays: Array.isArray(s.mediaOverlays) ? s.mediaOverlays.map((o) => ({ ...o })) : []
     }));
   }

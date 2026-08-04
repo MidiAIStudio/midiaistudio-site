@@ -23,7 +23,7 @@ function normalizeMediaOverlays(list) {
         y: clamp(raw.y),
         w: clamp(raw.w, 2, 100),
         h: clamp(raw.h, 2, 100),
-        label: String(raw.label || '').slice(0, 500)
+        label: String(raw.label || '')
       };
     }
     return {
@@ -31,7 +31,7 @@ function normalizeMediaOverlays(list) {
       type: 'bubble',
       x: clamp(raw.x),
       y: clamp(raw.y),
-      text: String(raw.text || '').slice(0, 500),
+      text: String(raw.text || ''),
       side: raw.side === 'right' ? 'right' : 'left'
     };
   }).filter(Boolean);
@@ -348,80 +348,82 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
       if (sel.type === 'rect') {
         const next = prompt('영역 설명', sel.label || '');
         if (next == null) return;
-        sel.label = String(next).slice(0, 500);
+        sel.label = String(next);
       } else {
         const next = prompt('말풍선 텍스트', sel.text || '');
         if (next == null) return;
-        sel.text = String(next).slice(0, 500);
+        sel.text = String(next);
       }
       paintAnnots();
     };
 
     const applyAsync = async () => {
       const applyBtn = bar.querySelector('[data-editor="apply"]');
-      try {
+      if (applyBtn) {
         applyBtn.disabled = true;
         applyBtn.textContent = '적용 중…';
+      }
+      try {
         const nextOverlays = uiMode === 'crop' ? [] : list.map((o) => ({ ...o }));
 
-        // Remote HTTPS images often fail canvas export (CORS). For annotate/transform,
-        // apply overlays against the existing URL instead of rebaking.
-        const remoteOnly = !bakeSourceFile && /^https?:/i.test(imageUrl) && !imageUrl.startsWith('blob:');
-        if (uiMode !== 'crop' && remoteOnly) {
+        // Annotations / frame aspect must never depend on canvas bake (CORS breaks Firebase URLs).
+        // Only crop rewrites pixels; transform bake is optional when a local file exists.
+        if (uiMode !== 'crop') {
+          let outFile = bakeSourceFile || null;
+          let outUrl = imageUrl;
+          if (bakeSourceFile && natural.w && natural.h) {
+            try {
+              const fr = frame.getBoundingClientRect();
+              if (fr.width > 2 && fr.height > 2) {
+                const vis = visibleSourceRect(natural.w, natural.h, fr.width, fr.height, zoom, panX, panY);
+                const baked = await bakeToFile(
+                  imageUrl,
+                  { sx: vis.sx, sy: vis.sy, sw: vis.sw, sh: vis.sh },
+                  Math.min(1600, Math.round(fr.width * 2)),
+                  Math.min(1600, Math.round(fr.height * 2)),
+                  bakeSourceFile
+                );
+                outFile = baked.file;
+                outUrl = baked.imageUrl;
+              }
+            } catch (bakeErr) {
+              console.warn('optional framing bake skipped', bakeErr);
+            }
+          }
           finish({
             overlays: nextOverlays,
-            file: null,
-            imageUrl,
+            file: outFile,
+            imageUrl: outUrl,
             frameAspect
           });
           return;
         }
 
-        let region;
-        let outW;
-        let outH;
-        if (uiMode === 'crop') {
-          region = {
-            sx: (crop.x / 100) * natural.w,
-            sy: (crop.y / 100) * natural.h,
-            sw: (crop.w / 100) * natural.w,
-            sh: (crop.h / 100) * natural.h
-          };
-          outW = Math.min(1600, Math.round(region.sw));
-          outH = Math.min(1600, Math.round(region.sh));
-        } else {
-          const fr = frame.getBoundingClientRect();
-          const vis = visibleSourceRect(natural.w, natural.h, fr.width, fr.height, zoom, panX, panY);
-          region = { sx: vis.sx, sy: vis.sy, sw: vis.sw, sh: vis.sh };
-          outW = Math.min(1600, Math.round(fr.width * 2));
-          outH = Math.min(1600, Math.round(fr.height * 2));
+        if (!natural.w || !natural.h) {
+          throw new Error('이미지가 아직 로드되지 않았습니다. 잠시 후 다시 시도해 주세요.');
         }
-
-        try {
-          const baked = await bakeToFile(imageUrl, region, outW, outH, bakeSourceFile);
-          finish({
-            overlays: nextOverlays,
-            file: baked.file,
-            imageUrl: baked.imageUrl,
-            frameAspect
-          });
-        } catch (bakeErr) {
-          console.warn('bake failed, overlays-only fallback', bakeErr);
-          if (uiMode === 'crop') {
-            throw new Error('잘라내기 적용에 실패했습니다. 이미지를 다시 업로드한 뒤 시도해 주세요.');
-          }
-          finish({
-            overlays: nextOverlays,
-            file: null,
-            imageUrl,
-            frameAspect
-          });
-        }
+        const region = {
+          sx: (crop.x / 100) * natural.w,
+          sy: (crop.y / 100) * natural.h,
+          sw: (crop.w / 100) * natural.w,
+          sh: (crop.h / 100) * natural.h
+        };
+        const outW = Math.min(1600, Math.max(2, Math.round(region.sw)));
+        const outH = Math.min(1600, Math.max(2, Math.round(region.sh)));
+        const baked = await bakeToFile(imageUrl, region, outW, outH, bakeSourceFile);
+        finish({
+          overlays: nextOverlays,
+          file: baked.file,
+          imageUrl: baked.imageUrl,
+          frameAspect
+        });
       } catch (err) {
         console.error(err);
         alert(`이미지 적용에 실패했습니다.\n${err?.message || err}`);
-        applyBtn.disabled = false;
-        applyBtn.textContent = '적용';
+        if (applyBtn) {
+          applyBtn.disabled = false;
+          applyBtn.textContent = '적용';
+        }
       }
     };
 
@@ -696,7 +698,7 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
           paintAnnots();
           const label = prompt('영역 설명 (선택)', '');
           if (label != null && label.trim()) {
-            draft.label = String(label).slice(0, 500);
+            draft.label = String(label).trim();
             paintAnnots();
           }
         };
@@ -716,7 +718,7 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
           type: 'bubble',
           x: p.x,
           y: p.y,
-          text: String(text).slice(0, 500) || '말풍선',
+          text: String(text).trim() || '말풍선',
           side: 'left'
         }];
         selectedId = list[list.length - 1].id;
