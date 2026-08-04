@@ -13,7 +13,7 @@ import {
   uploadToStorage,
   normalizeMediaWidthPct,
   normalizeMediaAspect
-} from './visual-cms.js?v=hero-size-15';
+} from './visual-cms.js?v=annot-cors-15';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 
 

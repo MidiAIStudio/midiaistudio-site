@@ -15,7 +15,7 @@ import {
   uploadToStorage,
   normalizeMediaWidthPct,
   normalizeMediaAspect
-} from './visual-cms.js?v=save-undef-14';
+} from './visual-cms.js?v=annot-cors-15';
 import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';

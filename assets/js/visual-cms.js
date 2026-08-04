@@ -301,6 +301,62 @@ export function normalizeMediaOverlays(list) {
   }).filter(Boolean);
 }
 
+function storagePathFromDownloadUrl(url) {
+  try {
+    const u = new URL(String(url || ''));
+    const m = u.pathname.match(/\/o\/([^?]+)/);
+    if (m) return decodeURIComponent(m[1]);
+  } catch (_) { /* ignore */ }
+  return '';
+}
+
+/**
+ * Turn a saved Firebase/HTTPS image into a local blob for the editor.
+ * Avoids broken previews from <img crossOrigin> when Storage CORS is missing.
+ */
+async function resolveImageSourceForEditor(url, file = null) {
+  if (file instanceof Blob) {
+    const displayUrl = typeof url === 'string' && url.startsWith('blob:')
+      ? url
+      : URL.createObjectURL(file);
+    return {
+      imageUrl: displayUrl,
+      sourceFile: file,
+      revokeUrl: displayUrl !== url ? displayUrl : null
+    };
+  }
+  if (!url || url.startsWith('blob:') || url.startsWith('data:')) {
+    return { imageUrl: url, sourceFile: null, revokeUrl: null };
+  }
+
+  const path = storagePathFromDownloadUrl(url);
+  if (path) {
+    try {
+      const { storage, st } = await getFirebase();
+      if (typeof st.getBlob === 'function') {
+        const blob = await st.getBlob(st.ref(storage, path));
+        const obj = URL.createObjectURL(blob);
+        return { imageUrl: obj, sourceFile: blob, revokeUrl: obj };
+      }
+    } catch (err) {
+      console.warn('storage getBlob for editor failed', err);
+    }
+  }
+
+  try {
+    const res = await fetch(url, { mode: 'cors', credentials: 'omit', cache: 'force-cache' });
+    if (res.ok) {
+      const blob = await res.blob();
+      const obj = URL.createObjectURL(blob);
+      return { imageUrl: obj, sourceFile: blob, revokeUrl: obj };
+    }
+  } catch (err) {
+    console.warn('fetch for editor failed', err);
+  }
+
+  return { imageUrl: url, sourceFile: null, revokeUrl: null };
+}
+
 /**
  * Media frame that never collapses. Supports image / upload video / youtube,
  * plus mediaWidth + mediaOverlays. Image pick/change opens annotation editor first.
@@ -538,22 +594,27 @@ export function mountEditableMedia(container, {
   };
 
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
+    let revokeHydrated = null;
     try {
-      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-apply-13');
+      const resolved = await resolveImageSourceForEditor(url, file);
+      revokeHydrated = resolved.revokeUrl;
+      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-apply-14');
       const result = await openMediaAnnotEditor({
-        imageUrl: url,
+        imageUrl: resolved.imageUrl,
         overlays: seedOverlays,
         frameAspect: aspect,
-        sourceFile: file || null
+        sourceFile: resolved.sourceFile || null
       });
       if (!result) {
-        if (file && url.startsWith('blob:')) URL.revokeObjectURL(url);
+        if (revokeHydrated) URL.revokeObjectURL(revokeHydrated);
+        if (file && url.startsWith('blob:') && url !== revokeHydrated) URL.revokeObjectURL(url);
         return false;
       }
       // Editor returns a local baked file when possible; otherwise overlays-only on existing URL.
-      const nextUrl = result.imageUrl || url;
-      const nextFile = result.file || file || null;
-      if (file && url.startsWith('blob:') && url !== nextUrl) URL.revokeObjectURL(url);
+      const nextUrl = result.imageUrl || resolved.imageUrl || url;
+      const nextFile = result.file || resolved.sourceFile || file || null;
+      if (revokeHydrated && revokeHydrated !== nextUrl) URL.revokeObjectURL(revokeHydrated);
+      if (file && url.startsWith('blob:') && url !== nextUrl && url !== revokeHydrated) URL.revokeObjectURL(url);
       pendingImageFile = nextFile || null;
       if (Number.isFinite(Number(result.frameAspect))) {
         aspect = normalizeMediaAspect(result.frameAspect);
@@ -567,7 +628,8 @@ export function mountEditableMedia(container, {
     } catch (err) {
       console.error(err);
       alert(`이미지 편집기를 열 수 없습니다.\n${err?.message || err}`);
-      if (file && url.startsWith('blob:')) URL.revokeObjectURL(url);
+      if (revokeHydrated) URL.revokeObjectURL(revokeHydrated);
+      if (file && url.startsWith('blob:') && url !== revokeHydrated) URL.revokeObjectURL(url);
       return false;
     }
   };

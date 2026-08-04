@@ -210,10 +210,9 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
     const cropImg = root.querySelector('.vcms-annot-crop-source');
     const cropBox = root.querySelector('[data-crop-box]');
     const bar = root.querySelector('.vcms-annot-modal-toolbar');
-    if (/^https?:/i.test(imageUrl)) {
-      img.crossOrigin = 'anonymous';
-      cropImg.crossOrigin = 'anonymous';
-    }
+    // Do not set crossOrigin on preview <img> — Firebase Storage download URLs
+    // often lack browser CORS, and crossOrigin="anonymous" makes the image
+    // fail entirely (broken icon). Pixel bake uses sourceBitmap()/sourceFile.
     img.src = imageUrl;
     cropImg.src = imageUrl;
 
@@ -779,6 +778,12 @@ export function openMediaAnnotEditor({ imageUrl, overlays = [], frameAspect: see
       paintAnnots();
     };
     if (img.complete && img.naturalWidth) boot();
-    else img.addEventListener('load', boot, { once: true });
+    else {
+      img.addEventListener('load', boot, { once: true });
+      img.addEventListener('error', () => {
+        console.warn('annot editor image failed to load', imageUrl);
+        alert('편집할 사진을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요.');
+      }, { once: true });
+    }
   });
 }
