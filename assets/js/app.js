@@ -1926,68 +1926,74 @@ async function loadLicense(uid){
 }
 
 async function initAuth(){
-  if(!configuredFirebase()){ console.error('Firebase config missing or invalid',CONFIG.firebase); return; }
-  const [{initializeApp},{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged},fs,st]=await Promise.all([
-    import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
-    import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'),
-    import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
-    import('https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js')
-  ]);
-  const app=initializeApp(CONFIG.firebase);
-  auth=getAuth(app);
-  db=fs.getFirestore(app);
-  storage=st.getStorage(app);
-  firestoreApi=fs;
-  storageApi=st;
-  const provider=new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  provider.addScope('email');
-  provider.addScope('profile');
+  const clearAuthPending=()=>document.documentElement.classList.remove('auth-pending');
+  if(!configuredFirebase()){ console.error('Firebase config missing or invalid',CONFIG.firebase); clearAuthPending(); return; }
+  try{
+    const [{initializeApp},{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged},fs,st]=await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js')
+    ]);
+    const app=initializeApp(CONFIG.firebase);
+    auth=getAuth(app);
+    db=fs.getFirestore(app);
+    storage=st.getStorage(app);
+    firestoreApi=fs;
+    storageApi=st;
+    const provider=new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    provider.addScope('email');
+    provider.addScope('profile');
 
-  async function loginWithGoogle(){
-    if(isInAppBrowser()){
-      showOAuthBrowserNotice();
-      alert('현재 브라우저에서는 Google 로그인이 제한될 수 있습니다.\n\n카카오톡·디스코드·인스타 내부 브라우저가 아닌 Chrome, Safari 또는 삼성 인터넷에서 다시 열어주세요.');
-      return;
-    }
-    try{
-      await signInWithPopup(auth, provider);
-    }catch(e){
-      if(e.code==='auth/web-storage-unsupported'||e.code==='auth/popup-blocked'||/disallowed_useragent/i.test(String(e.message||''))){
+    async function loginWithGoogle(){
+      if(isInAppBrowser()){
         showOAuthBrowserNotice();
-        alert('현재 브라우저에서는 Google 로그인이 제한됩니다.\n\nChrome, Safari 또는 삼성 인터넷에서 다시 열어주세요.');
+        alert('현재 브라우저에서는 Google 로그인이 제한될 수 있습니다.\n\n카카오톡·디스코드·인스타 내부 브라우저가 아닌 Chrome, Safari 또는 삼성 인터넷에서 다시 열어주세요.');
         return;
       }
-      console.error('Google login failed', {
-        code:e.code,
-        message:e.message,
-        origin:location.origin,
-        authDomain:CONFIG.firebase && CONFIG.firebase.authDomain,
-        apiKeyHead:CONFIG.firebase && CONFIG.firebase.apiKey ? CONFIG.firebase.apiKey.slice(0,10) : ''
-      });
-      const msg = [
-        'Google 로그인 실패',
-        '',
-        'code: ' + (e.code || 'unknown'),
-        'message: ' + (e.message || ''),
-        '',
-        '확인할 것:',
-        '1) Firebase Authentication > 승인된 도메인에 현재 도메인 추가',
-        '2) Google Cloud API Key 웹사이트 제한사항에 현재 도메인과 firebaseapp.com 추가',
-        '3) assets/js/config.js의 Firebase Web API Key가 실제 Firebase Web App 설정과 일치하는지 확인',
-        '',
-        'origin: ' + location.origin,
-        'authDomain: ' + (CONFIG.firebase && CONFIG.firebase.authDomain || '')
-      ].join('\n');
-      alert(msg);
+      try{
+        await signInWithPopup(auth, provider);
+      }catch(e){
+        if(e.code==='auth/web-storage-unsupported'||e.code==='auth/popup-blocked'||/disallowed_useragent/i.test(String(e.message||''))){
+          showOAuthBrowserNotice();
+          alert('현재 브라우저에서는 Google 로그인이 제한됩니다.\n\nChrome, Safari 또는 삼성 인터넷에서 다시 열어주세요.');
+          return;
+        }
+        console.error('Google login failed', {
+          code:e.code,
+          message:e.message,
+          origin:location.origin,
+          authDomain:CONFIG.firebase && CONFIG.firebase.authDomain,
+          apiKeyHead:CONFIG.firebase && CONFIG.firebase.apiKey ? CONFIG.firebase.apiKey.slice(0,10) : ''
+        });
+        const msg = [
+          'Google 로그인 실패',
+          '',
+          'code: ' + (e.code || 'unknown'),
+          'message: ' + (e.message || ''),
+          '',
+          '확인할 것:',
+          '1) Firebase Authentication > 승인된 도메인에 현재 도메인 추가',
+          '2) Google Cloud API Key 웹사이트 제한사항에 현재 도메인과 firebaseapp.com 추가',
+          '3) assets/js/config.js의 Firebase Web API Key가 실제 Firebase Web App 설정과 일치하는지 확인',
+          '',
+          'origin: ' + location.origin,
+          'authDomain: ' + (CONFIG.firebase && CONFIG.firebase.authDomain || '')
+        ].join('\n');
+        alert(msg);
+      }
     }
-  }
 
-  $('loginBtn') && ($('loginBtn').onclick=loginWithGoogle);
-  ensureTopbarProfile();
-  $('logoutBtn') && ($('logoutBtn').onclick=()=>signOut(auth));
-  onAuthStateChanged(auth,u=>u?setAuthUiSignedIn(u):setAuthUiSignedOut());
-  routeLoadPublic();
+    $('loginBtn') && ($('loginBtn').onclick=loginWithGoogle);
+    ensureTopbarProfile();
+    $('logoutBtn') && ($('logoutBtn').onclick=()=>signOut(auth));
+    onAuthStateChanged(auth,u=>{clearAuthPending();u?setAuthUiSignedIn(u):setAuthUiSignedOut();});
+    routeLoadPublic();
+  }catch(e){
+    console.error('initAuth failed', e);
+    clearAuthPending();
+  }
 }
 
 function listenDoc(collectionName, documentId, render){
@@ -7014,6 +7020,8 @@ function maybeShowSalePromo(){
 
 showOAuthBrowserNotice();
 bindBoardLightbox();
+document.documentElement.classList.add('auth-pending');
+setTimeout(()=>document.documentElement.classList.remove('auth-pending'),8000);
 initSidebarLayout();
 initTopbarActions();
 bindSidebar();
