@@ -1,0 +1,135 @@
+[
+  {
+    "label": "t100",
+    "layout": false,
+    "vw": 1440,
+    "main": {
+      "w": 1440,
+      "x": 0
+    },
+    "shell": {
+      "w": 1440,
+      "x": 0
+    },
+    "hero": {
+      "w": 1120,
+      "x": 160
+    },
+    "card": {
+      "w": 1120,
+      "x": 160
+    },
+    "appMain": null,
+    "sidebar": null
+  },
+  {
+    "label": "t300",
+    "layout": false,
+    "vw": 1440,
+    "main": {
+      "w": 1440,
+      "x": 0
+    },
+    "shell": {
+      "w": 1440,
+      "x": 0
+    },
+    "hero": {
+      "w": 1120,
+      "x": 160
+    },
+    "card": {
+      "w": 1120,
+      "x": 160
+    },
+    "appMain": null,
+    "sidebar": null
+  },
+  {
+    "label": "just_after_nav",
+    "layout": true,
+    "vw": 1440,
+    "main": {
+      "w": 1192,
+      "x": 248
+    },
+    "shell": {
+      "w": 1192,
+      "x": 248
+    },
+    "hero": {
+      "w": 1120,
+      "x": 284
+    },
+    "card": {
+      "w": 1120,
+      "x": 284
+    },
+    "appMain": {
+      "w": 1192,
+      "x": 248
+    },
+    "sidebar": {
+      "w": 248,
+      "x": 0
+    }
+  },
+  {
+    "label": "t200_after",
+    "layout": true,
+    "vw": 1440,
+    "main": {
+      "w": 1192,
+      "x": 248
+    },
+    "shell": {
+      "w": 1192,
+      "x": 248
+    },
+    "hero": {
+      "w": 1120,
+      "x": 284
+    },
+    "card": {
+      "w": 1120,
+      "x": 284
+    },
+    "appMain": {
+      "w": 1192,
+      "x": 248
+    },
+    "sidebar": {
+      "w": 248,
+      "x": 0
+    }
+  },
+  {
+    "label": "settled",
+    "layout": true,
+    "vw": 1440,
+    "main": {
+      "w": 1192,
+      "x": 248
+    },
+    "shell": {
+      "w": 1192,
+      "x": 248
+    },
+    "hero": {
+      "w": 1120,
+      "x": 284
+    },
+    "card": {
+      "w": 1120,
+      "x": 284
+    },
+    "appMain": {
+      "w": 1192,
+      "x": 248
+    },
+    "sidebar": {
+      "w": 248,
+      "x": 0
+    }
+  }
+]

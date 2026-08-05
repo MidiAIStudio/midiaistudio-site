@@ -7012,6 +7012,33 @@ function initSidebarLayout(){
   shell.appendChild(appMain);
   shell.appendChild(backdrop);
   document.body.classList.add('sidebar-layout');
+  // Reveal only after the sidebar column has laid out (avoids full-width→narrow flash).
+  // On product page also wait for CMS seed paint so static→CMS media swap isn't visible.
+  scheduleShellReveal();
+}
+function scheduleShellReveal(){
+  const ready=()=>document.documentElement.classList.add('sidebar-ready');
+  const afterLayout=(fn)=>{
+    if(typeof requestAnimationFrame==='function') requestAnimationFrame(()=>requestAnimationFrame(fn));
+    else setTimeout(fn,0);
+  };
+  const needsProduct=document.body.classList.contains('product-page');
+  afterLayout(()=>{
+    if(!needsProduct || document.body.classList.contains('product-cms-painted')){
+      ready();
+      return;
+    }
+    const started=Date.now();
+    const poll=()=>{
+      if(document.body.classList.contains('product-cms-painted') || Date.now()-started>2500){
+        ready();
+        return;
+      }
+      if(typeof requestAnimationFrame==='function') requestAnimationFrame(poll);
+      else setTimeout(poll,16);
+    };
+    poll();
+  });
 }
 function bindSidebar(){
   const close=()=>{
@@ -7125,6 +7152,10 @@ bindBoardLightbox();
 document.documentElement.classList.add('auth-pending');
 setTimeout(()=>document.documentElement.classList.remove('auth-pending'),8000);
 initSidebarLayout();
+if(!document.documentElement.classList.contains('sidebar-ready')){
+  // initSidebarLayout already scheduled reveal when shell was built; this covers early-exit paths.
+  if(!document.body.classList.contains('sidebar-layout')) scheduleShellReveal();
+}
 initTopbarActions();
 bindSidebar();
 applyStaticI18n();

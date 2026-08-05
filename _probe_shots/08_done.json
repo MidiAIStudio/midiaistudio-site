@@ -1,0 +1,7 @@
+{
+  "bodyClass": "portal-page hub-page sidebar-layout",
+  "shells": 1,
+  "before": "none",
+  "beforeW": "auto",
+  "sidebars": 1
+}

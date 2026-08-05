@@ -1,0 +1,527 @@
+{
+  "total": 13,
+  "ok": 13,
+  "bad": [],
+  "results": [
+    {
+      "name": "home",
+      "file": "index.html",
+      "url": "http://127.0.0.1:5520/index.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "홈",
+            "href": "./index.html"
+          }
+        ],
+        "title": "MidiAI Studio — AI MIDI Converter (YouTube, MP3, PDF, MusicXML)"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "product",
+      "file": "product.html",
+      "url": "http://127.0.0.1:5520/product.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "제품",
+            "href": "./product.html"
+          }
+        ],
+        "title": "제품 소개 — MidiAI Studio AI 오디오→MIDI 변환"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "guide",
+      "file": "guide/index.html",
+      "url": "http://127.0.0.1:5520/guide/index.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "가이드",
+            "href": "../guide/index.html"
+          }
+        ],
+        "title": "사용 가이드 — MidiAI Studio"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "downloads",
+      "file": "downloads.html",
+      "url": "http://127.0.0.1:5520/downloads.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": "none",
+        "active": [
+          {
+            "text": "다운로드",
+            "href": "./downloads.html"
+          }
+        ],
+        "title": "다운로드 — MidiAI Studio 최신 버전"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "purchase",
+      "file": "purchase.html",
+      "url": "http://127.0.0.1:5520/purchase.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "구매",
+            "href": "./purchase.html"
+          }
+        ],
+        "title": "Lifetime 라이선스 구매 — MidiAI Studio"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "notices",
+      "file": "notices.html",
+      "url": "http://127.0.0.1:5520/notices.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "공지사항",
+            "href": "./notices.html"
+          }
+        ],
+        "title": "공지사항 — MidiAI Studio"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "patches",
+      "file": "patch-notes.html",
+      "url": "http://127.0.0.1:5520/patch-notes.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "패치노트",
+            "href": "./patch-notes.html"
+          }
+        ],
+        "title": "패치노트 — MidiAI Studio 업데이트 기록"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "faq",
+      "file": "faq.html",
+      "url": "http://127.0.0.1:5520/faq.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "FAQ",
+            "href": "./faq.html"
+          }
+        ],
+        "title": "자주 묻는 질문(FAQ) — MidiAI Studio"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "board",
+      "file": "board.html",
+      "url": "http://127.0.0.1:5520/board.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "자유게시판",
+            "href": "./board.html"
+          }
+        ],
+        "title": "자유게시판 — MidiAI Studio 커뮤니티"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "support",
+      "file": "support.html",
+      "url": "http://127.0.0.1:5520/support.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "1:1 문의",
+            "href": "./support.html"
+          }
+        ],
+        "title": "1:1 문의 — MidiAI Studio 고객센터"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "tickets",
+      "file": "my-tickets.html",
+      "url": "http://127.0.0.1:5520/my-tickets.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "나의 문의",
+            "href": "./my-tickets.html"
+          }
+        ],
+        "title": "나의 문의 — MidiAI Studio"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "account",
+      "file": "account.html",
+      "url": "http://127.0.0.1:5520/account.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "내 계정",
+            "href": "./account.html"
+          }
+        ],
+        "title": "내 계정 — MidiAI Studio"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    },
+    {
+      "name": "admin",
+      "file": "admin.html",
+      "url": "http://127.0.0.1:5520/admin.html",
+      "ok": true,
+      "issues": [],
+      "mid": {
+        "layout": false,
+        "before": "none",
+        "beforeW": "auto",
+        "mainML": "0px",
+        "mainOp": "0",
+        "shells": 0
+      },
+      "loaded": {
+        "layout": true,
+        "shells": 1,
+        "sidebars": 1,
+        "topbars": 1,
+        "mains": 1,
+        "before": "none",
+        "mainML": "0px",
+        "brandTop": false,
+        "brandSide": true,
+        "hubSubnavDisplay": null,
+        "active": [
+          {
+            "text": "관리자",
+            "href": "./admin.html"
+          }
+        ],
+        "title": "관리자 — MidiAI Studio"
+      },
+      "afterReload": {
+        "layout": true,
+        "shells": 1,
+        "before": "none",
+        "mainML": "0px"
+      }
+    }
+  ]
+}

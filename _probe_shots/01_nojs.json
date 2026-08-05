@@ -1,0 +1,11 @@
+{
+  "bodyClass": "portal-page hub-page",
+  "hasShell": false,
+  "before": "\"\"",
+  "beforeW": "260px",
+  "mainML": "260px",
+  "topbarHTML": "\n    <a class=\"brand\" href=\"./index.html\"><img class=\"brand-symbol\" src=\"./assets/images/symbol.png\" alt=\"MidiAI Studio\" width=\"40\" height=\"40\"><b>MidiAI Studio</b></a>\n    <button id=\"menuBtn\" class=",
+  "brandVis": "hidden/flex/1",
+  "actionsVis": "hidden/flex",
+  "orbs": 2
+}

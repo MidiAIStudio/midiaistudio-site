@@ -1,0 +1,14 @@
+{
+  "bodyClass": "portal-page hub-page sidebar-layout",
+  "shells": 1,
+  "sidebars": 1,
+  "topbars": 1,
+  "before": "none",
+  "beforeDisplay": "inline",
+  "beforeW": "auto",
+  "mainML": "0px",
+  "appMainExists": true,
+  "brandInTopbar": false,
+  "brandInSidebar": true,
+  "hubSubnav": null
+}

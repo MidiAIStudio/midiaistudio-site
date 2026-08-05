@@ -538,27 +538,79 @@ function bindBar() {
   });
 }
 
+function hideProductFallback() {
+  const fallback = document.getElementById('productStaticFallback');
+  if (!fallback) return;
+  fallback.hidden = true;
+  fallback.setAttribute('aria-hidden', 'true');
+}
+
+function showProductFallback(errMsg) {
+  const fallback = document.getElementById('productStaticFallback');
+  if (!fallback) return;
+  fallback.hidden = false;
+  fallback.removeAttribute('aria-hidden');
+  const featuresRoot = document.getElementById('productFeatures');
+  if (featuresRoot) featuresRoot.innerHTML = '';
+  if (errMsg) {
+    const msg = document.getElementById('productCmsError');
+    if (msg) {
+      msg.hidden = false;
+      msg.textContent = esc(errMsg);
+    }
+  }
+}
+
+function sectionsFingerprint(list) {
+  return JSON.stringify((list || []).map((s) => ({
+    id: s.id,
+    kind: s.kind,
+    layout: s.layout,
+    category: s.category,
+    title: s.title,
+    body: s.body,
+    features: s.features,
+    mediaType: s.mediaType,
+    mediaUrl: s.mediaUrl,
+    posterUrl: s.posterUrl,
+    mediaFit: s.mediaFit,
+    mediaWidth: s.mediaWidth,
+    mediaWidthPct: s.mediaWidthPct,
+    mediaAspect: s.mediaAspect,
+    mediaOverlays: s.mediaOverlays,
+    order: s.order,
+    published: s.published,
+    iconOnly: s.iconOnly
+  })));
+}
+
 async function initProductCms() {
   if (!PAGE) return;
   status = createSaveStatus('productCmsStatus');
   status.bindUnload();
   bindBar();
 
-  const fallback = document.getElementById('productStaticFallback');
+  // Paint CMS-shaped seed immediately (same aspect/slot chrome as final) so the
+  // Firestore await doesn't leave a differently-sized static fallback on screen.
+  draft = cloneSections(SEED);
+  sections = cloneSections(SEED);
+  refreshChrome();
+  render();
+  hideProductFallback();
+  document.body.classList.add('product-cms-painted');
+
   try {
     const first = await waitForAdmin();
     isAdmin = first.isAdmin;
     authUid = first.user?.uid || "anon";
     if (isAdmin) await ensureSeed();
-    sections = await loadSections();
-    if (!sections.length) sections = cloneSections(SEED);
+    let loaded = await loadSections();
+    if (!loaded.length) loaded = cloneSections(SEED);
+    const prevFp = sectionsFingerprint(draft);
+    sections = cloneSections(loaded);
     draft = cloneSections(sections);
-    if (fallback) {
-      fallback.hidden = true;
-      fallback.setAttribute('aria-hidden', 'true');
-    }
     refreshChrome();
-    render();
+    if (sectionsFingerprint(draft) !== prevFp) render();
 
     onAuthAdmin(async ({ user, isAdmin: admin }) => {
       isAdmin = admin;
@@ -567,6 +619,7 @@ async function initProductCms() {
       if (admin) {
         await ensureSeed();
         sections = await loadSections();
+        if (!sections.length) sections = cloneSections(SEED);
         draft = cloneSections(sections);
       }
       refreshChrome();
@@ -574,11 +627,8 @@ async function initProductCms() {
     });
   } catch (e) {
     console.error(e);
-    if (fallback) {
-      fallback.hidden = false;
-      const msg = document.getElementById('productCmsError');
-      if (msg) msg.textContent = esc(e.message || String(e));
-    }
+    showProductFallback(e.message || String(e));
+    document.body.classList.add('product-cms-painted');
   }
 }
 

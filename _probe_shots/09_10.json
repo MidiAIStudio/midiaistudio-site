@@ -1,0 +1,17 @@
+{
+  "mid": {
+    "bodyClass": "portal-page hub-page",
+    "before": "none",
+    "beforeW": "auto",
+    "mainML": "0px",
+    "mainOp": "0",
+    "topOp": "0"
+  },
+  "done": {
+    "bodyClass": "portal-page hub-page sidebar-layout",
+    "shells": 1,
+    "before": "none",
+    "mainML": "0px",
+    "sidebars": 1
+  }
+}
