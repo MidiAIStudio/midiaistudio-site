@@ -394,9 +394,11 @@ body{
 }
 .topbar{
  min-height:68px;
- background:rgba(5,7,17,.72)!important;
+ background:#070914!important;
  border-bottom:1px solid rgba(255,255,255,.10)!important;
  box-shadow:0 10px 36px rgba(0,0,0,.22);
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
 }
 .brand b{letter-spacing:-.02em}.brand-symbol{width:40px!important;height:40px!important;border-radius:13px!important}
 nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s background,.18s color}.topbar nav a:hover,.topbar nav a.active{background:rgba(255,255,255,.08);color:#fff!important;transform:none}
@@ -1214,7 +1216,7 @@ body:not(.sidebar-layout) > .topbar > #mainNav{display:none!important}
 /* V35 Left sidebar navigation */
 body.sidebar-layout{overflow-x:hidden}
 .app-shell{display:flex;min-height:100vh;width:100%;position:relative}
-.sidebar{width:260px;flex-shrink:0;position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;border-right:1px solid rgba(255,255,255,.10);background:rgba(5,7,17,.92);backdrop-filter:blur(18px);padding:18px 14px 24px;z-index:30}
+.sidebar{width:260px;flex-shrink:0;position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;border-right:1px solid rgba(255,255,255,.10);background:#050711;backdrop-filter:none;-webkit-backdrop-filter:none;padding:18px 14px 24px;z-index:30;isolation:isolate;transform:translateZ(0)}
 .sidebar-brand{display:flex;align-items:center;gap:10px;margin-bottom:0;padding:8px 10px;border-radius:14px}
 .sidebar-brand:hover{background:rgba(255,255,255,.05)}
 .sidebar-identity .sidebar-brand{margin-bottom:0;border:0;background:transparent}
@@ -1226,7 +1228,8 @@ body.sidebar-layout #mainNav.sidebar-nav a.hidden,body.sidebar-layout .sidebar-n
 body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.07)!important}
 body.sidebar-layout #mainNav.sidebar-nav a.active,body.sidebar-layout .sidebar-nav a.active{color:#fff!important;border:1px solid rgba(139,92,246,.42)!important;background:linear-gradient(135deg,rgba(139,92,246,.26),rgba(34,211,238,.12))!important}
 .app-main{flex:1;min-width:0;display:flex;flex-direction:column}
-.topbar-slim{position:sticky;top:0;z-index:12;min-height:60px;padding:10px 18px;background:rgba(5,7,17,.78)!important;border-bottom:1px solid rgba(255,255,255,.10)!important}
+/* Opaque sticky topbar — translucent + backdrop-filter left paint ghosts on Windows Chrome during menu navigation. */
+.topbar-slim{position:sticky;top:0;z-index:12;min-height:60px;padding:10px 18px;background:#070914!important;border-bottom:1px solid rgba(255,255,255,.10)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;isolation:isolate;transform:translateZ(0)}
 .topbar-slim .menu-btn{margin-right:4px}
 .topbar-page{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:rgba(231,233,251,.72);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
 .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:25}
@@ -1247,7 +1250,9 @@ body.sidebar-layout .purchase-final-side{top:76px}
 body.sidebar-layout{background:radial-gradient(circle at 15% 0%,rgba(139,92,246,.14),transparent 42%),radial-gradient(circle at 85% 8%,rgba(34,211,238,.1),transparent 38%),#070914}
 .sidebar{border-right-color:rgba(255,255,255,.08);background:rgba(4,6,15,.94)}
 .sidebar-brand img{border-radius:12px}
-.topbar-slim{backdrop-filter:blur(16px)}
+.topbar-slim{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#070914!important}
+.sidebar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#050711!important}
+.topbar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#070914!important}
 
 /* V44 Topbar action controls */
 .topbar .actions.topbar-actions{display:inline-flex;align-items:center;gap:6px;padding:4px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08)}
@@ -1377,7 +1382,7 @@ body.sidebar-layout{background:radial-gradient(circle at 15% 0%,rgba(139,92,246,
 @media(max-width:680px){.portal-stats,.portal-feature-grid,.portal-steps{grid-template-columns:1fr}.portal-cta-banner-inner{display:grid}.portal-cta-banner-actions .primary,.portal-cta-banner-actions .ghost{width:100%;text-align:center}.home-flow-line{gap:8px;font-size:13px}.home-support-card{padding:8px 10px}.home-support-card-hub{padding:9px 11px}}
 
 /* V37 Sidebar menu upgrade */
-.sidebar{width:248px;padding:16px 14px 20px;background:rgba(3,5,14,.96);border-right:1px solid rgba(255,255,255,.06)}
+.sidebar{width:248px;padding:16px 14px 20px;background:#050711;border-right:1px solid rgba(255,255,255,.06);backdrop-filter:none;-webkit-backdrop-filter:none}
 .sidebar-identity{margin:0 0 10px;padding:4px 6px;border-radius:12px;border:0;background:transparent;display:grid;gap:0}
 .sidebar-brand{margin:0;padding:6px 8px 8px;border-radius:10px;border:0;background:transparent}
 .sidebar-brand:hover{background:rgba(255,255,255,.05)}
@@ -1397,9 +1402,11 @@ body.sidebar-layout{background:radial-gradient(circle at 15% 0%,rgba(139,92,246,
 .sidebar-section{gap:4px}
 .sidebar-label{margin:0;padding:0 10px 1px;color:rgba(148,155,184,.9);font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;border:0;background:transparent;line-height:1.2}
 .sidebar-primary{padding-bottom:8px;margin-bottom:2px;border-bottom:1px solid rgba(255,255,255,.06)}
-body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{gap:9px;padding:7px 10px!important;border-radius:11px!important;color:#c7cbe4!important;font-size:13px!important;font-weight:700!important;position:relative;line-height:1.2}
+body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{gap:9px;padding:7px 10px!important;border-radius:11px!important;color:#c7cbe4!important;font-size:13px!important;font-weight:700!important;position:relative;line-height:1.2;transition:background .12s ease,color .12s ease,border-color .12s ease;outline:none;box-shadow:none}
 body.sidebar-layout #mainNav.sidebar-nav a span:last-child,body.sidebar-layout .sidebar-nav a span:last-child{flex:1;min-width:0}
 body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.05)!important}
+body.sidebar-layout #mainNav.sidebar-nav a:focus,body.sidebar-layout .sidebar-nav a:focus{outline:none}
+body.sidebar-layout #mainNav.sidebar-nav a:focus-visible,body.sidebar-layout .sidebar-nav a:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:1px}
 body.sidebar-layout #mainNav.sidebar-nav a.active,body.sidebar-layout .sidebar-nav a.active{color:#fff!important;background:rgba(139,92,246,.14)!important;border:1px solid rgba(139,92,246,.28)!important;box-shadow:inset 3px 0 0 var(--accent2)}
 .sidebar-group{display:contents}
 .nav-icon{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
