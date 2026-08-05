@@ -2661,60 +2661,41 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 }
 .topbar-profile-avatar.has-photo{background:#111}
 .topbar-profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
-.topbar-profile-avatar.is-lg{width:44px;height:44px;font-size:16px;flex:none}
+.topbar-profile-avatar.is-lg{width:34px;height:34px;font-size:13px;flex:none}
 .topbar-profile-panel{
-  position:absolute;top:calc(100% + 10px);right:0;z-index:1300;
-  width:min(196px,calc(100vw - 20px));
-  border-radius:12px;border:1px solid rgba(255,255,255,.12);
+  position:absolute;top:calc(100% + 8px);right:0;z-index:1300;
+  width:min(176px,calc(100vw - 20px));
+  border-radius:10px;border:1px solid rgba(255,255,255,.12);
   background:linear-gradient(180deg,rgba(22,26,48,.98),rgba(10,12,24,.98));
-  box-shadow:0 22px 48px rgba(0,0,0,.5);overflow:hidden;
+  box-shadow:0 18px 40px rgba(0,0,0,.48);overflow:hidden;
   text-align:left
 }
 .topbar-profile-head{
-  display:flex;align-items:center;gap:8px;padding:10px;
+  display:flex;align-items:center;gap:7px;padding:8px;
   border-bottom:1px solid rgba(255,255,255,.08)
 }
-.topbar-profile-meta{min-width:0;display:grid;gap:2px;text-align:left}
-.topbar-profile-meta b{color:#fff;font-size:12.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topbar-profile-meta span{color:var(--muted);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topbar-profile-license{justify-self:start;margin-top:2px;font-size:10px!important;padding:2px 7px!important}
+.topbar-profile-meta{min-width:0;display:grid;gap:1px;text-align:left}
+.topbar-profile-meta b{color:#fff;font-size:12px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-profile-meta span{color:var(--muted);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-profile-license{justify-self:start;margin-top:1px;font-size:9px!important;padding:1px 6px!important}
 .topbar-profile-links{
-  display:grid!important;gap:1px;padding:4px;margin:0;
+  display:grid!important;gap:0;padding:3px;margin:0;
   text-align:left!important;justify-items:stretch;align-items:stretch!important;
   flex-wrap:nowrap!important;justify-content:flex-start!important
 }
 .topbar-profile-links a{
   display:block!important;width:100%;box-sizing:border-box;
-  padding:7px 8px!important;border-radius:8px;color:#d7dbf2!important;
-  font-size:12.5px;font-weight:700;text-decoration:none;
+  padding:6px 7px!important;border-radius:7px;color:#d7dbf2!important;
+  font-size:12px;font-weight:700;text-decoration:none;
   text-align:left!important;justify-content:flex-start!important;
   transform:none!important;background:transparent;margin:0
 }
 .topbar-profile-links a:hover{background:rgba(255,255,255,.06)!important;color:#fff!important;transform:none!important}
-.topbar-profile-notify{display:grid;gap:2px}
-.topbar-profile-notify[hidden]{display:none!important}
-.topbar-profile-notify-btn{
-  display:block;width:100%;box-sizing:border-box;margin:0;padding:7px 8px;border:0;border-radius:8px;
-  background:transparent;color:#d7dbf2;font:inherit;font-size:12.5px;font-weight:700;
-  text-align:left;cursor:pointer;transform:none!important
-}
-.topbar-profile-notify-btn:hover{background:rgba(255,255,255,.06);color:#fff}
-.topbar-profile-notify-btn[aria-expanded="true"]{background:rgba(255,255,255,.05);color:#fff}
-.topbar-profile-notify-prefs{
-  display:grid;gap:2px;margin:0 2px 4px;padding:4px 6px 6px;
-  border-radius:8px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.06)
-}
-.topbar-profile-notify-prefs[hidden]{display:none!important}
-.topbar-profile-notify-row{
-  display:flex;align-items:center;gap:7px;padding:4px 2px;color:#cfd5ef;
-  font-size:11.5px;font-weight:700;line-height:1.2;cursor:pointer;user-select:none
-}
-.topbar-profile-notify-row input{accent-color:var(--accent2);width:13px;height:13px;flex:none;margin:0}
 .topbar-profile-logout{
-  display:block;width:calc(100% - 8px);box-sizing:border-box;
-  margin:2px 4px 6px;padding:7px 8px;border-radius:8px;
+  display:block;width:calc(100% - 6px);box-sizing:border-box;
+  margin:1px 3px 4px;padding:6px 7px;border-radius:7px;
   border:1px solid rgba(251,113,133,.28);background:rgba(251,113,133,.08);
-  color:#ff9aac;font-size:12.5px;font-weight:800;cursor:pointer;
+  color:#ff9aac;font-size:12px;font-weight:800;cursor:pointer;
   text-align:left!important;transform:none!important
 }
 .topbar-profile-logout:hover{background:rgba(251,113,133,.14);color:#ffb4c0;transform:none!important}
@@ -2722,10 +2703,10 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 .topbar .actions > .topbar-login,
 .topbar .topbar-logout{display:none!important}
 .topbar-profile-login{
-  display:flex;align-items:center;justify-content:flex-start;gap:8px;
-  width:calc(100% - 8px);box-sizing:border-box;margin:2px 4px 6px;padding:8px;
-  border-radius:8px;border:1px solid rgba(255,255,255,.65);
-  background:#f8f9fc;color:#1e2433;font-size:12.5px;font-weight:800;cursor:pointer;
+  display:flex;align-items:center;justify-content:flex-start;gap:7px;
+  width:calc(100% - 6px);box-sizing:border-box;margin:1px 3px 4px;padding:7px;
+  border-radius:7px;border:1px solid rgba(255,255,255,.65);
+  background:#f8f9fc;color:#1e2433;font-size:12px;font-weight:800;cursor:pointer;
   text-align:left;transform:none!important
 }
 .topbar-profile-login:hover{background:#fff;transform:none!important}

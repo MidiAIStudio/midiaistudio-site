@@ -1793,7 +1793,6 @@ async function setAuthUiSignedIn(user){
   refreshDownloadCard(true);
   updatePurchaseAccountBox();
   updateSupportFormUi();
-  syncProfileNotifyPrefsUi();
   if(page==='board.html') applyBoardMineModeUi();
 }
 
@@ -1815,7 +1814,6 @@ async function upsertUser(user){
     await setDoc(ref,data,{merge:true});
     currentUserDoc={...old,...data};
     userNotifyPrefs = normalizeNotifyPrefs(old.notifyPrefs || data.notifyPrefs || currentUserDoc.notifyPrefs);
-    syncProfileNotifyPrefsUi();
     isAdminUser=normalizeRole(data.role || old.role)==='admin';
     setAdminNavVisible(isAdminUser);
     await ensureUserLicenseDoc(user.uid, { role: data.role || old.role || 'user' });
@@ -5821,55 +5819,6 @@ async function saveUserNotifyPrefs(next){
   updateNotifyBellBadge(visible.filter(n => n.read !== true).length);
   renderNotifyPanelList();
 }
-function syncProfileNotifyPrefsUi(){
-  ensureTopbarProfile();
-  const block = $('profileNotifyBlock');
-  const prefs = $('profileNotifyPrefs');
-  if(!block) return;
-  const signedIn = !!currentUser;
-  block.hidden = !signedIn;
-  if(!signedIn){
-    if(prefs){ prefs.hidden = true; prefs.classList.remove('is-open'); }
-    $('profileNotifyToggle')?.setAttribute('aria-expanded','false');
-    return;
-  }
-  const p = userNotifyPrefs || defaultNotifyPrefs();
-  block.querySelectorAll('input[data-pref]').forEach((el)=>{
-    if(el.dataset.pref === 'inApp') el.checked = p.inApp !== false;
-    if(el.dataset.pref === 'email') el.checked = p.email === true;
-  });
-}
-function bindProfileNotifyPrefs(){
-  const toggle = $('profileNotifyToggle');
-  const prefs = $('profileNotifyPrefs');
-  if(!toggle || !prefs || toggle.dataset.bound) return;
-  toggle.dataset.bound = '1';
-  toggle.addEventListener('click', (e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-    if(!currentUser){ alert(tr('need_login')); return; }
-    const open = prefs.hidden;
-    prefs.hidden = !open;
-    prefs.classList.toggle('is-open', open);
-    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
-  prefs.querySelectorAll('input[data-pref]').forEach((input)=>{
-    input.addEventListener('change', async (e)=>{
-      e.stopPropagation();
-      if(!currentUser) return;
-      const next = { ...(userNotifyPrefs || defaultNotifyPrefs()) };
-      prefs.querySelectorAll('input[data-pref]').forEach((el)=>{ next[el.dataset.pref] = !!el.checked; });
-      try{
-        await saveUserNotifyPrefs(next);
-      }catch(err){
-        alert(err.message||err);
-        syncProfileNotifyPrefsUi();
-      }
-    });
-    input.addEventListener('click', (e)=> e.stopPropagation());
-  });
-}
-
 function ensureNotifyBell(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
@@ -6793,7 +6742,6 @@ function syncTopbarProfileAuthUi(signedIn){
     logoutBtn.hidden = !signedIn;
     logoutBtn.setAttribute('aria-hidden', signedIn ? 'false' : 'true');
   }
-  syncProfileNotifyPrefsUi();
   if(!signedIn){
     setTopbarProfileAvatar($('topbarProfileAvatar'), null, '?');
     setTopbarProfileAvatar($('topbarProfileAvatarLarge'), null, '?');
@@ -6859,13 +6807,6 @@ function ensureTopbarProfile(){
       <a href="${base}account.html">${esc(tr('profile_my_account'))}</a>
       <a href="${base}my-tickets.html">${esc(tr('profile_my_tickets'))}</a>
       <a href="${base}board.html?mine=1">${esc(tr('profile_my_posts'))}</a>
-      <div class="topbar-profile-notify" id="profileNotifyBlock" hidden>
-        <button type="button" class="topbar-profile-notify-btn" id="profileNotifyToggle" aria-expanded="false">${esc(tr('profile_notify_settings'))}</button>
-        <div class="topbar-profile-notify-prefs" id="profileNotifyPrefs" hidden>
-          <label class="topbar-profile-notify-row"><input type="checkbox" data-pref="inApp"><span>${esc(tr('notify_pref_inapp'))}</span></label>
-          <label class="topbar-profile-notify-row"><input type="checkbox" data-pref="email"><span>${esc(tr('notify_pref_email'))}</span></label>
-        </div>
-      </div>
     </nav>
     <button type="button" class="topbar-profile-login" id="loginBtn" aria-label="${esc(tr('login'))}"><span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">${esc(tr('login'))}</span></button>
     <button type="button" class="topbar-profile-logout hidden" id="logoutBtn" hidden aria-hidden="true">${esc(tr('logout'))}</button>
@@ -6889,8 +6830,6 @@ function ensureTopbarProfile(){
     if(!el.closest?.('#topbarProfile')) el.remove();
   });
   bindTopbarLoginButton();
-  bindProfileNotifyPrefs();
-  syncProfileNotifyPrefsUi();
   const logoutBtn = $('logoutBtn');
   if(logoutBtn) logoutBtn.onclick = ()=>{ doLogout(); };
   return wrap;
@@ -6950,9 +6889,6 @@ function closeTopbarProfilePanel(){
   const panel = $('topbarProfilePanel');
   if(panel) panel.hidden = true;
   $('topbarProfileBtn')?.setAttribute('aria-expanded','false');
-  const prefs = $('profileNotifyPrefs');
-  if(prefs){ prefs.hidden = true; prefs.classList.remove('is-open'); }
-  $('profileNotifyToggle')?.setAttribute('aria-expanded','false');
 }
 
 function initTopbarActions(){
