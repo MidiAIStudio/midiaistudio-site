@@ -1204,7 +1204,6 @@ body:not(.sidebar-layout) > .topbar > .actions{visibility:hidden!important;point
 body:not(.sidebar-layout) > .topbar > #mainNav{display:none!important}
 html.auth-pending #loginBtn,
 html.auth-pending #logoutBtn,
-html.auth-pending #topbarProfile,
 html.auth-pending #topbarNotify{visibility:hidden!important;pointer-events:none!important}
 @media (min-width:981px){
   body:not(.sidebar-layout)::before{content:"";position:fixed;inset:0 auto 0 0;width:260px;z-index:9;background:rgba(4,6,15,.94);border-right:1px solid rgba(255,255,255,.08);pointer-events:none}
@@ -2614,41 +2613,60 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 .topbar-profile-avatar.is-lg{width:44px;height:44px;font-size:16px;flex:none}
 .topbar-profile-panel{
   position:absolute;top:calc(100% + 10px);right:0;z-index:1300;
-  width:min(248px,calc(100vw - 24px));
-  border-radius:14px;border:1px solid rgba(255,255,255,.12);
+  width:min(196px,calc(100vw - 20px));
+  border-radius:12px;border:1px solid rgba(255,255,255,.12);
   background:linear-gradient(180deg,rgba(22,26,48,.98),rgba(10,12,24,.98));
   box-shadow:0 22px 48px rgba(0,0,0,.5);overflow:hidden;
   text-align:left
 }
 .topbar-profile-head{
-  display:flex;align-items:center;gap:10px;padding:12px;
+  display:flex;align-items:center;gap:8px;padding:10px;
   border-bottom:1px solid rgba(255,255,255,.08)
 }
 .topbar-profile-meta{min-width:0;display:grid;gap:2px;text-align:left}
-.topbar-profile-meta b{color:#fff;font-size:13px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.topbar-profile-meta span{color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-profile-meta b{color:#fff;font-size:12.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-profile-meta span{color:var(--muted);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .topbar-profile-license{justify-self:start;margin-top:2px;font-size:10px!important;padding:2px 7px!important}
 .topbar-profile-links{
-  display:grid!important;gap:2px;padding:6px;margin:0;
-  text-align:left!important;justify-items:stretch
+  display:grid!important;gap:1px;padding:4px;margin:0;
+  text-align:left!important;justify-items:stretch;align-items:stretch!important;
+  flex-wrap:nowrap!important;justify-content:flex-start!important
 }
 .topbar-profile-links a{
   display:block!important;width:100%;box-sizing:border-box;
-  padding:8px 10px!important;border-radius:9px;color:#d7dbf2!important;
-  font-size:13px;font-weight:700;text-decoration:none;
+  padding:7px 8px!important;border-radius:8px;color:#d7dbf2!important;
+  font-size:12.5px;font-weight:700;text-decoration:none;
   text-align:left!important;justify-content:flex-start!important;
-  transform:none!important;background:transparent
+  transform:none!important;background:transparent;margin:0
 }
-.topbar-profile-links a:hover{background:rgba(255,255,255,.06)!important;color:#fff!important}
+.topbar-profile-links a:hover{background:rgba(255,255,255,.06)!important;color:#fff!important;transform:none!important}
 .topbar-profile-logout{
-  display:block;width:calc(100% - 12px);box-sizing:border-box;
-  margin:4px 6px 8px;padding:8px 10px;border-radius:9px;
+  display:block;width:calc(100% - 8px);box-sizing:border-box;
+  margin:2px 4px 6px;padding:7px 8px;border-radius:8px;
   border:1px solid rgba(251,113,133,.28);background:rgba(251,113,133,.08);
-  color:#ff9aac;font-size:13px;font-weight:800;cursor:pointer;
-  text-align:left!important
+  color:#ff9aac;font-size:12.5px;font-weight:800;cursor:pointer;
+  text-align:left!important;transform:none!important
 }
-.topbar-profile-logout:hover{background:rgba(251,113,133,.14);color:#ffb4c0}
+.topbar-profile-logout:hover{background:rgba(251,113,133,.14);color:#ffb4c0;transform:none!important}
+.topbar .actions > #loginBtn,
+.topbar .actions > .topbar-login,
 .topbar .topbar-logout{display:none!important}
+.topbar-profile-login{
+  display:flex;align-items:center;justify-content:flex-start;gap:8px;
+  width:calc(100% - 8px);box-sizing:border-box;margin:2px 4px 6px;padding:8px;
+  border-radius:8px;border:1px solid rgba(255,255,255,.65);
+  background:#f8f9fc;color:#1e2433;font-size:12.5px;font-weight:800;cursor:pointer;
+  text-align:left;transform:none!important
+}
+.topbar-profile-login:hover{background:#fff;transform:none!important}
+.topbar-profile-login .login-google-icon{
+  display:grid;place-items:center;width:20px;height:20px;flex:none;
+  border-radius:999px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.06)
+}
+.topbar-profile-login .login-google-icon svg{width:14px;height:14px;display:block}
+.topbar-profile-login .login-label{font-style:normal;white-space:nowrap}
+.topbar-profile-login.hidden,.topbar-profile-logout.hidden{display:none!important}
+
 
 
 /* —— Account notification settings —— */

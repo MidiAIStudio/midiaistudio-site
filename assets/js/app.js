@@ -33,6 +33,8 @@ let lang = pathLang || localStorage.getItem('midiai_lang') || document.documentE
 if (!['ko','en','ja'].includes(lang)) lang = 'ko';
 if (isRootKoreanPurchasePage) lang = 'ko';
 let auth = null;
+let firebaseSignOut = null;
+let topbarGoogleLogin = null;
 let db = null;
 let currentUser = null;
 let currentUserDoc = null;
@@ -1460,9 +1462,7 @@ function setAuthUiSignedOut(){
   currentLicenseLifetime = false;
   accountLicenseDoc = null;
   setAdminNavVisible(false);
-  $('loginBtn')?.classList.remove('hidden');
-  setTopbarProfileVisible(false);
-  closeTopbarProfilePanel();
+  syncTopbarProfileAuthUi(false);
   syncSidebarAuthUi({
     signedIn:false,
     name:tr('guest'),
@@ -1745,7 +1745,6 @@ async function fetchAccountDownloadData(){
 
 async function setAuthUiSignedIn(user){
   currentUser=user;
-  $('loginBtn')?.classList.add('hidden');
   const name=user.displayName||'Google User';
   const email=user.email||'';
   const avatar=(user.displayName||user.email||'?').slice(0,1).toUpperCase();
@@ -1770,7 +1769,7 @@ async function setAuthUiSignedIn(user){
     licenseText:tr('checking')
   });
   updateTopbarProfile(user);
-  setTopbarProfileVisible(true);
+  syncTopbarProfileAuthUi(true);
   await upsertUser(user);
   await loadLicense(user.uid);
   listenTicketNotifications();
@@ -1937,6 +1936,7 @@ async function initAuth(){
     ]);
     const app=initializeApp(CONFIG.firebase);
     auth=getAuth(app);
+    firebaseSignOut=signOut;
     db=fs.getFirestore(app);
     storage=st.getStorage(app);
     firestoreApi=fs;
@@ -1985,9 +1985,10 @@ async function initAuth(){
       }
     }
 
-    $('loginBtn') && ($('loginBtn').onclick=loginWithGoogle);
+    topbarGoogleLogin = loginWithGoogle;
+    bindTopbarLoginButton();
     ensureTopbarProfile();
-    $('logoutBtn') && ($('logoutBtn').onclick=()=>signOut(auth));
+    $('logoutBtn') && ($('logoutBtn').onclick=()=>{ doLogout(); });
     onAuthStateChanged(auth,u=>{clearAuthPending();u?setAuthUiSignedIn(u):setAuthUiSignedOut();});
     routeLoadPublic();
   }catch(e){
@@ -6706,6 +6707,67 @@ function refreshTopbarActionLabels(){
 
 let topbarProfilePanelOpen = false;
 
+
+
+function bindTopbarLoginButton(){
+  const loginBtn = $('loginBtn');
+  if(!loginBtn) return;
+  loginBtn.onclick = ()=>{
+    closeTopbarProfilePanel();
+    if(typeof topbarGoogleLogin === 'function') topbarGoogleLogin();
+    else console.warn('Google login not ready');
+  };
+}
+
+function syncTopbarProfileAuthUi(signedIn){
+  ensureTopbarProfile();
+  setTopbarProfileVisible(true);
+  const loginBtn = $('loginBtn');
+  const logoutBtn = $('logoutBtn');
+  if(loginBtn){
+    loginBtn.classList.toggle('hidden', !!signedIn);
+    loginBtn.hidden = !!signedIn;
+    loginBtn.setAttribute('aria-hidden', signedIn ? 'true' : 'false');
+  }
+  if(logoutBtn){
+    logoutBtn.classList.toggle('hidden', !signedIn);
+    logoutBtn.hidden = !signedIn;
+    logoutBtn.setAttribute('aria-hidden', signedIn ? 'false' : 'true');
+  }
+  if(!signedIn){
+    setTopbarProfileAvatar($('topbarProfileAvatar'), null, '?');
+    setTopbarProfileAvatar($('topbarProfileAvatarLarge'), null, '?');
+    if($('topbarProfileName')) $('topbarProfileName').textContent = tr('guest');
+    if($('topbarProfileEmail')){
+      $('topbarProfileEmail').textContent = tr('guest_desc');
+      $('topbarProfileEmail').title = tr('guest_desc');
+    }
+    const badge = $('topbarProfileLicense');
+    if(badge){
+      badge.hidden = false;
+      badge.className = 'badge topbar-profile-license pending';
+      badge.textContent = tr('license_wait');
+    }
+    const adminLink = $('topbarProfileAdmin');
+    if(adminLink) adminLink.hidden = true;
+  }
+  bindTopbarLoginButton();
+  const logout = $('logoutBtn');
+  if(logout) logout.onclick = ()=>{ doLogout(); };
+}
+
+async function doLogout(){
+  closeTopbarProfilePanel();
+  try{
+    if(auth && firebaseSignOut) await firebaseSignOut(auth);
+    else if(auth && typeof auth.signOut === 'function') await auth.signOut();
+    else location.reload();
+  }catch(e){
+    console.error('logout failed', e);
+    location.reload();
+  }
+}
+
 function ensureTopbarProfile(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
@@ -6722,15 +6784,15 @@ function ensureTopbarProfile(){
   wrap = document.createElement('div');
   wrap.className = 'topbar-profile';
   wrap.id = 'topbarProfile';
-  wrap.hidden = true;
+  wrap.hidden = false;
   wrap.innerHTML = `<button type="button" class="topbar-profile-btn" id="topbarProfileBtn" aria-label="${esc(tr('profile_menu_aria'))}" aria-expanded="false"><span class="topbar-profile-avatar" id="topbarProfileAvatar">?</span></button>
   <div class="topbar-profile-panel" id="topbarProfilePanel" hidden>
     <div class="topbar-profile-head">
       <div class="topbar-profile-avatar is-lg" id="topbarProfileAvatarLarge">?</div>
       <div class="topbar-profile-meta">
         <b id="topbarProfileName">${esc(tr('guest'))}</b>
-        <span id="topbarProfileEmail"></span>
-        <span id="topbarProfileLicense" class="badge topbar-profile-license pending" hidden>${esc(tr('license_wait'))}</span>
+        <span id="topbarProfileEmail">${esc(tr('guest_desc'))}</span>
+        <span id="topbarProfileLicense" class="badge topbar-profile-license pending">${esc(tr('license_wait'))}</span>
       </div>
     </div>
     <nav class="topbar-profile-links" aria-label="${esc(tr('profile_menu_aria'))}">
@@ -6739,7 +6801,8 @@ function ensureTopbarProfile(){
       <a href="${base}board.html?mine=1">${esc(tr('profile_my_posts'))}</a>
       <a href="${base}account.html#notify-settings">${esc(tr('profile_notify_settings'))}</a>
     </nav>
-    <button type="button" class="topbar-profile-logout" id="logoutBtn">${esc(tr('logout'))}</button>
+    <button type="button" class="topbar-profile-login" id="loginBtn" aria-label="${esc(tr('login'))}"><span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">${esc(tr('login'))}</span></button>
+    <button type="button" class="topbar-profile-logout hidden" id="logoutBtn" hidden aria-hidden="true">${esc(tr('logout'))}</button>
   </div>`;
   actions.appendChild(wrap);
 
@@ -6755,16 +6818,13 @@ function ensureTopbarProfile(){
       closeTopbarProfilePanel();
     });
   }
-  // re-bind logout if auth already ready
+  // Drop legacy topbar login button outside the profile menu
+  document.querySelectorAll('.topbar .actions > #loginBtn, .topbar .actions > .topbar-login').forEach((el)=>{
+    if(!el.closest?.('#topbarProfile')) el.remove();
+  });
+  bindTopbarLoginButton();
   const logoutBtn = $('logoutBtn');
-  if(logoutBtn && auth){
-    logoutBtn.onclick = ()=>signOut(auth);
-  } else if(logoutBtn){
-    logoutBtn.onclick = ()=>{
-      if(auth) signOut(auth);
-      else location.reload();
-    };
-  }
+  if(logoutBtn) logoutBtn.onclick = ()=>{ doLogout(); };
   return wrap;
 }
 function setTopbarProfileVisible(show){
@@ -6799,9 +6859,7 @@ function updateTopbarProfile(user){
   }
   const adminLink = $('topbarProfileAdmin');
   if(adminLink) adminLink.hidden = !isAdminUser;
-  // keep logout bound
-  const logoutBtn = $('logoutBtn');
-  if(logoutBtn && auth) logoutBtn.onclick = ()=>signOut(auth);
+  syncTopbarProfileAuthUi(true);
 }
 function toggleTopbarProfilePanel(){
   if(topbarProfilePanelOpen) closeTopbarProfilePanel();
@@ -6833,23 +6891,19 @@ function initTopbarActions(){
   actions.classList.add('topbar-actions');
 
   // Guide/SEO pages often only ship a Free-trial CTA — normalize to portal controls.
-  if(!$('langBtn') || !$('loginBtn')){
-    actions.innerHTML = `<button id="langBtn" class="ghost topbar-lang" aria-label="언어 변경" type="button"><span class="topbar-lang-icon">${TOPBAR_GLOBE_SVG}</span><span class="topbar-lang-code">EN</span></button><button id="loginBtn" class="login topbar-login" aria-label="Google 로그인" type="button"><span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">Google 로그인</span></button>`;
+  if(!$('langBtn')){
+    actions.innerHTML = `<button id="langBtn" class="ghost topbar-lang" aria-label="언어 변경" type="button"><span class="topbar-lang-icon">${TOPBAR_GLOBE_SVG}</span><span class="topbar-lang-code">EN</span></button>`;
   } else {
     const langBtn = $('langBtn');
     if(langBtn && !langBtn.querySelector('.topbar-lang-code')){
       langBtn.classList.add('topbar-lang');
       langBtn.innerHTML = `<span class="topbar-lang-icon">${TOPBAR_GLOBE_SVG}</span><span class="topbar-lang-code">EN</span>`;
     }
-    const loginBtn = $('loginBtn');
-    if(loginBtn && !loginBtn.querySelector('.login-label')){
-      loginBtn.classList.add('topbar-login');
-      loginBtn.innerHTML = `<span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">Google 로그인</span>`;
-    }
-    // legacy text logout is replaced by profile menu
-    const legacyLogout = $('logoutBtn');
-    if(legacyLogout && !legacyLogout.closest?.('#topbarProfile')) legacyLogout.remove();
   }
+  // Login/logout live inside the profile dropdown only
+  document.querySelectorAll('.topbar .actions > #loginBtn, .topbar .actions > #logoutBtn, .topbar .actions > .topbar-login, .topbar .actions > .topbar-logout').forEach((el)=>{
+    if(!el.closest?.('#topbarProfile')) el.remove();
+  });
 
   const langBtn = $('langBtn');
   if(langBtn) langBtn.onclick = onLangBtnClick;
@@ -6857,8 +6911,8 @@ function initTopbarActions(){
   ensureNotifyBell();
   setNotifyBellVisible(!!currentUser);
   ensureTopbarProfile();
-  setTopbarProfileVisible(!!currentUser);
   if(currentUser) updateTopbarProfile(currentUser);
+  else syncTopbarProfileAuthUi(false);
 }
 function initSidebarLayout(){
   if(document.querySelector('.app-shell')) return;
