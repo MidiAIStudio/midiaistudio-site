@@ -1125,16 +1125,26 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .portal-page .portal-account-head p{margin:0 0 8px;color:var(--muted);font-size:13px}
 .portal-page .portal-account-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .portal-page .portal-account-grid .stat-card{padding:12px 14px;border-radius:16px}
-/* Account page dashboard */
-.account-page .account-profile-card .portal-account-head{margin-bottom:0;padding-bottom:0;border-bottom:0;flex-wrap:wrap}
-.account-page .account-profile-meta{flex:1;min-width:180px}
-
-.account-page .account-profile-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+/* Account page dashboard — compact density */
+.account-page .hub-post-shell{width:min(820px,calc(100% - 24px))}
+.account-page .hub-shell{padding-top:12px}
+.account-page .hub-topline{align-items:center;margin-bottom:10px;gap:10px}
+.account-page .hub-topline .eyebrow{padding:4px 8px;font-size:10px}
+.account-page .hub-topline h1{margin:4px 0 0;font-size:clamp(22px,2.6vw,28px)}
+.account-page .hub-desc{margin:4px 0 0;font-size:12px;line-height:1.4;max-width:420px}
+.account-page .hub-card,
+.account-page.portal-page.hub-page .hub-card{padding:12px!important;border-radius:14px!important}
+.account-page .account-profile-card .portal-account-head{margin-bottom:0;padding-bottom:0;border-bottom:0;flex-wrap:wrap;gap:10px}
+.account-page .account-profile-meta{flex:1;min-width:160px}
+.account-page .portal-account-head b{font-size:15px!important;margin-bottom:2px!important}
+.account-page .portal-account-head p{margin:0!important;font-size:12px!important;line-height:1.35}
+.account-page .portal-avatar{width:40px!important;height:40px!important;border-radius:12px!important;font-size:15px!important}
+.account-page .account-profile-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .account-page .account-chip{
-  display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;
-  font-size:11px;font-weight:800;letter-spacing:.01em;border:1px solid transparent;line-height:1.2
+  display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;
+  font-size:10px;font-weight:800;letter-spacing:.01em;border:1px solid transparent;line-height:1.15
 }
-.account-page .account-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.account-page .account-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
 .account-page .account-chip.is-pending{background:rgba(148,163,184,.1);color:#94a3b8;border-color:rgba(148,163,184,.18)}
 .account-page .account-chip.is-status-active{background:rgba(52,211,153,.12);color:#6ee7b7;border-color:rgba(52,211,153,.28)}
 .account-page .account-chip.is-status-expired{background:rgba(148,163,184,.1);color:#94a3b8;border-color:rgba(148,163,184,.2)}
@@ -1145,38 +1155,39 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .account-page .account-license-title.is-plan-trial{color:#fcd34d}
 .account-page .account-license-title.is-plan-lifetime{color:#c4b5fd}
 .account-page .account-license-title.is-plan-period{color:#fdba74}
-.account-page .account-field-label{font-size:11px;font-weight:700;color:#8b93b3;letter-spacing:.04em;text-transform:uppercase}
-.account-page .account-field-value{font-size:16px;font-weight:800;color:#f7f8ff;letter-spacing:-.02em}
 .account-page #accountHeroCta.hidden{display:none!important}
-
 .account-page .account-profile-cta{margin-left:auto}
 .account-page .portal-avatar{overflow:hidden;padding:0;display:grid;place-items:center}
 .account-page .portal-avatar.has-photo{background:transparent}
 .account-page .portal-avatar img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
-.account-page .account-dashboard{margin-top:14px}
-.account-page .account-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
-.account-page .account-panel{display:flex;flex-direction:column;min-height:220px;padding:18px!important}
-.account-page .account-panel-full{grid-column:1/-1;min-height:0}
-.account-page .account-panel-head{display:flex;align-items:center;gap:10px;margin:0 0 14px}
-.account-page .account-panel-head h2{margin:0;font-size:15px;font-weight:800;letter-spacing:.02em;color:rgba(231,233,251,.92)}
-.account-page .account-panel-icon{font-size:18px;line-height:1}
-.account-page .account-panel-body{display:grid;gap:12px;flex:1}
-.account-page .account-license-title{margin:0 0 2px;font-size:22px;font-weight:900;letter-spacing:-.03em;color:#fff}
-.account-page .account-field{display:grid;gap:4px}
-.account-page .account-field-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
-.account-page .account-field-value{font-size:15px;font-weight:800;color:#f3f4ff;letter-spacing:-.01em;word-break:break-word}
-.account-page .account-panel-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
-.account-page .account-support-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start}
-.account-page .account-support-link{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#e7e9fb;font-size:13px;font-weight:800;text-decoration:none;transition:border-color .15s ease,background .15s ease,transform .15s ease}
-.account-page .account-support-link:hover{border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.12);transform:translateY(-1px)}
-.account-page .account-dev-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.account-page .account-dashboard{margin-top:8px}
+.account-page .account-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch}
+.account-page .account-panel{display:flex;flex-direction:column;min-height:0;padding:12px!important}
+.account-page .account-panel-full{grid-column:1/-1}
+.account-page .account-panel-head{display:flex;align-items:center;gap:6px;margin:0 0 8px}
+.account-page .account-panel-head h2{margin:0;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgba(184,189,216,.9)}
+.account-page .account-panel-icon{font-size:13px;line-height:1;opacity:.85}
+.account-page .account-panel-body{display:grid;gap:6px;flex:1}
+.account-page .account-license-title{margin:0 0 2px;font-size:16px;font-weight:900;letter-spacing:-.03em;color:#fff;line-height:1.2}
+.account-page .account-field{display:grid;grid-template-columns:92px minmax(0,1fr);gap:6px 10px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.account-page .account-field:last-child{border-bottom:0;padding-bottom:0}
+.account-page .account-field-label{font-size:11px;font-weight:700;color:#8b93b3;letter-spacing:.02em;text-transform:none}
+.account-page .account-field-value{font-size:13px;font-weight:700;color:#f3f4ff;letter-spacing:-.01em;word-break:break-word;text-align:right}
+.account-page .account-panel-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.account-page .account-panel-actions .mini-btn{padding:7px 10px;font-size:12px;border-radius:10px}
+.account-page .account-support-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start}
+.account-page .account-support-link{display:flex;align-items:center;justify-content:center;min-height:34px;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);color:#e7e9fb;font-size:12px;font-weight:700;text-decoration:none;transition:border-color .15s ease,background .15s ease}
+.account-page .account-support-link:hover{border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.12);transform:none}
+.account-page .account-dev-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
 .account-page .account-panel-developer{border-color:rgba(251,191,36,.28)!important;background:linear-gradient(180deg,rgba(251,191,36,.08),rgba(255,255,255,.03))!important}
-.account-page .account-login-card{padding:24px;text-align:center}
+.account-page .account-login-card{padding:16px!important;text-align:center}
+.account-page .account-notify-wrap{margin-top:8px}
+.account-page .account-notify-card{padding:10px 12px!important;border-radius:12px!important}
 @media(max-width:720px){
   .account-page .account-dashboard-grid,.account-page .account-support-grid,.account-page .account-dev-grid{grid-template-columns:1fr}
   .account-page .account-profile-cta{width:100%;margin-left:0}
   .account-page .account-profile-cta .mini-btn{width:100%;justify-content:center}
-  .account-page .account-panel{min-height:0}
+  .account-page .account-field{grid-template-columns:84px minmax(0,1fr)}
 }
 
 .portal-page .hub-card{border:1px solid var(--final-stroke)!important;background:var(--final-card)!important;box-shadow:var(--final-shadow)!important;border-radius:22px!important}
