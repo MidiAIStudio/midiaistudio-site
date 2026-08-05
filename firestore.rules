@@ -18,6 +18,17 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read, write: if isOwner(userId) || isAdmin();
+
+      match /notifications/{notifId} {
+        allow read, update, delete: if isOwner(userId) || isAdmin();
+        allow create: if signedIn()
+          && request.resource.data.actorUid == request.auth.uid
+          && request.resource.data.type == 'board_comment'
+          && userId != request.auth.uid
+          && request.resource.data.postId is string
+          && request.resource.data.read == false
+          && get(/databases/$(database)/documents/boardPosts/$(request.resource.data.postId)).data.uid == userId;
+      }
     }
 
     match /licenses/{userId} {

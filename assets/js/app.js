@@ -84,6 +84,10 @@ const adminTicketNotifyInFlight = new Set();
 const adminTicketReadInFlight = new Set();
 const toastedAdminTicketKeys = new Set();
 let pendingAdminTicketOpenId = '';
+let userNotifyUnsub = null;
+let userNotifyRows = [];
+let userNotifyPanelOpen = false;
+let boardCommentFocusDone = false;
 
 const textOriginals = new WeakMap();
 const attrOriginals = new WeakMap();
@@ -419,7 +423,9 @@ function tr(k){
     submit:'등록', edit:'수정', del:'삭제', close:'종료 처리', updated:'수정 완료', deleted:'삭제 완료', manage:'관리', confirm_delete:'정말 삭제할까요?',
     reply_toast_title:'💬 문의 답변이 등록되었습니다.', reply_toast_body:'문의하신 내용에 답변이 작성되었습니다.', reply_toast_action:'답변 보기',
     admin_ticket_toast_title:'💬 새로운 문의가 등록되었습니다.', admin_ticket_toast_body:'새 1:1 문의가 접수되었습니다.', admin_ticket_toast_action:'문의 보기',
-    admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기'
+    admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
+    notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
+    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_aria:'알림'
   };
   const EN = {
     login:'Sign in with Google', logout:'Logout', guest:'Not signed in', guest_desc:'Sign in with Google to check license',
@@ -430,7 +436,9 @@ function tr(k){
     submit:'Submit', edit:'Edit', del:'Delete', close:'Close', updated:'Updated', deleted:'Deleted', manage:'Manage', confirm_delete:'Delete this item?',
     reply_toast_title:'💬 A reply was posted on your ticket.', reply_toast_body:'An admin replied to your support request.', reply_toast_action:'View reply',
     admin_ticket_toast_title:'💬 A new support ticket was submitted.', admin_ticket_toast_body:'A new 1:1 inquiry has been received.', admin_ticket_toast_action:'View ticket',
-    admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket'
+    admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
+    notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_login:'Sign in to see notifications.',
+    notify_board_comment:' commented on your post.', notify_aria:'Notifications'
   };
   const JA = {
     login:'Googleログイン', logout:'ログアウト', guest:'未ログイン', guest_desc:'Googleログインでライセンス確認',
@@ -441,7 +449,9 @@ function tr(k){
     submit:'登録', edit:'編集', del:'削除', close:'終了にする', updated:'更新しました', deleted:'削除しました', manage:'管理', confirm_delete:'本当に削除しますか？',
     reply_toast_title:'💬 お問い合わせに返信がありました。', reply_toast_body:'ご質問への回答が登録されました。', reply_toast_action:'返信を見る',
     admin_ticket_toast_title:'💬 新しいお問い合わせが登録されました。', admin_ticket_toast_body:'新しい1:1問い合わせが届きました。', admin_ticket_toast_action:'問い合わせを見る',
-    admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る'
+    admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
+    notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_login:'ログインすると通知を確認できます。',
+    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_aria:'通知'
   };
   const T = lang === 'en' ? EN : lang === 'ja' ? JA : KO;
   return T[k] || KO[k] || k;
@@ -1428,6 +1438,8 @@ function setAuthUiSignedOut(){
   dismissAllAppToasts();
   updateTicketUnreadBadges(0);
   updateAdminTicketUnreadBadges(0);
+  stopUserNotifications();
+  setNotifyBellVisible(false);
   pendingTicketOpenId = '';
   pendingAdminTicketOpenId = '';
   currentUser = null; currentUserDoc = null; isAdminUser = false;
@@ -1733,10 +1745,12 @@ async function setAuthUiSignedIn(user){
   await loadLicense(user.uid);
   listenTicketNotifications();
   listenAdminTicketNotifications();
+  listenUserNotifications();
+  setNotifyBellVisible(true);
   if (page==='my-tickets.html') listenMyTickets();
   if (page==='ticket.html') listenTicketDetail();
   if (page==='board-write.html') initBoardPostEditor();
-  if (page==='board-post.html') refreshBoardPostActions();
+  if (page==='board-post.html'){ refreshBoardPostActions(); maybeFocusBoardCommentFromQuery(); }
   if (page==='admin.html') {
     if (isAdminUser) {
       unlockAdminPanel();
@@ -5634,7 +5648,14 @@ async function deleteBoardPost(postId){
 function listenBoardComments(postId){
   const {collection,onSnapshot,query,where}=firestoreApi;
   const q=query(collection(db,'boardPosts',postId,'comments'),where('visible','==',true));
-  addUnsub(onSnapshot(q, snap=>{ activeBoardComments=snap.docs.map(d=>({id:d.id,...d.data()})); renderBoardComments(postId); }, err=>{ $('commentList') && ($('commentList').innerHTML=`<div class="empty-card">${esc(err.message)}</div>`); }));
+  addUnsub(onSnapshot(q, snap=>{
+    activeBoardComments=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderBoardComments(postId);
+    if(!boardCommentFocusDone && getParam('focus')==='comment'){
+      boardCommentFocusDone = true;
+      requestAnimationFrame(()=>focusBoardComment(getParam('cid')||''));
+    }
+  }, err=>{ $('commentList') && ($('commentList').innerHTML=`<div class="empty-card">${esc(err.message)}</div>`); }));
 }
 function renderBoardComments(postId){
   const box=$('commentList'); if(!box)return;
@@ -5648,7 +5669,7 @@ function renderBoardComments(postId){
 }
 function renderCommentCard(postId,c,isReply){
   const manage=canManageRecord(c);
-  return `<div class="comment-card community-comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}"><div class="comment-avatar">${esc(authorAvatarInitial(c))}</div><div class="comment-main"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(contentAuthor(c))}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button class="secondary mini-btn" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button class="secondary mini-btn" data-comment-edit="${esc(c.id)}">수정</button><button class="secondary mini-btn danger-btn" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div></div>`;
+  return `<div class="comment-card community-comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}" data-comment-id="${esc(c.id)}"><div class="comment-avatar">${esc(authorAvatarInitial(c))}</div><div class="comment-main"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(contentAuthor(c))}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button class="secondary mini-btn" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button class="secondary mini-btn" data-comment-edit="${esc(c.id)}">수정</button><button class="secondary mini-btn danger-btn" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div></div>`;
 }
 function bindCommentActions(postId,root){
   root.querySelectorAll('[data-comment-reply]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.onclick=()=>openReplyBox(postId,btn.dataset.commentReply,btn.closest('.comment-card')); });
@@ -5662,6 +5683,212 @@ function openReplyBox(postId,parentId,host){
   form.onsubmit=e=>createBoardComment(e,postId,parentId,form.querySelector('textarea'));
   host.appendChild(form);
 }
+
+const NOTIFY_BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0"/></svg>';
+
+function ensureNotifyBell(){
+  const actions = document.querySelector('.topbar .actions');
+  if(!actions) return null;
+  let wrap = $('topbarNotify');
+  if(wrap) return wrap;
+  wrap = document.createElement('div');
+  wrap.className = 'topbar-notify';
+  wrap.id = 'topbarNotify';
+  wrap.hidden = true;
+  wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button></div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
+  const langBtn = $('langBtn');
+  if(langBtn) actions.insertBefore(wrap, langBtn);
+  else actions.insertBefore(wrap, actions.firstChild);
+  const bell = $('notifyBellBtn');
+  bell?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleNotifyPanel(); });
+  $('notifyMarkAllRead')?.addEventListener('click', (e)=>{ e.stopPropagation(); markAllNotificationsRead(); });
+  if(!document.body.dataset.notifyOutsideBound){
+    document.body.dataset.notifyOutsideBound = '1';
+    document.addEventListener('click', (e)=>{
+      if(!userNotifyPanelOpen) return;
+      if(e.target.closest?.('#topbarNotify')) return;
+      closeNotifyPanel();
+    });
+  }
+  return wrap;
+}
+function setNotifyBellVisible(show){
+  const wrap = ensureNotifyBell();
+  if(!wrap) return;
+  wrap.hidden = !show;
+  if(!show){
+    closeNotifyPanel();
+    updateNotifyBellBadge(0);
+  }
+}
+function updateNotifyBellBadge(count){
+  const badge = $('notifyBellBadge');
+  if(!badge) return;
+  const n = Math.max(0, Number(count)||0);
+  if(n > 0){
+    badge.hidden = false;
+    badge.textContent = String(n > 99 ? '99+' : n);
+  } else {
+    badge.hidden = true;
+    badge.textContent = '';
+  }
+}
+function stopUserNotifications(){
+  if(userNotifyUnsub){
+    try{ userNotifyUnsub(); }catch{}
+    userNotifyUnsub = null;
+  }
+  userNotifyRows = [];
+  updateNotifyBellBadge(0);
+  renderNotifyPanelList();
+}
+function listenUserNotifications(){
+  stopUserNotifications();
+  ensureNotifyBell();
+  if(!currentUser || !firestoreApi?.onSnapshot){
+    setNotifyBellVisible(false);
+    return;
+  }
+  setNotifyBellVisible(true);
+  const {collection, query, orderBy, limit, onSnapshot} = firestoreApi;
+  const q = query(collection(db,'users',currentUser.uid,'notifications'), orderBy('createdAt','desc'), limit(40));
+  userNotifyUnsub = onSnapshot(q, snap => {
+    userNotifyRows = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    const unread = userNotifyRows.filter(n => n.read !== true).length;
+    updateNotifyBellBadge(unread);
+    renderNotifyPanelList();
+  }, err => {
+    console.error('user notifications', err);
+  });
+}
+function toggleNotifyPanel(){
+  if(userNotifyPanelOpen) closeNotifyPanel();
+  else openNotifyPanel();
+}
+function openNotifyPanel(){
+  ensureNotifyBell();
+  const panel = $('notifyPanel');
+  const bell = $('notifyBellBtn');
+  if(!panel) return;
+  userNotifyPanelOpen = true;
+  panel.hidden = false;
+  bell?.setAttribute('aria-expanded','true');
+  renderNotifyPanelList();
+}
+function closeNotifyPanel(){
+  userNotifyPanelOpen = false;
+  const panel = $('notifyPanel');
+  if(panel) panel.hidden = true;
+  $('notifyBellBtn')?.setAttribute('aria-expanded','false');
+}
+function notifyItemHtml(n){
+  const name = n.actorName || 'User';
+  const title = n.postTitle || '';
+  const preview = n.preview || '';
+  const when = fmtDate(n.createdAt);
+  const unread = n.read !== true ? ' is-unread' : '';
+  const line = lang === 'en'
+    ? `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`
+    : `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
+  return `<button type="button" class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}" data-post-id="${esc(n.postId||'')}" data-comment-id="${esc(n.commentId||'')}">
+    <span class="topbar-notify-item-main">${line}</span>
+    ${title?`<span class="topbar-notify-item-title">${esc(title)}</span>`:''}
+    ${preview?`<span class="topbar-notify-item-preview">${esc(preview)}</span>`:''}
+    <span class="topbar-notify-item-time">${esc(when)}</span>
+  </button>`;
+}
+function renderNotifyPanelList(){
+  const list = $('notifyList');
+  if(!list) return;
+  if(!currentUser){
+    list.innerHTML = `<div class="topbar-notify-empty">${esc(tr('notify_login'))}</div>`;
+    return;
+  }
+  if(!userNotifyRows.length){
+    list.innerHTML = `<div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div>`;
+    return;
+  }
+  list.innerHTML = userNotifyRows.map(notifyItemHtml).join('');
+  list.querySelectorAll('[data-notify-id]').forEach(btn=>{
+    if(btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', ()=>openNotification(btn.dataset.notifyId, btn.dataset.postId, btn.dataset.commentId));
+  });
+}
+async function openNotification(notifyId, postId, commentId){
+  if(!currentUser || !postId) return;
+  try{
+    if(notifyId){
+      const {doc, updateDoc} = firestoreApi;
+      await updateDoc(doc(db,'users',currentUser.uid,'notifications',notifyId), {read:true});
+    }
+  }catch(e){ console.error(e); }
+  closeNotifyPanel();
+  const base = window.MIDIAI_BASE_PATH || './';
+  let href = `${base}board-post.html?id=${encodeURIComponent(postId)}`;
+  if(commentId) href += `&focus=comment&cid=${encodeURIComponent(commentId)}`;
+  if(page === 'board-post.html' && getParam('id') === postId){
+    focusBoardComment(commentId);
+    return;
+  }
+  location.href = href;
+}
+async function markAllNotificationsRead(){
+  if(!currentUser || !firestoreApi?.updateDoc) return;
+  const unread = userNotifyRows.filter(n => n.read !== true);
+  if(!unread.length) return;
+  const {doc, updateDoc} = firestoreApi;
+  try{
+    await Promise.all(unread.map(n => updateDoc(doc(db,'users',currentUser.uid,'notifications',n.id), {read:true})));
+  }catch(e){ console.error(e); alert(e.message||e); }
+}
+async function notifyBoardPostOwner({postId, commentId, content, parentId}={}){
+  if(!currentUser || !postId || !firestoreApi) return;
+  try{
+    const {doc, getDoc, collection, addDoc, serverTimestamp} = firestoreApi;
+    let post = (activeBoardPost && activeBoardPost.id === postId) ? activeBoardPost : null;
+    if(!post){
+      const snap = await getDoc(doc(db,'boardPosts',postId));
+      if(!snap.exists()) return;
+      post = {id:snap.id, ...snap.data()};
+    }
+    const ownerUid = post.uid || post.authorUid || '';
+    if(!ownerUid || ownerUid === currentUser.uid) return;
+    await addDoc(collection(db,'users',ownerUid,'notifications'), {
+      type:'board_comment',
+      postId,
+      commentId: commentId || '',
+      parentId: parentId || '',
+      actorUid: currentUser.uid,
+      actorName: boardDisplayName(),
+      postTitle: String(post.title || '').slice(0,120),
+      preview: String(content || '').slice(0,120),
+      read:false,
+      createdAt: serverTimestamp()
+    });
+  }catch(e){
+    console.error('notifyBoardPostOwner', e);
+  }
+}
+function focusBoardComment(commentId){
+  const root = $('commentList') || document;
+  const el = commentId
+    ? root.querySelector?.(`[data-comment-id="${CSS.escape(commentId)}"]`)
+    : root;
+  const target = el || $('commentList') || $('commentForm');
+  if(!target) return;
+  try{ target.scrollIntoView({behavior:'smooth', block:'center'}); }catch{ target.scrollIntoView(true); }
+  target.classList?.add?.('is-notify-focus');
+  setTimeout(()=>target.classList?.remove?.('is-notify-focus'), 1600);
+}
+function maybeFocusBoardCommentFromQuery(){
+  if(page !== 'board-post.html') return;
+  if(getParam('focus') !== 'comment') return;
+  if(boardCommentFocusDone) return;
+  const cid = getParam('cid') || '';
+  setTimeout(()=>{ if(!boardCommentFocusDone){ boardCommentFocusDone = true; focusBoardComment(cid); } }, 500);
+}
+
 async function createBoardComment(e,postId,parentId,customTextarea){
   e.preventDefault();
   if(!currentUser)return alert(tr('need_login'));
@@ -5669,9 +5896,10 @@ async function createBoardComment(e,postId,parentId,customTextarea){
   const content=textarea.value.trim(); if(!content)return;
   const {collection,addDoc,doc,updateDoc,increment,serverTimestamp}=firestoreApi;
   try{
-    await addDoc(collection(db,'boardPosts',postId,'comments'),{uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),content,parentId:parentId||'',visible:true,deleted:false,edited:false,...(isAdminUser?{authorRole:'admin'}:{}),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+    const commentRef = await addDoc(collection(db,'boardPosts',postId,'comments'),{uid:currentUser.uid,email:boardEmail(),displayName:boardDisplayName(),content,parentId:parentId||'',visible:true,deleted:false,edited:false,...(isAdminUser?{authorRole:'admin'}:{}),createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
     await updateDoc(doc(db,'boardPosts',postId),{commentCount:increment(1),updatedAt:serverTimestamp()});
     textarea.value=''; customTextarea?.closest('form')?.remove();
+    notifyBoardPostOwner({postId, commentId:commentRef.id, content, parentId:parentId||''}).catch(err=>console.error('notifyBoardPostOwner', err));
   }catch(err){ alert(err.message); }
 }
 async function editBoardComment(postId,commentId){
@@ -6238,6 +6466,8 @@ function initTopbarActions(){
   const langBtn = $('langBtn');
   if(langBtn) langBtn.onclick = onLangBtnClick;
   refreshTopbarActionLabels();
+  ensureNotifyBell();
+  setNotifyBellVisible(!!currentUser);
 }
 function initSidebarLayout(){
   if(document.querySelector('.app-shell')) return;
