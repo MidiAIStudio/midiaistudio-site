@@ -33,7 +33,10 @@ service cloud.firestore {
               && request.resource.data.type == 'board_comment'
               && userId != request.auth.uid
               && request.resource.data.postId is string
-              && get(/databases/$(database)/documents/boardPosts/$(request.resource.data.postId)).data.uid == userId
+              && (
+                get(/databases/$(database)/documents/boardPosts/$(request.resource.data.postId)).data.get('uid', '') == userId
+                || get(/databases/$(database)/documents/boardPosts/$(request.resource.data.postId)).data.get('authorUid', '') == userId
+              )
             )
           );
       }
@@ -137,12 +140,35 @@ service cloud.firestore {
       }
     }
 
+    function boardEngagementUpdate() {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let commentOk = changed.hasOnly(['commentCount', 'updatedAt'])
+        && request.resource.data.commentCount is int
+        && request.resource.data.commentCount >= 0
+        && (
+          request.resource.data.commentCount == resource.data.get('commentCount', 0) + 1
+          || request.resource.data.commentCount == resource.data.get('commentCount', 0) - 1
+        );
+      let likeOk = changed.hasOnly(['likeCount', 'updatedAt'])
+        && request.resource.data.likeCount is int
+        && request.resource.data.likeCount >= 0
+        && (
+          request.resource.data.likeCount == resource.data.get('likeCount', 0) + 1
+          || request.resource.data.likeCount == resource.data.get('likeCount', 0) - 1
+        );
+      let viewOk = (changed.hasOnly(['viewCount']) || changed.hasOnly(['viewCount', 'updatedAt']))
+        && request.resource.data.viewCount is int
+        && request.resource.data.viewCount == resource.data.get('viewCount', 0) + 1;
+      return commentOk || likeOk || viewOk;
+    }
+
     match /boardPosts/{postId} {
       allow read: if resource.data.visible == true || isAdmin();
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid;
       allow update: if isAdmin()
-        || (signedIn() && resource.data.uid == request.auth.uid);
+        || (signedIn() && resource.data.uid == request.auth.uid)
+        || boardEngagementUpdate();
       allow delete: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
 

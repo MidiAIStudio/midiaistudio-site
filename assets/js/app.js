@@ -4867,7 +4867,7 @@ async function saveAdminCrmAllChanges(){
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
-      notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}).catch(err=>console.error(err));
+      try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
       pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active');
     }
     if(memoChanged) await saveAdminCrmUserMemo();
@@ -4953,7 +4953,7 @@ async function adminQuickLicense(raw, silent=false, opts={}){
       payload.expiresAt = opts.expiresAt || deleteField();
     }
     await setDoc(doc(db,'licenses',uid), payload, {merge:true});
-    notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}).catch(err=>console.error(err));
+    try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
     if(!silent){
       const range = opts.days!=null ? ` · ${opts.days}일` : (opts.clearDates ? ' · 무기한' : '');
       adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(savePlan)} / ${esc(saveStatus)}${range}`);
@@ -6044,30 +6044,28 @@ async function markAllNotificationsRead(){
   }catch(e){ console.error(e); alert(e.message||e); }
 }
 async function createUserNotification(ownerUid, data={}){
-  if(!ownerUid || !firestoreApi?.addDoc || !currentUser) return null;
-  try{
-    const {collection, addDoc, serverTimestamp} = firestoreApi;
-    const payload = {
-      type: data.type || 'general',
-      postId: data.postId || '',
-      commentId: data.commentId || '',
-      parentId: data.parentId || '',
-      ticketId: data.ticketId || '',
-      plan: data.plan || '',
-      status: data.status || '',
-      actorUid: data.actorUid != null ? data.actorUid : (currentUser.uid || ''),
-      actorName: data.actorName != null ? data.actorName : (boardDisplayName() || BRAND_AUTHOR),
-      postTitle: String(data.postTitle || data.title || '').slice(0,120),
-      preview: String(data.preview || '').slice(0,160),
-      read: false,
-      createdAt: serverTimestamp()
-    };
-    const ref = await addDoc(collection(db,'users',ownerUid,'notifications'), payload);
-    return ref.id;
-  }catch(e){
-    console.error('createUserNotification', e);
-    return null;
+  if(!ownerUid || !firestoreApi?.addDoc || !currentUser){
+    throw new Error('notification create unavailable');
   }
+  const {collection, addDoc, serverTimestamp} = firestoreApi;
+  const payload = {
+    type: data.type || 'general',
+    postId: data.postId || '',
+    commentId: data.commentId || '',
+    parentId: data.parentId || '',
+    ticketId: data.ticketId || '',
+    plan: data.plan || '',
+    status: data.status || '',
+    actorUid: data.actorUid != null ? data.actorUid : (currentUser.uid || ''),
+    actorName: data.actorName != null ? data.actorName : (boardDisplayName() || BRAND_AUTHOR),
+    postTitle: String(data.postTitle || data.title || '').slice(0,120),
+    preview: String(data.preview || '').slice(0,160),
+    read: false,
+    createdAt: serverTimestamp()
+  };
+  if(!payload.actorUid) throw new Error('notification actorUid missing');
+  const ref = await addDoc(collection(db,'users',ownerUid,'notifications'), payload);
+  return ref.id;
 }
 async function notifyBoardPostOwner({postId, commentId, content, parentId}={}){
   if(!currentUser || !postId || !firestoreApi) return;
@@ -6115,11 +6113,19 @@ async function notifyTicketOwnerReply(ticketId, content){
   }
 }
 async function notifyLicenseChange(uid, {plan='', status=''}={}){
-  if(!isAdminUser || !uid || !firestoreApi) return;
+  if(!uid || !firestoreApi) return false;
+  if(!isAdminUser){
+    console.warn('notifyLicenseChange skipped: not admin');
+    return false;
+  }
+  if(!currentUser){
+    console.warn('notifyLicenseChange skipped: no currentUser');
+    return false;
+  }
+  const planLabel = adminLicenseTypeLabel(plan || 'trial');
+  const statusLabel = adminLicenseStatusLabel(status || 'active');
   try{
-    const planLabel = adminLicenseTypeLabel(plan || 'trial');
-    const statusLabel = adminLicenseStatusLabel(status || 'active');
-    await createUserNotification(uid, {
+    const id = await createUserNotification(uid, {
       type:'license_change',
       plan: plan || '',
       status: status || '',
@@ -6127,8 +6133,12 @@ async function notifyLicenseChange(uid, {plan='', status=''}={}){
       postTitle: planLabel,
       preview: `${statusLabel}${plan ? ` · ${planLabel}` : ''}`
     });
+    console.info('license notify created', {uid, id, plan, status});
+    return !!id;
   }catch(e){
     console.error('notifyLicenseChange', e);
+    try{ adminFlash(`라이선스 알림 실패: ${e.message||e}`); }catch{}
+    throw e;
   }
 }
 function focusBoardComment(commentId){
@@ -6266,7 +6276,7 @@ function initForms(){
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
-      notifyLicenseChange(uid, {plan:savePlan, status}).catch(err=>console.error(err));
+      try{ await notifyLicenseChange(uid, {plan:savePlan, status}); }catch(err){ console.error(err); }
       pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active');
       adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(role)} / ${esc(savePlan)}`);
       if(selectedAdminUid===uid) refreshAdminCrmDetail();
