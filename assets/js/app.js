@@ -6873,22 +6873,7 @@ function initSidebarLayout(){
     const identity=document.createElement('div');
     identity.className='sidebar-identity';
     identity.appendChild(brandClone);
-    const userCard=document.createElement('a');
-    userCard.className='sidebar-user';
-    userCard.id='sidebarUserCard';
-    userCard.href=`${base}account.html`;
-    userCard.setAttribute('aria-label','내 계정');
-    userCard.innerHTML=`<div id="sidebarAvatar" class="sidebar-avatar">?</div><div class="sidebar-user-meta"><b id="sidebarUserName">${esc(tr('guest'))}</b><span id="sidebarUserEmail">${esc(tr('guest_desc'))}</span><span id="sidebarLicenseBadge" class="badge sidebar-license-badge pending">${esc(tr('license_wait'))}</span></div>`;
-    identity.appendChild(userCard);
     sidebar.appendChild(identity);
-  } else {
-    const userCard=document.createElement('a');
-    userCard.className='sidebar-user';
-    userCard.id='sidebarUserCard';
-    userCard.href=`${base}account.html`;
-    userCard.setAttribute('aria-label','내 계정');
-    userCard.innerHTML=`<div id="sidebarAvatar" class="sidebar-avatar">?</div><div class="sidebar-user-meta"><b id="sidebarUserName">${esc(tr('guest'))}</b><span id="sidebarUserEmail">${esc(tr('guest_desc'))}</span><span id="sidebarLicenseBadge" class="badge sidebar-license-badge pending">${esc(tr('license_wait'))}</span></div>`;
-    sidebar.appendChild(userCard);
   }
   const nav=document.createElement('nav');
   nav.id='mainNav';
