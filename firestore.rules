@@ -87,8 +87,18 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
 
+      // Owners may bump unread flags on follow-up replies, but cannot mark admin-read themselves.
       allow update: if isAdmin()
-        || (signedIn() && resource.data.uid == request.auth.uid);
+        || (signedIn()
+          && resource.data.uid == request.auth.uid
+          && (
+            !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['adminRead', 'adminNotified', 'adminNotifyKind', 'adminNotifyAt'])
+            || (
+              request.resource.data.adminRead == false
+              && request.resource.data.adminNotified == false
+            )
+          ));
 
       allow delete: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);

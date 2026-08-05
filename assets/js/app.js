@@ -71,6 +71,19 @@ let activeBoardComments = [];
 let likedActivePost = false;
 let latestDownloadData = null;
 let downloadAdminExpanded = false;
+let ticketNotifyUnsub = null;
+let unreadReplyCount = 0;
+const ticketNotifyInFlight = new Set();
+const ticketReadInFlight = new Set();
+const toastedReplyKeys = new Set();
+let ticketReplyObserver = null;
+let pendingTicketOpenId = '';
+let adminTicketNotifyUnsub = null;
+let unreadAdminTicketCount = 0;
+const adminTicketNotifyInFlight = new Set();
+const adminTicketReadInFlight = new Set();
+const toastedAdminTicketKeys = new Set();
+let pendingAdminTicketOpenId = '';
 
 const textOriginals = new WeakMap();
 const attrOriginals = new WeakMap();
@@ -403,7 +416,10 @@ function tr(k){
     check_failed:'확인 실패', empty:'표시할 내용이 없습니다.', saved:'저장 완료', ticket_created:'문의가 등록되었습니다.', privacy_required:'개인정보 수집·이용에 동의해주세요.',
     need_login:'로그인이 필요합니다.', download:'다운로드', admin_required:'관리자 로그인이 필요합니다.',
     no_permission:'권한이 없습니다.', answered:'답변 완료', closed:'종료', open:'접수', reply_placeholder:'답변 또는 추가 내용 입력',
-    submit:'등록', edit:'수정', del:'삭제', close:'종료 처리', updated:'수정 완료', deleted:'삭제 완료', manage:'관리', confirm_delete:'정말 삭제할까요?'
+    submit:'등록', edit:'수정', del:'삭제', close:'종료 처리', updated:'수정 완료', deleted:'삭제 완료', manage:'관리', confirm_delete:'정말 삭제할까요?',
+    reply_toast_title:'💬 문의 답변이 등록되었습니다.', reply_toast_body:'문의하신 내용에 답변이 작성되었습니다.', reply_toast_action:'답변 보기',
+    admin_ticket_toast_title:'💬 새로운 문의가 등록되었습니다.', admin_ticket_toast_body:'새 1:1 문의가 접수되었습니다.', admin_ticket_toast_action:'문의 보기',
+    admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기'
   };
   const EN = {
     login:'Sign in with Google', logout:'Logout', guest:'Not signed in', guest_desc:'Sign in with Google to check license',
@@ -411,7 +427,10 @@ function tr(k){
     check_failed:'Check failed', empty:'Nothing to show.', saved:'Saved', ticket_created:'Ticket created.', privacy_required:'Please agree to the privacy policy.',
     need_login:'Sign-in required.', download:'Download', admin_required:'Admin sign-in required.',
     no_permission:'You do not have permission.', answered:'Answered', closed:'Closed', open:'Open', reply_placeholder:'Reply or add more details',
-    submit:'Submit', edit:'Edit', del:'Delete', close:'Close', updated:'Updated', deleted:'Deleted', manage:'Manage', confirm_delete:'Delete this item?'
+    submit:'Submit', edit:'Edit', del:'Delete', close:'Close', updated:'Updated', deleted:'Deleted', manage:'Manage', confirm_delete:'Delete this item?',
+    reply_toast_title:'💬 A reply was posted on your ticket.', reply_toast_body:'An admin replied to your support request.', reply_toast_action:'View reply',
+    admin_ticket_toast_title:'💬 A new support ticket was submitted.', admin_ticket_toast_body:'A new 1:1 inquiry has been received.', admin_ticket_toast_action:'View ticket',
+    admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket'
   };
   const JA = {
     login:'Googleログイン', logout:'ログアウト', guest:'未ログイン', guest_desc:'Googleログインでライセンス確認',
@@ -419,7 +438,10 @@ function tr(k){
     check_failed:'確認失敗', empty:'表示する内容がありません。', saved:'保存完了', ticket_created:'問い合わせを登録しました。', privacy_required:'個人情報の収集・利用に同意してください。',
     need_login:'ログインが必要です。', download:'ダウンロード', admin_required:'管理者ログインが必要です。',
     no_permission:'権限がありません。', answered:'回答済み', closed:'終了', open:'受付', reply_placeholder:'返信または追加内容を入力',
-    submit:'登録', edit:'編集', del:'削除', close:'終了にする', updated:'更新しました', deleted:'削除しました', manage:'管理', confirm_delete:'本当に削除しますか？'
+    submit:'登録', edit:'編集', del:'削除', close:'終了にする', updated:'更新しました', deleted:'削除しました', manage:'管理', confirm_delete:'本当に削除しますか？',
+    reply_toast_title:'💬 お問い合わせに返信がありました。', reply_toast_body:'ご質問への回答が登録されました。', reply_toast_action:'返信を見る',
+    admin_ticket_toast_title:'💬 新しいお問い合わせが登録されました。', admin_ticket_toast_body:'新しい1:1問い合わせが届きました。', admin_ticket_toast_action:'問い合わせを見る',
+    admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る'
   };
   const T = lang === 'en' ? EN : lang === 'ja' ? JA : KO;
   return T[k] || KO[k] || k;
@@ -1264,6 +1286,8 @@ function setAdminNavVisible(show){
     el.setAttribute('aria-hidden', show ? 'false' : 'true');
   });
   syncBoardAdminUi();
+  if(show) updateAdminTicketUnreadBadges(unreadAdminTicketCount);
+  else updateAdminTicketUnreadBadges(0);
 }
 
 function hubAdminLabels(){
@@ -1397,6 +1421,15 @@ async function createHubAdminPost(kind){
   }
 }
 function setAuthUiSignedOut(){
+  stopTicketNotifyListener();
+  stopAdminTicketNotifyListener();
+  clearUnsubs();
+  clearTicketReplyObserver();
+  dismissAllAppToasts();
+  updateTicketUnreadBadges(0);
+  updateAdminTicketUnreadBadges(0);
+  pendingTicketOpenId = '';
+  pendingAdminTicketOpenId = '';
   currentUser = null; currentUserDoc = null; isAdminUser = false;
   currentLicenseActive = false;
   currentLicenseLifetime = false;
@@ -1698,6 +1731,8 @@ async function setAuthUiSignedIn(user){
   });
   await upsertUser(user);
   await loadLicense(user.uid);
+  listenTicketNotifications();
+  listenAdminTicketNotifications();
   if (page==='my-tickets.html') listenMyTickets();
   if (page==='ticket.html') listenTicketDetail();
   if (page==='board-write.html') initBoardPostEditor();
@@ -2671,6 +2706,358 @@ function updateSupportFormUi(){
   bindTicketAttachmentPicker();
 }
 
+
+function hasUnreadTicketReply(t){
+  return !!(t && t.replyRead === false && t.replyAt);
+}
+function ticketReplyFocusHref(ticketId){
+  const base = window.MIDIAI_BASE_PATH || './';
+  return `${base}my-tickets.html?open=${encodeURIComponent(ticketId)}`;
+}
+function ticketDetailFocusHref(ticketId){
+  const base = window.MIDIAI_BASE_PATH || './';
+  return `${base}ticket.html?id=${encodeURIComponent(ticketId)}&focus=reply`;
+}
+function ensureToastHost(){
+  let host = document.getElementById('appToastHost');
+  if(host) return host;
+  host = document.createElement('div');
+  host.id = 'appToastHost';
+  host.className = 'app-toast-host';
+  host.setAttribute('aria-live', 'polite');
+  document.body.appendChild(host);
+  return host;
+}
+function dismissAllAppToasts(){
+  document.querySelectorAll('.app-toast').forEach(el => {
+    try{ el._dismissToast?.(true); }catch{}
+    el.remove();
+  });
+}
+function showAppToast({title, body, actionLabel, onAction, duration=5000}={}){
+  const host = ensureToastHost();
+  const el = document.createElement('div');
+  el.className = 'app-toast';
+  el.setAttribute('role', 'status');
+  el.innerHTML = `<p class="app-toast-title">${esc(title||'')}</p><p class="app-toast-body">${esc(body||'')}</p><div class="app-toast-actions">${actionLabel?`<button type="button" class="primary" data-toast-action>${esc(actionLabel)}</button>`:''}<button type="button" class="app-toast-close" data-toast-close aria-label="close">×</button></div>`;
+  host.appendChild(el);
+  requestAnimationFrame(()=>el.classList.add('is-in'));
+  let remaining = duration;
+  let timer = null;
+  let started = 0;
+  let closed = false;
+  const clearTimer = () => { if(timer){ clearTimeout(timer); timer=null; } };
+  const dismiss = (immediate=false) => {
+    if(closed) return;
+    closed = true;
+    clearTimer();
+    el.classList.remove('is-in');
+    el.classList.add('is-out');
+    const remove = () => { try{ el.remove(); }catch{} };
+    if(immediate) remove();
+    else setTimeout(remove, 280);
+  };
+  el._dismissToast = dismiss;
+  const startTimer = () => {
+    clearTimer();
+    started = Date.now();
+    timer = setTimeout(()=>dismiss(false), Math.max(0, remaining));
+  };
+  const pauseTimer = () => {
+    if(!timer) return;
+    clearTimer();
+    remaining -= (Date.now() - started);
+  };
+  el.addEventListener('mouseenter', pauseTimer);
+  el.addEventListener('mouseleave', startTimer);
+  el.querySelector('[data-toast-close]')?.addEventListener('click', ()=>dismiss(false));
+  el.querySelector('[data-toast-action]')?.addEventListener('click', ()=>{
+    try{ onAction?.(); }catch(e){ console.error(e); }
+    dismiss(false);
+  });
+  startTimer();
+  return el;
+}
+function updateTicketUnreadBadges(count){
+  unreadReplyCount = Math.max(0, Number(count)||0);
+  const targets = document.querySelectorAll('#mainNav [data-hub="tickets"], #mainNav [data-hub="support"], .hub-subnav [data-hub="tickets"], .hub-subnav [data-hub="support"], #mainNav a[href*="my-tickets.html"]');
+  targets.forEach(link => {
+    if(link.classList.contains('mini-btn') || link.classList.contains('secondary')) return;
+    let badge = link.querySelector('[data-ticket-unread-badge]');
+    if(!badge){
+      badge = document.createElement('span');
+      badge.className = 'nav-unread-badge';
+      badge.setAttribute('data-ticket-unread-badge', '');
+      badge.hidden = true;
+      link.appendChild(badge);
+    }
+    if(unreadReplyCount > 0){
+      badge.hidden = false;
+      badge.textContent = String(unreadReplyCount > 99 ? '99+' : unreadReplyCount);
+    } else {
+      badge.hidden = true;
+      badge.textContent = '';
+    }
+  });
+}
+function stopTicketNotifyListener(){
+  if(ticketNotifyUnsub){
+    try{ ticketNotifyUnsub(); }catch{}
+    ticketNotifyUnsub = null;
+  }
+  ticketNotifyInFlight.clear();
+  ticketReadInFlight.clear();
+  toastedReplyKeys.clear();
+}
+function clearTicketReplyObserver(){
+  if(ticketReplyObserver){
+    try{ ticketReplyObserver.disconnect(); }catch{}
+    ticketReplyObserver = null;
+  }
+}
+async function markTicketReplyNotified(ticketId){
+  if(!currentUser || !ticketId || !firestoreApi?.updateDoc) return;
+  try{
+    const {doc, updateDoc} = firestoreApi;
+    await updateDoc(doc(db,'supportTickets',ticketId), { replyNotified:true });
+  }catch(e){ console.error('markTicketReplyNotified', e); }
+}
+async function markTicketReplyRead(ticketId){
+  if(!currentUser || !ticketId || !firestoreApi?.updateDoc) return;
+  if(ticketReadInFlight.has(ticketId)) return;
+  ticketReadInFlight.add(ticketId);
+  try{
+    const {doc, updateDoc} = firestoreApi;
+    await updateDoc(doc(db,'supportTickets',ticketId), { replyRead:true, replyNotified:true });
+  }catch(e){ console.error('markTicketReplyRead', e); }
+  finally{ ticketReadInFlight.delete(ticketId); }
+}
+function ticketToastKey(t){
+  const at = t?.replyAt?.seconds || t?.replyAt?._seconds || t?.replyAt || '';
+  return `${t?.id||''}:${at}`;
+}
+function showTicketReplyToast(ticket){
+  if(!ticket?.id) return;
+  const key = ticketToastKey(ticket);
+  if(!key || toastedReplyKeys.has(key) || ticketNotifyInFlight.has(ticket.id)) return;
+  toastedReplyKeys.add(key);
+  ticketNotifyInFlight.add(ticket.id);
+  showAppToast({
+    title: tr('reply_toast_title'),
+    body: tr('reply_toast_body'),
+    actionLabel: tr('reply_toast_action'),
+    duration: 5000,
+    onAction: ()=>{ location.href = ticketReplyFocusHref(ticket.id); }
+  });
+  markTicketReplyNotified(ticket.id).finally(()=>{ ticketNotifyInFlight.delete(ticket.id); });
+}
+function processTicketNotifications(rows){
+  const unread = (rows||[]).filter(hasUnreadTicketReply);
+  updateTicketUnreadBadges(unread.length);
+  const toNotify = unread
+    .filter(t => t.replyNotified !== true && !toastedReplyKeys.has(ticketToastKey(t)) && !ticketNotifyInFlight.has(t.id))
+    .sort((a,b)=>(b.replyAt?.seconds||b.updatedAt?.seconds||0)-(a.replyAt?.seconds||a.updatedAt?.seconds||0));
+  toNotify.forEach(t => showTicketReplyToast(t));
+}
+function listenTicketNotifications(){
+  stopTicketNotifyListener();
+  if(!currentUser || !firestoreApi?.onSnapshot) {
+    updateTicketUnreadBadges(0);
+    return;
+  }
+  const {collection, query, where, onSnapshot} = firestoreApi;
+  const q = query(collection(db,'supportTickets'), where('uid','==', currentUser.uid));
+  ticketNotifyUnsub = onSnapshot(q, snap => {
+    const rows = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    processTicketNotifications(rows);
+  }, err => {
+    console.error('ticket notifications', err);
+  });
+}
+function observeTicketReplyVisibility(ticketId, target){
+  clearTicketReplyObserver();
+  if(!ticketId || !target || !currentUser) return;
+  if(typeof IntersectionObserver !== 'function'){
+    markTicketReplyRead(ticketId);
+    return;
+  }
+  ticketReplyObserver = new IntersectionObserver((entries)=>{
+    if(entries.some(e => e.isIntersecting && e.intersectionRatio > 0.2)){
+      clearTicketReplyObserver();
+      markTicketReplyRead(ticketId);
+    }
+  }, { threshold:[0.2, 0.5, 1], rootMargin:'0px 0px -10% 0px' });
+  ticketReplyObserver.observe(target);
+}
+function focusTicketReplySection(root=document){
+  const panel = root.querySelector?.('.hub-replies-panel') || root;
+  if(!panel) return;
+  panel.classList.add('is-focus-target');
+  const lastAdmin = panel.querySelector?.('.reply.is-admin:last-of-type') || panel.querySelector?.('[data-replies]');
+  const target = lastAdmin || panel;
+  try{ target.scrollIntoView({ behavior:'smooth', block:'center' }); }catch{ target.scrollIntoView(true); }
+  setTimeout(()=>panel.classList.remove('is-focus-target'), 1800);
+}
+function maybeOpenTicketFromQuery(){
+  if(page !== 'my-tickets.html') return;
+  const openId = getParam('open') || '';
+  if(!openId) return;
+  pendingTicketOpenId = openId;
+}
+function consumePendingTicketOpen(listRoot){
+  if(!pendingTicketOpenId || !listRoot) return;
+  const id = pendingTicketOpenId;
+  const row = listRoot.querySelector(`a.hub-ticket-row[data-ticket-id="${CSS.escape(id)}"]`);
+  if(row){
+    row.classList.add('is-focus');
+    try{ row.scrollIntoView({ behavior:'smooth', block:'center' }); }catch{ row.scrollIntoView(true); }
+  }
+  pendingTicketOpenId = '';
+  setTimeout(()=>{ location.href = ticketDetailFocusHref(id); }, 450);
+}
+
+
+function hasUnreadAdminTicket(t){
+  return !!(t && t.adminRead === false);
+}
+function adminTicketFocusHref(ticketId){
+  const base = window.MIDIAI_BASE_PATH || './';
+  return `${base}admin.html?tab=tickets&open=${encodeURIComponent(ticketId)}`;
+}
+function updateAdminTicketUnreadBadges(count){
+  unreadAdminTicketCount = Math.max(0, Number(count)||0);
+  const targets = document.querySelectorAll('#adminNav, [data-admin-tab="tickets"]');
+  targets.forEach(link => {
+    if(link.classList.contains('hidden') || link.hidden) {
+      // still attach badge so it appears when shown
+    }
+    let badge = link.querySelector('[data-admin-ticket-unread-badge]');
+    if(!badge){
+      badge = document.createElement('span');
+      badge.className = 'nav-unread-badge';
+      badge.setAttribute('data-admin-ticket-unread-badge', '');
+      badge.hidden = true;
+      link.appendChild(badge);
+    }
+    if(unreadAdminTicketCount > 0){
+      badge.hidden = false;
+      badge.textContent = String(unreadAdminTicketCount > 99 ? '99+' : unreadAdminTicketCount);
+    } else {
+      badge.hidden = true;
+      badge.textContent = '';
+    }
+  });
+}
+function stopAdminTicketNotifyListener(){
+  if(adminTicketNotifyUnsub){
+    try{ adminTicketNotifyUnsub(); }catch{}
+    adminTicketNotifyUnsub = null;
+  }
+  adminTicketNotifyInFlight.clear();
+  adminTicketReadInFlight.clear();
+  toastedAdminTicketKeys.clear();
+}
+async function markAdminTicketNotified(ticketId){
+  if(!currentUser || !isAdminUser || !ticketId || !firestoreApi?.updateDoc) return;
+  try{
+    const {doc, updateDoc} = firestoreApi;
+    await updateDoc(doc(db,'supportTickets',ticketId), { adminNotified:true });
+  }catch(e){ console.error('markAdminTicketNotified', e); }
+}
+async function markAdminTicketRead(ticketId){
+  if(!currentUser || !isAdminUser || !ticketId || !firestoreApi?.updateDoc) return;
+  if(adminTicketReadInFlight.has(ticketId)) return;
+  adminTicketReadInFlight.add(ticketId);
+  try{
+    const {doc, updateDoc} = firestoreApi;
+    await updateDoc(doc(db,'supportTickets',ticketId), { adminRead:true, adminNotified:true });
+  }catch(e){ console.error('markAdminTicketRead', e); }
+  finally{ adminTicketReadInFlight.delete(ticketId); }
+}
+function adminTicketToastKey(t){
+  const at = t?.adminNotifyAt?.seconds || t?.adminNotifyAt?._seconds || t?.updatedAt?.seconds || t?.createdAt?.seconds || t?.createdAt || '';
+  const kind = t?.adminNotifyKind || 'ticket';
+  return `admin:${t?.id||''}:${kind}:${at}`;
+}
+function showAdminTicketToast(ticket){
+  if(!ticket?.id || !isAdminUser) return;
+  const key = adminTicketToastKey(ticket);
+  if(!key || toastedAdminTicketKeys.has(key) || adminTicketNotifyInFlight.has(ticket.id)) return;
+  toastedAdminTicketKeys.add(key);
+  adminTicketNotifyInFlight.add(ticket.id);
+  const isReply = ticket.adminNotifyKind === 'reply';
+  const bodyBase = tr(isReply ? 'admin_reply_toast_body' : 'admin_ticket_toast_body');
+  const body = ticket.title ? `${bodyBase} · ${ticket.title}` : bodyBase;
+  showAppToast({
+    title: tr(isReply ? 'admin_reply_toast_title' : 'admin_ticket_toast_title'),
+    body,
+    actionLabel: tr(isReply ? 'admin_reply_toast_action' : 'admin_ticket_toast_action'),
+    duration: 5000,
+    onAction: ()=>{ location.href = adminTicketFocusHref(ticket.id); }
+  });
+  markAdminTicketNotified(ticket.id).finally(()=>{ adminTicketNotifyInFlight.delete(ticket.id); });
+}
+function processAdminTicketNotifications(rows){
+  if(!isAdminUser){
+    updateAdminTicketUnreadBadges(0);
+    return;
+  }
+  const unread = (rows||[]).filter(hasUnreadAdminTicket);
+  updateAdminTicketUnreadBadges(unread.length);
+  const toNotify = unread
+    .filter(t => t.adminNotified !== true && !toastedAdminTicketKeys.has(adminTicketToastKey(t)) && !adminTicketNotifyInFlight.has(t.id))
+    .sort((a,b)=>(b.createdAt?.seconds||b.updatedAt?.seconds||0)-(a.createdAt?.seconds||a.updatedAt?.seconds||0));
+  toNotify.forEach(t => showAdminTicketToast(t));
+}
+function listenAdminTicketNotifications(){
+  stopAdminTicketNotifyListener();
+  if(!currentUser || !isAdminUser || !firestoreApi?.onSnapshot){
+    updateAdminTicketUnreadBadges(0);
+    return;
+  }
+  const {collection, onSnapshot} = firestoreApi;
+  adminTicketNotifyUnsub = onSnapshot(collection(db,'supportTickets'), snap => {
+    const rows = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    processAdminTicketNotifications(rows);
+  }, err => {
+    console.error('admin ticket notifications', err);
+  });
+  if(page==='admin.html') applyAdminTicketDeepLink();
+}
+function applyAdminTicketDeepLink(){
+  if(page !== 'admin.html' || !isAdminUser) return;
+  const tab = getParam('tab');
+  const openId = getParam('open') || '';
+  if(tab === 'tickets' || openId){
+    const tabBtn = document.querySelector('[data-admin-tab="tickets"]');
+    if(tabBtn) tabBtn.click();
+    else {
+      const tickets = $('adminTicketsSection');
+      const crm = $('adminCrm');
+      const pricing = $('adminPricingSection');
+      if(crm) crm.hidden = true;
+      if(pricing) pricing.hidden = true;
+      if(tickets) tickets.hidden = false;
+      document.querySelectorAll('[data-admin-tab]').forEach(b=>b.classList.toggle('active', b.getAttribute('data-admin-tab')==='tickets'));
+    }
+  }
+  if(openId) pendingAdminTicketOpenId = openId;
+}
+function consumePendingAdminTicketOpen(box){
+  if(!box || !pendingAdminTicketOpenId) return;
+  const id = pendingAdminTicketOpenId;
+  pendingAdminTicketOpenId = '';
+  box.dataset.openTicketId = id;
+  markAdminTicketRead(id);
+  requestAnimationFrame(()=>{
+    const row = box.querySelector(`[data-ticket-row="${CSS.escape(id)}"]`);
+    if(row){
+      row.classList.add('is-focus');
+      try{ row.scrollIntoView({ behavior:'smooth', block:'center' }); }catch{ row.scrollIntoView(true); }
+    }
+  });
+}
+
 async function createTicket(e){
   e.preventDefault();
   if(!currentUser){
@@ -2697,6 +3084,10 @@ async function createTicket(e){
       displayName:currentUser.displayName||'',
       category,appVersion,os,
       title,content,status:'open',private:true,attachments:[],
+      adminRead:false,
+      adminNotified:false,
+      adminNotifyKind:'ticket',
+      adminNotifyAt:serverTimestamp(),
       createdAt:serverTimestamp(),updatedAt:serverTimestamp()
     });
     const uploaded = await uploadTicketAttachments(ref.id);
@@ -2727,18 +3118,19 @@ function ticketShell(t, detail=false, admin=false){
   if(detail){
     const form=(admin||detail)?`<form class="reply-form hub-reply-form" data-ticket="${esc(t.id)}"><input placeholder="${esc(tr('reply_placeholder'))}" required><button class="primary" type="submit">${tr('submit')}</button></form>`:'';
     const actions=canManage?`<div class="post-actions hub-post-actions"><button class="secondary mini-btn" data-ticket-edit="${esc(t.id)}">${tr('edit')}</button><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div>`:'';
-    return `<article class="hub-post-detail"><div class="post-card-head"><div class="post-kicker">1:1 문의</div><h1>${esc(t.title||'')}</h1><div class="post-meta-grid"><span>${statusBadge(t.status)}</span><span><em>작성일</em><b>${esc(fmtShortDate(t.createdAt))}</b></span>${metaExtra}</div></div><div class="post-body-content hub-post-body">${nl2br(t.content||'')}</div>${ticketAttachmentsHtml(t.attachments)}${actions}<section class="hub-replies-panel"><h3>답변</h3><div class="ticket-replies hub-reply-list" data-replies="${esc(t.id)}"></div>${form}</section></article>`;
+    return `<article class="hub-post-detail"><div class="post-card-head"><div class="post-kicker">1:1 문의</div><h1>${esc(t.title||'')}</h1><div class="post-meta-grid"><span>${statusBadge(t.status)}</span><span><em>작성일</em><b>${esc(fmtShortDate(t.createdAt))}</b></span>${metaExtra}</div></div><div class="post-body-content hub-post-body">${nl2br(t.content||'')}</div>${ticketAttachmentsHtml(t.attachments)}${actions}<section class="hub-replies-panel" id="ticketReplies"><h3>답변</h3><div class="ticket-replies hub-reply-list" data-replies="${esc(t.id)}"></div>${form}</section></article>`;
   }
-  const href=`./ticket.html?id=${encodeURIComponent(t.id)}`;
-  return `<a class="hub-list-row hub-ticket-row" href="${href}"><div class="hub-col-title"><b>${esc(t.title||'(제목 없음)')}</b></div><div class="hub-col-cat">${esc(ticketCategoryLabel(t.category))}</div><div class="hub-col-badge">${statusBadge(t.status)}</div><div class="hub-col-date">${esc(fmtListDate(t.createdAt))}</div></a>`;
+  const href=`./ticket.html?id=${encodeURIComponent(t.id)}${hasUnreadTicketReply(t)?'&focus=reply':''}`;
+  const unreadCls = hasUnreadTicketReply(t) ? ' is-unread' : '';
+  return `<a class="hub-list-row hub-ticket-row${unreadCls}" href="${href}" data-ticket-id="${esc(t.id)}"><div class="hub-col-title"><b>${esc(t.title||'(제목 없음)')}</b></div><div class="hub-col-cat">${esc(ticketCategoryLabel(t.category))}</div><div class="hub-col-badge">${statusBadge(t.status)}</div><div class="hub-col-date">${esc(fmtListDate(t.createdAt))}</div></a>`;
 }
-function listenReplies(ticketId, container){
+function listenReplies(ticketId, container, {adminView=false}={}){
   const {collection,query,orderBy,onSnapshot}=firestoreApi;
   const q=query(collection(db,'supportTickets',ticketId,'replies'),orderBy('createdAt','asc'));
   return addUnsub(onSnapshot(q, snap => {
     const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
     container.innerHTML=rows.length
-      ? rows.map(r=>ticketReplyItemHtml(r, ticketId, {adminView:false})).join('')
+      ? rows.map(r=>ticketReplyItemHtml(r, ticketId, {adminView})).join('')
       : '';
     bindTicketReplyActions(container);
   }, err => { console.error('replies',err); container.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
@@ -2999,6 +3391,7 @@ async function closeTicket(ticketId){
 function listenMyTickets(){
   const list=$('myTicketList'); if(!list)return;
   if(!currentUser){ list.innerHTML=`<div class="empty-card">${tr('need_login')}</div>`; return; }
+  maybeOpenTicketFromQuery();
   const {collection,query,where,onSnapshot}=firestoreApi;
   const q=query(collection(db,'supportTickets'),where('uid','==',currentUser.uid));
   addUnsub(onSnapshot(q, snap=>{
@@ -3006,20 +3399,53 @@ function listenMyTickets(){
     if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
     list.innerHTML=`${hubTicketHeadHtml()}<div class="hub-list-body">${rows.map(t=>ticketShell(t,false,false)).join('')}</div>`;
     bindTicketActions(list);
+    if(pendingTicketOpenId) consumePendingTicketOpen(list);
   }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
 function listenTicketDetail(){
   const box=$('ticketDetail'); if(!box||!currentUser)return;
   const id=getParam('id'); if(!id){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
   const {doc,onSnapshot}=firestoreApi;
+  let renderedKey = '';
+  let detailRepliesUnsub = null;
   addUnsub(onSnapshot(doc(db,'supportTickets',id), snap=>{
     if(!snap.exists()){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
     const t={id:snap.id,...snap.data()};
     if(!isAdminUser && t.uid!==currentUser.uid){ box.innerHTML=`<p class="muted">${tr('no_permission')}</p>`; return; }
-    box.innerHTML=ticketShell(t,true,isAdminUser);
-    const replyBox=box.querySelector(`[data-replies="${CSS.escape(id)}"]`);
-    if(replyBox) listenReplies(id, replyBox);
-    bindReplyForms(box);
+    if(isAdminUser && hasUnreadAdminTicket(t)) markAdminTicketRead(id);
+    const key = [t.title,t.content,t.status,t.updatedAt?.seconds||t.updatedAt,t.replyAt?.seconds||t.replyAt,(t.attachments||[]).length].join('|');
+    if(key !== renderedKey){
+      renderedKey = key;
+      clearTicketReplyObserver();
+      if(detailRepliesUnsub){ try{ detailRepliesUnsub(); }catch{} detailRepliesUnsub=null; }
+      box.innerHTML=ticketShell(t,true,isAdminUser);
+      const replyBox=box.querySelector(`[data-replies="${CSS.escape(id)}"]`);
+      if(replyBox){
+        const {collection,query,orderBy,onSnapshot:onRepliesSnap}=firestoreApi;
+        const rq=query(collection(db,'supportTickets',id,'replies'),orderBy('createdAt','asc'));
+        detailRepliesUnsub = onRepliesSnap(rq, replySnap => {
+          const rows=replySnap.docs.map(d=>({id:d.id,...d.data()}));
+          replyBox.innerHTML=rows.length
+            ? rows.map(r=>ticketReplyItemHtml(r, id, {adminView:false})).join('')
+            : '';
+          bindTicketReplyActions(replyBox);
+          const panel = replyBox.closest('.hub-replies-panel') || replyBox;
+          const shouldFocus = getParam('focus') === 'reply' || location.hash === '#ticketReplies';
+          if(shouldFocus) requestAnimationFrame(()=>focusTicketReplySection(panel));
+          const isOwner = currentUser && t.uid === currentUser.uid;
+          if(isOwner && hasUnreadTicketReply(t) && rows.some(r => r.role === 'admin')){
+            const watchTarget = panel.querySelector('.reply.is-admin:last-of-type') || panel;
+            observeTicketReplyVisibility(id, watchTarget);
+          }
+        }, err => { console.error('replies',err); replyBox.innerHTML=`<p class="muted">${esc(err.message)}</p>`; });
+        addUnsub(detailRepliesUnsub);
+      }
+      bindReplyForms(box);
+    } else if(currentUser && t.uid === currentUser.uid && hasUnreadTicketReply(t)){
+      const panel = box.querySelector('.hub-replies-panel');
+      const watchTarget = panel?.querySelector('.reply.is-admin:last-of-type') || panel;
+      if(watchTarget) observeTicketReplyVisibility(id, watchTarget);
+    }
   }, err=>{ console.error(err); box.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
 async function ticketReply(e){
@@ -3034,7 +3460,18 @@ async function ticketReply(e){
   try{
     const {collection,addDoc,doc,updateDoc,serverTimestamp}=firestoreApi;
     await addDoc(collection(db,'supportTickets',ticketId,'replies'),{uid:currentUser.uid,role:isAdminUser?'admin':'user',displayName:isAdminUser?BRAND_AUTHOR:(currentUser.displayName||''),content,createdAt:serverTimestamp()});
-    await updateDoc(doc(db,'supportTickets',ticketId),{status:isAdminUser?'answered':'open',updatedAt:serverTimestamp()});
+    const ticketPatch = {status:isAdminUser?'answered':'open', updatedAt:serverTimestamp()};
+    if(isAdminUser){
+      ticketPatch.replyRead = false;
+      ticketPatch.replyNotified = false;
+      ticketPatch.replyAt = serverTimestamp();
+    } else {
+      ticketPatch.adminRead = false;
+      ticketPatch.adminNotified = false;
+      ticketPatch.adminNotifyKind = 'reply';
+      ticketPatch.adminNotifyAt = serverTimestamp();
+    }
+    await updateDoc(doc(db,'supportTickets',ticketId), ticketPatch);
     input.value='';
   }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
 }
@@ -3109,6 +3546,7 @@ function mountAdminTicketExpandPanel(box){
 }
 function renderAdminTicketTable(){
   const box=$('adminTicketList'); if(!box||!isAdminUser)return;
+  if(pendingAdminTicketOpenId) consumePendingAdminTicketOpen(box);
   const rows=getAdminTicketFilteredRows();
   $('adminTicketCount') && ($('adminTicketCount').textContent = `${rows.length} / ${adminTicketRows.length}`);
   if(!rows.length){
@@ -3130,7 +3568,8 @@ function renderAdminTicketTable(){
       t.os?`<span><em>OS</em>${esc(ticketOsLabel(t.os))}</span>`:'',
       t.email?`<span><em>이메일</em>${esc(t.email)}</span>`:''
     ].filter(Boolean).join('');
-    return `<tr class="admin-ticket-row${open?' is-open':''}" data-ticket-row="${esc(t.id)}">
+    const unreadAdmin = hasUnreadAdminTicket(t) ? ' is-unread' : '';
+    return `<tr class="admin-ticket-row${open?' is-open':''}${unreadAdmin}" data-ticket-row="${esc(t.id)}">
       <td><label class="admin-ticket-check" onclick="event.stopPropagation()"><input type="checkbox" data-ticket-check="${esc(t.id)}"></label></td>
       <td>${esc(ticketCategoryLabel(t.category))}</td>
       <td>
@@ -3179,6 +3618,7 @@ function bindAdminTicketTable(box){
         const id = expandBtn.getAttribute('data-ticket-expand');
         const next = box.dataset.openTicketId === id ? '' : id;
         box.dataset.openTicketId = next;
+        if(next) markAdminTicketRead(next);
         renderAdminTicketTable();
         return;
       }

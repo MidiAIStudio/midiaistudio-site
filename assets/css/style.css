@@ -2414,3 +2414,88 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 #paypalButtons.is-paused{opacity:.45;pointer-events:none}
 @media(max-width:900px){.pricing-layout,.pricing-form-grid{grid-template-columns:1fr}}
 .admin-page .admin-crm-role-spacer{visibility:hidden;pointer-events:none}
+
+/* —— Inquiry reply notifications —— */
+.app-toast-host{
+  position:fixed;right:18px;bottom:18px;z-index:1200;
+  display:flex;flex-direction:column;gap:10px;
+  width:min(360px,calc(100vw - 28px));
+  pointer-events:none;
+}
+.app-toast{
+  pointer-events:auto;
+  display:grid;gap:8px;
+  padding:14px 16px;
+  border-radius:16px;
+  border:1px solid rgba(34,211,238,.28);
+  background:linear-gradient(180deg,rgba(18,22,44,.96),rgba(10,12,28,.96));
+  box-shadow:0 18px 40px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.04);
+  color:var(--text);
+  opacity:0;transform:translateY(12px);
+  transition:opacity .28s ease, transform .28s ease;
+}
+.app-toast.is-in{opacity:1;transform:translateY(0)}
+.app-toast.is-out{opacity:0;transform:translateY(10px)}
+.app-toast-title{margin:0;font-size:14px;font-weight:800;letter-spacing:-.01em;color:#eef7ff}
+.app-toast-body{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+.app-toast-actions{display:flex;align-items:center;gap:8px;margin-top:2px}
+.app-toast-actions .primary{
+  padding:6px 10px!important;border-radius:9px!important;
+  font-size:12px!important;line-height:1.2!important;min-height:0!important;height:auto!important
+}
+.app-toast-close{
+  margin-left:auto;border:0;background:transparent;color:var(--muted);
+  font-size:18px;line-height:1;cursor:pointer;padding:2px 4px;border-radius:8px
+}
+.app-toast-close:hover{color:#fff;background:rgba(255,255,255,.06)}
+.nav-unread-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:18px;height:18px;padding:0 5px;border-radius:999px;
+  background:var(--danger);color:#fff;font-size:10px;font-weight:900;line-height:1;
+  box-shadow:0 0 0 2px rgba(7,9,20,.65);
+  flex:none
+}
+.nav-unread-badge[hidden]{display:none!important}
+body.sidebar-layout #mainNav.sidebar-nav a .nav-unread-badge,
+body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
+.hub-subnav a{position:relative}
+.hub-subnav .nav-unread-badge{margin-left:6px;vertical-align:middle}
+.hub-page .hub-ticket-row.is-unread .hub-col-title b{position:relative;padding-left:12px}
+.hub-page .hub-ticket-row.is-unread .hub-col-title b:before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:6px;height:6px;border-radius:50%;background:var(--danger);
+  box-shadow:0 0 0 3px rgba(251,113,133,.18)
+}
+.hub-page .hub-ticket-row.is-focus{
+  background:rgba(34,211,238,.1);
+  outline:1px solid rgba(34,211,238,.35)
+}
+.hub-page .hub-replies-panel.is-focus-target{
+  scroll-margin-top:88px;
+  outline:1px solid rgba(34,211,238,.28);
+  border-radius:14px;
+  animation:replyFocusPulse 1.4s ease 1
+}
+@keyframes replyFocusPulse{
+  0%{box-shadow:0 0 0 0 rgba(34,211,238,.35)}
+  100%{box-shadow:0 0 0 12px rgba(34,211,238,0)}
+}
+@media(max-width:720px){
+  .app-toast-host{right:12px;bottom:12px;width:calc(100vw - 24px)}
+}
+
+
+/* —— Admin new-ticket notifications —— */
+.admin-nav-tab{display:inline-flex;align-items:center;gap:8px}
+.admin-nav-tab .nav-unread-badge{margin-left:2px}
+#adminNav .nav-unread-badge{margin-left:auto}
+.admin-page .admin-ticket-row.is-unread .admin-ticket-title-btn b{position:relative;padding-left:12px}
+.admin-page .admin-ticket-row.is-unread .admin-ticket-title-btn b:before{
+  content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:6px;height:6px;border-radius:50%;background:var(--danger);
+  box-shadow:0 0 0 3px rgba(251,113,133,.18)
+}
+.admin-page .admin-ticket-row.is-focus{
+  outline:1px solid rgba(34,211,238,.4);
+  background:rgba(34,211,238,.08)
+}
