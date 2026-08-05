@@ -21,13 +21,21 @@ service cloud.firestore {
 
       match /notifications/{notifId} {
         allow read, update, delete: if isOwner(userId) || isAdmin();
-        allow create: if signedIn()
+        allow create: if request.resource.data.read == false
           && request.resource.data.actorUid == request.auth.uid
-          && request.resource.data.type == 'board_comment'
-          && userId != request.auth.uid
-          && request.resource.data.postId is string
-          && request.resource.data.read == false
-          && get(/databases/$(database)/documents/boardPosts/$(request.resource.data.postId)).data.uid == userId;
+          && (
+            (
+              isAdmin()
+              && request.resource.data.type in ['ticket_reply', 'license_change', 'board_comment']
+            )
+            || (
+              signedIn()
+              && request.resource.data.type == 'board_comment'
+              && userId != request.auth.uid
+              && request.resource.data.postId is string
+              && get(/databases/$(database)/documents/boardPosts/$(request.resource.data.postId)).data.uid == userId
+            )
+          );
       }
     }
 

@@ -88,6 +88,7 @@ let userNotifyUnsub = null;
 let userNotifyRows = [];
 let userNotifyPanelOpen = false;
 let boardCommentFocusDone = false;
+let userNotifyPrefs = { inApp:true, email:false, boardComment:true, ticketReply:true, licenseChange:true };
 
 const textOriginals = new WeakMap();
 const attrOriginals = new WeakMap();
@@ -425,7 +426,10 @@ function tr(k){
     admin_ticket_toast_title:'💬 새로운 문의가 등록되었습니다.', admin_ticket_toast_body:'새 1:1 문의가 접수되었습니다.', admin_ticket_toast_action:'문의 보기',
     admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
     notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
-    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_aria:'알림'
+    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_aria:'알림',
+    profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
+    board_mine_title:'내 작성글', board_mine_desc:'내가 작성한 자유게시판 글만 표시합니다.', board_mine_all:'전체 글 보기', board_mine_only:'내 글만',
+    notify_settings_title:'알림 설정', notify_settings_desc:'종 알림과 이메일 알림 수신 여부를 설정합니다.', notify_pref_inapp:'앱 알림(종)', notify_pref_email:'이메일 알림', notify_pref_board:'게시판 댓글', notify_pref_ticket:'문의 답변', notify_pref_license:'라이선스 변경', notify_pref_email_note:'이메일 알림은 준비 중이며, 설정만 저장됩니다.', notify_pref_saved:'알림 설정이 저장되었습니다.'
   };
   const EN = {
     login:'Sign in with Google', logout:'Logout', guest:'Not signed in', guest_desc:'Sign in with Google to check license',
@@ -438,7 +442,10 @@ function tr(k){
     admin_ticket_toast_title:'💬 A new support ticket was submitted.', admin_ticket_toast_body:'A new 1:1 inquiry has been received.', admin_ticket_toast_action:'View ticket',
     admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
     notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_login:'Sign in to see notifications.',
-    notify_board_comment:' commented on your post.', notify_aria:'Notifications'
+    notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_aria:'Notifications',
+    profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
+    board_mine_title:'My posts', board_mine_desc:'Showing only posts you wrote on the free board.', board_mine_all:'All posts', board_mine_only:'My posts',
+    notify_settings_title:'Notification settings', notify_settings_desc:'Choose which bell and email notifications you receive.', notify_pref_inapp:'In-app (bell)', notify_pref_email:'Email notifications', notify_pref_board:'Board comments', notify_pref_ticket:'Ticket replies', notify_pref_license:'License changes', notify_pref_email_note:'Email delivery is not enabled yet; your preference is saved for later.', notify_pref_saved:'Notification settings saved.'
   };
   const JA = {
     login:'Googleログイン', logout:'ログアウト', guest:'未ログイン', guest_desc:'Googleログインでライセンス確認',
@@ -451,7 +458,10 @@ function tr(k){
     admin_ticket_toast_title:'💬 新しいお問い合わせが登録されました。', admin_ticket_toast_body:'新しい1:1問い合わせが届きました。', admin_ticket_toast_action:'問い合わせを見る',
     admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
     notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_login:'ログインすると通知を確認できます。',
-    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_aria:'通知'
+    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_aria:'通知',
+    profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
+    board_mine_title:'自分の投稿', board_mine_desc:'自由掲示板で自分が書いた投稿だけを表示します。', board_mine_all:'すべての投稿', board_mine_only:'自分の投稿',
+    notify_settings_title:'通知設定', notify_settings_desc:'ベル通知とメール通知の受信を設定します。', notify_pref_inapp:'アプリ通知（ベル）', notify_pref_email:'メール通知', notify_pref_board:'掲示板コメント', notify_pref_ticket:'問い合わせ返信', notify_pref_license:'ライセンス変更', notify_pref_email_note:'メール送信は準備中です。設定のみ保存されます。', notify_pref_saved:'通知設定を保存しました。'
   };
   const T = lang === 'en' ? EN : lang === 'ja' ? JA : KO;
   return T[k] || KO[k] || k;
@@ -1295,6 +1305,8 @@ function setAdminNavVisible(show){
     el.hidden = !show;
     el.setAttribute('aria-hidden', show ? 'false' : 'true');
   });
+  const profileAdmin = $('topbarProfileAdmin');
+  if(profileAdmin) profileAdmin.hidden = !show;
   syncBoardAdminUi();
   if(show) updateAdminTicketUnreadBadges(unreadAdminTicketCount);
   else updateAdminTicketUnreadBadges(0);
@@ -1442,13 +1454,15 @@ function setAuthUiSignedOut(){
   setNotifyBellVisible(false);
   pendingTicketOpenId = '';
   pendingAdminTicketOpenId = '';
+  userNotifyPrefs = defaultNotifyPrefs();
   currentUser = null; currentUserDoc = null; isAdminUser = false;
   currentLicenseActive = false;
   currentLicenseLifetime = false;
   accountLicenseDoc = null;
   setAdminNavVisible(false);
   $('loginBtn')?.classList.remove('hidden');
-  $('logoutBtn')?.classList.add('hidden');
+  setTopbarProfileVisible(false);
+  closeTopbarProfilePanel();
   syncSidebarAuthUi({
     signedIn:false,
     name:tr('guest'),
@@ -1485,7 +1499,10 @@ function setAuthUiSignedOut(){
 function syncSidebarAuthUi({signedIn, name, email, avatar, licenseClass, licenseText}){
   const card=$('sidebarUserCard');
   if(card) card.classList.toggle('is-signed-in', !!signedIn);
-  if($('sidebarAvatar')) $('sidebarAvatar').textContent=avatar||'?';
+  if($('sidebarAvatar')){
+    // keep text fallback; photo handled separately in topbar profile
+    if(!$('sidebarAvatar').querySelector('img')) $('sidebarAvatar').textContent=avatar||'?';
+  }
   if($('sidebarUserName')) $('sidebarUserName').textContent=name||tr('guest');
   if($('sidebarUserEmail')){
     $('sidebarUserEmail').textContent=email||'';
@@ -1496,6 +1513,18 @@ function syncSidebarAuthUi({signedIn, name, email, avatar, licenseClass, license
     badge.className='badge sidebar-license-badge '+(licenseClass||'pending');
     badge.textContent=licenseText||tr('license_wait');
   }
+  const pName=$('topbarProfileName');
+  const pEmail=$('topbarProfileEmail');
+  const pBadge=$('topbarProfileLicense');
+  if(pName && signedIn) pName.textContent=name||tr('guest');
+  if(pEmail && signedIn){ pEmail.textContent=email||''; pEmail.title=email||''; }
+  if(pBadge){
+    pBadge.className='badge topbar-profile-license '+(licenseClass||'pending');
+    pBadge.textContent=licenseText||tr('license_wait');
+    pBadge.hidden = !signedIn;
+  }
+  const adminLink=$('topbarProfileAdmin');
+  if(adminLink) adminLink.hidden = !(signedIn && isAdminUser);
 }
 
 function metaCard(k,v){ return `<div class="stat-card"><b>${esc(k)}</b><span>${esc(v || '-')}</span></div>`; }
@@ -1717,7 +1746,6 @@ async function fetchAccountDownloadData(){
 async function setAuthUiSignedIn(user){
   currentUser=user;
   $('loginBtn')?.classList.add('hidden');
-  $('logoutBtn')?.classList.remove('hidden');
   const name=user.displayName||'Google User';
   const email=user.email||'';
   const avatar=(user.displayName||user.email||'?').slice(0,1).toUpperCase();
@@ -1741,6 +1769,8 @@ async function setAuthUiSignedIn(user){
     licenseClass:'pending',
     licenseText:tr('checking')
   });
+  updateTopbarProfile(user);
+  setTopbarProfileVisible(true);
   await upsertUser(user);
   await loadLicense(user.uid);
   listenTicketNotifications();
@@ -1764,6 +1794,8 @@ async function setAuthUiSignedIn(user){
   refreshDownloadCard(true);
   updatePurchaseAccountBox();
   updateSupportFormUi();
+  if(page==='account.html') initAccountNotifySettings();
+  if(page==='board.html') applyBoardMineModeUi();
 }
 
 async function upsertUser(user){
@@ -1783,6 +1815,7 @@ async function upsertUser(user){
     }
     await setDoc(ref,data,{merge:true});
     currentUserDoc={...old,...data};
+    userNotifyPrefs = normalizeNotifyPrefs(old.notifyPrefs || data.notifyPrefs || currentUserDoc.notifyPrefs);
     isAdminUser=normalizeRole(data.role || old.role)==='admin';
     setAdminNavVisible(isAdminUser);
     await ensureUserLicenseDoc(user.uid, { role: data.role || old.role || 'user' });
@@ -1875,6 +1908,8 @@ async function loadLicense(uid){
     const licenseText=adminLicenseStatusLabel(statusKey);
     if(badge){ badge.className='badge '+licenseClass; badge.textContent=licenseText; }
     if(sideBadge){ sideBadge.className='badge sidebar-license-badge '+licenseClass; sideBadge.textContent=licenseText; }
+    const pBadge=$('topbarProfileLicense');
+    if(pBadge){ pBadge.hidden=false; pBadge.className='badge topbar-profile-license '+licenseClass; pBadge.textContent=licenseText; }
     updateAccountProfileBadges(d);
     if($('accountMeta')){
       const downloadData = await fetchAccountDownloadData();
@@ -1949,6 +1984,7 @@ async function initAuth(){
   }
 
   $('loginBtn') && ($('loginBtn').onclick=loginWithGoogle);
+  ensureTopbarProfile();
   $('logoutBtn') && ($('logoutBtn').onclick=()=>signOut(auth));
   onAuthStateChanged(auth,u=>u?setAuthUiSignedIn(u):setAuthUiSignedOut());
   routeLoadPublic();
@@ -2834,6 +2870,10 @@ function ticketToastKey(t){
 }
 function showTicketReplyToast(ticket){
   if(!ticket?.id) return;
+  if(!isNotifyTypeEnabled('ticket_reply')){
+    markTicketReplyNotified(ticket.id);
+    return;
+  }
   const key = ticketToastKey(ticket);
   if(!key || toastedReplyKeys.has(key) || ticketNotifyInFlight.has(ticket.id)) return;
   toastedReplyKeys.add(key);
@@ -3466,6 +3506,9 @@ async function ticketReply(e){
       ticketPatch.adminNotifyAt = serverTimestamp();
     }
     await updateDoc(doc(db,'supportTickets',ticketId), ticketPatch);
+    if(isAdminUser){
+      notifyTicketOwnerReply(ticketId, content).catch(err=>console.error(err));
+    }
     input.value='';
   }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
 }
@@ -4817,6 +4860,7 @@ async function saveAdminCrmAllChanges(){
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
+      notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}).catch(err=>console.error(err));
       pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active');
     }
     if(memoChanged) await saveAdminCrmUserMemo();
@@ -4902,6 +4946,7 @@ async function adminQuickLicense(raw, silent=false, opts={}){
       payload.expiresAt = opts.expiresAt || deleteField();
     }
     await setDoc(doc(db,'licenses',uid), payload, {merge:true});
+    notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}).catch(err=>console.error(err));
     if(!silent){
       const range = opts.days!=null ? ` · ${opts.days}일` : (opts.clearDates ? ' · 무기한' : '');
       adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(savePlan)} / ${esc(saveStatus)}${range}`);
@@ -4950,15 +4995,59 @@ function boardDisplayName(){ return isAdminUser ? BRAND_AUTHOR : (currentUser?.d
 function boardEmail(){ return currentUser?.email || ''; }
 function boardPostUrl(id){ return `./board-post.html?id=${encodeURIComponent(id)}`; }
 function boardEditUrl(id){ return `./board-write.html?id=${encodeURIComponent(id)}`; }
+function isBoardMineMode(){
+  const v = String(getParam('mine')||'').toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
 function boardFilteredSorted(rows){
   const q=($('boardSearch')?.value||'').trim().toLowerCase();
   let out=rows.filter(x=>x.visible!==false && x.deleted!==true).filter(x=>{
     const hay=[x.title,x.content,x.displayName,x.email].join(' ').toLowerCase();
     return !q || hay.includes(q);
   });
+  if(isBoardMineMode()){
+    if(!currentUser) out = [];
+    else out = out.filter(x => x.uid === currentUser.uid || x.authorUid === currentUser.uid);
+  }
   const time=x=>x.createdAt?.seconds||0;
   out.sort((a,b)=>(b.pinned===true)-(a.pinned===true) || (time(b)-time(a)));
   return out;
+}
+function applyBoardMineModeUi(){
+  if(page !== 'board.html') return;
+  const mine = isBoardMineMode();
+  const h1 = document.querySelector('.hub-topline h1');
+  const desc = document.querySelector('.hub-topline .hub-desc');
+  const title = $('boardListTitle') || document.querySelector('.hub-toolbar h2');
+  if(h1){
+    if(!h1.dataset.defaultText) h1.dataset.defaultText = h1.textContent;
+    h1.textContent = mine ? tr('board_mine_title') : h1.dataset.defaultText;
+  }
+  if(desc){
+    if(!desc.dataset.defaultText) desc.dataset.defaultText = desc.textContent;
+    desc.textContent = mine ? tr('board_mine_desc') : desc.dataset.defaultText;
+  }
+  if(title){
+    if(!title.dataset.defaultText) title.dataset.defaultText = title.textContent;
+    title.textContent = mine ? tr('board_mine_title') : title.dataset.defaultText;
+  }
+  let tools = document.querySelector('.hub-tools');
+  if(tools){
+    let link = $('boardMineToggle');
+    if(!link){
+      link = document.createElement('a');
+      link.id = 'boardMineToggle';
+      link.className = 'secondary mini-btn';
+      tools.insertBefore(link, tools.firstChild);
+    }
+    if(mine){
+      link.href = './board.html';
+      link.textContent = tr('board_mine_all');
+    } else {
+      link.href = './board.html?mine=1';
+      link.textContent = tr('board_mine_only');
+    }
+  }
 }
 function renderBoardPosts(rows, err){
   const box=$('boardPostList'); if(!box)return;
@@ -4980,6 +5069,7 @@ function renderBoardPosts(rows, err){
 }
 function listenBoardPosts(){
   if(!$('boardPostList')) return;
+  applyBoardMineModeUi();
   const search=$('boardSearch');
   if(search && !search.dataset.boardBound){
     search.dataset.boardBound='1';
@@ -5686,6 +5776,82 @@ function openReplyBox(postId,parentId,host){
 
 const NOTIFY_BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0"/></svg>';
 
+
+function defaultNotifyPrefs(){
+  return { inApp:true, email:false, boardComment:true, ticketReply:true, licenseChange:true };
+}
+function normalizeNotifyPrefs(raw){
+  const d = defaultNotifyPrefs();
+  const src = raw && typeof raw === 'object' ? raw : {};
+  return {
+    inApp: src.inApp !== false,
+    email: src.email === true,
+    boardComment: src.boardComment !== false,
+    ticketReply: src.ticketReply !== false,
+    licenseChange: src.licenseChange !== false
+  };
+}
+function isNotifyTypeEnabled(type){
+  const p = userNotifyPrefs || defaultNotifyPrefs();
+  if(p.inApp === false) return false;
+  if(type === 'board_comment') return p.boardComment !== false;
+  if(type === 'ticket_reply') return p.ticketReply !== false;
+  if(type === 'license_change') return p.licenseChange !== false;
+  return true;
+}
+function visibleUserNotifications(rows){
+  return (rows||[]).filter(n => isNotifyTypeEnabled(n.type || 'board_comment'));
+}
+async function saveUserNotifyPrefs(next){
+  if(!currentUser || !firestoreApi?.setDoc) return;
+  userNotifyPrefs = normalizeNotifyPrefs(next);
+  const {doc, setDoc, serverTimestamp} = firestoreApi;
+  await setDoc(doc(db,'users',currentUser.uid), { notifyPrefs:userNotifyPrefs, updatedAt:serverTimestamp() }, {merge:true});
+  if(currentUserDoc) currentUserDoc.notifyPrefs = userNotifyPrefs;
+  // refresh bell counts with new prefs
+  const visible = visibleUserNotifications(userNotifyRows);
+  updateNotifyBellBadge(visible.filter(n => n.read !== true).length);
+  renderNotifyPanelList();
+}
+function initAccountNotifySettings(){
+  const host = $('notifySettings');
+  if(!host) return;
+  if(!currentUser){
+    host.innerHTML = `<div class="empty-card">${esc(tr('need_login'))}</div>`;
+    return;
+  }
+  const p = userNotifyPrefs || defaultNotifyPrefs();
+  host.innerHTML = `<article class="hub-card account-panel account-notify-card" id="notifySettingsCard">
+    <header class="account-panel-head"><h2>${esc(tr('notify_settings_title'))}</h2></header>
+    <p class="muted account-notify-desc">${esc(tr('notify_settings_desc'))}</p>
+    <div class="account-notify-grid">
+      <label class="account-notify-row"><input type="checkbox" data-pref="inApp" ${p.inApp?'checked':''}><span>${esc(tr('notify_pref_inapp'))}</span></label>
+      <label class="account-notify-row"><input type="checkbox" data-pref="email" ${p.email?'checked':''}><span>${esc(tr('notify_pref_email'))}</span></label>
+      <label class="account-notify-row"><input type="checkbox" data-pref="boardComment" ${p.boardComment?'checked':''}><span>${esc(tr('notify_pref_board'))}</span></label>
+      <label class="account-notify-row"><input type="checkbox" data-pref="ticketReply" ${p.ticketReply?'checked':''}><span>${esc(tr('notify_pref_ticket'))}</span></label>
+      <label class="account-notify-row"><input type="checkbox" data-pref="licenseChange" ${p.licenseChange?'checked':''}><span>${esc(tr('notify_pref_license'))}</span></label>
+    </div>
+    <p class="muted small account-notify-note">${esc(tr('notify_pref_email_note'))}</p>
+    <p class="form-msg account-notify-msg" id="notifySettingsMsg" hidden></p>
+  </article>`;
+  host.querySelectorAll('input[data-pref]').forEach(input=>{
+    input.addEventListener('change', async ()=>{
+      const next = { ...(userNotifyPrefs || defaultNotifyPrefs()) };
+      host.querySelectorAll('input[data-pref]').forEach(el=>{ next[el.dataset.pref] = !!el.checked; });
+      try{
+        await saveUserNotifyPrefs(next);
+        const msg = $('notifySettingsMsg');
+        if(msg){ msg.hidden=false; msg.style.color='#8ff3c5'; msg.textContent=tr('notify_pref_saved'); }
+      }catch(e){
+        alert(e.message||e);
+      }
+    });
+  });
+  if(location.hash === '#notify-settings' || getParam('tab') === 'notify'){
+    setTimeout(()=>{ host.scrollIntoView({behavior:'smooth', block:'start'}); }, 200);
+  }
+}
+
 function ensureNotifyBell(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
@@ -5754,7 +5920,8 @@ function listenUserNotifications(){
   const q = query(collection(db,'users',currentUser.uid,'notifications'), orderBy('createdAt','desc'), limit(40));
   userNotifyUnsub = onSnapshot(q, snap => {
     userNotifyRows = snap.docs.map(d=>({id:d.id, ...d.data()}));
-    const unread = userNotifyRows.filter(n => n.read !== true).length;
+    const visible = visibleUserNotifications(userNotifyRows);
+    const unread = visible.filter(n => n.read !== true).length;
     updateNotifyBellBadge(unread);
     renderNotifyPanelList();
   }, err => {
@@ -5767,6 +5934,7 @@ function toggleNotifyPanel(){
 }
 function openNotifyPanel(){
   ensureNotifyBell();
+  try{ closeTopbarProfilePanel(); }catch{}
   const panel = $('notifyPanel');
   const bell = $('notifyBellBtn');
   if(!panel) return;
@@ -5782,15 +5950,21 @@ function closeNotifyPanel(){
   $('notifyBellBtn')?.setAttribute('aria-expanded','false');
 }
 function notifyItemHtml(n){
-  const name = n.actorName || 'User';
+  const type = n.type || 'board_comment';
+  const name = n.actorName || (type === 'board_comment' ? 'User' : BRAND_AUTHOR);
   const title = n.postTitle || '';
   const preview = n.preview || '';
   const when = fmtDate(n.createdAt);
   const unread = n.read !== true ? ' is-unread' : '';
-  const line = lang === 'en'
-    ? `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`
-    : `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
-  return `<button type="button" class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}" data-post-id="${esc(n.postId||'')}" data-comment-id="${esc(n.commentId||'')}">
+  let line = '';
+  if(type === 'ticket_reply'){
+    line = `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
+  } else if(type === 'license_change'){
+    line = `<b>${esc(name)}</b> · ${esc(tr('notify_license_change'))}`;
+  } else {
+    line = `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
+  }
+  return `<button type="button" class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}">
     <span class="topbar-notify-item-main">${line}</span>
     ${title?`<span class="topbar-notify-item-title">${esc(title)}</span>`:''}
     ${preview?`<span class="topbar-notify-item-preview">${esc(preview)}</span>`:''}
@@ -5804,27 +5978,48 @@ function renderNotifyPanelList(){
     list.innerHTML = `<div class="topbar-notify-empty">${esc(tr('notify_login'))}</div>`;
     return;
   }
-  if(!userNotifyRows.length){
+  const rows = visibleUserNotifications(userNotifyRows);
+  if(!rows.length){
     list.innerHTML = `<div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div>`;
     return;
   }
-  list.innerHTML = userNotifyRows.map(notifyItemHtml).join('');
+  list.innerHTML = rows.map(notifyItemHtml).join('');
   list.querySelectorAll('[data-notify-id]').forEach(btn=>{
     if(btn.dataset.bound) return;
     btn.dataset.bound = '1';
-    btn.addEventListener('click', ()=>openNotification(btn.dataset.notifyId, btn.dataset.postId, btn.dataset.commentId));
+    btn.addEventListener('click', ()=>openNotification(btn.dataset.notifyId));
   });
 }
-async function openNotification(notifyId, postId, commentId){
-  if(!currentUser || !postId) return;
+async function markNotificationRead(notifyId, n=null){
+  if(!currentUser || !notifyId || !firestoreApi?.updateDoc) return;
+  const row = n || userNotifyRows.find(x => x.id === notifyId) || null;
   try{
-    if(notifyId){
-      const {doc, updateDoc} = firestoreApi;
-      await updateDoc(doc(db,'users',currentUser.uid,'notifications',notifyId), {read:true});
+    const {doc, updateDoc} = firestoreApi;
+    await updateDoc(doc(db,'users',currentUser.uid,'notifications',notifyId), {read:true});
+    if(row?.type === 'ticket_reply' && row.ticketId){
+      await markTicketReplyRead(row.ticketId);
     }
   }catch(e){ console.error(e); }
+}
+async function openNotification(notifyId){
+  if(!currentUser || !notifyId) return;
+  const n = userNotifyRows.find(x => x.id === notifyId);
+  if(!n) return;
+  await markNotificationRead(notifyId, n);
   closeNotifyPanel();
   const base = window.MIDIAI_BASE_PATH || './';
+  const type = n.type || 'board_comment';
+  if(type === 'ticket_reply' && n.ticketId){
+    location.href = `${base}ticket.html?id=${encodeURIComponent(n.ticketId)}&focus=reply`;
+    return;
+  }
+  if(type === 'license_change'){
+    location.href = `${base}account.html`;
+    return;
+  }
+  const postId = n.postId || '';
+  const commentId = n.commentId || '';
+  if(!postId) return;
   let href = `${base}board-post.html?id=${encodeURIComponent(postId)}`;
   if(commentId) href += `&focus=comment&cid=${encodeURIComponent(commentId)}`;
   if(page === 'board-post.html' && getParam('id') === postId){
@@ -5837,15 +6032,40 @@ async function markAllNotificationsRead(){
   if(!currentUser || !firestoreApi?.updateDoc) return;
   const unread = userNotifyRows.filter(n => n.read !== true);
   if(!unread.length) return;
-  const {doc, updateDoc} = firestoreApi;
   try{
-    await Promise.all(unread.map(n => updateDoc(doc(db,'users',currentUser.uid,'notifications',n.id), {read:true})));
+    await Promise.all(unread.map(n => markNotificationRead(n.id, n)));
   }catch(e){ console.error(e); alert(e.message||e); }
+}
+async function createUserNotification(ownerUid, data={}){
+  if(!ownerUid || !firestoreApi?.addDoc || !currentUser) return null;
+  try{
+    const {collection, addDoc, serverTimestamp} = firestoreApi;
+    const payload = {
+      type: data.type || 'general',
+      postId: data.postId || '',
+      commentId: data.commentId || '',
+      parentId: data.parentId || '',
+      ticketId: data.ticketId || '',
+      plan: data.plan || '',
+      status: data.status || '',
+      actorUid: data.actorUid != null ? data.actorUid : (currentUser.uid || ''),
+      actorName: data.actorName != null ? data.actorName : (boardDisplayName() || BRAND_AUTHOR),
+      postTitle: String(data.postTitle || data.title || '').slice(0,120),
+      preview: String(data.preview || '').slice(0,160),
+      read: false,
+      createdAt: serverTimestamp()
+    };
+    const ref = await addDoc(collection(db,'users',ownerUid,'notifications'), payload);
+    return ref.id;
+  }catch(e){
+    console.error('createUserNotification', e);
+    return null;
+  }
 }
 async function notifyBoardPostOwner({postId, commentId, content, parentId}={}){
   if(!currentUser || !postId || !firestoreApi) return;
   try{
-    const {doc, getDoc, collection, addDoc, serverTimestamp} = firestoreApi;
+    const {doc, getDoc} = firestoreApi;
     let post = (activeBoardPost && activeBoardPost.id === postId) ? activeBoardPost : null;
     if(!post){
       const snap = await getDoc(doc(db,'boardPosts',postId));
@@ -5854,20 +6074,54 @@ async function notifyBoardPostOwner({postId, commentId, content, parentId}={}){
     }
     const ownerUid = post.uid || post.authorUid || '';
     if(!ownerUid || ownerUid === currentUser.uid) return;
-    await addDoc(collection(db,'users',ownerUid,'notifications'), {
+    await createUserNotification(ownerUid, {
       type:'board_comment',
       postId,
       commentId: commentId || '',
       parentId: parentId || '',
-      actorUid: currentUser.uid,
       actorName: boardDisplayName(),
-      postTitle: String(post.title || '').slice(0,120),
-      preview: String(content || '').slice(0,120),
-      read:false,
-      createdAt: serverTimestamp()
+      postTitle: post.title || '',
+      preview: content || ''
     });
   }catch(e){
     console.error('notifyBoardPostOwner', e);
+  }
+}
+async function notifyTicketOwnerReply(ticketId, content){
+  if(!isAdminUser || !ticketId || !firestoreApi) return;
+  try{
+    const {doc, getDoc} = firestoreApi;
+    const snap = await getDoc(doc(db,'supportTickets',ticketId));
+    if(!snap.exists()) return;
+    const t = snap.data() || {};
+    const ownerUid = t.uid || '';
+    if(!ownerUid || ownerUid === currentUser?.uid) return;
+    await createUserNotification(ownerUid, {
+      type:'ticket_reply',
+      ticketId,
+      actorName: BRAND_AUTHOR,
+      postTitle: t.title || '',
+      preview: content || ''
+    });
+  }catch(e){
+    console.error('notifyTicketOwnerReply', e);
+  }
+}
+async function notifyLicenseChange(uid, {plan='', status=''}={}){
+  if(!isAdminUser || !uid || !firestoreApi) return;
+  try{
+    const planLabel = adminLicenseTypeLabel(plan || 'trial');
+    const statusLabel = adminLicenseStatusLabel(status || 'active');
+    await createUserNotification(uid, {
+      type:'license_change',
+      plan: plan || '',
+      status: status || '',
+      actorName: BRAND_AUTHOR,
+      postTitle: planLabel,
+      preview: `${statusLabel}${plan ? ` · ${planLabel}` : ''}`
+    });
+  }catch(e){
+    console.error('notifyLicenseChange', e);
   }
 }
 function focusBoardComment(commentId){
@@ -6005,6 +6259,7 @@ function initForms(){
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
+      notifyLicenseChange(uid, {plan:savePlan, status}).catch(err=>console.error(err));
       pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active');
       adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(role)} / ${esc(savePlan)}`);
       if(selectedAdminUid===uid) refreshAdminCrmDetail();
@@ -6438,8 +6693,133 @@ function refreshTopbarActionLabels(){
   const loginLabel = $('loginBtn')?.querySelector('.login-label');
   if(loginLabel) loginLabel.textContent = tr('login');
   const logoutBtn = $('logoutBtn');
-  if(logoutBtn && !logoutBtn.querySelector('svg')) logoutBtn.textContent = tr('logout');
+  if(logoutBtn) logoutBtn.textContent = tr('logout');
+  const profileBtn = $('topbarProfileBtn');
+  if(profileBtn) profileBtn.setAttribute('aria-label', tr('profile_menu_aria'));
 }
+
+let topbarProfilePanelOpen = false;
+
+function ensureTopbarProfile(){
+  const actions = document.querySelector('.topbar .actions');
+  if(!actions) return null;
+  let wrap = $('topbarProfile');
+  if(wrap) return wrap;
+
+  // Remove legacy text logout button if present outside profile menu
+  const legacyLogout = $('logoutBtn');
+  if(legacyLogout && !legacyLogout.closest?.('#topbarProfile')){
+    legacyLogout.remove();
+  }
+
+  const base = window.MIDIAI_BASE_PATH || './';
+  wrap = document.createElement('div');
+  wrap.className = 'topbar-profile';
+  wrap.id = 'topbarProfile';
+  wrap.hidden = true;
+  wrap.innerHTML = `<button type="button" class="topbar-profile-btn" id="topbarProfileBtn" aria-label="${esc(tr('profile_menu_aria'))}" aria-expanded="false"><span class="topbar-profile-avatar" id="topbarProfileAvatar">?</span></button>
+  <div class="topbar-profile-panel" id="topbarProfilePanel" hidden>
+    <div class="topbar-profile-head">
+      <div class="topbar-profile-avatar is-lg" id="topbarProfileAvatarLarge">?</div>
+      <div class="topbar-profile-meta">
+        <b id="topbarProfileName">${esc(tr('guest'))}</b>
+        <span id="topbarProfileEmail"></span>
+        <span id="topbarProfileLicense" class="badge topbar-profile-license pending" hidden>${esc(tr('license_wait'))}</span>
+      </div>
+    </div>
+    <nav class="topbar-profile-links" aria-label="${esc(tr('profile_menu_aria'))}">
+      <a href="${base}account.html">${esc(tr('profile_my_account'))}</a>
+      <a href="${base}my-tickets.html">${esc(tr('profile_my_tickets'))}</a>
+      <a href="${base}board.html?mine=1">${esc(tr('profile_my_posts'))}</a>
+      <a href="${base}account.html#notify-settings">${esc(tr('profile_notify_settings'))}</a>
+    </nav>
+    <button type="button" class="topbar-profile-logout" id="logoutBtn">${esc(tr('logout'))}</button>
+  </div>`;
+  actions.appendChild(wrap);
+
+  $('topbarProfileBtn')?.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    toggleTopbarProfilePanel();
+  });
+  if(!document.body.dataset.profileOutsideBound){
+    document.body.dataset.profileOutsideBound = '1';
+    document.addEventListener('click', (e)=>{
+      if(!topbarProfilePanelOpen) return;
+      if(e.target.closest?.('#topbarProfile')) return;
+      closeTopbarProfilePanel();
+    });
+  }
+  // re-bind logout if auth already ready
+  const logoutBtn = $('logoutBtn');
+  if(logoutBtn && auth){
+    logoutBtn.onclick = ()=>signOut(auth);
+  } else if(logoutBtn){
+    logoutBtn.onclick = ()=>{
+      if(auth) signOut(auth);
+      else location.reload();
+    };
+  }
+  return wrap;
+}
+function setTopbarProfileVisible(show){
+  const wrap = ensureTopbarProfile();
+  if(!wrap) return;
+  wrap.hidden = !show;
+  if(!show) closeTopbarProfilePanel();
+}
+function setTopbarProfileAvatar(el, user, initial){
+  if(!el) return;
+  const photo = user?.photoURL || '';
+  if(photo){
+    el.classList.add('has-photo');
+    el.innerHTML = `<img src="${esc(photo)}" alt="" width="34" height="34" loading="lazy" referrerpolicy="no-referrer">`;
+  } else {
+    el.classList.remove('has-photo');
+    el.textContent = initial || '?';
+  }
+}
+function updateTopbarProfile(user){
+  ensureTopbarProfile();
+  if(!user) return;
+  const name = user.displayName || 'Google User';
+  const email = user.email || '';
+  const initial = (user.displayName || user.email || '?').slice(0,1).toUpperCase();
+  setTopbarProfileAvatar($('topbarProfileAvatar'), user, initial);
+  setTopbarProfileAvatar($('topbarProfileAvatarLarge'), user, initial);
+  if($('topbarProfileName')) $('topbarProfileName').textContent = name;
+  if($('topbarProfileEmail')){
+    $('topbarProfileEmail').textContent = email;
+    $('topbarProfileEmail').title = email;
+  }
+  const adminLink = $('topbarProfileAdmin');
+  if(adminLink) adminLink.hidden = !isAdminUser;
+  // keep logout bound
+  const logoutBtn = $('logoutBtn');
+  if(logoutBtn && auth) logoutBtn.onclick = ()=>signOut(auth);
+}
+function toggleTopbarProfilePanel(){
+  if(topbarProfilePanelOpen) closeTopbarProfilePanel();
+  else openTopbarProfilePanel();
+}
+function openTopbarProfilePanel(){
+  ensureTopbarProfile();
+  // close notify panel if open
+  try{ closeNotifyPanel(); }catch{}
+  const panel = $('topbarProfilePanel');
+  if(!panel) return;
+  topbarProfilePanelOpen = true;
+  panel.hidden = false;
+  $('topbarProfileBtn')?.setAttribute('aria-expanded','true');
+  const adminLink = $('topbarProfileAdmin');
+  if(adminLink) adminLink.hidden = !isAdminUser;
+}
+function closeTopbarProfilePanel(){
+  topbarProfilePanelOpen = false;
+  const panel = $('topbarProfilePanel');
+  if(panel) panel.hidden = true;
+  $('topbarProfileBtn')?.setAttribute('aria-expanded','false');
+}
+
 function initTopbarActions(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions || actions.dataset.upgraded === '1') return;
@@ -6448,7 +6828,7 @@ function initTopbarActions(){
 
   // Guide/SEO pages often only ship a Free-trial CTA — normalize to portal controls.
   if(!$('langBtn') || !$('loginBtn')){
-    actions.innerHTML = `<button id="langBtn" class="ghost topbar-lang" aria-label="언어 변경" type="button"><span class="topbar-lang-icon">${TOPBAR_GLOBE_SVG}</span><span class="topbar-lang-code">EN</span></button><button id="loginBtn" class="login topbar-login" aria-label="Google 로그인" type="button"><span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">Google 로그인</span></button><button id="logoutBtn" class="ghost topbar-logout hidden" aria-label="로그아웃" type="button">로그아웃</button>`;
+    actions.innerHTML = `<button id="langBtn" class="ghost topbar-lang" aria-label="언어 변경" type="button"><span class="topbar-lang-icon">${TOPBAR_GLOBE_SVG}</span><span class="topbar-lang-code">EN</span></button><button id="loginBtn" class="login topbar-login" aria-label="Google 로그인" type="button"><span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">Google 로그인</span></button>`;
   } else {
     const langBtn = $('langBtn');
     if(langBtn && !langBtn.querySelector('.topbar-lang-code')){
@@ -6460,7 +6840,9 @@ function initTopbarActions(){
       loginBtn.classList.add('topbar-login');
       loginBtn.innerHTML = `<span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">Google 로그인</span>`;
     }
-    $('logoutBtn')?.classList.add('topbar-logout');
+    // legacy text logout is replaced by profile menu
+    const legacyLogout = $('logoutBtn');
+    if(legacyLogout && !legacyLogout.closest?.('#topbarProfile')) legacyLogout.remove();
   }
 
   const langBtn = $('langBtn');
@@ -6468,6 +6850,9 @@ function initTopbarActions(){
   refreshTopbarActionLabels();
   ensureNotifyBell();
   setNotifyBellVisible(!!currentUser);
+  ensureTopbarProfile();
+  setTopbarProfileVisible(!!currentUser);
+  if(currentUser) updateTopbarProfile(currentUser);
 }
 function initSidebarLayout(){
   if(document.querySelector('.app-shell')) return;

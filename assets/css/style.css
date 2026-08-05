@@ -2555,3 +2555,61 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 @media(max-width:680px){
   .topbar-notify-panel{right:-40px}
 }
+
+
+/* —— Topbar profile menu (YouTube-style) —— */
+.topbar-profile{position:relative;display:inline-flex;align-items:center}
+.topbar-profile-btn{
+  display:inline-grid;place-items:center;width:34px;height:34px;padding:0;
+  border:0;border-radius:999px;background:transparent;cursor:pointer;
+  box-shadow:0 0 0 1px rgba(255,255,255,.12);
+  transition:box-shadow .18s ease, transform .18s ease
+}
+.topbar-profile-btn:hover{box-shadow:0 0 0 2px rgba(34,211,238,.45)}
+.topbar-profile-avatar{
+  width:34px;height:34px;border-radius:999px;overflow:hidden;
+  display:grid;place-items:center;background:linear-gradient(135deg,#5b6cff,#22d3ee);
+  color:#fff;font-size:13px;font-weight:900;line-height:1
+}
+.topbar-profile-avatar.has-photo{background:#111}
+.topbar-profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.topbar-profile-avatar.is-lg{width:44px;height:44px;font-size:16px;flex:none}
+.topbar-profile-panel{
+  position:absolute;top:calc(100% + 10px);right:0;z-index:1300;
+  width:min(300px,calc(100vw - 24px));
+  border-radius:16px;border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg,rgba(22,26,48,.98),rgba(10,12,24,.98));
+  box-shadow:0 22px 48px rgba(0,0,0,.5);overflow:hidden
+}
+.topbar-profile-head{
+  display:flex;align-items:center;gap:12px;padding:14px;
+  border-bottom:1px solid rgba(255,255,255,.08)
+}
+.topbar-profile-meta{min-width:0;display:grid;gap:3px}
+.topbar-profile-meta b{color:#fff;font-size:14px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-profile-meta span{color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar-profile-license{justify-self:start;margin-top:2px;font-size:10px!important;padding:2px 7px!important}
+.topbar-profile-links{display:grid;padding:6px}
+.topbar-profile-links a{
+  display:block;padding:10px 12px;border-radius:10px;color:#d7dbf2;
+  font-size:13px;font-weight:700;text-decoration:none
+}
+.topbar-profile-links a:hover{background:rgba(255,255,255,.06);color:#fff}
+.topbar-profile-logout{
+  width:calc(100% - 12px);margin:0 6px 8px;padding:10px 12px;border-radius:10px;
+  border:1px solid rgba(251,113,133,.28);background:rgba(251,113,133,.08);
+  color:#ff9aac;font-size:13px;font-weight:800;cursor:pointer;text-align:left
+}
+.topbar-profile-logout:hover{background:rgba(251,113,133,.14);color:#ffb4c0}
+.topbar .topbar-logout{display:none!important}
+
+
+/* —— Account notification settings —— */
+.account-notify-wrap{margin-top:14px}
+.account-notify-card{padding:16px 18px}
+.account-notify-desc{margin:0 0 12px;font-size:13px;line-height:1.5}
+.account-notify-grid{display:grid;gap:8px}
+.account-notify-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#e8ebf8;font-size:13px;font-weight:700;cursor:pointer}
+.account-notify-row input{accent-color:var(--accent2);width:16px;height:16px}
+.account-notify-note{margin:12px 0 0;font-size:12px;line-height:1.45}
+.account-notify-msg{margin:10px 0 0;font-size:13px;font-weight:700}
