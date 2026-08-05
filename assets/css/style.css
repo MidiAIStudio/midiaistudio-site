@@ -1239,27 +1239,10 @@ body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{di
 body.sidebar-layout #mainNav.sidebar-nav a.hidden,body.sidebar-layout .sidebar-nav a.hidden,#adminNav.hidden{display:none!important}
 body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.07)!important;transform:none!important}
 body.sidebar-layout #mainNav.sidebar-nav a.active,body.sidebar-layout .sidebar-nav a.active{color:#fff!important;border:0!important;background:rgba(139,92,246,.18)!important;box-shadow:inset 3px 0 0 var(--accent2)!important}
-.app-main{flex:1;min-width:0;display:flex;flex-direction:column;background:#070914;isolation:isolate;transform:translateZ(0)}
-/* Opaque content layers — translucent cards/orbs let Windows Chrome show previous-page paint after navigation */
-body.sidebar-layout .orb{display:none!important}
+.app-main{flex:1;min-width:0;display:flex;flex-direction:column;background:transparent;isolation:isolate}
 body.sidebar-layout .hub-main,
 body.sidebar-layout main{
-  background:#070914;isolation:isolate;transform:translateZ(0);position:relative;z-index:0
-}
-body.sidebar-layout .hub-card,
-.hub-page .hub-card,
-.portal-page.hub-page .hub-card{
-  background:#12162a!important;
-  background-image:none!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-  box-shadow:0 12px 32px rgba(0,0,0,.28)!important
-}
-body.sidebar-layout .legal-footer,
-body.sidebar-layout .site-footer.legal-footer{
-  background:#12162a!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important
+  background:transparent;isolation:isolate;position:relative;z-index:0
 }
 
 /* Opaque sticky topbar — translucent + backdrop-filter left paint ghosts on Windows Chrome during menu navigation. */
@@ -1282,7 +1265,7 @@ body.sidebar-layout .purchase-final-side{top:76px}
 
 /* V36 Full site renewal */
 :root{--site-max:1120px;--site-radius:18px;--site-card:rgba(12,14,28,.78);--site-stroke:rgba(255,255,255,.1)}
-body.sidebar-layout{--site-card:#12162a;--final-card:#12162a;background:#070914}
+body.sidebar-layout{background:radial-gradient(circle at 15% 0%,rgba(139,92,246,.14),transparent 42%),radial-gradient(circle at 85% 8%,rgba(34,211,238,.1),transparent 38%),#070914}
 .sidebar{border-right-color:rgba(255,255,255,.08);background:rgba(4,6,15,.94)}
 .sidebar-brand img{border-radius:12px}
 .topbar-slim{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#070914!important}
