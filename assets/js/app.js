@@ -427,7 +427,7 @@ function tr(k){
     reply_toast_title:'💬 문의 답변이 등록되었습니다.', reply_toast_body:'문의하신 내용에 답변이 작성되었습니다.', reply_toast_action:'답변 보기',
     admin_ticket_toast_title:'💬 새로운 문의가 등록되었습니다.', admin_ticket_toast_body:'새 1:1 문의가 접수되었습니다.', admin_ticket_toast_action:'문의 보기',
     admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
-    notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
+    notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_clear_all:'모두 삭제', notify_clear_confirm:'알림을 모두 삭제할까요?', notify_delete_aria:'알림 삭제', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
     notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_aria:'알림',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
     board_mine_title:'내 작성글', board_mine_desc:'내가 작성한 자유게시판 글만 표시합니다.', board_mine_all:'전체 글 보기', board_mine_only:'내 글만',
@@ -443,7 +443,7 @@ function tr(k){
     reply_toast_title:'💬 A reply was posted on your ticket.', reply_toast_body:'An admin replied to your support request.', reply_toast_action:'View reply',
     admin_ticket_toast_title:'💬 A new support ticket was submitted.', admin_ticket_toast_body:'A new 1:1 inquiry has been received.', admin_ticket_toast_action:'View ticket',
     admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
-    notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_login:'Sign in to see notifications.',
+    notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_clear_all:'Clear all', notify_clear_confirm:'Delete all notifications?', notify_delete_aria:'Delete notification', notify_login:'Sign in to see notifications.',
     notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_aria:'Notifications',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
     board_mine_title:'My posts', board_mine_desc:'Showing only posts you wrote on the free board.', board_mine_all:'All posts', board_mine_only:'My posts',
@@ -459,7 +459,7 @@ function tr(k){
     reply_toast_title:'💬 お問い合わせに返信がありました。', reply_toast_body:'ご質問への回答が登録されました。', reply_toast_action:'返信を見る',
     admin_ticket_toast_title:'💬 新しいお問い合わせが登録されました。', admin_ticket_toast_body:'新しい1:1問い合わせが届きました。', admin_ticket_toast_action:'問い合わせを見る',
     admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
-    notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_login:'ログインすると通知を確認できます。',
+    notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_clear_all:'すべて削除', notify_clear_confirm:'通知をすべて削除しますか？', notify_delete_aria:'通知を削除', notify_login:'ログインすると通知を確認できます。',
     notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_aria:'通知',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
     board_mine_title:'自分の投稿', board_mine_desc:'自由掲示板で自分が書いた投稿だけを表示します。', board_mine_all:'すべての投稿', board_mine_only:'自分の投稿',
@@ -5868,13 +5868,14 @@ function ensureNotifyBell(){
   wrap.className = 'topbar-notify';
   wrap.id = 'topbarNotify';
   wrap.hidden = true;
-  wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button></div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
+  wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><div class="topbar-notify-head-actions"><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button><button type="button" class="topbar-notify-clear" id="notifyClearAll">${esc(tr('notify_clear_all'))}</button></div></div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
   const langBtn = $('langBtn');
   if(langBtn) actions.insertBefore(wrap, langBtn);
   else actions.insertBefore(wrap, actions.firstChild);
   const bell = $('notifyBellBtn');
   bell?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleNotifyPanel(); });
   $('notifyMarkAllRead')?.addEventListener('click', (e)=>{ e.stopPropagation(); markAllNotificationsRead(); });
+  $('notifyClearAll')?.addEventListener('click', (e)=>{ e.stopPropagation(); clearAllNotifications(); });
   if(!document.body.dataset.notifyOutsideBound){
     document.body.dataset.notifyOutsideBound = '1';
     document.addEventListener('click', (e)=>{
@@ -5971,12 +5972,15 @@ function notifyItemHtml(n){
   } else {
     line = `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
   }
-  return `<button type="button" class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}">
-    <span class="topbar-notify-item-main">${line}</span>
-    ${title?`<span class="topbar-notify-item-title">${esc(title)}</span>`:''}
-    ${preview?`<span class="topbar-notify-item-preview">${esc(preview)}</span>`:''}
-    <span class="topbar-notify-item-time">${esc(when)}</span>
-  </button>`;
+  return `<div class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}">
+    <button type="button" class="topbar-notify-item-body" data-notify-open="${esc(n.id)}">
+      <span class="topbar-notify-item-main">${line}</span>
+      ${title?`<span class="topbar-notify-item-title">${esc(title)}</span>`:''}
+      ${preview?`<span class="topbar-notify-item-preview">${esc(preview)}</span>`:''}
+      <span class="topbar-notify-item-time">${esc(when)}</span>
+    </button>
+    <button type="button" class="topbar-notify-item-del" data-notify-del="${esc(n.id)}" aria-label="${esc(tr('notify_delete_aria'))}">×</button>
+  </div>`;
 }
 function renderNotifyPanelList(){
   const list = $('notifyList');
@@ -5991,10 +5995,18 @@ function renderNotifyPanelList(){
     return;
   }
   list.innerHTML = rows.map(notifyItemHtml).join('');
-  list.querySelectorAll('[data-notify-id]').forEach(btn=>{
+  list.querySelectorAll('[data-notify-open]').forEach(btn=>{
     if(btn.dataset.bound) return;
     btn.dataset.bound = '1';
-    btn.addEventListener('click', ()=>openNotification(btn.dataset.notifyId));
+    btn.addEventListener('click', ()=>openNotification(btn.dataset.notifyOpen));
+  });
+  list.querySelectorAll('[data-notify-del]').forEach(btn=>{
+    if(btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      deleteNotification(btn.dataset.notifyDel);
+    });
   });
 }
 async function markNotificationRead(notifyId, n=null){
@@ -6042,6 +6054,32 @@ async function markAllNotificationsRead(){
   try{
     await Promise.all(unread.map(n => markNotificationRead(n.id, n)));
   }catch(e){ console.error(e); alert(e.message||e); }
+}
+async function deleteNotification(notifyId){
+  if(!currentUser || !notifyId || !firestoreApi?.deleteDoc) return;
+  try{
+    const {doc, deleteDoc} = firestoreApi;
+    await deleteDoc(doc(db,'users',currentUser.uid,'notifications',notifyId));
+  }catch(e){
+    console.error(e);
+    alert(e.message||e);
+  }
+}
+async function clearAllNotifications(){
+  if(!currentUser || !firestoreApi?.getDocs || !firestoreApi?.deleteDoc) return;
+  if(!confirm(tr('notify_clear_confirm'))) return;
+  try{
+    const {collection, getDocs, deleteDoc} = firestoreApi;
+    const snap = await getDocs(collection(db,'users',currentUser.uid,'notifications'));
+    const docs = snap.docs || [];
+    const chunk = 40;
+    for(let i=0;i<docs.length;i+=chunk){
+      await Promise.all(docs.slice(i,i+chunk).map(d=>deleteDoc(d.ref)));
+    }
+  }catch(e){
+    console.error(e);
+    alert(e.message||e);
+  }
 }
 async function createUserNotification(ownerUid, data={}){
   if(!ownerUid || !firestoreApi?.addDoc || !currentUser){

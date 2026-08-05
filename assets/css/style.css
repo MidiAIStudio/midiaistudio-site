@@ -2567,19 +2567,32 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
   padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08)
 }
 .topbar-notify-head b{font-size:14px;color:#fff}
-.topbar-notify-mark{
-  border:0;background:transparent;color:#9af2ff;font-size:12px;font-weight:800;cursor:pointer;padding:4px 6px;border-radius:8px
+.topbar-notify-head-actions{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.topbar-notify-mark,.topbar-notify-clear{
+  border:0;background:transparent;font-size:12px;font-weight:800;cursor:pointer;padding:4px 6px;border-radius:8px
 }
+.topbar-notify-mark{color:#9af2ff}
 .topbar-notify-mark:hover{background:rgba(34,211,238,.1)}
+.topbar-notify-clear{color:#ff9aac}
+.topbar-notify-clear:hover{background:rgba(251,113,133,.12)}
 .topbar-notify-list{max-height:min(420px,60vh);overflow:auto;display:grid}
 .topbar-notify-empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}
 .topbar-notify-item{
-  display:grid;gap:4px;width:100%;text-align:left;padding:12px 14px;
-  border:0;border-bottom:1px solid rgba(255,255,255,.06);
-  background:transparent;color:inherit;font:inherit;cursor:pointer
+  display:grid;grid-template-columns:1fr auto;gap:4px;align-items:start;width:100%;
+  padding:10px 10px 10px 12px;border:0;border-bottom:1px solid rgba(255,255,255,.06);
+  background:transparent;color:inherit;text-align:left
 }
 .topbar-notify-item:hover{background:rgba(255,255,255,.05)}
 .topbar-notify-item.is-unread{background:rgba(34,211,238,.07)}
+.topbar-notify-item-body{
+  display:grid;gap:3px;width:100%;padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer
+}
+.topbar-notify-item-del{
+  width:28px;height:28px;border:0;border-radius:8px;background:transparent;color:#8b91ad;
+  font-size:18px;line-height:1;cursor:pointer;flex:none
+}
+.topbar-notify-item-del:hover{background:rgba(251,113,133,.14);color:#ff9aac}
+
 .topbar-notify-item-main{font-size:13px;line-height:1.4;color:#e8ebf8}
 .topbar-notify-item-main b{color:#fff;font-weight:800}
 .topbar-notify-item-title{font-size:12px;font-weight:700;color:#9af2ff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
