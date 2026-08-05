@@ -1255,6 +1255,7 @@ const {
   notifyPaymentCompleted,
   isLicenseGrantedOrder
 } = require('./discordNotify');
+const { broadcastPublishedContent } = require('./broadcastNotify');
 
 const functionsV1 = require('firebase-functions/v1');
 
@@ -1301,3 +1302,33 @@ exports.notifyDiscordOnOrderCompleted = functionsV1
     }
     return null;
   });
+
+/**
+ * Visible announcement / patch note → fan-out user inbox notifications.
+ * Runs once per document (userNotified claim). Idempotent notification IDs.
+ */
+async function onPublishedContentWrite(type, change, context) {
+  if (!change.after.exists) return null;
+  const after = change.after.data() || {};
+  if (after.visible !== true) return null;
+  if (after.userNotified === true) return null;
+  try {
+    await broadcastPublishedContent(type, context.params.postId, after, change.after.ref);
+  } catch (err) {
+    console.error(`notifyUsersOn${type}`, {
+      postId: context.params.postId,
+      message: err && err.message ? err.message : String(err)
+    });
+  }
+  return null;
+}
+
+exports.notifyUsersOnAnnouncement = functionsV1
+  .runWith({ timeoutSeconds: 300, memory: '512MB' })
+  .firestore.document('announcements/{postId}')
+  .onWrite((change, context) => onPublishedContentWrite('notice', change, context));
+
+exports.notifyUsersOnPatchNote = functionsV1
+  .runWith({ timeoutSeconds: 300, memory: '512MB' })
+  .firestore.document('patchNotes/{postId}')
+  .onWrite((change, context) => onPublishedContentWrite('patch_note', change, context));

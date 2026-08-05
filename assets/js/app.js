@@ -428,7 +428,7 @@ function tr(k){
     admin_ticket_toast_title:'💬 새로운 문의가 등록되었습니다.', admin_ticket_toast_body:'새 1:1 문의가 접수되었습니다.', admin_ticket_toast_action:'문의 보기',
     admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
     notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_clear_all:'모두 삭제', notify_clear_confirm:'알림을 모두 삭제할까요?', notify_delete_aria:'알림 삭제', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
-    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_aria:'알림',
+    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
     board_mine_title:'내 작성글', board_mine_desc:'내가 작성한 자유게시판 글만 표시합니다.', board_mine_all:'전체 글 보기', board_mine_only:'내 글만',
     notify_settings_title:'알림 설정', notify_pref_inapp:'앱 알림', notify_pref_email:'이메일 알림', notify_pref_saved:'저장됨'
@@ -444,7 +444,7 @@ function tr(k){
     admin_ticket_toast_title:'💬 A new support ticket was submitted.', admin_ticket_toast_body:'A new 1:1 inquiry has been received.', admin_ticket_toast_action:'View ticket',
     admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
     notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_clear_all:'Clear all', notify_clear_confirm:'Delete all notifications?', notify_delete_aria:'Delete notification', notify_login:'Sign in to see notifications.',
-    notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_aria:'Notifications',
+    notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
     board_mine_title:'My posts', board_mine_desc:'Showing only posts you wrote on the free board.', board_mine_all:'All posts', board_mine_only:'My posts',
     notify_settings_title:'Notifications', notify_pref_inapp:'App alerts', notify_pref_email:'Email alerts', notify_pref_saved:'Saved'
@@ -460,7 +460,7 @@ function tr(k){
     admin_ticket_toast_title:'💬 新しいお問い合わせが登録されました。', admin_ticket_toast_body:'新しい1:1問い合わせが届きました。', admin_ticket_toast_action:'問い合わせを見る',
     admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
     notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_clear_all:'すべて削除', notify_clear_confirm:'通知をすべて削除しますか？', notify_delete_aria:'通知を削除', notify_login:'ログインすると通知を確認できます。',
-    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_aria:'通知',
+    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
     board_mine_title:'自分の投稿', board_mine_desc:'自由掲示板で自分が書いた投稿だけを表示します。', board_mine_all:'すべての投稿', board_mine_only:'自分の投稿',
     notify_settings_title:'通知設定', notify_pref_inapp:'アプリ通知', notify_pref_email:'メール通知', notify_pref_saved:'保存しました'
@@ -5784,17 +5784,18 @@ const NOTIFY_BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 
 
 function defaultNotifyPrefs(){
-  return { inApp:true, email:false, boardComment:true, ticketReply:true, licenseChange:true };
+  return { inApp:true, email:false, boardComment:true, ticketReply:true, licenseChange:true, notice:true, patchNote:true };
 }
 function normalizeNotifyPrefs(raw){
-  const d = defaultNotifyPrefs();
   const src = raw && typeof raw === 'object' ? raw : {};
   return {
     inApp: src.inApp !== false,
     email: src.email === true,
     boardComment: src.boardComment !== false,
     ticketReply: src.ticketReply !== false,
-    licenseChange: src.licenseChange !== false
+    licenseChange: src.licenseChange !== false,
+    notice: src.notice !== false,
+    patchNote: src.patchNote !== false
   };
 }
 function isNotifyTypeEnabled(type){
@@ -5803,6 +5804,8 @@ function isNotifyTypeEnabled(type){
   if(type === 'board_comment') return p.boardComment !== false;
   if(type === 'ticket_reply') return p.ticketReply !== false;
   if(type === 'license_change') return p.licenseChange !== false;
+  if(type === 'notice') return p.notice !== false;
+  if(type === 'patch_note') return p.patchNote !== false;
   return true;
 }
 function visibleUserNotifications(rows){
@@ -5929,6 +5932,10 @@ function notifyItemHtml(n){
     line = `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
   } else if(type === 'license_change'){
     line = `<b>${esc(name)}</b> · ${esc(tr('notify_license_change'))}`;
+  } else if(type === 'notice'){
+    line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_notice'))}`;
+  } else if(type === 'patch_note'){
+    line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_patch_note'))}`;
   } else {
     line = `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
   }
@@ -5997,6 +6004,14 @@ async function openNotification(notifyId){
     return;
   }
   const postId = n.postId || '';
+  if(type === 'notice' && postId){
+    location.href = `${base}notice.html?id=${encodeURIComponent(postId)}`;
+    return;
+  }
+  if(type === 'patch_note' && postId){
+    location.href = `${base}patch-note.html?id=${encodeURIComponent(postId)}`;
+    return;
+  }
   const commentId = n.commentId || '';
   if(!postId) return;
   let href = `${base}board-post.html?id=${encodeURIComponent(postId)}`;
