@@ -431,7 +431,7 @@ function tr(k){
     notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_aria:'알림',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
     board_mine_title:'내 작성글', board_mine_desc:'내가 작성한 자유게시판 글만 표시합니다.', board_mine_all:'전체 글 보기', board_mine_only:'내 글만',
-    notify_settings_title:'알림 설정', notify_settings_desc:'종 알림과 이메일 알림 수신 여부를 설정합니다.', notify_pref_inapp:'앱 알림(종)', notify_pref_email:'이메일 알림', notify_pref_board:'게시판 댓글', notify_pref_ticket:'문의 답변', notify_pref_license:'라이선스 변경', notify_pref_email_note:'이메일 알림은 준비 중이며, 설정만 저장됩니다.', notify_pref_saved:'알림 설정이 저장되었습니다.'
+    notify_settings_title:'알림 설정', notify_pref_inapp:'앱 알림', notify_pref_email:'이메일 알림', notify_pref_saved:'저장됨'
   };
   const EN = {
     login:'Sign in with Google', logout:'Logout', guest:'Not signed in', guest_desc:'Sign in with Google to check license',
@@ -447,7 +447,7 @@ function tr(k){
     notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_aria:'Notifications',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
     board_mine_title:'My posts', board_mine_desc:'Showing only posts you wrote on the free board.', board_mine_all:'All posts', board_mine_only:'My posts',
-    notify_settings_title:'Notification settings', notify_settings_desc:'Choose which bell and email notifications you receive.', notify_pref_inapp:'In-app (bell)', notify_pref_email:'Email notifications', notify_pref_board:'Board comments', notify_pref_ticket:'Ticket replies', notify_pref_license:'License changes', notify_pref_email_note:'Email delivery is not enabled yet; your preference is saved for later.', notify_pref_saved:'Notification settings saved.'
+    notify_settings_title:'Notifications', notify_pref_inapp:'App alerts', notify_pref_email:'Email alerts', notify_pref_saved:'Saved'
   };
   const JA = {
     login:'Googleログイン', logout:'ログアウト', guest:'未ログイン', guest_desc:'Googleログインでライセンス確認',
@@ -463,7 +463,7 @@ function tr(k){
     notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_aria:'通知',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
     board_mine_title:'自分の投稿', board_mine_desc:'自由掲示板で自分が書いた投稿だけを表示します。', board_mine_all:'すべての投稿', board_mine_only:'自分の投稿',
-    notify_settings_title:'通知設定', notify_settings_desc:'ベル通知とメール通知の受信を設定します。', notify_pref_inapp:'アプリ通知（ベル）', notify_pref_email:'メール通知', notify_pref_board:'掲示板コメント', notify_pref_ticket:'問い合わせ返信', notify_pref_license:'ライセンス変更', notify_pref_email_note:'メール送信は準備中です。設定のみ保存されます。', notify_pref_saved:'通知設定を保存しました。'
+    notify_settings_title:'通知設定', notify_pref_inapp:'アプリ通知', notify_pref_email:'メール通知', notify_pref_saved:'保存しました'
   };
   const T = lang === 'en' ? EN : lang === 'ja' ? JA : KO;
   return T[k] || KO[k] || k;
@@ -1793,7 +1793,7 @@ async function setAuthUiSignedIn(user){
   refreshDownloadCard(true);
   updatePurchaseAccountBox();
   updateSupportFormUi();
-  if(page==='account.html') initAccountNotifySettings();
+  syncProfileNotifyPrefsUi();
   if(page==='board.html') applyBoardMineModeUi();
 }
 
@@ -1815,6 +1815,7 @@ async function upsertUser(user){
     await setDoc(ref,data,{merge:true});
     currentUserDoc={...old,...data};
     userNotifyPrefs = normalizeNotifyPrefs(old.notifyPrefs || data.notifyPrefs || currentUserDoc.notifyPrefs);
+    syncProfileNotifyPrefsUi();
     isAdminUser=normalizeRole(data.role || old.role)==='admin';
     setAdminNavVisible(isAdminUser);
     await ensureUserLicenseDoc(user.uid, { role: data.role || old.role || 'user' });
@@ -5820,43 +5821,53 @@ async function saveUserNotifyPrefs(next){
   updateNotifyBellBadge(visible.filter(n => n.read !== true).length);
   renderNotifyPanelList();
 }
-function initAccountNotifySettings(){
-  const host = $('notifySettings');
-  if(!host) return;
-  if(!currentUser){
-    host.innerHTML = `<div class="empty-card">${esc(tr('need_login'))}</div>`;
+function syncProfileNotifyPrefsUi(){
+  ensureTopbarProfile();
+  const block = $('profileNotifyBlock');
+  const prefs = $('profileNotifyPrefs');
+  if(!block) return;
+  const signedIn = !!currentUser;
+  block.hidden = !signedIn;
+  if(!signedIn){
+    if(prefs){ prefs.hidden = true; prefs.classList.remove('is-open'); }
+    $('profileNotifyToggle')?.setAttribute('aria-expanded','false');
     return;
   }
   const p = userNotifyPrefs || defaultNotifyPrefs();
-  host.innerHTML = `<article class="hub-card account-panel account-notify-card" id="notifySettingsCard">
-    <header class="account-panel-head"><h2>${esc(tr('notify_settings_title'))}</h2></header>
-    <p class="muted account-notify-desc">${esc(tr('notify_settings_desc'))}</p>
-    <div class="account-notify-grid">
-      <label class="account-notify-row"><input type="checkbox" data-pref="inApp" ${p.inApp?'checked':''}><span>${esc(tr('notify_pref_inapp'))}</span></label>
-      <label class="account-notify-row"><input type="checkbox" data-pref="email" ${p.email?'checked':''}><span>${esc(tr('notify_pref_email'))}</span></label>
-      <label class="account-notify-row"><input type="checkbox" data-pref="boardComment" ${p.boardComment?'checked':''}><span>${esc(tr('notify_pref_board'))}</span></label>
-      <label class="account-notify-row"><input type="checkbox" data-pref="ticketReply" ${p.ticketReply?'checked':''}><span>${esc(tr('notify_pref_ticket'))}</span></label>
-      <label class="account-notify-row"><input type="checkbox" data-pref="licenseChange" ${p.licenseChange?'checked':''}><span>${esc(tr('notify_pref_license'))}</span></label>
-    </div>
-    <p class="muted small account-notify-note">${esc(tr('notify_pref_email_note'))}</p>
-    <p class="form-msg account-notify-msg" id="notifySettingsMsg" hidden></p>
-  </article>`;
-  host.querySelectorAll('input[data-pref]').forEach(input=>{
-    input.addEventListener('change', async ()=>{
+  block.querySelectorAll('input[data-pref]').forEach((el)=>{
+    if(el.dataset.pref === 'inApp') el.checked = p.inApp !== false;
+    if(el.dataset.pref === 'email') el.checked = p.email === true;
+  });
+}
+function bindProfileNotifyPrefs(){
+  const toggle = $('profileNotifyToggle');
+  const prefs = $('profileNotifyPrefs');
+  if(!toggle || !prefs || toggle.dataset.bound) return;
+  toggle.dataset.bound = '1';
+  toggle.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    if(!currentUser){ alert(tr('need_login')); return; }
+    const open = prefs.hidden;
+    prefs.hidden = !open;
+    prefs.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  prefs.querySelectorAll('input[data-pref]').forEach((input)=>{
+    input.addEventListener('change', async (e)=>{
+      e.stopPropagation();
+      if(!currentUser) return;
       const next = { ...(userNotifyPrefs || defaultNotifyPrefs()) };
-      host.querySelectorAll('input[data-pref]').forEach(el=>{ next[el.dataset.pref] = !!el.checked; });
+      prefs.querySelectorAll('input[data-pref]').forEach((el)=>{ next[el.dataset.pref] = !!el.checked; });
       try{
         await saveUserNotifyPrefs(next);
-        const msg = $('notifySettingsMsg');
-        if(msg){ msg.hidden=false; msg.style.color='#8ff3c5'; msg.textContent=tr('notify_pref_saved'); }
-      }catch(e){
-        alert(e.message||e);
+      }catch(err){
+        alert(err.message||err);
+        syncProfileNotifyPrefsUi();
       }
     });
+    input.addEventListener('click', (e)=> e.stopPropagation());
   });
-  if(location.hash === '#notify-settings' || getParam('tab') === 'notify'){
-    setTimeout(()=>{ host.scrollIntoView({behavior:'smooth', block:'start'}); }, 200);
-  }
 }
 
 function ensureNotifyBell(){
@@ -6782,6 +6793,7 @@ function syncTopbarProfileAuthUi(signedIn){
     logoutBtn.hidden = !signedIn;
     logoutBtn.setAttribute('aria-hidden', signedIn ? 'false' : 'true');
   }
+  syncProfileNotifyPrefsUi();
   if(!signedIn){
     setTopbarProfileAvatar($('topbarProfileAvatar'), null, '?');
     setTopbarProfileAvatar($('topbarProfileAvatarLarge'), null, '?');
@@ -6847,7 +6859,13 @@ function ensureTopbarProfile(){
       <a href="${base}account.html">${esc(tr('profile_my_account'))}</a>
       <a href="${base}my-tickets.html">${esc(tr('profile_my_tickets'))}</a>
       <a href="${base}board.html?mine=1">${esc(tr('profile_my_posts'))}</a>
-      <a href="${base}account.html#notify-settings">${esc(tr('profile_notify_settings'))}</a>
+      <div class="topbar-profile-notify" id="profileNotifyBlock" hidden>
+        <button type="button" class="topbar-profile-notify-btn" id="profileNotifyToggle" aria-expanded="false">${esc(tr('profile_notify_settings'))}</button>
+        <div class="topbar-profile-notify-prefs" id="profileNotifyPrefs" hidden>
+          <label class="topbar-profile-notify-row"><input type="checkbox" data-pref="inApp"><span>${esc(tr('notify_pref_inapp'))}</span></label>
+          <label class="topbar-profile-notify-row"><input type="checkbox" data-pref="email"><span>${esc(tr('notify_pref_email'))}</span></label>
+        </div>
+      </div>
     </nav>
     <button type="button" class="topbar-profile-login" id="loginBtn" aria-label="${esc(tr('login'))}"><span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">${esc(tr('login'))}</span></button>
     <button type="button" class="topbar-profile-logout hidden" id="logoutBtn" hidden aria-hidden="true">${esc(tr('logout'))}</button>
@@ -6871,6 +6889,8 @@ function ensureTopbarProfile(){
     if(!el.closest?.('#topbarProfile')) el.remove();
   });
   bindTopbarLoginButton();
+  bindProfileNotifyPrefs();
+  syncProfileNotifyPrefsUi();
   const logoutBtn = $('logoutBtn');
   if(logoutBtn) logoutBtn.onclick = ()=>{ doLogout(); };
   return wrap;
@@ -6930,6 +6950,9 @@ function closeTopbarProfilePanel(){
   const panel = $('topbarProfilePanel');
   if(panel) panel.hidden = true;
   $('topbarProfileBtn')?.setAttribute('aria-expanded','false');
+  const prefs = $('profileNotifyPrefs');
+  if(prefs){ prefs.hidden = true; prefs.classList.remove('is-open'); }
+  $('profileNotifyToggle')?.setAttribute('aria-expanded','false');
 }
 
 function initTopbarActions(){
