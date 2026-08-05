@@ -1235,17 +1235,40 @@ body.sidebar-layout{overflow-x:hidden}
 .sidebar-nav{display:flex;flex-direction:column;gap:10px;align-items:stretch!important;flex-wrap:nowrap!important;justify-content:flex-start!important}
 .sidebar-group{display:grid;gap:2px;padding:8px 8px 10px;border-radius:14px;background:rgba(0,0,0,.22);border:1px solid rgba(255,255,255,.07)}
 .sidebar-label{display:block;padding:0 8px 8px;margin:0 0 6px;color:rgba(154,160,191,.82)!important;font-size:10px!important;font-weight:900!important;letter-spacing:.14em;text-transform:uppercase;line-height:1.2;text-align:left;pointer-events:none;user-select:none;border-bottom:1px solid rgba(255,255,255,.08)}
-body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{display:flex!important;align-items:center;justify-content:flex-start!important;width:100%;padding:9px 10px!important;border-radius:10px;color:#d7dbf2!important;font-size:13px!important;font-weight:700!important;border:1px solid transparent;text-align:left!important;transform:none!important}
+body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{display:flex!important;align-items:center;justify-content:flex-start!important;width:100%;padding:9px 10px!important;border-radius:10px;color:#d7dbf2!important;font-size:13px!important;font-weight:700!important;border:0!important;text-align:left!important;transform:none!important;transition:none!important;box-shadow:none!important;outline:none!important}
 body.sidebar-layout #mainNav.sidebar-nav a.hidden,body.sidebar-layout .sidebar-nav a.hidden,#adminNav.hidden{display:none!important}
-body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.07)!important}
-body.sidebar-layout #mainNav.sidebar-nav a.active,body.sidebar-layout .sidebar-nav a.active{color:#fff!important;border:1px solid rgba(139,92,246,.42)!important;background:linear-gradient(135deg,rgba(139,92,246,.26),rgba(34,211,238,.12))!important}
-.app-main{flex:1;min-width:0;display:flex;flex-direction:column}
+body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.07)!important;transform:none!important}
+body.sidebar-layout #mainNav.sidebar-nav a.active,body.sidebar-layout .sidebar-nav a.active{color:#fff!important;border:0!important;background:rgba(139,92,246,.18)!important;box-shadow:inset 3px 0 0 var(--accent2)!important}
+.app-main{flex:1;min-width:0;display:flex;flex-direction:column;background:#070914;isolation:isolate;transform:translateZ(0)}
+/* Opaque content layers — translucent cards/orbs let Windows Chrome show previous-page paint after navigation */
+body.sidebar-layout .orb{display:none!important}
+body.sidebar-layout .hub-main,
+body.sidebar-layout main{
+  background:#070914;isolation:isolate;transform:translateZ(0);position:relative;z-index:0
+}
+body.sidebar-layout .hub-card,
+.hub-page .hub-card,
+.portal-page.hub-page .hub-card{
+  background:#12162a!important;
+  background-image:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:0 12px 32px rgba(0,0,0,.28)!important
+}
+body.sidebar-layout .legal-footer,
+body.sidebar-layout .site-footer.legal-footer{
+  background:#12162a!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important
+}
+
 /* Opaque sticky topbar — translucent + backdrop-filter left paint ghosts on Windows Chrome during menu navigation. */
 .topbar-slim{position:sticky;top:0;z-index:12;min-height:60px;padding:10px 18px;background:#070914!important;border-bottom:1px solid rgba(255,255,255,.10)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;isolation:isolate;transform:translateZ(0)}
 .topbar-slim .menu-btn{margin-right:4px}
 .topbar-page{flex:1;min-width:0;font-size:12.5px;font-weight:600;color:rgba(231,233,251,.72);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
 .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:25}
-body.sidebar-layout .hub-subnav{display:none!important}
+/* Sidebar replaces hub-subnav; hide immediately to avoid previous-page/FOUC paint ghosts */
+.hub-page .hub-subnav,body.sidebar-layout .hub-subnav{display:none!important}
 body.sidebar-layout .admin-tabs{top:64px}
 body.sidebar-layout .purchase-final-side{top:76px}
 @media(min-width:981px){body.sidebar-layout .menu-btn{display:none}}
@@ -1259,7 +1282,7 @@ body.sidebar-layout .purchase-final-side{top:76px}
 
 /* V36 Full site renewal */
 :root{--site-max:1120px;--site-radius:18px;--site-card:rgba(12,14,28,.78);--site-stroke:rgba(255,255,255,.1)}
-body.sidebar-layout{background:radial-gradient(circle at 15% 0%,rgba(139,92,246,.14),transparent 42%),radial-gradient(circle at 85% 8%,rgba(34,211,238,.1),transparent 38%),#070914}
+body.sidebar-layout{--site-card:#12162a;--final-card:#12162a;background:#070914}
 .sidebar{border-right-color:rgba(255,255,255,.08);background:rgba(4,6,15,.94)}
 .sidebar-brand img{border-radius:12px}
 .topbar-slim{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:#070914!important}
@@ -1414,12 +1437,19 @@ body.sidebar-layout{background:radial-gradient(circle at 15% 0%,rgba(139,92,246,
 .sidebar-section{gap:4px}
 .sidebar-label{margin:0;padding:0 10px 1px;color:rgba(148,155,184,.9);font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;border:0;background:transparent;line-height:1.2}
 .sidebar-primary{padding-bottom:8px;margin-bottom:2px;border-bottom:1px solid rgba(255,255,255,.06)}
-body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{gap:9px;padding:7px 10px!important;border-radius:11px!important;color:#c7cbe4!important;font-size:13px!important;font-weight:700!important;position:relative;line-height:1.2;transition:background .12s ease,color .12s ease,border-color .12s ease;outline:none;box-shadow:none}
+/* Avoid border/outline transitions — Windows Chrome leaves paint ghosts on sidebar nav. */
+body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{gap:9px;padding:7px 10px!important;border-radius:11px!important;color:#c7cbe4!important;font-size:13px!important;font-weight:700!important;position:relative;line-height:1.2;transition:none!important;outline:none!important;box-shadow:none!important;border:0!important;transform:none!important}
 body.sidebar-layout #mainNav.sidebar-nav a span:last-child,body.sidebar-layout .sidebar-nav a span:last-child{flex:1;min-width:0}
-body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.05)!important}
-body.sidebar-layout #mainNav.sidebar-nav a:focus,body.sidebar-layout .sidebar-nav a:focus{outline:none}
-body.sidebar-layout #mainNav.sidebar-nav a:focus-visible,body.sidebar-layout .sidebar-nav a:focus-visible{outline:2px solid rgba(34,211,238,.55);outline-offset:1px}
-body.sidebar-layout #mainNav.sidebar-nav a.active,body.sidebar-layout .sidebar-nav a.active{color:#fff!important;background:rgba(139,92,246,.14)!important;border:1px solid rgba(139,92,246,.28)!important;box-shadow:inset 3px 0 0 var(--accent2)}
+body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.05)!important;transform:none!important;border:0!important;box-shadow:none!important}
+body.sidebar-layout #mainNav.sidebar-nav a:focus,body.sidebar-layout .sidebar-nav a:focus,
+body.sidebar-layout #mainNav.sidebar-nav a:focus-visible,body.sidebar-layout .sidebar-nav a:focus-visible{outline:none!important;box-shadow:none!important}
+body.sidebar-layout #mainNav.sidebar-nav a.active,body.sidebar-layout .sidebar-nav a.active,
+body.sidebar-layout #mainNav.sidebar-nav a.active:hover,body.sidebar-layout .sidebar-nav a.active:hover,
+body.sidebar-layout #mainNav.sidebar-nav a.active:focus,body.sidebar-layout .sidebar-nav a.active:focus,
+body.sidebar-layout #mainNav.sidebar-nav a.active:focus-visible,body.sidebar-layout .sidebar-nav a.active:focus-visible{
+  color:#fff!important;background:rgba(139,92,246,.18)!important;border:0!important;
+  box-shadow:inset 3px 0 0 var(--accent2)!important;outline:none!important;transform:none!important
+}
 .sidebar-group{display:contents}
 .nav-icon{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex-shrink:0;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
 .nav-icon svg{width:14px;height:14px;display:block}
