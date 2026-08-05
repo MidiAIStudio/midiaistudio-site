@@ -2734,7 +2734,7 @@ function dismissAllAppToasts(){
     el.remove();
   });
 }
-function showAppToast({title, body, actionLabel, onAction, duration=5000}={}){
+function showAppToast({title, body, actionLabel, onAction}={}){
   const host = ensureToastHost();
   const el = document.createElement('div');
   el.className = 'app-toast';
@@ -2742,15 +2742,10 @@ function showAppToast({title, body, actionLabel, onAction, duration=5000}={}){
   el.innerHTML = `<p class="app-toast-title">${esc(title||'')}</p><p class="app-toast-body">${esc(body||'')}</p><div class="app-toast-actions">${actionLabel?`<button type="button" class="primary" data-toast-action>${esc(actionLabel)}</button>`:''}<button type="button" class="app-toast-close" data-toast-close aria-label="close">×</button></div>`;
   host.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('is-in'));
-  let remaining = duration;
-  let timer = null;
-  let started = 0;
   let closed = false;
-  const clearTimer = () => { if(timer){ clearTimeout(timer); timer=null; } };
   const dismiss = (immediate=false) => {
     if(closed) return;
     closed = true;
-    clearTimer();
     el.classList.remove('is-in');
     el.classList.add('is-out');
     const remove = () => { try{ el.remove(); }catch{} };
@@ -2758,24 +2753,11 @@ function showAppToast({title, body, actionLabel, onAction, duration=5000}={}){
     else setTimeout(remove, 280);
   };
   el._dismissToast = dismiss;
-  const startTimer = () => {
-    clearTimer();
-    started = Date.now();
-    timer = setTimeout(()=>dismiss(false), Math.max(0, remaining));
-  };
-  const pauseTimer = () => {
-    if(!timer) return;
-    clearTimer();
-    remaining -= (Date.now() - started);
-  };
-  el.addEventListener('mouseenter', pauseTimer);
-  el.addEventListener('mouseleave', startTimer);
   el.querySelector('[data-toast-close]')?.addEventListener('click', ()=>dismiss(false));
   el.querySelector('[data-toast-action]')?.addEventListener('click', ()=>{
     try{ onAction?.(); }catch(e){ console.error(e); }
     dismiss(false);
   });
-  startTimer();
   return el;
 }
 function updateTicketUnreadBadges(count){
@@ -2846,7 +2828,6 @@ function showTicketReplyToast(ticket){
     title: tr('reply_toast_title'),
     body: tr('reply_toast_body'),
     actionLabel: tr('reply_toast_action'),
-    duration: 5000,
     onAction: ()=>{ location.href = ticketReplyFocusHref(ticket.id); }
   });
   markTicketReplyNotified(ticket.id).finally(()=>{ ticketNotifyInFlight.delete(ticket.id); });
@@ -2992,7 +2973,6 @@ function showAdminTicketToast(ticket){
     title: tr(isReply ? 'admin_reply_toast_title' : 'admin_ticket_toast_title'),
     body,
     actionLabel: tr(isReply ? 'admin_reply_toast_action' : 'admin_ticket_toast_action'),
-    duration: 5000,
     onAction: ()=>{ location.href = adminTicketFocusHref(ticket.id); }
   });
   markAdminTicketNotified(ticket.id).finally(()=>{ adminTicketNotifyInFlight.delete(ticket.id); });
