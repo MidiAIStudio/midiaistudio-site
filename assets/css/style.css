@@ -997,10 +997,66 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .hub-page .support-form.is-disabled{opacity:.72}
 .hub-page .support-upload-box{margin-top:0}
 .hub-page .support-form .primary[type="submit"]{padding:6px 10px!important;border-radius:9px!important;font-size:12px!important;line-height:1.2!important;min-height:0!important;height:auto!important}
-.hub-page .ticket-attachment-file{display:flex;align-items:center;justify-content:center;min-height:120px;padding:18px;background:rgba(0,0,0,.28)}
-.hub-page .ticket-attachment-file a{display:flex;flex-direction:column;align-items:center;gap:8px;color:#dffcff;text-decoration:none;font-weight:900}
-.hub-page .ticket-attachment-file a span{font-size:28px}
-.hub-page .ticket-attachment-file a b{font-size:12px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Commercial-style ticket file attachments */
+.file-attach-list{display:grid;gap:8px;margin:12px 0}
+.file-attach-list.is-preview{margin:8px 0 0}
+.file-attach-row{display:flex;align-items:center;gap:8px}
+.file-attach-row .file-attach-card{flex:1;min-width:0}
+.file-attach-card{
+  display:flex;align-items:center;gap:12px;padding:10px 12px;min-width:0;
+  border-radius:12px;border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.18));
+  color:inherit;text-decoration:none;transition:border-color .15s ease,background .15s ease
+}
+.file-attach-card:hover{border-color:rgba(34,211,238,.35);background:rgba(34,211,238,.08);transform:none}
+.file-attach-card.is-preview{cursor:default}
+.file-attach-icon{
+  flex:none;width:42px;height:42px;border-radius:10px;display:grid;place-items:center;
+  background:rgba(148,163,184,.16);border:1px solid rgba(255,255,255,.08);color:#e8ebf8
+}
+.file-attach-icon em{font-style:normal;font-size:11px;font-weight:900;letter-spacing:.02em;line-height:1}
+.file-attach-icon.is-archive{background:rgba(251,191,36,.16);border-color:rgba(251,191,36,.28);color:#fcd34d}
+.file-attach-icon.is-pdf{background:rgba(251,113,133,.16);border-color:rgba(251,113,133,.28);color:#fda4af}
+.file-attach-icon.is-text{background:rgba(34,211,238,.14);border-color:rgba(34,211,238,.28);color:#9af2ff}
+.file-attach-icon.is-audio{background:rgba(167,139,250,.16);border-color:rgba(167,139,250,.3);color:#c4b5fd}
+.file-attach-icon.is-image{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.28);color:#6ee7b7}
+.file-attach-icon.is-video{background:rgba(96,165,250,.16);border-color:rgba(96,165,250,.3);color:#93c5fd}
+.file-attach-icon.is-file{background:rgba(148,163,184,.14);border-color:rgba(148,163,184,.24);color:#cbd5e1}
+.file-attach-copy{min-width:0;flex:1;display:grid;gap:2px;text-align:left}
+.file-attach-copy b{
+  font-size:13px;font-weight:800;color:#f3f5ff;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.file-attach-copy small{font-size:11px;font-weight:650;color:#9aa3c7;line-height:1.3}
+.file-attach-action{
+  flex:none;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);color:#d7dbf2;font-size:11px;font-weight:800;white-space:nowrap
+}
+.file-attach-card:hover .file-attach-action{border-color:rgba(34,211,238,.4);color:#9af2ff}
+.file-attach-remove{flex:none}
+.file-attach-media{margin:0;border:1px solid rgba(255,255,255,.1);border-radius:14px;overflow:hidden;background:rgba(0,0,0,.22)}
+.file-attach-media img,.file-attach-media video{display:block;width:100%;max-height:320px;object-fit:contain;background:rgba(0,0,0,.35)}
+.file-attach-caption{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.08)
+}
+.file-attach-kind{
+  flex:none;min-width:40px;padding:5px 7px;border-radius:8px;text-align:center;
+  font-size:10px;font-weight:900;letter-spacing:.04em;background:rgba(255,255,255,.06);color:#d7dbf2
+}
+.file-attach-kind.is-image{background:rgba(52,211,153,.14);color:#6ee7b7}
+.file-attach-kind.is-video{background:rgba(96,165,250,.16);color:#93c5fd}
+.file-attach-link{
+  flex:none;margin-left:auto;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.12);
+  color:#d7dbf2;font-size:11px;font-weight:800;text-decoration:none
+}
+.file-attach-link:hover{border-color:rgba(34,211,238,.4);color:#9af2ff;transform:none}
+.admin-page .file-attach-list,.hub-page .file-attach-list{max-width:560px}
+@media(max-width:720px){
+  .file-attach-card{padding:9px 10px;gap:10px}
+  .file-attach-icon{width:38px;height:38px;border-radius:9px}
+  .file-attach-action{padding:5px 8px;font-size:10.5px}
+  .file-attach-copy b{font-size:12px}
+}
 .hub-page .form-msg{margin:0;font-size:13px;font-weight:700}
 @media(max-width:720px){.hub-page .support-form-grid{grid-template-columns:1fr}.hub-page .hub-ticket-row .hub-col-cat:before{content:'유형 ';color:var(--muted);font-weight:900;margin-right:6px;font-size:11px}}
 .hub-page .hub-post-shell{width:min(760px,calc(100% - 24px));margin:0 auto}

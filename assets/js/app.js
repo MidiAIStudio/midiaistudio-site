@@ -2450,7 +2450,12 @@ function supportLocaleText(){
     appVersionPh:'e.g. 1.5.7',
     badge_video:'Video',
     badge_image:'Image',
+    badge_audio:'Audio',
+    badge_pdf:'PDF',
+    badge_archive:'Archive',
+    badge_text:'Text',
     badge_file:'File',
+    download:'Download',
     attachUnsupported:'Unsupported file type. Use image, video, PDF, TXT, CSV, LOG, or ZIP.',
     attachTooBig:'Each file can be up to 20MB.',
     attachMax:'Up to 5 attachments per ticket.',
@@ -2497,7 +2502,12 @@ function supportLocaleText(){
     appVersionPh:'例: 1.5.7',
     badge_video:'動画',
     badge_image:'画像',
+    badge_audio:'音声',
+    badge_pdf:'PDF',
+    badge_archive:'圧縮',
+    badge_text:'テキスト',
     badge_file:'ファイル',
+    download:'ダウンロード',
     attachUnsupported:'対応していない形式です。画像/動画/PDF/TXT/CSV/LOG/ZIPのみアップロードできます。',
     attachTooBig:'1ファイルあたり最大20MBまでです。',
     attachMax:'問い合わせあたり添付は最大5個までです。',
@@ -2544,7 +2554,12 @@ function supportLocaleText(){
     appVersionPh:'예: 1.5.7',
     badge_video:'영상',
     badge_image:'사진',
+    badge_audio:'오디오',
+    badge_pdf:'PDF',
+    badge_archive:'압축파일',
+    badge_text:'텍스트',
     badge_file:'파일',
+    download:'다운로드',
     attachUnsupported:'지원하지 않는 파일 형식입니다. 이미지/영상/PDF/TXT/CSV/LOG/ZIP만 업로드할 수 있어요.',
     attachTooBig:'파일당 최대 20MB까지 업로드할 수 있어요.',
     attachMax:'문의당 첨부는 최대 5개까지 가능합니다.',
@@ -2629,43 +2644,113 @@ const TICKET_MAX_FILE_SIZE = 20 * 1024 * 1024;
 const TICKET_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm)|application\/pdf|text\/(plain|csv|log)|application\/(zip|x-zip-compressed))$/i;
 let selectedTicketFiles = [];
 
+function ticketFileExt(fileOrAttachment){
+  const name = String(fileOrAttachment?.name || fileOrAttachment?.fileName || '');
+  const m = name.match(/\.([a-z0-9]{1,8})$/i);
+  return m ? m[1].toLowerCase() : '';
+}
 function ticketFileType(fileOrAttachment){
-  const mime = String(fileOrAttachment?.type || fileOrAttachment?.mime || '');
-  if(mime.startsWith('video/')) return 'video';
-  if(mime.startsWith('image/')) return 'image';
+  const mime = String(fileOrAttachment?.mime || fileOrAttachment?.type || '').toLowerCase();
+  const ext = ticketFileExt(fileOrAttachment);
+  if(mime.startsWith('video/') || ['mp4','webm','mov','mkv'].includes(ext)) return 'video';
+  if(mime.startsWith('image/') || ['jpg','jpeg','png','webp','gif','bmp'].includes(ext)) return 'image';
+  if(mime.startsWith('audio/') || ['mp3','wav','flac','m4a','ogg','aac'].includes(ext)) return 'audio';
+  if(mime === 'application/pdf' || ext === 'pdf') return 'pdf';
+  if(
+    mime.includes('zip') || mime.includes('rar') || mime.includes('7z') || mime.includes('compressed')
+    || ['zip','rar','7z','alz','egg','tar','gz'].includes(ext)
+  ) return 'archive';
+  if(
+    mime.startsWith('text/') || mime.includes('json') || mime.includes('xml')
+    || ['txt','log','csv','md','json','xml'].includes(ext)
+  ) return 'text';
   return 'file';
 }
-function ticketFileIcon(type){ return ({video:'🎥',image:'🖼️',file:'📎'})[type] || '📎'; }
+function ticketFileIcon(type){
+  return ({video:'▶',image:'▣',audio:'♪',pdf:'PDF',archive:'ZIP',text:'TXT',file:'FILE'})[type] || 'FILE';
+}
 function ticketAttachmentBadge(type){
   const t = supportLocaleText();
-  return ({video:t.badge_video,image:t.badge_image,file:t.badge_file})[type] || t.badge_file;
+  return ({
+    video:t.badge_video,
+    image:t.badge_image,
+    audio:t.badge_audio,
+    pdf:t.badge_pdf,
+    archive:t.badge_archive,
+    text:t.badge_text,
+    file:t.badge_file
+  })[type] || t.badge_file;
+}
+function formatTicketFileSize(bytes){
+  const n = Number(bytes);
+  if(!Number.isFinite(n) || n <= 0) return '';
+  if(n < 1024) return `${n} B`;
+  if(n < 1024 * 1024) return `${(n/1024).toFixed(n < 10*1024 ? 1 : 0)} KB`;
+  return `${(n/(1024*1024)).toFixed(n < 10*1024*1024 ? 1 : 0)} MB`;
+}
+function ticketFileExtLabel(fileOrAttachment, type){
+  const ext = ticketFileExt(fileOrAttachment);
+  if(ext) return ext.toUpperCase();
+  return ({video:'VIDEO',image:'IMG',audio:'AUDIO',pdf:'PDF',archive:'ZIP',text:'TXT',file:'FILE'})[type] || 'FILE';
 }
 function ticketAttachmentItemHtml(a, idx, editable=false){
   const type = ticketFileType(a);
-  const name = esc(a.name || a.fileName || 'attachment');
+  const rawName = a.name || a.fileName || 'attachment';
+  const name = esc(rawName);
   const url = esc(a.url || '');
-  const badge = ticketFileIcon(type) + ' ' + ticketAttachmentBadge(type);
-  const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-ticket-attachment="${idx}">삭제</button>` : '';
-  const media = type === 'video'
-    ? `<video controls preload="metadata" src="${url}"></video>`
-    : type === 'image'
-    ? `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`
-    : `<div class="ticket-attachment-file"><a href="${url}" target="_blank" rel="noopener noreferrer" download><span>📎</span><b>${name}</b></a></div>`;
-  return `<figure class="board-attachment-item board-attachment-${type}">${media}<figcaption><span>${badge}</span><b>${name}</b>${remove}</figcaption></figure>`;
+  const sizeLabel = formatTicketFileSize(a.size);
+  const kindLabel = ticketAttachmentBadge(type);
+  const extLabel = ticketFileExtLabel(a, type);
+  const metaBits = [kindLabel, sizeLabel].filter(Boolean).join(' · ');
+  const remove = editable
+    ? `<button type="button" class="secondary mini-btn danger-btn file-attach-remove" data-remove-ticket-attachment="${idx}">삭제</button>`
+    : '';
+  const t = supportLocaleText();
+
+  if(type === 'image' || type === 'video'){
+    const media = type === 'video'
+      ? `<video controls preload="metadata" src="${url}"></video>`
+      : `<img src="${url}" alt="${name}" loading="lazy" data-lightbox-src="${url}">`;
+    return `<figure class="board-attachment-item board-attachment-${type} file-attach-media">
+      ${media}
+      <figcaption class="file-attach-caption">
+        <span class="file-attach-kind is-${type}">${esc(extLabel)}</span>
+        <span class="file-attach-copy"><b title="${name}">${name}</b>${metaBits?`<small>${esc(metaBits)}</small>`:''}</span>
+        <a class="file-attach-link" href="${url}" target="_blank" rel="noopener noreferrer" download>${esc(t.download || '다운로드')}</a>
+        ${remove}
+      </figcaption>
+    </figure>`;
+  }
+
+  const card = `<a class="file-attach-card is-${type}" href="${url}" target="_blank" rel="noopener noreferrer" download title="${name}">
+    <span class="file-attach-icon is-${type}" aria-hidden="true"><em>${esc(extLabel)}</em></span>
+    <span class="file-attach-copy">
+      <b>${name}</b>
+      <small>${esc(metaBits || kindLabel)}</small>
+    </span>
+    <span class="file-attach-action">${esc(t.download || '다운로드')}</span>
+  </a>`;
+  return remove ? `<div class="file-attach-row">${card}${remove}</div>` : card;
 }
 function ticketAttachmentsHtml(list){
   const arr = Array.isArray(list) ? list.filter(x=>x && x.url) : [];
   if(!arr.length) return '';
-  return `<div class="board-attachments ticket-attachments">${arr.map((a,i)=>ticketAttachmentItemHtml(a,i,false)).join('')}</div>`;
+  return `<div class="file-attach-list ticket-attachments">${arr.map((a,i)=>ticketAttachmentItemHtml(a,i,false)).join('')}</div>`;
 }
 function renderTicketAttachmentPreview(){
   const box = $('ticketAttachmentPreview');
   if(!box) return;
   const fresh = selectedTicketFiles.map((file,i)=>{
     const type = ticketFileType(file);
-    return `<div class="board-file-chip"><span>${ticketFileIcon(type)}</span><b>${esc(file.name)}</b><small>${Math.max(1, Math.ceil(file.size/1024/1024))}MB</small><button type="button" class="secondary mini-btn danger-btn" data-remove-new-ticket-attachment="${i}">삭제</button></div>`;
+    const ext = ticketFileExtLabel(file, type);
+    const sizeLabel = formatTicketFileSize(file.size);
+    return `<div class="file-attach-card is-${type} is-preview">
+      <span class="file-attach-icon is-${type}" aria-hidden="true"><em>${esc(ext)}</em></span>
+      <span class="file-attach-copy"><b title="${esc(file.name)}">${esc(file.name)}</b><small>${esc([ticketAttachmentBadge(type), sizeLabel].filter(Boolean).join(' · '))}</small></span>
+      <button type="button" class="secondary mini-btn danger-btn file-attach-remove" data-remove-new-ticket-attachment="${i}">삭제</button>
+    </div>`;
   }).join('');
-  box.innerHTML = fresh ? `<div class="board-file-chip-list">${fresh}</div>` : `<p class="muted">${esc(supportLocaleText().noAttach)}</p>`;
+  box.innerHTML = fresh ? `<div class="file-attach-list is-preview">${fresh}</div>` : `<p class="muted">${esc(supportLocaleText().noAttach)}</p>`;
   box.querySelectorAll('[data-remove-new-ticket-attachment]').forEach(btn=>btn.onclick=()=>{
     selectedTicketFiles.splice(Number(btn.dataset.removeNewTicketAttachment),1);
     const input = $('ticketAttachments');
