@@ -712,8 +712,17 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-crm-avatar.is-fallback{display:inline-flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#d7dcf2}
 .admin-page .admin-crm-head-actions{display:flex;gap:6px;align-items:center;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
 .admin-page .admin-crm-head-actions .mini-btn{border-radius:9px!important}
-.admin-page .admin-crm-fav-btn{width:32px;height:32px;border-radius:9px;font-size:15px;line-height:1;color:#fbbf24}
-.admin-page .admin-crm-menu-btn{min-height:32px;min-width:32px;border-radius:9px;padding:0 8px;font-size:14px;font-weight:700}
+.admin-page .admin-crm-fav-btn{
+  width:36px;height:36px;min-width:36px;padding:0!important;margin:0;
+  display:inline-grid!important;place-items:center;align-content:center;
+  border-radius:9px;font-size:16px;line-height:1;color:#fbbf24;
+  transform:none!important
+}
+.admin-page .admin-crm-fav-btn:hover{transform:none!important}
+.admin-page .admin-crm-menu-btn{
+  width:36px;height:36px;min-width:36px;min-height:36px;padding:0!important;
+  display:inline-grid!important;place-items:center;border-radius:9px;font-size:16px;font-weight:700;line-height:1
+}
 .admin-page .admin-crm-menu-wrap{position:relative}
 .admin-page .admin-crm-menu{position:absolute;right:0;top:38px;min-width:188px;padding:6px;border-radius:12px;border:1px solid var(--crm-line);background:rgba(10,14,24,.98);box-shadow:0 16px 40px rgba(0,0,0,.4);z-index:5;display:flex;flex-direction:column;gap:1px}
 .admin-page .admin-crm-menu[hidden]{display:none!important}
@@ -2452,7 +2461,8 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
   text-transform:uppercase;color:#8b93b3
 }
 .admin-page .admin-float-nav .admin-nav-tab{
-  appearance:none;width:100%;text-align:left;border:1px solid rgba(255,255,255,.08);
+  appearance:none;width:100%;display:inline-flex;align-items:center;justify-content:flex-start;
+  text-align:left;border:1px solid rgba(255,255,255,.08);
   background:rgba(255,255,255,.03);color:var(--text);font:inherit;font-size:12px;font-weight:800;
   padding:10px 11px;border-radius:12px;cursor:pointer;line-height:1.25
 }
@@ -2477,7 +2487,10 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
     border-radius:14px
   }
   .admin-page .admin-float-nav-label{display:none}
-  .admin-page .admin-float-nav .admin-nav-tab{text-align:center;padding:10px 6px;font-size:11px;line-height:1.2}
+  .admin-page .admin-float-nav .admin-nav-tab{
+    display:inline-flex!important;align-items:center;justify-content:center;
+    text-align:center;padding:10px 6px;font-size:11px;line-height:1.2;gap:0
+  }
   .admin-page .admin-shell{padding-bottom:96px}
   .admin-page .admin-workspace{padding-bottom:8px}
 }
@@ -2485,7 +2498,10 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
   .admin-page .admin-float-nav{
     left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:6px;gap:4px
   }
-  .admin-page .admin-float-nav .admin-nav-tab{padding:9px 4px;font-size:10.5px;border-radius:10px}
+  .admin-page .admin-float-nav .admin-nav-tab{
+    display:inline-flex!important;align-items:center;justify-content:center;
+    text-align:center;padding:9px 4px;font-size:10.5px;border-radius:10px;gap:0
+  }
   .admin-page .admin-shell{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 }
 .admin-nav-tab{appearance:none;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);font:inherit;font-size:13px;font-weight:800;padding:8px 12px;border-radius:10px;cursor:pointer}
