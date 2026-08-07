@@ -68,6 +68,7 @@ let adminCrmBaseline = null;
 let adminCrmDetailTimer = null;
 let adminCrmRecentFeed = [];
 try{ adminCrmRecentFeed = JSON.parse(localStorage.getItem('midiai_admin_crm_feed')||'[]'); }catch{ adminCrmRecentFeed = []; }
+if(!Array.isArray(adminCrmRecentFeed)) adminCrmRecentFeed = [];
 let activeBoardPost = null;
 let activeBoardComments = [];
 let likedActivePost = false;
@@ -4136,9 +4137,28 @@ function fmtClock(v){
     return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
   }catch{ return '--:--'; }
 }
-function pushAdminCrmFeed(label, detail=''){
-  const item={ t:Date.now(), label:String(label||''), detail:String(detail||'') };
-  adminCrmRecentFeed = [item, ...adminCrmRecentFeed].slice(0, 40);
+function pushAdminCrmFeed(label, detail='', uid=''){
+  const targetUid = String(uid || selectedAdminUid || '').trim();
+  if(!targetUid) return;
+  const item={
+    t:Date.now(),
+    uid: targetUid,
+    label:String(label||''),
+    detail:String(detail||'')
+  };
+  // Drop accidental double-log (Enter submit + Save, or duplicate listeners)
+  const prev = adminCrmRecentFeed[0];
+  if(
+    prev
+    && prev.uid === item.uid
+    && prev.label === item.label
+    && prev.detail === item.detail
+    && (item.t - Number(prev.t||0)) < 2500
+  ){
+    renderAdminCrmRecentFeed();
+    return;
+  }
+  adminCrmRecentFeed = [item, ...adminCrmRecentFeed].slice(0, 120);
   try{ localStorage.setItem('midiai_admin_crm_feed', JSON.stringify(adminCrmRecentFeed)); }catch{}
   renderAdminCrmRecentFeed();
 }
@@ -4445,8 +4465,18 @@ function renderAdminCrmMemoHistory(user){
 }
 function renderAdminCrmRecentFeed(){
   const box=$('adminCrmRecentFeed'); if(!box) return;
-  const items = adminCrmRecentFeed.slice(0, 12);
-  if(!items.length){ box.innerHTML=`<p class="muted small">최근 관리 활동이 없습니다.</p>`; return; }
+  const uid = String(selectedAdminUid || '').trim();
+  if(!uid){
+    box.innerHTML=`<p class="muted small">회원을 선택하면 관리 활동이 표시됩니다.</p>`;
+    return;
+  }
+  const items = adminCrmRecentFeed
+    .filter(it => String(it?.uid || '') === uid)
+    .slice(0, 12);
+  if(!items.length){
+    box.innerHTML=`<p class="muted small">이 회원에 대한 최근 관리 활동이 없습니다.</p>`;
+    return;
+  }
   box.innerHTML = items.map(it=>`<div class="admin-crm-feed-item"><time>${esc(fmtClock(it.t/1000))}</time><b>${esc(it.label)}</b>${it.detail?`<span>${esc(it.detail)}</span>`:''}</div>`).join('');
 }
 function renderAdminCrmDetail(uid){
@@ -4930,7 +4960,7 @@ async function saveAdminCrmAllChanges(){
       await setDoc(doc(db,'users',uid),{ role, updatedAt:serverTimestamp() },{merge:true});
       const row=adminUserRows.find(u=>adminUserUid(u)===uid);
       if(row) row.role=role;
-      pushAdminCrmFeed('권한 변경', role);
+      pushAdminCrmFeed('권한 변경', role, uid);
     }
     if(licChanged){
       if(startsAt && expiresAt && startsAt > expiresAt){
@@ -4952,7 +4982,7 @@ async function saveAdminCrmAllChanges(){
         createdAt:serverTimestamp()
       },{merge:true});
       try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
-      pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active');
+      pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active', uid);
     }
     if(memoChanged) await saveAdminCrmUserMemo();
     if(roleChanged || licChanged || memoChanged){
@@ -4990,7 +5020,7 @@ async function saveAdminCrmUserMemo(){
     },{merge:true});
     if(user){ user.adminMemo=text; user.adminMemoHistory=hist; }
     $('adminCrmMemoStatus') && ($('adminCrmMemoStatus').textContent='저장됨');
-    if(prevText!==text) pushAdminCrmFeed('관리자 메모', selectedAdminUid);
+    if(prevText!==text) pushAdminCrmFeed('관리자 메모', text.slice(0,40), selectedAdminUid);
     captureAdminCrmBaseline();
     renderAdminCrmMemoHistory(user||{adminMemoHistory:hist});
   }catch(e){
@@ -5041,7 +5071,7 @@ async function adminQuickLicense(raw, silent=false, opts={}){
     if(!silent){
       const range = opts.days!=null ? ` · ${opts.days}일` : (opts.clearDates ? ' · 무기한' : '');
       adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(savePlan)} / ${esc(saveStatus)}${range}`);
-      pushAdminCrmFeed(savePlan==='lifetime'?'Lifetime 지급':(savePlan==='trial'?'Trial 지급':`${savePlan} 지급`), saveStatus + range);
+      pushAdminCrmFeed(savePlan==='lifetime'?'Lifetime 지급':(savePlan==='trial'?'Trial 지급':`${savePlan} 지급`), saveStatus + range, uid);
     }
     if(selectedAdminUid===uid) refreshAdminCrmDetail();
   }catch(e){ alert(e.message); }
@@ -5054,7 +5084,7 @@ async function adminResetHwid(uid){
     await setDoc(doc(db,'users',uid),{hwid:'',updatedAt:serverTimestamp()},{merge:true});
     await setDoc(doc(db,'licenses',uid),{hwid:'',updatedAt:serverTimestamp()},{merge:true});
     adminFlash(`HWID 초기화 완료 · ${esc(uid)}`);
-    pushAdminCrmFeed('HWID 초기화', uid);
+    pushAdminCrmFeed('HWID 초기화', String(hwid||uid).slice(0,18), uid);
     if(selectedAdminUid===uid) refreshAdminCrmDetail();
   }catch(e){ alert(e.message); }
 }
@@ -6313,7 +6343,7 @@ async function adminDeleteBoardPosts(ids, confirmMsg, skipConfirm=false){
       adminCrmPostSelected.delete(id);
     }
     adminFlash(list.length===1 ? tr('deleted') : `삭제 완료 · ${list.length}건`);
-    pushAdminCrmFeed('작성글 삭제', `${list.length}건`);
+    pushAdminCrmFeed('작성글 삭제', `${list.length}건`, selectedAdminUid);
   }catch(e){ alert(e.message); }
 }
 async function adminPinBoardPost(id,pinned){ try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',id),{pinned,updatedAt:serverTimestamp()},{merge:true}); }catch(e){ alert(e.message); } }
@@ -6339,47 +6369,13 @@ function adminFlash(html){
 }
 function initForms(){
   $('ticketForm')?.addEventListener('submit',createTicket);
+  // Enter in license fields → same path as float Save (avoids duplicate feed + save logic)
   $('adminLicenseForm')?.addEventListener('submit',async e=>{
     e.preventDefault();
-    if(!isAdminUser)return;
-    try{
-      const {doc,setDoc,serverTimestamp}=firestoreApi;
-      const uid=$('adminLicenseUid').value.trim();
-      if(!uid) return alert('회원을 선택해 주세요.');
-      const role=normalizeRole($('adminUserRole')?.value||'user');
-      const status='active';
-      const plan=$('adminLicensePlan').value;
-      const startsAt=$('adminLicenseStartsAt')?.value||'';
-      const expiresAt=$('adminLicenseExpiresAt')?.value||'';
-      if(startsAt && expiresAt && startsAt > expiresAt){
-        return alert('시작일이 만료일보다 늦을 수 없습니다.');
-      }
-      let savePlan=normalizeAdminLicensePlanForSave(plan, expiresAt);
-      if(!['trial','lifetime','period'].includes(savePlan)) savePlan='trial';
-      if(savePlan==='lifetime'){
-        if($('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value='';
-        if($('adminLicenseStartsAt')) $('adminLicenseStartsAt').value='';
-      }
-      if($('adminLicensePlan')) $('adminLicensePlan').value=savePlan;
-      await setDoc(doc(db,'users',uid),{ role, updatedAt:serverTimestamp() },{merge:true});
-      const row=adminUserRows.find(u=>adminUserUid(u)===uid);
-      if(row) row.role=role;
-      await setDoc(doc(db,'licenses',uid),{
-        licensed: true,
-        plan: savePlan,
-        status,
-        method:'manual',
-        memo:$('adminLicenseMemo').value,
-        ...buildAdminLicenseDateFields(),
-        updatedAt:serverTimestamp(),
-        createdAt:serverTimestamp()
-      },{merge:true});
-      try{ await notifyLicenseChange(uid, {plan:savePlan, status}); }catch(err){ console.error(err); }
-      pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active');
-      adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(role)} / ${esc(savePlan)}`);
-      if(selectedAdminUid===uid) refreshAdminCrmDetail();
-      else captureAdminCrmBaseline();
-    }catch(err){ alert(err.message); }
+    if(!isAdminUser) return;
+    if(!selectedAdminUid) return alert('회원을 선택해 주세요.');
+    if(!adminCrmDirty) return;
+    await saveAdminCrmAllChanges();
   });
 }
 async function callFunctionJsonRaw(name, payload){
