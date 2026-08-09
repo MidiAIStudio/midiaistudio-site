@@ -50,6 +50,7 @@ let adminFaqRows = [];
 let adminTicketRows = [];
 let adminUserRows = [];
 let adminLicenseRows = [];
+let adminLicensesLoaded = false;
 let adminOrderRows = [];
 let adminBoardRows = [];
 let selectedAdminUid = null;
@@ -3913,7 +3914,7 @@ function listenAdminDashboard(){
 }
 
 function licenseForUid(uid){ return adminLicenseRows.find(x=>x.id===uid || x.uid===uid) || null; }
-function adminUserUid(u){ return String(u?.uid || u?.id || ''); }
+function adminUserUid(u){ return String(u?.id || u?.uid || ''); }
 function adminTsSec(v){
   if(typeof v==='number' && Number.isFinite(v)) return v>1e12 ? Math.floor(v/1000) : v;
   return Number(v?.seconds || v?._seconds || 0);
@@ -4074,6 +4075,8 @@ function adminLicenseKind(lic){
   return normalizePlan(lic);
 }
 function adminPlanBadgeHtml(lic){
+  if(!adminLicensesLoaded) return `<span class="crm-badge is-loading"><i></i>확인 중</span>`;
+  if(!lic) return `<span class="crm-badge is-none"><i></i>라이선스 확인 필요</span>`;
   const plan = normalizePlan(lic);
   if(plan==='lifetime') return `<span class="crm-badge is-lifetime"><i></i>${esc(adminLicenseTypeLabel('lifetime'))}</span>`;
   if(plan==='period') return `<span class="crm-badge is-period"><i></i>${esc(adminLicenseTypeLabel('period'))}</span>`;
@@ -4194,6 +4197,7 @@ function getAdminCrmRows(){
     const plan=normalizePlan(lic);
     const active=status==='active';
     const role=normalizeRole(u.role);
+    if(adminLicensesLoaded && !lic && st!=='all' && st!=='favorites') return false;
     if(st==='lifetime' && !(active && plan==='lifetime')) return false;
     else if(st==='trial' && !(active && plan==='trial')) return false;
     else if(st==='period' && !(active && plan==='period')) return false;
@@ -4224,7 +4228,7 @@ function renderAdminCrmStats(rows){
   let active=0, trial=0, lifetime=0;
   adminUserRows.forEach(u=>{
     const lic=licenseForUid(adminUserUid(u));
-    const kind=adminLicenseKind(lic);
+    if(!lic) return;
     const plan=normalizePlan(lic);
     if(plan==='trial') trial++;
     if(plan==='lifetime') lifetime++;
@@ -4261,7 +4265,7 @@ function renderAdminUserTable(){
     if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
     box.innerHTML=`<table class="admin-table user-admin-table"><thead><tr><th>회원</th><th>라이선스</th><th>HWID</th><th>최근 로그인</th><th>관리</th></tr></thead><tbody>${rows.map(u=>{
       const uid=u.uid||u.id; const lic=u.license; const active=lic && lic.licensed===true && String(lic.status||'').toLowerCase()==='active';
-      return `<tr><td><b>${esc(u.displayName||'-')}</b><small>${esc(u.email||'')}<br><span class="mono">${esc(uid||'')}</span></small></td><td>${lic?`<span class="badge ${active?'active':'none'}">${esc(lic.plan||'-')} · ${esc(lic.status||'-')}</span>`:`<span class="badge active">trial · active</span>`}</td><td><span class="mono">${esc(u.hwid||lic?.hwid||'-')}</span></td><td>${esc(fmtDate(u.lastLogin||u.lastSeenAt))}</td><td><div class="table-actions"><button class="secondary mini-btn" data-user-license="${esc(uid)}:lifetime:active">Lifetime</button><button class="secondary mini-btn" data-user-license="${esc(uid)}:trial:active">Trial</button><button class="secondary mini-btn danger-btn" data-user-license="${esc(uid)}:${esc(lic?.plan||'lifetime')}:banned">정지</button><button class="secondary mini-btn" data-user-hwid-reset="${esc(uid)}">HWID 초기화</button></div></td></tr>`;
+      return `<tr><td><b>${esc(u.displayName||'-')}</b><small>${esc(u.email||'')}<br><span class="mono">${esc(uid||'')}</span></small></td><td>${adminPlanBadgeHtml(lic)}</td><td><span class="mono">${esc(u.hwid||lic?.hwid||'-')}</span></td><td>${esc(fmtDate(u.lastLogin||u.lastSeenAt))}</td><td><div class="table-actions"><button class="secondary mini-btn" data-user-license="${esc(uid)}:lifetime:active">Lifetime</button><button class="secondary mini-btn" data-user-license="${esc(uid)}:trial:active">Trial</button><button class="secondary mini-btn danger-btn" data-user-license="${esc(uid)}:${esc(lic?.plan||'lifetime')}:banned">정지</button><button class="secondary mini-btn" data-user-hwid-reset="${esc(uid)}">HWID 초기화</button></div></td></tr>`;
     }).join('')}</tbody></table>`;
     bindAdminUserActions(box);
     return;
@@ -4544,7 +4548,7 @@ function renderAdminCrmDetail(uid){
   }
   $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML = adminPlanBadgeHtml(lic));
   $('adminCrmLicenseMeta') && ($('adminCrmLicenseMeta').innerHTML = `
-    <span class="crm-chip"><em>유형</em>${esc(adminLicenseTypeLabel(adminEffectivePlan(lic) || lic?.plan || '-'))}</span>
+    <span class="crm-chip"><em>유형</em>${esc(lic ? adminLicenseTypeLabel(adminEffectivePlan(lic) || lic?.plan || '-') : (adminLicensesLoaded ? '라이선스 확인 필요' : '확인 중'))}</span>
     <span class="crm-chip"><em>시작</em>${esc(lic?.startsAt ? fmtListDate(lic.startsAt) : '-')}</span>
     <span class="crm-chip"><em>만료</em>${esc(lic?.expiresAt ? fmtListDate(lic.expiresAt) : (adminEffectivePlan(lic)==='lifetime'?'없음':'-'))}</span>
     <span class="crm-chip"><em>변경</em>${esc(fmtListDate(lic?.updatedAt || lic?.createdAt))}</span>
@@ -5153,9 +5157,11 @@ async function adminDeleteUser(uid, silent=false){
 function listenAdminUsers(){
   if(!isAdminUser || !$('adminUserList')) return;
   bindAdminUserFilters();
+  adminLicenseRows = [];
+  adminLicensesLoaded = false;
   const {collection,onSnapshot}=firestoreApi;
   addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-  addUnsub(onSnapshot(collection(db,'licenses'), snap=>{ adminLicenseRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
+  addUnsub(onSnapshot(collection(db,'licenses'), snap=>{ adminLicenseRows=snap.docs.map(d=>({id:d.id,...d.data()})); adminLicensesLoaded=true; renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'orders'), snap=>{ adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{ adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'boardPosts'), snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); if(selectedAdminUid) renderAdminCrmPosts(selectedAdminUid); }));
