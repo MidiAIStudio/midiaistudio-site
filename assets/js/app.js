@@ -51,6 +51,8 @@ let adminTicketRows = [];
 let adminUserRows = [];
 let adminLicenseRows = [];
 let adminLicenseCache = {};
+/** @type {Record<string, {userDocId:string, fieldUid:string, canonicalUid:string, license:any, licenseState:string, conflict:boolean, error:boolean}>} */
+let adminIdentityCache = {};
 let adminLicensesLoaded = false;
 let adminOrderRows = [];
 let adminBoardRows = [];
@@ -3914,25 +3916,195 @@ function listenAdminDashboard(){
   if($('adminBoardList')) addUnsub(onSnapshot(collection(db,'boardPosts'), snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminBoardTable(); }));
 }
 
-function licenseForUid(uid){ return adminLicenseRows.find(x=>x.id===uid || x.uid===uid) || null; }
-function adminUserUid(u){ return String(u?.uid || u?.id || ''); }
+/**
+ * Admin CRM identity + license resolution.
+ * Source of truth for licenses is licenses/{FirebaseAuthUID} (same as account loadLicense).
+ * Never assume u.id === u.uid; never fall back missing license → trial.
+ */
+function adminUserDocId(u){ return String(u?.id || '').trim(); }
+function adminUserFieldUid(u){ return String(u?.uid || '').trim(); }
+function adminIdentityKey(u){ return adminUserDocId(u) || adminUserFieldUid(u); }
+
+function adminIdentityForUser(u){
+  const key = adminIdentityKey(u);
+  if(key && adminIdentityCache[key]) return adminIdentityCache[key];
+  // provisional before resolve finishes
+  const docId = adminUserDocId(u);
+  const fieldUid = adminUserFieldUid(u);
+  return {
+    userDocId: docId,
+    fieldUid,
+    canonicalUid: fieldUid || docId,
+    license: null,
+    licenseState: adminLicensesLoaded ? 'missing' : 'loading',
+    conflict: false,
+    error: false
+  };
+}
+
+/** Canonical Auth UID for CRM lookups (licenses/orders/tickets/usage). */
+function adminUserUid(u){
+  const idn = adminIdentityForUser(u);
+  return String(idn.canonicalUid || idn.fieldUid || idn.userDocId || '');
+}
+
+function adminUserDocIdForUid(uid){
+  const hit = Object.values(adminIdentityCache).find(x=>x.canonicalUid===uid || x.userDocId===uid || x.fieldUid===uid);
+  if(hit?.userDocId) return hit.userDocId;
+  const row = adminUserRows.find(u=>adminUserUid(u)===uid || u.id===uid || String(u.uid||'')===uid);
+  return row ? adminUserDocId(row) : String(uid||'');
+}
+
+function findAdminUserRow(uid){
+  const s=String(uid||'');
+  return adminUserRows.find(u=>{
+    const idn=adminIdentityForUser(u);
+    return idn.canonicalUid===s || idn.userDocId===s || idn.fieldUid===s || String(u.id||'')===s || String(u.uid||'')===s;
+  }) || null;
+}
+
+function licenseForUid(uid){
+  const s=String(uid||'');
+  if(!s) return null;
+  if(adminLicenseCache[s]) return adminLicenseCache[s];
+  const idn = Object.values(adminIdentityCache).find(x=>x.canonicalUid===s || x.userDocId===s || x.fieldUid===s);
+  if(idn?.license) return idn.license;
+  return adminLicenseRows.find(x=>x.id===s || x.uid===s) || null;
+}
+
+/** Normalized CRM license view shared by badge/stats/filter/detail. */
+function adminLicenseView(uidOrUser){
+  const u = typeof uidOrUser==='object' && uidOrUser ? uidOrUser : findAdminUserRow(uidOrUser);
+  const uid = typeof uidOrUser==='string' ? uidOrUser : adminUserUid(u);
+  const idn = u ? adminIdentityForUser(u) : Object.values(adminIdentityCache).find(x=>x.canonicalUid===uid);
+  if(!adminLicensesLoaded){
+    return { state:'loading', license:null, plan:null, status:null, kind:null, uid };
+  }
+  if(idn?.conflict){
+    return { state:'conflict', license:null, plan:null, status:null, kind:null, uid };
+  }
+  if(idn?.error){
+    return { state:'error', license:null, plan:null, status:null, kind:null, uid };
+  }
+  const lic = idn?.license || licenseForUid(uid);
+  if(!lic){
+    return { state:'missing', license:null, plan:null, status:null, kind:null, uid };
+  }
+  const plan = normalizePlan(lic);
+  const status = normalizeStatus(lic);
+  return {
+    state:'ok',
+    license: lic,
+    plan,
+    status,
+    kind: status==='banned' ? 'banned' : (status==='expired' ? 'expired' : plan),
+    uid
+  };
+}
+
+function adminUidAliases(uid){
+  const s=String(uid||'');
+  const set = new Set([s].filter(Boolean));
+  const idn = Object.values(adminIdentityCache).find(x=>x.canonicalUid===s || x.userDocId===s || x.fieldUid===s);
+  if(idn){
+    if(idn.canonicalUid) set.add(idn.canonicalUid);
+    if(idn.userDocId) set.add(idn.userDocId);
+    if(idn.fieldUid) set.add(idn.fieldUid);
+  }
+  return set;
+}
+
+function adminOrdersForUid(uid){
+  const ids = adminUidAliases(uid);
+  return (adminOrderRows||[])
+    .filter(o=>{
+      const ou = String(o.uid || o.userId || o.customerUid || '');
+      return ou && ids.has(ou);
+    })
+    .sort((a,b)=>adminTsSec(b.completedAt||b.verifiedAt||b.createdAt||b.updatedAt)-adminTsSec(a.completedAt||a.verifiedAt||a.createdAt||a.updatedAt));
+}
+function adminTicketsForUid(uid){
+  const ids = adminUidAliases(uid);
+  return (adminTicketRows||[])
+    .filter(t=>{
+      const tu = String(t.uid || t.userId || t.authorUid || '');
+      return tu && ids.has(tu);
+    })
+    .sort((a,b)=>adminTsSec(b.createdAt||b.updatedAt)-adminTsSec(a.createdAt||a.updatedAt));
+}
+function adminBoardPostsForUid(uid){
+  const ids = adminUidAliases(uid);
+  return (adminBoardRows||[])
+    .filter(p=>p.deleted!==true)
+    .filter(p=>{
+      const pu = String(p.uid || p.authorUid || '');
+      return pu && ids.has(pu);
+    })
+    .sort((a,b)=>adminTsSec(b.createdAt||b.updatedAt)-adminTsSec(a.createdAt||a.updatedAt));
+}
 function adminTsSec(v){
   if(typeof v==='number' && Number.isFinite(v)) return v>1e12 ? Math.floor(v/1000) : v;
   return Number(v?.seconds || v?._seconds || 0);
 }
-function adminOrdersForUid(uid){
-  return (adminOrderRows||[]).filter(o=>String(o.uid||'')===String(uid))
-    .sort((a,b)=>adminTsSec(b.completedAt||b.verifiedAt||b.createdAt||b.updatedAt)-adminTsSec(a.completedAt||a.verifiedAt||a.createdAt||a.updatedAt));
+
+/**
+ * Resolve canonical Auth UID from license probes (READ-ONLY decision).
+ * Rules: prefer licenses/{u.uid} if exists; else licenses/{u.id};
+ * both distinct docs → conflict; neither → missing.
+ */
+function resolveAdminCanonicalFromLicenseProbes(docId, fieldUid, idProbe, uidProbe){
+  const id = String(docId||'').trim();
+  const fu = String(fieldUid||'').trim();
+  const same = !!(id && fu && id===fu);
+  const idOk = !!(id && idProbe?.exists);
+  const uidOk = !!(fu && uidProbe?.exists);
+  const idErr = !!(id && idProbe?.error);
+  const uidErr = !!(fu && uidProbe?.error);
+
+  if(same){
+    const probe = uidProbe?.exists || uidProbe?.error ? uidProbe : idProbe;
+    if(probe?.exists){
+      return { canonicalUid:id, license:probe.data||null, conflict:false, error:false, licenseState:'ok' };
+    }
+    if(probe?.error){
+      return { canonicalUid:id, license:null, conflict:false, error:true, licenseState:'error' };
+    }
+    return { canonicalUid:id, license:null, conflict:false, error:false, licenseState:'missing' };
+  }
+
+  if(uidOk && idOk && id!==fu){
+    return { canonicalUid:'', license:null, conflict:true, error:false, licenseState:'conflict' };
+  }
+  if(uidOk){
+    return { canonicalUid:fu, license:uidProbe.data||null, conflict:false, error:false, licenseState:'ok' };
+  }
+  if(idOk){
+    return { canonicalUid:id, license:idProbe.data||null, conflict:false, error:false, licenseState:'ok' };
+  }
+  // one candidate only (no license doc) — still usable as alias key
+  if(fu && !id){
+    return { canonicalUid:fu, license:null, conflict:false, error:!!uidErr, licenseState: uidErr?'error':'missing' };
+  }
+  if(id && !fu){
+    return { canonicalUid:id, license:null, conflict:false, error:!!idErr, licenseState: idErr?'error':'missing' };
+  }
+  // both candidates, neither license exists
+  if(uidErr || idErr){
+    return { canonicalUid:fu||id, license:null, conflict:false, error:true, licenseState:'error' };
+  }
+  return { canonicalUid:fu||id, license:null, conflict:false, error:false, licenseState:'missing' };
 }
-function adminTicketsForUid(uid){
-  return (adminTicketRows||[]).filter(t=>String(t.uid||'')===String(uid))
-    .sort((a,b)=>adminTsSec(b.createdAt||b.updatedAt)-adminTsSec(a.createdAt||a.updatedAt));
-}
-function adminBoardPostsForUid(uid){
-  return (adminBoardRows||[])
-    .filter(p=>p.deleted!==true)
-    .filter(p=>String(p.uid||p.authorUid||'')===String(uid))
-    .sort((a,b)=>adminTsSec(b.createdAt||b.updatedAt)-adminTsSec(a.createdAt||a.updatedAt));
+
+async function probeAdminLicenseDoc(getDoc, docRefFn, uid){
+  if(!uid) return { exists:false, data:null, error:false };
+  try{
+    const snap = await getDoc(docRefFn(uid));
+    if(snap.exists()) return { exists:true, data:{ id:snap.id, ...snap.data() }, error:false };
+    return { exists:false, data:null, error:false };
+  }catch(e){
+    console.warn('probeAdminLicenseDoc', uid, e);
+    return { exists:false, data:null, error:true };
+  }
 }
 
 /** Past expiresAt → keep status active, convert plan to trial and clear dates. */
@@ -4083,6 +4255,18 @@ function adminPlanBadgeHtml(lic){
   if(plan==='period') return `<span class="crm-badge is-period"><i></i>${esc(adminLicenseTypeLabel('period'))}</span>`;
   return `<span class="crm-badge is-trial"><i></i>${esc(adminLicenseTypeLabel('trial'))}</span>`;
 }
+/** Badge from shared adminLicenseView — never maps missing → trial. */
+function adminPlanBadgeFromView(view){
+  if(!view || view.state==='loading' || !adminLicensesLoaded){
+    return `<span class="crm-badge is-loading"><i></i>확인 중</span>`;
+  }
+  if(view.state==='error') return `<span class="crm-badge is-none"><i></i>조회 오류</span>`;
+  if(view.state==='conflict') return `<span class="crm-badge is-none"><i></i>라이선스 충돌</span>`;
+  if(view.state==='missing' || !view.license){
+    return `<span class="crm-badge is-none"><i></i>라이선스 확인 필요</span>`;
+  }
+  return adminPlanBadgeHtml(view.license);
+}
 function adminLicenseBadgeHtml(kind, lic){
   // Prefer plan badge; status-only kinds still show plan (list uses role+plan).
   if(kind==='banned' || kind==='suspended') return `<span class="crm-badge is-banned"><i></i>${esc(adminLicenseStatusLabel('banned'))}</span>`;
@@ -4179,26 +4363,28 @@ function getAdminCrmRows(){
   const ticketsF=$('adminCrmFilterTickets')?.value || 'all';
   const sort=$('adminUserSort')?.value || 'lastLogin';
   let rows = adminUserRows.map(u=>{
-    const uid=adminUserUid(u);
-    const license=licenseForUid(uid);
+    const view=adminLicenseView(u);
+    const uid=view.uid || adminUserUid(u);
+    const license=view.license;
     return {
       ...u,
       uid,
       license,
-      licenseKind: adminLicenseKind(license),
+      licenseView: view,
+      licenseKind: view.kind || (view.state==='ok' ? adminLicenseKind(license) : view.state),
       orderCount: adminOrdersForUid(uid).length,
       ticketCount: adminTicketsForUid(uid).length,
       lastPaymentSec: adminLastPaymentSec(uid),
       isFav: adminCrmFavorites.has(uid)
     };
   }).filter(u=>{
-    const kind=u.licenseKind;
-    const lic=u.license;
-    const status=normalizeStatus(lic);
-    const plan=normalizePlan(lic);
-    const active=status==='active';
+    const view=u.licenseView || adminLicenseView(u);
+    const kind=view.kind;
+    const status=view.status;
+    const plan=view.plan;
+    const active=view.state==='ok' && status==='active';
     const role=normalizeRole(u.role);
-    if(adminLicensesLoaded && !lic && st!=='all' && st!=='favorites') return false;
+    if(adminLicensesLoaded && view.state==='missing' && st!=='all' && st!=='favorites') return false;
     if(st==='lifetime' && !(active && plan==='lifetime')) return false;
     else if(st==='trial' && !(active && plan==='trial')) return false;
     else if(st==='period' && !(active && plan==='period')) return false;
@@ -4210,7 +4396,7 @@ function getAdminCrmRows(){
     if(ordersF==='none' && u.orderCount>0) return false;
     if(ticketsF==='has' && !(u.ticketCount>0)) return false;
     if(ticketsF==='none' && u.ticketCount>0) return false;
-    const hay=[u.email,u.displayName,u.uid,u.id,u.hwid,lic?.hwid,lic?.plan,lic?.status,role].join(' ').toLowerCase();
+    const hay=[u.email,u.displayName,u.uid,u.id,u.hwid,u.license?.hwid,plan,status,role].join(' ').toLowerCase();
     return !q || hay.includes(q);
   });
   rows.sort((a,b)=>{
@@ -4228,12 +4414,11 @@ function renderAdminCrmStats(rows){
   const all=adminUserRows.length;
   let active=0, trial=0, lifetime=0;
   adminUserRows.forEach(u=>{
-    const lic=licenseForUid(adminUserUid(u));
-    if(!lic) return;
-    const plan=normalizePlan(lic);
-    if(plan==='trial') trial++;
-    if(plan==='lifetime') lifetime++;
-    if(normalizeStatus(lic)==='active') active++;
+    const view=adminLicenseView(u);
+    if(view.state!=='ok' || !view.license) return;
+    if(view.plan==='trial') trial++;
+    if(view.plan==='lifetime') lifetime++;
+    if(view.status==='active') active++;
   });
   const todayJoin=adminUserRows.filter(u=>adminTsSec(u.createdAt) && now-adminTsSec(u.createdAt) < 86400).length;
   const idle7=adminUserRows.filter(u=>{ const t=adminTsSec(u.lastLogin||u.lastSeenAt); return t>0 && now-t > 7*86400; }).length;
@@ -4345,7 +4530,7 @@ function adminCrmMemberCardHtml(u){
       <div class="admin-crm-member-top">
         <b>${fav}${esc(u.displayName||'Google User')}</b>
         ${adminRoleBadgeHtml(u.role)}
-        ${adminPlanBadgeHtml(u.license)}
+        ${adminPlanBadgeFromView(u.licenseView || adminLicenseView(u))}
       </div>
       <div class="admin-crm-member-meta">
         <span class="crm-meta-login">${esc(fmtRelative(u.lastLogin||u.lastSeenAt))}</span>
@@ -4476,7 +4661,7 @@ function renderAdminCrmRecentFeed(){
     return;
   }
   const items = adminCrmRecentFeed
-    .filter(it => String(it?.uid || '') === uid)
+    .filter(it => adminUidAliases(uid).has(String(it?.uid || '')))
     .slice(0, 12);
   if(!items.length){
     box.innerHTML=`<p class="muted small">이 회원에 대한 최근 관리 활동이 없습니다.</p>`;
@@ -4496,7 +4681,7 @@ function renderAdminCrmDetail(uid){
     const fb=$('adminCrmFloatSave'); if(fb) fb.hidden=true;
     return;
   }
-  const user = adminUserRows.find(u=>adminUserUid(u)===uid);
+  const user = findAdminUserRow(uid);
   if(!user){
     empty?.classList.remove('is-hidden');
     body?.classList.add('is-hidden');
@@ -4508,14 +4693,18 @@ function renderAdminCrmDetail(uid){
   void body?.offsetWidth;
   body?.classList.add('is-fading');
 
-  const lic = licenseForUid(uid);
-  if((!lic || licenseNeedsMigration(lic)) && !adminLicenseHealTried.has(uid)){
-    adminLicenseHealTried.add(uid);
-    ensureUserLicenseDoc(uid).catch(()=>{ adminLicenseHealTried.delete(uid); });
+  const view = adminLicenseView(user);
+  const canonicalUid = view.uid || adminUserUid(user);
+  const lic = view.license;
+  // Do NOT auto-create missing license docs from CRM (would invent trial).
+  // Only heal existing docs that need migration / expired period conversion.
+  if(lic && licenseNeedsMigration(lic) && !adminLicenseHealTried.has(canonicalUid)){
+    adminLicenseHealTried.add(canonicalUid);
+    ensureUserLicenseDoc(canonicalUid).catch(()=>{ adminLicenseHealTried.delete(canonicalUid); });
   }
-  const kind = adminLicenseKind(lic);
-  const orders = adminOrdersForUid(uid);
-  const tickets = adminTicketsForUid(uid);
+  const kind = view.kind || adminLicenseKind(lic);
+  const orders = adminOrdersForUid(canonicalUid);
+  const tickets = adminTicketsForUid(canonicalUid);
   const lastOrder = orders[0];
   const lastTicket = tickets[0];
   const avatar=$('adminCrmAvatar');
@@ -4525,21 +4714,34 @@ function renderAdminCrmDetail(uid){
   }
   $('adminCrmName') && ($('adminCrmName').textContent = user.displayName || 'Google User');
   $('adminCrmRoleBadge') && ($('adminCrmRoleBadge').innerHTML = adminRoleBadgeHtml(user.role));
-  $('adminCrmHeaderLicense') && ($('adminCrmHeaderLicense').innerHTML = adminPlanBadgeHtml(lic));
+  $('adminCrmHeaderLicense') && ($('adminCrmHeaderLicense').innerHTML = adminPlanBadgeFromView(view));
   $('adminCrmEmail') && ($('adminCrmEmail').textContent = user.email || '');
-  $('adminCrmUid') && ($('adminCrmUid').textContent = `UID ${uid}`);
+  $('adminCrmUid') && ($('adminCrmUid').textContent = `UID ${canonicalUid}`);
   $('adminCrmHeaderMeta') && ($('adminCrmHeaderMeta').innerHTML = `
     <span><em>가입</em> ${esc(fmtListDate(user.createdAt))}</span>
     <span><em>최근 로그인</em> ${esc(fmtRelative(user.lastLogin||user.lastSeenAt))}</span>
     <span>${adminActivityBadgeHtml(user)}</span>`);
   const favBtn=$('adminCrmFavBtn');
-  if(favBtn) favBtn.textContent = adminCrmFavorites.has(uid) ? '★' : '☆';
-  $('adminLicenseUid') && ($('adminLicenseUid').value = uid);
+  if(favBtn) favBtn.textContent = adminCrmFavorites.has(canonicalUid) ? '★' : '☆';
+  $('adminLicenseUid') && ($('adminLicenseUid').value = canonicalUid);
   if($('adminUserRole')) $('adminUserRole').value = normalizeRole(user.role);
   if($('adminLicensePlan')){
-    const plan=normalizePlan(lic);
-    if([...$('adminLicensePlan').options].some(o=>o.value===plan)) $('adminLicensePlan').value=plan;
-    else $('adminLicensePlan').value='trial';
+    const sel=$('adminLicensePlan');
+    const emptyOpt=[...sel.options].find(o=>o.value==='');
+    if(view.state==='ok' && lic){
+      if(emptyOpt) emptyOpt.remove();
+      const plan=view.plan || normalizePlan(lic);
+      if([...sel.options].some(o=>o.value===plan)) sel.value=plan;
+      else sel.value='trial';
+    } else {
+      if(!emptyOpt){
+        const o=document.createElement('option');
+        o.value='';
+        o.textContent='— 확인 필요 —';
+        sel.insertBefore(o, sel.firstChild);
+      }
+      sel.value='';
+    }
   }
   if($('adminLicenseStartsAt')) $('adminLicenseStartsAt').value = toDateInputValue(lic?.startsAt);
   if($('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value = toDateInputValue(lic?.expiresAt);
@@ -4547,11 +4749,16 @@ function renderAdminCrmDetail(uid){
   if($('adminCrmUserMemo') && document.activeElement !== $('adminCrmUserMemo')){
     $('adminCrmUserMemo').value = user.adminMemo || '';
   }
-  $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML = adminPlanBadgeHtml(lic));
+  $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML = adminPlanBadgeFromView(view));
+  const typeLabel = view.state==='loading' ? '확인 중'
+    : (view.state==='error' ? '조회 오류'
+    : (view.state==='conflict' ? '라이선스 충돌'
+    : (view.state==='missing' || !lic ? '라이선스 확인 필요'
+    : adminLicenseTypeLabel(view.plan || adminEffectivePlan(lic) || lic?.plan || '-'))));
   $('adminCrmLicenseMeta') && ($('adminCrmLicenseMeta').innerHTML = `
-    <span class="crm-chip"><em>유형</em>${esc(lic ? adminLicenseTypeLabel(adminEffectivePlan(lic) || lic?.plan || '-') : (adminLicensesLoaded ? '라이선스 확인 필요' : '확인 중'))}</span>
+    <span class="crm-chip"><em>유형</em>${esc(typeLabel)}</span>
     <span class="crm-chip"><em>시작</em>${esc(lic?.startsAt ? fmtListDate(lic.startsAt) : '-')}</span>
-    <span class="crm-chip"><em>만료</em>${esc(lic?.expiresAt ? fmtListDate(lic.expiresAt) : (adminEffectivePlan(lic)==='lifetime'?'없음':'-'))}</span>
+    <span class="crm-chip"><em>만료</em>${esc(lic?.expiresAt ? fmtListDate(lic.expiresAt) : (view.plan==='lifetime'?'없음':'-'))}</span>
     <span class="crm-chip"><em>변경</em>${esc(fmtListDate(lic?.updatedAt || lic?.createdAt))}</span>
     <span class="crm-chip"><em>발급</em>${esc(adminLicenseMethodLabel(lic?.method))}</span>`);
   const lastAmount = lastOrder?.amount!=null ? `${Number(lastOrder.amount).toLocaleString('ko-KR')} ${lastOrder.currency||'KRW'}` : '';
@@ -4569,15 +4776,15 @@ function renderAdminCrmDetail(uid){
       <small>${esc(fmtRelative(user.lastLogin||user.lastSeenAt))}</small>
     </div>`);
   renderAdminCrmHwidBox(user, lic);
-  renderAdminCrmOrders(uid, false);
-  renderAdminCrmTickets(uid);
-  renderAdminCrmPosts(uid);
-  renderAdminCrmTimeline(uid, user, lic);
+  renderAdminCrmOrders(canonicalUid, false);
+  renderAdminCrmTickets(canonicalUid);
+  renderAdminCrmPosts(canonicalUid);
+  renderAdminCrmTimeline(canonicalUid, user, lic);
   renderAdminCrmMemoHistory(user);
   renderAdminCrmRecentFeed();
-  renderAdminCrmUsage(uid);
+  renderAdminCrmUsage(canonicalUid);
   captureAdminCrmBaseline();
-  maybeHealExpiredLicense(uid, lic);
+  if(lic) maybeHealExpiredLicense(canonicalUid, lic);
 }
 function renderAdminCrmUsage(uid){
   if(!isAdminUser || !uid || !db || !firestoreApi?.doc) return;
@@ -4587,14 +4794,31 @@ function renderAdminCrmUsage(uid){
     if(String(selectedAdminUid || '') !== String(uid)) return;
     try{
       const {doc,getDoc,collection,getDocs,query,orderBy,limit}=firestoreApi;
-      const paidSnap = await getDoc(doc(db,'users',uid,'usage','paid'));
-      const proofsSnap = await getDocs(query(collection(db,'users',uid,'usageProofs'), orderBy('createdAt','desc'), limit(5)));
+      const tryIds = [...new Set([
+        adminUserDocIdForUid(uid),
+        ...adminUidAliases(uid)
+      ].filter(Boolean))];
+      let paid = {};
+      let proofs = [];
+      let foundPaid = false;
+      for(const id of tryIds){
+        try{
+          const paidSnap = await getDoc(doc(db,'users',id,'usage','paid'));
+          if(paidSnap.exists()){
+            paid = paidSnap.data() || {};
+            foundPaid = true;
+            try{
+              const proofsSnap = await getDocs(query(collection(db,'users',id,'usageProofs'), orderBy('createdAt','desc'), limit(5)));
+              proofs = proofsSnap?.docs ? proofsSnap.docs.map(d=>({id:d.id, ...d.data()})) : [];
+            }catch{}
+            break;
+          }
+        }catch(e){ console.warn('admin usage probe', id, e); }
+      }
       if(String(selectedAdminUid || '') !== String(uid)) return;
-      const paid = paidSnap.exists() ? paidSnap.data() : {};
-      const proofs = proofsSnap?.docs ? proofsSnap.docs.map(d=>({id:d.id, ...d.data()})) : [];
       const fmtTs = (v)=> v ? fmtCompactDateTime(v) : '-';
       let html='';
-      if(!paid.paidFeatureUsed){
+      if(!foundPaid || !paid.paidFeatureUsed){
         html=`<p class="muted small admin-crm-usage-empty">사용 기록 없음</p>`;
       } else {
         html=`<div class="admin-crm-usage-grid">
@@ -4999,6 +5223,7 @@ function bindAdminCrmDirtyWatchers(){
 async function saveAdminCrmAllChanges(){
   if(!isAdminUser || !selectedAdminUid || !adminCrmDirty) return;
   const uid=selectedAdminUid;
+  const userDocId = adminUserDocIdForUid(uid);
   const role=normalizeRole($('adminUserRole')?.value||'user');
   const plan=$('adminLicensePlan')?.value;
   const saveStatus='active';
@@ -5013,12 +5238,15 @@ async function saveAdminCrmAllChanges(){
       || baseline.startsAt!==startsAt || baseline.expiresAt!==expiresAt;
     const memoChanged = baseline.userMemo!==($('adminCrmUserMemo')?.value||'');
     if(roleChanged){
-      await setDoc(doc(db,'users',uid),{ role, updatedAt:serverTimestamp() },{merge:true});
-      const row=adminUserRows.find(u=>adminUserUid(u)===uid);
+      await setDoc(doc(db,'users',userDocId),{ role, updatedAt:serverTimestamp() },{merge:true});
+      const row=findAdminUserRow(uid);
       if(row) row.role=role;
       pushAdminCrmFeed('권한 변경', role, uid);
     }
     if(licChanged){
+      if(!plan){
+        return alert('라이선스 유형을 선택해 주세요.');
+      }
       if(startsAt && expiresAt && startsAt > expiresAt){
         return alert('시작일이 만료일보다 늦을 수 없습니다.');
       }
@@ -5064,12 +5292,13 @@ async function saveAdminCrmUserMemo(){
   const text = ta?.value || '';
   try{
     const {doc,setDoc,serverTimestamp}=firestoreApi;
-    const user = adminUserRows.find(u=>adminUserUid(u)===selectedAdminUid);
+    const user = findAdminUserRow(selectedAdminUid);
+    const userDocId = adminUserDocIdForUid(selectedAdminUid);
     const prevText = user?.adminMemo || '';
     const histEntry = { text, atMs:Date.now(), by: currentUser?.uid||'admin' };
     const prev = Array.isArray(user?.adminMemoHistory) ? user.adminMemoHistory : [];
     const hist = prevText===text ? prev : [histEntry, ...prev].slice(0,20);
-    await setDoc(doc(db,'users',selectedAdminUid),{
+    await setDoc(doc(db,'users',userDocId),{
       adminMemo: text,
       adminMemoHistory: hist,
       updatedAt: serverTimestamp()
@@ -5137,36 +5366,75 @@ async function adminResetHwid(uid){
   if(!confirm('이 사용자의 HWID를 초기화할까요?'))return;
   try{
     const {doc,setDoc,serverTimestamp}=firestoreApi;
-    await setDoc(doc(db,'users',uid),{hwid:'',updatedAt:serverTimestamp()},{merge:true});
-    await setDoc(doc(db,'licenses',uid),{hwid:'',updatedAt:serverTimestamp()},{merge:true});
+    const userDocId = adminUserDocIdForUid(uid);
+    const licUid = String(uid||'');
+    await setDoc(doc(db,'users',userDocId),{hwid:'',updatedAt:serverTimestamp()},{merge:true});
+    await setDoc(doc(db,'licenses',licUid),{hwid:'',updatedAt:serverTimestamp()},{merge:true});
     adminFlash(`HWID 초기화 완료 · ${esc(uid)}`);
-    pushAdminCrmFeed('HWID 초기화', String(hwid||uid).slice(0,18), uid);
+    pushAdminCrmFeed('HWID 초기화', String(uid).slice(0,18), uid);
     if(selectedAdminUid===uid) refreshAdminCrmDetail();
   }catch(e){ alert(e.message); }
 }
 async function adminDeleteUser(uid, silent=false){
   if(!isAdminUser)return alert(tr('no_permission'));
   if(!uid) return;
-  if(!silent && !confirm(`회원 ${uid} 문서를 삭제할까요?\n(라이선스/주문/문의 문서는 유지됩니다)`)) return;
+  const userDocId = adminUserDocIdForUid(uid);
+  if(!silent && !confirm(`회원 ${userDocId} 문서를 삭제할까요?\n(라이선스/주문/문의 문서는 유지됩니다)`)) return;
   try{
     const {doc,deleteDoc}=firestoreApi;
-    await deleteDoc(doc(db,'users',uid));
-    if(!silent) adminFlash(`회원 삭제 · ${esc(uid)}`);
+    await deleteDoc(doc(db,'users',userDocId));
+    if(!silent) adminFlash(`회원 삭제 · ${esc(userDocId)}`);
     if(selectedAdminUid===uid){ selectedAdminUid=null; renderAdminCrmDetail(null); }
   }catch(e){ alert(e.message); }
 }
 async function loadAdminLicenses(){
   if(!firestoreApi || !db) return;
   const {doc,getDoc}=firestoreApi;
-  const uids = [...new Set(adminUserRows.map(adminUserUid).filter(Boolean))];
-  adminLicenseCache = {};
-  await Promise.all(uids.map(async uid=>{
-    try{
-      const snap = await getDoc(doc(db,'licenses',uid));
-      if(snap.exists()) adminLicenseCache[uid] = {id:snap.id, ...snap.data()};
-    }catch(e){ console.warn('loadAdminLicense', uid, e); }
+  const docRef = (uid)=>doc(db,'licenses',uid);
+  const nextIdentity = {};
+  const nextLicenseCache = {};
+  const gen = (loadAdminLicenses._gen = (loadAdminLicenses._gen||0)+1);
+
+  await Promise.all(adminUserRows.map(async u=>{
+    const docId = adminUserDocId(u);
+    const fieldUid = adminUserFieldUid(u);
+    const key = docId || fieldUid;
+    if(!key) return;
+
+    let idProbe = { exists:false, data:null, error:false };
+    let uidProbe = { exists:false, data:null, error:false };
+
+    if(docId && fieldUid && docId===fieldUid){
+      idProbe = uidProbe = await probeAdminLicenseDoc(getDoc, docRef, docId);
+    } else {
+      const tasks = [];
+      if(fieldUid) tasks.push(probeAdminLicenseDoc(getDoc, docRef, fieldUid).then(r=>{ uidProbe=r; }));
+      if(docId) tasks.push(probeAdminLicenseDoc(getDoc, docRef, docId).then(r=>{ idProbe=r; }));
+      await Promise.all(tasks);
+    }
+
+    const resolved = resolveAdminCanonicalFromLicenseProbes(docId, fieldUid, idProbe, uidProbe);
+    const entry = {
+      userDocId: docId,
+      fieldUid,
+      canonicalUid: resolved.canonicalUid,
+      license: resolved.license,
+      licenseState: resolved.licenseState,
+      conflict: resolved.conflict,
+      error: resolved.error
+    };
+    nextIdentity[key] = entry;
+    if(docId) nextIdentity[docId] = entry;
+    if(fieldUid) nextIdentity[fieldUid] = entry;
+    if(resolved.license && resolved.canonicalUid){
+      nextLicenseCache[resolved.canonicalUid] = resolved.license;
+    }
   }));
-  adminLicenseRows = Object.values(adminLicenseCache);
+
+  if(gen !== loadAdminLicenses._gen) return; // newer resolve in flight
+  adminIdentityCache = nextIdentity;
+  adminLicenseCache = nextLicenseCache;
+  adminLicenseRows = Object.values(nextLicenseCache);
   adminLicensesLoaded = true;
   renderAdminUserTable();
   refreshAdminCrmDetail();
@@ -5176,9 +5444,10 @@ function listenAdminUsers(){
   bindAdminUserFilters();
   adminLicenseRows = [];
   adminLicenseCache = {};
+  adminIdentityCache = {};
   adminLicensesLoaded = false;
   const {collection,onSnapshot}=firestoreApi;
-  addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); loadAdminLicenses(); renderAdminUserTable(); refreshAdminCrmDetail(); }));
+  addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); adminLicensesLoaded=false; loadAdminLicenses(); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'orders'), snap=>{ adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{ adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'boardPosts'), snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); if(selectedAdminUid) renderAdminCrmPosts(selectedAdminUid); }));
