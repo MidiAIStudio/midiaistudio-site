@@ -857,6 +857,19 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   0%,12%{transform:translateX(0)}
   88%,100%{transform:translateX(calc(-1 * var(--crm-slide,0px)))}
 }
+.admin-page .admin-crm-usage p{margin:0}
+.admin-page .admin-crm-usage-empty{padding:8px 0}
+.admin-page .admin-crm-usage-grid{display:grid;gap:6px}
+.admin-page .admin-crm-usage-row{display:grid;grid-template-columns:160px 1fr;gap:10px;align-items:center;font-size:11px}
+.admin-page .admin-crm-usage-label{color:#6f7694;font-size:10px;font-weight:600;letter-spacing:.03em}
+.admin-page .admin-crm-usage-value{color:#d7dcf2}
+.admin-page .admin-crm-usage-proofs{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08)}
+.admin-page .admin-crm-usage-proofs-title{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8b93b3;margin:0 0 8px}
+.admin-page .admin-crm-proof-list{display:grid;gap:8px}
+.admin-page .admin-crm-proof-item{display:grid;grid-template-columns:100px 1fr;gap:6px 10px;align-items:center;font-size:11px;padding:8px;border-radius:8px;background:rgba(0,0,0,.24);border:1px solid var(--crm-line)}
+.admin-page .admin-crm-proof-label{color:#6f7694;font-size:10px;font-weight:600}
+.admin-page .admin-crm-proof-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-page .admin-crm-proof-value.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 @media (prefers-reduced-motion:reduce){
   .admin-page .crm-slide.is-overflow .crm-slide-text{animation:none}
 }

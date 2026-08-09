@@ -4570,8 +4570,59 @@ function renderAdminCrmDetail(uid){
   renderAdminCrmTimeline(uid, user, lic);
   renderAdminCrmMemoHistory(user);
   renderAdminCrmRecentFeed();
+  renderAdminCrmUsage(uid);
   captureAdminCrmBaseline();
   maybeHealExpiredLicense(uid, lic);
+}
+function renderAdminCrmUsage(uid){
+  if(!isAdminUser || !uid || !db || !firestoreApi?.doc) return;
+  const box=$('adminCrmUsage'); if(!box) return;
+  box.innerHTML=`<p class="muted small">불러오는 중...</p>`;
+  (async ()=>{
+    if(String(selectedAdminUid || '') !== String(uid)) return;
+    try{
+      const {doc,getDoc,collection,getDocs,query,orderBy,limit}=firestoreApi;
+      const paidSnap = await getDoc(doc(db,'users',uid,'usage','paid'));
+      const proofsSnap = await getDocs(query(collection(db,'users',uid,'usageProofs'), orderBy('createdAt','desc'), limit(5)));
+      if(String(selectedAdminUid || '') !== String(uid)) return;
+      const paid = paidSnap.exists() ? paidSnap.data() : {};
+      const proofs = proofsSnap?.docs ? proofsSnap.docs.map(d=>({id:d.id, ...d.data()})) : [];
+      const fmtTs = (v)=> v ? fmtCompactDateTime(v) : '-';
+      let html='';
+      if(!paid.paidFeatureUsed){
+        html=`<p class="muted small admin-crm-usage-empty">사용 기록 없음</p>`;
+      } else {
+        html=`<div class="admin-crm-usage-grid">
+          <div class="admin-crm-usage-row"><span class="admin-crm-usage-label">사용 여부</span><span class="admin-crm-usage-value">이용함</span></div>
+          <div class="admin-crm-usage-row"><span class="admin-crm-usage-label">최초 이용</span><span class="admin-crm-usage-value">${esc(fmtTs(paid.firstPaidFeatureUsedAt))}</span></div>
+          <div class="admin-crm-usage-row"><span class="admin-crm-usage-label">최근 이용</span><span class="admin-crm-usage-value">${esc(fmtTs(paid.lastPaidFeatureUsedAt))}</span></div>
+          <div class="admin-crm-usage-row"><span class="admin-crm-usage-label">총 이용</span><span class="admin-crm-usage-value">${esc(paid.paidFeatureUseCount ?? 0)}회</span></div>
+          <div class="admin-crm-usage-row"><span class="admin-crm-usage-label">Piano 전체 변환</span><span class="admin-crm-usage-value">${esc(paid.pianoFullConvertCount ?? 0)}회</span></div>
+          <div class="admin-crm-usage-row"><span class="admin-crm-usage-label">Orchestra 전체 변환</span><span class="admin-crm-usage-value">${esc(paid.orchestraFullConvertCount ?? 0)}회</span></div>
+          <div class="admin-crm-usage-row"><span class="admin-crm-usage-label">MIDI 편집 전체 내보내기</span><span class="admin-crm-usage-value">${esc(paid.midiEditorFullExportCount ?? 0)}회</span></div>
+          <div class="admin-crm-usage-row"><span class="admin-crm-usage-label">악보 편집 전체 내보내기</span><span class="admin-crm-usage-value">${esc(paid.scoreEditorFullExportCount ?? 0)}회</span></div>
+        </div>`;
+      }
+      if(proofs.length){
+        html+=`<div class="admin-crm-usage-proofs">
+          <h4 class="admin-crm-usage-proofs-title">최근 증빙</h4>
+          <div class="admin-crm-proof-list">
+          ${proofs.map(p=>`<div class="admin-crm-proof-item">
+            <span class="admin-crm-proof-label">기능</span><span class="admin-crm-proof-value">${esc(p.feature || '-')}</span>
+            <span class="admin-crm-proof-label">서버 기록 시각</span><span class="admin-crm-proof-value">${esc(fmtTs(p.createdAt))}</span>
+            <span class="admin-crm-proof-label">60초 초과 여부</span><span class="admin-crm-proof-value">${p.durationCategory==='over_60s' ? '60초 초과' : '아니오'}</span>
+            <span class="admin-crm-proof-label">앱 버전</span><span class="admin-crm-proof-value">${esc(p.appVersion || '-')}</span>
+            <span class="admin-crm-proof-label">Event ID</span><span class="admin-crm-proof-value mono">${esc(p.eventId || '-')}</span>
+          </div>`).join('')}
+          </div>
+        </div>`;
+      }
+      box.innerHTML=html;
+    }catch(e){
+      console.error('admin usage load error', e);
+      if(String(selectedAdminUid || '') === String(uid)) box.innerHTML=`<p class="muted small">사용 기록을 불러오지 못했습니다.</p>`;
+    }
+  })();
 }
 function crmSlideHtml(text){
   return `<span class="crm-slide"><span class="crm-slide-text">${esc(text)}</span></span>`;
