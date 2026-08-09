@@ -10,10 +10,12 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // Must stay aligned with site JS normalizeRole() → admin.
+    // Source of truth: users/{request.auth.uid}.role
     function isAdmin() {
       return signedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') in ['admin', 'developer', 'staff'];
     }
 
     match /users/{userId} {
@@ -39,6 +41,16 @@ service cloud.firestore {
               )
             )
           );
+      }
+
+      // FULL feature usage evidence — admin CRM read only (writes via Admin SDK / Functions).
+      match /usage/{docId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+      match /usageProofs/{eventId} {
+        allow read: if isAdmin();
+        allow write: if false;
       }
     }
 

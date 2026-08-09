@@ -51,9 +51,13 @@ let adminTicketRows = [];
 let adminUserRows = [];
 let adminLicenseRows = [];
 let adminLicenseCache = {};
-/** @type {Record<string, {userDocId:string, fieldUid:string, canonicalUid:string, license:any, licenseState:string, conflict:boolean, error:boolean}>} */
+/** @type {Record<string, {userDocId:string, fieldUid:string, canonicalUid:string, license:any, licenseState:string, conflict:boolean, error:boolean, errorCode?:string}>} */
 let adminIdentityCache = {};
 let adminLicensesLoaded = false;
+/** Collection listener health for CRM sections (independent of license resolve). */
+let adminOrdersListenError = null;
+let adminTicketsListenError = null;
+let adminUsersListenError = null;
 let adminOrderRows = [];
 let adminBoardRows = [];
 let selectedAdminUid = null;
@@ -4060,50 +4064,58 @@ function resolveAdminCanonicalFromLicenseProbes(docId, fieldUid, idProbe, uidPro
   const uidOk = !!(fu && uidProbe?.exists);
   const idErr = !!(id && idProbe?.error);
   const uidErr = !!(fu && uidProbe?.error);
+  const errCode = String(uidProbe?.errorCode || idProbe?.errorCode || '');
 
   if(same){
     const probe = uidProbe?.exists || uidProbe?.error ? uidProbe : idProbe;
     if(probe?.exists){
-      return { canonicalUid:id, license:probe.data||null, conflict:false, error:false, licenseState:'ok' };
+      return { canonicalUid:id, license:probe.data||null, conflict:false, error:false, licenseState:'ok', errorCode:'' };
     }
     if(probe?.error){
-      return { canonicalUid:id, license:null, conflict:false, error:true, licenseState:'error' };
+      return { canonicalUid:id, license:null, conflict:false, error:true, licenseState:'error', errorCode: probe.errorCode||errCode };
     }
-    return { canonicalUid:id, license:null, conflict:false, error:false, licenseState:'missing' };
+    return { canonicalUid:id, license:null, conflict:false, error:false, licenseState:'missing', errorCode:'' };
   }
 
   if(uidOk && idOk && id!==fu){
-    return { canonicalUid:'', license:null, conflict:true, error:false, licenseState:'conflict' };
+    return { canonicalUid:'', license:null, conflict:true, error:false, licenseState:'conflict', errorCode:'' };
   }
+  // Prefer successful probe even if the other candidate errored (section isolation).
   if(uidOk){
-    return { canonicalUid:fu, license:uidProbe.data||null, conflict:false, error:false, licenseState:'ok' };
+    return { canonicalUid:fu, license:uidProbe.data||null, conflict:false, error:false, licenseState:'ok', errorCode:'' };
   }
   if(idOk){
-    return { canonicalUid:id, license:idProbe.data||null, conflict:false, error:false, licenseState:'ok' };
+    return { canonicalUid:id, license:idProbe.data||null, conflict:false, error:false, licenseState:'ok', errorCode:'' };
   }
   // one candidate only (no license doc) — still usable as alias key
   if(fu && !id){
-    return { canonicalUid:fu, license:null, conflict:false, error:!!uidErr, licenseState: uidErr?'error':'missing' };
+    return { canonicalUid:fu, license:null, conflict:false, error:!!uidErr, licenseState: uidErr?'error':'missing', errorCode: uidErr?(uidProbe.errorCode||errCode):'' };
   }
   if(id && !fu){
-    return { canonicalUid:id, license:null, conflict:false, error:!!idErr, licenseState: idErr?'error':'missing' };
+    return { canonicalUid:id, license:null, conflict:false, error:!!idErr, licenseState: idErr?'error':'missing', errorCode: idErr?(idProbe.errorCode||errCode):'' };
   }
   // both candidates, neither license exists
   if(uidErr || idErr){
-    return { canonicalUid:fu||id, license:null, conflict:false, error:true, licenseState:'error' };
+    return { canonicalUid:fu||id, license:null, conflict:false, error:true, licenseState:'error', errorCode: errCode };
   }
-  return { canonicalUid:fu||id, license:null, conflict:false, error:false, licenseState:'missing' };
+  return { canonicalUid:fu||id, license:null, conflict:false, error:false, licenseState:'missing', errorCode:'' };
 }
 
+function adminFsErrorMeta(e){
+  const code = String(e?.code || e?.name || '');
+  const message = String(e?.message || e || '');
+  return { code, message };
+}
 async function probeAdminLicenseDoc(getDoc, docRefFn, uid){
-  if(!uid) return { exists:false, data:null, error:false };
+  if(!uid) return { exists:false, data:null, error:false, errorCode:'' };
   try{
     const snap = await getDoc(docRefFn(uid));
-    if(snap.exists()) return { exists:true, data:{ id:snap.id, ...snap.data() }, error:false };
-    return { exists:false, data:null, error:false };
+    if(snap.exists()) return { exists:true, data:{ id:snap.id, ...snap.data() }, error:false, errorCode:'' };
+    return { exists:false, data:null, error:false, errorCode:'' };
   }catch(e){
-    console.warn('probeAdminLicenseDoc', uid, e);
-    return { exists:false, data:null, error:true };
+    const meta = adminFsErrorMeta(e);
+    console.warn('probeAdminLicenseDoc', uid, meta.code, meta.message, e);
+    return { exists:false, data:null, error:true, errorCode: meta.code || 'unknown' };
   }
 }
 
@@ -4801,8 +4813,12 @@ function renderAdminCrmUsage(uid){
       let paid = {};
       let proofs = [];
       let foundPaid = false;
+      let probed = 0;
+      let denied = 0;
+      let lastUsageErr = null;
       for(const id of tryIds){
         try{
+          probed++;
           const paidSnap = await getDoc(doc(db,'users',id,'usage','paid'));
           if(paidSnap.exists()){
             paid = paidSnap.data() || {};
@@ -4810,15 +4826,26 @@ function renderAdminCrmUsage(uid){
             try{
               const proofsSnap = await getDocs(query(collection(db,'users',id,'usageProofs'), orderBy('createdAt','desc'), limit(5)));
               proofs = proofsSnap?.docs ? proofsSnap.docs.map(d=>({id:d.id, ...d.data()})) : [];
-            }catch{}
+            }catch(proofErr){
+              const meta = adminFsErrorMeta(proofErr);
+              console.warn('admin usageProofs probe', id, meta.code, meta.message, proofErr);
+              // proofs optional — do not fail whole usage section if paid exists
+            }
             break;
           }
-        }catch(e){ console.warn('admin usage probe', id, e); }
+        }catch(e){
+          const meta = adminFsErrorMeta(e);
+          lastUsageErr = meta;
+          if(meta.code.includes('permission-denied') || meta.message.includes('insufficient')) denied++;
+          console.warn('admin usage probe', id, meta.code, meta.message, e);
+        }
       }
       if(String(selectedAdminUid || '') !== String(uid)) return;
       const fmtTs = (v)=> v ? fmtCompactDateTime(v) : '-';
       let html='';
-      if(!foundPaid || !paid.paidFeatureUsed){
+      if(!foundPaid && probed>0 && denied===probed){
+        html=`<p class="muted small">조회 오류${lastUsageErr?.code?` (${esc(lastUsageErr.code)})`:''}</p>`;
+      } else if(!foundPaid || !paid.paidFeatureUsed){
         html=`<p class="muted small admin-crm-usage-empty">사용 기록 없음</p>`;
       } else {
         html=`<div class="admin-crm-usage-grid">
@@ -4876,6 +4903,11 @@ function bindCrmTextSlides(root){
 }
 function renderAdminCrmOrders(uid, showAll){
   const box=$('adminCrmOrders'); if(!box) return;
+  if(adminOrdersListenError){
+    const code = adminOrdersListenError.code || 'unknown';
+    box.innerHTML=`<p class="muted small">주문 조회 오류 (${esc(code)})</p>`;
+    return;
+  }
   const all = adminOrdersForUid(uid);
   const rows = showAll ? all : all.slice(0, 5);
   if(!rows.length){ box.innerHTML=`<p class="muted small">주문 기록이 없습니다.</p>`; return; }
@@ -4931,6 +4963,11 @@ if(typeof window!=='undefined' && !window.__adminCrmEscBound){
 }
 function renderAdminCrmTickets(uid){
   const box=$('adminCrmTickets'); if(!box) return;
+  if(adminTicketsListenError){
+    const code = adminTicketsListenError.code || 'unknown';
+    box.innerHTML=`<p class="muted small">문의 조회 오류 (${esc(code)})</p>`;
+    return;
+  }
   const rows = adminTicketsForUid(uid).slice(0, 5);
   if(!rows.length){ box.innerHTML=`<p class="muted small">문의 기록이 없습니다.</p>`; return; }
   box.innerHTML = rows.map(t=>`<a class="admin-crm-ticket-row" href="./ticket.html?id=${encodeURIComponent(t.id)}"><b class="crm-slide"><span class="crm-slide-text">${esc(t.title||'(제목 없음)')}</span></b><span class="badge ${esc(String(t.status||'open'))}">${esc(adminPaymentStatusLabel(t.status||'open'))}</span><small>${esc(fmtListDate(t.createdAt))}</small></a>`).join('');
@@ -5414,6 +5451,14 @@ async function loadAdminLicenses(){
     }
 
     const resolved = resolveAdminCanonicalFromLicenseProbes(docId, fieldUid, idProbe, uidProbe);
+    if(resolved.error){
+      console.warn('adminLicenseResolveError', {
+        userDocId: docId,
+        fieldUid,
+        code: resolved.errorCode || 'unknown',
+        licenseState: resolved.licenseState
+      });
+    }
     const entry = {
       userDocId: docId,
       fieldUid,
@@ -5421,7 +5466,8 @@ async function loadAdminLicenses(){
       license: resolved.license,
       licenseState: resolved.licenseState,
       conflict: resolved.conflict,
-      error: resolved.error
+      error: resolved.error,
+      errorCode: resolved.errorCode || ''
     };
     nextIdentity[key] = entry;
     if(docId) nextIdentity[docId] = entry;
@@ -5446,11 +5492,56 @@ function listenAdminUsers(){
   adminLicenseCache = {};
   adminIdentityCache = {};
   adminLicensesLoaded = false;
+  adminOrdersListenError = null;
+  adminTicketsListenError = null;
+  adminUsersListenError = null;
   const {collection,onSnapshot}=firestoreApi;
-  addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); adminLicensesLoaded=false; loadAdminLicenses(); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-  addUnsub(onSnapshot(collection(db,'orders'), snap=>{ adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-  addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{ adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-  addUnsub(onSnapshot(collection(db,'boardPosts'), snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); if(selectedAdminUid) renderAdminCrmPosts(selectedAdminUid); }));
+  const onSnapErr = (label, setter)=>{
+    return (err)=>{
+      const meta = adminFsErrorMeta(err);
+      console.error(`admin ${label} snapshot error`, meta.code, meta.message, err);
+      setter(meta);
+      renderAdminUserTable();
+      refreshAdminCrmDetail();
+    };
+  };
+  addUnsub(onSnapshot(
+    collection(db,'users'),
+    snap=>{
+      adminUsersListenError = null;
+      adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()}));
+      adminLicensesLoaded=false;
+      loadAdminLicenses();
+      renderAdminUserTable();
+      refreshAdminCrmDetail();
+    },
+    onSnapErr('users', m=>{ adminUsersListenError=m; })
+  ));
+  addUnsub(onSnapshot(
+    collection(db,'orders'),
+    snap=>{
+      adminOrdersListenError = null;
+      adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderAdminUserTable();
+      refreshAdminCrmDetail();
+    },
+    onSnapErr('orders', m=>{ adminOrdersListenError=m; })
+  ));
+  addUnsub(onSnapshot(
+    collection(db,'supportTickets'),
+    snap=>{
+      adminTicketsListenError = null;
+      adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderAdminUserTable();
+      refreshAdminCrmDetail();
+    },
+    onSnapErr('tickets', m=>{ adminTicketsListenError=m; })
+  ));
+  addUnsub(onSnapshot(
+    collection(db,'boardPosts'),
+    snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); if(selectedAdminUid) renderAdminCrmPosts(selectedAdminUid); },
+    (err)=>{ const meta=adminFsErrorMeta(err); console.error('admin boardPosts snapshot error', meta.code, meta.message, err); }
+  ));
 }
 
 function isOwnerRecord(x){ return !!(currentUser && x && (x.uid === currentUser.uid || x.authorUid === currentUser.uid)); }
