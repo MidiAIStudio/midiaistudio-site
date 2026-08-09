@@ -50,6 +50,7 @@ let adminFaqRows = [];
 let adminTicketRows = [];
 let adminUserRows = [];
 let adminLicenseRows = [];
+let adminLicenseCache = {};
 let adminLicensesLoaded = false;
 let adminOrderRows = [];
 let adminBoardRows = [];
@@ -3914,7 +3915,7 @@ function listenAdminDashboard(){
 }
 
 function licenseForUid(uid){ return adminLicenseRows.find(x=>x.id===uid || x.uid===uid) || null; }
-function adminUserUid(u){ return String(u?.id || u?.uid || ''); }
+function adminUserUid(u){ return String(u?.uid || u?.id || ''); }
 function adminTsSec(v){
   if(typeof v==='number' && Number.isFinite(v)) return v>1e12 ? Math.floor(v/1000) : v;
   return Number(v?.seconds || v?._seconds || 0);
@@ -5154,14 +5155,30 @@ async function adminDeleteUser(uid, silent=false){
     if(selectedAdminUid===uid){ selectedAdminUid=null; renderAdminCrmDetail(null); }
   }catch(e){ alert(e.message); }
 }
+async function loadAdminLicenses(){
+  if(!firestoreApi || !db) return;
+  const {doc,getDoc}=firestoreApi;
+  const uids = [...new Set(adminUserRows.map(adminUserUid).filter(Boolean))];
+  adminLicenseCache = {};
+  await Promise.all(uids.map(async uid=>{
+    try{
+      const snap = await getDoc(doc(db,'licenses',uid));
+      if(snap.exists()) adminLicenseCache[uid] = {id:snap.id, ...snap.data()};
+    }catch(e){ console.warn('loadAdminLicense', uid, e); }
+  }));
+  adminLicenseRows = Object.values(adminLicenseCache);
+  adminLicensesLoaded = true;
+  renderAdminUserTable();
+  refreshAdminCrmDetail();
+}
 function listenAdminUsers(){
   if(!isAdminUser || !$('adminUserList')) return;
   bindAdminUserFilters();
   adminLicenseRows = [];
+  adminLicenseCache = {};
   adminLicensesLoaded = false;
   const {collection,onSnapshot}=firestoreApi;
-  addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
-  addUnsub(onSnapshot(collection(db,'licenses'), snap=>{ adminLicenseRows=snap.docs.map(d=>({id:d.id,...d.data()})); adminLicensesLoaded=true; renderAdminUserTable(); refreshAdminCrmDetail(); }));
+  addUnsub(onSnapshot(collection(db,'users'), snap=>{ adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()})); loadAdminLicenses(); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'orders'), snap=>{ adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{ adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminUserTable(); refreshAdminCrmDetail(); }));
   addUnsub(onSnapshot(collection(db,'boardPosts'), snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); if(selectedAdminUid) renderAdminCrmPosts(selectedAdminUid); }));
