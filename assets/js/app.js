@@ -4850,6 +4850,14 @@ function renderAdminCrmUsage(uid){
 function crmSlideHtml(text){
   return `<span class="crm-slide"><span class="crm-slide-text">${esc(text)}</span></span>`;
 }
+function adminOrderDisplayId(o){
+  const candidates=[o?.paymentId, o?.paypalOrderId, o?.portonePaymentId, o?.id];
+  for(const c of candidates){
+    const s=String(c??'').trim();
+    if(s) return s;
+  }
+  return '-';
+}
 function bindCrmTextSlides(root){
   if(!root) return;
   const measure=()=>{
@@ -4898,12 +4906,12 @@ function renderAdminCrmOrders(uid, showAll){
   const rows = showAll ? all : all.slice(0, 5);
   if(!rows.length){ box.innerHTML=`<p class="muted small">주문 기록이 없습니다.</p>`; return; }
   box.innerHTML = `<table class="admin-table crm-mini-table"><colgroup><col class="crm-col-id"><col class="crm-col-method"><col class="crm-col-amount"><col class="crm-col-date"><col class="crm-col-status"></colgroup><thead><tr><th>주문번호</th><th>수단</th><th>금액</th><th>결제일</th><th>상태</th></tr></thead><tbody>${rows.map(o=>{
-    const id=String(o.paymentId||o.paypalOrderId||o.id||'-');
+    const id=adminOrderDisplayId(o);
     const method=o.paymentMethod||o.provider||o.method||'-';
     const amount=o.amount!=null ? `${Number(o.amount).toLocaleString('ko-KR')} ${o.currency||'KRW'}` : '-';
     const when=fmtCompactDateTime(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
     const key=o.id || o.paymentId || o.paypalOrderId || '';
-    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="mono crm-td-id">${crmSlideHtml(id)}</td><td class="crm-td-method">${crmSlideHtml(adminPaymentMethodLabel(method))}</td><td class="crm-td-amount">${crmSlideHtml(amount)}</td><td class="crm-td-date">${crmSlideHtml(when)}</td><td class="crm-td-status">${crmSlideHtml(adminPaymentStatusLabel(o.status||'-'))}</td></tr>`;
+    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="crm-td-id">${crmSlideHtml(id)}</td><td class="crm-td-method">${crmSlideHtml(adminPaymentMethodLabel(method))}</td><td class="crm-td-amount">${crmSlideHtml(amount)}</td><td class="crm-td-date">${crmSlideHtml(when)}</td><td class="crm-td-status">${crmSlideHtml(adminPaymentStatusLabel(o.status||'-'))}</td></tr>`;
   }).join('')}</tbody></table>${(!showAll && all.length>5) ? `<p class="muted small">외 ${all.length-5}건 · 더보기로 전체 표시</p>` : ''}`;
   bindCrmTextSlides(box);
   box.querySelectorAll('[data-order-id]').forEach(row=>{

@@ -842,18 +842,26 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   overflow:hidden;max-width:0
 }
 .admin-page .crm-mini-table th{color:#6f7694;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:10px;overflow:hidden;text-overflow:ellipsis}
-.admin-page .crm-mini-table .crm-td-id{color:#d7dcf2;text-decoration:none}
+.admin-page .crm-mini-table .crm-td-id{
+  /* Do NOT use global .mono on <td> — it sets display:block/max-width and hides the id. */
+  color:#e8ebf8;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11px;
+  display:table-cell!important;
+  max-width:0!important;
+  overflow:hidden;
+  text-overflow:clip;
+  white-space:nowrap
+}
 .admin-page .crm-mini-table .crm-td-amount{font-variant-numeric:tabular-nums}
 .admin-page .crm-mini-table .crm-td-date{font-variant-numeric:tabular-nums;color:#aeb4d0}
 .admin-page .crm-mini-table .crm-td-status{color:#c7cbe4}
 .admin-page .crm-slide{
-  display:block;overflow:hidden;min-width:0;max-width:100%;
-  /* Prefer fill; avoid width:100% resolving against max-width:0 cells as 0. */
-  width:auto
+  display:block;overflow:hidden;min-width:0;width:100%;max-width:100%
 }
 .admin-page .crm-slide-text{
   display:inline-block;white-space:nowrap;max-width:none;
-  color:inherit;vertical-align:middle;will-change:transform
+  color:inherit;vertical-align:middle
 }
 .admin-page .crm-slide.is-overflow .crm-slide-text{
   animation:crmTextMarquee var(--crm-slide-dur,8s) linear infinite;
