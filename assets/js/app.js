@@ -542,31 +542,6 @@ function licenseNeedsMigration(lic){
   if(status!=='active' && lic.licensed===true) return true;
   return false;
 }
-function defaultTrialLicensePayload(serverTimestamp){
-  return {
-    licensed:true,
-    plan:'trial',
-    status:'active',
-    method:'signup',
-    createdAt:serverTimestamp(),
-    updatedAt:serverTimestamp()
-  };
-}
-function defaultAdminLifetimePayload(serverTimestamp, deleteField){
-  const payload = {
-    licensed:true,
-    plan:'lifetime',
-    status:'active',
-    method:'admin',
-    updatedAt:serverTimestamp(),
-    createdAt:serverTimestamp()
-  };
-  if(deleteField){
-    payload.startsAt = deleteField();
-    payload.expiresAt = deleteField();
-  }
-  return payload;
-}
 function toDateInputValue(v){
   const ms=licenseTsMs(v);
   if(!ms) return '';
@@ -1832,55 +1807,27 @@ async function upsertUser(user){
     setAdminNavVisible(false);
   }
 }
+/**
+ * Resolve licenses/{uid} without client writes for normal users.
+ * Trial create is Cloud Function only (create-if-absent on users/{uid} write).
+ * Existing docs are returned as-is — never overwritten with trial.
+ */
 async function ensureUserLicenseDoc(uid, opts={}){
   if(!uid || !firestoreApi || !db) return null;
+  const {doc,getDoc}=firestoreApi;
+  const ref=doc(db,'licenses',uid);
   try{
-    const {doc,getDoc,setDoc,serverTimestamp,deleteField}=firestoreApi;
-    let roleHint = opts.role;
-    if(roleHint == null && uid===currentUser?.uid) roleHint = currentUserDoc?.role || (isAdminUser?'admin':'user');
-    if(roleHint == null && typeof adminUserRows!=='undefined' && Array.isArray(adminUserRows)){
-      const row = adminUserRows.find(u=>(u.uid||u.id)===uid);
-      if(row) roleHint = row.role;
+    let snap=await getDoc(ref);
+    if(snap.exists()) return snap.data();
+
+    // Wait briefly for ensureTrialLicenseOnUserWrite (create-if-absent).
+    const delays = [200, 400, 800, 1200];
+    for(const ms of delays){
+      await new Promise(r=>setTimeout(r, ms));
+      snap=await getDoc(ref);
+      if(snap.exists()) return snap.data();
     }
-    const role = normalizeRole(roleHint || 'user');
-    const ref=doc(db,'licenses',uid);
-    const snap=await getDoc(ref);
-    if(!snap.exists()){
-      const payload = role==='admin'
-        ? defaultAdminLifetimePayload(serverTimestamp, deleteField)
-        : defaultTrialLicensePayload(serverTimestamp);
-      await setDoc(ref, payload, {merge:true});
-      return payload;
-    }
-    const lic=snap.data();
-    // Timed license ended → trial + active (status stays active)
-    if(licenseShouldConvertExpiredPeriod(lic) && role!=='admin'){
-      const patch=periodExpiredToTrialPatch(serverTimestamp, deleteField);
-      await setDoc(ref, patch, {merge:true});
-      return {...lic, plan:'trial', licensed:true, status:'active', startsAt:undefined, expiresAt:undefined};
-    }
-    // Admins default to lifetime + active (운영 정책)
-    if(role==='admin'){
-      const plan=normalizePlan(lic);
-      const status=normalizeStatus(lic);
-      if(plan!=='lifetime' || status!=='active' || lic.licensed!==true || licenseTsMs(lic.expiresAt)){
-        const patch=defaultAdminLifetimePayload(serverTimestamp, deleteField);
-        await setDoc(ref, patch, {merge:true});
-        return {...lic, ...patch, plan:'lifetime', status:'active', licensed:true};
-      }
-      if(!licenseNeedsMigration(lic)) return lic;
-    }
-    if(!licenseNeedsMigration(lic)) return lic;
-    const plan=normalizePlan(lic);
-    const status=normalizeStatus(lic);
-    const patch={
-      plan,
-      status,
-      licensed: status==='active',
-      updatedAt:serverTimestamp()
-    };
-    await setDoc(ref, patch, {merge:true});
-    return {...lic, ...patch};
+    return null;
   }catch(e){
     console.warn('ensureUserLicenseDoc', e);
     return null;
@@ -1897,13 +1844,8 @@ async function loadLicense(uid){
     let d=snap.exists()?snap.data():null;
     if(!d){
       d = await ensureUserLicenseDoc(uid);
-      const again=await getDoc(doc(db,'licenses',uid));
-      d=again.exists()?again.data():d;
-    } else if(licenseNeedsMigration(d)){
-      d = await ensureUserLicenseDoc(uid) || d;
-      const again=await getDoc(doc(db,'licenses',uid));
-      if(again.exists()) d=again.data();
     }
+    // Existing docs (trial/lifetime/period) are never rewritten on login.
     const active=isLicenseCurrentlyActive(d);
     const lifetime=isLifetimeLicense(d);
     const statusKey=normalizeStatus(d);
@@ -4134,45 +4076,13 @@ function periodExpiredToTrialPatch(serverTimestamp, deleteField){
 }
 function licenseShouldConvertExpiredPeriod(lic){
   if(!lic) return false;
+  // Lifetime must never be converted to trial by heal/expiry paths.
+  if(normalizePlan(lic)==='lifetime') return false;
   const endMs=licenseTsMs(lic.expiresAt);
   if(endMs && Date.now() > endMs) return true;
   // legacy rows that were already marked expired
   if(String(lic.status||'').toLowerCase()==='expired') return true;
   return false;
-}
-async function maybeHealExpiredLicense(uid, lic){
-  if(!uid || !lic || !firestoreApi) return;
-  const needsPlanFix = String(lic.plan||'').toLowerCase()==='lifetime' && licenseTsMs(lic.expiresAt) && licenseDateBoundsActive(lic);
-  const needsToTrial = licenseShouldConvertExpiredPeriod(lic);
-  if(!needsToTrial && !needsPlanFix) return;
-  try{
-    const {doc,setDoc,serverTimestamp,deleteField}=firestoreApi;
-    let patch;
-    if(needsToTrial){
-      patch = periodExpiredToTrialPatch(serverTimestamp, deleteField);
-    } else {
-      patch = { plan:'period', updatedAt:serverTimestamp() };
-    }
-    await setDoc(doc(db,'licenses',uid), patch, {merge:true});
-    Object.assign(lic, {
-      plan: patch.plan,
-      licensed: patch.licensed!=null ? patch.licensed : lic.licensed,
-      status: patch.status || lic.status
-    });
-    if(needsToTrial){
-      delete lic.expiresAt;
-      delete lic.startsAt;
-    }
-    if(selectedAdminUid===uid){
-      if($('adminLicensePlan')) $('adminLicensePlan').value=lic.plan||'trial';
-      if($('adminLicenseStartsAt')) $('adminLicenseStartsAt').value='';
-      if($('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value='';
-      const kind=adminLicenseKind(lic);
-      $('adminCrmHeaderLicense') && ($('adminCrmHeaderLicense').innerHTML=adminPlanBadgeHtml(lic));
-      $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML=adminPlanBadgeHtml(lic));
-      captureAdminCrmBaseline();
-    }
-  }catch(e){ console.warn('heal expired license', e); }
 }
 
 /** Display labels — storage uses normalizeRole/Plan/Status canonical keys only. */
@@ -4298,7 +4208,6 @@ function saveAdminCrmFavorites(set){
   localStorage.setItem(adminCrmFavKey(), JSON.stringify([...set]));
 }
 let adminCrmFavorites = loadAdminCrmFavorites();
-const adminLicenseHealTried = new Set();
 function adminRoleBadgeHtml(role){
   const r=normalizeRole(role);
   const label = adminRoleLabel(r);
@@ -4708,15 +4617,7 @@ function renderAdminCrmDetail(uid){
   const view = adminLicenseView(user);
   const canonicalUid = view.uid || adminUserUid(user);
   const lic = view.license;
-  // Heal: migrate existing docs, or create missing trial (admin write / signup parity).
-  if(canonicalUid && !adminLicenseHealTried.has(canonicalUid)){
-    const needsCreate = view.state==='missing' || !lic;
-    const needsMigrate = !!lic && licenseNeedsMigration(lic);
-    if(needsCreate || needsMigrate){
-      adminLicenseHealTried.add(canonicalUid);
-      ensureUserLicenseDoc(canonicalUid, { role: user.role }).catch(()=>{ adminLicenseHealTried.delete(canonicalUid); });
-    }
-  }
+  // CRM detail is read-only for licenses — no create/migrate/heal on open.
   const kind = view.kind || adminLicenseKind(lic);
   const orders = adminOrdersForUid(canonicalUid);
   const tickets = adminTicketsForUid(canonicalUid);
@@ -4799,7 +4700,6 @@ function renderAdminCrmDetail(uid){
   renderAdminCrmRecentFeed();
   renderAdminCrmUsage(canonicalUid);
   captureAdminCrmBaseline();
-  if(lic) maybeHealExpiredLicense(canonicalUid, lic);
 }
 function renderAdminCrmUsage(uid){
   if(!isAdminUser || !uid || !db || !firestoreApi?.doc) return;

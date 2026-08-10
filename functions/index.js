@@ -1229,7 +1229,11 @@ exports.expireTimedLicenses = onSchedule({
       .get();
     if (snap.empty) break;
     const batch = db.batch();
+    let batchCount = 0;
     snap.docs.forEach((docSnap) => {
+      const data = docSnap.data() || {};
+      // Never convert lifetime to trial.
+      if (String(data.plan || '').toLowerCase() === 'lifetime') return;
       const patch = {
         plan: 'trial',
         licensed: true,
@@ -1241,10 +1245,12 @@ exports.expireTimedLicenses = onSchedule({
         expireReason: 'auto_period_to_trial'
       };
       batch.set(docSnap.ref, patch, { merge: true });
+      batchCount += 1;
     });
-    await batch.commit();
-    expired += snap.size;
-    if (snap.size < 400) break;
+    if (batchCount) await batch.commit();
+    expired += batchCount;
+    // Lifetime rows with expiresAt would otherwise loop forever.
+    if (!batchCount || snap.size < 400) break;
   }
   console.log('expireTimedLicenses done', { convertedToTrial: expired });
   return null;
@@ -1258,11 +1264,11 @@ const {
 const { broadcastPublishedContent } = require('./broadcastNotify');
 
 const functionsV1 = require('firebase-functions/v1');
+const { createLicenseIfAbsent } = require('./licenseProvision');
 
 /**
- * Ensure every users/{uid} has licenses/{uid}.
- * Covers new Google signups and heals accounts that missed trial create
- * after licenses writes were restricted to admin/Functions.
+ * Ensure every users/{uid} has licenses/{uid} (create-if-absent only).
+ * Never overwrites existing license docs — lifetime/trial/period stay intact.
  */
 exports.ensureTrialLicenseOnUserWrite = functionsV1
   .runWith({ timeoutSeconds: 30, memory: '256MB' })
@@ -1271,32 +1277,12 @@ exports.ensureTrialLicenseOnUserWrite = functionsV1
     const uid = context.params.uid;
     if (!change.after.exists) return null;
     try {
-      const licenseRef = db.collection('licenses').doc(uid);
-      const licSnap = await licenseRef.get();
-      if (licSnap.exists) return null;
-
-      const user = change.after.data() || {};
-      const role = String(user.role || 'user').toLowerCase().trim();
-      const isAdminRole = role === 'admin' || role === 'developer' || role === 'staff';
-      const now = admin.firestore.FieldValue.serverTimestamp();
-      const payload = isAdminRole
-        ? {
-            licensed: true,
-            plan: 'lifetime',
-            status: 'active',
-            method: 'admin',
-            createdAt: now,
-            updatedAt: now
-          }
-        : {
-            licensed: true,
-            plan: 'trial',
-            status: 'active',
-            method: 'signup',
-            createdAt: now,
-            updatedAt: now
-          };
-      await licenseRef.set(payload, { merge: true });
+      await createLicenseIfAbsent(
+        db,
+        uid,
+        change.after.data() || {},
+        admin.firestore.FieldValue
+      );
     } catch (err) {
       console.error('ensureTrialLicenseOnUserWrite', {
         uid,
