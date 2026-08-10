@@ -3351,8 +3351,9 @@ function modalEscapeClose(root, handler){
   document.addEventListener('keydown', onKey, {once:false});
   root._cleanup = () => document.removeEventListener('keydown', onKey);
 }
-function openEditModal(title, fields){
+function openEditModal(title, fields, opts={}){
   const hasMarkdown = fields.some(f => f.type === 'markdown');
+  const submitLabel = opts.submitLabel || (hasMarkdown ? '완료' : '저장');
   return new Promise(async resolve => {
     ensureMarkdownCss();
     const overlay = document.createElement('div');
@@ -3360,8 +3361,8 @@ function openEditModal(title, fields){
     const form = document.createElement('form');
     form.className = 'edit-modal' + (hasMarkdown ? ' md-edit-modal' : '');
     const actionHtml = hasMarkdown
-      ? `<button type="button" class="secondary" data-cancel>취소</button><button type="button" class="secondary" data-preview>미리보기</button><button type="submit" class="primary">완료</button>`
-      : `<button type="button" class="secondary" data-cancel>취소</button><button type="submit" class="primary">저장</button>`;
+      ? `<button type="button" class="secondary" data-cancel>취소</button><button type="button" class="secondary" data-preview>미리보기</button><button type="submit" class="primary">${esc(submitLabel)}</button>`
+      : `<button type="button" class="secondary" data-cancel>취소</button><button type="submit" class="primary">${esc(submitLabel)}</button>`;
     form.innerHTML = `<div class="edit-modal-head"><h3>${esc(title)}</h3><button type="button" class="edit-modal-x" aria-label="close">×</button></div><div class="edit-modal-body"></div><div class="edit-modal-actions">${actionHtml}</div>`;
     const body = form.querySelector('.edit-modal-body');
     const mdHosts = {};
@@ -5200,15 +5201,13 @@ function bindAdminUserFilters(){
       const uids=[...adminCrmSelected];
       if(!uids.length) return;
       if(action==='app-message' || action==='mail'){
-        const text = window.prompt(`${uids.length}명에게 앱 알림(종)으로 보낼 쪽지 내용을 입력하세요.`);
-        if(text === null) return;
-        const body = String(text).trim();
-        if(!body) return alert('쪽지 내용을 입력해 주세요.');
+        const draft = await openAdminMessageComposer({ count:uids.length });
+        if(!draft) return;
         if(!confirm(`${uids.length}명에게 쪽지를 보낼까요?`)) return;
         let ok=0, fail=0;
         for(const uid of uids){
           try{
-            await notifyAdminAppMessage(uid, body);
+            await notifyAdminAppMessage(uid, draft);
             ok++;
           }catch(err){
             console.error('bulk app-message', uid, err);
@@ -5216,7 +5215,7 @@ function bindAdminUserFilters(){
           }
         }
         adminFlash(`일괄 앱 쪽지 · 성공 ${ok}명${fail?` · 실패 ${fail}명`:''}`);
-        pushAdminCrmFeed('일괄 앱 쪽지', `${ok}명 · ${body.slice(0,40)}`, uids[0]||'');
+        pushAdminCrmFeed('일괄 앱 쪽지', `${ok}명 · ${draft.title}`, uids[0]||'');
         return;
       }
       if(action==='delete'){
@@ -6496,6 +6495,8 @@ function isAdminMessageNotify(n){
   if(!n) return false;
   if(n.type === 'admin_message') return true;
   if(n.adminMessage === true) return true;
+  const title = String(n.postTitle || '').trim();
+  if(title === '관리자 쪽지' || title === 'Admin message' || title === '管理者メッセージ') return true;
   return false;
 }
 function isNotifyTypeEnabled(type){
@@ -6685,16 +6686,14 @@ function notifyItemHtml(n){
   const when = fmtDate(n.createdAt);
   const unread = n.read !== true ? ' is-unread' : '';
   let line = '';
-  if(type === 'ticket_reply'){
-    if(isAdminMessageNotify(n)){
-      line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
-    } else {
-      line = `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
-    }
+  // Admin inbox notes must win over legacy/mis-typed labels.
+  const adminNote = isAdminMessageNotify(n);
+  if(adminNote){
+    line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
+  } else if(type === 'ticket_reply'){
+    line = `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
   } else if(type === 'license_change'){
     line = `<b>${esc(name)}</b> · ${esc(tr('notify_license_change'))}`;
-  } else if(type === 'admin_message' || isAdminMessageNotify(n)){
-    line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
   } else if(type === 'notice'){
     line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_notice'))}`;
   } else if(type === 'patch_note'){
@@ -6702,10 +6701,12 @@ function notifyItemHtml(n){
   } else {
     line = `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
   }
+  const genericAdminTitle = title === '관리자 쪽지' || title === 'Admin message' || title === '管理者メッセージ';
+  const showTitle = title && !(adminNote && genericAdminTitle);
   return `<div class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}">
     <button type="button" class="topbar-notify-item-body" data-notify-open="${esc(n.id)}">
       <span class="topbar-notify-item-main">${line}</span>
-      ${title?`<span class="topbar-notify-item-title">${esc(title)}</span>`:''}
+      ${showTitle?`<span class="topbar-notify-item-title">${esc(title)}</span>`:''}
       ${preview?`<span class="topbar-notify-item-preview">${esc(preview)}</span>`:''}
       <span class="topbar-notify-item-time">${esc(when)}</span>
     </button>
@@ -6758,13 +6759,12 @@ async function openNotification(notifyId){
   closeNotifyPanel();
   const base = window.MIDIAI_BASE_PATH || './';
   const type = n.type || 'board_comment';
-  if(type === 'license_change'){
-    location.href = `${base}account.html`;
+  if(isAdminMessageNotify(n)){
+    openAdminMessageViewer(n);
     return;
   }
-  if(type === 'admin_message' || isAdminMessageNotify(n)){
-    const body = String(n.preview || n.postTitle || '').trim();
-    if(body) alert(`${tr('notify_admin_message')}\n\n${body}`);
+  if(type === 'license_change'){
+    location.href = `${base}account.html`;
     return;
   }
   if(type === 'ticket_reply' && n.ticketId){
@@ -6789,6 +6789,25 @@ async function openNotification(notifyId){
     return;
   }
   location.href = href;
+}
+function openAdminMessageViewer(n){
+  const title = String(n?.postTitle || tr('notify_admin_message')).trim() || tr('notify_admin_message');
+  const body = String(n?.preview || '').trim();
+  const overlay = document.createElement('div');
+  overlay.className = 'edit-modal-backdrop';
+  overlay.innerHTML = `<div class="edit-modal admin-message-viewer" role="dialog" aria-modal="true" aria-label="${esc(tr('notify_admin_message'))}">
+    <div class="edit-modal-head"><h3>${esc(tr('notify_admin_message'))}</h3><button type="button" class="edit-modal-x" aria-label="close">×</button></div>
+    <div class="edit-modal-body">
+      <div class="admin-message-view-title">${esc(title)}</div>
+      <div class="admin-message-view-body">${esc(body || '(내용 없음)')}</div>
+    </div>
+    <div class="edit-modal-actions"><button type="button" class="primary" data-close>확인</button></div>
+  </div>`;
+  const close = ()=>{ overlay.remove(); };
+  overlay.querySelector('.edit-modal-x')?.addEventListener('click', close);
+  overlay.querySelector('[data-close]')?.addEventListener('click', close);
+  overlay.addEventListener('click', e=>{ if(e.target === overlay) close(); });
+  document.body.appendChild(overlay);
 }
 async function markAllNotificationsRead(){
   if(!currentUser || !firestoreApi?.updateDoc) return;
@@ -6925,30 +6944,45 @@ async function notifyLicenseChange(uid, {plan='', status=''}={}){
     throw e;
   }
 }
-async function notifyAdminAppMessage(uid, message){
+async function notifyAdminAppMessage(uid, {title='', body=''}={}){
   if(!uid || !firestoreApi) return false;
   if(!isAdminUser || !currentUser) throw new Error(tr('no_permission') || '권한 없음');
-  const body = String(message || '').trim();
-  if(!body) throw new Error('쪽지 내용을 입력해 주세요.');
+  const msgTitle = String(title || '').trim() || tr('notify_admin_message');
+  const msgBody = String(body || '').trim();
+  if(!msgBody) throw new Error('쪽지 내용을 입력해 주세요.');
   const id = await createUserNotification(uid, {
     type: 'admin_message',
     adminMessage: true,
     actorName: BRAND_AUTHOR,
-    postTitle: tr('notify_admin_message'),
-    preview: body
+    postTitle: msgTitle.slice(0, 120),
+    preview: msgBody
   });
   return !!id;
 }
+function openAdminMessageComposer({count=1}={}){
+  const heading = count > 1
+    ? `앱으로 쪽지 보내기 · ${count}명`
+    : '앱으로 쪽지 보내기';
+  return openEditModal(heading, [
+    { name:'title', label:'제목', type:'text', required:true, value:'' },
+    { name:'body', label:'내용', type:'textarea', rows:8, required:true, value:'' }
+  ], { submitLabel:'보내기' }).then(data=>{
+    if(!data) return null;
+    const title = String(data.title || '').trim();
+    const body = String(data.body || '').trim();
+    if(!title){ alert('제목을 입력해 주세요.'); return null; }
+    if(!body){ alert('내용을 입력해 주세요.'); return null; }
+    return { title, body };
+  });
+}
 async function adminSendAppMessage(uid){
   if(!isAdminUser || !uid) return;
-  const text = window.prompt('앱 알림(종)으로 보낼 쪽지 내용을 입력하세요.');
-  if(text === null) return;
-  const body = String(text).trim();
-  if(!body) return alert('쪽지 내용을 입력해 주세요.');
+  const draft = await openAdminMessageComposer({ count:1 });
+  if(!draft) return;
   try{
-    await notifyAdminAppMessage(uid, body);
+    await notifyAdminAppMessage(uid, draft);
     adminFlash(`쪽지 전송 완료 · ${esc(uid)}`);
-    pushAdminCrmFeed('앱 쪽지', body.slice(0, 40), uid);
+    pushAdminCrmFeed('앱 쪽지', `${draft.title} · ${draft.body.slice(0,30)}`, uid);
   }catch(e){
     console.error(e);
     alert(e.message || e);
