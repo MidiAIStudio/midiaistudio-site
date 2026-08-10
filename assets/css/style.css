@@ -1345,6 +1345,7 @@ html.sidebar-ready body.sidebar-layout .app-shell{opacity:1}
 html.auth-pending #loginBtn,
 html.auth-pending #logoutBtn,
 html.auth-pending #topbarNotify{visibility:hidden!important;pointer-events:none!important}
+html.auth-pending #topbarLicensePeriod{visibility:hidden!important;pointer-events:none!important}
 @media (scripting: none){
   body:not(.sidebar-layout){padding-left:0!important}
   body:not(.sidebar-layout) > .topbar,
@@ -2704,6 +2705,17 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 
 
 /* —— Topbar notification bell (YouTube-style) —— */
+.topbar-license-period{
+  display:inline-flex;align-items:center;max-width:min(220px,34vw);
+  padding:0 8px;height:28px;border-radius:8px;
+  border:1px solid rgba(251,191,36,.28);background:rgba(251,191,36,.08);
+  color:#fbbf24;font-size:11px;font-weight:700;letter-spacing:.01em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1
+}
+.topbar-license-period[hidden]{display:none!important}
+.topbar-license-period.is-expired{
+  border-color:rgba(251,113,133,.35);background:rgba(251,113,133,.1);color:#fb7185
+}
 .topbar-notify{position:relative;display:inline-flex;align-items:center}
 .topbar-notify-btn{
   position:relative;display:inline-grid;place-items:center;

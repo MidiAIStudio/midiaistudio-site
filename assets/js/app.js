@@ -562,10 +562,24 @@ function dateInputToEndTimestamp(yyyyMmDd){
   return firestoreApi.Timestamp.fromDate(d);
 }
 
-function normalizeAdminLicensePlanForSave(plan, expiresAtVal){
+function normalizeAdminLicensePlanForSave(plan, expiresAtVal, startsAtVal){
   const p=String(plan||'lifetime').toLowerCase();
-  if(p==='lifetime' && expiresAtVal) return 'period';
-  return p;
+  // Lifetime cannot keep dates — dates imply period.
+  if(p==='lifetime' && (expiresAtVal || startsAtVal)) return 'period';
+  if(p==='trial' || p==='lifetime' || p==='period') return p;
+  if(expiresAtVal || startsAtVal) return 'period';
+  return 'trial';
+}
+/** When admin fills start/expiry dates, switch license dropdown to 기간제. */
+function syncAdminLicensePlanFromDates(){
+  const startVal=$('adminLicenseStartsAt')?.value||'';
+  const endVal=$('adminLicenseExpiresAt')?.value||'';
+  const sel=$('adminLicensePlan');
+  if(!sel) return false;
+  if(!(startVal || endVal)) return false;
+  if(sel.value==='period') return false;
+  sel.value='period';
+  return true;
 }
 function buildAdminLicenseDateFields(){
   const {deleteField}=firestoreApi;
@@ -577,6 +591,29 @@ function buildAdminLicenseDateFields(){
     startsAt: startsAt || deleteField(),
     expiresAt: expiresAt || deleteField()
   };
+}
+/** Patch CRM license caches so detail/list update immediately after write. */
+function patchAdminLicenseCache(uid, patch){
+  const s=String(uid||'');
+  if(!s || !patch) return;
+  const prev = licenseForUid(s) || {};
+  const next = { ...prev, ...patch };
+  if(Object.prototype.hasOwnProperty.call(patch, 'startsAt') && !patch.startsAt) delete next.startsAt;
+  if(Object.prototype.hasOwnProperty.call(patch, 'expiresAt') && !patch.expiresAt) delete next.expiresAt;
+  adminLicenseCache[s] = next;
+  Object.values(adminIdentityCache).forEach(idn=>{
+    if(!idn) return;
+    if(idn.canonicalUid===s || idn.userDocId===s || idn.fieldUid===s){
+      idn.license = next;
+      idn.licenseState = 'ok';
+      idn.conflict = false;
+      idn.error = false;
+    }
+  });
+  const idx = adminLicenseRows.findIndex(x=>x===prev || x?.id===s || x?.uid===s);
+  if(idx>=0) adminLicenseRows[idx]=next;
+  else adminLicenseRows.push(next);
+  adminLicensesLoaded = true;
 }
 function fmtCompactDateTime(v){
   try{
@@ -1438,6 +1475,7 @@ function setAuthUiSignedOut(){
   updateAdminTicketUnreadBadges(0);
   stopUserNotifications();
   setNotifyBellVisible(false);
+  updateTopbarLicensePeriod(null);
   pendingTicketOpenId = '';
   pendingAdminTicketOpenId = '';
   userNotifyPrefs = defaultNotifyPrefs();
@@ -1859,6 +1897,7 @@ async function loadLicense(uid){
     if(sideBadge){ sideBadge.className='badge sidebar-license-badge '+licenseClass; sideBadge.textContent=licenseText; }
     const pBadge=$('topbarProfileLicense');
     if(pBadge){ pBadge.hidden=false; pBadge.className='badge topbar-profile-license '+licenseClass; pBadge.textContent=licenseText; }
+    updateTopbarLicensePeriod(d);
     updateAccountProfileBadges(d);
     if($('accountMeta')){
       const downloadData = await fetchAccountDownloadData();
@@ -1870,6 +1909,7 @@ async function loadLicense(uid){
     currentLicenseLifetime = false;
     if(badge){ badge.className='badge none'; badge.textContent=tr('check_failed'); }
     if(sideBadge){ sideBadge.className='badge sidebar-license-badge none'; sideBadge.textContent=tr('check_failed'); }
+    updateTopbarLicensePeriod(null);
     if($('accountMeta') && currentUser) renderAccountDashboard(uid, null, latestDownloadData);
   }
 }
@@ -4512,8 +4552,10 @@ function showAdminCrmSkeleton(on){
     sk.classList.add('is-hidden');
   }
 }
-function refreshAdminCrmDetail(){
-  if(selectedAdminUid) renderAdminCrmDetail(selectedAdminUid);
+function refreshAdminCrmDetail(opts={}){
+  // Avoid wiping in-progress edits when Firestore snapshots fire.
+  if(adminCrmDirty && !opts.force) return;
+  if(selectedAdminUid) renderAdminCrmDetail(selectedAdminUid, opts);
 }
 function renderAdminCrmHwidBox(user, lic){
   const box=$('adminCrmHwidBox'); if(!box) return;
@@ -4590,7 +4632,7 @@ function renderAdminCrmRecentFeed(){
   }
   box.innerHTML = items.map(it=>`<div class="admin-crm-feed-item"><time>${esc(fmtClock(it.t/1000))}</time><b>${esc(it.label)}</b>${it.detail?`<span>${esc(it.detail)}</span>`:''}</div>`).join('');
 }
-function renderAdminCrmDetail(uid){
+function renderAdminCrmDetail(uid, opts={}){
   const empty=$('adminCrmEmpty');
   const body=$('adminCrmDetailBody');
   const sk=$('adminCrmSkeleton');
@@ -4600,6 +4642,7 @@ function renderAdminCrmDetail(uid){
     body?.classList.add('is-hidden');
     setAdminCrmDirty(false);
     const fb=$('adminCrmFloatSave'); if(fb) fb.hidden=true;
+    renderAdminCrmDetail._lastUid = '';
     return;
   }
   const user = findAdminUserRow(uid);
@@ -4610,9 +4653,14 @@ function renderAdminCrmDetail(uid){
   }
   empty?.classList.add('is-hidden');
   body?.classList.remove('is-hidden');
-  body?.classList.remove('is-fading');
-  void body?.offsetWidth;
-  body?.classList.add('is-fading');
+  const uidChanged = renderAdminCrmDetail._lastUid !== uid;
+  renderAdminCrmDetail._lastUid = uid;
+  // Fade only when switching members — avoids periodic flicker on snapshot refresh.
+  if(uidChanged || opts.animate){
+    body?.classList.remove('is-fading');
+    void body?.offsetWidth;
+    body?.classList.add('is-fading');
+  }
 
   const view = adminLicenseView(user);
   const canonicalUid = view.uid || adminUserUid(user);
@@ -4698,15 +4746,20 @@ function renderAdminCrmDetail(uid){
   renderAdminCrmTimeline(canonicalUid, user, lic);
   renderAdminCrmMemoHistory(user);
   renderAdminCrmRecentFeed();
-  renderAdminCrmUsage(canonicalUid);
+  // Usage panel: refetch only when member changes (avoids "불러오는 중..." blink).
+  if(uidChanged || renderAdminCrmUsage._uid !== canonicalUid){
+    renderAdminCrmUsage(canonicalUid);
+  }
   captureAdminCrmBaseline();
 }
 function renderAdminCrmUsage(uid){
   if(!isAdminUser || !uid || !db || !firestoreApi?.doc) return;
   const box=$('adminCrmUsage'); if(!box) return;
+  renderAdminCrmUsage._uid = uid;
   box.innerHTML=`<p class="muted small">불러오는 중...</p>`;
   (async ()=>{
     if(String(selectedAdminUid || '') !== String(uid)) return;
+    if(renderAdminCrmUsage._uid !== uid) return;
     try{
       const {doc,getDoc,collection,getDocs,query,orderBy,limit}=firestoreApi;
       const tryIds = [...new Set([
@@ -5156,8 +5209,14 @@ function bindAdminCrmDirtyWatchers(){
   ['adminUserRole','adminLicensePlan','adminLicenseStartsAt','adminLicenseExpiresAt','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
     const el=$(id); if(!el||el.dataset.dirtyBound) return;
     el.dataset.dirtyBound='1';
-    el.addEventListener('input', checkAdminCrmDirty);
-    el.addEventListener('change', checkAdminCrmDirty);
+    const onChange=()=>{
+      if(id==='adminLicenseStartsAt' || id==='adminLicenseExpiresAt'){
+        syncAdminLicensePlanFromDates();
+      }
+      checkAdminCrmDirty();
+    };
+    el.addEventListener('input', onChange);
+    el.addEventListener('change', onChange);
   });
 }
 async function saveAdminCrmAllChanges(){
@@ -5190,11 +5249,13 @@ async function saveAdminCrmAllChanges(){
       if(startsAt && expiresAt && startsAt > expiresAt){
         return alert('시작일이 만료일보다 늦을 수 없습니다.');
       }
-      let savePlan=normalizeAdminLicensePlanForSave(plan, expiresAt);
+      let savePlan=normalizeAdminLicensePlanForSave(plan, expiresAt, startsAt);
       if(!['trial','lifetime','period'].includes(savePlan)) savePlan='trial';
       if(savePlan==='lifetime' && $('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value='';
       if(savePlan==='lifetime' && $('adminLicenseStartsAt')) $('adminLicenseStartsAt').value='';
       if($('adminLicensePlan')) $('adminLicensePlan').value=savePlan;
+      const startsAtTs = savePlan==='lifetime' ? null : dateInputToStartTimestamp($('adminLicenseStartsAt')?.value||'');
+      const expiresAtTs = savePlan==='lifetime' ? null : dateInputToEndTimestamp($('adminLicenseExpiresAt')?.value||'');
       await setDoc(doc(db,'licenses',uid),{
         licensed: true,
         plan: savePlan,
@@ -5205,13 +5266,25 @@ async function saveAdminCrmAllChanges(){
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
+      patchAdminLicenseCache(uid, {
+        licensed: true,
+        plan: savePlan,
+        status: saveStatus,
+        method: 'manual',
+        memo: licenseMemo,
+        startsAt: startsAtTs,
+        expiresAt: expiresAtTs,
+        updatedAt: { seconds: Math.floor(Date.now()/1000) }
+      });
       try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
       pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active', uid);
+      renderAdminUserTable();
     }
     if(memoChanged) await saveAdminCrmUserMemo();
     if(roleChanged || licChanged || memoChanged){
       adminFlash(`${tr('saved')} · ${esc(uid)}`);
-      refreshAdminCrmDetail();
+      setAdminCrmDirty(false);
+      refreshAdminCrmDetail({ force:true });
     }
   }catch(e){
     alert(e.message||e);
@@ -5292,13 +5365,32 @@ async function adminQuickLicense(raw, silent=false, opts={}){
       payload.expiresAt = opts.expiresAt || deleteField();
     }
     await setDoc(doc(db,'licenses',uid), payload, {merge:true});
+    const cachePatch = {
+      licensed,
+      plan: savePlan,
+      status: saveStatus,
+      method: 'admin',
+      updatedAt: { seconds: Math.floor(Date.now()/1000) }
+    };
+    if(opts.clearDates){
+      cachePatch.startsAt = null;
+      cachePatch.expiresAt = null;
+    } else if(opts.days!=null){
+      cachePatch.startsAt = payload.startsAt;
+      cachePatch.expiresAt = payload.expiresAt;
+    } else if(opts.startsAt || opts.expiresAt){
+      cachePatch.startsAt = opts.startsAt || null;
+      cachePatch.expiresAt = opts.expiresAt || null;
+    }
+    patchAdminLicenseCache(uid, cachePatch);
     try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
     if(!silent){
       const range = opts.days!=null ? ` · ${opts.days}일` : (opts.clearDates ? ' · 무기한' : '');
       adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(savePlan)} / ${esc(saveStatus)}${range}`);
       pushAdminCrmFeed(savePlan==='lifetime'?'Lifetime 지급':(savePlan==='trial'?'Trial 지급':`${savePlan} 지급`), saveStatus + range, uid);
     }
-    if(selectedAdminUid===uid) refreshAdminCrmDetail();
+    renderAdminUserTable();
+    if(selectedAdminUid===uid) refreshAdminCrmDetail({ force:true });
   }catch(e){ alert(e.message); }
 }
 async function adminResetHwid(uid){
@@ -5412,9 +5504,14 @@ function listenAdminUsers(){
     collection(db,'users'),
     snap=>{
       adminUsersListenError = null;
+      const prevIds = adminUserRows.map(u=>String(u.id||'')).filter(Boolean).sort().join('|');
       adminUserRows=snap.docs.map(d=>({id:d.id,...d.data()}));
-      adminLicensesLoaded=false;
-      loadAdminLicenses();
+      const nextIds = adminUserRows.map(u=>String(u.id||'')).filter(Boolean).sort().join('|');
+      const membershipChanged = prevIds !== nextIds;
+      // lastLogin churn must not wipe license badges to "확인 중" or reload every license.
+      if(membershipChanged || !adminLicensesLoaded){
+        loadAdminLicenses();
+      }
       renderAdminUserTable();
       refreshAdminCrmDetail();
     },
@@ -6277,6 +6374,7 @@ async function saveUserNotifyPrefs(next){
 function ensureNotifyBell(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
+  ensureTopbarLicensePeriod();
   let wrap = $('topbarNotify');
   if(wrap) return wrap;
   wrap = document.createElement('div');
@@ -6285,8 +6383,14 @@ function ensureNotifyBell(){
   wrap.hidden = true;
   wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><div class="topbar-notify-head-actions"><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button><button type="button" class="topbar-notify-clear" id="notifyClearAll">${esc(tr('notify_clear_all'))}</button></div></div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
   const langBtn = $('langBtn');
-  if(langBtn) actions.insertBefore(wrap, langBtn);
-  else actions.insertBefore(wrap, actions.firstChild);
+  const periodEl = $('topbarLicensePeriod');
+  if(periodEl && periodEl.parentNode === actions){
+    actions.insertBefore(wrap, periodEl.nextSibling);
+  } else if(langBtn){
+    actions.insertBefore(wrap, langBtn);
+  } else {
+    actions.insertBefore(wrap, actions.firstChild);
+  }
   const bell = $('notifyBellBtn');
   bell?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleNotifyPanel(); });
   $('notifyMarkAllRead')?.addEventListener('click', (e)=>{ e.stopPropagation(); markAllNotificationsRead(); });
@@ -6300,6 +6404,52 @@ function ensureNotifyBell(){
     });
   }
   return wrap;
+}
+function ensureTopbarLicensePeriod(){
+  const actions = document.querySelector('.topbar .actions');
+  if(!actions) return null;
+  let el = $('topbarLicensePeriod');
+  if(el) return el;
+  el = document.createElement('span');
+  el.id = 'topbarLicensePeriod';
+  el.className = 'topbar-license-period';
+  el.hidden = true;
+  const notify = $('topbarNotify');
+  const langBtn = $('langBtn');
+  if(notify) actions.insertBefore(el, notify);
+  else if(langBtn) actions.insertBefore(el, langBtn);
+  else actions.insertBefore(el, actions.firstChild);
+  return el;
+}
+function updateTopbarLicensePeriod(d){
+  const el = ensureTopbarLicensePeriod();
+  if(!el) return;
+  if(!currentUser || !d){
+    el.hidden = true;
+    el.textContent = '';
+    el.removeAttribute('title');
+    return;
+  }
+  const plan = normalizePlan(d);
+  const status = normalizeStatus(d);
+  if(plan !== 'period' || status === 'banned'){
+    el.hidden = true;
+    el.textContent = '';
+    el.removeAttribute('title');
+    return;
+  }
+  const start = d.startsAt ? fmtListDate(d.startsAt) : '';
+  const end = d.expiresAt ? fmtListDate(d.expiresAt) : '';
+  if(!start && !end){
+    el.hidden = true;
+    el.textContent = '';
+    return;
+  }
+  const label = start && end ? `${start} ~ ${end}` : (end ? `~ ${end}` : start);
+  el.hidden = false;
+  el.textContent = label;
+  el.title = lang==='en' ? `Period license: ${label}` : lang==='ja' ? `期間制: ${label}` : `기간제: ${label}`;
+  el.classList.toggle('is-expired', status==='expired');
 }
 function setNotifyBellVisible(show){
   const wrap = ensureNotifyBell();
