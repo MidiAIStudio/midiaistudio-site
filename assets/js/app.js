@@ -564,8 +564,7 @@ function dateInputToEndTimestamp(yyyyMmDd){
 
 function normalizeAdminLicensePlanForSave(plan, expiresAtVal, startsAtVal){
   const p=String(plan||'lifetime').toLowerCase();
-  // Lifetime cannot keep dates — dates imply period.
-  if(p==='lifetime' && (expiresAtVal || startsAtVal)) return 'period';
+  // Admin choice wins for trial/lifetime (dates are cleared separately).
   if(p==='trial' || p==='lifetime' || p==='period') return p;
   if(expiresAtVal || startsAtVal) return 'period';
   return 'trial';
@@ -581,10 +580,22 @@ function syncAdminLicensePlanFromDates(){
   sel.value='period';
   return true;
 }
-function buildAdminLicenseDateFields(){
+/** Trial / lifetime have no period bounds — clear start & expiry inputs. */
+function clearAdminLicenseDatesIfNonPeriod(plan){
+  const p=String(plan||'').toLowerCase();
+  if(p!=='trial' && p!=='lifetime') return false;
+  let cleared=false;
+  const startEl=$('adminLicenseStartsAt');
+  const endEl=$('adminLicenseExpiresAt');
+  if(startEl && startEl.value){ startEl.value=''; cleared=true; }
+  if(endEl && endEl.value){ endEl.value=''; cleared=true; }
+  return cleared;
+}
+function buildAdminLicenseDateFields(opts={}){
   const {deleteField}=firestoreApi;
-  const startVal=$('adminLicenseStartsAt')?.value||'';
-  const endVal=$('adminLicenseExpiresAt')?.value||'';
+  const clearDates = !!opts.clearDates;
+  const startVal=clearDates ? '' : ($('adminLicenseStartsAt')?.value||'');
+  const endVal=clearDates ? '' : ($('adminLicenseExpiresAt')?.value||'');
   const startsAt=dateInputToStartTimestamp(startVal);
   const expiresAt=dateInputToEndTimestamp(endVal);
   return {
@@ -4848,14 +4859,33 @@ function bindCrmTextSlides(root){
       text.style.removeProperty('--crm-slide');
       text.style.removeProperty('--crm-slide-dur');
       el.classList.remove('is-overflow');
-      const overflow=text.scrollWidth - el.clientWidth;
-      if(overflow<=1) return;
+      // Reset transform so scrollWidth is accurate after prior animation frames.
+      text.style.transform='';
+      const cw=el.clientWidth;
+      if(cw<=0) return;
+      const sw=text.scrollWidth;
+      const overflow=sw - cw;
+      if(overflow<=2) return;
+      // Extra gap so the tail isn't clipped at the end of the scroll.
+      const travel=overflow + 16;
       el.classList.add('is-overflow');
-      text.style.setProperty('--crm-slide', `${overflow}px`);
-      text.style.setProperty('--crm-slide-dur', `${Math.max(4, Math.min(14, overflow/28))}s`);
+      text.style.setProperty('--crm-slide', `${travel}px`);
+      text.style.setProperty('--crm-slide-dur', `${Math.max(5, Math.min(16, travel/22))}s`);
     });
   };
-  requestAnimationFrame(()=>requestAnimationFrame(measure));
+  const runWithRetry=()=>{
+    measure();
+    const pending=[...root.querySelectorAll('.crm-slide')].some(el=>el.clientWidth<=0);
+    if(pending) setTimeout(measure, 80);
+  };
+  requestAnimationFrame(()=>requestAnimationFrame(runWithRetry));
+  if(typeof ResizeObserver!=='undefined'){
+    if(root._crmSlideRo){
+      try{ root._crmSlideRo.disconnect(); }catch{}
+    }
+    root._crmSlideRo=new ResizeObserver(()=>{ measure(); });
+    root._crmSlideRo.observe(root);
+  }
 }
 function renderAdminCrmOrders(uid, showAll){
   const box=$('adminCrmOrders'); if(!box) return;
@@ -5210,7 +5240,10 @@ function bindAdminCrmDirtyWatchers(){
     const el=$(id); if(!el||el.dataset.dirtyBound) return;
     el.dataset.dirtyBound='1';
     const onChange=()=>{
-      if(id==='adminLicenseStartsAt' || id==='adminLicenseExpiresAt'){
+      if(id==='adminLicensePlan'){
+        // Switching away from period clears bounds so the chosen type sticks.
+        clearAdminLicenseDatesIfNonPeriod(el.value);
+      } else if(id==='adminLicenseStartsAt' || id==='adminLicenseExpiresAt'){
         syncAdminLicensePlanFromDates();
       }
       checkAdminCrmDirty();
@@ -5227,6 +5260,8 @@ async function saveAdminCrmAllChanges(){
   const plan=$('adminLicensePlan')?.value;
   const saveStatus='active';
   const licenseMemo=$('adminLicenseMemo')?.value||'';
+  // Respect plan choice: trial/lifetime drop period dates before we read them.
+  clearAdminLicenseDatesIfNonPeriod(plan);
   const startsAt=$('adminLicenseStartsAt')?.value||'';
   const expiresAt=$('adminLicenseExpiresAt')?.value||'';
   const baseline=adminCrmBaseline||{};
@@ -5246,23 +5281,26 @@ async function saveAdminCrmAllChanges(){
       if(!plan){
         return alert('라이선스 유형을 선택해 주세요.');
       }
-      if(startsAt && expiresAt && startsAt > expiresAt){
+      if(plan==='period' && startsAt && expiresAt && startsAt > expiresAt){
         return alert('시작일이 만료일보다 늦을 수 없습니다.');
       }
       let savePlan=normalizeAdminLicensePlanForSave(plan, expiresAt, startsAt);
       if(!['trial','lifetime','period'].includes(savePlan)) savePlan='trial';
-      if(savePlan==='lifetime' && $('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value='';
-      if(savePlan==='lifetime' && $('adminLicenseStartsAt')) $('adminLicenseStartsAt').value='';
+      const clearDates = savePlan==='lifetime' || savePlan==='trial';
+      if(clearDates){
+        if($('adminLicenseStartsAt')) $('adminLicenseStartsAt').value='';
+        if($('adminLicenseExpiresAt')) $('adminLicenseExpiresAt').value='';
+      }
       if($('adminLicensePlan')) $('adminLicensePlan').value=savePlan;
-      const startsAtTs = savePlan==='lifetime' ? null : dateInputToStartTimestamp($('adminLicenseStartsAt')?.value||'');
-      const expiresAtTs = savePlan==='lifetime' ? null : dateInputToEndTimestamp($('adminLicenseExpiresAt')?.value||'');
+      const startsAtTs = clearDates ? null : dateInputToStartTimestamp($('adminLicenseStartsAt')?.value||'');
+      const expiresAtTs = clearDates ? null : dateInputToEndTimestamp($('adminLicenseExpiresAt')?.value||'');
       await setDoc(doc(db,'licenses',uid),{
         licensed: true,
         plan: savePlan,
         status: saveStatus,
         method:'manual',
         memo:licenseMemo,
-        ...buildAdminLicenseDateFields(),
+        ...buildAdminLicenseDateFields({ clearDates }),
         updatedAt:serverTimestamp(),
         createdAt:serverTimestamp()
       },{merge:true});
@@ -5277,7 +5315,7 @@ async function saveAdminCrmAllChanges(){
         updatedAt: { seconds: Math.floor(Date.now()/1000) }
       });
       try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
-      pushAdminCrmFeed(`${savePlan} 저장`, expiresAt && savePlan!=='lifetime' ? `~${expiresAt}` : 'active', uid);
+      pushAdminCrmFeed(`${savePlan} 저장`, (!clearDates && expiresAt) ? `~${expiresAt}` : 'active', uid);
       renderAdminUserTable();
     }
     if(memoChanged) await saveAdminCrmUserMemo();
