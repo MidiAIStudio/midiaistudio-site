@@ -28,7 +28,7 @@ service cloud.firestore {
           && (
             (
               isAdmin()
-              && request.resource.data.type in ['ticket_reply', 'license_change', 'board_comment']
+              && request.resource.data.type in ['ticket_reply', 'license_change', 'board_comment', 'admin_message']
             )
             || (
               signedIn()

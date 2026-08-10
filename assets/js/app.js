@@ -75,6 +75,9 @@ let adminCrmDirty = false;
 let adminCrmBaseline = null;
 let adminCrmDetailTimer = null;
 let adminCrmRecentFeed = [];
+/** Extra list filter from stats cards: '' | 'active' | 'today' | 'idle7' | 'idle30' */
+let adminCrmQuickFilter = '';
+let adminCrmStatKey = 'all';
 try{ adminCrmRecentFeed = JSON.parse(localStorage.getItem('midiai_admin_crm_feed')||'[]'); }catch{ adminCrmRecentFeed = []; }
 if(!Array.isArray(adminCrmRecentFeed)) adminCrmRecentFeed = [];
 let activeBoardPost = null;
@@ -437,7 +440,7 @@ function tr(k){
     admin_ticket_toast_title:'💬 새로운 문의가 등록되었습니다.', admin_ticket_toast_body:'새 1:1 문의가 접수되었습니다.', admin_ticket_toast_action:'문의 보기',
     admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
     notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_clear_all:'모두 삭제', notify_clear_confirm:'알림을 모두 삭제할까요?', notify_delete_aria:'알림 삭제', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
-    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
+    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_admin_message:'관리자 쪽지', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
     board_mine_title:'내 작성글', board_mine_desc:'내가 작성한 자유게시판 글만 표시합니다.', board_mine_all:'전체 글 보기', board_mine_only:'내 글만',
     notify_settings_title:'알림 설정', notify_pref_inapp:'앱 알림', notify_pref_email:'이메일 알림', notify_pref_saved:'저장됨'
@@ -453,7 +456,7 @@ function tr(k){
     admin_ticket_toast_title:'💬 A new support ticket was submitted.', admin_ticket_toast_body:'A new 1:1 inquiry has been received.', admin_ticket_toast_action:'View ticket',
     admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
     notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_clear_all:'Clear all', notify_clear_confirm:'Delete all notifications?', notify_delete_aria:'Delete notification', notify_login:'Sign in to see notifications.',
-    notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
+    notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_admin_message:'Admin message', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
     board_mine_title:'My posts', board_mine_desc:'Showing only posts you wrote on the free board.', board_mine_all:'All posts', board_mine_only:'My posts',
     notify_settings_title:'Notifications', notify_pref_inapp:'App alerts', notify_pref_email:'Email alerts', notify_pref_saved:'Saved'
@@ -469,7 +472,7 @@ function tr(k){
     admin_ticket_toast_title:'💬 新しいお問い合わせが登録されました。', admin_ticket_toast_body:'新しい1:1問い合わせが届きました。', admin_ticket_toast_action:'問い合わせを見る',
     admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
     notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_clear_all:'すべて削除', notify_clear_confirm:'通知をすべて削除しますか？', notify_delete_aria:'通知を削除', notify_login:'ログインすると通知を確認できます。',
-    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
+    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_admin_message:'管理者メッセージ', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
     board_mine_title:'自分の投稿', board_mine_desc:'自由掲示板で自分が書いた投稿だけを表示します。', board_mine_all:'すべての投稿', board_mine_only:'自分の投稿',
     notify_settings_title:'通知設定', notify_pref_inapp:'アプリ通知', notify_pref_email:'メール通知', notify_pref_saved:'保存しました'
@@ -4382,6 +4385,19 @@ function getAdminCrmRows(){
     if(ordersF==='none' && u.orderCount>0) return false;
     if(ticketsF==='has' && !(u.ticketCount>0)) return false;
     if(ticketsF==='none' && u.ticketCount>0) return false;
+    const nowSec=Date.now()/1000;
+    if(adminCrmQuickFilter==='active'){
+      if(!(view.state==='ok' && status==='active')) return false;
+    } else if(adminCrmQuickFilter==='today'){
+      const t=adminTsSec(u.createdAt);
+      if(!t || nowSec-t >= 86400) return false;
+    } else if(adminCrmQuickFilter==='idle7'){
+      const t=adminTsSec(u.lastLogin||u.lastSeenAt);
+      if(!(t>0 && nowSec-t > 7*86400)) return false;
+    } else if(adminCrmQuickFilter==='idle30'){
+      const t=adminTsSec(u.lastLogin||u.lastSeenAt);
+      if(!(t>0 && nowSec-t > 30*86400)) return false;
+    }
     const hay=[u.email,u.displayName,u.uid,u.id,u.hwid,u.license?.hwid,plan,status,role].join(' ').toLowerCase();
     return !q || hay.includes(q);
   });
@@ -4394,8 +4410,37 @@ function getAdminCrmRows(){
   });
   return rows;
 }
+function applyAdminCrmStatFilter(key){
+  const k=String(key||'all');
+  adminCrmStatKey = k;
+  adminCrmQuickFilter = '';
+  const sel=$('adminUserLicenseStatus');
+  if(k==='all'){
+    if(sel) sel.value='all';
+  } else if(k==='lifetime' || k==='trial' || k==='period' || k==='favorites'){
+    if(sel) sel.value=k;
+  } else if(k==='active' || k==='today' || k==='idle7' || k==='idle30'){
+    if(sel) sel.value='all';
+    adminCrmQuickFilter = k;
+  } else if(k==='filtered'){
+    // Keep whatever filters are already applied; only update selection highlight.
+  }
+  adminCrmPage=1;
+  renderAdminUserTable();
+}
+function bindAdminCrmStatClicks(){
+  const box=$('adminCrmStats');
+  if(!box || box.dataset.statBound) return;
+  box.dataset.statBound='1';
+  box.addEventListener('click', e=>{
+    const btn=e.target.closest('[data-crm-stat]');
+    if(!btn) return;
+    applyAdminCrmStatFilter(btn.getAttribute('data-crm-stat'));
+  });
+}
 function renderAdminCrmStats(rows){
   const box=$('adminCrmStats'); if(!box) return;
+  bindAdminCrmStatClicks();
   const now=Date.now()/1000;
   const all=adminUserRows.length;
   let active=0, trial=0, lifetime=0;
@@ -4409,15 +4454,20 @@ function renderAdminCrmStats(rows){
   const todayJoin=adminUserRows.filter(u=>adminTsSec(u.createdAt) && now-adminTsSec(u.createdAt) < 86400).length;
   const idle7=adminUserRows.filter(u=>{ const t=adminTsSec(u.lastLogin||u.lastSeenAt); return t>0 && now-t > 7*86400; }).length;
   const idle30=adminUserRows.filter(u=>{ const t=adminTsSec(u.lastLogin||u.lastSeenAt); return t>0 && now-t > 30*86400; }).length;
+  const selected = adminCrmStatKey || 'all';
+  const card=(key, value, label, extraClass='')=>{
+    const on = selected===key ? ' is-selected' : '';
+    return `<button type="button" class="crm-stat${extraClass}${on}" data-crm-stat="${esc(key)}" aria-pressed="${selected===key?'true':'false'}"><b>${value}</b><span>${esc(label)}</span></button>`;
+  };
   box.innerHTML=`
-    <div class="crm-stat"><b>${all}</b><span>전체 회원</span></div>
-    <div class="crm-stat"><b>${active}</b><span>활성</span></div>
-    <div class="crm-stat"><b>${lifetime}</b><span>평생</span></div>
-    <div class="crm-stat"><b>${trial}</b><span>체험판</span></div>
-    <div class="crm-stat"><b>${todayJoin}</b><span>오늘 가입</span></div>
-    <div class="crm-stat"><b>${idle7}</b><span>7일 미접속</span></div>
-    <div class="crm-stat"><b>${idle30}</b><span>30일 미접속</span></div>
-    <div class="crm-stat is-accent"><b>${rows.length}</b><span>필터 결과</span></div>`;
+    ${card('all', all, '전체 회원')}
+    ${card('active', active, '활성')}
+    ${card('lifetime', lifetime, '평생')}
+    ${card('trial', trial, '체험판')}
+    ${card('today', todayJoin, '오늘 가입')}
+    ${card('idle7', idle7, '7일 미접속')}
+    ${card('idle30', idle30, '30일 미접속')}
+    ${card('filtered', rows.length, '필터 결과', ' is-accent')}`;
 }
 function renderAdminUserTable(){
   const box=$('adminUserList'); if(!box || !isAdminUser) return;
@@ -4777,6 +4827,25 @@ function renderAdminCrmDetail(uid, opts={}){
   }
   captureAdminCrmBaseline();
 }
+function bindAdminCrmUsageCollapse(){
+  const card=$('adminCrmUsageCard');
+  const btn=$('adminCrmUsageToggle');
+  const body=$('adminCrmUsage');
+  const hint=$('adminCrmUsageHint');
+  if(!card || !btn || !body || btn.dataset.bound) return;
+  btn.dataset.bound='1';
+  const apply=(open)=>{
+    card.classList.toggle('is-collapsed', !open);
+    body.hidden = !open;
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if(hint) hint.textContent = open ? '접기' : '펼치기';
+  };
+  apply(false);
+  btn.addEventListener('click', ()=>{
+    const open = btn.getAttribute('aria-expanded') !== 'true';
+    apply(open);
+  });
+}
 function renderAdminCrmUsage(uid){
   if(!isAdminUser || !uid || !db || !firestoreApi?.doc) return;
   const box=$('adminCrmUsage'); if(!box) return;
@@ -5085,12 +5154,22 @@ function bindAdminUserFilters(){
     search.dataset.bound='1';
     search.addEventListener('input',()=>{
       clearTimeout(adminCrmSearchTimer);
-      adminCrmSearchTimer=setTimeout(()=>{ adminCrmPage=1; renderAdminUserTable(); }, 220);
+      adminCrmSearchTimer=setTimeout(()=>{
+        adminCrmStatKey = 'filtered';
+        adminCrmPage=1;
+        renderAdminUserTable();
+      }, 220);
     });
   }
   ['adminUserLicenseStatus','adminUserSort','adminCrmFilterOrders','adminCrmFilterTickets'].forEach(id=>{
     const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1';
     el.addEventListener('change',()=>{
+      if(id==='adminUserLicenseStatus'){
+        adminCrmQuickFilter = '';
+        adminCrmStatKey = el.value || 'all';
+      } else {
+        adminCrmStatKey = 'filtered';
+      }
       adminCrmPage=1;
       renderAdminUserTable();
     });
@@ -5120,13 +5199,24 @@ function bindAdminUserFilters(){
       const action=btn.getAttribute('data-bulk');
       const uids=[...adminCrmSelected];
       if(!uids.length) return;
-      if(action==='mail'){
-        const emails = uids.map(id=>{
-          const u=adminUserRows.find(x=>adminUserUid(x)===id);
-          return u?.email;
-        }).filter(Boolean);
-        if(!emails.length) return alert('선택된 회원에 이메일이 없습니다.');
-        location.href=`mailto:?bcc=${encodeURIComponent(emails.join(','))}&subject=${encodeURIComponent('[MidiAI Studio]')}`;
+      if(action==='app-message' || action==='mail'){
+        const text = window.prompt(`${uids.length}명에게 앱 알림(종)으로 보낼 쪽지 내용을 입력하세요.`);
+        if(text === null) return;
+        const body = String(text).trim();
+        if(!body) return alert('쪽지 내용을 입력해 주세요.');
+        if(!confirm(`${uids.length}명에게 쪽지를 보낼까요?`)) return;
+        let ok=0, fail=0;
+        for(const uid of uids){
+          try{
+            await notifyAdminAppMessage(uid, body);
+            ok++;
+          }catch(err){
+            console.error('bulk app-message', uid, err);
+            fail++;
+          }
+        }
+        adminFlash(`일괄 앱 쪽지 · 성공 ${ok}명${fail?` · 실패 ${fail}명`:''}`);
+        pushAdminCrmFeed('일괄 앱 쪽지', `${ok}명 · ${body.slice(0,40)}`, uids[0]||'');
         return;
       }
       if(action==='delete'){
@@ -5137,12 +5227,6 @@ function bindAdminUserFilters(){
         renderAdminUserTable();
         renderAdminCrmDetail(null);
         adminFlash(`일괄 삭제 완료 · ${uids.length}명`);
-        return;
-      }
-      if(action==='trial' || action==='lifetime'){
-        if(!confirm(`${uids.length}명에게 ${action} 라이선스를 지급할까요?`)) return;
-        for(const uid of uids) await adminQuickLicense(`${uid}:${action}:active`, true);
-        adminFlash(`일괄 ${action} 완료 · ${uids.length}명`);
         return;
       }
       if(action==='ban' || action==='suspend'){
@@ -5157,6 +5241,7 @@ function bindAdminUserFilters(){
   }
   bindAdminCrmDetailActions();
   bindAdminCrmMemoAutosave();
+  bindAdminCrmUsageCollapse();
 }
 function bindAdminCrmDetailActions(){
   const root=$('adminCrm'); if(!root || root.dataset.actionsBound) return;
@@ -5232,10 +5317,8 @@ function bindAdminCrmDetailActions(){
       adminCrmPostSelected.clear();
       renderAdminCrmPosts(uid);
     }
-    else if(action==='mail'){
-      if(!user?.email) return alert('이메일이 없습니다.');
-      location.href=`mailto:${encodeURIComponent(user.email)}?subject=${encodeURIComponent('[MidiAI Studio]')}`;
-    }
+    else if(action==='app-message') await adminSendAppMessage(uid);
+    else if(action==='mail') await adminSendAppMessage(uid);
     else if(action==='google-profile'){
       if(user?.photoURL) window.open(user.photoURL, '_blank', 'noopener');
       else if(user?.email) window.open(`https://www.google.com/search?q=${encodeURIComponent(user.email)}`, '_blank', 'noopener');
@@ -5662,20 +5745,8 @@ function applyBoardMineModeUi(){
   }
   let tools = document.querySelector('.hub-tools');
   if(tools){
-    let link = $('boardMineToggle');
-    if(!link){
-      link = document.createElement('a');
-      link.id = 'boardMineToggle';
-      link.className = 'secondary mini-btn';
-      tools.insertBefore(link, tools.firstChild);
-    }
-    if(mine){
-      link.href = './board.html';
-      link.textContent = tr('board_mine_all');
-    } else {
-      link.href = './board.html?mine=1';
-      link.textContent = tr('board_mine_only');
-    }
+    // Remove legacy "내 글만" toolbar toggle if present.
+    $('boardMineToggle')?.remove();
   }
 }
 function renderBoardPosts(rows, err){
@@ -6427,6 +6498,7 @@ function isNotifyTypeEnabled(type){
   if(type === 'board_comment') return p.boardComment !== false;
   if(type === 'ticket_reply') return p.ticketReply !== false;
   if(type === 'license_change') return p.licenseChange !== false;
+  if(type === 'admin_message') return true; // always show admin notes
   if(type === 'notice') return p.notice !== false;
   if(type === 'patch_note') return p.patchNote !== false;
   return true;
@@ -6608,6 +6680,8 @@ function notifyItemHtml(n){
     line = `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
   } else if(type === 'license_change'){
     line = `<b>${esc(name)}</b> · ${esc(tr('notify_license_change'))}`;
+  } else if(type === 'admin_message'){
+    line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
   } else if(type === 'notice'){
     line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_notice'))}`;
   } else if(type === 'patch_note'){
@@ -6679,6 +6753,11 @@ async function openNotification(notifyId){
     location.href = `${base}account.html`;
     return;
   }
+  if(type === 'admin_message'){
+    const body = String(n.preview || n.postTitle || '').trim();
+    if(body) alert(`${tr('notify_admin_message')}\n\n${body}`);
+    return;
+  }
   const postId = n.postId || '';
   if(type === 'notice' && postId){
     location.href = `${base}notice.html?id=${encodeURIComponent(postId)}`;
@@ -6737,8 +6816,10 @@ async function createUserNotification(ownerUid, data={}){
     throw new Error('notification create unavailable');
   }
   const {collection, addDoc, serverTimestamp} = firestoreApi;
+  const type = data.type || 'general';
+  const previewMax = type === 'admin_message' ? 500 : 160;
   const payload = {
-    type: data.type || 'general',
+    type,
     postId: data.postId || '',
     commentId: data.commentId || '',
     parentId: data.parentId || '',
@@ -6748,7 +6829,7 @@ async function createUserNotification(ownerUid, data={}){
     actorUid: data.actorUid != null ? data.actorUid : (currentUser.uid || ''),
     actorName: data.actorName != null ? data.actorName : (boardDisplayName() || BRAND_AUTHOR),
     postTitle: String(data.postTitle || data.title || '').slice(0,120),
-    preview: String(data.preview || '').slice(0,160),
+    preview: String(data.preview || '').slice(0, previewMax),
     read: false,
     createdAt: serverTimestamp()
   };
@@ -6828,6 +6909,34 @@ async function notifyLicenseChange(uid, {plan='', status=''}={}){
     console.error('notifyLicenseChange', e);
     try{ adminFlash(`라이선스 알림 실패: ${e.message||e}`); }catch{}
     throw e;
+  }
+}
+async function notifyAdminAppMessage(uid, message){
+  if(!uid || !firestoreApi) return false;
+  if(!isAdminUser || !currentUser) throw new Error(tr('no_permission') || '권한 없음');
+  const body = String(message || '').trim();
+  if(!body) throw new Error('쪽지 내용을 입력해 주세요.');
+  const id = await createUserNotification(uid, {
+    type: 'admin_message',
+    actorName: BRAND_AUTHOR,
+    postTitle: tr('notify_admin_message'),
+    preview: body
+  });
+  return !!id;
+}
+async function adminSendAppMessage(uid){
+  if(!isAdminUser || !uid) return;
+  const text = window.prompt('앱 알림(종)으로 보낼 쪽지 내용을 입력하세요.');
+  if(text === null) return;
+  const body = String(text).trim();
+  if(!body) return alert('쪽지 내용을 입력해 주세요.');
+  try{
+    await notifyAdminAppMessage(uid, body);
+    adminFlash(`쪽지 전송 완료 · ${esc(uid)}`);
+    pushAdminCrmFeed('앱 쪽지', body.slice(0, 40), uid);
+  }catch(e){
+    console.error(e);
+    alert(e.message || e);
   }
 }
 function focusBoardComment(commentId){

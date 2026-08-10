@@ -169,9 +169,6 @@
                       <option value="trial">체험판</option>
                       <option value="lifetime">평생</option>
                       <option value="period">기간제</option>
-                      <option value="active">활성</option>
-                      <option value="expired">만료</option>
-                      <option value="banned">차단</option>
                       <option value="favorites">★ 즐겨찾기</option>
                     </select>
                     <select id="adminUserSort" aria-label="정렬">
@@ -197,10 +194,8 @@
                 <div class="admin-crm-bulkbar" id="adminCrmBulkbar" hidden>
                   <span id="adminCrmBulkCount">0명 선택</span>
                   <div class="admin-crm-bulk-actions">
-                    <button type="button" class="secondary mini-btn" data-bulk="trial">일괄 체험판</button>
-                    <button type="button" class="secondary mini-btn" data-bulk="lifetime">일괄 평생</button>
                     <button type="button" class="secondary mini-btn danger-btn" data-bulk="ban">일괄 차단</button>
-                    <button type="button" class="secondary mini-btn" data-bulk="mail">일괄 메일</button>
+                    <button type="button" class="secondary mini-btn" data-bulk="app-message">일괄 앱 쪽지</button>
                     <button type="button" class="secondary mini-btn danger-btn" data-bulk="delete">일괄 삭제</button>
                   </div>
                 </div>
@@ -243,14 +238,7 @@
                         <button type="button" class="secondary mini-btn admin-crm-menu-btn" id="adminCrmMenuBtn" aria-haspopup="true" aria-expanded="false">⋯</button>
                         <div class="admin-crm-menu" id="adminCrmMenu" hidden role="menu">
                           <button type="button" role="menuitem" data-crm-action="hwid-reset">HWID 초기화</button>
-                          <button type="button" role="menuitem" data-crm-action="mail">메일 보내기</button>
-                          <button type="button" role="menuitem" data-crm-action="google-profile">Google 프로필</button>
-                          <button type="button" role="menuitem" data-crm-action="discord">Discord 프로필</button>
-                          <button type="button" role="menuitem" data-crm-action="orders">주문 보기</button>
-                          <button type="button" role="menuitem" data-crm-action="tickets">문의 보기</button>
-                          <button type="button" role="menuitem" data-crm-action="ban">계정 차단</button>
-                          <button type="button" role="menuitem" data-crm-action="activate">계정 활성화</button>
-                          <button type="button" role="menuitem" data-crm-action="focus-license">라이선스 변경</button>
+                          <button type="button" role="menuitem" data-crm-action="app-message">앱으로 쪽지 보내기</button>
                           <button type="button" role="menuitem" class="is-danger" data-crm-action="delete">회원 삭제</button>
                         </div>
                       </div>
@@ -296,9 +284,14 @@
                     </form>
                   </div>
 
-                  <div class="admin-crm-card admin-crm-card-dense" id="adminCrmUsageCard">
-                    <div class="admin-crm-card-head"><h3>FULL 기능 사용</h3></div>
-                    <div id="adminCrmUsage" class="admin-crm-usage"><p class="muted small">불러오는 중...</p></div>
+                  <div class="admin-crm-card admin-crm-card-dense is-collapsed" id="adminCrmUsageCard">
+                    <div class="admin-crm-card-head">
+                      <button type="button" class="admin-crm-collapse-btn" id="adminCrmUsageToggle" aria-expanded="false" aria-controls="adminCrmUsage">
+                        <h3>FULL 기능 사용</h3>
+                        <span class="admin-crm-collapse-hint" id="adminCrmUsageHint">펼치기</span>
+                      </button>
+                    </div>
+                    <div id="adminCrmUsage" class="admin-crm-usage" hidden><p class="muted small">불러오는 중...</p></div>
                   </div>
 
                   <div class="admin-crm-split-cards">
