@@ -479,7 +479,6 @@ function tr(k){
 }
 
 function fmtDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); return d ? d.toLocaleString(lang==='ja'?'ja-JP':lang==='en'?'en-US':'ko-KR') : ''; } catch { return ''; } }
-function fmtListDate(v){ try{ const d=v?.toDate?v.toDate():(v?new Date(v):null); if(!d)return '-'; const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`; }catch{return '';} }
 function licenseTsMs(v){
   if(v==null || v==='') return 0;
   if(typeof v==='number' && Number.isFinite(v)) return v>1e12 ? v : v*1000;
@@ -487,11 +486,24 @@ function licenseTsMs(v){
   if(typeof v?.toDate==='function'){ const t=v.toDate().getTime(); return Number.isFinite(t)?t:0; }
   const sec=Number(v?.seconds||v?._seconds||0);
   if(sec) return sec*1000;
+  if(v instanceof Date){ const t=v.getTime(); return Number.isFinite(t)?t:0; }
   const d=new Date(v);
   return Number.isFinite(d.getTime()) ? d.getTime() : 0;
 }
+function fmtListDate(v){
+  try{
+    const ms=licenseTsMs(v);
+    if(!ms) return '-';
+    const d=new Date(ms);
+    if(!Number.isFinite(d.getTime())) return '-';
+    const pad=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
+  }catch{ return '-'; }
+}
 function licenseDateBoundsActive(d, nowMs=Date.now()){
   if(!d) return false;
+  // Explicit lifetime ignores leftover date fields.
+  if(String(d.plan||'').toLowerCase().trim()==='lifetime') return true;
   const startMs=licenseTsMs(d.startsAt);
   const endMs=licenseTsMs(d.expiresAt);
   if(startMs && nowMs < startMs) return false;
@@ -506,9 +518,11 @@ function normalizeRole(role){
 }
 function normalizePlan(lic){
   const plan=String(lic?.plan||'').toLowerCase().trim();
-  if((plan==='lifetime' || !plan) && licenseTsMs(lic?.expiresAt)) return 'period';
+  // Explicit lifetime always wins — admin save clears dates; leftover bounds must not flip type.
+  if(plan==='lifetime') return 'lifetime';
   if(plan==='monthly') return 'period';
-  if(plan==='trial' || plan==='lifetime' || plan==='period') return plan;
+  if(!plan && licenseTsMs(lic?.expiresAt)) return 'period';
+  if(plan==='trial' || plan==='period') return plan;
   // developer/admin were mistaken "plans"; missing/unknown → trial
   return 'trial';
 }
@@ -5244,20 +5258,27 @@ function bindAdminCrmDetailActions(){
   });
 }
 function bindAdminCrmDirtyWatchers(){
-  ['adminUserRole','adminLicensePlan','adminLicenseStartsAt','adminLicenseExpiresAt','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
-    const el=$(id); if(!el||el.dataset.dirtyBound) return;
-    el.dataset.dirtyBound='1';
-    const onChange=()=>{
-      if(id==='adminLicensePlan'){
-        // Switching away from period clears bounds so the chosen type sticks.
-        clearAdminLicenseDatesIfNonPeriod(el.value);
-      } else if(id==='adminLicenseStartsAt' || id==='adminLicenseExpiresAt'){
+  const form=$('adminLicenseForm');
+  if(form && !form.dataset.planDateBound){
+    form.dataset.planDateBound='1';
+    const onPlanOrDate=(e)=>{
+      const t=e?.target;
+      if(!t?.id) return;
+      if(t.id==='adminLicensePlan'){
+        clearAdminLicenseDatesIfNonPeriod(t.value);
+      } else if(t.id==='adminLicenseStartsAt' || t.id==='adminLicenseExpiresAt'){
         syncAdminLicensePlanFromDates();
       }
       checkAdminCrmDirty();
     };
-    el.addEventListener('input', onChange);
-    el.addEventListener('change', onChange);
+    form.addEventListener('change', onPlanOrDate);
+    form.addEventListener('input', onPlanOrDate);
+  }
+  ['adminUserRole','adminLicensePlan','adminLicenseStartsAt','adminLicenseExpiresAt','adminLicenseMemo','adminCrmUserMemo'].forEach(id=>{
+    const el=$(id); if(!el||el.dataset.dirtyBound) return;
+    el.dataset.dirtyBound='1';
+    el.addEventListener('input', checkAdminCrmDirty);
+    el.addEventListener('change', checkAdminCrmDirty);
   });
 }
 async function saveAdminCrmAllChanges(){
@@ -5268,16 +5289,18 @@ async function saveAdminCrmAllChanges(){
   const plan=$('adminLicensePlan')?.value;
   const saveStatus='active';
   const licenseMemo=$('adminLicenseMemo')?.value||'';
-  // Respect plan choice: trial/lifetime drop period dates before we read them.
-  clearAdminLicenseDatesIfNonPeriod(plan);
-  const startsAt=$('adminLicenseStartsAt')?.value||'';
-  const expiresAt=$('adminLicenseExpiresAt')?.value||'';
+  const wantsClearDates = plan==='lifetime' || plan==='trial';
+  // Always wipe period bounds when saving trial/lifetime (before reading values).
+  if(wantsClearDates) clearAdminLicenseDatesIfNonPeriod(plan);
+  const startsAt=wantsClearDates ? '' : ($('adminLicenseStartsAt')?.value||'');
+  const expiresAt=wantsClearDates ? '' : ($('adminLicenseExpiresAt')?.value||'');
   const baseline=adminCrmBaseline||{};
   try{
-    const {doc,setDoc,serverTimestamp}=firestoreApi;
+    const {doc,setDoc,serverTimestamp,deleteField}=firestoreApi;
     const roleChanged = baseline.role!==role;
     const licChanged = baseline.plan!==plan || baseline.licenseMemo!==licenseMemo
-      || baseline.startsAt!==startsAt || baseline.expiresAt!==expiresAt;
+      || baseline.startsAt!==startsAt || baseline.expiresAt!==expiresAt
+      || (wantsClearDates && (!!baseline.startsAt || !!baseline.expiresAt));
     const memoChanged = baseline.userMemo!==($('adminCrmUserMemo')?.value||'');
     if(roleChanged){
       await setDoc(doc(db,'users',userDocId),{ role, updatedAt:serverTimestamp() },{merge:true});
@@ -5302,16 +5325,21 @@ async function saveAdminCrmAllChanges(){
       if($('adminLicensePlan')) $('adminLicensePlan').value=savePlan;
       const startsAtTs = clearDates ? null : dateInputToStartTimestamp($('adminLicenseStartsAt')?.value||'');
       const expiresAtTs = clearDates ? null : dateInputToEndTimestamp($('adminLicenseExpiresAt')?.value||'');
-      await setDoc(doc(db,'licenses',uid),{
+      const payload={
         licensed: true,
         plan: savePlan,
         status: saveStatus,
         method:'manual',
         memo:licenseMemo,
-        ...buildAdminLicenseDateFields({ clearDates }),
-        updatedAt:serverTimestamp(),
-        createdAt:serverTimestamp()
-      },{merge:true});
+        updatedAt:serverTimestamp()
+      };
+      if(clearDates){
+        payload.startsAt = deleteField();
+        payload.expiresAt = deleteField();
+      } else {
+        Object.assign(payload, buildAdminLicenseDateFields());
+      }
+      await setDoc(doc(db,'licenses',uid), payload, {merge:true});
       patchAdminLicenseCache(uid, {
         licensed: true,
         plan: savePlan,
@@ -5320,7 +5348,7 @@ async function saveAdminCrmAllChanges(){
         memo: licenseMemo,
         startsAt: startsAtTs,
         expiresAt: expiresAtTs,
-        updatedAt: { seconds: Math.floor(Date.now()/1000) }
+        updatedAt: new Date()
       });
       try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
       pushAdminCrmFeed(`${savePlan} 저장`, (!clearDates && expiresAt) ? `~${expiresAt}` : 'active', uid);
