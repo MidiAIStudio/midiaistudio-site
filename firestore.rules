@@ -56,7 +56,14 @@ service cloud.firestore {
 
     match /licenses/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow write: if isAdmin();
+      // New users may create their own trial doc on first login.
+      // Upgrades / bans / date changes stay admin-or-Functions only.
+      allow create: if isOwner(userId)
+        && request.resource.data.licensed == true
+        && request.resource.data.plan == 'trial'
+        && request.resource.data.status == 'active'
+        && request.resource.data.get('method', 'signup') == 'signup';
+      allow update, delete: if isAdmin();
     }
 
     match /orders/{orderId} {

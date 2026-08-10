@@ -1260,6 +1260,53 @@ const { broadcastPublishedContent } = require('./broadcastNotify');
 const functionsV1 = require('firebase-functions/v1');
 
 /**
+ * Ensure every users/{uid} has licenses/{uid}.
+ * Covers new Google signups and heals accounts that missed trial create
+ * after licenses writes were restricted to admin/Functions.
+ */
+exports.ensureTrialLicenseOnUserWrite = functionsV1
+  .runWith({ timeoutSeconds: 30, memory: '256MB' })
+  .firestore.document('users/{uid}')
+  .onWrite(async (change, context) => {
+    const uid = context.params.uid;
+    if (!change.after.exists) return null;
+    try {
+      const licenseRef = db.collection('licenses').doc(uid);
+      const licSnap = await licenseRef.get();
+      if (licSnap.exists) return null;
+
+      const user = change.after.data() || {};
+      const role = String(user.role || 'user').toLowerCase().trim();
+      const isAdminRole = role === 'admin' || role === 'developer' || role === 'staff';
+      const now = admin.firestore.FieldValue.serverTimestamp();
+      const payload = isAdminRole
+        ? {
+            licensed: true,
+            plan: 'lifetime',
+            status: 'active',
+            method: 'admin',
+            createdAt: now,
+            updatedAt: now
+          }
+        : {
+            licensed: true,
+            plan: 'trial',
+            status: 'active',
+            method: 'signup',
+            createdAt: now,
+            updatedAt: now
+          };
+      await licenseRef.set(payload, { merge: true });
+    } catch (err) {
+      console.error('ensureTrialLicenseOnUserWrite', {
+        uid,
+        message: err && err.message ? err.message : String(err)
+      });
+    }
+    return null;
+  });
+
+/**
  * New 1:1 support ticket → Discord inquiry channel.
  * Uses DISCORD_INQUIRY_WEBHOOK secret. Never blocks the client create path.
  */

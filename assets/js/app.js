@@ -4708,11 +4708,14 @@ function renderAdminCrmDetail(uid){
   const view = adminLicenseView(user);
   const canonicalUid = view.uid || adminUserUid(user);
   const lic = view.license;
-  // Do NOT auto-create missing license docs from CRM (would invent trial).
-  // Only heal existing docs that need migration / expired period conversion.
-  if(lic && licenseNeedsMigration(lic) && !adminLicenseHealTried.has(canonicalUid)){
-    adminLicenseHealTried.add(canonicalUid);
-    ensureUserLicenseDoc(canonicalUid).catch(()=>{ adminLicenseHealTried.delete(canonicalUid); });
+  // Heal: migrate existing docs, or create missing trial (admin write / signup parity).
+  if(canonicalUid && !adminLicenseHealTried.has(canonicalUid)){
+    const needsCreate = view.state==='missing' || !lic;
+    const needsMigrate = !!lic && licenseNeedsMigration(lic);
+    if(needsCreate || needsMigrate){
+      adminLicenseHealTried.add(canonicalUid);
+      ensureUserLicenseDoc(canonicalUid, { role: user.role }).catch(()=>{ adminLicenseHealTried.delete(canonicalUid); });
+    }
   }
   const kind = view.kind || adminLicenseKind(lic);
   const orders = adminOrdersForUid(canonicalUid);
