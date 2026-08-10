@@ -6492,6 +6492,12 @@ function normalizeNotifyPrefs(raw){
     patchNote: src.patchNote !== false
   };
 }
+function isAdminMessageNotify(n){
+  if(!n) return false;
+  if(n.type === 'admin_message') return true;
+  if(n.adminMessage === true) return true;
+  return false;
+}
 function isNotifyTypeEnabled(type){
   const p = userNotifyPrefs || defaultNotifyPrefs();
   if(p.inApp === false) return false;
@@ -6504,7 +6510,10 @@ function isNotifyTypeEnabled(type){
   return true;
 }
 function visibleUserNotifications(rows){
-  return (rows||[]).filter(n => isNotifyTypeEnabled(n.type || 'board_comment'));
+  return (rows||[]).filter(n => {
+    if(isAdminMessageNotify(n)) return (userNotifyPrefs || defaultNotifyPrefs()).inApp !== false;
+    return isNotifyTypeEnabled(n.type || 'board_comment');
+  });
 }
 async function saveUserNotifyPrefs(next){
   if(!currentUser || !firestoreApi?.setDoc) return;
@@ -6677,10 +6686,14 @@ function notifyItemHtml(n){
   const unread = n.read !== true ? ' is-unread' : '';
   let line = '';
   if(type === 'ticket_reply'){
-    line = `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
+    if(isAdminMessageNotify(n)){
+      line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
+    } else {
+      line = `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
+    }
   } else if(type === 'license_change'){
     line = `<b>${esc(name)}</b> · ${esc(tr('notify_license_change'))}`;
-  } else if(type === 'admin_message'){
+  } else if(type === 'admin_message' || isAdminMessageNotify(n)){
     line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
   } else if(type === 'notice'){
     line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_notice'))}`;
@@ -6745,17 +6758,17 @@ async function openNotification(notifyId){
   closeNotifyPanel();
   const base = window.MIDIAI_BASE_PATH || './';
   const type = n.type || 'board_comment';
-  if(type === 'ticket_reply' && n.ticketId){
-    location.href = `${base}ticket.html?id=${encodeURIComponent(n.ticketId)}&focus=reply`;
-    return;
-  }
   if(type === 'license_change'){
     location.href = `${base}account.html`;
     return;
   }
-  if(type === 'admin_message'){
+  if(type === 'admin_message' || isAdminMessageNotify(n)){
     const body = String(n.preview || n.postTitle || '').trim();
     if(body) alert(`${tr('notify_admin_message')}\n\n${body}`);
+    return;
+  }
+  if(type === 'ticket_reply' && n.ticketId){
+    location.href = `${base}ticket.html?id=${encodeURIComponent(n.ticketId)}&focus=reply`;
     return;
   }
   const postId = n.postId || '';
@@ -6833,6 +6846,7 @@ async function createUserNotification(ownerUid, data={}){
     read: false,
     createdAt: serverTimestamp()
   };
+  if(data.adminMessage === true) payload.adminMessage = true;
   if(!payload.actorUid) throw new Error('notification actorUid missing');
   const ref = await addDoc(collection(db,'users',ownerUid,'notifications'), payload);
   return ref.id;
@@ -6918,6 +6932,7 @@ async function notifyAdminAppMessage(uid, message){
   if(!body) throw new Error('쪽지 내용을 입력해 주세요.');
   const id = await createUserNotification(uid, {
     type: 'admin_message',
+    adminMessage: true,
     actorName: BRAND_AUTHOR,
     postTitle: tr('notify_admin_message'),
     preview: body
