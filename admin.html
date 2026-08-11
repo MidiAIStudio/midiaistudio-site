@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-logs-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-logs-2">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -373,7 +373,10 @@
               </div>
               <div class="admin-logs-layout">
                 <aside class="admin-logs-users" aria-label="사용자 목록">
-                  <input type="search" id="adminLogsUserSearch" class="search-input compact" placeholder="이메일 검색" aria-label="사용자 검색">
+                  <div class="admin-logs-users-head">
+                    <h4 class="admin-logs-users-title">사용자</h4>
+                    <input type="search" id="adminLogsUserSearch" class="search-input compact admin-logs-user-search" placeholder="이메일 검색" aria-label="이메일 검색">
+                  </div>
                   <div id="adminLogsUserList" class="admin-logs-user-list"><div class="admin-logs-empty">사용자 불러오는 중…</div></div>
                 </aside>
                 <div class="admin-logs-main">
@@ -426,8 +429,8 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=admin-logs-1"></script>
-  <script type="module" src="./assets/js/app.js?v=admin-logs-1"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=admin-logs-1"></script>
+  <script type="module" src="./assets/js/config.js?v=admin-logs-2"></script>
+  <script type="module" src="./assets/js/app.js?v=admin-logs-2"></script>
+  <script type="module" src="./assets/js/pricing-admin.js?v=admin-logs-2"></script>
 </body>
 </html>

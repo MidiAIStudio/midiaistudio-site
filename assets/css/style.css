@@ -2952,27 +2952,61 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
   color:var(--text);padding:10px 12px;font:inherit;font-size:13px
 }
 .admin-logs-layout{
-  display:grid;grid-template-columns:240px minmax(0,1fr);gap:12px;
+  display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);gap:12px;
   min-height:min(680px,72vh);align-items:stretch
 }
 .admin-logs-users{
-  display:flex;flex-direction:column;gap:8px;min-height:0;
-  border:1px solid var(--line);border-radius:16px;background:rgba(0,0,0,.18);padding:10px
+  display:flex;flex-direction:column;gap:0;min-height:0;max-height:min(680px,72vh);
+  border:1px solid rgba(255,255,255,.1);border-radius:12px;
+  background:rgba(255,255,255,.02);padding:0;overflow:hidden
 }
-.admin-logs-user-list{flex:1;min-height:0;overflow:auto;display:grid;gap:4px;align-content:start}
+.admin-logs-users-head{
+  flex:0 0 auto;display:grid;gap:8px;padding:10px 10px 8px;
+  border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.12)
+}
+.admin-logs-users-title{
+  margin:0;font-size:11px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:#9aa3c2
+}
+.admin-logs-user-search{
+  width:100%;min-width:0!important;max-width:none;padding:8px 10px!important;
+  font-size:12px!important;border-radius:10px!important
+}
+.admin-logs-user-list{
+  flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;
+  gap:0;align-content:start;padding:4px
+}
 .admin-logs-user{
   appearance:none;width:100%;text-align:left;border:1px solid transparent;
-  background:transparent;color:var(--text);border-radius:10px;padding:9px 10px;
-  cursor:pointer;display:grid;gap:2px;font:inherit
+  background:transparent;color:var(--text);border-radius:8px;
+  padding:7px 8px 7px 6px;cursor:pointer;display:flex;align-items:flex-start;gap:8px;
+  font:inherit;line-height:1.25;position:relative
 }
-.admin-logs-user:hover{background:rgba(255,255,255,.05)}
+.admin-logs-user:hover{background:rgba(255,255,255,.04)}
 .admin-logs-user.is-active{
-  border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.1)
+  border-color:rgba(34,211,238,.32);background:rgba(34,211,238,.08)
+}
+.admin-logs-user.is-active::before{
+  content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;
+  border-radius:2px;background:rgba(34,211,238,.85)
+}
+.admin-logs-user-dot{
+  flex:0 0 auto;width:7px;height:7px;margin-top:5px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.28);background:transparent
+}
+.admin-logs-user.is-active .admin-logs-user-dot{
+  border-color:rgba(34,211,238,.7);background:rgba(34,211,238,.85)
+}
+.admin-logs-user-text{
+  min-width:0;flex:1;display:grid;gap:2px
 }
 .admin-logs-user-email{
-  font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eef0ff
 }
-.admin-logs-user-plan{font-size:11px;color:var(--muted);font-weight:700}
+.admin-logs-user-plan{font-size:11px;color:var(--muted);font-weight:600}
+.admin-logs-users .admin-logs-empty{
+  padding:14px 10px;text-align:left;font-size:12px
+}
 .admin-logs-main{display:grid;grid-template-rows:auto auto auto 1fr;gap:10px;min-width:0;min-height:0}
 .admin-logs-tabs{
   display:flex;flex-wrap:wrap;gap:6px;padding-bottom:2px;border-bottom:1px solid rgba(255,255,255,.1)
@@ -2985,7 +3019,7 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 .admin-logs-tab.is-active{color:#e8fbff;border-bottom-color:rgba(34,211,238,.85)}
 .admin-logs-selected{
   border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.03);
-  padding:10px 12px
+  padding:8px 12px
 }
 .admin-logs-selected-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .admin-logs-selected-main strong{font-size:14px}
@@ -3037,9 +3071,15 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 }
 .admin-logs-empty-panel{position:absolute;inset:48px 0 0;display:grid;place-items:center;pointer-events:none}
 .admin-logs-empty-panel[hidden]{display:none!important}
+@media(max-width:1280px){
+  .admin-logs-layout{grid-template-columns:minmax(210px,240px) minmax(0,1fr)}
+}
+@media(max-width:1024px){
+  .admin-logs-layout{grid-template-columns:minmax(200px,220px) minmax(0,1fr)}
+}
 @media(max-width:980px){
   .admin-logs-layout{grid-template-columns:1fr;min-height:0}
-  .admin-logs-users{max-height:220px}
+  .admin-logs-users{max-height:240px}
   .admin-logs-detail dl{grid-template-columns:1fr}
   .admin-page .admin-float-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
 }

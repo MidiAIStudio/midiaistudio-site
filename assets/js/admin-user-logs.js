@@ -295,10 +295,16 @@ function renderUserList() {
     const uid = userUid(u);
     const lic = api.getLicense(uid);
     const plan = planLabel(lic?.plan);
+    const status = String(lic?.status || '').toLowerCase() || '-';
+    const email = u.email || uid || '-';
     const active = uid === selectedUid ? ' is-active' : '';
-    return `<button type="button" class="admin-logs-user${active}" data-logs-uid="${esc(uid)}">
-      <span class="admin-logs-user-email">${esc(u.email || uid || '-')}</span>
-      <span class="admin-logs-user-plan">${esc(plan)}</span>
+    const meta = status && status !== '-' ? `${plan} · ${status}` : plan;
+    return `<button type="button" class="admin-logs-user${active}" data-logs-uid="${esc(uid)}" title="${esc(email)}">
+      <span class="admin-logs-user-dot" aria-hidden="true"></span>
+      <span class="admin-logs-user-text">
+        <span class="admin-logs-user-email">${esc(email)}</span>
+        <span class="admin-logs-user-plan">${esc(meta)}</span>
+      </span>
     </button>`;
   }).join('');
   host.querySelectorAll('[data-logs-uid]').forEach((btn) => {

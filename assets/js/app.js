@@ -24,7 +24,7 @@ import {
   initAdminUserLogs,
   writeAdminAuditLog,
   refreshAdminUserLogsUsers
-} from './admin-user-logs.js?v=admin-logs-1';
+} from './admin-user-logs.js?v=admin-logs-2';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -1343,7 +1343,7 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
-  import('./pricing-admin.js?v=admin-logs-1').then((m)=>{
+  import('./pricing-admin.js?v=admin-logs-2').then((m)=>{
     m.initPricingAdmin({ db, firestoreApi, isAdmin: true });
   }).catch((e)=>console.warn('pricing-admin', e));
   try{
