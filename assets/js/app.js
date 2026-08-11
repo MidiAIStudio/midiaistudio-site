@@ -2093,7 +2093,7 @@ function downloadAdminPanelHtml(d){
       <label class="download-admin-field"><span>버전</span><input id="dlAdminVersion" type="text" value="${esc(v.version||'')}" placeholder="예: 1.5.7" autocomplete="off"></label>
       <label class="download-admin-field"><span>파일명</span><input id="dlAdminFilename" type="text" value="${esc(v.filename||'')}" placeholder="MidiAI Installer.exe" autocomplete="off"></label>
       <label class="download-admin-field download-admin-field-full"><span>다운로드 URL</span><input id="dlAdminUrl" type="url" value="${esc(v.url||'')}" placeholder="https://..." autocomplete="off"></label>
-      <label class="download-admin-field download-admin-field-full"><span>업데이트 설명</span><textarea id="dlAdminNotes" rows="3" placeholder="업데이트 설명">${esc(v.notes||v.description||'')}</textarea></label>
+      <label class="download-admin-field download-admin-field-full"><span>업데이트 설명</span><textarea id="dlAdminNotes" rows="6" placeholder="업데이트 설명 (줄바꿈 가능)">${esc(v.notes||v.description||'')}</textarea></label>
       <label class="check download-admin-check"><input id="dlAdminMandatory" type="checkbox" ${v.mandatory?'checked':''}> 필수 업데이트</label>
     </div>
     <div class="download-admin-actions">

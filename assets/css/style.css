@@ -1281,7 +1281,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .portal-page .portal-download-inner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .portal-page .portal-download-meta h3{margin:8px 0 4px;font-size:22px;letter-spacing:-.03em}
 .portal-page .portal-download-file{margin:0 0 6px;color:#e7e9fb;font-size:14px}
-.portal-page .portal-download-notes{margin:0 0 8px;color:var(--muted);font-size:13px;line-height:1.55}
+.portal-page .portal-download-notes{margin:0 0 8px;color:var(--muted);font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
 .portal-page .portal-download-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px}
 .portal-page .portal-version-pill,.portal-page .portal-mandatory-pill{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:900}
 .portal-page .portal-version-pill{background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.28);color:#9af2ff}
@@ -1820,7 +1820,7 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 }
 .download-platform-pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#c7cbe4}
 .download-card-pro .portal-download-file{display:inline-flex;align-items:center;gap:6px;margin:0;color:#eef1ff;font-size:13px;font-weight:700;white-space:nowrap}
-.download-card-pro .portal-download-notes{width:100%;margin:4px 0 0;font-size:12px;line-height:1.5}
+.download-card-pro .portal-download-notes{width:100%;margin:4px 0 0;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
 .download-file-ext{padding:2px 6px;border-radius:6px;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.24);color:#e9d5ff;font-size:9px;font-weight:900;letter-spacing:.04em}
 .download-card-meta-row{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap}
 .download-card-meta-row span+span:before{content:'·';margin-right:8px;color:rgba(255,255,255,.25)}
