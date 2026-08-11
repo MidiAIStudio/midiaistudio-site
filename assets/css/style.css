@@ -2608,6 +2608,7 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 /* Float menu overlays viewport edge — do not shrink admin content width */
 .admin-page .admin-tickets-section[hidden],
 .admin-page .admin-pricing-section[hidden],
+.admin-page .admin-logs-section[hidden],
 .admin-page .admin-crm[hidden]{display:none!important}
 .admin-page .admin-tickets-section:not([hidden]){
   min-height:min(720px,70vh)
@@ -2618,7 +2619,7 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 @media(max-width:1100px){
   .admin-page .admin-float-nav{
     top:auto;left:12px;right:12px;bottom:12px;transform:none;width:auto;
-    grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:6px;padding:8px;
+    grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;gap:6px;padding:8px;
     border-radius:14px
   }
   .admin-page .admin-float-nav-label{display:none}
@@ -2940,6 +2941,109 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
   .topbar-profile-logout:hover,
   .topbar-profile-login:hover{transform:none!important}
 }
+
+/* Admin user unified logs */
+.admin-logs-section{display:grid;gap:12px;min-height:min(760px,78vh)}
+.admin-logs-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.admin-logs-head h3{margin:0 0 4px;font-size:20px;letter-spacing:-.02em}
+.admin-logs-head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.admin-logs-head-actions select{
+  border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.28);
+  color:var(--text);padding:10px 12px;font:inherit;font-size:13px
+}
+.admin-logs-layout{
+  display:grid;grid-template-columns:240px minmax(0,1fr);gap:12px;
+  min-height:min(680px,72vh);align-items:stretch
+}
+.admin-logs-users{
+  display:flex;flex-direction:column;gap:8px;min-height:0;
+  border:1px solid var(--line);border-radius:16px;background:rgba(0,0,0,.18);padding:10px
+}
+.admin-logs-user-list{flex:1;min-height:0;overflow:auto;display:grid;gap:4px;align-content:start}
+.admin-logs-user{
+  appearance:none;width:100%;text-align:left;border:1px solid transparent;
+  background:transparent;color:var(--text);border-radius:10px;padding:9px 10px;
+  cursor:pointer;display:grid;gap:2px;font:inherit
+}
+.admin-logs-user:hover{background:rgba(255,255,255,.05)}
+.admin-logs-user.is-active{
+  border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.1)
+}
+.admin-logs-user-email{
+  font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.admin-logs-user-plan{font-size:11px;color:var(--muted);font-weight:700}
+.admin-logs-main{display:grid;grid-template-rows:auto auto auto 1fr;gap:10px;min-width:0;min-height:0}
+.admin-logs-tabs{
+  display:flex;flex-wrap:wrap;gap:6px;padding-bottom:2px;border-bottom:1px solid rgba(255,255,255,.1)
+}
+.admin-logs-tab{
+  appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;
+  color:var(--muted);font:inherit;font-size:12px;font-weight:800;padding:7px 8px;cursor:pointer
+}
+.admin-logs-tab em{font-style:normal;opacity:.7;margin-left:4px;font-weight:700}
+.admin-logs-tab.is-active{color:#e8fbff;border-bottom-color:rgba(34,211,238,.85)}
+.admin-logs-selected{
+  border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.03);
+  padding:10px 12px
+}
+.admin-logs-selected-main{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.admin-logs-selected-main strong{font-size:14px}
+.admin-logs-pill{
+  display:inline-flex;font-size:11px;font-weight:800;color:#c9f7ff;
+  border:1px solid rgba(34,211,238,.28);background:rgba(34,211,238,.08);
+  border-radius:999px;padding:3px 8px
+}
+.admin-logs-selected-meta{
+  display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:12px;color:var(--muted)
+}
+.admin-logs-selected-meta code{color:#d7daf0}
+.admin-logs-table-meta-row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.admin-logs-table-wrap{
+  position:relative;min-height:0;overflow:auto;border:1px solid var(--line);
+  border-radius:14px;background:rgba(0,0,0,.2);max-height:min(560px,58vh)
+}
+.admin-logs-table{width:100%;border-collapse:collapse;min-width:720px;font-size:12px}
+.admin-logs-table th{
+  position:sticky;top:0;z-index:1;background:rgba(12,14,28,.98);color:#b8bdd8;
+  font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;
+  text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);white-space:nowrap
+}
+.admin-logs-table td{
+  padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.06);color:#e7e9fb;
+  vertical-align:middle;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.admin-logs-tr{cursor:pointer}
+.admin-logs-tr:hover td{background:rgba(255,255,255,.035)}
+.admin-logs-tr.is-open td{background:rgba(34,211,238,.06)}
+.admin-logs-time{font-variant-numeric:tabular-nums;color:#c7cbe4}
+.admin-logs-badge{
+  display:inline-flex;align-items:center;max-width:100%;
+  border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:2px 6px;
+  font-size:11px;font-weight:800;line-height:1.3;color:#d7daf0;background:rgba(255,255,255,.04)
+}
+.admin-logs-badge-cat{border-color:rgba(34,211,238,.28);color:#b9f4ff;background:rgba(34,211,238,.08)}
+.admin-logs-detail-row td{white-space:normal;max-width:none;padding:0;background:rgba(0,0,0,.22)}
+.admin-logs-detail{padding:12px 14px 14px}
+.admin-logs-detail dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;margin:0}
+.admin-logs-detail dt{font-size:11px;color:var(--muted);font-weight:800;margin:0 0 2px}
+.admin-logs-detail dd{margin:0;font-size:12px;color:#eef0ff;word-break:break-word;white-space:pre-wrap}
+.admin-logs-raw{
+  margin:12px 0 0;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(0,0,0,.28);color:#aeb4d0;font-size:11px;max-height:180px;overflow:auto
+}
+.admin-logs-empty,.admin-logs-empty-panel,.admin-logs-td-muted{
+  color:var(--muted);font-size:13px;padding:18px;text-align:center
+}
+.admin-logs-empty-panel{position:absolute;inset:48px 0 0;display:grid;place-items:center;pointer-events:none}
+.admin-logs-empty-panel[hidden]{display:none!important}
+@media(max-width:980px){
+  .admin-logs-layout{grid-template-columns:1fr;min-height:0}
+  .admin-logs-users{max-height:220px}
+  .admin-logs-detail dl{grid-template-columns:1fr}
+  .admin-page .admin-float-nav{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
 
 
 

@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=file-attach-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-logs-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -83,6 +83,7 @@
           <nav class="admin-float-nav" aria-label="관리자 메뉴">
             <p class="admin-float-nav-label">메뉴</p>
             <button type="button" class="admin-nav-tab active" data-admin-tab="crm">회원·CRM</button>
+            <button type="button" class="admin-nav-tab" data-admin-tab="logs">로그</button>
             <button type="button" class="admin-nav-tab" data-admin-tab="pricing">가격·상품</button>
             <button type="button" class="admin-nav-tab" data-admin-tab="tickets">전체 문의</button>
           </nav>
@@ -353,6 +354,46 @@
               </div>
             </div>
 
+            <section class="admin-logs-section" id="adminLogsSection" hidden>
+              <div class="admin-logs-head">
+                <div>
+                  <h3>사용자 로그</h3>
+                  <p class="muted small">사용자를 선택한 뒤 상단 탭으로 관련 이력을 조회합니다. 기존 회원·CRM 화면과 독립됩니다.</p>
+                </div>
+                <div class="admin-logs-head-actions">
+                  <input type="search" id="adminLogsTableSearch" class="search-input compact" placeholder="로그 내용 검색" aria-label="로그 검색">
+                  <select id="adminLogsDateFilter" aria-label="기간">
+                    <option value="all">전체 기간</option>
+                    <option value="today">오늘</option>
+                    <option value="7d">7일</option>
+                    <option value="30d">30일</option>
+                  </select>
+                  <button type="button" class="secondary mini-btn" id="adminLogsRefreshBtn">새로고침</button>
+                </div>
+              </div>
+              <div class="admin-logs-layout">
+                <aside class="admin-logs-users" aria-label="사용자 목록">
+                  <input type="search" id="adminLogsUserSearch" class="search-input compact" placeholder="이메일 검색" aria-label="사용자 검색">
+                  <div id="adminLogsUserList" class="admin-logs-user-list"><div class="admin-logs-empty">사용자 불러오는 중…</div></div>
+                </aside>
+                <div class="admin-logs-main">
+                  <div id="adminLogsTabs" class="admin-logs-tabs" role="tablist" aria-label="로그 종류"></div>
+                  <div id="adminLogsSelected" class="admin-logs-selected"><p class="muted">왼쪽에서 사용자를 선택하세요.</p></div>
+                  <div class="admin-logs-table-meta-row">
+                    <span id="adminLogsTableMeta" class="muted small"></span>
+                    <button type="button" class="secondary mini-btn" id="adminLogsLoadMore" hidden>더보기</button>
+                  </div>
+                  <div class="admin-logs-table-wrap">
+                    <table class="admin-logs-table" aria-label="사용자 로그">
+                      <thead id="adminLogsTableHead"></thead>
+                      <tbody id="adminLogsTableBody"></tbody>
+                    </table>
+                    <div id="adminLogsEmpty" class="admin-logs-empty-panel">사용자를 선택하면 로그가 표시됩니다.</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
             <section class="admin-tickets-section" id="adminTicketsSection" hidden>
               <div class="admin-section-head"><h3>전체 문의</h3><span id="adminTicketCount" class="muted"></span></div>
               <div class="admin-list-toolbar">
@@ -385,8 +426,8 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=license-period-fix"></script>
-  <script type="module" src="./assets/js/app.js?v=license-cf-only-1"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=license-period-fix"></script>
+  <script type="module" src="./assets/js/config.js?v=admin-logs-1"></script>
+  <script type="module" src="./assets/js/app.js?v=admin-logs-1"></script>
+  <script type="module" src="./assets/js/pricing-admin.js?v=admin-logs-1"></script>
 </body>
 </html>

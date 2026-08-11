@@ -19,6 +19,12 @@ import {
   ensureMarkdownCss,
   pickMarkdownSource
 } from './markdown/index.js?v=md-placeholder-1';
+import {
+  configureAdminUserLogs,
+  initAdminUserLogs,
+  writeAdminAuditLog,
+  refreshAdminUserLogsUsers
+} from './admin-user-logs.js?v=admin-logs-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -1337,9 +1343,22 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
-  import('./pricing-admin.js?v=pricing-promo-1').then((m)=>{
+  import('./pricing-admin.js?v=admin-logs-1').then((m)=>{
     m.initPricingAdmin({ db, firestoreApi, isAdmin: true });
   }).catch((e)=>console.warn('pricing-admin', e));
+  try{
+    configureAdminUserLogs({
+      db,
+      firestoreApi,
+      isAdmin: () => !!isAdminUser,
+      getActor: () => ({ uid: currentUser?.uid || '', email: currentUser?.email || '' }),
+      getUsers: () => adminUserRows || [],
+      getLicense: (uid) => licenseForUid(uid),
+      getOrders: (uid) => adminOrdersForUid(uid),
+      getTickets: (uid) => adminTicketsForUid(uid)
+    });
+    initAdminUserLogs();
+  }catch(e){ console.warn('admin-user-logs', e); }
 }
 
 function updateBoardPinnedUi(){
@@ -4471,6 +4490,7 @@ function renderAdminCrmStats(rows){
     ${card('filtered', rows.length, '필터 결과', ' is-accent')}`;
 }
 function renderAdminUserTable(){
+  try{ refreshAdminUserLogsUsers(); }catch{}
   const box=$('adminUserList'); if(!box || !isAdminUser) return;
   if(!$('adminCrm')){
     const q=($('adminUserSearch')?.value||'').trim().toLowerCase();
@@ -5208,6 +5228,16 @@ function bindAdminUserFilters(){
         for(const uid of uids){
           try{
             await notifyAdminAppMessage(uid, draft);
+            writeAdminAuditLog({
+              targetUserId: uid,
+              targetEmail: findAdminUserRow(uid)?.email || '',
+              category: 'message',
+              action: '쪽지 발송',
+              before: null,
+              after: { title: draft.title, body: draft.body.slice(0,500), bulk: true },
+              result: 'success',
+              summary: draft.title
+            });
             ok++;
           }catch(err){
             console.error('bulk app-message', uid, err);
@@ -5389,6 +5419,16 @@ async function saveAdminCrmAllChanges(){
       const row=findAdminUserRow(uid);
       if(row) row.role=role;
       pushAdminCrmFeed('권한 변경', role, uid);
+      writeAdminAuditLog({
+        targetUserId: uid,
+        targetEmail: row?.email || '',
+        category: 'admin',
+        action: '권한 변경',
+        before: baseline.role || 'user',
+        after: role,
+        result: 'success',
+        summary: `${baseline.role||'user'} → ${role}`
+      });
     }
     if(licChanged){
       if(!plan){
@@ -5434,6 +5474,16 @@ async function saveAdminCrmAllChanges(){
       });
       try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
       pushAdminCrmFeed(`${savePlan} 저장`, (!clearDates && expiresAt) ? `~${expiresAt}` : 'active', uid);
+      writeAdminAuditLog({
+        targetUserId: uid,
+        targetEmail: findAdminUserRow(uid)?.email || '',
+        category: 'license',
+        action: '라이선스 변경',
+        before: { plan: baseline.plan, startsAt: baseline.startsAt, expiresAt: baseline.expiresAt, memo: baseline.licenseMemo },
+        after: { plan: savePlan, status: saveStatus, startsAt: clearDates ? null : startsAt, expiresAt: clearDates ? null : expiresAt, memo: licenseMemo, method: 'manual' },
+        result: 'success',
+        summary: `${baseline.plan||'-'} → ${savePlan}`
+      });
       renderAdminUserTable();
     }
     if(memoChanged) await saveAdminCrmUserMemo();
@@ -5474,7 +5524,19 @@ async function saveAdminCrmUserMemo(){
     },{merge:true});
     if(user){ user.adminMemo=text; user.adminMemoHistory=hist; }
     $('adminCrmMemoStatus') && ($('adminCrmMemoStatus').textContent='저장됨');
-    if(prevText!==text) pushAdminCrmFeed('관리자 메모', text.slice(0,40), selectedAdminUid);
+    if(prevText!==text){
+      pushAdminCrmFeed('관리자 메모', text.slice(0,40), selectedAdminUid);
+      writeAdminAuditLog({
+        targetUserId: selectedAdminUid,
+        targetEmail: user?.email || '',
+        category: 'admin',
+        action: '관리자 메모 변경',
+        before: prevText,
+        after: text,
+        result: 'success',
+        summary: text.slice(0,80)
+      });
+    }
     captureAdminCrmBaseline();
     renderAdminCrmMemoHistory(user||{adminMemoHistory:hist});
   }catch(e){
@@ -5545,6 +5607,16 @@ async function adminQuickLicense(raw, silent=false, opts={}){
       adminFlash(`${tr('saved')} · ${esc(uid)} · ${esc(savePlan)} / ${esc(saveStatus)}${range}`);
       pushAdminCrmFeed(savePlan==='lifetime'?'Lifetime 지급':(savePlan==='trial'?'Trial 지급':`${savePlan} 지급`), saveStatus + range, uid);
     }
+    writeAdminAuditLog({
+      targetUserId: uid,
+      targetEmail: findAdminUserRow(uid)?.email || '',
+      category: 'license',
+      action: saveStatus==='banned' ? '라이선스 차단' : (savePlan==='lifetime'?'Lifetime 지급':(savePlan==='trial'?'Trial 지급':`라이선스 지급`)),
+      before: null,
+      after: { plan: savePlan, status: saveStatus, method: 'admin', days: opts.days ?? null },
+      result: 'success',
+      summary: `${savePlan}/${saveStatus}`
+    });
     renderAdminUserTable();
     if(selectedAdminUid===uid) refreshAdminCrmDetail({ force:true });
   }catch(e){ alert(e.message); }
@@ -5556,10 +5628,23 @@ async function adminResetHwid(uid){
     const {doc,setDoc,serverTimestamp}=firestoreApi;
     const userDocId = adminUserDocIdForUid(uid);
     const licUid = String(uid||'');
+    const user = findAdminUserRow(uid);
+    const lic = licenseForUid(uid);
+    const prevHwid = user?.hwid || lic?.hwid || '';
     await setDoc(doc(db,'users',userDocId),{hwid:'',updatedAt:serverTimestamp()},{merge:true});
     await setDoc(doc(db,'licenses',licUid),{hwid:'',updatedAt:serverTimestamp()},{merge:true});
     adminFlash(`HWID 초기화 완료 · ${esc(uid)}`);
     pushAdminCrmFeed('HWID 초기화', String(uid).slice(0,18), uid);
+    writeAdminAuditLog({
+      targetUserId: uid,
+      targetEmail: user?.email || '',
+      category: 'hwid',
+      action: 'HWID 초기화',
+      before: prevHwid || null,
+      after: '',
+      result: 'success',
+      summary: prevHwid ? maskAdminHwid(prevHwid) : '(없음)'
+    });
     if(selectedAdminUid===uid) refreshAdminCrmDetail();
   }catch(e){ alert(e.message); }
 }
@@ -5569,8 +5654,19 @@ async function adminDeleteUser(uid, silent=false){
   const userDocId = adminUserDocIdForUid(uid);
   if(!silent && !confirm(`회원 ${userDocId} 문서를 삭제할까요?\n(라이선스/주문/문의 문서는 유지됩니다)`)) return;
   try{
+    const user = findAdminUserRow(uid);
     const {doc,deleteDoc}=firestoreApi;
     await deleteDoc(doc(db,'users',userDocId));
+    writeAdminAuditLog({
+      targetUserId: uid,
+      targetEmail: user?.email || '',
+      category: 'admin',
+      action: '회원 삭제',
+      before: { email: user?.email || '', role: user?.role || '' },
+      after: null,
+      result: 'success',
+      summary: userDocId
+    });
     if(!silent) adminFlash(`회원 삭제 · ${esc(userDocId)}`);
     if(selectedAdminUid===uid){ selectedAdminUid=null; renderAdminCrmDetail(null); }
   }catch(e){ alert(e.message); }
@@ -6983,6 +7079,16 @@ async function adminSendAppMessage(uid){
     await notifyAdminAppMessage(uid, draft);
     adminFlash(`쪽지 전송 완료 · ${esc(uid)}`);
     pushAdminCrmFeed('앱 쪽지', `${draft.title} · ${draft.body.slice(0,30)}`, uid);
+    writeAdminAuditLog({
+      targetUserId: uid,
+      targetEmail: findAdminUserRow(uid)?.email || '',
+      category: 'message',
+      action: '쪽지 발송',
+      before: null,
+      after: { title: draft.title, body: draft.body.slice(0,500) },
+      result: 'success',
+      summary: draft.title
+    });
   }catch(e){
     console.error(e);
     alert(e.message || e);

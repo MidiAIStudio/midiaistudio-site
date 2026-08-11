@@ -89,11 +89,19 @@ function bindTabs() {
       const crm = $('adminCrm');
       const pricing = $('adminPricingSection');
       const tickets = $('adminTicketsSection');
+      const logs = $('adminLogsSection');
       if (crm) crm.hidden = tab !== 'crm';
       if (pricing) pricing.hidden = tab !== 'pricing';
       if (tickets) tickets.hidden = tab !== 'tickets';
+      if (logs) logs.hidden = tab !== 'logs';
       if (tab === 'pricing' && !products.length) loadAll().catch(console.error);
       if (tab === 'tickets') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+      if (tab === 'logs') {
+        import('./admin-user-logs.js?v=admin-logs-1')
+          .then((m) => m.showAdminUserLogsPanel?.(true))
+          .catch(console.error);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });

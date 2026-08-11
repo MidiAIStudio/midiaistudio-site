@@ -1,0 +1,1008 @@
+/**
+ * Admin: 사용자별 통합 로그 (독립 화면)
+ * Existing CRM / Timeline / Recent Activity are left untouched.
+ */
+const PAGE_SIZE = 80;
+const TABS = [
+  { id: 'all', label: '전체' },
+  { id: 'license', label: '라이선스' },
+  { id: 'admin', label: '관리자 작업' },
+  { id: 'message', label: '쪽지/알림' },
+  { id: 'payment', label: '결제' },
+  { id: 'app', label: '앱 사용' },
+  { id: 'hwid', label: 'HWID/기기' },
+  { id: 'ticket', label: '문의' }
+];
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+}[c]));
+
+function $(id) { return document.getElementById(id); }
+
+let api = {
+  db: null,
+  fs: null,
+  isAdmin: () => false,
+  getActor: () => ({ uid: '', email: '' }),
+  getUsers: () => [],
+  getLicense: () => null,
+  getOrders: () => [],
+  getTickets: () => []
+};
+
+let booted = false;
+let selectedUid = '';
+let activeTab = 'all';
+let dateRange = 'all';
+let tableQuery = '';
+let userQuery = '';
+let loadToken = 0;
+let allRows = [];
+let visibleLimit = PAGE_SIZE;
+let expandedId = '';
+let loading = false;
+let lastError = '';
+
+function tsMs(v) {
+  if (!v) return 0;
+  if (typeof v === 'number') return v < 1e12 ? v * 1000 : v;
+  if (typeof v?.toMillis === 'function') return v.toMillis();
+  if (typeof v?.seconds === 'number') return v.seconds * 1000;
+  if (v?.atMs) return Number(v.atMs) || 0;
+  const d = v instanceof Date ? v : new Date(v);
+  const n = d.getTime();
+  return Number.isFinite(n) ? n : 0;
+}
+
+function fmtTs(ms) {
+  if (!ms) return '-';
+  try {
+    return new Date(ms).toLocaleString('ko-KR', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    });
+  } catch {
+    return '-';
+  }
+}
+
+function maskHwid(hwid) {
+  const s = String(hwid || '');
+  if (!s) return '(없음)';
+  if (s.length <= 10) return `${s.slice(0, 2)}${'*'.repeat(Math.max(4, s.length - 2))}`;
+  return `${s.slice(0, 4)}${'*'.repeat(8)}${s.slice(-4)}`;
+}
+
+function truncate(s, n = 72) {
+  const t = String(s || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= n) return t;
+  return `${t.slice(0, n - 1)}…`;
+}
+
+function makeRow(partial) {
+  const id = partial.id || `row_${partial.category}_${partial.timestamp || 0}_${Math.random().toString(36).slice(2, 8)}`;
+  return {
+    id,
+    timestamp: Number(partial.timestamp) || 0,
+    category: partial.category || 'other',
+    action: partial.action || '-',
+    summary: partial.summary || '',
+    actor: partial.actor || '-',
+    result: partial.result || '-',
+    before: partial.before ?? '',
+    after: partial.after ?? '',
+    source: partial.source || '',
+    raw: partial.raw || null,
+    columns: partial.columns || null
+  };
+}
+
+function categoryLabel(cat) {
+  return ({
+    all: '전체',
+    license: '라이선스',
+    admin: '관리자',
+    message: '쪽지',
+    payment: '결제',
+    app: '앱',
+    hwid: 'HWID',
+    ticket: '문의',
+    user: '계정'
+  })[cat] || cat;
+}
+
+function planLabel(p) {
+  const s = String(p || '').toLowerCase();
+  if (s === 'lifetime') return 'Lifetime';
+  if (s === 'trial') return 'Trial';
+  if (s === 'period' || s === 'monthly') return '기간제';
+  return p || '-';
+}
+
+function statusLabel(s) {
+  const v = String(s || '').toLowerCase();
+  if (v === 'completed' || v === 'paid') return '결제완료';
+  if (v === 'created' || v === 'pending') return '대기';
+  if (v === 'refunded' || v === 'duplicate_refunded') return '환불';
+  if (v === 'failed' || v === 'duplicate_refund_failed') return '실패';
+  if (v === 'cancelled' || v === 'canceled') return '취소';
+  return s || '-';
+}
+
+function inDateRange(ms) {
+  if (!ms || dateRange === 'all') return true;
+  const now = Date.now();
+  if (dateRange === 'today') {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    return ms >= d.getTime();
+  }
+  if (dateRange === '7d') return ms >= now - 7 * 86400000;
+  if (dateRange === '30d') return ms >= now - 30 * 86400000;
+  return true;
+}
+
+function userUid(u) {
+  return String(u?.uid || u?.id || '');
+}
+
+function findUser(uid) {
+  const s = String(uid || '');
+  return (api.getUsers() || []).find((u) => {
+    return String(u.uid || '') === s || String(u.id || '') === s;
+  }) || null;
+}
+
+/** Write durable admin audit log (admin-only collection). */
+export async function writeAdminAuditLog(entry = {}) {
+  try {
+    if (!api.db || !api.fs || !api.isAdmin()) return null;
+    const actor = api.getActor() || {};
+    const { collection, addDoc, serverTimestamp } = api.fs;
+    const targetUserId = String(entry.targetUserId || '').trim();
+    if (!targetUserId) return null;
+    const payload = {
+      timestamp: serverTimestamp(),
+      targetUserId,
+      targetEmail: String(entry.targetEmail || findUser(targetUserId)?.email || ''),
+      category: String(entry.category || 'admin'),
+      action: String(entry.action || 'unknown'),
+      actorType: String(entry.actorType || 'admin'),
+      actorId: String(entry.actorId || actor.uid || ''),
+      actorEmail: String(entry.actorEmail || actor.email || ''),
+      before: entry.before == null ? null : entry.before,
+      after: entry.after == null ? null : entry.after,
+      result: String(entry.result || 'success'),
+      summary: String(entry.summary || entry.action || ''),
+      metadata: entry.metadata && typeof entry.metadata === 'object' ? entry.metadata : {}
+    };
+    const ref = await addDoc(collection(api.db, 'adminAuditLogs'), payload);
+    return ref.id;
+  } catch (e) {
+    console.error('writeAdminAuditLog', e);
+    return null;
+  }
+}
+
+export function configureAdminUserLogs(next = {}) {
+  if (next.db) api.db = next.db;
+  if (next.firestoreApi) api.fs = next.firestoreApi;
+  if (typeof next.isAdmin === 'function') api.isAdmin = next.isAdmin;
+  else if (next.isAdmin != null) api.isAdmin = () => !!next.isAdmin;
+  if (typeof next.getActor === 'function') api.getActor = next.getActor;
+  if (typeof next.getUsers === 'function') api.getUsers = next.getUsers;
+  if (typeof next.getLicense === 'function') api.getLicense = next.getLicense;
+  if (typeof next.getOrders === 'function') api.getOrders = next.getOrders;
+  if (typeof next.getTickets === 'function') api.getTickets = next.getTickets;
+}
+
+export function initAdminUserLogs(next = {}) {
+  configureAdminUserLogs(next);
+  ensureBoot();
+  renderUserList();
+}
+
+function ensureBoot() {
+  if (booted) return;
+  booted = true;
+  bindUi();
+  renderTabs();
+  renderUserList();
+  renderMain();
+}
+
+function bindUi() {
+  const search = $('adminLogsUserSearch');
+  if (search && !search.dataset.bound) {
+    search.dataset.bound = '1';
+    search.addEventListener('input', () => {
+      userQuery = search.value.trim().toLowerCase();
+      renderUserList();
+    });
+  }
+  const refresh = $('adminLogsRefreshBtn');
+  if (refresh && !refresh.dataset.bound) {
+    refresh.dataset.bound = '1';
+    refresh.addEventListener('click', () => {
+      renderUserList();
+      if (selectedUid) loadSelectedLogs({ force: true });
+    });
+  }
+  const tableSearch = $('adminLogsTableSearch');
+  if (tableSearch && !tableSearch.dataset.bound) {
+    tableSearch.dataset.bound = '1';
+    tableSearch.addEventListener('input', () => {
+      tableQuery = tableSearch.value.trim().toLowerCase();
+      visibleLimit = PAGE_SIZE;
+      renderTable();
+    });
+  }
+  const dateSel = $('adminLogsDateFilter');
+  if (dateSel && !dateSel.dataset.bound) {
+    dateSel.dataset.bound = '1';
+    dateSel.addEventListener('change', () => {
+      dateRange = dateSel.value || 'all';
+      visibleLimit = PAGE_SIZE;
+      renderTable();
+      renderTabs();
+    });
+  }
+  const more = $('adminLogsLoadMore');
+  if (more && !more.dataset.bound) {
+    more.dataset.bound = '1';
+    more.addEventListener('click', () => {
+      visibleLimit += PAGE_SIZE;
+      renderTable();
+    });
+  }
+}
+
+function renderTabs() {
+  const host = $('adminLogsTabs');
+  if (!host) return;
+  const counts = countByCategory(filterByDateAndSearch(allRows));
+  host.innerHTML = TABS.map((t) => {
+    const n = t.id === 'all' ? counts.all : (counts[t.id] || 0);
+    const active = activeTab === t.id ? ' is-active' : '';
+    return `<button type="button" class="admin-logs-tab${active}" data-logs-tab="${esc(t.id)}">${esc(t.label)} <em>${n}</em></button>`;
+  }).join('');
+  host.querySelectorAll('[data-logs-tab]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      activeTab = btn.getAttribute('data-logs-tab') || 'all';
+      expandedId = '';
+      visibleLimit = PAGE_SIZE;
+      renderTabs();
+      renderTable();
+    });
+  });
+}
+
+function renderUserList() {
+  const host = $('adminLogsUserList');
+  if (!host) return;
+  const users = (api.getUsers() || []).slice();
+  users.sort((a, b) => String(a.email || '').localeCompare(String(b.email || ''), 'ko'));
+  const filtered = users.filter((u) => {
+    if (!userQuery) return true;
+    const hay = [u.email, u.displayName, u.uid, u.id].join(' ').toLowerCase();
+    return hay.includes(userQuery);
+  });
+  if (!filtered.length) {
+    host.innerHTML = `<div class="admin-logs-empty">사용자 없음</div>`;
+    return;
+  }
+  host.innerHTML = filtered.map((u) => {
+    const uid = userUid(u);
+    const lic = api.getLicense(uid);
+    const plan = planLabel(lic?.plan);
+    const active = uid === selectedUid ? ' is-active' : '';
+    return `<button type="button" class="admin-logs-user${active}" data-logs-uid="${esc(uid)}">
+      <span class="admin-logs-user-email">${esc(u.email || uid || '-')}</span>
+      <span class="admin-logs-user-plan">${esc(plan)}</span>
+    </button>`;
+  }).join('');
+  host.querySelectorAll('[data-logs-uid]').forEach((btn) => {
+    btn.addEventListener('click', () => selectUser(btn.getAttribute('data-logs-uid') || ''));
+  });
+}
+
+function selectUser(uid) {
+  if (!uid || uid === selectedUid) {
+    if (uid === selectedUid) loadSelectedLogs({ force: true });
+    return;
+  }
+  selectedUid = uid;
+  expandedId = '';
+  visibleLimit = PAGE_SIZE;
+  renderUserList();
+  renderSelectedSummary();
+  loadSelectedLogs({ force: true });
+}
+
+function renderSelectedSummary() {
+  const box = $('adminLogsSelected');
+  if (!box) return;
+  if (!selectedUid) {
+    box.innerHTML = `<p class="muted">왼쪽에서 사용자를 선택하세요.</p>`;
+    return;
+  }
+  const u = findUser(selectedUid) || {};
+  const lic = api.getLicense(selectedUid);
+  const hwid = u.hwid || lic?.hwid || '';
+  box.innerHTML = `
+    <div class="admin-logs-selected-main">
+      <strong>${esc(u.email || selectedUid)}</strong>
+      <span class="admin-logs-pill">${esc(planLabel(lic?.plan))} · ${esc(lic?.status || '-')}</span>
+    </div>
+    <div class="admin-logs-selected-meta">
+      <span>UID: <code class="mono">${esc(selectedUid)}</code></span>
+      <span>HWID: <code class="mono">${esc(maskHwid(hwid))}</code></span>
+    </div>`;
+}
+
+async function loadSelectedLogs({ force = false } = {}) {
+  if (!selectedUid || !api.db || !api.fs || !api.isAdmin()) return;
+  const token = ++loadToken;
+  loading = true;
+  lastError = '';
+  renderTable();
+  try {
+    const rows = await collectLogsForUser(selectedUid);
+    if (token !== loadToken) return;
+    allRows = rows.sort((a, b) => b.timestamp - a.timestamp);
+    loading = false;
+    renderTabs();
+    renderTable();
+  } catch (e) {
+    if (token !== loadToken) return;
+    console.error('loadSelectedLogs', e);
+    loading = false;
+    lastError = e.message || String(e);
+    allRows = [];
+    renderTabs();
+    renderTable();
+  }
+}
+
+async function safeQuery(label, fn) {
+  try {
+    return await fn();
+  } catch (e) {
+    console.warn(`admin logs ${label}`, e);
+    lastError = lastError || `${label}: ${e.message || e}`;
+    return [];
+  }
+}
+
+async function collectLogsForUser(uid) {
+  const { collection, doc, getDoc, getDocs, query, where, orderBy, limit } = api.fs;
+  const user = findUser(uid) || {};
+  const email = user.email || '';
+  const lic = api.getLicense(uid);
+  const rows = [];
+
+  // Account milestones from user doc (real fields only)
+  if (user.createdAt) {
+    rows.push(makeRow({
+      id: `user_join_${uid}`,
+      timestamp: tsMs(user.createdAt),
+      category: 'app',
+      action: '가입',
+      summary: email || uid,
+      actor: '사용자',
+      result: '정상',
+      source: 'users',
+      raw: { createdAt: user.createdAt }
+    }));
+  }
+  if (user.lastLogin || user.lastSeenAt) {
+    rows.push(makeRow({
+      id: `user_login_${uid}`,
+      timestamp: tsMs(user.lastLogin || user.lastSeenAt),
+      category: 'app',
+      action: '최근 로그인',
+      summary: email || uid,
+      actor: '사용자',
+      result: '정상',
+      source: 'users',
+      raw: { lastLogin: user.lastLogin, lastSeenAt: user.lastSeenAt }
+    }));
+  }
+
+  // Current license snapshot (not a full history — only latest doc state)
+  if (lic && (lic.updatedAt || lic.createdAt)) {
+    rows.push(makeRow({
+      id: `license_snap_${uid}`,
+      timestamp: tsMs(lic.updatedAt || lic.createdAt),
+      category: 'license',
+      action: '라이선스 상태',
+      summary: `${planLabel(lic.plan)} · ${lic.status || '-'} · ${lic.method || '-'}`,
+      actor: lic.method === 'admin' || lic.method === 'manual' ? '관리자' : (lic.method || '시스템'),
+      result: lic.status || '-',
+      before: '',
+      after: { plan: lic.plan, status: lic.status, method: lic.method, startsAt: lic.startsAt, expiresAt: lic.expiresAt },
+      source: 'licenses',
+      raw: lic
+    }));
+  }
+
+  // Admin memo history on user doc
+  const memoHist = Array.isArray(user.adminMemoHistory) ? user.adminMemoHistory : [];
+  memoHist.forEach((h, i) => {
+    rows.push(makeRow({
+      id: `memo_${uid}_${i}_${h.atMs || i}`,
+      timestamp: tsMs(h.atMs || h.at || 0),
+      category: 'admin',
+      action: '관리자 메모 변경',
+      summary: truncate(h.text || '', 80),
+      actor: h.by || '관리자',
+      result: '성공',
+      after: h.text || '',
+      source: 'users.adminMemoHistory',
+      raw: h
+    }));
+  });
+
+  // Orders (reuse CRM cache first)
+  const orders = (api.getOrders(uid) || []).slice();
+  orders.forEach((o) => {
+    const t = tsMs(o.completedAt || o.verifiedAt || o.issuedAt || o.updatedAt || o.createdAt);
+    rows.push(makeRow({
+      id: `order_${o.id}`,
+      timestamp: t,
+      category: 'payment',
+      action: statusLabel(o.status),
+      summary: `${o.productName || o.orderName || o.plan || '상품'} · ${o.provider || o.paymentMethod || '-'}`,
+      actor: '사용자',
+      result: statusLabel(o.status),
+      source: 'orders',
+      raw: o,
+      columns: {
+        product: o.productName || o.orderName || o.plan || '-',
+        method: o.provider || o.paymentMethod || '-',
+        amount: formatAmount(o),
+        status: statusLabel(o.status),
+        paymentId: o.paymentId || o.paypalOrderId || o.id || '-'
+      }
+    }));
+  });
+
+  // Tickets (reuse CRM cache)
+  const tickets = (api.getTickets(uid) || []).slice();
+  for (const t of tickets) {
+    rows.push(makeRow({
+      id: `ticket_${t.id}`,
+      timestamp: tsMs(t.createdAt),
+      category: 'ticket',
+      action: '문의 작성',
+      summary: t.title || t.id,
+      actor: '사용자',
+      result: t.status || 'open',
+      source: 'supportTickets',
+      raw: t
+    }));
+    if (t.updatedAt && tsMs(t.updatedAt) !== tsMs(t.createdAt)) {
+      rows.push(makeRow({
+        id: `ticket_upd_${t.id}`,
+        timestamp: tsMs(t.updatedAt),
+        category: 'ticket',
+        action: '문의 상태/갱신',
+        summary: t.title || t.id,
+        actor: '시스템',
+        result: t.status || '-',
+        source: 'supportTickets',
+        raw: t
+      }));
+    }
+  }
+
+  // Ticket replies (fetch, limited)
+  const replyRows = await safeQuery('ticket-replies', async () => {
+    const out = [];
+    const top = tickets.slice(0, 25);
+    for (const t of top) {
+      try {
+        const snap = await getDocs(query(
+          collection(api.db, 'supportTickets', t.id, 'replies'),
+          orderBy('createdAt', 'asc'),
+          limit(40)
+        ));
+        snap.docs.forEach((d) => {
+          const r = { id: d.id, ...d.data() };
+          out.push(makeRow({
+            id: `reply_${t.id}_${r.id}`,
+            timestamp: tsMs(r.createdAt),
+            category: 'ticket',
+            action: r.role === 'admin' ? '관리자 답변' : '사용자 추가 문의',
+            summary: truncate(r.content || '', 80),
+            actor: r.role === 'admin' ? (r.displayName || '관리자') : '사용자',
+            result: t.status || '-',
+            source: 'supportTickets/replies',
+            raw: { ticket: t, reply: r }
+          }));
+        });
+      } catch (e) {
+        console.warn('ticket replies', t.id, e);
+      }
+    }
+    return out;
+  });
+  rows.push(...replyRows);
+
+  // Notifications
+  const notifRows = await safeQuery('notifications', async () => {
+    const snap = await getDocs(query(
+      collection(api.db, 'users', uid, 'notifications'),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    ));
+    return snap.docs.map((d) => {
+      const n = { id: d.id, ...d.data() };
+      const isAdminMsg = n.type === 'admin_message' || n.adminMessage === true;
+      const isLicense = n.type === 'license_change';
+      let category = 'message';
+      let action = '알림';
+      if (isAdminMsg) { category = 'message'; action = '쪽지 발송'; }
+      else if (isLicense) { category = 'license'; action = '라이선스 알림'; }
+      else if (n.type === 'ticket_reply') { category = 'ticket'; action = '문의 답변 알림'; }
+      else if (n.type === 'notice') { action = '공지 알림'; }
+      else if (n.type === 'patch_note') { action = '패치노트 알림'; }
+      else if (n.type === 'board_comment') { action = '댓글 알림'; }
+      return makeRow({
+        id: `notif_${n.id}`,
+        timestamp: tsMs(n.createdAt),
+        category,
+        action,
+        summary: n.postTitle || n.preview || n.type || '',
+        actor: n.actorName || (isAdminMsg ? '관리자' : '시스템'),
+        result: n.read === true ? '읽음' : '미확인',
+        source: 'users/notifications',
+        raw: n,
+        columns: {
+          kind: isAdminMsg ? '쪽지' : '알림',
+          title: n.postTitle || '-',
+          sender: n.actorName || '-',
+          read: n.read === true ? '읽음' : '미확인',
+          readAt: '-'
+        }
+      });
+    });
+  });
+  rows.push(...notifRows);
+
+  // Usage proofs (app events written by desktop/Admin SDK)
+  const proofRows = await safeQuery('usageProofs', async () => {
+    const snap = await getDocs(query(
+      collection(api.db, 'users', uid, 'usageProofs'),
+      orderBy('createdAt', 'desc'),
+      limit(100)
+    ));
+    return snap.docs.map((d) => {
+      const p = { id: d.id, ...d.data() };
+      return makeRow({
+        id: `proof_${p.id}`,
+        timestamp: tsMs(p.createdAt),
+        category: 'app',
+        action: p.feature || '앱 기능 사용',
+        summary: [p.durationCategory, p.eventId].filter(Boolean).join(' · ') || '-',
+        actor: '사용자',
+        result: '정상',
+        source: 'users/usageProofs',
+        raw: p,
+        columns: {
+          work: p.feature || '-',
+          version: p.appVersion || '-',
+          device: '-',
+          result: '정상'
+        }
+      });
+    });
+  });
+  rows.push(...proofRows);
+
+  // Usage aggregate (optional milestone markers — only if timestamps exist)
+  await safeQuery('usage/paid', async () => {
+    try {
+      const snap = await getDoc(doc(api.db, 'users', uid, 'usage', 'paid'));
+      if (!snap.exists()) return [];
+      const u = snap.data() || {};
+      if (u.firstPaidFeatureUsedAt) {
+        rows.push(makeRow({
+          id: `usage_first_${uid}`,
+          timestamp: tsMs(u.firstPaidFeatureUsedAt),
+          category: 'app',
+          action: '유료 기능 최초 사용',
+          summary: `총 ${u.paidFeatureUseCount || 0}회`,
+          actor: '사용자',
+          result: '정상',
+          source: 'users/usage/paid',
+          raw: u
+        }));
+      }
+      if (u.lastPaidFeatureUsedAt) {
+        rows.push(makeRow({
+          id: `usage_last_${uid}`,
+          timestamp: tsMs(u.lastPaidFeatureUsedAt),
+          category: 'app',
+          action: '유료 기능 최근 사용',
+          summary: `총 ${u.paidFeatureUseCount || 0}회`,
+          actor: '사용자',
+          result: '정상',
+          source: 'users/usage/paid',
+          raw: u
+        }));
+      }
+    } catch (e) {
+      console.warn('usage/paid', e);
+    }
+    return [];
+  });
+
+  // Durable admin audit logs
+  const auditRows = await safeQuery('adminAuditLogs', async () => {
+    try {
+      const snap = await getDocs(query(
+        collection(api.db, 'adminAuditLogs'),
+        where('targetUserId', '==', uid),
+        orderBy('timestamp', 'desc'),
+        limit(150)
+      ));
+      return snap.docs.map((d) => mapAuditDoc(d.id, d.data()));
+    } catch (e) {
+      // Fallback without composite index
+      console.warn('adminAuditLogs indexed query failed, fallback', e);
+      const snap = await getDocs(query(
+        collection(api.db, 'adminAuditLogs'),
+        where('targetUserId', '==', uid),
+        limit(150)
+      ));
+      return snap.docs.map((d) => mapAuditDoc(d.id, d.data()))
+        .sort((a, b) => b.timestamp - a.timestamp);
+    }
+  });
+  rows.push(...auditRows);
+
+  // Deduplicate near-identical license snapshot vs license_change notif is fine (different sources)
+  return dedupeRows(rows);
+}
+
+function mapAuditDoc(id, data) {
+  const cat = String(data.category || 'admin');
+  const beforeStr = stringifyVal(data.before);
+  const afterStr = stringifyVal(data.after);
+  const summary = data.summary
+    || [beforeStr && afterStr ? `${beforeStr} → ${afterStr}` : '', data.action].filter(Boolean).join(' · ');
+  return makeRow({
+    id: `audit_${id}`,
+    timestamp: tsMs(data.timestamp),
+    category: cat === 'user' ? 'admin' : cat,
+    action: data.action || '관리자 작업',
+    summary,
+    actor: data.actorEmail || data.actorId || '관리자',
+    result: data.result || 'success',
+    before: data.before,
+    after: data.after,
+    source: 'adminAuditLogs',
+    raw: { id, ...data }
+  });
+}
+
+function stringifyVal(v) {
+  if (v == null || v === '') return '';
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
+  try { return JSON.stringify(v); } catch { return String(v); }
+}
+
+function formatAmount(o) {
+  const amount = o.amount ?? o.price ?? o.totalAmount;
+  if (amount == null || amount === '') return '-';
+  const cur = String(o.currency || 'KRW').toUpperCase();
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return String(amount);
+  if (cur === 'KRW') return `${n.toLocaleString('ko-KR')}원`;
+  return `${cur} ${n.toLocaleString('en-US')}`;
+}
+
+function dedupeRows(rows) {
+  const seen = new Set();
+  const out = [];
+  for (const r of rows) {
+    const key = r.id || `${r.source}|${r.timestamp}|${r.action}|${r.summary}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(r);
+  }
+  return out;
+}
+
+function filterByDateAndSearch(rows) {
+  const q = tableQuery;
+  return (rows || []).filter((r) => {
+    if (!inDateRange(r.timestamp)) return false;
+    if (!q) return true;
+    const hay = [
+      r.action, r.summary, r.actor, r.result, r.category,
+      stringifyVal(r.before), stringifyVal(r.after)
+    ].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function countByCategory(rows) {
+  const counts = { all: rows.length, license: 0, admin: 0, message: 0, payment: 0, app: 0, hwid: 0, ticket: 0 };
+  rows.forEach((r) => {
+    if (counts[r.category] != null) counts[r.category] += 1;
+  });
+  counts.admin = rows.filter((r) =>
+    r.category === 'admin'
+    || r.source === 'adminAuditLogs'
+    || r.source === 'users.adminMemoHistory'
+  ).length;
+  return counts;
+}
+
+function rowsForActiveTab() {
+  const base = filterByDateAndSearch(allRows);
+  if (activeTab === 'all') return base;
+  if (activeTab === 'admin') {
+    return base.filter((r) =>
+      r.category === 'admin'
+      || r.source === 'adminAuditLogs'
+      || r.source === 'users.adminMemoHistory'
+    );
+  }
+  return base.filter((r) => r.category === activeTab);
+}
+
+function renderMain() {
+  renderSelectedSummary();
+  renderTabs();
+  renderTable();
+}
+
+function renderTable() {
+  const host = $('adminLogsTableBody');
+  const empty = $('adminLogsEmpty');
+  const meta = $('adminLogsTableMeta');
+  const more = $('adminLogsLoadMore');
+  if (!host) return;
+
+  if (!selectedUid) {
+    host.innerHTML = '';
+    if (empty) {
+      empty.hidden = false;
+      empty.textContent = '사용자를 선택하면 로그가 표시됩니다.';
+    }
+    if (meta) meta.textContent = '';
+    if (more) more.hidden = true;
+    renderTableHead();
+    return;
+  }
+
+  if (loading) {
+    host.innerHTML = `<tr><td colspan="6" class="admin-logs-td-muted">불러오는 중…</td></tr>`;
+    if (empty) empty.hidden = true;
+    if (more) more.hidden = true;
+    if (meta) meta.textContent = '';
+    renderTableHead();
+    return;
+  }
+
+  const rows = rowsForActiveTab();
+  const slice = rows.slice(0, visibleLimit);
+  renderTableHead();
+
+  if (!slice.length) {
+    host.innerHTML = '';
+    if (empty) {
+      empty.hidden = false;
+      empty.textContent = lastError
+        ? `로그를 불러오지 못했습니다. ${lastError}`
+        : '기록 없음';
+    }
+    if (meta) meta.textContent = lastError ? '일부 소스 오류 가능' : '';
+    if (more) more.hidden = true;
+    return;
+  }
+
+  if (empty) empty.hidden = true;
+  if (meta) {
+    meta.textContent = lastError
+      ? `${slice.length} / ${rows.length}건 · 일부 소스 오류`
+      : `${slice.length} / ${rows.length}건`;
+  }
+  if (more) more.hidden = rows.length <= visibleLimit;
+
+  host.innerHTML = slice.map((r) => rowHtml(r)).join('');
+  host.querySelectorAll('[data-logs-row]').forEach((tr) => {
+    tr.addEventListener('click', () => {
+      const id = tr.getAttribute('data-logs-row') || '';
+      expandedId = expandedId === id ? '' : id;
+      renderTable();
+    });
+  });
+}
+
+function renderTableHead() {
+  const head = $('adminLogsTableHead');
+  if (!head) return;
+  const cols = headColsForTab(activeTab);
+  head.innerHTML = `<tr>${cols.map((c) => `<th>${esc(c)}</th>`).join('')}</tr>`;
+}
+
+function headColsForTab(tab) {
+  if (tab === 'license') return ['일시', '작업', '이전 값', '변경 값', '처리자', '결과'];
+  if (tab === 'admin') return ['일시', '처리자', '작업', '이전→변경', '결과', '대상'];
+  if (tab === 'message') return ['일시', '종류', '제목', '발송자', '읽음', '내용'];
+  if (tab === 'payment') return ['일시', '상품', '결제수단', '금액', '상태', '결제 ID'];
+  if (tab === 'app') return ['일시', '작업', '버전', '내용', '처리자', '결과'];
+  if (tab === 'hwid') return ['일시', '작업', '이전 HWID', '변경 HWID', '처리자', '결과'];
+  if (tab === 'ticket') return ['일시', '작업', '문의 제목', '처리자', '상태', '내용'];
+  return ['일시', '구분', '작업', '내용', '처리자', '결과'];
+}
+
+function rowHtml(r) {
+  const open = expandedId === r.id;
+  const cells = cellsForTab(activeTab, r);
+  const detail = open ? detailHtml(r) : '';
+  return `<tr class="admin-logs-tr${open ? ' is-open' : ''}" data-logs-row="${esc(r.id)}">${
+    cells.map((c) => `<td title="${esc(String(c.text || '').replace(/<[^>]+>/g, ''))}"><span class="${esc(c.cls || '')}">${c.html}</span></td>`).join('')
+  }</tr>${detail}`;
+}
+
+function cellsForTab(tab, r) {
+  const time = { html: esc(fmtTs(r.timestamp)), text: fmtTs(r.timestamp), cls: 'admin-logs-time' };
+  if (tab === 'license') {
+    return [
+      time,
+      { html: esc(r.action), text: r.action },
+      { html: esc(truncate(stringifyVal(r.before) || '-', 40)), text: stringifyVal(r.before) },
+      { html: esc(truncate(stringifyVal(r.after) || r.summary || '-', 40)), text: stringifyVal(r.after) || r.summary },
+      { html: esc(r.actor), text: r.actor },
+      { html: badge(r.result), text: r.result, cls: '' }
+    ];
+  }
+  if (tab === 'admin') {
+    const delta = [stringifyVal(r.before), stringifyVal(r.after)].filter(Boolean).join(' → ') || r.summary || '-';
+    return [
+      time,
+      { html: esc(truncate(r.actor, 28)), text: r.actor },
+      { html: esc(r.action), text: r.action },
+      { html: esc(truncate(delta, 48)), text: delta },
+      { html: badge(r.result), text: r.result },
+      { html: esc(truncate(selectedUid, 18)), text: selectedUid }
+    ];
+  }
+  if (tab === 'message') {
+    const c = r.columns || {};
+    const kind = c.kind || (r.action.includes('쪽지') ? '쪽지' : '알림');
+    const title = c.title || r.raw?.postTitle || r.summary || '-';
+    const body = r.raw?.preview || '';
+    return [
+      time,
+      { html: badge(kind, 'cat'), text: kind },
+      { html: esc(truncate(title, 40)), text: title },
+      { html: esc(c.sender || r.actor), text: c.sender || r.actor },
+      { html: badge(c.read || r.result), text: c.read || r.result },
+      { html: esc(truncate(body, 36)), text: body }
+    ];
+  }
+  if (tab === 'payment') {
+    const c = r.columns || {};
+    return [
+      time,
+      { html: esc(truncate(c.product || r.summary, 36)), text: c.product || r.summary },
+      { html: esc(c.method || '-'), text: c.method },
+      { html: esc(c.amount || '-'), text: c.amount },
+      { html: badge(c.status || r.result), text: c.status || r.result },
+      { html: esc(truncate(c.paymentId || '-', 22)), text: c.paymentId, cls: 'mono' }
+    ];
+  }
+  if (tab === 'app') {
+    const c = r.columns || {};
+    return [
+      time,
+      { html: esc(r.action), text: r.action },
+      { html: esc(c.version || r.raw?.appVersion || '-'), text: c.version || r.raw?.appVersion },
+      { html: esc(truncate(r.summary, 40)), text: r.summary },
+      { html: esc(r.actor), text: r.actor },
+      { html: badge(r.result), text: r.result }
+    ];
+  }
+  if (tab === 'hwid') {
+    const before = maskIfHwid(r.before);
+    const after = maskIfHwid(r.after);
+    return [
+      time,
+      { html: esc(r.action), text: r.action },
+      { html: esc(before || '-'), text: before, cls: 'mono' },
+      { html: esc(after || '-'), text: after, cls: 'mono' },
+      { html: esc(r.actor), text: r.actor },
+      { html: badge(r.result), text: r.result }
+    ];
+  }
+  if (tab === 'ticket') {
+    const title = r.raw?.ticket?.title || r.raw?.title || (r.action.includes('문의') ? r.summary : '-') || '-';
+    return [
+      time,
+      { html: esc(r.action), text: r.action },
+      { html: esc(truncate(title, 36)), text: title },
+      { html: esc(r.actor), text: r.actor },
+      { html: badge(r.result), text: r.result },
+      { html: esc(truncate(r.summary, 36)), text: r.summary }
+    ];
+  }
+  return [
+    time,
+    { html: badge(categoryLabel(r.category), 'cat'), text: categoryLabel(r.category) },
+    { html: esc(r.action), text: r.action },
+    { html: esc(truncate(r.summary, 48)), text: r.summary },
+    { html: esc(truncate(r.actor, 24)), text: r.actor },
+    { html: badge(r.result), text: r.result }
+  ];
+}
+
+function maskIfHwid(v) {
+  const s = stringifyVal(v);
+  if (!s || s === '-' || s === '{}' || s === 'null') return '';
+  if (/^[A-Fa-f0-9-]{8,}$/.test(s) || s.length >= 12) return maskHwid(s);
+  return truncate(s, 40);
+}
+
+function badge(text, kind = 'result') {
+  const t = String(text || '-');
+  return `<span class="admin-logs-badge admin-logs-badge-${esc(kind)}">${esc(t)}</span>`;
+}
+
+function detailHtml(r) {
+  const rawPretty = (() => {
+    try { return JSON.stringify(r.raw || {}, null, 2); } catch { return ''; }
+  })();
+  const fields = [
+    ['일시', fmtTs(r.timestamp)],
+    ['구분', categoryLabel(r.category)],
+    ['작업', r.action],
+    ['처리자', r.actor],
+    ['결과', r.result],
+    ['내용', r.summary],
+    ['이전', stringifyVal(r.before) || '-'],
+    ['변경', stringifyVal(r.after) || '-'],
+    ['소스', r.source || '-']
+  ];
+  if (r.category === 'message' && r.raw) {
+    fields.push(['제목', r.raw.postTitle || '-']);
+    fields.push(['본문', r.raw.preview || '-']);
+    fields.push(['발송자', r.raw.actorName || r.actor]);
+    fields.push(['읽음', r.raw.read === true ? '읽음' : '미확인']);
+  }
+  if (r.category === 'hwid') {
+    const fullBefore = stringifyVal(r.before);
+    const fullAfter = stringifyVal(r.after);
+    if (fullBefore) fields.push(['이전 HWID (전체)', fullBefore]);
+    if (fullAfter) fields.push(['변경 HWID (전체)', fullAfter]);
+  }
+  return `<tr class="admin-logs-detail-row"><td colspan="6">
+    <div class="admin-logs-detail">
+      <dl>${fields.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+      ${rawPretty ? `<pre class="admin-logs-raw">${esc(rawPretty)}</pre>` : ''}
+    </div>
+  </td></tr>`;
+}
+
+/** Called when CRM user list updates so left pane stays fresh. */
+export function refreshAdminUserLogsUsers() {
+  if (!booted) return;
+  renderUserList();
+  if (selectedUid) renderSelectedSummary();
+}
+
+export function showAdminUserLogsPanel(show) {
+  const el = $('adminLogsSection');
+  if (el) el.hidden = !show;
+  if (show) {
+    ensureBoot();
+    renderUserList();
+    if (selectedUid) loadSelectedLogs({ force: true });
+    else renderMain();
+  }
+}
