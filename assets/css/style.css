@@ -1824,7 +1824,7 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 .download-file-ext{padding:2px 6px;border-radius:6px;background:rgba(139,92,246,.16);border:1px solid rgba(139,92,246,.24);color:#e9d5ff;font-size:9px;font-weight:900;letter-spacing:.04em}
 .download-card-meta-row{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap}
 .download-card-meta-row span+span:before{content:'·';margin-right:8px;color:rgba(255,255,255,.25)}
-.download-card-pro .portal-download-actions{display:flex;flex-direction:row;gap:6px;align-items:center;flex-shrink:0;justify-self:end;align-self:center;margin-left:0}
+.download-card-pro .portal-download-actions{display:flex;flex-direction:row;gap:6px;align-items:center;flex-shrink:0;justify-self:end;align-self:start;margin-left:0;margin-top:2px}
 .download-card-pro .portal-download-actions .primary,.download-card-pro .portal-download-actions .secondary{padding:7px 12px!important;border-radius:10px!important;font-size:12px!important;line-height:1.2!important;min-height:0!important}
 .download-cta{display:inline-flex!important;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#22d3ee,#8b5cf6)!important;border:0!important;box-shadow:0 6px 18px rgba(34,211,238,.18);transition:transform .18s ease,box-shadow .18s ease;white-space:nowrap}
 .download-cta svg{width:14px;height:14px}
