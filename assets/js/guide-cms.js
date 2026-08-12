@@ -15,6 +15,17 @@ import {
   normalizeMediaAspect
 } from './visual-cms.js?v=slot-scale-22';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
+import {
+  buildCategoryChips,
+  renderGuideCard,
+  guideMatchesQuery,
+  guideMatchesChip,
+  sectionTocItems,
+  padStep,
+  chaptersHtml,
+  bindScrollSpy,
+  bindGuideImageZoom
+} from './guide-learn.js?v=guide-learn-2';
 
 
 const CONFIG = window.MIDIAI_CONFIG || {};
@@ -45,8 +56,14 @@ const SEED_GUIDES = [
 const pathBase = () => window.MIDIAI_BASE_PATH || './';
 const ytId = youtubeId;
 
+function newSectionId() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return `sec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
 function emptyProductSection(layout = 'normal') {
   return {
+    id: newSectionId(),
     layout,
     category: 'Studio',
     title: '새 제목',
@@ -59,54 +76,155 @@ function emptyProductSection(layout = 'normal') {
     mediaWidth: 'full',
     mediaWidthPct: 100,
     mediaAspect: 1.6,
-    mediaOverlays: []
+    mediaOverlays: [],
+    mediaCaption: ''
   };
+}
+
+/**
+ * Normalize one CMS section/step into a stable object.
+ * Media is owned by the section — never inherited from hero or siblings.
+ */
+function normalizeSection(s = {}, i = 0, fromStep = false) {
+  let mediaType = '';
+  let mediaUrl = '';
+  let posterUrl = '';
+
+  if (fromStep) {
+    // Legacy steps[]: prefer explicit image/video on the step itself.
+    if (s.video) {
+      mediaType = s.videoType === 'youtube' ? 'youtube' : 'video';
+      mediaUrl = s.video;
+    } else if (s.image) {
+      mediaType = 'image';
+      mediaUrl = s.image;
+    }
+  } else {
+    mediaType = s.mediaType || '';
+    mediaUrl = s.mediaUrl || '';
+    posterUrl = s.posterUrl || '';
+    // Optional explicit fields (newer docs) win when present.
+    if (s.image && (!mediaUrl || mediaType === 'image' || !mediaType)) {
+      mediaType = 'image';
+      mediaUrl = s.image;
+    }
+    if (s.video && (!mediaUrl || mediaType === 'video' || mediaType === 'youtube' || !mediaType)) {
+      mediaType = s.videoType === 'youtube' || mediaType === 'youtube' ? 'youtube' : 'video';
+      mediaUrl = s.video;
+    }
+  }
+
+  // Guard: empty type with url → infer; type without url → clear.
+  if (mediaUrl && !mediaType) mediaType = 'image';
+  if (!mediaUrl) {
+    mediaType = '';
+    posterUrl = '';
+  }
+
+  return {
+    id: s.id || s.sectionId || newSectionId(),
+    layout: s.layout || (i % 2 ? 'reverse' : 'normal'),
+    category: s.category || (fromStep ? `Step ${i + 1}` : ''),
+    title: s.title || '',
+    body: s.body || '',
+    features: Array.isArray(s.features) ? [...s.features] : [],
+    mediaType,
+    mediaUrl,
+    posterUrl,
+    mediaFit: s.mediaFit || 'cover',
+    mediaWidth: s.mediaWidth || 'full',
+    mediaWidthPct: normalizeMediaWidthPct(s.mediaWidthPct, s.mediaWidth),
+    mediaAspect: normalizeMediaAspect(s.mediaAspect),
+    mediaOverlays: Array.isArray(s.mediaOverlays) ? s.mediaOverlays.map((o) => ({ ...o })) : [],
+    mediaCaption: s.mediaCaption || ''
+  };
+}
+
+function guideSlugOf(g) {
+  return String(g?.id || g?.slug || '').trim();
+}
+
+/** Fallback only — Firestore sections should already carry stable ids. */
+function deterministicSectionId(slug, title, i) {
+  const t = String(title || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-가-힣]/g, '')
+    .slice(0, 48);
+  return `sec_${slug || 'guide'}_${t || i}`;
 }
 
 /** Product-style feature cards (same template as product.html). Migrates legacy steps. */
 function getSections(g) {
+  const slug = guideSlugOf(g);
   if (Array.isArray(g?.sections) && g.sections.length) {
-    return g.sections.map((s, i) => ({
-      layout: s.layout || (i % 2 ? 'reverse' : 'normal'),
-      category: s.category || '',
-      title: s.title || '',
-      body: s.body || '',
-      features: Array.isArray(s.features) ? [...s.features] : [],
-      mediaType: s.mediaType || '',
-      mediaUrl: s.mediaUrl || '',
-      posterUrl: s.posterUrl || '',
-      mediaFit: s.mediaFit || 'cover',
-      mediaWidth: s.mediaWidth || 'full',
-      mediaWidthPct: normalizeMediaWidthPct(s.mediaWidthPct, s.mediaWidth),
-      mediaAspect: normalizeMediaAspect(s.mediaAspect),
-      mediaOverlays: Array.isArray(s.mediaOverlays) ? s.mediaOverlays.map((o) => ({ ...o })) : []
-    }));
+    return g.sections.map((s, i) => {
+      const n = normalizeSection(s, i, false);
+      if (!s.id && !s.sectionId) n.id = deterministicSectionId(slug, n.title, i);
+      return n;
+    });
   }
-  return (g?.steps || []).map((s, i) => ({
-    layout: i % 2 ? 'reverse' : 'normal',
-    category: `Step ${i + 1}`,
-    title: s.title || '',
-    body: s.body || '',
-    features: [],
-    mediaType: s.video ? (s.videoType === 'youtube' ? 'youtube' : 'video') : (s.image ? 'image' : ''),
-    mediaUrl: s.video || s.image || '',
-    posterUrl: '',
-    mediaFit: 'cover',
-    mediaWidth: 'full',
-    mediaWidthPct: 100,
-    mediaAspect: 1.6,
-    mediaOverlays: []
-  }));
+  return (g?.steps || []).map((s, i) => {
+    const n = normalizeSection(s, i, true);
+    if (!s.id && !s.sectionId) n.id = deterministicSectionId(slug, n.title, i);
+    return n;
+  });
+}
+
+/** Only this section's own media — never hero / sibling / index guessing. */
+function resolveSectionMedia(sec) {
+  if (!sec) return null;
+  const url = String(sec.mediaUrl || '').trim();
+  const type = String(sec.mediaType || '').trim();
+  if (!url || !type) return null;
+  if (type !== 'image' && type !== 'video' && type !== 'youtube') return null;
+  return {
+    mediaType: type,
+    mediaUrl: url,
+    posterUrl: sec.posterUrl || '',
+    mediaFit: sec.mediaFit || 'cover',
+    mediaWidth: sec.mediaWidth || 'full',
+    mediaWidthPct: sec.mediaWidthPct,
+    mediaAspect: sec.mediaAspect,
+    mediaOverlays: Array.isArray(sec.mediaOverlays) ? sec.mediaOverlays : [],
+    mediaCaption: sec.mediaCaption || ''
+  };
+}
+
+function mediaFileLabel(url) {
+  if (!url) return '';
+  try {
+    const path = decodeURIComponent(String(url).split('/o/')[1]?.split('?')[0] || url);
+    return path.split('/').pop() || url;
+  } catch {
+    return String(url).slice(-40);
+  }
+}
+
+function findDuplicateMediaIds(sections) {
+  const map = new Map();
+  (sections || []).forEach((s, i) => {
+    const u = String(s.mediaUrl || '').trim();
+    if (!u) return;
+    if (!map.has(u)) map.set(u, []);
+    map.get(u).push(i);
+  });
+  return [...map.values()].filter((arr) => arr.length > 1);
 }
 
 function sectionsToSteps(sections) {
-  return (sections || []).map((s) => ({
-    title: s.title || '',
-    body: s.body || '',
-    image: s.mediaType === 'image' ? (s.mediaUrl || '') : '',
-    video: (s.mediaType === 'video' || s.mediaType === 'youtube') ? (s.mediaUrl || '') : '',
-    videoType: s.mediaType === 'youtube' ? 'youtube' : (s.mediaType === 'video' ? 'upload' : '')
-  }));
+  return (sections || []).map((s) => {
+    const media = resolveSectionMedia(s);
+    return {
+      id: s.id,
+      title: s.title || '',
+      body: s.body || '',
+      image: media?.mediaType === 'image' ? media.mediaUrl : '',
+      video: (media?.mediaType === 'video' || media?.mediaType === 'youtube') ? media.mediaUrl : '',
+      videoType: media?.mediaType === 'youtube' ? 'youtube' : (media?.mediaType === 'video' ? 'upload' : '')
+    };
+  });
 }
 
 
@@ -119,6 +237,8 @@ let allGuides = [];
 let pendingHeroFile = null;
 let pendingStepFiles = {};
 let pendingSectionFiles = {};
+let hubFilter = { q: '', chip: 'all' };
+let learnSpyDisconnect = null;
 
 function isGuideListPage() {
   const p = location.pathname.replace(/\\/g, '/').toLowerCase();
@@ -297,17 +417,61 @@ function renderList(guides) {
   allGuides = guides || [];
   const root = document.getElementById('guideList');
   if (!root) return;
-  const rows = isAdmin ? allGuides : allGuides.filter((g) => g.published !== false);
+  const rows = (isAdmin ? allGuides : allGuides.filter((g) => g.published !== false))
+    .filter((g) => guideMatchesChip(g, hubFilter.chip))
+    .filter((g) => guideMatchesQuery(g, hubFilter.q));
+
+  bindHubChrome(isAdmin ? allGuides : allGuides.filter((g) => g.published !== false));
+
+  const status = document.getElementById('guideFilterStatus');
+  if (status) {
+    const total = (isAdmin ? allGuides : allGuides.filter((g) => g.published !== false)).length;
+    status.textContent = rows.length === total
+      ? `${total}개 가이드`
+      : `${rows.length} / ${total}개 표시`;
+  }
+
+  const qs = document.getElementById('guideQuickStartLink');
+  if (qs) qs.href = `${pathBase()}guide.html?slug=getting-started`;
+
   if (!rows.length) {
-    root.innerHTML = `<div class="empty-card">등록된 가이드가 없습니다.</div>`;
+    root.innerHTML = `<div class="empty-card">조건에 맞는 가이드가 없습니다.</div>`;
     return;
   }
-  root.innerHTML = rows.map((g) => {
-    const href = `${pathBase()}guide.html?slug=${encodeURIComponent(g.slug || g.id)}`;
-    const img = g.heroImage ? `<img src="${esc(g.heroImage)}" alt="" width="1280" height="720" loading="lazy">` : `<div class="product-card-icon" aria-hidden="true">▣</div>`;
-    const badge = g.published === false ? `<span class="guide-draft-badge">초안</span>` : '';
-    return `<a class="product-card guide-card ${g.heroImage ? '' : 'product-card-text'}" href="${esc(href)}">${img}<div><h3>${esc(g.title || g.slug)}${badge}</h3><p>${esc(g.summary || '')}</p><span class="guide-card-cat">${esc(g.category || '')}</span></div></a>`;
-  }).join('');
+  root.innerHTML = rows.map((g) => renderGuideCard(g, pathBase())).join('');
+}
+
+function bindHubChrome(guides) {
+  const chipsHost = document.getElementById('guideCatChips');
+  const search = document.getElementById('guideSearch');
+  if (chipsHost && !chipsHost.dataset.bound) {
+    chipsHost.dataset.bound = '1';
+    chipsHost.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-chip]');
+      if (!btn) return;
+      hubFilter.chip = btn.getAttribute('data-chip') || 'all';
+      chipsHost.querySelectorAll('[data-chip]').forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      renderList(allGuides);
+    });
+  }
+  if (chipsHost) {
+    const chips = buildCategoryChips(guides || []);
+    chipsHost.innerHTML = chips.map((c) => {
+      const active = hubFilter.chip === c.id;
+      return `<button type="button" class="guide-hub-chip${active ? ' is-active' : ''}" data-chip="${esc(c.id)}" role="tab" aria-selected="${active ? 'true' : 'false'}">${esc(c.label)}</button>`;
+    }).join('');
+  }
+  if (search && !search.dataset.bound) {
+    search.dataset.bound = '1';
+    search.addEventListener('input', () => {
+      hubFilter.q = search.value.trim();
+      renderList(allGuides);
+    });
+  }
 }
 
 function collectFromDom() {
@@ -340,6 +504,13 @@ function collectFromDom() {
   const related = [...root.querySelectorAll('[data-related]:checked')].map((el) => el.value);
   const published = root.querySelector('#guidePublished')?.checked ?? currentGuide.published !== false;
   const order = Number(root.querySelector('#guideOrder')?.value ?? currentGuide.order) || 0;
+  const level = root.querySelector('#guideLevel')?.value?.trim() ?? currentGuide.level ?? '';
+  const duration = root.querySelector('#guideDuration')?.value?.trim() ?? currentGuide.duration ?? '';
+  const chaptersRaw = root.querySelector('#guideChapters')?.value?.trim() ?? '';
+  let chapters = Array.isArray(currentGuide.chapters) ? currentGuide.chapters : [];
+  if (root.querySelector('#guideChapters')) {
+    chapters = parseChaptersInput(chaptersRaw);
+  }
   const heroYt = root.querySelector('#guideHeroYoutube')?.value?.trim() || '';
   let heroVideo = currentGuide.heroVideo || '';
   let heroVideoType = currentGuide.heroVideoType || '';
@@ -354,12 +525,27 @@ function collectFromDom() {
     sections,
     relatedGuides: related.length ? related : (currentGuide.relatedGuides || []),
     published, order,
+    level, duration, chapters,
     heroImage: currentGuide.heroImage || '',
     heroVideo, heroVideoType,
     heroOverlays: Array.isArray(currentGuide.heroOverlays) ? currentGuide.heroOverlays : [],
     heroMediaWidthPct: normalizeMediaWidthPct(currentGuide.heroMediaWidthPct, 'full'),
     heroMediaAspect: normalizeMediaAspect(currentGuide.heroMediaAspect)
   };
+}
+
+/** Optional CMS field: one chapter per line — `초:제목` or `초 제목` */
+function parseChaptersInput(raw) {
+  return String(raw || '').split(/\n+/).map((line) => {
+    const m = line.trim().match(/^(\d+(?:\.\d+)?)\s*[:：\s]\s*(.+)$/);
+    if (!m) return null;
+    return { start: Number(m[1]), title: m[2].trim() };
+  }).filter(Boolean);
+}
+
+function chaptersToInput(chapters) {
+  if (!Array.isArray(chapters) || !chapters.length) return '';
+  return chapters.map((c) => `${Number(c.start) || 0}: ${c.title || ''}`).join('\n');
 }
 
 function guessContentType(file, kind) {
@@ -434,20 +620,25 @@ async function saveGuide() {
     }
     pendingStepFiles = {};
     if (!Array.isArray(data.sections)) data.sections = getSections(data);
-    for (const [idx, file] of Object.entries(pendingSectionFiles)) {
-      const i = Number(idx);
-      if (!data.sections[i] || !file) continue;
+    else data.sections = data.sections.map((s, i) => normalizeSection(s, i, false));
+    for (const [sid, file] of Object.entries(pendingSectionFiles)) {
+      if (!file) continue;
+      const i = data.sections.findIndex((s) => s.id === sid || String(s.id) === String(sid));
+      // Legacy fallback: numeric keys from older sessions
+      const idx = i >= 0 ? i : (/^\d+$/.test(sid) ? Number(sid) : -1);
+      if (idx < 0 || !data.sections[idx]) continue;
       const isVid = isVideoFile(file);
       const path = isVid
-        ? `guide-videos/${slug}/section-${i}_${Date.now()}`
-        : `guide-images/${slug}/section-${i}_${Date.now()}`;
+        ? `guide-videos/${slug}/section-${data.sections[idx].id || idx}_${Date.now()}`
+        : `guide-images/${slug}/section-${data.sections[idx].id || idx}_${Date.now()}`;
       const url = await uploadFile(path, file, isVid ? 'video' : 'image');
       if (isVid) {
-        data.sections[i].mediaType = 'video';
-        data.sections[i].mediaUrl = url;
+        data.sections[idx].mediaType = 'video';
+        data.sections[idx].mediaUrl = url;
+        data.sections[idx].posterUrl = '';
       } else {
-        data.sections[i].mediaType = 'image';
-        data.sections[i].mediaUrl = url;
+        data.sections[idx].mediaType = 'image';
+        data.sections[idx].mediaUrl = url;
       }
     }
     pendingSectionFiles = {};
@@ -472,6 +663,9 @@ async function saveGuide() {
       relatedGuides: data.relatedGuides || [],
       published: data.published !== false,
       order: data.order || 0,
+      level: data.level || '',
+      duration: data.duration || '',
+      chapters: Array.isArray(data.chapters) ? data.chapters : [],
       updatedAt: serverTimestamp()
     };
     if (!data.createdAt) payload.createdAt = serverTimestamp();
@@ -666,6 +860,11 @@ function bindEditable(root) {
       if (kind === 'sections' && !confirmDelete('이 카드 템플릿을 삭제할까요? (슬롯만 제거, 가이드는 유지)')) return;
       const data = collectFromDom();
       if (kind === 'sections') data.sections = getSections(data);
+      if (kind === 'sections' && data.sections[idx]) {
+        const sid = data.sections[idx].id;
+        if (sid) delete pendingSectionFiles[sid];
+        delete pendingSectionFiles[idx];
+      }
       data[kind] = (data[kind] || []).filter((_, i) => i !== idx);
       if (kind === 'sections') data.steps = sectionsToSteps(data.sections);
       currentGuide = data;
@@ -684,8 +883,214 @@ function renderDetail(g) {
     root.innerHTML = `<div class="empty-card">이 가이드는 아직 공개되지 않았습니다.</div>`;
     return;
   }
+  if (learnSpyDisconnect) {
+    try { learnSpyDisconnect(); } catch (_) {}
+    learnSpyDisconnect = null;
+  }
   const editing = editMode && isAdmin;
-  const ce = editing ? ' contenteditable="true"' : '';
+  if (editing) {
+    renderDetailEdit(root, g);
+    return;
+  }
+  renderDetailPublic(root, g);
+}
+
+function neighborGuides(g) {
+  const rows = (allGuides.length
+    ? allGuides
+    : []).filter((x) => x.published !== false).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const idx = rows.findIndex((x) => (x.slug || x.id) === (g.slug || g.id));
+  return {
+    prev: idx > 0 ? rows[idx - 1] : null,
+    next: idx >= 0 && idx < rows.length - 1 ? rows[idx + 1] : null,
+    related: (g.relatedGuides || [])
+      .map((slug) => rows.find((x) => (x.slug || x.id) === slug))
+      .filter(Boolean)
+      .slice(0, 3)
+  };
+}
+
+function renderDetailPublic(root, g) {
+  const sections = getSections(g);
+  currentGuide = { ...g, sections };
+  const features = g.features || [];
+  const toc = sectionTocItems(sections);
+  const { prev, next, related } = neighborGuides(g);
+  const workflow = GUIDE_WORKFLOW_MAP[g.slug];
+  const hasHeroMedia = !!(g.heroImage || g.heroVideo);
+  const hasVideo = g.heroVideoType === 'upload' || g.heroVideoType === 'youtube';
+  const metaBits = [];
+  if (g.category) metaBits.push(esc(g.category));
+  if (g.level) metaBits.push(esc(g.level));
+  if (g.duration) metaBits.push(esc(g.duration));
+  if (toc.length) metaBits.push(`${toc.length}단계`);
+
+  const stepRail = toc.length
+    ? `<nav class="guide-step-rail" aria-label="단계 바로가기">
+        ${toc.map((t, i) => `<a href="#${esc(t.id)}" data-step-link="${i}"><b>${padStep(i)}</b><span>${esc(t.label)}</span></a>`).join('<i aria-hidden="true"></i>')}
+      </nav>`
+    : '';
+
+  const tocNav = `<nav class="guide-learn-toc" aria-label="목차">
+      <p class="guide-learn-toc-title">${esc(g.title || 'Guide')}</p>
+      <a href="#guide-intro" data-toc-link>소개</a>
+      ${toc.map((t) => `<a href="#${esc(t.id)}" data-toc-link>${esc(t.label)}</a>`).join('')}
+      ${g.tips ? '<a href="#guide-tips" data-toc-link>팁</a>' : ''}
+      <a href="#guide-help" data-toc-link>도움말</a>
+    </nav>
+    <details class="guide-learn-toc-mobile">
+      <summary>목차</summary>
+      <div class="guide-learn-toc-mobile-links">
+        <a href="#guide-intro">소개</a>
+        ${toc.map((t) => `<a href="#${esc(t.id)}">${esc(t.label)}</a>`).join('')}
+        ${g.tips ? '<a href="#guide-tips">팁</a>' : ''}
+        <a href="#guide-help">도움말</a>
+      </div>
+    </details>`;
+
+  const featureItems = features.map((f) => `<li>${esc(f)}</li>`).join('');
+
+  const sectionShells = sections.map((s, i) => {
+    const media = resolveSectionMedia(s);
+    const hasMedia = !!media;
+    const isVid = media?.mediaType === 'video' || media?.mediaType === 'youtube';
+    return `<section class="guide-learn-step${isVid ? ' has-video' : ''}" id="guide-step-${i}" data-guide-section="${i}" data-section-id="${esc(s.id)}">
+      <header class="guide-learn-step-head">
+        <span class="guide-learn-step-num">${padStep(i)}</span>
+        <div>
+          ${s.category ? `<p class="guide-learn-badge">${esc(s.category)}</p>` : ''}
+          <h2 data-sec-title-slot>${esc(s.title || `단계 ${i + 1}`)}</h2>
+        </div>
+      </header>
+      <div class="guide-learn-step-grid${hasMedia ? '' : ' is-text-only'}">
+        <div class="guide-learn-step-copy">
+          <div data-sec-body></div>
+          <div data-sec-features></div>
+        </div>
+        ${hasMedia ? `<figure class="guide-learn-step-media" data-bound-media="${esc(media.mediaUrl)}">
+          <div data-sec-media class="product-feature-media" data-section-id="${esc(s.id)}"></div>
+          ${media.mediaCaption ? `<figcaption>${esc(media.mediaCaption)}</figcaption>` : (s.title ? `<figcaption>${esc(s.title)}</figcaption>` : '')}
+        </figure>` : ''}
+      </div>
+    </section>`;
+  }).join('');
+
+  const relatedHtml = related.length
+    ? `<div class="guide-related-mini">${related.map((r) => `<a class="guide-learn-card" href="${pathBase()}guide.html?slug=${encodeURIComponent(r.slug || r.id)}"><span>${esc(r.category || '관련')}</span><b>${esc(r.title || r.slug)}</b></a>`).join('')}</div>`
+    : '';
+
+  root.innerHTML = `
+    <div class="guide-learn-shell wrap">
+      <aside class="guide-learn-aside">${tocNav}</aside>
+      <div class="guide-learn-main">
+        <header class="guide-learn-hero" id="guide-intro">
+          <p class="pill portal-pill">${esc(g.category || 'Guide')}</p>
+          <h1>${esc(g.title || '')}</h1>
+          <p class="portal-lead">${esc(g.summary || '')}</p>
+          ${metaBits.length ? `<div class="guide-learn-meta">${metaBits.map((b) => `<em>${b}</em>`).join('')}</div>` : ''}
+          ${stepRail}
+          ${features.length ? `<ul class="product-points guide-learn-features">${featureItems}</ul>` : ''}
+        </header>
+
+        ${hasHeroMedia ? `<section class="guide-learn-hero-media-wrap${hasVideo ? ' is-video' : ''}">
+          <div class="guide-learn-hero-media" data-hero-media></div>
+          ${hasVideo ? `<div class="guide-learn-hero-side">
+            <p class="guide-learn-badge">가이드 영상</p>
+            <h2>${esc(g.title || '')}</h2>
+            <p>${esc(g.summary || '화면을 따라 가며 기능을 확인하세요.')}</p>
+            ${chaptersHtml(g.chapters)}
+          </div>` : ''}
+        </section>` : '<div class="hidden" data-hero-media></div>'}
+
+        <div id="guideSections" class="guide-learn-steps">${sectionShells || '<p class="muted">등록된 단계가 없습니다.</p>'}</div>
+
+        ${g.tips ? `<section class="guide-learn-tips" id="guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>` : ''}
+
+        <section class="guide-learn-help" id="guide-help">
+          <h2>문제가 해결되지 않았나요?</h2>
+          <p>사용 방법은 Guide에서, 자주 묻는 질문과 오류는 아래 메뉴를 이용하세요.</p>
+          <div class="guide-learn-help-actions">
+            <a class="guide-learn-btn" href="${pathBase()}guide.html?slug=troubleshooting">문제 해결</a>
+            <a class="guide-learn-btn" href="${pathBase()}faq.html">FAQ</a>
+            ${workflow ? `<a class="guide-learn-btn" href="${pathBase()}${workflow.replace(/^\//, '')}">Workflow 설명</a>` : ''}
+          </div>
+        </section>
+
+        <nav class="guide-learn-pager" aria-label="이전 다음 가이드">
+          ${prev ? `<a class="guide-learn-card guide-pager-prev" href="${pathBase()}guide.html?slug=${encodeURIComponent(prev.slug || prev.id)}"><span>← 이전 가이드</span><b>${esc(prev.title || prev.slug)}</b></a>` : '<span></span>'}
+          ${next ? `<a class="guide-learn-card guide-pager-next" href="${pathBase()}guide.html?slug=${encodeURIComponent(next.slug || next.id)}"><span>다음 가이드 →</span><b>${esc(next.title || next.slug)}</b></a>` : '<span></span>'}
+        </nav>
+        ${relatedHtml}
+        <p class="guide-more-all"><a href="${pathBase()}guide/index.html">전체 Guide</a></p>
+      </div>
+    </div>
+  `;
+
+  document.title = `${g.title || 'Guide'} — MidiAI Studio`;
+  mountHeroMedia(root, g, false);
+  // Mount section bodies/features/media without edit chrome
+  mountGuideSectionsPublic(root, sections);
+  mountGuideMarkdownFields(root, g, false);
+  bindGuideImageZoom(root);
+  bindChapterSeek(root);
+  learnSpyDisconnect = bindScrollSpy(root, '[data-toc-link], [data-step-link]');
+}
+
+function mountGuideSectionsPublic(root, sections) {
+  sections.forEach((sec, i) => {
+    const block = root.querySelector(`[data-guide-section="${i}"]`);
+    if (!block) return;
+    const body = block.querySelector('[data-sec-body]');
+    const feats = block.querySelector('[data-sec-features]');
+    const media = block.querySelector('[data-sec-media]');
+    if (body) {
+      if (sec.body) mountMarkdownField(body, { value: sec.body, editMode: false, isAdmin: false });
+      else body.innerHTML = '';
+    }
+    const fl = (sec.features || []).filter((f) => String(f || '').trim());
+    if (feats) {
+      feats.innerHTML = fl.length
+        ? `<ul class="product-points">${fl.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>`
+        : '';
+    }
+    const resolved = resolveSectionMedia(sec);
+    if (!media || !resolved) {
+      // No media for this step — leave empty; never borrow another step/hero.
+      return;
+    }
+    // Bind exactly this section's media URL (assert data attribute matches).
+    media.setAttribute('data-bound-url', resolved.mediaUrl);
+    mountEditableMedia(media, {
+      mediaType: resolved.mediaType,
+      mediaUrl: resolved.mediaUrl,
+      posterUrl: resolved.posterUrl || '',
+      mediaFit: resolved.mediaFit || 'cover',
+      mediaWidth: resolved.mediaWidth || 'full',
+      mediaWidthPct: resolved.mediaWidthPct,
+      mediaAspect: resolved.mediaAspect,
+      mediaOverlays: resolved.mediaOverlays || [],
+      editMode: false,
+      isAdmin: false,
+      videoClass: 'product-video'
+    });
+  });
+}
+
+function bindChapterSeek(root) {
+  const video = root.querySelector('.guide-learn-hero-media video');
+  root.querySelectorAll('[data-chapter-start]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const start = Number(btn.getAttribute('data-chapter-start'));
+      if (!video || !Number.isFinite(start)) return;
+      video.currentTime = start;
+      video.play?.().catch(() => {});
+      root.querySelectorAll('[data-chapter-start]').forEach((b) => b.classList.toggle('is-active', b === btn));
+    });
+  });
+}
+
+function renderDetailEdit(root, g) {
+  const ce = ' contenteditable="true"';
   const workflow = GUIDE_WORKFLOW_MAP[g.slug];
   const updated = g.updatedAt?.toDate ? g.updatedAt.toDate() : (g.updatedAt?.seconds ? new Date(g.updatedAt.seconds * 1000) : null);
   const features = g.features || [];
@@ -693,43 +1098,73 @@ function renderDetail(g) {
   currentGuide = { ...g, sections };
   const faq = g.faq || [];
 
-  const adminMeta = editing ? `<div class="guide-admin-meta">
+  const adminMeta = `<div class="guide-admin-meta">
     <label><input type="checkbox" id="guidePublished" ${g.published !== false ? 'checked' : ''}> 공개</label>
     <label>순서 <input type="number" id="guideOrder" value="${esc(g.order ?? 0)}"></label>
+    <label>난이도 <input type="text" id="guideLevel" value="${esc(g.level || '')}" placeholder="초급 (선택)"></label>
+    <label>소요 시간 <input type="text" id="guideDuration" value="${esc(g.duration || '')}" placeholder="3분 (선택)"></label>
     <label class="guide-yt-field">Hero YouTube URL <input type="url" id="guideHeroYoutube" value="${g.heroVideoType === 'youtube' ? esc(g.heroVideo || '') : ''}" placeholder="https://www.youtube.com/watch?v=..."></label>
-  </div>` : '';
+    <label class="guide-chapters-field">영상 챕터 (선택, 한 줄에 초:제목)<textarea id="guideChapters" rows="3" placeholder="0: 검색&#10;8: 미리듣기&#10;17: 구간 선택">${esc(chaptersToInput(g.chapters))}</textarea></label>
+  </div>`;
 
-  const featureItems = features.map((f, i) => editing
-    ? `<li class="guide-edit-row"><span data-feature${ce}>${esc(f)}</span>
+  const featureItems = features.map((f, i) => `<li class="guide-edit-row"><span data-feature${ce}>${esc(f)}</span>
         <span class="guide-item-tools">
           <button type="button" data-move="up" data-move-kind="features" data-move-idx="${i}">↑</button>
           <button type="button" data-move="down" data-move-kind="features" data-move-idx="${i}">↓</button>
           <button type="button" data-remove="features" data-remove-idx="${i}">삭제</button>
-        </span></li>`
-    : `<li>${esc(f)}</li>`).join('');
+        </span></li>`).join('');
 
   const sectionShells = sections.map((s, i) => {
-    const rev = (s.layout || (i % 2 ? 'reverse' : 'normal')) === 'reverse' ? ' product-feature-reverse' : '';
-    const tools = editing ? `<div class="guide-item-tools vcms-card-settings">
+    const media = resolveSectionMedia(s);
+    const fileLabel = media ? mediaFileLabel(media.mediaUrl) : '';
+    const thumb = media?.mediaType === 'image'
+      ? `<img src="${esc(media.mediaUrl)}" alt="" loading="lazy" decoding="async">`
+      : media?.mediaType === 'video'
+        ? `<video src="${esc(media.mediaUrl)}" muted playsinline preload="metadata"></video>`
+        : media?.mediaType === 'youtube'
+          ? `<span class="guide-step-media-yt">YouTube</span>`
+          : `<span class="guide-step-media-empty">미디어 없음</span>`;
+    const tools = `<div class="guide-item-tools vcms-card-settings">
       <button type="button" class="ghost mini-btn" data-section-flip="${i}">좌우 전환</button>
       <button type="button" data-move="up" data-move-kind="sections" data-move-idx="${i}">↑</button>
       <button type="button" data-move="down" data-move-kind="sections" data-move-idx="${i}">↓</button>
       <button type="button" data-remove="sections" data-remove-idx="${i}">삭제</button>
-    </div>` : '';
-    return `<section class="wrap product-feature${rev}" data-guide-section="${i}">
-      <div class="product-feature-copy">
+    </div>`;
+    return `<section class="guide-step-editor wrap" data-guide-section="${i}" data-section-id="${esc(s.id)}">
+      <div class="guide-step-editor-head">
+        <span class="guide-learn-step-num">${padStep(i)}</span>
+        <div class="guide-step-editor-head-copy">
+          <strong>Step ${padStep(i)}</strong>
+          <span class="muted small">id: ${esc(s.id)}</span>
+        </div>
         ${tools}
-        <div data-sec-cat></div>
-        <div data-sec-title></div>
-        <div data-sec-body></div>
-        <div data-sec-features></div>
       </div>
-      <div data-sec-media class="product-feature-media"></div>
+      <div class="guide-step-editor-grid">
+        <div class="guide-step-editor-copy">
+          <div data-sec-cat></div>
+          <div data-sec-title></div>
+          <div data-sec-body></div>
+          <div data-sec-features></div>
+          <label class="guide-caption-field muted small">이 단계 미디어 설명(선택)
+            <input type="text" data-sec-caption="${i}" value="${esc(s.mediaCaption || '')}" placeholder="캡션 — 이 Step에만 적용">
+          </label>
+        </div>
+        <div class="guide-step-media-panel">
+          <p class="guide-step-media-label">이 단계에 연결된 미디어</p>
+          <div class="guide-step-media-thumb" data-step-thumb="${esc(s.id)}">${thumb}</div>
+          <p class="guide-step-media-file muted small">${media ? `${esc(media.mediaType)} · ${esc(fileLabel)}` : '이미지/영상을 아래에서 이 Step에만 지정하세요.'}</p>
+          <div data-sec-media class="product-feature-media guide-step-media-slot" data-section-id="${esc(s.id)}"></div>
+        </div>
+      </div>
     </section>`;
   }).join('');
 
-  const faqBlocks = faq.map((item, i) => editing
-    ? `<div class="guide-faq-item" data-faq>
+  const dupes = findDuplicateMediaIds(sections);
+  const dupeWarn = dupes.length
+    ? `<div class="guide-media-dupe-warn wrap">⚠️ 서로 다른 Step이 같은 미디어 URL을 공유합니다: ${dupes.map((arr) => arr.map((i) => padStep(i)).join('=')).join(', ')}. 각 Step에는 고유 이미지를 지정하세요.</div>`
+    : '';
+
+  const faqBlocks = faq.map((item, i) => `<div class="guide-faq-item" data-faq>
         <div class="guide-item-tools">
           <button type="button" data-move="up" data-move-kind="faq" data-move-idx="${i}">↑</button>
           <button type="button" data-move="down" data-move-kind="faq" data-move-idx="${i}">↓</button>
@@ -737,8 +1172,7 @@ function renderDetail(g) {
         </div>
         <h3 data-faq-q${ce}>${esc(item.q || '')}</h3>
         <div data-faq-a class="guide-md-slot"></div>
-      </div>`
-    : `<details class="guide-faq-item"><summary>${esc(item.q || '')}</summary><div data-faq-a class="guide-md-slot"></div></details>`).join('');
+      </div>`).join('');
 
   root.innerHTML = `
     <section class="wrap product-hero guide-hero">
@@ -748,28 +1182,37 @@ function renderDetail(g) {
       ${adminMeta}
       <div class="guide-hero-media" data-hero-media></div>
     </section>
-    ${(features.length || editing) ? `<section class="wrap guide-features">
+    <section class="wrap guide-features">
       <h2>주요 기능</h2>
       <ul class="product-points">${featureItems || '<li class="muted">기능 목록이 없습니다.</li>'}</ul>
-      ${editing ? '<button type="button" class="secondary mini-btn" data-add-feature>기능 추가</button>' : ''}
-    </section>` : ''}
-    <div id="guideSections" class="guide-sections">${sectionShells || (editing ? '' : '<p class="wrap muted">제품형 카드 템플릿이 없습니다. [템플릿 추가]로 추가하세요.</p>')}</div>
-    ${editing ? `<div class="wrap guide-template-actions">
-      <button type="button" class="primary mini-btn" data-cms-inline="add-section">+ 제품 카드 템플릿 추가</button>
-      <span class="muted small">제품 메뉴와 동일한 레이아웃(카테고리·제목·설명·기능·사진/영상)</span>
-    </div>` : ''}
-    ${(g.tips || editing) ? `<section class="wrap guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>` : ''}
-    <section class="wrap guide-faq"><h2>FAQ</h2>${faqBlocks}${editing ? '<button type="button" class="secondary mini-btn" data-add-faq>FAQ 추가</button>' : ''}</section>
+      <button type="button" class="secondary mini-btn" data-add-feature>기능 추가</button>
+    </section>
+    <div id="guideSections" class="guide-sections guide-sections-editor">${sectionShells || '<p class="wrap muted">제품형 카드 템플릿이 없습니다. [템플릿 추가]로 추가하세요.</p>'}</div>
+    ${dupeWarn}
+    <div class="wrap guide-template-actions">
+      <button type="button" class="primary mini-btn" data-cms-inline="add-section">+ Step 추가</button>
+      <span class="muted small">각 Step은 고유 id를 가지며, 이미지는 해당 Step에만 연결됩니다. 순서 변경 시 미디어 연결이 유지됩니다.</span>
+    </div>
+    <section class="wrap guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>
+    <section class="wrap guide-faq"><h2>FAQ (관리자 편집용 · 공개 화면에서는 문제해결/FAQ 링크로 연결)</h2>${faqBlocks}<button type="button" class="secondary mini-btn" data-add-faq>FAQ 추가</button></section>
     ${workflow ? `<div class="wrap workflow-seo-cta"><a class="secondary" href="${pathBase()}${workflow.replace(/^\//, '')}">기술적인 Workflow 설명 보기</a></div>` : ''}
     ${updated ? `<p class="wrap muted guide-updated">업데이트: ${updated.toLocaleDateString('ko-KR')}</p>` : ''}
   `;
 
   document.title = `${g.title || 'Guide'} — MidiAI Studio`;
-  mountHeroMedia(root, g, editing);
+  mountHeroMedia(root, g, true);
   bindEditable(root);
-  mountGuideSections(root, sections, editing);
-  mountGuideMarkdownFields(root, g, editing);
+  mountGuideSections(root, sections, true);
+  mountGuideMarkdownFields(root, g, true);
   root.querySelector('[data-cms-inline="add-section"]')?.addEventListener('click', () => addSectionTemplate());
+  root.querySelectorAll('[data-sec-caption]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const i = Number(input.getAttribute('data-sec-caption'));
+      if (!currentGuide?.sections?.[i]) return;
+      currentGuide.sections[i].mediaCaption = input.value;
+      scheduleSave();
+    });
+  });
 }
 
 function heroMediaState(g) {
@@ -900,20 +1343,39 @@ function mountGuideSections(root, sections, editing) {
     const body = block.querySelector('[data-sec-body]');
     const feats = block.querySelector('[data-sec-features]');
     const media = block.querySelector('[data-sec-media]');
+    const sectionId = sec.id;
+
+    const refreshThumb = (s) => {
+      const host = root.querySelector(`[data-step-thumb="${CSS.escape(sectionId)}"]`);
+      const fileEl = block.querySelector('.guide-step-media-file');
+      const resolved = resolveSectionMedia(s);
+      if (host) {
+        if (resolved?.mediaType === 'image') {
+          host.innerHTML = `<img src="${esc(resolved.mediaUrl)}" alt="" loading="lazy" decoding="async">`;
+        } else if (resolved?.mediaType === 'video') {
+          host.innerHTML = `<video src="${esc(resolved.mediaUrl)}" muted playsinline preload="metadata"></video>`;
+        } else if (resolved?.mediaType === 'youtube') {
+          host.innerHTML = `<span class="guide-step-media-yt">YouTube</span>`;
+        } else {
+          host.innerHTML = `<span class="guide-step-media-empty">미디어 없음</span>`;
+        }
+      }
+      if (fileEl) {
+        fileEl.textContent = resolved
+          ? `${resolved.mediaType} · ${mediaFileLabel(resolved.mediaUrl)}`
+          : '이미지/영상을 아래에서 이 Step에만 지정하세요.';
+      }
+    };
 
     if (!editing) {
-      // Public: fill static content matching product template
       if (cat) {
-        if (sec.category) cat.innerHTML = `<p class="eyebrow">${esc(sec.category)}</p>`;
+        if (sec.category) cat.innerHTML = `<p class="guide-learn-badge">${esc(sec.category)}</p>`;
         else cat.innerHTML = '';
       }
       if (title) title.innerHTML = sec.title ? `<h2>${esc(sec.title)}</h2>` : '';
       if (body) {
-        if (sec.body) {
-          mountMarkdownField(body, { value: sec.body, editMode: false, isAdmin: false });
-        } else {
-          body.innerHTML = '';
-        }
+        if (sec.body) mountMarkdownField(body, { value: sec.body, editMode: false, isAdmin: false });
+        else body.innerHTML = '';
       }
       const fl = (sec.features || []).filter((f) => String(f || '').trim());
       if (feats) {
@@ -921,16 +1383,17 @@ function mountGuideSections(root, sections, editing) {
           ? `<ul class="product-points">${fl.map((f) => `<li>${esc(f)}</li>`).join('')}</ul>`
           : '';
       }
-      if (media) {
+      const resolved = resolveSectionMedia(sec);
+      if (media && resolved) {
         mountEditableMedia(media, {
-          mediaType: sec.mediaType || '',
-          mediaUrl: sec.mediaUrl || '',
-          posterUrl: sec.posterUrl || '',
-          mediaFit: sec.mediaFit || 'cover',
-          mediaWidth: sec.mediaWidth || 'full',
-          mediaWidthPct: sec.mediaWidthPct,
-          mediaAspect: sec.mediaAspect,
-          mediaOverlays: sec.mediaOverlays || [],
+          mediaType: resolved.mediaType,
+          mediaUrl: resolved.mediaUrl,
+          posterUrl: resolved.posterUrl || '',
+          mediaFit: resolved.mediaFit || 'cover',
+          mediaWidth: resolved.mediaWidth || 'full',
+          mediaWidthPct: resolved.mediaWidthPct,
+          mediaAspect: resolved.mediaAspect,
+          mediaOverlays: resolved.mediaOverlays || [],
           editMode: false,
           isAdmin: false
         });
@@ -939,7 +1402,7 @@ function mountGuideSections(root, sections, editing) {
     }
 
     mountEditableText(cat, {
-      tag: 'p', className: 'eyebrow', value: sec.category || '', placeholder: '카테고리 작성',
+      tag: 'p', className: 'guide-learn-badge', value: sec.category || '', placeholder: '카테고리 작성',
       editMode: true, isAdmin: true,
       onChange: (v) => { currentGuide.sections[i].category = v; scheduleSave(); },
       onClear: () => { currentGuide.sections[i].category = ''; scheduleSave(); }
@@ -955,7 +1418,7 @@ function mountGuideSections(root, sections, editing) {
       placeholder: '설명 작성',
       editMode: true,
       isAdmin: true,
-      draftKey: `guide:${currentGuide.id || currentGuide.slug}:sec:${i}:body`,
+      draftKey: `guide:${currentGuide.id || currentGuide.slug}:sec:${sectionId}:body`,
       storagePrefix: `cms-md/${(typeof auth !== 'undefined' && auth?.currentUser?.uid) || 'anon'}/guide/${currentGuide.slug || currentGuide.id || 'draft'}`,
       onChange: (v) => { currentGuide.sections[i].body = v; scheduleSave(); },
       onClear: () => { currentGuide.sections[i].body = ''; scheduleSave(); }
@@ -965,28 +1428,46 @@ function mountGuideSections(root, sections, editing) {
       editMode: true, isAdmin: true,
       onChange: (v) => { currentGuide.sections[i].features = v; scheduleSave(); }
     });
+
+    const resolved = resolveSectionMedia(sec) || {
+      mediaType: '', mediaUrl: '', posterUrl: '', mediaFit: 'cover',
+      mediaWidth: 'full', mediaWidthPct: 100, mediaAspect: 1.6, mediaOverlays: []
+    };
     mountEditableMedia(media, {
-      mediaType: sec.mediaType || '',
-      mediaUrl: sec.mediaUrl || '',
-      posterUrl: sec.posterUrl || '',
-      mediaFit: sec.mediaFit || 'cover',
-      mediaWidth: sec.mediaWidth || 'full',
-      mediaWidthPct: sec.mediaWidthPct,
-      mediaAspect: sec.mediaAspect,
-      mediaOverlays: sec.mediaOverlays || [],
+      mediaType: resolved.mediaType,
+      mediaUrl: resolved.mediaUrl,
+      posterUrl: resolved.posterUrl || '',
+      mediaFit: resolved.mediaFit || 'cover',
+      mediaWidth: resolved.mediaWidth || 'full',
+      mediaWidthPct: resolved.mediaWidthPct,
+      mediaAspect: resolved.mediaAspect,
+      mediaOverlays: resolved.mediaOverlays || [],
       editMode: true, isAdmin: true,
-      onChange: (m) => { Object.assign(currentGuide.sections[i], m); scheduleSave(); },
+      onChange: (m) => {
+        const target = currentGuide.sections.find((x) => x.id === sectionId) || currentGuide.sections[i];
+        if (!target) return;
+        target.mediaType = m.mediaType || '';
+        target.mediaUrl = m.mediaUrl || '';
+        target.posterUrl = m.posterUrl || '';
+        target.mediaFit = m.mediaFit || 'cover';
+        target.mediaWidth = m.mediaWidth || 'full';
+        target.mediaWidthPct = m.mediaWidthPct;
+        target.mediaAspect = m.mediaAspect;
+        target.mediaOverlays = Array.isArray(m.mediaOverlays) ? m.mediaOverlays : [];
+        refreshThumb(target);
+        scheduleSave();
+      },
       onFile: (f) => {
-        if (f.kind === 'clear') delete pendingSectionFiles[i];
-        else if (f.kind === 'youtube') delete pendingSectionFiles[i];
-        else if (f.file) pendingSectionFiles[i] = f.file;
+        if (f.kind === 'clear' || f.kind === 'youtube') delete pendingSectionFiles[sectionId];
+        else if (f.file) pendingSectionFiles[sectionId] = f.file;
         scheduleSave();
       }
     });
 
     block.querySelector(`[data-section-flip="${i}"]`)?.addEventListener('click', () => {
-      const cur = currentGuide.sections[i].layout === 'reverse' ? 'normal' : 'reverse';
-      currentGuide.sections[i].layout = cur;
+      const target = currentGuide.sections.find((x) => x.id === sectionId) || currentGuide.sections[i];
+      if (!target) return;
+      target.layout = target.layout === 'reverse' ? 'normal' : 'reverse';
       setDirty(true);
       renderDetail(currentGuide);
       scheduleSave();
