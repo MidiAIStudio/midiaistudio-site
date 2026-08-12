@@ -1623,6 +1623,12 @@ body.sidebar-layout{background:radial-gradient(circle at 15% 0%,rgba(139,92,246,
 /* Avoid border/outline transitions — Windows Chrome leaves paint ghosts on sidebar nav. */
 body.sidebar-layout #mainNav.sidebar-nav a,body.sidebar-layout .sidebar-nav a{gap:9px;padding:7px 10px!important;border-radius:11px!important;color:#c7cbe4!important;font-size:13px!important;font-weight:700!important;position:relative;line-height:1.2;transition:none!important;outline:none!important;box-shadow:none!important;border:0!important;transform:none!important}
 body.sidebar-layout #mainNav.sidebar-nav a span:last-child,body.sidebar-layout .sidebar-nav a span:last-child{flex:1;min-width:0}
+body.sidebar-layout #mainNav.sidebar-nav a .nav-soon-badge,
+body.sidebar-layout .sidebar-nav a .nav-soon-badge{
+  flex:none!important;margin-left:auto;padding:3px 7px;border-radius:999px;
+  font-size:10px;font-weight:800;line-height:1;letter-spacing:.01em;white-space:nowrap;
+  color:#ffd98e;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.28)
+}
 body.sidebar-layout #mainNav.sidebar-nav a:hover,body.sidebar-layout .sidebar-nav a:hover{color:#fff!important;background:rgba(255,255,255,.05)!important;transform:none!important;border:0!important;box-shadow:none!important}
 body.sidebar-layout #mainNav.sidebar-nav a:focus,body.sidebar-layout .sidebar-nav a:focus,
 body.sidebar-layout #mainNav.sidebar-nav a:focus-visible,body.sidebar-layout .sidebar-nav a:focus-visible{outline:none!important;box-shadow:none!important}

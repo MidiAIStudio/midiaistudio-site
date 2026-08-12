@@ -1,0 +1,197 @@
+[
+  {
+    "slug": "getting-started",
+    "title": "Getting Started",
+    "order": 10,
+    "sections": [
+      {
+        "i": 0,
+        "id": "sec_getting-started_앱-설치실행",
+        "title": "앱 설치·실행",
+        "body": "홈페이지 **다운로드**에서 Installer를 받아 설치합니다. 설치가 끝나면 **MidiAI Studio**를 실행하세요. 왼쪽 사이드바에 **홈**, **스튜디오**, **MIDI 편집**, **악보 편집기**, **라이브러리**, **설정** 메뉴가 보입니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fgetting-started%2Fhome.jpg?alt=media&token=6d2f26f4-1b58-420b-899a-b310b6ea026d",
+        "posterUrl": "",
+        "file": "home.jpg"
+      },
+      {
+        "i": 1,
+        "id": "sec_getting-started_google-로그인--라이선스",
+        "title": "Google 로그인 · 라이선스",
+        "body": "우측 상단에서 계정 상태를 확인합니다. Google로 로그인하면 라이선스가 연결되며, FULL LICENSE가 확인되면 전체 구간 변환을 사용할 수 있습니다. 계정·출력 폴더 등은 **설정**에서 변경합니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fgetting-started%2Fsettings.jpg?alt=media&token=d2e82b3d-9399-4387-a12a-3a4772cc03e9",
+        "posterUrl": "",
+        "file": "settings.jpg"
+      },
+      {
+        "i": 2,
+        "id": "sec_getting-started_첫-변환-시작",
+        "title": "첫 변환 시작",
+        "body": "홈 화면의 **변환 시작**을 누르거나 왼쪽 **스튜디오**로 이동합니다. YouTube 링크를 붙여넣고 **분석**하거나, **음성 파일 드롭 또는 선택**으로 로컬 오디오를 올린 뒤 **MIDI로 변환**을 실행합니다.",
+        "mediaType": "video",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-videos%2Fgetting-started%2Fannotated.mp4?alt=media&token=5ffec958-f3f6-4694-b61d-cb8898d91177",
+        "posterUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fgetting-started%2Fhero.jpg?alt=media&token=c7312d45-56d5-438f-bd14-3b57e7ee92ad",
+        "file": "annotated.mp4"
+      }
+    ]
+  },
+  {
+    "slug": "youtube-to-midi",
+    "title": "YouTube → MIDI",
+    "order": 20,
+    "sections": [
+      {
+        "i": 0,
+        "id": "sec_youtube-to-midi_링크-입력--분석",
+        "title": "링크 입력 · 분석",
+        "body": "왼쪽 **스튜디오**로 이동합니다. **입력** 카드의 상단 칸에 YouTube URL을 붙여넣은 뒤 **분석**을 누릅니다. 플레이스홀더는 **YouTube 링크를 붙여넣으세요**입니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Furl.jpg?alt=media&token=5892839a-95ca-434e-bd70-47953093426a",
+        "posterUrl": "",
+        "file": "url.jpg"
+      },
+      {
+        "i": 1,
+        "id": "sec_youtube-to-midi_곡명으로-검색",
+        "title": "곡명으로 검색",
+        "body": "URL이 없다면 **검색** 카드에서 곡명을 입력합니다. 예: `Faded`, `Canon`, `풍선`. **검색**을 실행한 뒤 결과 목록에서 원하는 영상을 선택하면 URL이 채워집니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Fsearch.jpg?alt=media&token=652de8f4-6612-48f1-ac2c-c08639273dd4",
+        "posterUrl": "",
+        "file": "search.jpg"
+      },
+      {
+        "i": 2,
+        "id": "sec_youtube-to-midi_구간--변환-모드",
+        "title": "구간 · 변환 모드",
+        "body": "하단 **오디오 미리듣기**에서 파형을 확인하고 **선택 구간**을 조정합니다. 오른쪽 **MIDI 변환**에서 **Piano MIDI (권장)** 또는 **Band / Orchestra MIDI (Preview)**를 고른 뒤 **MIDI로 변환**을 누릅니다.",
+        "mediaType": "video",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-videos%2Fstudio%2Fannotated.mp4?alt=media&token=36982caa-4409-42d4-9db1-7c7cdf5a3c6c",
+        "posterUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Fhero.jpg?alt=media&token=77585e7f-7f57-477e-b82a-63d1e69d5b51",
+        "file": "annotated.mp4"
+      },
+      {
+        "i": 3,
+        "id": "sec_youtube-to-midi_변환-진행--결과",
+        "title": "변환 진행 · 결과",
+        "body": "변환이 진행되면 진행 화면이 표시됩니다. 완료 후 MIDI는 출력 폴더와 **라이브러리**에 쌓이며, **MIDI 편집**에서 바로 다듬을 수 있습니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Fprogress.jpg?alt=media&token=8cf2ddca-ec0f-44fe-a69b-e636739b802c",
+        "posterUrl": "",
+        "file": "progress.jpg"
+      },
+      {
+        "i": 4,
+        "id": "sec_youtube-to-midi_악기트랙-결과-확인",
+        "title": "악기·트랙 결과 확인",
+        "body": "변환 결과에서 트랙·악기가 어떻게 나뉘었는지 확인한 뒤, 필요하면 **MIDI 편집**에서 악기·벨로시티를 조정하세요.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Ftracks-result_1786543565949.jpg?alt=media&token=e94e0174-85e7-4475-a139-1fe9b659f110",
+        "posterUrl": "",
+        "file": "tracks-result_1786543565949.jpg"
+      }
+    ]
+  },
+  {
+    "slug": "audio-to-midi",
+    "title": "Audio → MIDI",
+    "order": 30,
+    "sections": [
+      {
+        "i": 0,
+        "id": "sec_audio-to-midi_로컬-오디오-불러오기",
+        "title": "로컬 오디오 불러오기",
+        "body": "**스튜디오**의 **입력** 카드에서 **음성 파일 드롭 또는 선택** 영역을 클릭하거나 파일을 끌어다 놓습니다. YouTube 없이도 로컬 파일만으로 변환할 수 있습니다.",
+        "mediaType": "video",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-videos%2Faudio%2Fannotated.mp4?alt=media&token=b4cb65e0-9b58-4571-8f5f-d37a747e7a69",
+        "posterUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Faudio-to-midi%2Fhero.jpg?alt=media&token=ec77f346-521f-4725-a5a3-597493055679",
+        "file": "annotated.mp4"
+      },
+      {
+        "i": 1,
+        "id": "sec_audio-to-midi_미리듣기--구간",
+        "title": "미리듣기 · 구간",
+        "body": "파일이 로드되면 하단 **오디오 미리듣기**에서 ▶ **미리듣기**로 확인합니다. 필요한 부분만 변환하려면 **선택 구간**을 조정하세요. 체험판은 최대 1분 저장 제한이 있습니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Faudio-to-midi%2Fpreview-range_1786543565949.jpg?alt=media&token=5923de35-afad-4907-b1d7-818950d6656f",
+        "posterUrl": "",
+        "file": "preview-range_1786543565949.jpg"
+      },
+      {
+        "i": 2,
+        "id": "sec_audio-to-midi_변환-모드--실행",
+        "title": "변환 모드 · 실행",
+        "body": "오른쪽 **MIDI 변환**에서 **Piano MIDI (권장)** 또는 **Band / Orchestra MIDI (Preview)**를 선택한 뒤 **MIDI로 변환**을 누릅니다. 완료 후 **MIDI 편집**·**라이브러리**로 이어집니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Faudio-to-midi%2Fconvert-mode_1786543565949.jpg?alt=media&token=70d42395-555c-46d7-a991-272f13dddc02",
+        "posterUrl": "",
+        "file": "convert-mode_1786543565949.jpg"
+      }
+    ]
+  },
+  {
+    "slug": "midi-editor",
+    "title": "MIDI Editor",
+    "order": 50,
+    "sections": [
+      {
+        "i": 0,
+        "id": "sec_midi-editor_midi-편집-열기",
+        "title": "MIDI 편집 열기",
+        "body": "왼쪽 **MIDI 편집**으로 이동합니다. 상단에 **PRO** 배지와 메뉴(파일·편집·보기·삽입·도구·트랜스포트·도움말)가 있습니다. 트랙 목록에서 악기(예: 그랜드 피아노)를 확인하세요.",
+        "mediaType": "video",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-videos%2Fmidi-editor%2Fannotated.mp4?alt=media&token=9c246c6f-3f53-4b84-bd75-a7c37f9b7614",
+        "posterUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fmidi-editor%2Fhero.jpg?alt=media&token=25d50dd9-1e2b-4d3e-9923-cd8e87d6a6ba",
+        "file": "annotated.mp4"
+      },
+      {
+        "i": 1,
+        "id": "sec_midi-editor_피아노-롤에서-노트-편집",
+        "title": "피아노 롤에서 노트 편집",
+        "body": "중앙 **피아노 롤**에서 음표 피치·길이를 드래그로 조정합니다. 하단 **Performance**에서 **Velocity**, Pitch, Mod, Expr 등을 다듬고, 스냅·BPM·루프를 맞춘 뒤 재생으로 확인합니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fmidi-editor%2Froll.jpg?alt=media&token=d4c13177-bdaa-4e70-abbe-997d8ad91545",
+        "posterUrl": "",
+        "file": "roll.jpg"
+      },
+      {
+        "i": 2,
+        "id": "sec_midi-editor_악기-변경--내보내기",
+        "title": "악기 변경 · 내보내기",
+        "body": "트랙 악기를 바꾸고 저장합니다. 악보가 필요하면 PDF/MusicXML로 내보내거나 **악보 편집기**로 이어가세요. 작업 파일은 **라이브러리**에서도 다시 열 수 있습니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fmidi-editor%2Finstruments.jpg?alt=media&token=411bbfcd-00cf-472d-b92a-0bace32090d8",
+        "posterUrl": "",
+        "file": "instruments.jpg"
+      }
+    ]
+  },
+  {
+    "slug": "library",
+    "title": "Library",
+    "order": 80,
+    "sections": [
+      {
+        "i": 0,
+        "id": "sec_library_라이브러리에서-찾기",
+        "title": "라이브러리에서 찾기",
+        "body": "왼쪽 **라이브러리**로 이동합니다. 상단 검색창에 파일명·확장자·프로젝트명을 입력하고, **전체** 필터와 **최신순** 정렬로 목록을 좁힙니다.",
+        "mediaType": "video",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-videos%2Flibrary%2Fannotated.mp4?alt=media&token=d4fc159f-e8da-41f6-94df-774c6d30e1e2",
+        "posterUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Flibrary%2Fhero.jpg?alt=media&token=a8f7217f-9f53-423a-b7f8-ec2cb5b4c087",
+        "file": "annotated.mp4"
+      },
+      {
+        "i": 1,
+        "id": "sec_library_열기--폴더--새-변환",
+        "title": "열기 · 폴더 · 새 변환",
+        "body": "항목의 **열기**로 MIDI 편집 등 이어가기, **삭제**로 정리합니다. 하단 **Outputs 폴더 열기**로 저장 위치를 확인하고, **새 변환 시작**으로 스튜디오로 돌아갈 수 있습니다.",
+        "mediaType": "image",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Flibrary%2Fhero.jpg?alt=media&token=a8f7217f-9f53-423a-b7f8-ec2cb5b4c087",
+        "posterUrl": "",
+        "file": "hero.jpg"
+      }
+    ]
+  }
+]
