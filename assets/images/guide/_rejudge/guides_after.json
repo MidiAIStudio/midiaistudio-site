@@ -1,0 +1,160 @@
+[
+  {
+    "slug": "audio-to-midi",
+    "title": "Audio → MIDI",
+    "secs": [
+      {
+        "id": "sec_audio-to-midi_로컬-오디오-불러오기",
+        "title": "로컬 오디오 불러오기",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "rejudge_drop-zone-v2_1786547120291.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Faudio-to-midi%2Frejudge_drop-zone-v2_1786547120291.jpg?alt=media&token=26e0ac5d-ff5d-4f2a-8607-d35f30a77d59"
+      },
+      {
+        "id": "sec_audio-to-midi_미리듣기--구간",
+        "title": "미리듣기 · 구간",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "preview-range_1786543565949.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Faudio-to-midi%2Fpreview-range_1786543565949.jpg?alt=media&token=5923de35-afad-4907-b1d7-818950d6656f"
+      },
+      {
+        "id": "sec_audio-to-midi_변환-모드--실행",
+        "title": "변환 모드 · 실행",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "convert-mode_1786543565949.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Faudio-to-midi%2Fconvert-mode_1786543565949.jpg?alt=media&token=70d42395-555c-46d7-a991-272f13dddc02"
+      }
+    ]
+  },
+  {
+    "slug": "getting-started",
+    "title": "Getting Started",
+    "secs": [
+      {
+        "id": "sec_getting-started_앱-설치실행",
+        "title": "앱 설치·실행",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "home.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fgetting-started%2Fhome.jpg?alt=media&token=6d2f26f4-1b58-420b-899a-b310b6ea026d"
+      },
+      {
+        "id": "sec_getting-started_google-로그인--라이선스",
+        "title": "Google 로그인 · 라이선스",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "settings.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fgetting-started%2Fsettings.jpg?alt=media&token=d2e82b3d-9399-4387-a12a-3a4772cc03e9"
+      },
+      {
+        "id": "sec_getting-started_첫-변환-시작",
+        "title": "첫 변환 시작",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "rejudge_start-convert_1786547120291.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fgetting-started%2Frejudge_start-convert_1786547120291.jpg?alt=media&token=bc2f4d6e-7ab9-4d06-8582-02c2504720e0"
+      }
+    ]
+  },
+  {
+    "slug": "library",
+    "title": "Library",
+    "secs": [
+      {
+        "id": "sec_library_라이브러리에서-찾기",
+        "title": "라이브러리에서 찾기",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "rejudge_search-list_1786547120291.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Flibrary%2Frejudge_search-list_1786547120291.jpg?alt=media&token=b2d68ba6-51fb-4f54-b53b-4a0ba350ceca"
+      },
+      {
+        "id": "sec_library_열기--폴더--새-변환",
+        "title": "열기 · 폴더 · 새 변환",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "hero.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Flibrary%2Fhero.jpg?alt=media&token=a8f7217f-9f53-423a-b7f8-ec2cb5b4c087"
+      }
+    ]
+  },
+  {
+    "slug": "midi-editor",
+    "title": "MIDI Editor",
+    "secs": [
+      {
+        "id": "sec_midi-editor_midi-편집-열기",
+        "title": "MIDI 편집 열기",
+        "description": "",
+        "mediaType": "video",
+        "mediaFile": "annotated.mp4",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-videos%2Fmidi-editor%2Fannotated.mp4?alt=media&token=9c246c6f-3f53-4b84-bd75-a7c37f9b7614"
+      },
+      {
+        "id": "sec_midi-editor_피아노-롤에서-노트-편집",
+        "title": "피아노 롤에서 노트 편집",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "rejudge_roll-with-notes_1786547120291.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fmidi-editor%2Frejudge_roll-with-notes_1786547120291.jpg?alt=media&token=4264a516-3738-439c-a654-2ea646208e61"
+      },
+      {
+        "id": "sec_midi-editor_악기-변경--내보내기",
+        "title": "악기 변경 · 내보내기",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "instruments.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fmidi-editor%2Finstruments.jpg?alt=media&token=411bbfcd-00cf-472d-b92a-0bace32090d8"
+      }
+    ]
+  },
+  {
+    "slug": "youtube-to-midi",
+    "title": "YouTube → MIDI",
+    "secs": [
+      {
+        "id": "sec_youtube-to-midi_링크-입력--분석",
+        "title": "링크 입력 · 분석",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "rejudge_url-with-context_1786547120291.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Frejudge_url-with-context_1786547120291.jpg?alt=media&token=0c7d9014-dfab-4751-b419-6ff7d4d13157"
+      },
+      {
+        "id": "sec_youtube-to-midi_곡명으로-검색",
+        "title": "곡명으로 검색",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "search.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Fsearch.jpg?alt=media&token=652de8f4-6612-48f1-ac2c-c08639273dd4"
+      },
+      {
+        "id": "sec_youtube-to-midi_구간--변환-모드",
+        "title": "구간 · 변환 모드",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "rejudge_range-and-mode_1786547120291.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Frejudge_range-and-mode_1786547120291.jpg?alt=media&token=46554c1c-a94f-4ce7-802e-05462b2ba5bc"
+      },
+      {
+        "id": "sec_youtube-to-midi_변환-진행--결과",
+        "title": "변환 진행 · 결과",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "progress.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Fprogress.jpg?alt=media&token=8cf2ddca-ec0f-44fe-a69b-e636739b802c"
+      },
+      {
+        "id": "sec_youtube-to-midi_악기트랙-결과-확인",
+        "title": "악기·트랙 결과 확인",
+        "description": "",
+        "mediaType": "image",
+        "mediaFile": "tracks-result_1786543565949.jpg",
+        "mediaUrl": "https://firebasestorage.googleapis.com/v0/b/midiaistudio.firebasestorage.app/o/guide-images%2Fyoutube-to-midi%2Ftracks-result_1786543565949.jpg?alt=media&token=e94e0174-85e7-4475-a139-1fe9b659f110"
+      }
+    ]
+  }
+]
