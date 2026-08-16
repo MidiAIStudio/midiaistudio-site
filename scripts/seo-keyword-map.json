@@ -1,0 +1,82 @@
+{
+  "note": "One primary landing per search intent. Product manuals: /guide/{slug}/. English articles exist but are noindex so they do not compete with KR pillars.",
+  "map": [
+    {
+      "intent": "Brand / AI MIDI converter",
+      "kr": ["AI MIDI 변환", "MIDI 변환 프로그램"],
+      "en": ["AI MIDI converter", "AI music transcription"],
+      "jp": ["AI MIDI変換", "AI自動採譜"],
+      "target": "https://midiaistudio.com/"
+    },
+    {
+      "intent": "Audio → MIDI",
+      "kr": ["음원 MIDI 변환", "오디오 MIDI 변환", "MP3 MIDI 변환", "음악 MIDI 변환", "노래 MIDI 변환", "피아노 MIDI 변환"],
+      "en": ["audio to MIDI", "convert audio to MIDI", "how to convert audio to MIDI"],
+      "jp": ["音源 MIDI変換", "オーディオ MIDI変換"],
+      "target": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "intent": "MP3 → MIDI",
+      "kr": ["MP3 MIDI 변환", "MP3를 MIDI로 변환하는 방법"],
+      "en": ["MP3 to MIDI", "convert MP3 to MIDI"],
+      "jp": ["MP3 MIDI変換"],
+      "target": "https://midiaistudio.com/guides/audio-to-midi.html"
+    },
+    {
+      "intent": "YouTube → MIDI",
+      "kr": ["유튜브 MIDI 변환", "유튜브 미디 변환", "유튜브 음악을 MIDI로 변환하는 방법"],
+      "en": ["YouTube to MIDI", "YouTube MIDI converter"],
+      "jp": ["YouTube MIDI変換", "YouTube MIDIコンバーター"],
+      "target": "https://midiaistudio.com/guides/youtube-to-midi.html"
+    },
+    {
+      "intent": "PDF / sheet → MIDI",
+      "kr": ["PDF MIDI 변환", "악보 MIDI 변환", "악보 PDF를 MIDI로 변환하는 방법"],
+      "en": ["PDF to MIDI", "sheet music to MIDI", "music OCR"],
+      "jp": ["楽譜 MIDI変換", "PDF MIDI変換", "楽譜認識"],
+      "target": "https://midiaistudio.com/guides/pdf-to-midi.html"
+    },
+    {
+      "intent": "MIDI editor",
+      "kr": ["MIDI 편집 프로그램", "MIDI 에디터", "피아노롤"],
+      "en": ["MIDI editor", "piano roll editor"],
+      "jp": ["MIDI編集", "MIDIエディター", "ピアノロール"],
+      "target": "https://midiaistudio.com/guides/midi-editor.html"
+    },
+    {
+      "intent": "AI transcription",
+      "kr": ["AI 채보", "자동 채보", "AI로 MIDI 만드는 방법"],
+      "en": ["automatic music transcription", "AI music transcriber"],
+      "jp": ["自動採譜", "自動採譜ソフト"],
+      "target": "https://midiaistudio.com/guides/ai-transcription.html"
+    },
+    {
+      "intent": "In-app YouTube steps",
+      "kr": ["유튜브 MIDI 변환 사용법"],
+      "en": ["YouTube to MIDI how-to in the app"],
+      "jp": ["YouTube MIDI変換の使い方"],
+      "target": "https://midiaistudio.com/guide/youtube-to-midi/"
+    },
+    {
+      "intent": "In-app audio steps",
+      "kr": ["음원 MIDI 변환 사용법"],
+      "en": ["audio to MIDI how-to in the app"],
+      "jp": ["音源MIDI変換の使い方"],
+      "target": "https://midiaistudio.com/guide/audio-to-midi/"
+    },
+    {
+      "intent": "In-app PDF steps",
+      "kr": ["악보 PDF MIDI 사용법"],
+      "en": ["PDF to MIDI how-to in the app"],
+      "jp": ["楽譜PDF MIDIの使い方"],
+      "target": "https://midiaistudio.com/guide/pdf-to-midi/"
+    },
+    {
+      "intent": "In-app editor steps",
+      "kr": ["피아노롤 사용법"],
+      "en": ["piano roll how-to in the app"],
+      "jp": ["ピアノロールの使い方"],
+      "target": "https://midiaistudio.com/guide/midi-editor/"
+    }
+  ]
+}

@@ -1,0 +1,1364 @@
+{
+  "crawledAt": "2026-08-16T01:03:31.649Z",
+  "origin": "https://midiaistudio.web.app",
+  "sitemapCount": 89,
+  "http200": 89,
+  "not200": [],
+  "quality": {
+    "THIN": [
+      {
+        "url": "https://midiaistudio.web.app/board-post.html",
+        "wordCount": 74
+      },
+      {
+        "url": "https://midiaistudio.web.app/board.html",
+        "wordCount": 69
+      },
+      {
+        "url": "https://midiaistudio.web.app/faq.html",
+        "wordCount": 69
+      },
+      {
+        "url": "https://midiaistudio.web.app/notice.html",
+        "wordCount": 68
+      },
+      {
+        "url": "https://midiaistudio.web.app/notices.html",
+        "wordCount": 67
+      },
+      {
+        "url": "https://midiaistudio.web.app/patch-note.html",
+        "wordCount": 68
+      },
+      {
+        "url": "https://midiaistudio.web.app/patch-notes.html",
+        "wordCount": 68
+      }
+    ],
+    "NEAR_THIN": [
+      {
+        "url": "https://midiaistudio.web.app/business-info.html",
+        "wordCount": 99
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/ai-assistant",
+        "wordCount": 133
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/audio-to-midi",
+        "wordCount": 142
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/getting-started",
+        "wordCount": 137
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/",
+        "wordCount": 88
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/library",
+        "wordCount": 121
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/license",
+        "wordCount": 120
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/midi-editor",
+        "wordCount": 129
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/pdf-to-midi",
+        "wordCount": 132
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/score-editor",
+        "wordCount": 129
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/troubleshooting",
+        "wordCount": 128
+      },
+      {
+        "url": "https://midiaistudio.web.app/guide/youtube-to-midi",
+        "wordCount": 163
+      },
+      {
+        "url": "https://midiaistudio.web.app/guides/ai-transcription.html",
+        "wordCount": 139
+      },
+      {
+        "url": "https://midiaistudio.web.app/guides/midi-editor.html",
+        "wordCount": 142
+      },
+      {
+        "url": "https://midiaistudio.web.app/ja/purchase.html",
+        "wordCount": 106
+      },
+      {
+        "url": "https://midiaistudio.web.app/support.html",
+        "wordCount": 161
+      }
+    ],
+    "SUBSTANTIAL": 66,
+    "NOINDEX": []
+  },
+  "duplicateTitles": [],
+  "issues": [],
+  "similarity": [
+    {
+      "name": "audio-mp3",
+      "a": "https://midiaistudio.web.app/guides/audio-to-midi.html",
+      "b": "https://midiaistudio.web.app/guides/mp3-to-midi.html",
+      "error": "missing from sitemap crawl"
+    },
+    {
+      "name": "yt-pillar-manual",
+      "a": "https://midiaistudio.web.app/guides/youtube-to-midi.html",
+      "b": "https://midiaistudio.web.app/guide/youtube-to-midi",
+      "jaccard": 0.04,
+      "wordA": 820,
+      "wordB": 163,
+      "h1A": [
+        "유튜브 음악을 MIDI로 변환하는 방법"
+      ],
+      "h1B": [
+        "유튜브 음악을 MIDI로 변환하는 방법"
+      ]
+    },
+    {
+      "name": "audio-pillar-manual",
+      "a": "https://midiaistudio.web.app/guides/audio-to-midi.html",
+      "b": "https://midiaistudio.web.app/guide/audio-to-midi",
+      "jaccard": 0.019,
+      "wordA": 812,
+      "wordB": 142,
+      "h1A": [
+        "음원을 MIDI로 변환하는 방법"
+      ],
+      "h1B": [
+        "음원을 MIDI로 변환하는 방법"
+      ]
+    },
+    {
+      "name": "pdf-pillar-manual",
+      "a": "https://midiaistudio.web.app/guides/pdf-to-midi.html",
+      "b": "https://midiaistudio.web.app/guide/pdf-to-midi",
+      "jaccard": 0.037,
+      "wordA": 771,
+      "wordB": 132,
+      "h1A": [
+        "악보 PDF를 MIDI로 변환하는 방법"
+      ],
+      "h1B": [
+        "악보 PDF를 MIDI로 변환하는 방법"
+      ]
+    },
+    {
+      "name": "editor-pillar-manual",
+      "a": "https://midiaistudio.web.app/guides/midi-editor.html",
+      "b": "https://midiaistudio.web.app/guide/midi-editor",
+      "jaccard": 0.189,
+      "wordA": 142,
+      "wordB": 129,
+      "h1A": [
+        "MIDI 편집과 피아노롤 사용법"
+      ],
+      "h1B": [
+        "MIDI 편집과 피아노롤 사용법"
+      ]
+    },
+    {
+      "name": "yt-workflow",
+      "a": "https://midiaistudio.web.app/guides/youtube-to-midi.html",
+      "b": "https://midiaistudio.web.app/workflow/youtube-to-midi",
+      "error": "missing from sitemap crawl"
+    },
+    {
+      "name": "audio-workflow",
+      "a": "https://midiaistudio.web.app/guides/audio-to-midi.html",
+      "b": "https://midiaistudio.web.app/workflow/audio-to-midi",
+      "error": "missing from sitemap crawl"
+    },
+    {
+      "name": "pdf-workflow",
+      "a": "https://midiaistudio.web.app/guides/pdf-to-midi.html",
+      "b": "https://midiaistudio.web.app/workflow/pdf-to-midi",
+      "error": "missing from sitemap crawl"
+    }
+  ],
+  "extraRows": [
+    {
+      "url": "https://midiaistudio.web.app/guide.html?slug=youtube-to-midi",
+      "status": 200,
+      "title": "사용 가이드 — MidiAI Studio",
+      "desc": "MidiAI Studio 프로그램 사용 가이드. slug가 있으면 해당 기능(YouTube·음원·PDF·MIDI 편집) 상세로 이동합니다.",
+      "robots": "noindex, follow",
+      "canonical": "https://midiaistudio.com/guide/",
+      "noindex": true,
+      "h1": [],
+      "h1Count": 0,
+      "h2": [],
+      "wordCount": 57,
+      "textSample": "사용 가이드 — MidiAI Studio MidiAI Studio EN G Google 로그인 로그아웃 편집 미리보기 저장 + 제품 카드 템플릿 삭제 ✓ 저장 완료 목록 가이드를 불러오는 중… MidiAI Studio AI 기반 MIDI 변환 소프트웨어 고객센터 이용약관 개인정보처리방침 환불정책 사업자정보 상호: 미디에이아이스튜디오 대표자: 최정환 사업자등록번호: 332-22-02381 사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호 대표전화: 010-2166-5563 통",
+      "textForSim": "사용 가이드 — MidiAI Studio MidiAI Studio EN G Google 로그인 로그아웃 편집 미리보기 저장 + 제품 카드 템플릿 삭제 ✓ 저장 완료 목록 가이드를 불러오는 중… MidiAI Studio AI 기반 MIDI 변환 소프트웨어 고객센터 이용약관 개인정보처리방침 환불정책 사업자정보 상호: 미디에이아이스튜디오 대표자: 최정환 사업자등록번호: 332-22-02381 사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호 대표전화: 010-2166-5563 통신판매업: 제2026-창원성산-0312호 이메일: midiaistudio@gmail.com © MidiAI Studio",
+      "ldOk": true,
+      "ldCount": 0,
+      "offers": [],
+      "hasStaticGuide": false,
+      "finalUrl": "https://midiaistudio.web.app/guide.html?slug=youtube-to-midi"
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide.html?slug=audio-to-midi",
+      "status": 200,
+      "title": "사용 가이드 — MidiAI Studio",
+      "desc": "MidiAI Studio 프로그램 사용 가이드. slug가 있으면 해당 기능(YouTube·음원·PDF·MIDI 편집) 상세로 이동합니다.",
+      "robots": "noindex, follow",
+      "canonical": "https://midiaistudio.com/guide/",
+      "noindex": true,
+      "h1": [],
+      "h1Count": 0,
+      "h2": [],
+      "wordCount": 57,
+      "textSample": "사용 가이드 — MidiAI Studio MidiAI Studio EN G Google 로그인 로그아웃 편집 미리보기 저장 + 제품 카드 템플릿 삭제 ✓ 저장 완료 목록 가이드를 불러오는 중… MidiAI Studio AI 기반 MIDI 변환 소프트웨어 고객센터 이용약관 개인정보처리방침 환불정책 사업자정보 상호: 미디에이아이스튜디오 대표자: 최정환 사업자등록번호: 332-22-02381 사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호 대표전화: 010-2166-5563 통",
+      "textForSim": "사용 가이드 — MidiAI Studio MidiAI Studio EN G Google 로그인 로그아웃 편집 미리보기 저장 + 제품 카드 템플릿 삭제 ✓ 저장 완료 목록 가이드를 불러오는 중… MidiAI Studio AI 기반 MIDI 변환 소프트웨어 고객센터 이용약관 개인정보처리방침 환불정책 사업자정보 상호: 미디에이아이스튜디오 대표자: 최정환 사업자등록번호: 332-22-02381 사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호 대표전화: 010-2166-5563 통신판매업: 제2026-창원성산-0312호 이메일: midiaistudio@gmail.com © MidiAI Studio",
+      "ldOk": true,
+      "ldCount": 0,
+      "offers": [],
+      "hasStaticGuide": false,
+      "finalUrl": "https://midiaistudio.web.app/guide.html?slug=audio-to-midi"
+    },
+    {
+      "url": "https://midiaistudio.web.app/robots.txt",
+      "status": 200,
+      "title": "",
+      "desc": "",
+      "robots": "",
+      "canonical": "",
+      "noindex": false,
+      "h1": [],
+      "h1Count": 0,
+      "h2": [],
+      "wordCount": 17,
+      "textSample": "User-agent: * Allow: / # Private / app areas Disallow: /admin.html Disallow: /account.html Disallow: /my-tickets.html Disallow: /ticket.html Disallow: /board-write.html Sitemap: https://midiaistudio.com/sitemap.xml",
+      "textForSim": "User-agent: * Allow: / # Private / app areas Disallow: /admin.html Disallow: /account.html Disallow: /my-tickets.html Disallow: /ticket.html Disallow: /board-write.html Sitemap: https://midiaistudio.com/sitemap.xml",
+      "ldOk": true,
+      "ldCount": 0,
+      "offers": [],
+      "hasStaticGuide": false,
+      "finalUrl": "https://midiaistudio.web.app/robots.txt"
+    }
+  ],
+  "keyPages": [
+    {
+      "url": "https://midiaistudio.web.app/guide/audio-to-midi",
+      "status": 200,
+      "title": "음원·MP3를 MIDI로 변환하는 방법 | MidiAI Studio",
+      "desc": "MP3, WAV 등 음원을 MIDI로 변환하는 방법. 파일 업로드, 구간·악기 선택, AI 채보 후 피아노롤 편집까지 안내합니다.",
+      "canonical": "https://midiaistudio.com/guide/audio-to-midi",
+      "h1": [
+        "음원을 MIDI로 변환하는 방법"
+      ],
+      "h1Count": 1,
+      "wordCount": 142,
+      "noindex": false,
+      "hasStaticGuide": true,
+      "offers": [],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/getting-started",
+      "status": 200,
+      "title": "MidiAI Studio 시작하기 — 설치부터 첫 MIDI 변환",
+      "desc": "MidiAI Studio 설치, Google 로그인, 무료 체험으로 첫 MIDI 변환까지. YouTube·음원 변환 전에 확인할 시작 가이드입니다.",
+      "canonical": "https://midiaistudio.com/guide/getting-started",
+      "h1": [
+        "MidiAI Studio 시작하기"
+      ],
+      "h1Count": 1,
+      "wordCount": 137,
+      "noindex": false,
+      "hasStaticGuide": true,
+      "offers": [],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/midi-editor",
+      "status": 200,
+      "title": "MIDI 편집 및 피아노롤 사용법 | MidiAI Studio",
+      "desc": "변환된 MIDI를 멀티트랙 피아노롤에서 편집하는 방법. 노트, 벨로시티, 악기 변경, 양자화까지 MidiAI Studio MIDI 에디터 가이드입니다.",
+      "canonical": "https://midiaistudio.com/guide/midi-editor",
+      "h1": [
+        "MIDI 편집과 피아노롤 사용법"
+      ],
+      "h1Count": 1,
+      "wordCount": 129,
+      "noindex": false,
+      "hasStaticGuide": true,
+      "offers": [],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/pdf-to-midi",
+      "status": 200,
+      "title": "PDF → MIDI 사용 가이드 | MidiAI Studio",
+      "desc": "악보 PDF를 인식해 편집 가능한 MIDI로 만드는 방법. 스캔 악보 팁, MIDI·악보 편집 연동을 안내합니다.",
+      "canonical": "https://midiaistudio.com/guide/pdf-to-midi",
+      "h1": [
+        "악보 PDF를 MIDI로 변환하는 방법"
+      ],
+      "h1Count": 1,
+      "wordCount": 132,
+      "noindex": false,
+      "hasStaticGuide": true,
+      "offers": [],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/youtube-to-midi",
+      "status": 200,
+      "title": "유튜브 MIDI 변환 가이드 | MidiAI Studio",
+      "desc": "유튜브 음악·피아노 커버를 MIDI로 변환하는 방법. URL 검색, 구간 선택, AI 변환, 피아노롤 편집까지 MidiAI Studio 화면 기준으로 안내합니다.",
+      "canonical": "https://midiaistudio.com/guide/youtube-to-midi",
+      "h1": [
+        "유튜브 음악을 MIDI로 변환하는 방법"
+      ],
+      "h1Count": 1,
+      "wordCount": 163,
+      "noindex": false,
+      "hasStaticGuide": true,
+      "offers": [],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/ai-transcription.html",
+      "status": 200,
+      "title": "AI 자동 채보·AI MIDI 변환 | MidiAI Studio",
+      "desc": "AI 음악 채보와 AI MIDI 변환이 하는 일, 한계, 편집으로 다듬는 방법. MidiAI Studio의 자동 채보와 AI Assistant 검토를 안내합니다.",
+      "canonical": "https://midiaistudio.com/guides/ai-transcription.html",
+      "h1": [
+        "AI로 음악을 자동 채보해 MIDI로 만들기"
+      ],
+      "h1Count": 1,
+      "wordCount": 139,
+      "noindex": false,
+      "hasStaticGuide": false,
+      "offers": [],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/audio-to-midi.html",
+      "status": 200,
+      "title": "음원·MP3 MIDI 변환 — Audio to MIDI | MidiAI Studio",
+      "desc": "음원·MP3를 MIDI로 변환하는 방법. 파일 업로드, 구간·악기 선택, AI 자동 채보와 피아노롤 편집까지 MidiAI Studio 기준으로 안내합니다.",
+      "canonical": "https://midiaistudio.com/guides/audio-to-midi.html",
+      "h1": [
+        "음원을 MIDI로 변환하는 방법"
+      ],
+      "h1Count": 1,
+      "wordCount": 812,
+      "noindex": false,
+      "hasStaticGuide": false,
+      "offers": [
+        {
+          "price": "130000",
+          "currency": "KRW"
+        }
+      ],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/midi-editor.html",
+      "status": 200,
+      "title": "MIDI 편집 프로그램·피아노롤 | MidiAI Studio",
+      "desc": "MIDI 편집 프로그램 사용법. 변환된 MIDI를 멀티트랙 피아노롤에서 노트·벨로시티·악기 변경까지 다듬는 MidiAI Studio 에디터 가이드입니다.",
+      "canonical": "https://midiaistudio.com/guides/midi-editor.html",
+      "h1": [
+        "MIDI 편집과 피아노롤 사용법"
+      ],
+      "h1Count": 1,
+      "wordCount": 142,
+      "noindex": false,
+      "hasStaticGuide": false,
+      "offers": [],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/pdf-to-midi.html",
+      "status": 200,
+      "title": "악보 PDF를 MIDI로 변환하는 방법 | MidiAI Studio",
+      "desc": "악보 PDF·스캔 악보를 인식해 MIDI로 변환하는 방법. 악보 자동 인식 팁과 MidiAI Studio 편집 연동을 안내합니다.",
+      "canonical": "https://midiaistudio.com/guides/pdf-to-midi.html",
+      "h1": [
+        "악보 PDF를 MIDI로 변환하는 방법"
+      ],
+      "h1Count": 1,
+      "wordCount": 771,
+      "noindex": false,
+      "hasStaticGuide": false,
+      "offers": [
+        {
+          "price": "130000",
+          "currency": "KRW"
+        }
+      ],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/youtube-to-midi.html",
+      "status": 200,
+      "title": "유튜브 MIDI 변환 — YouTube to MIDI | MidiAI Studio",
+      "desc": "유튜브 음악·피아노 커버를 MIDI로 변환하는 방법. URL 검색, 구간 선택, AI 채보 후 피아노롤 편집까지 MidiAI Studio 기준으로 안내합니다.",
+      "canonical": "https://midiaistudio.com/guides/youtube-to-midi.html",
+      "h1": [
+        "유튜브 음악을 MIDI로 변환하는 방법"
+      ],
+      "h1Count": 1,
+      "wordCount": 820,
+      "noindex": false,
+      "hasStaticGuide": false,
+      "offers": [
+        {
+          "price": "130000",
+          "currency": "KRW"
+        }
+      ],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/",
+      "status": 200,
+      "title": "MidiAI Studio | AI 음원·YouTube·PDF MIDI 변환",
+      "desc": "Windows용 AI MIDI 변환 프로그램. 음원·MP3·YouTube 음악을 MIDI로 바꾸고, 악보 PDF 인식과 피아노롤 편집까지 한 앱에서 진행합니다.",
+      "canonical": "https://midiaistudio.com/",
+      "h1": [
+        "음원과 YouTube 음악을 AI로 MIDI로 변환"
+      ],
+      "h1Count": 1,
+      "wordCount": 346,
+      "noindex": false,
+      "hasStaticGuide": false,
+      "offers": [
+        {
+          "price": "130000",
+          "currency": "KRW"
+        }
+      ],
+      "ldOk": true
+    },
+    {
+      "url": "https://midiaistudio.web.app/purchase.html",
+      "status": 200,
+      "title": "Lifetime 라이선스 구매 — MidiAI Studio",
+      "desc": "MidiAI Studio Lifetime 라이선스(130,000원)를 구매하세요. 전체 구간 MIDI 변환, 오케스트라 변환, MIDI·악보 편집, 1:1 문의 지원 포함.",
+      "canonical": "https://midiaistudio.com/purchase.html",
+      "h1": [
+        "MidiAI Studio"
+      ],
+      "h1Count": 1,
+      "wordCount": 210,
+      "noindex": false,
+      "hasStaticGuide": false,
+      "offers": [
+        {
+          "price": "130000",
+          "currency": "KRW"
+        }
+      ],
+      "ldOk": true
+    }
+  ],
+  "rows": [
+    {
+      "url": "https://midiaistudio.web.app/about.html",
+      "status": 200,
+      "title": "About MidiAI Studio — 회사 · 제작자 · EEAT",
+      "canonical": "https://midiaistudio.com/about.html",
+      "wordCount": 185,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/board-post.html",
+      "status": 200,
+      "title": "게시글 — MidiAI Studio 자유게시판",
+      "canonical": "https://midiaistudio.com/board-post.html",
+      "wordCount": 74,
+      "quality": "THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/board.html",
+      "status": 200,
+      "title": "자유게시판 — MidiAI Studio 커뮤니티",
+      "canonical": "https://midiaistudio.com/board.html",
+      "wordCount": 69,
+      "quality": "THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/business-info.html",
+      "status": 200,
+      "title": "사업자정보 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/business-info.html",
+      "wordCount": 99,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/downloads.html",
+      "status": 200,
+      "title": "다운로드 — MidiAI Studio 최신 버전",
+      "canonical": "https://midiaistudio.com/downloads.html",
+      "wordCount": 297,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/en/purchase.html",
+      "status": 200,
+      "title": "Buy Lifetime License — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/en/purchase.html",
+      "wordCount": 228,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/faq.html",
+      "status": 200,
+      "title": "자주 묻는 질문(FAQ) — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/faq.html",
+      "wordCount": 69,
+      "quality": "THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/ai-assistant",
+      "status": 200,
+      "title": "AI 채보 보조 — AI Assistant | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/ai-assistant",
+      "wordCount": 133,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/audio-to-midi",
+      "status": 200,
+      "title": "음원·MP3를 MIDI로 변환하는 방법 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/audio-to-midi",
+      "wordCount": 142,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/getting-started",
+      "status": 200,
+      "title": "MidiAI Studio 시작하기 — 설치부터 첫 MIDI 변환",
+      "canonical": "https://midiaistudio.com/guide/getting-started",
+      "wordCount": 137,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/",
+      "status": 200,
+      "title": "사용 가이드 — YouTube·음원·PDF MIDI | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/",
+      "wordCount": 88,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/library",
+      "status": 200,
+      "title": "라이브러리에서 MIDI 다시 열기 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/library",
+      "wordCount": 121,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/license",
+      "status": 200,
+      "title": "라이선스 활성화 가이드 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/license",
+      "wordCount": 120,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/midi-editor",
+      "status": 200,
+      "title": "MIDI 편집 및 피아노롤 사용법 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/midi-editor",
+      "wordCount": 129,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/pdf-to-midi",
+      "status": 200,
+      "title": "PDF → MIDI 사용 가이드 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/pdf-to-midi",
+      "wordCount": 132,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/score-editor",
+      "status": 200,
+      "title": "악보 편집기 사용법 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/score-editor",
+      "wordCount": 129,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/troubleshooting",
+      "status": 200,
+      "title": "문제 해결 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/troubleshooting",
+      "wordCount": 128,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guide/youtube-to-midi",
+      "status": 200,
+      "title": "유튜브 MIDI 변환 가이드 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guide/youtube-to-midi",
+      "wordCount": 163,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/ai-transcription.html",
+      "status": 200,
+      "title": "AI 자동 채보·AI MIDI 변환 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guides/ai-transcription.html",
+      "wordCount": 139,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/ai-music-transcription-guide.html",
+      "status": 200,
+      "title": "The AI Music Transcription Guide: Capabilities, Limits, and Practice",
+      "canonical": "https://midiaistudio.com/guides/articles/ai-music-transcription-guide.html",
+      "wordCount": 1675,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/audio-to-midi-ai.html",
+      "status": 200,
+      "title": "AI Audio to MIDI: How Machine Listening Turns Sound Into Notes",
+      "canonical": "https://midiaistudio.com/guides/articles/audio-to-midi-ai.html",
+      "wordCount": 1787,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/beginner-guide-midi-files.html",
+      "status": 200,
+      "title": "A Beginner's Guide to MIDI Files: Everything You Need to Start",
+      "canonical": "https://midiaistudio.com/guides/articles/beginner-guide-midi-files.html",
+      "wordCount": 1742,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/best-practices-audio-to-midi.html",
+      "status": 200,
+      "title": "Best Practices for Audio-to-MIDI: Getting Accurate Results",
+      "canonical": "https://midiaistudio.com/guides/articles/best-practices-audio-to-midi.html",
+      "wordCount": 1665,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/cleaning-up-ai-generated-midi.html",
+      "status": 200,
+      "title": "Cleaning Up AI-Generated MIDI: From Rough Draft to Polished Part",
+      "canonical": "https://midiaistudio.com/guides/articles/cleaning-up-ai-generated-midi.html",
+      "wordCount": 1655,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/compare-ai-transcription-tools.html",
+      "status": 200,
+      "title": "How to Compare AI Transcription Tools Without Getting Fooled",
+      "canonical": "https://midiaistudio.com/guides/articles/compare-ai-transcription-tools.html",
+      "wordCount": 1698,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/convert-cover-songs-to-midi-legally.html",
+      "status": 200,
+      "title": "How to Convert Cover Songs to MIDI Legally and Responsibly",
+      "canonical": "https://midiaistudio.com/guides/articles/convert-cover-songs-to-midi-legally.html",
+      "wordCount": 1688,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/convert-youtube-piano-covers-to-midi.html",
+      "status": 200,
+      "title": "Converting YouTube Piano Covers to MIDI, Note for Note",
+      "canonical": "https://midiaistudio.com/guides/articles/convert-youtube-piano-covers-to-midi.html",
+      "wordCount": 1690,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/copyright-and-youtube-to-midi.html",
+      "status": 200,
+      "title": "Copyright and YouTube-to-MIDI: What Musicians Should Know",
+      "canonical": "https://midiaistudio.com/guides/articles/copyright-and-youtube-to-midi.html",
+      "wordCount": 1750,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/daw-workflow-with-converted-midi.html",
+      "status": 200,
+      "title": "A DAW Workflow for Converted MIDI: From Import to Finished Track",
+      "canonical": "https://midiaistudio.com/guides/articles/daw-workflow-with-converted-midi.html",
+      "wordCount": 1657,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/drum-midi-extraction.html",
+      "status": 200,
+      "title": "Drum MIDI Extraction: Turning a Beat Into Programmable Hits",
+      "canonical": "https://midiaistudio.com/guides/articles/drum-midi-extraction.html",
+      "wordCount": 1686,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/flac-to-midi.html",
+      "status": 200,
+      "title": "FLAC to MIDI: Lossless Compression Meets Transcription",
+      "canonical": "https://midiaistudio.com/guides/articles/flac-to-midi.html",
+      "wordCount": 1682,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/guitar-to-midi.html",
+      "status": 200,
+      "title": "Guitar to MIDI: Transcribing the Instrument That Fights Back",
+      "canonical": "https://midiaistudio.com/guides/articles/guitar-to-midi.html",
+      "wordCount": 1687,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/how-ai-midi-conversion-works.html",
+      "status": 200,
+      "title": "How AI MIDI Conversion Works, Explained for Musicians",
+      "canonical": "https://midiaistudio.com/guides/articles/how-ai-midi-conversion-works.html",
+      "wordCount": 1690,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/how-to-edit-sheet-music-digitally.html",
+      "status": 200,
+      "title": "How to Edit Sheet Music Digitally After Converting From Paper",
+      "canonical": "https://midiaistudio.com/guides/articles/how-to-edit-sheet-music-digitally.html",
+      "wordCount": 1714,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/improve-midi-accuracy.html",
+      "status": 200,
+      "title": "How to Improve MIDI Accuracy After Any Conversion",
+      "canonical": "https://midiaistudio.com/guides/articles/improve-midi-accuracy.html",
+      "wordCount": 1685,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/instrument-conversion-midi.html",
+      "status": 200,
+      "title": "Instrument-to-MIDI Conversion: A Field Guide Across Instruments",
+      "canonical": "https://midiaistudio.com/guides/articles/instrument-conversion-midi.html",
+      "wordCount": 1624,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/jazz-piano-to-midi-challenges.html",
+      "status": 200,
+      "title": "Jazz Piano to MIDI: The Unique Challenges of Transcribing Jazz",
+      "canonical": "https://midiaistudio.com/guides/articles/jazz-piano-to-midi-challenges.html",
+      "wordCount": 1698,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/midi-editing-basics.html",
+      "status": 200,
+      "title": "MIDI Editing Basics: The Core Skills Every Musician Needs",
+      "canonical": "https://midiaistudio.com/guides/articles/midi-editing-basics.html",
+      "wordCount": 1699,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/midi-for-content-creators.html",
+      "status": 200,
+      "title": "MIDI for Content Creators: Fast, Flexible Music From Conversion",
+      "canonical": "https://midiaistudio.com/guides/articles/midi-for-content-creators.html",
+      "wordCount": 1709,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/midi-for-music-teachers.html",
+      "status": 200,
+      "title": "MIDI for Music Teachers: Practical Uses in Lessons and Studios",
+      "canonical": "https://midiaistudio.com/guides/articles/midi-for-music-teachers.html",
+      "wordCount": 1549,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/midi-to-musicxml.html",
+      "status": 200,
+      "title": "MIDI to MusicXML: Turning a Performance Into Readable Notation",
+      "canonical": "https://midiaistudio.com/guides/articles/midi-to-musicxml.html",
+      "wordCount": 1715,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/midi-to-pdf-sheet-music.html",
+      "status": 200,
+      "title": "MIDI to PDF Sheet Music: Printing Readable Scores From MIDI",
+      "canonical": "https://midiaistudio.com/guides/articles/midi-to-pdf-sheet-music.html",
+      "wordCount": 1729,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/midi-velocity-and-expression.html",
+      "status": 200,
+      "title": "MIDI Velocity and Expression: Making Converted Parts Come Alive",
+      "canonical": "https://midiaistudio.com/guides/articles/midi-velocity-and-expression.html",
+      "wordCount": 1684,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/midi-vs-audio-explained.html",
+      "status": 200,
+      "title": "MIDI vs Audio Explained: Two Fundamentally Different Things",
+      "canonical": "https://midiaistudio.com/guides/articles/midi-vs-audio-explained.html",
+      "wordCount": 1754,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/midiai-studio-vs-manual-transcription.html",
+      "status": 200,
+      "title": "MidiAI Studio vs Manual Transcription: When Each Wins",
+      "canonical": "https://midiaistudio.com/guides/articles/midiai-studio-vs-manual-transcription.html",
+      "wordCount": 1751,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/monophonic-vs-polyphonic-midi.html",
+      "status": 200,
+      "title": "Monophonic vs Polyphonic MIDI: Why It Changes Everything",
+      "canonical": "https://midiaistudio.com/guides/articles/monophonic-vs-polyphonic-midi.html",
+      "wordCount": 1576,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/mp3-piano-to-midi.html",
+      "status": 200,
+      "title": "MP3 Piano to MIDI: Transcribing Piano Recordings From MP3",
+      "canonical": "https://midiaistudio.com/guides/articles/mp3-piano-to-midi.html",
+      "wordCount": 1684,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/mp3-to-midi-conversion.html",
+      "status": 200,
+      "title": "MP3 to MIDI Conversion: What an MP3 Can and Cannot Give You",
+      "canonical": "https://midiaistudio.com/guides/articles/mp3-to-midi-conversion.html",
+      "wordCount": 1711,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/musicxml-explained.html",
+      "status": 200,
+      "title": "MusicXML Explained: The Interchange Format Behind Digital Scores",
+      "canonical": "https://midiaistudio.com/guides/articles/musicxml-explained.html",
+      "wordCount": 1668,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/musicxml-to-midi.html",
+      "status": 200,
+      "title": "MusicXML to MIDI: Turning Notation Into a Playable Performance",
+      "canonical": "https://midiaistudio.com/guides/articles/musicxml-to-midi.html",
+      "wordCount": 1675,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/musicxml-vs-midi.html",
+      "status": 200,
+      "title": "MusicXML vs MIDI: Which Format Do You Actually Need?",
+      "canonical": "https://midiaistudio.com/guides/articles/musicxml-vs-midi.html",
+      "wordCount": 1710,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/offline-vs-online-midi-converters.html",
+      "status": 200,
+      "title": "Offline vs Online MIDI Converters: Which Should You Use?",
+      "canonical": "https://midiaistudio.com/guides/articles/offline-vs-online-midi-converters.html",
+      "wordCount": 1695,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/pdf-sheet-music-to-editable-midi.html",
+      "status": 200,
+      "title": "From Frozen PDF to Fully Editable MIDI: A Musician's Workflow",
+      "canonical": "https://midiaistudio.com/guides/articles/pdf-sheet-music-to-editable-midi.html",
+      "wordCount": 1736,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/pdf-to-midi-complete-guide.html",
+      "status": 200,
+      "title": "PDF to MIDI: The Complete Guide for Musicians Who Want Editable Notes",
+      "canonical": "https://midiaistudio.com/guides/articles/pdf-to-midi-complete-guide.html",
+      "wordCount": 1972,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/pdf-to-musicxml.html",
+      "status": 200,
+      "title": "PDF to MusicXML: Converting Scores Into Editable Notation",
+      "canonical": "https://midiaistudio.com/guides/articles/pdf-to-musicxml.html",
+      "wordCount": 1677,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/piano-learning-from-youtube-midi.html",
+      "status": 200,
+      "title": "Learning Piano From YouTube by Converting Performances to MIDI",
+      "canonical": "https://midiaistudio.com/guides/articles/piano-learning-from-youtube-midi.html",
+      "wordCount": 1738,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/piano-midi-converter.html",
+      "status": 200,
+      "title": "Piano-to-MIDI Conversion: Why Piano Is the Ideal Instrument",
+      "canonical": "https://midiaistudio.com/guides/articles/piano-midi-converter.html",
+      "wordCount": 1630,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/polyphonic-piano-transcription.html",
+      "status": 200,
+      "title": "Polyphonic Piano Transcription: Hearing Every Note at Once",
+      "canonical": "https://midiaistudio.com/guides/articles/polyphonic-piano-transcription.html",
+      "wordCount": 1711,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/quantize-midi-after-conversion.html",
+      "status": 200,
+      "title": "Quantizing MIDI After Conversion: Tightening Without Killing Feel",
+      "canonical": "https://midiaistudio.com/guides/articles/quantize-midi-after-conversion.html",
+      "wordCount": 1684,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/score-editor-workflow.html",
+      "status": 200,
+      "title": "A Score Editor Workflow That Turns Conversions Into Finished Scores",
+      "canonical": "https://midiaistudio.com/guides/articles/score-editor-workflow.html",
+      "wordCount": 1653,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/sheet-music-recognition-ocr.html",
+      "status": 200,
+      "title": "Optical Music Recognition Explained: How OCR for Sheet Music Works",
+      "canonical": "https://midiaistudio.com/guides/articles/sheet-music-recognition-ocr.html",
+      "wordCount": 1737,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/transcribe-classical-piano.html",
+      "status": 200,
+      "title": "Transcribing Classical Piano to MIDI: Repertoire and Reality",
+      "canonical": "https://midiaistudio.com/guides/articles/transcribe-classical-piano.html",
+      "wordCount": 1582,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/using-midi-in-ableton.html",
+      "status": 200,
+      "title": "Using Converted MIDI in Ableton Live: A Producer's Guide",
+      "canonical": "https://midiaistudio.com/guides/articles/using-midi-in-ableton.html",
+      "wordCount": 1659,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/using-midi-in-fl-studio.html",
+      "status": 200,
+      "title": "Using Converted MIDI in FL Studio: A Beatmaker's Guide",
+      "canonical": "https://midiaistudio.com/guides/articles/using-midi-in-fl-studio.html",
+      "wordCount": 1630,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/using-midi-in-logic-pro.html",
+      "status": 200,
+      "title": "Using Converted MIDI in Logic Pro: A Composer's Guide",
+      "canonical": "https://midiaistudio.com/guides/articles/using-midi-in-logic-pro.html",
+      "wordCount": 1653,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/vocal-to-midi.html",
+      "status": 200,
+      "title": "Vocal to MIDI: Transcribing the Human Voice Into Notes",
+      "canonical": "https://midiaistudio.com/guides/articles/vocal-to-midi.html",
+      "wordCount": 1671,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/wav-to-midi.html",
+      "status": 200,
+      "title": "WAV to MIDI: Transcribing From Uncompressed Audio",
+      "canonical": "https://midiaistudio.com/guides/articles/wav-to-midi.html",
+      "wordCount": 1676,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/windows-midi-converter-software.html",
+      "status": 200,
+      "title": "Choosing MIDI Converter Software on Windows",
+      "canonical": "https://midiaistudio.com/guides/articles/windows-midi-converter-software.html",
+      "wordCount": 1565,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/articles/youtube-to-midi-converter.html",
+      "status": 200,
+      "title": "YouTube to MIDI: How Converting Video Audio Into MIDI Really Works",
+      "canonical": "https://midiaistudio.com/guides/articles/youtube-to-midi-converter.html",
+      "wordCount": 1723,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/audio-to-midi.html",
+      "status": 200,
+      "title": "음원·MP3 MIDI 변환 — Audio to MIDI | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guides/audio-to-midi.html",
+      "wordCount": 812,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/",
+      "status": 200,
+      "title": "MIDI Conversion Guides — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guides/",
+      "wordCount": 2101,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/midi-converter-faq.html",
+      "status": 200,
+      "title": "MIDI Converter FAQ (20+) ? PDF, YouTube, MP3, Audio, MusicXML",
+      "canonical": "https://midiaistudio.com/guides/midi-converter-faq.html",
+      "wordCount": 723,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/midi-editor.html",
+      "status": 200,
+      "title": "MIDI 편집 프로그램·피아노롤 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guides/midi-editor.html",
+      "wordCount": 142,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/musicxml.html",
+      "status": 200,
+      "title": "MusicXML Guide &amp; Conversion — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guides/musicxml.html",
+      "wordCount": 733,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/pdf-to-midi.html",
+      "status": 200,
+      "title": "악보 PDF를 MIDI로 변환하는 방법 | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guides/pdf-to-midi.html",
+      "wordCount": 771,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/topical-map.html",
+      "status": 200,
+      "title": "Topical Map — MidiAI Studio SEO Architecture",
+      "canonical": "https://midiaistudio.com/guides/topical-map.html",
+      "wordCount": 572,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/guides/youtube-to-midi.html",
+      "status": 200,
+      "title": "유튜브 MIDI 변환 — YouTube to MIDI | MidiAI Studio",
+      "canonical": "https://midiaistudio.com/guides/youtube-to-midi.html",
+      "wordCount": 820,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/",
+      "status": 200,
+      "title": "MidiAI Studio | AI 음원·YouTube·PDF MIDI 변환",
+      "canonical": "https://midiaistudio.com/",
+      "wordCount": 346,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/ja/purchase.html",
+      "status": 200,
+      "title": "Lifetimeライセンス購入 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/ja/purchase.html",
+      "wordCount": 106,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/notice.html",
+      "status": 200,
+      "title": "공지 상세 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/notice.html",
+      "wordCount": 68,
+      "quality": "THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/notices.html",
+      "status": 200,
+      "title": "공지사항 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/notices.html",
+      "wordCount": 67,
+      "quality": "THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/patch-note.html",
+      "status": 200,
+      "title": "패치노트 상세 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/patch-note.html",
+      "wordCount": 68,
+      "quality": "THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/patch-notes.html",
+      "status": 200,
+      "title": "패치노트 — MidiAI Studio 업데이트 기록",
+      "canonical": "https://midiaistudio.com/patch-notes.html",
+      "wordCount": 68,
+      "quality": "THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/privacy.html",
+      "status": 200,
+      "title": "개인정보처리방침 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/privacy.html",
+      "wordCount": 281,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/product.html",
+      "status": 200,
+      "title": "제품 소개 — MidiAI Studio AI 오디오→MIDI 변환",
+      "canonical": "https://midiaistudio.com/product.html",
+      "wordCount": 220,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/purchase.html",
+      "status": 200,
+      "title": "Lifetime 라이선스 구매 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/purchase.html",
+      "wordCount": 210,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/refund.html",
+      "status": 200,
+      "title": "환불정책 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/refund.html",
+      "wordCount": 251,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/support.html",
+      "status": 200,
+      "title": "1:1 문의 — MidiAI Studio 고객센터",
+      "canonical": "https://midiaistudio.com/support.html",
+      "wordCount": 161,
+      "quality": "NEAR-THIN",
+      "h1Count": 1,
+      "noindex": false
+    },
+    {
+      "url": "https://midiaistudio.web.app/terms.html",
+      "status": 200,
+      "title": "이용약관 — MidiAI Studio",
+      "canonical": "https://midiaistudio.com/terms.html",
+      "wordCount": 316,
+      "quality": "SUBSTANTIAL",
+      "h1Count": 1,
+      "noindex": false
+    }
+  ]
+}

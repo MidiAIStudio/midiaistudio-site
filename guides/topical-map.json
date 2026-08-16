@@ -23,8 +23,8 @@
     },
     {
       "slug": "mp3-to-midi",
-      "path": "/guides/mp3-to-midi.html",
-      "primary": "MP3 to MIDI",
+      "primary": "MP3 / Audio to MIDI (merged into audio-to-midi)",
+      "path": "/guides/audio-to-midi.html",
       "cluster": "audio-formats",
       "role": "pillar"
     },

@@ -5,10 +5,12 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { readSitePrices } from "./price-source.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const SITE = "https://midiaistudio.com";
+const PRICES = readSitePrices(ROOT);
 const OUT = path.join(ROOT, "guides");
 const ART = path.join(OUT, "articles");
 
@@ -192,7 +194,7 @@ function softwareSnippet() {
     author: { "@type": "Organization", name: AUTHOR.org, url: SITE },
     offers: {
       "@type": "Offer",
-      price: "90000",
+      price: PRICES.krValue,
       priceCurrency: "KRW",
       availability: "https://schema.org/InStock",
       url: `${SITE}/purchase.html`,

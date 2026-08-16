@@ -364,6 +364,7 @@ export function mountEditableMedia(container, {
   editMode = false,
   isAdmin = false,
   videoClass = 'product-video',
+  mediaAlt = '',
   onChange,
   onFile
 }) {
@@ -436,7 +437,7 @@ export function mountEditableMedia(container, {
     } else if (mediaType === 'image' && mediaUrl) {
       const img = document.createElement('img');
       img.src = mediaUrl;
-      img.alt = '';
+      img.alt = mediaAlt || '';
       img.loading = 'lazy';
       body.appendChild(img);
     } else {

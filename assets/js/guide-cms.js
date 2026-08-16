@@ -26,6 +26,13 @@ import {
   bindScrollSpy,
   bindGuideImageZoom
 } from './guide-learn.js?v=guide-learn-2';
+import {
+  applyGuideDocumentSeo,
+  guideSlugFromLocation,
+  hideGuideSeoFallback,
+  mediaAltForGuide,
+  prettyGuidePath
+} from './guide-seo.js?v=guide-seo-1';
 
 
 const CONFIG = window.MIDIAI_CONFIG || {};
@@ -245,7 +252,13 @@ function isGuideListPage() {
   return /\/guide\/?(index\.html)?$/.test(p) || p.endsWith('/guide/index.html');
 }
 function isGuideDetailPage() {
-  return (location.pathname.split('/').pop() || '') === 'guide.html';
+  const p = location.pathname.replace(/\\/g, '/');
+  if ((p.split('/').pop() || '') === 'guide.html') return true;
+  return /\/guide\/[a-z0-9-]+(?:\.html)?\/?$/i.test(p) && !/\/guide\/index\.html$/i.test(p) && !/\/guide\/?$/i.test(p);
+}
+
+function guideHref(slug) {
+  return `${pathBase()}${prettyGuidePath(slug)}`;
 }
 
 async function resolveAdmin(user) {
@@ -389,12 +402,12 @@ async function loadGuideBySlug(slug) {
       ? query(collection(db, COLLECTION), where('slug', '==', slug))
       : query(collection(db, COLLECTION), where('slug', '==', slug), where('published', '==', true));
     const snap = await getDocs(q);
-    if (snap.empty) return null;
+    if (snap.empty) return SEED_GUIDES.find((g) => g.slug === slug) || null;
     const d = snap.docs[0];
     return { id: d.id, ...d.data() };
   } catch (e) {
     console.error('guide getBySlug', e);
-    return null;
+    return SEED_GUIDES.find((g) => g.slug === slug) || null;
   }
 }
 
@@ -408,7 +421,8 @@ function mediaHtml(image, video, videoType, opts = {}) {
   if (video && videoType === 'upload') {
     return `<div class="${cls}"${editable}><video src="${esc(video)}" controls playsinline></video></div>`;
   }
-  if (image) return `<div class="${cls}"${editable}><img src="${esc(image)}" alt="" loading="lazy" decoding="async"></div>`;
+  const alt = opts.alt || '';
+  if (image) return `<div class="${cls}"${editable}><img src="${esc(image)}" alt="${esc(alt)}" loading="lazy" decoding="async"></div>`;
   if (opts.editable) return `<div class="${cls} guide-media-empty"${editable}><span>이미지/영상 추가</span></div>`;
   return '';
 }
@@ -432,7 +446,7 @@ function renderList(guides) {
   }
 
   const qs = document.getElementById('guideQuickStartLink');
-  if (qs) qs.href = `${pathBase()}guide.html?slug=getting-started`;
+  if (qs) qs.href = guideHref('getting-started');
 
   if (!rows.length) {
     root.innerHTML = `<div class="empty-card">조건에 맞는 가이드가 없습니다.</div>`;
@@ -717,7 +731,7 @@ async function addGuide() {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
-  location.href = `${pathBase()}guide.html?slug=${encodeURIComponent(slug)}`;
+  location.href = guideHref(slug);
 }
 
 async function addProductTemplateGuide() {
@@ -751,7 +765,7 @@ async function addProductTemplateGuide() {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
-  location.href = `${pathBase()}guide.html?slug=${encodeURIComponent(slug)}`;
+  location.href = guideHref(slug);
 }
 
 function addSectionTemplate() {
@@ -805,7 +819,7 @@ function bindEditable(root) {
         pendingStepFiles[idx] = f;
         scheduleSave();
         const url = URL.createObjectURL(f);
-        media.innerHTML = f.type.startsWith('video/') ? `<video src="${url}" controls playsinline></video>` : `<img src="${url}" alt="">`;
+        media.innerHTML = f.type.startsWith('video/') ? `<video src="${url}" controls playsinline></video>` : `<img src="${url}" alt="${esc(mediaAltForGuide(currentGuide, currentGuide))}">`;
       };
       input.click();
     });
@@ -976,7 +990,7 @@ function renderDetailPublic(root, g) {
   }).join('');
 
   const relatedHtml = related.length
-    ? `<div class="guide-related-mini">${related.map((r) => `<a class="guide-learn-card" href="${pathBase()}guide.html?slug=${encodeURIComponent(r.slug || r.id)}"><span>${esc(r.category || '관련')}</span><b>${esc(r.title || r.slug)}</b></a>`).join('')}</div>`
+    ? `<div class="guide-related-mini">${related.map((r) => `<a class="guide-learn-card" href="${guideHref(r.slug || r.id)}"><span>${esc(r.category || '관련')}</span><b>${esc(r.title || r.slug)}</b></a>`).join('')}</div>`
     : '';
 
   root.innerHTML = `
@@ -1010,15 +1024,15 @@ function renderDetailPublic(root, g) {
           <h2>문제가 해결되지 않았나요?</h2>
           <p>사용 방법은 Guide에서, 자주 묻는 질문과 오류는 아래 메뉴를 이용하세요.</p>
           <div class="guide-learn-help-actions">
-            <a class="guide-learn-btn" href="${pathBase()}guide.html?slug=troubleshooting">문제 해결</a>
+            <a class="guide-learn-btn" href="${guideHref('troubleshooting')}">문제 해결</a>
             <a class="guide-learn-btn" href="${pathBase()}faq.html">FAQ</a>
             ${workflow ? `<a class="guide-learn-btn" href="${pathBase()}${workflow.replace(/^\//, '')}">Workflow 설명</a>` : ''}
           </div>
         </section>
 
         <nav class="guide-learn-pager" aria-label="이전 다음 가이드">
-          ${prev ? `<a class="guide-learn-card guide-pager-prev" href="${pathBase()}guide.html?slug=${encodeURIComponent(prev.slug || prev.id)}"><span>← 이전 가이드</span><b>${esc(prev.title || prev.slug)}</b></a>` : '<span></span>'}
-          ${next ? `<a class="guide-learn-card guide-pager-next" href="${pathBase()}guide.html?slug=${encodeURIComponent(next.slug || next.id)}"><span>다음 가이드 →</span><b>${esc(next.title || next.slug)}</b></a>` : '<span></span>'}
+          ${prev ? `<a class="guide-learn-card guide-pager-prev" href="${guideHref(prev.slug || prev.id)}"><span>← 이전 가이드</span><b>${esc(prev.title || prev.slug)}</b></a>` : '<span></span>'}
+          ${next ? `<a class="guide-learn-card guide-pager-next" href="${guideHref(next.slug || next.id)}"><span>다음 가이드 →</span><b>${esc(next.title || next.slug)}</b></a>` : '<span></span>'}
         </nav>
         ${relatedHtml}
         <p class="guide-more-all"><a href="${pathBase()}guide/index.html">전체 Guide</a></p>
@@ -1026,7 +1040,8 @@ function renderDetailPublic(root, g) {
     </div>
   `;
 
-  document.title = `${g.title || 'Guide'} — MidiAI Studio`;
+  applyGuideDocumentSeo(g.slug || g.id, g.title);
+  hideGuideSeoFallback();
   mountHeroMedia(root, g, false);
   // Mount section bodies/features/media without edit chrome
   mountGuideSectionsPublic(root, sections);
@@ -1071,7 +1086,8 @@ function mountGuideSectionsPublic(root, sections) {
       mediaOverlays: resolved.mediaOverlays || [],
       editMode: false,
       isAdmin: false,
-      videoClass: 'product-video'
+      videoClass: 'product-video',
+      mediaAlt: mediaAltForGuide(currentGuide, sec)
     });
   });
 }
@@ -1118,7 +1134,7 @@ function renderDetailEdit(root, g) {
     const media = resolveSectionMedia(s);
     const fileLabel = media ? mediaFileLabel(media.mediaUrl) : '';
     const thumb = media?.mediaType === 'image'
-      ? `<img src="${esc(media.mediaUrl)}" alt="" loading="lazy" decoding="async">`
+      ? `<img src="${esc(media.mediaUrl)}" alt="${esc(mediaAltForGuide(g, s))}" loading="lazy" decoding="async">`
       : media?.mediaType === 'video'
         ? `<video src="${esc(media.mediaUrl)}" muted playsinline preload="metadata"></video>`
         : media?.mediaType === 'youtube'
@@ -1199,7 +1215,7 @@ function renderDetailEdit(root, g) {
     ${updated ? `<p class="wrap muted guide-updated">업데이트: ${updated.toLocaleDateString('ko-KR')}</p>` : ''}
   `;
 
-  document.title = `${g.title || 'Guide'} — MidiAI Studio`;
+  applyGuideDocumentSeo(g.slug || g.id, g.title);
   mountHeroMedia(root, g, true);
   bindEditable(root);
   mountGuideSections(root, sections, true);
@@ -1248,6 +1264,7 @@ function mountHeroMedia(root, g, editing) {
     editMode: !!editing,
     isAdmin: !!editing,
     videoClass: 'product-video',
+    mediaAlt: mediaAltForGuide(g, { title: '대표 화면' }),
     onChange: (m) => {
       if (!currentGuide || !editing) return;
       currentGuide.heroMediaWidthPct = normalizeMediaWidthPct(m.mediaWidthPct, m.mediaWidth);
@@ -1351,7 +1368,7 @@ function mountGuideSections(root, sections, editing) {
       const resolved = resolveSectionMedia(s);
       if (host) {
         if (resolved?.mediaType === 'image') {
-          host.innerHTML = `<img src="${esc(resolved.mediaUrl)}" alt="" loading="lazy" decoding="async">`;
+          host.innerHTML = `<img src="${esc(resolved.mediaUrl)}" alt="${esc(mediaAltForGuide(currentGuide, s))}" loading="lazy" decoding="async">`;
         } else if (resolved?.mediaType === 'video') {
           host.innerHTML = `<video src="${esc(resolved.mediaUrl)}" muted playsinline preload="metadata"></video>`;
         } else if (resolved?.mediaType === 'youtube') {
@@ -1512,13 +1529,21 @@ export async function initGuideCms() {
       refreshAdminChrome();
       return;
     }
-    const slug = new URLSearchParams(location.search).get('slug') || '';
+    const slug = guideSlugFromLocation();
+    applyGuideDocumentSeo(slug);
     if (!slug) {
       document.getElementById('guideDetail').innerHTML = `<div class="empty-card">slug가 없습니다. <a href="${pathBase()}guide/index.html">목록으로</a></div>`;
       return;
     }
     const g = await loadGuideBySlug(slug);
     if (!g) {
+      const seeded = SEED_GUIDES.find((x) => x.slug === slug);
+      if (seeded) {
+        renderDetail(seeded);
+        refreshAdminChrome();
+        setDirty(false);
+        return;
+      }
       document.getElementById('guideDetail').innerHTML = `<div class="empty-card">가이드를 찾을 수 없습니다. <a href="${pathBase()}guide/index.html">목록으로</a></div>`;
       return;
     }

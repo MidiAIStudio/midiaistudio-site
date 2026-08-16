@@ -6,6 +6,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { readSitePrices, pricesMatch } from "./price-source.mjs";
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SITE = "https://midiaistudio.com";
 
@@ -16,7 +18,8 @@ const info = [];
 function walk(dir, base = "") {
   const out = [];
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (["node_modules", "functions", "firebase", "scripts", ".git"].includes(ent.name)) continue;
+    if (["node_modules", "functions", "firebase", "scripts", ".git", "_probe", "_probe_shots", "_probe_product", "_corrupt_backup2", "_corrupt_backup", "tests"].includes(ent.name)) continue;
+    if (/^google[a-z0-9]+\.html$/i.test(ent.name)) continue;
     const rel = path.join(base, ent.name).replace(/\\/g, "/");
     if (ent.isDirectory()) out.push(...walk(path.join(dir, ent.name), rel));
     else if (ent.name.endsWith(".html")) out.push(rel);
@@ -51,6 +54,18 @@ for (const rel of pages) {
   const styleCss = /assets\/css\/style\.css/i.test(html);
   const h1Count = (html.match(/<h1[\s>]/gi) || []).length;
 
+  const ldBlocks = [...html.matchAll(/<script type=["']application\/ld\+json["']>([\s\S]*?)<\/script>/gi)];
+  for (const b of ldBlocks) {
+    try {
+      JSON.parse(b[1]);
+    } catch {
+      critical.push(`${rel}: invalid JSON-LD`);
+    }
+  }
+
+  const isNoindex = /noindex/i.test(robots);
+  const skipSocial = isRedirect || isNoindex;
+
   if (!title) critical.push(`${rel}: missing <title>`);
   if (!desc && !isRedirect) critical.push(`${rel}: missing meta description`);
   if (!charset) critical.push(`${rel}: missing charset`);
@@ -58,11 +73,11 @@ for (const rel of pages) {
   if (!lang) critical.push(`${rel}: missing html lang`);
   if (!canonical) critical.push(`${rel}: missing canonical`);
   if (!favicon) warnings.push(`${rel}: missing favicon`);
-  if (!isRedirect && !ogTitle) critical.push(`${rel}: missing og:title`);
-  if (!isRedirect && !ogDesc) critical.push(`${rel}: missing og:description`);
-  if (!isRedirect && !ogImage) critical.push(`${rel}: missing og:image`);
-  if (!isRedirect && !ogUrl) warnings.push(`${rel}: missing og:url`);
-  if (!isRedirect && !twitter) warnings.push(`${rel}: missing twitter:card`);
+  if (!skipSocial && !ogTitle) critical.push(`${rel}: missing og:title`);
+  if (!skipSocial && !ogDesc) critical.push(`${rel}: missing og:description`);
+  if (!skipSocial && !ogImage) critical.push(`${rel}: missing og:image`);
+  if (!skipSocial && !ogUrl) warnings.push(`${rel}: missing og:url`);
+  if (!skipSocial && !twitter) warnings.push(`${rel}: missing twitter:card`);
   if (!isRedirect && !manifest) warnings.push(`${rel}: missing manifest`);
   if (!isRedirect && !themeColor) warnings.push(`${rel}: missing theme-color`);
   if (!isRedirect && !styleCss) critical.push(`${rel}: missing style.css (broken design)`);
@@ -154,15 +169,77 @@ else {
   const sm = fs.readFileSync(path.join(ROOT, "sitemap.xml"), "utf8");
   if (!sm.includes("<urlset")) critical.push("sitemap.xml invalid");
   if (!sm.includes(`${SITE}/`)) critical.push("sitemap missing homepage");
-  // ensure private pages not in sitemap
   for (const p of ["admin.html", "account.html", "my-tickets.html", "ticket.html", "board-write.html"]) {
     if (sm.includes(p)) warnings.push(`sitemap includes private page ${p}`);
+  }
+  const locs = [...sm.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  for (const loc of locs) {
+    if (/guide\.html\?slug=/.test(loc)) {
+      warnings.push(`sitemap uses JS query URL ${loc} — prefer /guide/{slug}`);
+    }
+    const pathPart = loc.replace(SITE, "").replace(/^\//, "");
+    if (!pathPart || pathPart === "") continue;
+    const fileGuess = pathPart.endsWith("/")
+      ? pathPart + "index.html"
+      : pathPart.endsWith(".html")
+        ? pathPart
+        : pathPart + ".html";
+    const exists =
+      fs.existsSync(path.join(ROOT, fileGuess)) ||
+      fs.existsSync(path.join(ROOT, pathPart, "index.html"));
+    if (!exists && !/\/workflow\//.test(loc) && !/\/guide\/[a-z]/.test(loc)) {
+      warnings.push(`sitemap loc may be missing on disk: ${loc}`);
+    }
+  }
+  const need = [
+    `${SITE}/guides/audio-to-midi.html`,
+    `${SITE}/guides/youtube-to-midi.html`,
+    `${SITE}/guides/pdf-to-midi.html`,
+    `${SITE}/guide/youtube-to-midi/`,
+    `${SITE}/guide/audio-to-midi/`,
+  ];
+  for (const u of need) {
+    if (!sm.includes(u)) critical.push(`sitemap missing ${u}`);
   }
 }
 if (!fs.existsSync(path.join(ROOT, "manifest.webmanifest"))) critical.push("missing manifest.webmanifest");
 if (!fs.existsSync(path.join(ROOT, "assets/js/analytics.js"))) warnings.push("missing analytics.js");
 if (!fs.existsSync(path.join(ROOT, "404.html"))) critical.push("missing 404.html");
 if (!fs.existsSync(path.join(ROOT, "assets/images/symbol.png"))) critical.push("missing favicon/symbol.png");
+
+const PRICES = readSitePrices(ROOT);
+info.push(`Lifetime KR ${PRICES.krValue} ${PRICES.krDisplay}; USD ${PRICES.usdValue} ${PRICES.usdDisplay}`);
+
+for (const rel of pages) {
+  const html = fs.readFileSync(path.join(ROOT, rel), "utf8");
+  if (/noindex/i.test(html) || /location\.replace|http-equiv=["']refresh/i.test(html)) continue;
+  const ldBlocks = [...html.matchAll(/<script type=["']application\/ld\+json["']>([\s\S]*?)<\/script>/gi)];
+  for (const b of ldBlocks) {
+    let data;
+    try {
+      data = JSON.parse(b[1]);
+    } catch {
+      continue;
+    }
+    const nodes = Array.isArray(data) ? data : [data];
+    for (const node of nodes) {
+      const offer = node?.offers;
+      if (!offer || offer.price == null) continue;
+      const cur = String(offer.priceCurrency || "").toUpperCase();
+      if (cur === "KRW" && !pricesMatch(offer.price, PRICES.krValue)) {
+        critical.push(`${rel}: Offer.price ${offer.price} KRW != config ${PRICES.krValue}`);
+      }
+      if (cur === "USD" && !pricesMatch(offer.price, PRICES.usdValue)) {
+        critical.push(`${rel}: Offer.price ${offer.price} USD != config ${PRICES.usdValue}`);
+      }
+    }
+  }
+}
+
+const purchaseHtml = fs.readFileSync(path.join(ROOT, "purchase.html"), "utf8");
+if (!purchaseHtml.includes(PRICES.krDisplay) && !purchaseHtml.includes("130,000원")) {
+  critical.push("purchase.html visible price does not include config KR display");
+}
 
 const report = { critical, warnings, info, pagesAudited: pages.length };
 fs.writeFileSync(path.join(ROOT, "scripts/seo-audit-report.json"), JSON.stringify(report, null, 2));

@@ -7938,7 +7938,7 @@ function initSidebarNav(){
   const parentPage={'notice.html':'notices.html','patch-note.html':'patch-notes.html','board-post.html':'board.html','board-write.html':'board.html','ticket.html':'my-tickets.html','guide.html':'guide/index.html'};
   const file=parentPage[page]||page||'index.html';
   const path=location.pathname.replace(/\\/g,'/').toLowerCase();
-  const inGuideCms=page==='guide.html' || /\/guide\/(index\.html)?$/.test(path) || path.endsWith('/guide/');
+  const inGuideCms=page==='guide.html' || /\/guide\//.test(path);
   document.querySelectorAll('#mainNav a[href]').forEach(a=>{
     const href=a.getAttribute('href')||'';
     const target=href.split('/').pop()?.split('?')[0]||'';

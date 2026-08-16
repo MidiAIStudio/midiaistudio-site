@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIDI 편집 프로그램·피아노롤 | MidiAI Studio</title>
+  <meta name="description" content="MIDI 편집 프로그램 사용법. 변환된 MIDI를 멀티트랙 피아노롤에서 노트·벨로시티·악기 변경까지 다듬는 MidiAI Studio 에디터 가이드입니다.">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <link rel="canonical" href="https://midiaistudio.com/guides/midi-editor.html">
+  <link rel="icon" href="../assets/images/symbol.png" type="image/png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="MIDI 편집 프로그램·피아노롤 | MidiAI Studio">
+  <meta property="og:description" content="변환된 MIDI를 멀티트랙 피아노롤에서 편집하는 방법. 노트, 벨로시티, 악기 변경, 양자화를 안내합니다.">
+  <meta property="og:url" content="https://midiaistudio.com/guides/midi-editor.html">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MIDI 편집 프로그램·피아노롤 | MidiAI Studio">
+  <meta name="twitter:description" content="변환된 MIDI를 멀티트랙 피아노롤에서 편집하는 방법.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/midi-editor-piano-roll.jpg">
+  <link rel="stylesheet" href="../assets/css/style.css?v=nav-soon-1">
+  <link rel="stylesheet" href="../assets/css/seo-content.css?v=20260720-no-gutter-bleed">
+  <script defer src="../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "MIDI 편집 프로그램에서 무엇을 고치나요?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "피치, 길이, 벨로시티, 트랙 악기, 양자화 등 변환 직후 남는 오류를 피아노롤에서 수정합니다."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "실행취소가 되나요?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "네. 일반적인 편집 작업에 실행취소/다시실행을 지원합니다."
+        }
+      }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://midiaistudio.com/"},
+      {"@type":"ListItem","position":2,"name":"Guides","item":"https://midiaistudio.com/guides/"},
+      {"@type":"ListItem","position":3,"name":"MIDI Editor","item":"https://midiaistudio.com/guides/midi-editor.html"}
+    ]
+  }
+  </script>
+</head>
+<body class="portal-page seo-page">
+  <header class="topbar">
+    <a class="brand" href="../index.html"><img class="brand-symbol" src="../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40"><b>MidiAI Studio</b></a>
+    <nav id="mainNav" aria-label="주요 메뉴"></nav>
+  </header>
+  <main class="portal-main" id="guide-main">
+    <article class="wrap seo-prose" style="padding-top:36px;padding-bottom:48px">
+      <nav class="seo-breadcrumbs"><a href="../index.html">Home</a> › <a href="./index.html">Guides</a> › <span>MIDI Editor</span></nav>
+      <h1>MIDI 편집과 피아노롤 사용법</h1>
+      <p>MIDI 에디터는 변환 결과를 연주 가능한 데이터로 다듬는 단계입니다. 음원·유튜브·PDF 변환 후 거의 항상 이 화면으로 이어집니다.</p>
+      <figure class="seo-figure">
+        <img src="../assets/images/product/midi-editor-piano-roll.jpg" alt="MidiAI Studio 멀티트랙 피아노롤 MIDI 편집 화면" width="1280" height="720" loading="lazy" decoding="async">
+        <figcaption>멀티트랙 피아노롤에서 노트와 악기를 수정합니다.</figcaption>
+      </figure>
+      <h2>어떤 상황에서 쓰나요</h2>
+      <p>AI가 만든 MIDI는 초안입니다. 겹친 음, 옥타브 실수, 리듬이 어긋난 구간은 피아노롤에서 직접 고칩니다. 멜로디와 반주를 트랙으로 나눠 악기를 바꾼 뒤, 라이브러리에 저장하거나 PDF·MusicXML 악보로 내보낼 수 있습니다.</p>
+      <h2>에디터에서 다루는 것</h2>
+      <ul>
+        <li>멀티트랙 피아노롤에서 노트 피치·길이 수정</li>
+        <li>벨로시티로 셈여림 조절</li>
+        <li>트랙별 악기 변경</li>
+        <li>양자화로 그리드에 맞추기</li>
+        <li>편집 후 MIDI → PDF / MusicXML 저장</li>
+      </ul>
+      <h2>권장 순서</h2>
+      <ol>
+        <li>변환된 MIDI를 에디터에서 엽니다.</li>
+        <li>멜로디와 반주 트랙을 나눕니다.</li>
+        <li>겹친 음·옥타브 오류를 고칩니다.</li>
+        <li>저장하거나 악보로 내보냅니다.</li>
+      </ol>
+      <p>버튼 위치와 화면 단계는 <a href="../guide/midi-editor/">MIDI Editor 사용 가이드</a>를 보세요. 입력은 <a href="./audio-to-midi.html">음원 MIDI</a>, <a href="./youtube-to-midi.html">유튜브 MIDI</a>, <a href="./pdf-to-midi.html">악보 PDF MIDI</a>와 이어집니다.</p>
+      <section class="seo-faq">
+        <h2>FAQ</h2>
+        <details open><summary>MIDI 편집 프로그램에서 무엇을 고치나요?</summary><p>피치, 길이, 벨로시티, 트랙 악기, 양자화 등 변환 직후 남는 오류를 피아노롤에서 수정합니다.</p></details>
+        <details><summary>실행취소가 되나요?</summary><p>네. 일반적인 편집 작업에 실행취소/다시실행을 지원합니다.</p></details>
+      </section>
+      <p class="portal-cta" style="display:flex;gap:10px;flex-wrap:wrap">
+        <a class="primary" href="../downloads.html">무료 체험 다운로드</a>
+        <a class="secondary" href="../guide/midi-editor/">프로그램 가이드</a>
+      </p>
+    </article>
+  </main>
+  <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div class="footer-brand"><img src="../assets/images/symbol.png" alt="MidiAI Studio" width="32" height="32"><div><strong>MidiAI Studio</strong><p>AI 기반 MIDI 변환 소프트웨어</p></div></div>
+      <div class="footer-links">
+        <a href="../support.html">고객센터</a><a href="../terms.html">이용약관</a><a href="../privacy.html">개인정보처리방침</a>
+      </div>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+  <script>window.MIDIAI_BASE_PATH='../';</script>
+  <script type="module" src="../assets/js/config.js"></script>
+  <script type="module" src="../assets/js/app.js?v=nav-soon-1"></script>
+</body>
+</html>

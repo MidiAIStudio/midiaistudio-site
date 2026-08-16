@@ -6,6 +6,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { readSitePrices } from "./price-source.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -14,6 +15,7 @@ const OG_IMAGE = `${SITE}/assets/images/product/ai-midi-converter-home.jpg`;
 const LOGO_IMAGE = `${SITE}/assets/images/symbol.png`;
 const TODAY = new Date().toISOString().slice(0, 10);
 const THEME = "#0b1020";
+const PRICES = readSitePrices(ROOT);
 
 const SOFTWARE_SCHEMA = {
   "@context": "https://schema.org",
@@ -22,13 +24,13 @@ const SOFTWARE_SCHEMA = {
   applicationCategory: "MultimediaApplication",
   operatingSystem: "Windows",
   description:
-    "AI로 피아노 커버 영상·오디오를 MIDI로 변환하고, MIDI 편집·악보 변환까지 지원하는 Windows 소프트웨어.",
+    "AI로 음원·YouTube·악보 PDF를 MIDI로 변환하고 MIDI 편집까지 지원하는 Windows 소프트웨어.",
   url: SITE,
   downloadUrl: `${SITE}/downloads.html`,
   image: LOGO_IMAGE,
   offers: {
     "@type": "Offer",
-    price: "90000",
+    price: PRICES.krValue,
     priceCurrency: "KRW",
     availability: "https://schema.org/InStock",
     url: `${SITE}/purchase.html`,
@@ -39,11 +41,11 @@ const SOFTWARE_SCHEMA = {
 const PAGES = {
   "index.html": {
     lang: "ko",
-    title: "MidiAI Studio — AI 피아노 커버를 MIDI로 변환",
+    title: "MidiAI Studio | AI 음원·YouTube·PDF MIDI 변환",
     description:
-      "MidiAI Studio는 피아노 커버 영상을 AI로 MIDI 파일로 변환하는 Windows 소프트웨어입니다. 공식 다운로드, Lifetime 라이선스 구매, 고객 지원.",
+      "Windows용 AI MIDI 변환 프로그램. 음원·MP3·YouTube 음악을 MIDI로 바꾸고, 악보 PDF 인식과 피아노롤 편집까지 한 앱에서 진행합니다.",
     keywords:
-      "MidiAI Studio, MIDI 변환, 피아노 MIDI, AI MIDI, 오디오 MIDI, YouTube MIDI, 악보 변환, Windows MIDI",
+      "MidiAI Studio, AI MIDI 변환, 음원 MIDI 변환, YouTube to MIDI, audio to MIDI",
     robots: "index, follow, max-image-preview:large, max-snippet:-1",
     canonical: `${SITE}/`,
     ogType: "website",
@@ -109,7 +111,7 @@ const PAGES = {
     lang: "ko",
     title: "Lifetime 라이선스 구매 — MidiAI Studio",
     description:
-      "MidiAI Studio Lifetime 라이선스(90,000원)를 구매하세요. 전체 구간 MIDI 변환, 악기 변환, MIDI·악보 편집, 1:1 문의 지원 포함.",
+      `MidiAI Studio Lifetime 라이선스(${PRICES.krDisplay})를 구매하세요. 전체 구간 MIDI 변환, 악기 변환, MIDI·악보 편집, 1:1 문의 지원 포함.`,
     keywords: "MidiAI Studio 구매, Lifetime 라이선스, MIDI 변환 프로그램 가격",
     robots: "index, follow",
     canonical: `${SITE}/purchase.html`,
@@ -127,7 +129,7 @@ const PAGES = {
         brand: { "@type": "Brand", name: "MidiAI Studio" },
         offers: {
           "@type": "Offer",
-          price: "90000",
+          price: PRICES.krValue,
           priceCurrency: "KRW",
           availability: "https://schema.org/InStock",
           url: `${SITE}/purchase.html`,
@@ -139,7 +141,7 @@ const PAGES = {
     lang: "en",
     title: "Buy Lifetime License — MidiAI Studio",
     description:
-      "Purchase the MidiAI Studio Lifetime license ($65 USD). Full-song MIDI conversion, instrument conversion, MIDI & score editing, and support.",
+      `Purchase the MidiAI Studio Lifetime license (${PRICES.usdDisplay}). Full-song MIDI conversion, instrument conversion, MIDI & score editing, and support.`,
     keywords: "MidiAI Studio purchase, lifetime license, AI MIDI converter buy",
     robots: "index, follow",
     canonical: `${SITE}/en/purchase.html`,
@@ -158,7 +160,7 @@ const PAGES = {
         brand: { "@type": "Brand", name: "MidiAI Studio" },
         offers: {
           "@type": "Offer",
-          price: "65.00",
+          price: PRICES.usdValue,
           priceCurrency: "USD",
           availability: "https://schema.org/InStock",
           url: `${SITE}/en/purchase.html`,
@@ -189,7 +191,7 @@ const PAGES = {
         brand: { "@type": "Brand", name: "MidiAI Studio" },
         offers: {
           "@type": "Offer",
-          price: "65.00",
+          price: PRICES.usdValue,
           priceCurrency: "USD",
           availability: "https://schema.org/InStock",
           url: `${SITE}/ja/purchase.html`,
@@ -728,22 +730,47 @@ ${body}
 }
 
 function writeSitemap() {
-  const urls = Object.entries(PAGES)
-    .filter(([, m]) => m.sitemap)
-    .map(([rel, m]) => {
-      const loc = m.canonical.endsWith("/") ? m.canonical : m.canonical;
-      return `  <url>
+  const skipDir = (name) =>
+    ["node_modules", "functions", "firebase", "scripts", ".git", "_probe", "_probe_shots", "_probe_product", "_corrupt_backup2", "tests"].includes(name);
+
+  function walk(dir, base = "") {
+    const out = [];
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (skipDir(ent.name)) continue;
+      const rel = path.join(base, ent.name).replace(/\\/g, "/");
+      if (ent.isDirectory()) out.push(...walk(path.join(dir, ent.name), rel));
+      else if (ent.name.endsWith(".html")) out.push(rel);
+    }
+    return out;
+  }
+
+  const privateRe = /(admin|account|my-tickets|ticket|board-write)\.html$/i;
+  const urls = [];
+  const seen = new Set();
+
+  for (const rel of walk(ROOT)) {
+    if (privateRe.test(rel)) continue;
+    const html = fs.readFileSync(path.join(ROOT, rel), "utf8");
+    if (/noindex/i.test(html)) continue;
+    if (/location\.replace|http-equiv=["']refresh/i.test(html)) continue;
+    const canonical = html.match(/<link[^>]*rel=["']canonical["'][^>]*href=["']([^"']*)["']/i)?.[1];
+    const loc = canonical || `${SITE}/${rel.replace(/index\.html$/, "").replace(/\\/g, "/")}`;
+    if (seen.has(loc)) continue;
+    seen.add(loc);
+    const isHome = loc === `${SITE}/` || loc === SITE;
+    const isPillar = /\/guides\/(audio|youtube|pdf|mp3)-to-midi\.html|\/guides\/midi-editor/.test(loc);
+    const isGuideShell = /\/guide\/[a-z0-9-]+$/.test(loc);
+    urls.push(`  <url>
     <loc>${loc}</loc>
     <lastmod>${TODAY}</lastmod>
-    <changefreq>${m.changefreq || "monthly"}</changefreq>
-    <priority>${m.priority || "0.5"}</priority>
-  </url>`;
-    })
-    .join("\n");
+    <changefreq>${isHome ? "weekly" : "monthly"}</changefreq>
+    <priority>${isHome ? "1.0" : isPillar ? "0.9" : isGuideShell ? "0.8" : "0.6"}</priority>
+  </url>`);
+  }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls}
+${urls.join("\n")}
 </urlset>
 `;
   fs.writeFileSync(path.join(ROOT, "sitemap.xml"), xml, "utf8");

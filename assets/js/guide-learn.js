@@ -77,12 +77,12 @@ export function cardMetaBits(g) {
 }
 
 export function renderGuideCard(g, pathBase) {
-  const href = `${pathBase}guide.html?slug=${encodeURIComponent(g.slug || g.id)}`;
+  const href = `${pathBase}guide/${encodeURIComponent(g.slug || g.id)}/`;
   const thumb = guideThumb(g);
   const badge = g.published === false ? `<span class="guide-draft-badge">초안</span>` : '';
   const meta = cardMetaBits(g);
   const media = thumb.type === 'image'
-    ? `<div class="guide-hub-card-media"><img src="${esc(thumb.url)}" alt="" loading="lazy" decoding="async" width="640" height="360"></div>`
+    ? `<div class="guide-hub-card-media"><img src="${esc(thumb.url)}" alt="${esc(g.title || 'MidiAI Studio')} 가이드 미리보기" loading="lazy" decoding="async" width="640" height="360"></div>`
     : `<div class="guide-hub-card-media is-empty" aria-hidden="true"><span></span></div>`;
   return `<a class="guide-hub-card" href="${esc(href)}" data-guide-slug="${esc(g.slug || g.id)}">
     ${media}

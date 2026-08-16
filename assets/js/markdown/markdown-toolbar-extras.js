@@ -64,7 +64,7 @@ export async function searchInternalDocs({ db, fs }, query, limit = 12) {
       fs.getDocs(fs.query(fs.collection(db, 'patchNotes'), fs.limit(30))),
       fs.getDocs(fs.query(fs.collection(db, 'productSections'), fs.limit(20))).catch(() => null)
     ]);
-    pushSnap(guides, 'guide', (d) => `./guide.html?slug=${encodeURIComponent(d.slug || '')}`, (d) => d.title || d.slug);
+    pushSnap(guides, 'guide', (d) => `./guide/${encodeURIComponent(d.slug || '')}`, (d) => d.title || d.slug);
     pushSnap(announcements, 'notice', (_d, id) => `./notice.html?id=${encodeURIComponent(id)}`, (d) => d.title);
     pushSnap(patches, 'patch', (_d, id) => `./patch-note.html?id=${encodeURIComponent(id)}`, (d) => d.title || d.version);
     if (products) {
