@@ -1365,3 +1365,27 @@ exports.notifyUsersOnPatchNote = functionsV1
   .runWith({ timeoutSeconds: 300, memory: '512MB' })
   .firestore.document('patchNotes/{postId}')
   .onWrite((change, context) => onPublishedContentWrite('patch_note', change, context));
+
+const { recordUserAccessInfo } = require('./accessInfo');
+
+/**
+ * Record Geo-IP access metadata after login / session start.
+ * Client must NOT send IP. Country is derived on the server.
+ * Response never includes the raw IP.
+ */
+exports.recordAccessInfo = functions.https.onRequest(async (req, res) => {
+  if (cors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
+  try {
+    const user = await requireUser(req);
+    const result = await recordUserAccessInfo(db, admin, user, req);
+    return res.json({ ok: true, updated: !!result.updated, throttled: !!result.throttled });
+  } catch (err) {
+    const status = err.status || 500;
+    console.error('recordAccessInfo', err && err.message ? err.message : err);
+    return res.status(status).json({
+      ok: false,
+      message: err.message || 'recordAccessInfo failed'
+    });
+  }
+});

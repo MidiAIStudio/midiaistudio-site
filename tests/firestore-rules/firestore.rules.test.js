@@ -140,3 +140,50 @@ describe('licenses rules', () => {
     await assertFails(db.doc('licenses/user1').set({ plan: 'trial', licensed: true, status: 'active' }));
   });
 });
+
+describe('users accessInfo rules', () => {
+  it('owner can still update lastLogin without touching accessInfo', async () => {
+    await seedUser('user1');
+    const db = testEnv.authenticatedContext('user1').firestore();
+    await assertSucceeds(db.doc('users/user1').set({ lastLogin: new Date(), lastSeenAt: new Date() }, { merge: true }));
+  });
+
+  it('owner cannot write accessInfo', async () => {
+    await seedUser('user1');
+    const db = testEnv.authenticatedContext('user1').firestore();
+    await assertFails(
+      db.doc('users/user1').set({
+        accessInfo: { countryCode: 'US', lastIpMasked: '1.2.***.***' }
+      }, { merge: true })
+    );
+  });
+
+  it('other user cannot read another member accessInfo', async () => {
+    await seedUser('user1');
+    await seedUser('user2');
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc('users/user1').set({
+        uid: 'user1',
+        role: 'user',
+        accessInfo: { countryCode: 'KR', lastIpMasked: '123.45.***.***' }
+      }, { merge: true });
+    });
+    const db = testEnv.authenticatedContext('user2').firestore();
+    await assertFails(db.doc('users/user1').get());
+  });
+
+  it('admin can read another member accessInfo', async () => {
+    await seedAdmin('admin1');
+    await seedUser('user1');
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc('users/user1').set({
+        uid: 'user1',
+        role: 'user',
+        accessInfo: { countryCode: 'KR', lastIpMasked: '123.45.***.***' }
+      }, { merge: true });
+    });
+    const db = testEnv.authenticatedContext('admin1').firestore();
+    const snap = await assertSucceeds(db.doc('users/user1').get());
+    assert.strictEqual(snap.data().accessInfo.countryCode, 'KR');
+  });
+});

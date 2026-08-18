@@ -130,7 +130,8 @@ const I18N = {
     '소식':'News','패치':'Patch','피아노 커버·오디오·악보를':'Piano covers, audio & scores','MidiAI Studio는 Windows용 AI MIDI 변환 소프트웨어입니다. YouTube·MP3·오디오를 MIDI로 바꾸고, PDF/MusicXML 악보 워크플로까지 이어갑니다.':'MidiAI Studio is Windows AI MIDI conversion software. Turn YouTube, MP3, and audio into MIDI, then continue into PDF/MusicXML score workflows.','분석':'Analyze','풍선':'Balloon','god Best 피아노 모음 · 04:36:46':'god Best Piano Collection · 04:36:46','선택 정보':'Selection','길이 04:36:45':'Length 04:36:45','MIDI 변환':'MIDI convert','MIDI로 변환':'Convert to MIDI','YouTube 검색 중...':'Searching YouTube...','길이와 제목 정보 분석 중...':'Analyzing length and title...','미리듣기 오디오/웨이브폼 준비 중...':'Preparing preview audio / waveform...','트랙 범위':'Track range','미리듣기':'Preview','정지':'Stop','초기화':'Reset',
     'YouTube 링크나 MP3/오디오를 불러와 AI가 MIDI로 변환합니다.':'Load a YouTube link or MP3/audio and convert it to MIDI with AI.','PDF·MusicXML 악보 변환과 MIDI 편집까지 한 앱에서 이어집니다.':'Continue into PDF/MusicXML score conversion and MIDI editing in one app.','PDF / YouTube / MP3 가이드':'PDF / YouTube / MP3 guides','관련 변환 가이드':'Related conversion guides','가이드 허브':'Guide hub',
     'MidiAI Studio를 만드는 사람들':'The people behind MidiAI Studio','MidiAI Studio는 피아노 커버·오디오·악보를 MIDI로 변환하고 편집하는 Windows 소프트웨어입니다. 이 페이지는 Google과 사용자가 제품을 신뢰할 수 있도록 ':'MidiAI Studio is Windows software for converting and editing piano covers, audio, and scores to MIDI. This page clearly discloses ','제작자, 회사, 연락처, 업데이트, 지원':'author, company, contact, updates, and support',' 정보를 명확히 공개합니다.':' information so Google and users can trust the product.','제작자 · Author':'Author',' — 대표 · Product Lead. AI MIDI 변환, MIDI 편집, 악보(MusicXML/PDF) 워크플로를 실제 연주자·제작자 관점에서 설계합니다.':' — Founder & Product Lead. Designs AI MIDI conversion, MIDI editing, and score (MusicXML/PDF) workflows from a performer/creator perspective.','문의:':'Contact:','회사 정보 · Organization':'Organization','상세:':'Details:','제품 신뢰 · Software credibility':'Software credibility','MidiAI Studio는 브라우저 일회성 도구가 아니라 ':'MidiAI Studio is not a one-off browser tool — it is an ','설치형 Windows 앱':'installed Windows app','입니다. Google 로그인 라이선스, 공식 다운로드, Lifetime 구매, 버전별 패치노트를 제공합니다.':'. It provides Google sign-in licensing, official downloads, Lifetime purchase, and versioned patch notes.','제품 기능':'Product features',' — AI 오디오→MIDI, MIDI 편집, 악보 변환':' — AI audio→MIDI, MIDI editing, score conversion',' — 최신 설치 파일':' — Latest installer',' — Lifetime 라이선스':' — Lifetime license',' — 업데이트·버전 이력':' — Updates & version history','SEO 가이드':'SEO guides','고객 지원 · Support':'Support','MIDI 변환 FAQ (20+)':'MIDI converter FAQ (20+)','를 운영합니다.':' are available.','법적 고지':'Legal','지금 시작하기':'Get started','무료 체험으로 YouTube·오디오→MIDI 변환을 확인하세요.':'Try the free trial to convert YouTube/audio to MIDI.','개인정보':'Privacy',
-    '← 나의 문의':'← My tickets','새 문의':'New ticket','게시글':'Post','댓글을 입력하세요':'Write a comment','댓글 불러오는 중...':'Loading comments...','사진/영상/MIDI 첨부':'Attach photo / video / MIDI','JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 파일당 50MB · 최대 5개':'JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 50MB each · max 5','첨부한 파일이 없습니다.':'No files attached.','이모티콘':'Emoji','이모티콘 선택':'Choose emoji','이모티콘을 눌러 내용에 삽입합니다.':'Tap an emoji to insert it into the post.'
+    '← 나의 문의':'← My tickets','새 문의':'New ticket','게시글':'Post','댓글을 입력하세요':'Write a comment','댓글 불러오는 중...':'Loading comments...','사진/영상/MIDI 첨부':'Attach photo / video / MIDI','JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 파일당 50MB · 최대 5개':'JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 50MB each · max 5','첨부한 파일이 없습니다.':'No files attached.','이모티콘':'Emoji','이모티콘 선택':'Choose emoji',    '이모티콘을 눌러 내용에 삽입합니다.':'Tap an emoji to insert it into the post.',
+    '접속 정보':'Access information','국가':'Country','지역':'Region','최근 접속':'Last seen','IP':'IP','언어':'Language','접속 환경':'Client','국가 정보 없음':'Location unavailable','MidiAI Studio App':'MidiAI Studio App'
   },
   ja: {
     '번호':'番号','글쓴이':'投稿者','작성일':'作成日','포털':'ポータル','커뮤니티':'コミュニティ','고객지원':'サポート','지원':'サポート','계정':'アカウント','홈':'ホーム','제품':'製品','다운로드':'ダウンロード','구매':'購入','변환가이드':'変換ガイド','전체 가이드':'ガイド一覧','변환 가이드':'変換ガイド','MIDI 변환 가이드':'MIDI変換ガイド','변환 FAQ':'変換FAQ','가이드':'ガイド','준비중':'準備中','소개':'紹介','회사·제작자':'会社・制作','지원하는 워크플로':'対応ワークフロー','제품 보기':'製品を見る','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'入力から編集・楽譜まで、MidiAI Studioひとつでつながります。','입력':'入力','코어':'コア','결과':'結果','피아노 커버·영상 링크를 분석해 MIDI로 변환':'ピアノカバーや動画リンクを解析してMIDIに変換','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'MP3・WAVなどのオーディオをAIで変換','악보 PDF를 인식해 편집 가능한 MIDI로':'楽譜PDFを認識して編集可能なMIDIに','AI MIDI 변환':'AI MIDI変換','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'入力をMIDIに変換するMidiAI Studioの中核エンジン','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'マルチトラックピアノロールでノート・ベロシティを編集','MusicXML / PDF 악보':'MusicXML / PDF楽譜','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ 楽譜変換と楽譜ワークフロー','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'変換したMIDIを印刷用PDF・MusicXML楽譜に','라이브러리 저장':'ライブラリ保存','변환·편집한 MIDI를 모아 다시 열어 작업':'変換・編集したMIDIをまとめて再度開いて作業','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'YouTubeのURLを貼るか検索してピアノカバー・演奏動画を読み込みます。波形で区間を選び、AIがMIDIに変換します。','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'MP3やWAVなどのローカル音声をアップロードして変換。プレビューで区間を確認し、希望の楽器でMIDIを取得できます。','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'スキャンや印刷用の楽譜PDFを認識して編集可能なMIDIに変換。抽出した音符はMIDI編集・楽譜ワークフローへそのまま続きます。','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'YouTube・音声・PDF入力をMIDIに変える中核エンジン。楽器選択、区間指定、変換進行を一か所で処理します。','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'変換したMIDIをマルチトラックピアノロールですぐ編集。ノート、ベロシティ、CC、クオンタイズまでプロ編集が可能です。','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'変換・編集したMIDIを印刷用PDF楽譜とMusicXMLで書き出します。楽譜プレビューと結果フォルダ保存に対応します。','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'変換・編集したMIDIをライブラリにまとめ、あとで再度開いて編集・楽譜変換を続けられます。','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXML・MIDI→PDFの変換ガイドと詳細記事をまとめています。','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXMLの変換ガイドと詳細記事をまとめています。','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI、YouTube to MIDI、MP3 to MIDI、Audio to MIDI、MusicXML — 検索意図に合わせた実践ガイドと50本の詳細記事。','공지사항':'お知らせ','패치노트 목록':'パッチノート一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト','문의 작성':'問い合わせ作成','전체 보기':'すべて見る',
@@ -148,7 +149,8 @@ const I18N = {
     '소식':'ニュース','패치':'パッチ','피아노 커버·오디오·악보를':'ピアノカバー・オーディオ・楽譜を','MidiAI Studio는 Windows용 AI MIDI 변환 소프트웨어입니다. YouTube·MP3·오디오를 MIDI로 바꾸고, PDF/MusicXML 악보 워크플로까지 이어갑니다.':'MidiAI StudioはWindows向けAI MIDI変換ソフトです。YouTube・MP3・オーディオをMIDIに変え、PDF/MusicXML楽譜ワークフローまでつなげます。','분석':'解析','풍선':'風船','god Best 피아노 모음 · 04:36:46':'god Best ピアノコレクション · 04:36:46','선택 정보':'選択情報','길이 04:36:45':'長さ 04:36:45','MIDI 변환':'MIDI変換','MIDI로 변환':'MIDIに変換','YouTube 검색 중...':'YouTube検索中...','길이와 제목 정보 분석 중...':'長さとタイトル情報を解析中...','미리듣기 오디오/웨이브폼 준비 중...':'プレビュー音声/波形を準備中...','트랙 범위':'トラック範囲','미리듣기':'プレビュー','정지':'停止','초기화':'初期化',
     'YouTube 링크나 MP3/오디오를 불러와 AI가 MIDI로 변환합니다.':'YouTubeリンクやMP3/オーディオを読み込み、AIがMIDIに変換します。','PDF·MusicXML 악보 변환과 MIDI 편집까지 한 앱에서 이어집니다.':'PDF・MusicXML楽譜変換とMIDI編集まで1つのアプリで続けられます。','PDF / YouTube / MP3 가이드':'PDF / YouTube / MP3ガイド','관련 변환 가이드':'関連変換ガイド','가이드 허브':'ガイドハブ',
     'MidiAI Studio를 만드는 사람들':'MidiAI Studioをつくる人たち','MidiAI Studio는 피아노 커버·오디오·악보를 MIDI로 변환하고 편집하는 Windows 소프트웨어입니다. 이 페이지는 Google과 사용자가 제품을 신뢰할 수 있도록 ':'MidiAI Studioはピアノカバー・オーディオ・楽譜をMIDIに変換・編集するWindowsソフトです。このページはGoogleとユーザーが製品を信頼できるよう ','제작자, 회사, 연락처, 업데이트, 지원':'制作者・会社・連絡先・更新・サポート',' 정보를 명확히 공개합니다.':'情報を明確に公開します。','제작자 · Author':'制作者 · Author',' — 대표 · Product Lead. AI MIDI 변환, MIDI 편집, 악보(MusicXML/PDF) 워크플로를 실제 연주자·제작자 관점에서 설계합니다.':' — 代表 · Product Lead。AI MIDI変換、MIDI編集、楽譜(MusicXML/PDF)ワークフローを演奏者・制作者の視点で設計します。','문의:':'お問い合わせ:','회사 정보 · Organization':'会社情報 · Organization','상세:':'詳細:','제품 신뢰 · Software credibility':'製品信頼 · Software credibility','MidiAI Studio는 브라우저 일회성 도구가 아니라 ':'MidiAI Studioはブラウザの使い捨てツールではなく ','설치형 Windows 앱':'インストール型Windowsアプリ','입니다. Google 로그인 라이선스, 공식 다운로드, Lifetime 구매, 버전별 패치노트를 제공합니다.':'です。Googleログインライセンス、公式ダウンロード、Lifetime購入、バージョン別パッチノートを提供します。','제품 기능':'製品機能',' — AI 오디오→MIDI, MIDI 편집, 악보 변환':' — AIオーディオ→MIDI、MIDI編集、楽譜変換',' — 최신 설치 파일':' — 最新インストーラー',' — Lifetime 라이선스':' — Lifetimeライセンス',' — 업데이트·버전 이력':' — 更新・バージョン履歴','SEO 가이드':'SEOガイド','고객 지원 · Support':'カスタマーサポート · Support','MIDI 변환 FAQ (20+)':'MIDI変換FAQ (20+)','를 운영합니다.':'を運営しています。','법적 고지':'法的告知','지금 시작하기':'今すぐ始める','무료 체험으로 YouTube·오디오→MIDI 변환을 확인하세요.':'無料トライアルでYouTube・オーディオ→MIDI変換を確認してください。','개인정보':'プライバシー',
-    '← 나의 문의':'← マイ問い合わせ','새 문의':'新しい問い合わせ','게시글':'投稿','댓글을 입력하세요':'コメントを入力','댓글 불러오는 중...':'コメント読み込み中...','사진/영상/MIDI 첨부':'写真/動画/MIDI添付','JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 파일당 50MB · 최대 5개':'JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 各50MB · 最大5件','첨부한 파일이 없습니다.':'添付ファイルはありません。','이모티콘':'絵文字','이모티콘 선택':'絵文字を選択','이모티콘을 눌러 내용에 삽입합니다.':'絵文字を押して本文に挿入します。'
+    '← 나의 문의':'← マイ問い合わせ','새 문의':'新しい問い合わせ','게시글':'投稿','댓글을 입력하세요':'コメントを入力','댓글 불러오는 중...':'コメント読み込み中...','사진/영상/MIDI 첨부':'写真/動画/MIDI添付','JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 파일당 50MB · 최대 5개':'JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 各50MB · 最大5件','첨부한 파일이 없습니다.':'添付ファイルはありません。','이모티콘':'絵文字','이모티콘 선택':'絵文字を選択',    '이모티콘을 눌러 내용에 삽입します.':'絵文字を押して本文に挿入します。',
+    '접속 정보':'接続情報','국가':'国','지역':'地域','최근 접속':'最終接続','IP':'IP','언어':'言語','접속 환경':'接続環境','국가 정보 없음':'位置情報なし','MidiAI Studio App':'MidiAI Studio App'
   }
 };
 
@@ -508,6 +510,74 @@ function fmtListDate(v){
     const pad=n=>String(n).padStart(2,'0');
     return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())}`;
   }catch{ return '-'; }
+}
+function fmtListDateTime(v){
+  try{
+    const ms=licenseTsMs(v);
+    if(!ms) return '-';
+    const d=new Date(ms);
+    if(!Number.isFinite(d.getTime())) return '-';
+    const pad=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }catch{ return '-'; }
+}
+function countryFlagEmoji(code){
+  const cc=String(code||'').trim().toUpperCase();
+  if(!/^[A-Z]{2}$/.test(cc) || cc==='ZZ' || cc==='XX') return '';
+  return String.fromCodePoint(...[...cc].map(c=>127397+c.charCodeAt(0)));
+}
+function localizedCountryName(code){
+  const cc=String(code||'').trim().toUpperCase();
+  if(!/^[A-Z]{2}$/.test(cc) || cc==='ZZ' || cc==='XX') return '';
+  try{
+    const loc = lang==='ja'?'ja':lang==='en'?'en':'ko';
+    const name = new Intl.DisplayNames([loc],{type:'region'}).of(cc);
+    return name && name!==cc ? name : cc;
+  }catch{
+    return cc;
+  }
+}
+function maskIpForDisplay(ip){
+  const s=String(ip||'').trim();
+  if(!s) return '';
+  if(s.includes('*')) return s;
+  const mapped=s.replace(/^::ffff:/i,'');
+  if(/^\d+\.\d+\.\d+\.\d+$/.test(mapped)){
+    const p=mapped.split('.');
+    return `${p[0]}.${p[1]}.***.***`;
+  }
+  if(s.includes(':')){
+    const raw=s.split(':');
+    return `${raw[0]||'****'}:${raw[1]||'****'}:****:****:****:****`;
+  }
+  return '';
+}
+function adminAccessInfo(user){
+  const info = user && typeof user.accessInfo==='object' && user.accessInfo ? user.accessInfo : null;
+  if(!info) return null;
+  const countryCode = String(info.countryCode||'').trim().toUpperCase();
+  const validCode = /^[A-Z]{2}$/.test(countryCode) && countryCode!=='ZZ' && countryCode!=='XX' ? countryCode : '';
+  return {
+    countryCode: validCode,
+    countryName: localizedCountryName(validCode) || String(info.countryName||'').trim(),
+    city: String(info.city||info.region||'').trim(),
+    language: String(info.language||'').trim(),
+    clientType: String(info.clientType||'').trim().toLowerCase(),
+    lastIpMasked: maskIpForDisplay(info.lastIpMasked || ''),
+    lastSeenAt: info.updatedAt || user.lastLogin || user.lastSeenAt
+  };
+}
+function adminAccessCountryLine(user){
+  const info = adminAccessInfo(user);
+  if(!info || !info.countryCode) return '';
+  const flag = countryFlagEmoji(info.countryCode);
+  const name = info.countryName || info.countryCode;
+  return `${flag ? flag+' ' : ''}${name}`.trim();
+}
+function adminAccessClientLabel(clientType){
+  if(clientType==='app') return tt('MidiAI Studio App');
+  if(clientType==='web') return 'Web';
+  return clientType || '-';
 }
 function licenseDateBoundsActive(d, nowMs=Date.now()){
   if(!d) return false;
@@ -1840,6 +1910,7 @@ async function setAuthUiSignedIn(user){
   updateTopbarProfile(user);
   syncTopbarProfileAuthUi(true);
   await upsertUser(user);
+  recordAccessInfoQuiet();
   await loadLicense(user.uid);
   listenTicketNotifications();
   listenAdminTicketNotifications();
@@ -1891,6 +1962,51 @@ async function upsertUser(user){
     isAdminUser=false;
     setAdminNavVisible(false);
   }
+}
+const ACCESS_INFO_CLIENT_THROTTLE_MS = 30 * 60 * 1000;
+const ACCESS_INFO_LS_KEY = 'midiai_accessInfo_at';
+function detectAccessClientType(){
+  const ua = navigator.userAgent || '';
+  if(/MidiAIStudio|MidiAI Studio|Electron/i.test(ua)) return 'app';
+  return 'web';
+}
+function shouldRecordAccessInfoClient(){
+  try{
+    const at = Number(localStorage.getItem(ACCESS_INFO_LS_KEY) || 0);
+    if(at && Date.now() - at < ACCESS_INFO_CLIENT_THROTTLE_MS) return false;
+  }catch(_){}
+  return true;
+}
+/** Fire-and-forget: never blocks login / license. Server also throttles writes. */
+function recordAccessInfoQuiet(){
+  if(!currentUser || !shouldRecordAccessInfoClient()) return;
+  (async ()=>{
+    try{
+      const base = String(CONFIG.functionsBaseUrl || '').replace(/\/$/, '');
+      if(!base || base.includes('PASTE_')) return;
+      const token = await currentUser.getIdToken();
+      const res = await fetch(`${base}/recordAccessInfo`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          language: String(navigator.language || '').slice(0, 32),
+          clientType: detectAccessClientType()
+        })
+      });
+      if(res.ok){
+        try{ localStorage.setItem(ACCESS_INFO_LS_KEY, String(Date.now())); }catch(_){}
+      }else{
+        // Back off 10 minutes on failure so a missing Function cannot spam on every page load.
+        try{ localStorage.setItem(ACCESS_INFO_LS_KEY, String(Date.now() - ACCESS_INFO_CLIENT_THROTTLE_MS + 10*60*1000)); }catch(_){}
+      }
+    }catch(e){
+      console.warn('recordAccessInfo', e);
+      try{ localStorage.setItem(ACCESS_INFO_LS_KEY, String(Date.now() - ACCESS_INFO_CLIENT_THROTTLE_MS + 10*60*1000)); }catch(_){}
+    }
+  })();
 }
 /**
  * Resolve licenses/{uid} without client writes for normal users.
@@ -4580,6 +4696,9 @@ function adminCrmMemberCardHtml(u){
   const avatar = u.photoURL
     ? `<img class="admin-crm-card-avatar" src="${esc(u.photoURL)}" alt="" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">`
     : `<span class="admin-crm-card-avatar is-fallback">${esc((u.displayName||u.email||'?').slice(0,1).toUpperCase())}</span>`;
+  const country = adminAccessCountryLine(u);
+  const seen = fmtRelative(u.lastLogin||u.lastSeenAt);
+  const loginMeta = country ? `${country} · ${seen}` : seen;
   return `<article class="admin-crm-member${selected}" data-admin-uid="${esc(uid)}" style="min-height:${ADMIN_CRM_ROW_H}px">
     <label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-check="${esc(uid)}" ${checked}></label>
     ${avatar}
@@ -4590,7 +4709,7 @@ function adminCrmMemberCardHtml(u){
         ${adminPlanBadgeFromView(u.licenseView || adminLicenseView(u))}
       </div>
       <div class="admin-crm-member-meta">
-        <span class="crm-meta-login">${esc(fmtRelative(u.lastLogin||u.lastSeenAt))}</span>
+        <span class="crm-meta-login">${esc(loginMeta)}</span>
         <span class="crm-meta-num">주문 ${Number(u.orderCount||0)}</span>
         <span class="crm-meta-num">문의 ${Number(u.ticketCount||0)}</span>
       </div>
@@ -4667,6 +4786,27 @@ function renderAdminCrmHwidBox(user, lic){
       <button type="button" class="secondary mini-btn" data-crm-action="hwid-copy" ${hwid?'':'disabled'}>복사</button>
       <button type="button" class="secondary mini-btn danger-btn" data-crm-action="hwid-reset">초기화</button>
     </div>`;
+}
+function renderAdminCrmAccessBox(user){
+  const box=$('adminCrmAccessBox'); if(!box) return;
+  const info = adminAccessInfo(user);
+  if(!info || (!info.countryCode && !info.city && !info.language && !info.lastIpMasked && !info.clientType)){
+    box.innerHTML = `<p class="muted small admin-crm-access-empty">${esc(tt('국가 정보 없음'))}</p>`;
+    return;
+  }
+  const flag = countryFlagEmoji(info.countryCode);
+  const country = info.countryCode
+    ? `${flag}${flag ? ' ' : ''}${esc(info.countryName || info.countryCode)}`
+    : esc(tt('국가 정보 없음'));
+  const rows = [
+    [tt('국가'), country],
+    [tt('지역'), esc(info.city || '-')],
+    [tt('최근 접속'), esc(fmtListDateTime(user.lastLogin || user.lastSeenAt || info.lastSeenAt))],
+    [tt('IP'), esc(info.lastIpMasked || '-')],
+    [tt('언어'), esc(info.language || '-')],
+    [tt('접속 환경'), esc(adminAccessClientLabel(info.clientType))]
+  ];
+  box.innerHTML = `<dl class="admin-crm-access-list">${rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
 }
 function captureAdminCrmBaseline(){
   adminCrmBaseline = {
@@ -4836,6 +4976,7 @@ function renderAdminCrmDetail(uid, opts={}){
       <small>${esc(fmtRelative(user.lastLogin||user.lastSeenAt))}</small>
     </div>`);
   renderAdminCrmHwidBox(user, lic);
+  renderAdminCrmAccessBox(user);
   renderAdminCrmOrders(canonicalUid, false);
   renderAdminCrmTickets(canonicalUid);
   renderAdminCrmPosts(canonicalUid);
@@ -6081,7 +6222,7 @@ function boardAttachmentItemHtml(a, idx, editable=false){
     return `<figure class="board-attachment-item board-attachment-midi">
       <div class="board-midi-card">
         <div class="board-midi-row">
-          <span class="board-midi-badge">🎹 MIDI</span>
+          <span class="board-midi-badge"><span class="board-midi-badge-icon" aria-hidden="true">🎹</span> MIDI</span>
           <b class="board-midi-name" title="${name}">${name}</b>
           ${editable?'':`${hasPreview?'':`<button type="button" class="board-midi-play-btn" data-midi-preview="${url}" data-midi-path="${path}" aria-label="미리듣기">미리듣기</button>`}
           <a class="board-midi-dl" href="${url}" target="_blank" rel="noopener noreferrer" download>다운로드</a>`}

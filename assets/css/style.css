@@ -211,7 +211,7 @@ nav a.active{color:var(--text)}
 .board-attachment-midi{grid-column:1/-1!important;max-width:min(100%,520px)!important;border-radius:14px!important;overflow:hidden}
 .board-midi-card{display:grid;gap:8px;padding:10px 12px;background:rgba(0,0,0,.22)}
 .board-midi-row{display:flex;align-items:center;gap:8px;min-width:0}
-.board-midi-badge{flex:none;font-size:11px;font-weight:900;color:#9af2ff;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.22);border-radius:8px;padding:4px 7px}
+.board-midi-badge{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;line-height:1.2;color:#9af2ff;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.22);border-radius:6px;padding:2px 6px}
 .board-midi-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#e8ebf8}
 .board-midi-play-btn{flex:none;padding:7px 10px;border-radius:9px;border:1px solid rgba(34,211,238,.35);background:linear-gradient(135deg,rgba(34,211,238,.28),rgba(139,92,246,.22));color:#fff;font-size:11px;font-weight:900;cursor:pointer;line-height:1;white-space:nowrap}
 .board-midi-play-btn:hover{filter:brightness(1.08)}
@@ -699,7 +699,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   font-size:13px;font-weight:650;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;color:#f3f5ff
 }
 .admin-page .admin-crm-member-meta{
-  display:grid;grid-template-columns:72px 56px 56px;gap:8px;align-items:center
+  display:grid;grid-template-columns:minmax(0,1fr) 52px 52px;gap:8px;align-items:center
 }
 .admin-page .admin-crm-member-meta span{
   font-size:11px!important;font-weight:500;line-height:1.2;color:#8b93b3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
@@ -806,6 +806,18 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 }
 .admin-page .admin-crm-hwid-value.is-revealed{background:rgba(122,162,255,.1);border-color:rgba(122,162,255,.25)}
 .admin-page .admin-crm-hwid-actions{display:flex;gap:5px;flex-wrap:wrap}
+.admin-page .admin-crm-access-box{min-width:0}
+.admin-page .admin-crm-access-empty{margin:0}
+.admin-page .admin-crm-access-list{display:grid;gap:5px;margin:0}
+.admin-page .admin-crm-access-list div{
+  display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:baseline
+}
+.admin-page .admin-crm-access-list dt{
+  margin:0;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#6f7694
+}
+.admin-page .admin-crm-access-list dd{
+  margin:0;font-size:12px;color:#d7dcf2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
 .admin-page .admin-crm-license-form{display:grid;gap:8px}
 .admin-page .admin-crm-license-form .form-split{gap:8px}
 .admin-page .admin-crm-license-form label{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#6f7694;display:grid;gap:5px}
@@ -2259,6 +2271,28 @@ article .board-attachment-item figcaption b{
  overflow:hidden!important;
  text-overflow:ellipsis!important;
  white-space:nowrap!important;
+}
+.community-post-detail .board-midi-badge,
+.hub-page .board-midi-badge,
+.board-attachments .board-midi-badge,
+.board-midi-badge{
+ display:inline-flex!important;
+ align-items:center!important;
+ gap:4px!important;
+ font-size:12px!important;
+ font-weight:700!important;
+ line-height:1.2!important;
+ letter-spacing:0!important;
+ padding:2px 6px!important;
+ border-radius:6px!important;
+}
+.community-post-detail .board-midi-badge-icon,
+.hub-page .board-midi-badge-icon,
+.board-attachments .board-midi-badge-icon,
+.board-midi-badge-icon{
+ font-size:12px!important;
+ line-height:1!important;
+ font-weight:400!important;
 }
 @media(max-width:720px){
  .board-attachments .board-attachment-video video{
