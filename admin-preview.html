@@ -1,17 +1,17 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" class="sidebar-ready">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>관리자 — MidiAI Studio</title>
-  <meta name="description" content="MidiAI Studio 관리자 전용 페이지입니다.">
-  <meta name="keywords" content="MidiAI Studio 관리자">
-  <meta name="robots" content="noindex, nofollow">
+  <title>관리자 콘솔 미리보기 — MidiAI Studio</title>
+  <meta name="description" content="MidiAI Studio 관리자 콘솔 IA 미리보기. 목업 데이터이며 실제 Firestore를 사용하지 않습니다.">
+  <meta name="keywords" content="MidiAI Studio 관리자 미리보기">
+  <meta name="robots" content="noindex, nofollow, noarchive">
   <meta name="author" content="MidiAI Studio">
   <meta name="theme-color" content="#0b1020">
   <meta name="application-name" content="MidiAI Studio">
   <meta name="format-detection" content="telephone=no">
-  <link rel="canonical" href="https://midiaistudio.com/admin.html">
+  <link rel="canonical" href="https://midiaistudio.com/admin-preview.html">
   <link rel="alternate" hreflang="ko" href="https://midiaistudio.com/admin.html">
   <link rel="alternate" hreflang="x-default" href="https://midiaistudio.com/admin.html">
   <link rel="icon" href="./assets/images/symbol.png" type="image/png" sizes="any">
@@ -20,9 +20,9 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="MidiAI Studio">
   <meta property="og:locale" content="ko_KR">
-  <meta property="og:title" content="관리자 — MidiAI Studio">
-  <meta property="og:description" content="MidiAI Studio 관리자 전용 페이지입니다.">
-  <meta property="og:url" content="https://midiaistudio.com/admin.html">
+  <meta property="og:title" content="관리자 콘솔 미리보기 — MidiAI Studio">
+  <meta property="og:description" content="관리자 콘솔 IA 미리보기. 목업 데이터입니다.">
+  <meta property="og:url" content="https://midiaistudio.com/admin-preview.html">
   <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-midi-converter-home.jpg">
   <meta property="og:image:alt" content="MidiAI Studio — AI 피아노 커버를 MIDI로 변환">
   <meta property="og:image:width" content="1280">
@@ -39,11 +39,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-console-3">
-  <script defer src="./assets/js/analytics.js"></script>
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-preview-5">
 
 </head>
-<body class="admin-page admin-console-page portal-page">
+<body class="admin-page admin-console-page admin-preview-page portal-page">
   <div class="orb orb-a"></div>
   <div class="orb orb-b"></div>
   <header class="topbar">
@@ -80,7 +79,7 @@
         <p class="admin-nav-group">회원 관리</p>
         <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1">전체 회원</button>
         <p class="admin-nav-group">라이선스 관리</p>
-        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1">라이선스 현황</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-crm-mode="license" data-crm-detail-tab="license">라이선스 현황</button>
         <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="license">변경/지급 기록</button>
         <p class="admin-nav-group">결제 관리</p>
         <button type="button" class="admin-nav-item" data-admin-nav="payments">결제 내역</button>
@@ -109,11 +108,12 @@
       <div class="admin-console-pagehead">
         <button type="button" class="ghost mini-btn admin-sidebar-toggle" id="adminSidebarToggle" aria-label="메뉴">☰</button>
         <h1 id="adminConsoleTitle">홈</h1>
+        <span class="admin-preview-badge">PREVIEW · 목업 데이터</span>
       </div>
   <main class="admin-console-main">
     <section class="admin-shell">
-      <div id="admin" class="content-card admin-locked">
-        <div id="adminGate" class="empty-card admin-gate">관리자 권한 확인 중...</div>
+      <div id="admin" class="content-card">
+        <div id="adminGate" class="empty-card admin-gate hidden">미리보기에서는 로그인 게이트를 건너뜁니다.</div>
         <div class="admin-panel">
           <div id="adminSaveMsg" class="admin-flash hidden"></div>
 
@@ -122,18 +122,40 @@
             <section class="admin-home-section" id="adminHomeSection">
               <div class="admin-section-head">
                 <div>
-                  <h3>홈</h3>
-                  <p class="muted">기존 관리 기능으로 바로 이동합니다. 통계는 회원 관리와 동일합니다.</p>
+                  <h3>운영 현황</h3>
+                  <p class="muted">지금 MidiAI Studio에서 일어나는 일을 한눈에 봅니다. 상세는 전체 보기로 이동합니다.</p>
                 </div>
               </div>
-              <div class="admin-crm-stats" id="adminHomeStats" aria-label="회원 통계"></div>
-              <div class="admin-home-links">
-                <button type="button" class="admin-home-link" data-admin-nav="crm" data-admin-tab="crm"><b>회원 관리</b><small>검색 · 필터 · 일괄 작업</small></button>
-                <button type="button" class="admin-home-link" data-admin-nav="payments"><b>결제 내역</b><small>전체 주문</small></button>
-                <button type="button" class="admin-home-link" data-admin-nav="tickets" data-admin-tab="tickets"><b>문의 관리</b><small>접수 · 답변 · 종료</small></button>
-                <button type="button" class="admin-home-link" data-admin-nav="logs" data-admin-tab="logs"><b>로그</b><small>라이선스 · 쪽지 · 결제</small></button>
-                <button type="button" class="admin-home-link" data-admin-nav="pricing" data-admin-tab="pricing"><b>가격·상품</b><small>Region · 할인 · 팝업</small></button>
-                <button type="button" class="admin-home-link" data-admin-nav="content"><b>공지·콘텐츠</b><small>공지 · 패치노트 · FAQ</small></button>
+              <div class="admin-crm-stats" id="adminHomeStats" aria-label="운영 KPI"></div>
+              <div class="admin-dash-grid">
+                <section class="admin-dash-panel">
+                  <header class="admin-dash-panel-head">
+                    <h3>최근 결제</h3>
+                    <button type="button" class="ghost mini-btn" data-admin-nav="payments">전체 보기 →</button>
+                  </header>
+                  <div id="dashPaymentsBody"></div>
+                </section>
+                <section class="admin-dash-panel">
+                  <header class="admin-dash-panel-head">
+                    <h3>최근 문의</h3>
+                    <button type="button" class="ghost mini-btn" data-admin-nav="tickets" data-admin-tab="tickets">전체 보기 →</button>
+                  </header>
+                  <div id="dashTicketsBody"></div>
+                </section>
+                <section class="admin-dash-panel">
+                  <header class="admin-dash-panel-head">
+                    <h3>최근 회원</h3>
+                    <button type="button" class="ghost mini-btn" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1">전체 보기 →</button>
+                  </header>
+                  <div id="dashUsersBody"></div>
+                </section>
+                <section class="admin-dash-panel">
+                  <header class="admin-dash-panel-head">
+                    <h3>최근 관리자 작업</h3>
+                    <button type="button" class="ghost mini-btn" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="admin">전체 보기 →</button>
+                  </header>
+                  <div id="dashAdminBody"></div>
+                </section>
               </div>
             </section>
 
@@ -288,6 +310,7 @@
                       <div class="admin-crm-menu-wrap">
                         <button type="button" class="secondary mini-btn admin-crm-menu-btn" id="adminCrmMenuBtn" aria-haspopup="true" aria-expanded="false">⋯</button>
                         <div class="admin-crm-menu" id="adminCrmMenu" hidden role="menu">
+                          <button type="button" role="menuitem" data-crm-action="open-logs">로그 보기</button>
                           <button type="button" role="menuitem" data-crm-action="hwid-reset">HWID 초기화</button>
                           <button type="button" role="menuitem" data-crm-action="app-message">앱으로 쪽지 보내기</button>
                           <button type="button" role="menuitem" class="is-danger" data-crm-action="delete">회원 삭제</button>
@@ -346,6 +369,13 @@
                         </label>
                       </div>
                       <p class="muted small" style="margin:.25rem 0 .5rem">평생은 만료일 없음(무기한). 기간 지급·만료일이 있으면 유형은 기간제입니다. 만료일 지나면 자동 해제됩니다.</p>
+                      <div class="admin-crm-license-grants" aria-label="라이선스 지급">
+                        <button type="button" class="secondary mini-btn" data-crm-action="grant-trial">체험판 지급</button>
+                        <button type="button" class="secondary mini-btn" data-crm-action="grant-lifetime">평생 지급</button>
+                        <button type="button" class="secondary mini-btn" data-crm-action="grant-timed">기간제 지급</button>
+                        <button type="button" class="secondary mini-btn" data-crm-action="activate">활성화</button>
+                        <button type="button" class="secondary mini-btn danger-btn" data-crm-action="ban">정지</button>
+                      </div>
                       <div class="admin-crm-license-meta" id="adminCrmLicenseMeta"></div>
                       <textarea id="adminLicenseMemo" rows="2" placeholder="라이선스 메모"></textarea>
                     </form>
@@ -395,7 +425,7 @@
 
                   <div class="admin-crm-bottom-grid" data-tab-panel="audit">
                     <div class="admin-crm-card admin-crm-card-dense">
-                      <div class="admin-crm-card-head"><h3>Timeline</h3><button type="button" class="ghost mini-btn" data-crm-action="open-logs">로그 콘솔</button></div>
+                      <div class="admin-crm-card-head"><h3>Timeline</h3><button type="button" class="ghost mini-btn" data-crm-action="open-logs">로그 보기</button></div>
                       <div id="adminCrmTimeline" class="admin-crm-timeline"></div>
                     </div>
                     <div class="admin-crm-card admin-crm-card-dense admin-crm-feed-card">
@@ -451,45 +481,38 @@
             </section>
 
             <section class="admin-logs-section" id="adminLogsSection" hidden>
-              <div class="admin-logs-head">
+              <div class="admin-section-head">
                 <div>
                   <h3>사용자 로그</h3>
-                  <p class="muted small">사용자를 선택한 뒤 상단 탭으로 관련 이력을 조회합니다. 기존 회원·CRM 화면과 독립됩니다.</p>
-                </div>
-                <div class="admin-logs-head-actions">
-                  <input type="search" id="adminLogsTableSearch" class="search-input compact" placeholder="로그 내용 검색" aria-label="로그 검색">
-                  <select id="adminLogsDateFilter" aria-label="기간">
-                    <option value="all">전체 기간</option>
-                    <option value="today">오늘</option>
-                    <option value="7d">7일</option>
-                    <option value="30d">30일</option>
-                  </select>
-                  <button type="button" class="secondary mini-btn" id="adminLogsRefreshBtn">새로고침</button>
+                  <p class="muted small">사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다. 기존 로그 종류는 모두 유지됩니다.</p>
                 </div>
               </div>
-              <div class="admin-logs-layout">
-                <aside class="admin-logs-users" aria-label="사용자 목록">
-                  <div class="admin-logs-users-head">
-                    <h4 class="admin-logs-users-title">사용자</h4>
-                    <input type="search" id="adminLogsUserSearch" class="search-input compact admin-logs-user-search" placeholder="이메일 검색" aria-label="이메일 검색">
-                  </div>
-                  <div id="adminLogsUserList" class="admin-logs-user-list"><div class="admin-logs-empty">사용자 불러오는 중…</div></div>
-                </aside>
-                <div class="admin-logs-main">
-                  <div id="adminLogsTabs" class="admin-logs-tabs" role="tablist" aria-label="로그 종류"></div>
-                  <div id="adminLogsSelected" class="admin-logs-selected"><p class="muted">왼쪽에서 사용자를 선택하세요.</p></div>
-                  <div class="admin-logs-table-meta-row">
-                    <span id="adminLogsTableMeta" class="muted small"></span>
-                    <button type="button" class="secondary mini-btn" id="adminLogsLoadMore" hidden>더보기</button>
-                  </div>
-                  <div class="admin-logs-table-wrap">
-                    <table class="admin-logs-table" aria-label="사용자 로그">
-                      <thead id="adminLogsTableHead"></thead>
-                      <tbody id="adminLogsTableBody"></tbody>
-                    </table>
-                    <div id="adminLogsEmpty" class="admin-logs-empty-panel">사용자를 선택하면 로그가 표시됩니다.</div>
-                  </div>
-                </div>
+              <div class="admin-list-toolbar admin-logs-toolbar">
+                <input type="search" id="adminLogsUserSearch" class="search-input compact" placeholder="사용자 이름·이메일 검색" aria-label="사용자 검색" autocomplete="off">
+                <select id="adminLogsUserSelect" aria-label="사용자 선택">
+                  <option value="">사용자 선택</option>
+                </select>
+                <input type="search" id="adminLogsTableSearch" class="search-input compact" placeholder="로그 내용 검색" aria-label="로그 검색">
+                <select id="adminLogsDateFilter" aria-label="기간">
+                  <option value="all">전체 기간</option>
+                  <option value="today">오늘</option>
+                  <option value="7d">7일</option>
+                  <option value="30d">30일</option>
+                </select>
+                <button type="button" class="secondary mini-btn" id="adminLogsRefreshBtn">새로고침</button>
+              </div>
+              <div id="adminLogsSelected" class="admin-logs-selected"><p class="muted">사용자를 선택하면 로그가 표시됩니다.</p></div>
+              <div id="adminLogsTabs" class="admin-logs-tabs" role="tablist" aria-label="로그 종류"></div>
+              <div class="admin-logs-table-meta-row">
+                <span id="adminLogsTableMeta" class="muted small"></span>
+                <button type="button" class="secondary mini-btn" id="adminLogsLoadMore" hidden>더보기</button>
+              </div>
+              <div class="admin-logs-table-wrap admin-console-table-wrap">
+                <table class="admin-table admin-logs-table" aria-label="사용자 로그">
+                  <thead id="adminLogsTableHead"></thead>
+                  <tbody id="adminLogsTableBody"></tbody>
+                </table>
+                <div id="adminLogsEmpty" class="admin-logs-empty-panel">사용자를 선택하면 로그가 표시됩니다.</div>
               </div>
             </section>
 
@@ -497,7 +520,7 @@
               <div class="admin-section-head"><h3>전체 문의</h3><span id="adminTicketCount" class="muted"></span></div>
               <div class="admin-list-toolbar">
                 <input id="adminTicketSearch" class="search-input compact" placeholder="문의 검색">
-                <select id="adminTicketStatus"><option value="all">전체</option><option value="open">접수</option><option value="answered">답변 완료</option><option value="closed">종료</option></select>
+                <select id="adminTicketStatus"><option value="all">전체</option><option value="open">미답변</option><option value="answered">답변 완료</option><option value="closed">종료</option></select>
                 <div class="admin-ticket-bulk">
                   <button type="button" class="secondary mini-btn danger-btn" id="adminTicketDeleteSelected">선택 삭제</button>
                   <button type="button" class="secondary mini-btn danger-btn" id="adminTicketDeleteAll">전체 삭제</button>
@@ -526,10 +549,6 @@
     </div>
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
-  <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=admin-console-2"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=admin-console-2"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=admin-console-2"></script>
+  <script type="module" src="./assets/js/admin-preview.js?v=admin-preview-5"></script>
 </body>
 </html>

@@ -85,6 +85,16 @@ function bindTabs() {
     btn.dataset.bound = '1';
     btn.addEventListener('click', () => {
       const tab = btn.getAttribute('data-admin-tab');
+      if (typeof window.__midiaiShowAdminView === 'function') {
+        window.__midiaiShowAdminView(tab, {
+          logsTab: btn.getAttribute('data-logs-tab') || undefined,
+          ticketStatus: btn.getAttribute('data-ticket-status') || undefined,
+          closeDetail: btn.getAttribute('data-admin-close-detail') === '1',
+          source: btn
+        });
+        if (tab === 'pricing' && !products.length) loadAll().catch(console.error);
+        return;
+      }
       document.querySelectorAll('[data-admin-tab]').forEach((b) => b.classList.toggle('active', b === btn));
       const crm = $('adminCrm');
       const pricing = $('adminPricingSection');
@@ -94,12 +104,15 @@ function bindTabs() {
       if (pricing) pricing.hidden = tab !== 'pricing';
       if (tickets) tickets.hidden = tab !== 'tickets';
       if (logs) logs.hidden = tab !== 'logs';
+      ['adminHomeSection','adminPaymentsSection','adminContentSection'].forEach((id) => {
+        const extra = $(id); if (extra) extra.hidden = true;
+      });
       if (tab === 'pricing' && !products.length) loadAll().catch(console.error);
       if (tab === 'tickets') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       if (tab === 'logs') {
-        import('./admin-user-logs.js?v=admin-logs-2')
+        import('./admin-user-logs.js?v=admin-console-2')
           .then((m) => m.showAdminUserLogsPanel?.(true))
           .catch(console.error);
         window.scrollTo({ top: 0, behavior: 'smooth' });

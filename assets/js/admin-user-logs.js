@@ -1012,3 +1012,19 @@ export function showAdminUserLogsPanel(show) {
     else renderMain();
   }
 }
+
+export function setAdminLogsTab(id) {
+  const next = String(id || 'all');
+  activeTab = TABS.some((t) => t.id === next) ? next : 'all';
+  expandedId = '';
+  visibleLimit = PAGE_SIZE;
+  ensureBoot();
+  renderTabs();
+  renderTable();
+}
+
+export function selectAdminLogsUser(uid) {
+  if (!uid) return;
+  ensureBoot();
+  selectUser(uid);
+}

@@ -26,7 +26,7 @@ import {
   initAdminUserLogs,
   writeAdminAuditLog,
   refreshAdminUserLogsUsers
-} from './admin-user-logs.js?v=admin-logs-2';
+} from './admin-user-logs.js?v=admin-console-2';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -1450,7 +1450,7 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
-  import('./pricing-admin.js?v=admin-logs-2').then((m)=>{
+  import('./pricing-admin.js?v=admin-console-2').then((m)=>{
     m.initPricingAdmin({ db, firestoreApi, isAdmin: true });
   }).catch((e)=>console.warn('pricing-admin', e));
   try{
@@ -4685,19 +4685,10 @@ function applyAdminCrmStatFilter(key){
   adminCrmPage=1;
   renderAdminUserTable();
 }
-function bindAdminCrmStatClicks(){
-  const box=$('adminCrmStats');
-  if(!box || box.dataset.statBound) return;
-  box.dataset.statBound='1';
-  box.addEventListener('click', e=>{
-    const btn=e.target.closest('[data-crm-stat]');
-    if(!btn) return;
-    applyAdminCrmStatFilter(btn.getAttribute('data-crm-stat'));
-  });
-}
 function renderAdminCrmStats(rows){
-  const box=$('adminCrmStats'); if(!box) return;
-  bindAdminCrmStatClicks();
+  const boxes=['adminCrmStats','adminHomeStats'].map($).filter(Boolean);
+  if(!boxes.length) return;
+  boxes.forEach(box=>bindAdminCrmStatClicksOn(box));
   const now=Date.now()/1000;
   const all=adminUserRows.length;
   let active=0, trial=0, lifetime=0;
@@ -4716,7 +4707,7 @@ function renderAdminCrmStats(rows){
     const on = selected===key ? ' is-selected' : '';
     return `<button type="button" class="crm-stat${extraClass}${on}" data-crm-stat="${esc(key)}" aria-pressed="${selected===key?'true':'false'}"><b>${value}</b><span>${esc(label)}</span></button>`;
   };
-  box.innerHTML=`
+  const html=`
     ${card('all', all, '전체 회원')}
     ${card('active', active, '활성')}
     ${card('lifetime', lifetime, '평생')}
@@ -4725,6 +4716,21 @@ function renderAdminCrmStats(rows){
     ${card('idle7', idle7, '7일 미접속')}
     ${card('idle30', idle30, '30일 미접속')}
     ${card('filtered', rows.length, '필터 결과', ' is-accent')}`;
+  boxes.forEach(box=>{ box.innerHTML=html; });
+}
+function bindAdminCrmStatClicks(){
+  bindAdminCrmStatClicksOn($('adminCrmStats'));
+  bindAdminCrmStatClicksOn($('adminHomeStats'));
+}
+function bindAdminCrmStatClicksOn(box){
+  if(!box || box.dataset.statBound) return;
+  box.dataset.statBound='1';
+  box.addEventListener('click', e=>{
+    const btn=e.target.closest('[data-crm-stat]');
+    if(!btn) return;
+    applyAdminCrmStatFilter(btn.getAttribute('data-crm-stat'));
+    if(typeof window.__midiaiShowAdminView==='function') window.__midiaiShowAdminView('crm');
+  });
 }
 function renderAdminUserTable(){
   try{ refreshAdminUserLogsUsers(); }catch{}
@@ -4759,6 +4765,7 @@ function renderAdminUserTable(){
     box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`;
     const pager=$('adminCrmPager');
     if(pager){ pager.hidden=true; pager.innerHTML=''; }
+    renderAdminPaymentsTable();
     return;
   }
   if(!box.dataset.pageBound){
@@ -4771,6 +4778,7 @@ function renderAdminUserTable(){
     pager.addEventListener('click', onAdminCrmPagerClick);
   }
   paintAdminCrmPagedList();
+  renderAdminPaymentsTable();
 }
 function adminCrmTotalPages(){
   return Math.max(1, Math.ceil(adminCrmFilteredRows.length / ADMIN_CRM_PAGE_SIZE));
@@ -4783,8 +4791,34 @@ function paintAdminCrmPagedList(){
   if(adminCrmPage < 1) adminCrmPage = 1;
   const start = (adminCrmPage - 1) * ADMIN_CRM_PAGE_SIZE;
   const slice = adminCrmFilteredRows.slice(start, start + ADMIN_CRM_PAGE_SIZE);
-  box.innerHTML = `<div class="admin-crm-page-list">${slice.map(u=>adminCrmMemberCardHtml(u)).join('')}</div>`;
+  box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-member-table"><thead><tr>
+    <th class="admin-col-check"></th>
+    <th>사용자</th><th>이메일</th><th>권한</th><th>라이선스</th><th>상태</th><th>국가</th><th>최근 접속</th><th>주문</th><th>문의</th>
+  </tr></thead><tbody>${slice.map(u=>adminCrmMemberRowHtml(u)).join('')}</tbody></table></div>`;
   renderAdminCrmPager(pages, total);
+}
+function adminCrmMemberRowHtml(u){
+  const uid=u.uid;
+  const selected = selectedAdminUid===uid ? ' is-selected' : '';
+  const checked = adminCrmSelected.has(uid) ? 'checked' : '';
+  const fav = u.isFav ? '<span class="crm-fav-mark" aria-hidden="true">★</span>' : '';
+  const avatar = u.photoURL
+    ? `<img class="admin-crm-card-avatar" src="${esc(u.photoURL)}" alt="" width="28" height="28" loading="lazy" referrerpolicy="no-referrer">`
+    : `<span class="admin-crm-card-avatar is-fallback">${esc((u.displayName||u.email||'?').slice(0,1).toUpperCase())}</span>`;
+  const country = adminAccessCountryLine(u) || '-';
+  const seen = fmtRelative(u.lastLogin||u.lastSeenAt);
+  return `<tr class="admin-crm-member-row${selected}" data-admin-uid="${esc(uid)}">
+    <td><label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-check="${esc(uid)}" ${checked}></label></td>
+    <td class="admin-member-user">${avatar}<span><b>${fav}${esc(u.displayName||'Google User')}</b></span></td>
+    <td class="admin-member-email" title="${esc(u.email||'')}">${esc(u.email||'-')}</td>
+    <td>${adminRoleBadgeHtml(u.role)}</td>
+    <td>${adminPlanBadgeFromView(u.licenseView || adminLicenseView(u))}</td>
+    <td>${adminActivityBadgeHtml(u)}</td>
+    <td class="admin-member-country" title="${esc(country)}">${esc(country)}</td>
+    <td>${esc(seen)}</td>
+    <td>${Number(u.orderCount||0)}</td>
+    <td>${Number(u.ticketCount||0)}</td>
+  </tr>`;
 }
 function renderAdminCrmPager(pages, total){
   const pager=$('adminCrmPager'); if(!pager) return;
@@ -4863,10 +4897,12 @@ function updateAdminCrmBulkbar(){
 }
 function selectAdminCrmUser(uid){
   if(!uid || !isAdminUser) return;
-  if(selectedAdminUid===uid){ renderAdminCrmDetail(uid); return; }
+  if(selectedAdminUid===uid){ renderAdminCrmDetail(uid); $('adminCrm')?.classList.add('is-detail-open'); setAdminCrmDetailTab($('adminCrmDetailBody')?.dataset.tab || 'overview'); return; }
   selectedAdminUid = uid;
   adminCrmHwidRevealed = false;
   adminCrmPostSelected.clear();
+  $('adminCrm')?.classList.add('is-detail-open');
+  setAdminCrmDetailTab('overview');
   paintAdminCrmVirtualList();
   showAdminCrmSkeleton(true);
   clearTimeout(adminCrmDetailTimer);
@@ -4997,6 +5033,7 @@ function renderAdminCrmDetail(uid, opts={}){
   if(!uid){
     empty?.classList.remove('is-hidden');
     body?.classList.add('is-hidden');
+    $('adminCrm')?.classList.remove('is-detail-open');
     setAdminCrmDirty(false);
     const fb=$('adminCrmFloatSave'); if(fb) fb.hidden=true;
     renderAdminCrmDetail._lastUid = '';
@@ -5531,8 +5568,82 @@ function bindAdminUserFilters(){
     });
   }
   bindAdminCrmDetailActions();
+  bindAdminCrmDetailTabs();
   bindAdminCrmMemoAutosave();
   bindAdminCrmUsageCollapse();
+  bindAdminPaymentsSearch();
+}
+function setAdminCrmDetailTab(tab){
+  const next = String(tab || 'overview');
+  const body = $('adminCrmDetailBody');
+  if(body) body.dataset.tab = next;
+  document.querySelectorAll('#adminCrmDetailTabs [data-crm-detail-tab]').forEach(btn=>{
+    btn.classList.toggle('is-active', btn.getAttribute('data-crm-detail-tab') === next);
+  });
+}
+function bindAdminCrmDetailTabs(){
+  const nav=$('adminCrmDetailTabs');
+  if(!nav || nav.dataset.bound) return;
+  nav.dataset.bound='1';
+  nav.addEventListener('click', e=>{
+    const btn=e.target.closest('[data-crm-detail-tab]');
+    if(!btn) return;
+    setAdminCrmDetailTab(btn.getAttribute('data-crm-detail-tab'));
+  });
+}
+function bindAdminPaymentsSearch(){
+  const el=$('adminPaymentsSearch');
+  if(!el || el.dataset.bound) return;
+  el.dataset.bound='1';
+  el.addEventListener('input', ()=>{
+    clearTimeout(bindAdminPaymentsSearch._t);
+    bindAdminPaymentsSearch._t=setTimeout(renderAdminPaymentsTable, 180);
+  });
+}
+function renderAdminPaymentsTable(){
+  const box=$('adminPaymentsList'); if(!box || !isAdminUser) return;
+  const q=($('adminPaymentsSearch')?.value||'').trim().toLowerCase();
+  const all=adminOrderRows||[];
+  const rows=all.slice().sort((a,b)=>adminTsSec(b.completedAt||b.verifiedAt||b.createdAt||b.updatedAt)-adminTsSec(a.completedAt||a.verifiedAt||a.createdAt||a.updatedAt)).filter(o=>{
+    if(!q) return true;
+    const user=findAdminUserRow(o.uid||o.userId||o.customerUid);
+    const hay=[o.id,o.uid,o.userId,o.email,user?.email,user?.displayName,adminOrderDisplayId(o),o.paymentId,o.paypalOrderId,o.status].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+  $('adminPaymentsCount') && ($('adminPaymentsCount').textContent=`${rows.length} / ${all.length}`);
+  if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  box.innerHTML=`<table class="admin-table admin-payments-table"><thead><tr><th>주문번호</th><th>사용자</th><th>수단</th><th>금액</th><th>상태</th><th>결제일</th></tr></thead><tbody>${rows.map(o=>{
+    const uid=String(o.uid||o.userId||o.customerUid||'');
+    const user=findAdminUserRow(uid);
+    const id=adminOrderDisplayId(o);
+    const key=o.id||o.paymentId||o.paypalOrderId||'';
+    const amount=o.amount!=null?`${Number(o.amount).toLocaleString('ko-KR')} ${o.currency||'KRW'}`:'-';
+    const when=fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
+    return `<tr data-pay-uid="${esc(uid)}" data-pay-order="${esc(key)}">
+      <td class="mono">${esc(id)}</td>
+      <td title="${esc(user?.email||uid)}">${esc(user?.email||uid||'-')}</td>
+      <td>${esc(adminPaymentMethodLabel(o.paymentMethod||o.provider||o.method||'-'))}</td>
+      <td>${esc(amount)}</td>
+      <td>${esc(adminPaymentStatusLabel(o.status||'-'))}</td>
+      <td>${esc(when)}</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+  if(!box.dataset.payBound){
+    box.dataset.payBound='1';
+    box.addEventListener('click', e=>{
+      const row=e.target.closest('[data-pay-uid]');
+      if(!row) return;
+      const uid=row.getAttribute('data-pay-uid');
+      const key=row.getAttribute('data-pay-order');
+      if(!uid) return;
+      if(typeof window.__midiaiShowAdminView==='function') window.__midiaiShowAdminView('crm');
+      selectAdminCrmUser(uid);
+      setTimeout(()=>{
+        setAdminCrmDetailTab('payments');
+        openAdminCrmOrderDrawer(uid, key);
+      }, 200);
+    });
+  }
 }
 function bindAdminCrmDetailActions(){
   const root=$('adminCrm'); if(!root || root.dataset.actionsBound) return;
@@ -5550,6 +5661,12 @@ function bindAdminCrmDetailActions(){
     const btn=e.target.closest('[data-crm-action]'); if(!btn) return;
     const action=btn.getAttribute('data-crm-action');
     if(action==='close-order-drawer'){ closeAdminCrmOrderDrawer(); return; }
+    if(action==='back-list'){
+      selectedAdminUid=null;
+      renderAdminCrmDetail(null);
+      paintAdminCrmVirtualList();
+      return;
+    }
     const uid=selectedAdminUid;
     if(!uid) return;
     const user = adminUserRows.find(u=>adminUserUid(u)===uid);
@@ -5580,13 +5697,20 @@ function bindAdminCrmDetailActions(){
     }
     else if(action==='ban' || action==='suspend'){ await adminQuickLicense(`${uid}:${normalizePlan(lic)}:banned`); }
     else if(action==='activate'){ await adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:active`); }
-    else if(action==='orders'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
-    else if(action==='orders-more'){ $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); renderAdminCrmOrders(uid, true); }
-    else if(action==='tickets'){ $('adminCrmTicketsCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
+    else if(action==='orders'){ setAdminCrmDetailTab('payments'); $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
+    else if(action==='orders-more'){ setAdminCrmDetailTab('payments'); $('adminCrmOrdersCard')?.scrollIntoView({behavior:'smooth',block:'start'}); renderAdminCrmOrders(uid, true); }
+    else if(action==='tickets'){ setAdminCrmDetailTab('tickets'); $('adminCrmTicketsCard')?.scrollIntoView({behavior:'smooth',block:'start'}); }
     else if(action==='tickets-tab'){
-      const tabBtn=document.querySelector('[data-admin-tab="tickets"]');
-      if(tabBtn) tabBtn.click();
-      else $('adminTicketsSection')?.scrollIntoView({behavior:'smooth',block:'start'});
+      const email=user?.email||'';
+      if(typeof window.__midiaiShowAdminView==='function') window.__midiaiShowAdminView('tickets', { ticketQuery: email });
+      else {
+        const tabBtn=document.querySelector('[data-admin-tab="tickets"]');
+        if(tabBtn) tabBtn.click();
+        else $('adminTicketsSection')?.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    }
+    else if(action==='open-logs'){
+      if(typeof window.__midiaiShowAdminView==='function') window.__midiaiShowAdminView('logs', { uid });
     }
     else if(action==='posts-delete-one'){
       const postId=btn.getAttribute('data-post-id');
@@ -8074,6 +8198,10 @@ function initTopbarActions(){
   else syncTopbarProfileAuthUi(false);
 }
 function initSidebarLayout(){
+  if(document.body.classList.contains('admin-console-page')){
+    document.documentElement.classList.add('sidebar-ready');
+    return;
+  }
   if(document.querySelector('.app-shell')) return;
   const topbar=document.querySelector('.topbar');
   const main=document.querySelector('main');
