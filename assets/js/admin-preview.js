@@ -11,22 +11,35 @@ const VIEWS = {
 };
 const TITLES = {
   home: '홈',
-  crm: '회원 관리',
-  payments: '결제 내역',
+  crm: '회원',
+  payments: '결제',
   tickets: '문의 관리',
   logs: '로그',
   pricing: '가격·상품',
   content: '공지·콘텐츠'
 };
-const CRM_TITLES = { members: '회원 관리', license: '라이선스 현황', orders: '사용자별 주문' };
+const CRM_TITLES = { members: '회원', license: '라이선스', orders: '주문' };
+const VIEW_LEADS = {
+  home: '운영 현황을 한눈에 보고 주요 관리 화면으로 이동합니다.',
+  payments: '전체 결제·주문 내역입니다. 행을 누르면 해당 회원 상세가 열립니다.',
+  tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
+  logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
+  pricing: 'Region별 정가·판매가와 할인·팝업을 관리합니다.',
+  content: '공지·패치노트·FAQ와 회원 쪽지 경로입니다.'
+};
+const CRM_LEADS = {
+  members: '회원을 검색하고 상세·일괄 작업을 수행합니다.',
+  license: '회원별 라이선스 현황입니다. 변경·지급 기록은 로그 → 라이선스에서 확인합니다.',
+  orders: '회원별 주문 여부입니다. 전체 결제는 결제 메뉴에서 봅니다.'
+};
 const PREVIEW_TODAY = '2026-08-19';
 const LOG_TABS = [
   ['all', '전체'],
   ['license', '라이선스'],
   ['admin', '관리자 작업'],
-  ['message', '쪽지'],
+  ['message', '쪽지/알림'],
   ['payment', '결제'],
-  ['app', '앱'],
+  ['app', '앱 사용'],
   ['hwid', 'HWID/기기'],
   ['ticket', '문의']
 ];
@@ -51,10 +64,10 @@ const ORDERS = [
 ];
 
 const TICKETS = [
-  { id: 't_1004', type: '결제', title: 'PayPal 중복 결제', user: 'orion.belt@example.net', uid: 'u_preview_03', status: 'open', when: '08.19 10:12' },
-  { id: 't_1001', type: '결제', title: '라이선스 미지급 문의', user: 'praesepe@example.com', uid: 'u_preview_01', status: 'open', when: '08.18 21:40' },
-  { id: 't_1002', type: '앱', title: 'HWID 초기화 요청', user: 'nova.lyrae@example.com', uid: 'u_preview_02', status: 'answered', when: '08.16 15:01' },
-  { id: 't_1003', type: '기타', title: 'MIDI 내보내기 오류', user: 'deneb.keys@example.com', uid: 'u_preview_06', status: 'closed', when: '08.02 19:08' }
+  { id: 't_1004', type: '결제', title: 'PayPal 중복 결제', user: 'orion.belt@example.net', uid: 'u_preview_03', status: 'open', when: '08.19 10:12', day: 'today' },
+  { id: 't_1001', type: '결제', title: '라이선스 미지급 문의', user: 'praesepe@example.com', uid: 'u_preview_01', status: 'open', when: '08.18 21:40', day: '7d' },
+  { id: 't_1002', type: '앱', title: 'HWID 초기화 요청', user: 'nova.lyrae@example.com', uid: 'u_preview_02', status: 'answered', when: '08.16 15:01', day: '7d' },
+  { id: 't_1003', type: '기타', title: 'MIDI 내보내기 오류', user: 'deneb.keys@example.com', uid: 'u_preview_06', status: 'closed', when: '08.02 19:08', day: '30d' }
 ];
 
 const LOGS = [
@@ -148,7 +161,7 @@ function payStatusBadge(status) {
   return `<span class="crm-badge ${on}"><i></i>${status}</span>`;
 }
 function ticketStatusBadge(status) {
-  const map = { open: ['is-trial', '미답변'], answered: ['is-active', '답변 완료'], closed: ['is-none', '종료'] };
+  const map = { open: ['is-trial', '미답변'], answered: ['is-active', '답변완료'], closed: ['is-none', '종료'] };
   const [cls, label] = map[status] || ['is-none', status];
   return `<span class="crm-badge ${cls}"><i></i>${label}</span>`;
 }
@@ -168,19 +181,18 @@ function showView(view, opts = {}) {
     else crmMode = 'members';
     if (opts.detailTab) preferredDetailTab = opts.detailTab;
     else if (crmMode === 'license') preferredDetailTab = 'license';
+    else if (crmMode === 'orders') preferredDetailTab = 'payments';
     else preferredDetailTab = 'overview';
     if ($('adminConsoleTitle')) $('adminConsoleTitle').textContent = CRM_TITLES[crmMode] || TITLES.crm;
+    if ($('adminConsoleLead')) $('adminConsoleLead').textContent = CRM_LEADS[crmMode] || CRM_LEADS.members;
   } else if ($('adminConsoleTitle')) {
     $('adminConsoleTitle').textContent = TITLES[next];
+    if ($('adminConsoleLead')) $('adminConsoleLead').textContent = VIEW_LEADS[next] || '';
   }
   document.body.dataset.adminView = next;
   if (next === 'crm' && opts.closeDetail) closeDetail();
-  else if (next === 'crm' && crmMode === 'license') {
-    const uid = selectedUid || MEMBERS.find((u) => u.plan === 'period')?.uid || MEMBERS[0]?.uid;
-    if (uid) openDetail(uid, { tab: 'license' });
-  }
-  if (next === 'tickets' && opts.ticketStatus && $('adminTicketStatus')) {
-    $('adminTicketStatus').value = opts.ticketStatus;
+  if (next === 'tickets') {
+    if (opts.ticketStatus && $('adminTicketStatus')) $('adminTicketStatus').value = opts.ticketStatus;
     renderTickets();
   }
   if (next === 'logs') {
@@ -193,8 +205,6 @@ function showView(view, opts = {}) {
   if (!target) {
     target = sidebarBtns.find((btn) => {
       if (btn.getAttribute('data-admin-nav') !== next) return false;
-      if (next === 'logs') return (btn.getAttribute('data-logs-tab') || 'all') === (opts.logsTab || logTab || 'all');
-      if (next === 'tickets') return (btn.getAttribute('data-ticket-status') || 'all') === (opts.ticketStatus || $('adminTicketStatus')?.value || 'all');
       if (next === 'crm') {
         const mode = btn.getAttribute('data-crm-mode') || 'members';
         return mode === crmMode;
@@ -208,7 +218,7 @@ function showView(view, opts = {}) {
   if (opts.logsTab) hash.set('log', opts.logsTab);
   if (opts.uid) hash.set('uid', opts.uid);
   if (opts.ticketStatus && opts.ticketStatus !== 'all') hash.set('ticket', opts.ticketStatus);
-  if (next === 'crm' && crmMode === 'license') hash.set('crm', 'license');
+  if (next === 'crm' && crmMode && crmMode !== 'members') hash.set('crm', crmMode);
   history.replaceState(null, '', `#${hash}`);
 }
 
@@ -414,11 +424,35 @@ function renderPayments() {
 function renderTickets() {
   const q = ($('adminTicketSearch')?.value || '').trim().toLowerCase();
   const st = $('adminTicketStatus')?.value || 'all';
-  const rows = TICKETS.filter((t) => (st === 'all' || t.status === st) && (!q || [t.title, t.user].join(' ').toLowerCase().includes(q)));
+  const cat = $('adminTicketCategory')?.value || 'all';
+  const range = $('adminTicketDate')?.value || 'all';
+  const counts = { all: TICKETS.length, open: 0, answered: 0, closed: 0 };
+  TICKETS.forEach((t) => { if (t.status in counts) counts[t.status]++; });
+  document.querySelectorAll('#adminTicketTabs [data-ticket-tab]').forEach((btn) => {
+    btn.classList.toggle('is-active', (btn.getAttribute('data-ticket-tab') || 'all') === st);
+  });
+  document.querySelectorAll('#adminTicketTabs [data-ticket-count]').forEach((el) => {
+    el.textContent = String(counts[el.getAttribute('data-ticket-count')] ?? 0);
+  });
+  const rows = TICKETS.filter((t) => {
+    if (st !== 'all' && t.status !== st) return false;
+    if (cat !== 'all' && t.type !== cat) return false;
+    if (range === 'today' && t.day !== 'today') return false;
+    if (range === '7d' && !(t.day === 'today' || t.day === '7d')) return false;
+    if (range === '30d' && t.day === 'older') return false;
+    return !q || [t.title, t.user, t.type].join(' ').toLowerCase().includes(q);
+  });
   $('adminTicketCount') && ($('adminTicketCount').textContent = `${rows.length} / ${TICKETS.length}`);
   const box = $('adminTicketList');
   if (!box) return;
-  box.innerHTML = `<table class="admin-table"><thead><tr><th></th><th>유형</th><th>제목</th><th>사용자</th><th>상태</th><th>수정일</th></tr></thead><tbody>${rows.map((t) => `<tr><td></td><td>${t.type}</td><td><b>${t.title}</b></td><td>${t.user}</td><td>${ticketStatusBadge(t.status)}</td><td>${t.when}</td></tr>`).join('')}</tbody></table>`;
+  box.innerHTML = `<table class="admin-table admin-ticket-table"><thead><tr><th></th><th>유형</th><th>제목</th><th>사용자</th><th>상태</th><th>수정일</th></tr></thead><tbody>${rows.map((t) => `<tr>
+    <td></td>
+    <td class="admin-ticket-cat">${t.type}</td>
+    <td class="admin-ticket-title"><b>${t.title}</b></td>
+    <td class="admin-ticket-user">${t.user}</td>
+    <td class="admin-ticket-status">${ticketStatusBadge(t.status)}</td>
+    <td class="admin-ticket-date">${t.when}</td>
+  </tr>`).join('')}</tbody></table>`;
 }
 
 function fillLogUserSelect(filter) {
@@ -600,6 +634,16 @@ function bind() {
       logTab = logTabBtn.getAttribute('data-log-tab');
       renderLogs();
     }
+    const ticketTab = e.target.closest('#adminTicketTabs [data-ticket-tab]');
+    if (ticketTab) {
+      const next = ticketTab.getAttribute('data-ticket-tab') || 'all';
+      if ($('adminTicketStatus')) $('adminTicketStatus').value = next;
+      renderTickets();
+      const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+      hash.set('view', 'tickets');
+      if (next === 'all') hash.delete('ticket'); else hash.set('ticket', next);
+      history.replaceState(null, '', `#${hash}`);
+    }
     if (e.target.closest('#adminLogsRefreshBtn')) renderLogs();
     const saveBtn = e.target.closest('#adminCrmFloatSave');
     if (saveBtn && !saveBtn.disabled) {
@@ -627,9 +671,9 @@ function bind() {
       if (id === 'adminLogsUserSearch') fillLogUserSelect($('adminLogsUserSearch').value);
     });
   });
-  ['adminUserLicenseStatus', 'adminUserSort', 'adminCrmFilterOrders', 'adminCrmFilterTickets', 'adminTicketStatus', 'adminLogsDateFilter', 'adminLogsUserSelect', 'adminLicensePlan', 'adminUserRole', 'adminLicenseStartsAt', 'adminLicenseExpiresAt'].forEach((id) => {
+  ['adminUserLicenseStatus', 'adminUserSort', 'adminCrmFilterOrders', 'adminCrmFilterTickets', 'adminTicketStatus', 'adminTicketCategory', 'adminTicketDate', 'adminLogsDateFilter', 'adminLogsUserSelect', 'adminLicensePlan', 'adminUserRole', 'adminLicenseStartsAt', 'adminLicenseExpiresAt'].forEach((id) => {
     $(id)?.addEventListener('change', () => {
-      if (id === 'adminTicketStatus') renderTickets();
+      if (id === 'adminTicketStatus' || id === 'adminTicketCategory' || id === 'adminTicketDate') renderTickets();
       else if (id === 'adminLogsDateFilter') renderLogs();
       else if (id === 'adminLogsUserSelect') {
         logUid = $('adminLogsUserSelect').value;
@@ -677,7 +721,17 @@ function bind() {
     ticketStatus: params.get('ticket') || undefined,
     uid: params.get('uid') || undefined,
     crmMode: params.get('crm') || undefined,
-    detailTab: params.get('crm') === 'license' ? 'license' : undefined
+    detailTab: params.get('crm') === 'license' ? 'license' : params.get('crm') === 'orders' ? 'payments' : undefined
+  });
+  window.addEventListener('hashchange', () => {
+    const next = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    showView(next.get('view') || 'home', {
+      logsTab: next.get('log') || undefined,
+      ticketStatus: next.get('ticket') || undefined,
+      uid: next.get('uid') || undefined,
+      crmMode: next.get('crm') || undefined,
+      detailTab: next.get('crm') === 'license' ? 'license' : next.get('crm') === 'orders' ? 'payments' : undefined
+    });
   });
 }
 

@@ -27,7 +27,7 @@ import {
   initAdminUserLogs,
   writeAdminAuditLog,
   refreshAdminUserLogsUsers
-} from './admin-user-logs.js?v=admin-console-2';
+} from './admin-user-logs.js?v=admin-ia-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -77,7 +77,7 @@ let adminCrmPage = 1;
 let adminCrmSearchTimer = null;
 let adminCrmMemoTimer = null;
 let adminCrmExpandedHwid = new Set();
-const ADMIN_CRM_PAGE_SIZE = 5;
+const ADMIN_CRM_PAGE_SIZE = 15;
 const ADMIN_CRM_ROW_H = 48;
 let adminCrmHwidRevealed = false;
 let adminCrmDirty = false;
@@ -1451,7 +1451,7 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
-  import('./pricing-admin.js?v=admin-console-2').then((m)=>{
+  import('./pricing-admin.js?v=admin-ia-1').then((m)=>{
     m.initPricingAdmin({ db, firestoreApi, isAdmin: true });
   }).catch((e)=>console.warn('pricing-admin', e));
   try{
@@ -3912,8 +3912,90 @@ function renderAdminPostTable(kind){
   box.innerHTML = `<table class="admin-table"><thead><tr><th>제목</th><th>상태</th><th>작성일</th><th>관리</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${cfg.title(x)}</b>${cfg.sub(x)?`<small>${cfg.sub(x)}</small>`:''}</td><td>${statusPill(x)}</td><td>${esc(cfg.date(x))}</td><td>${adminActions(cfg.collection,x.id)}</td></tr>`).join('')}</tbody></table>`;
   bindAdminPostActions(box);
 }
+function adminTicketStatusLabel(st){
+  const v=String(st||'open').toLowerCase();
+  return ({open:'미답변', pending:'처리 중', answered:'답변완료', closed:'종료'})[v] || st || '미답변';
+}
+function ticketStatusPill(row){
+  const st=String(row?.status||'open').toLowerCase();
+  const cls = st==='answered'?'answered':st==='closed'?'closed':st==='pending'?'pending':'open';
+  return `<span class="badge ${esc(cls)}">${esc(adminTicketStatusLabel(st))}</span>`;
+}
+function adminTicketCategoryKo(v){
+  return ({
+    login:'로그인/계정',
+    license:'라이선스',
+    payment:'결제/환불',
+    bug:'오류/버그',
+    feature:'기능 문의',
+    other:'기타'
+  })[v] || ticketCategoryLabel(v);
+}
+function fillAdminTicketCategorySelect(){
+  const el=$('adminTicketCategory');
+  if(!el || el.dataset.filled==='1') return;
+  el.innerHTML = `<option value="all">유형: 전체</option>` + TICKET_CATEGORIES.map(x=>`<option value="${esc(x.value)}">${esc(adminTicketCategoryKo(x.value))}</option>`).join('');
+  el.dataset.filled='1';
+}
+function ticketInDateRange(t, range){
+  if(!range || range==='all') return true;
+  const ms=licenseTsMs(t.updatedAt||t.createdAt);
+  if(!ms) return false;
+  const now=Date.now();
+  const start=new Date(); start.setHours(0,0,0,0);
+  if(range==='today') return ms>=start.getTime();
+  if(range==='7d') return ms>=now-7*86400000;
+  if(range==='30d') return ms>=now-30*86400000;
+  return true;
+}
+function fmtAdminStamp(v){
+  const ms=licenseTsMs(v);
+  if(!ms) return '-';
+  const d=new Date(ms);
+  if(!Number.isFinite(d.getTime())) return '-';
+  const pad=n=>String(n).padStart(2,'0');
+  return `${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function syncAdminTicketTabs(){
+  const st=$('adminTicketStatus')?.value || 'all';
+  document.querySelectorAll('#adminTicketTabs [data-ticket-tab]').forEach(btn=>{
+    btn.classList.toggle('is-active', (btn.getAttribute('data-ticket-tab')||'all')===st);
+  });
+  const counts={all:adminTicketRows.length, open:0, answered:0, closed:0};
+  adminTicketRows.forEach(t=>{
+    const s=String(t.status||'open');
+    if(s in counts) counts[s]++;
+  });
+  document.querySelectorAll('#adminTicketTabs [data-ticket-count]').forEach(el=>{
+    const key=el.getAttribute('data-ticket-count');
+    el.textContent = String(counts[key] ?? 0);
+  });
+}
+function bindAdminTicketTabs(){
+  const host=$('adminTicketTabs');
+  if(!host || host.dataset.bound==='1') return;
+  host.dataset.bound='1';
+  host.addEventListener('click', (e)=>{
+    const btn=e.target.closest('[data-ticket-tab]');
+    if(!btn) return;
+    const next=btn.getAttribute('data-ticket-tab') || 'all';
+    const sel=$('adminTicketStatus');
+    if(sel) sel.value=next;
+    syncAdminTicketTabs();
+    renderAdminTicketTable();
+    try{
+      const hash=new URLSearchParams((location.hash||'').replace(/^#/,''));
+      hash.set('view','tickets');
+      if(next==='all') hash.delete('ticket'); else hash.set('ticket', next);
+      history.replaceState(null,'',`#${hash.toString()}`);
+    }catch(_){}
+  });
+}
 function getAdminTicketFilteredRows(){
+  const cat=$('adminTicketCategory')?.value || 'all';
+  const range=$('adminTicketDate')?.value || 'all';
   return filterRows(adminTicketRows,'adminTicketSearch','adminTicketStatus',['title','content','email','uid','category'])
+    .filter(t => (cat==='all' || t.category===cat) && ticketInDateRange(t, range))
     .sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
 }
 let adminTicketReplyUnsub = null;
@@ -3946,6 +4028,9 @@ function mountAdminTicketExpandPanel(box){
 }
 function renderAdminTicketTable(){
   const box=$('adminTicketList'); if(!box||!isAdminUser)return;
+  fillAdminTicketCategorySelect();
+  bindAdminTicketTabs();
+  syncAdminTicketTabs();
   if(pendingAdminTicketOpenId) consumePendingAdminTicketOpen(box);
   const rows=getAdminTicketFilteredRows();
   $('adminTicketCount') && ($('adminTicketCount').textContent = `${rows.length} / ${adminTicketRows.length}`);
@@ -3963,7 +4048,7 @@ function renderAdminTicketTable(){
   </tr></thead><tbody>${rows.map(t=>{
     const open = openId===t.id;
     const metaBits=[
-      t.category?`<span><em>유형</em>${esc(ticketCategoryLabel(t.category))}</span>`:'',
+      t.category?`<span><em>유형</em>${esc(adminTicketCategoryKo(t.category))}</span>`:'',
       t.appVersion?`<span><em>버전</em>${esc(t.appVersion)}</span>`:'',
       t.os?`<span><em>OS</em>${esc(ticketOsLabel(t.os))}</span>`:'',
       t.email?`<span><em>이메일</em>${esc(t.email)}</span>`:''
@@ -3971,15 +4056,15 @@ function renderAdminTicketTable(){
     const unreadAdmin = hasUnreadAdminTicket(t) ? ' is-unread' : '';
     return `<tr class="admin-ticket-row${open?' is-open':''}${unreadAdmin}" data-ticket-row="${esc(t.id)}">
       <td><label class="admin-ticket-check" onclick="event.stopPropagation()"><input type="checkbox" data-ticket-check="${esc(t.id)}"></label></td>
-      <td>${esc(ticketCategoryLabel(t.category))}</td>
-      <td>
+      <td class="admin-ticket-cat">${esc(adminTicketCategoryKo(t.category))}</td>
+      <td class="admin-ticket-title">
         <button type="button" class="admin-ticket-title-btn" data-ticket-expand="${esc(t.id)}" aria-expanded="${open?'true':'false'}">
           <b>${esc(t.title||'-')}</b>
         </button>
       </td>
-      <td><span class="mono">${esc(t.email||t.uid||'')}</span></td>
-      <td>${statusPill(t)}</td>
-      <td>${esc(fmtDate(t.updatedAt||t.createdAt))}</td>
+      <td class="admin-ticket-user">${esc(t.email||t.uid||'')}</td>
+      <td class="admin-ticket-status">${ticketStatusPill(t)}</td>
+      <td class="admin-ticket-date">${esc(fmtAdminStamp(t.updatedAt||t.createdAt))}</td>
     </tr>
     <tr class="admin-ticket-expand" data-ticket-panel="${esc(t.id)}" ${open?'':'hidden'}>
       <td colspan="6"><div class="admin-ticket-expand-inner">
@@ -4079,7 +4164,9 @@ function bindAdminFilters(){
   [['adminNoticeSearch','notices'],['adminNoticeStatus','notices'],['adminPatchSearch','patches'],['adminPatchStatus','patches'],['adminFaqSearch','faq'],['adminFaqStatus','faq']].forEach(([id,kind])=>{
     const el=$(id); if(!el || el.dataset.bound)return; el.dataset.bound='1'; el.addEventListener('input',()=>renderAdminPostTable(kind)); el.addEventListener('change',()=>renderAdminPostTable(kind));
   });
-  [['adminTicketSearch'],['adminTicketStatus']].forEach(([id])=>{ const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1'; el.addEventListener('input',renderAdminTicketTable); el.addEventListener('change',renderAdminTicketTable); });
+  [['adminTicketSearch'],['adminTicketStatus'],['adminTicketCategory'],['adminTicketDate']].forEach(([id])=>{ const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1'; el.addEventListener('input',renderAdminTicketTable); el.addEventListener('change',renderAdminTicketTable); });
+  bindAdminTicketTabs();
+  fillAdminTicketCategorySelect();
 }
 async function editAdminPost(raw){
   if(!isAdminUser)return alert(tr('no_permission'));
@@ -4903,7 +4990,7 @@ function selectAdminCrmUser(uid){
   adminCrmHwidRevealed = false;
   adminCrmPostSelected.clear();
   $('adminCrm')?.classList.add('is-detail-open');
-  setAdminCrmDetailTab('overview');
+  setAdminCrmDetailTab(document.body.dataset.crmDetailTab || 'overview');
   paintAdminCrmVirtualList();
   showAdminCrmSkeleton(true);
   clearTimeout(adminCrmDetailTimer);

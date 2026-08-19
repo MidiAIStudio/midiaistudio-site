@@ -114,10 +114,36 @@ function categoryLabel(cat) {
 
 function planLabel(p) {
   const s = String(p || '').toLowerCase();
-  if (s === 'lifetime') return 'Lifetime';
-  if (s === 'trial') return 'Trial';
+  if (s === 'lifetime') return '평생';
+  if (s === 'trial') return '체험판';
   if (s === 'period' || s === 'monthly') return '기간제';
   return p || '-';
+}
+
+function licenseStatusKo(s) {
+  const v = String(s || '').toLowerCase();
+  if (v === 'active' || v === 'inactive') return '활성';
+  if (v === 'expired' || v === 'refunded') return '만료';
+  if (v === 'banned' || v === 'suspended') return '차단';
+  return s || '-';
+}
+
+function planBadgeHtml(plan) {
+  const s = String(plan || '').toLowerCase();
+  if (s === 'lifetime') return `<span class="crm-badge is-lifetime"><i></i>평생</span>`;
+  if (s === 'period' || s === 'monthly') return `<span class="crm-badge is-period"><i></i>기간제</span>`;
+  if (s === 'trial') return `<span class="crm-badge is-trial"><i></i>체험판</span>`;
+  if (plan) return `<span class="crm-badge is-none"><i></i>${esc(planLabel(plan))}</span>`;
+  return '';
+}
+
+function statusBadgeHtml(status) {
+  const v = String(status || '').toLowerCase();
+  if (!v || v === '-') return '';
+  if (v === 'expired' || v === 'refunded') return `<span class="crm-badge is-expired"><i></i>만료</span>`;
+  if (v === 'banned' || v === 'suspended') return `<span class="crm-badge is-banned"><i></i>차단</span>`;
+  if (v === 'active' || v === 'inactive') return `<span class="crm-badge is-active"><i></i>활성</span>`;
+  return `<span class="crm-badge is-none"><i></i>${esc(status)}</span>`;
 }
 
 function statusLabel(s) {
@@ -273,6 +299,13 @@ function renderTabs() {
       visibleLimit = PAGE_SIZE;
       renderTabs();
       renderTable();
+      try {
+        const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+        hash.set('view', 'logs');
+        if (activeTab === 'all') hash.delete('log');
+        else hash.set('log', activeTab);
+        history.replaceState(null, '', `#${hash.toString()}`);
+      } catch (_) {}
     });
   });
 }
@@ -294,16 +327,14 @@ function renderUserList() {
   host.innerHTML = filtered.map((u) => {
     const uid = userUid(u);
     const lic = api.getLicense(uid);
-    const plan = planLabel(lic?.plan);
-    const status = String(lic?.status || '').toLowerCase() || '-';
     const email = u.email || uid || '-';
     const active = uid === selectedUid ? ' is-active' : '';
-    const meta = status && status !== '-' ? `${plan} · ${status}` : plan;
+    const badges = `${planBadgeHtml(lic?.plan)}${statusBadgeHtml(lic?.status)}` || `<span class="admin-logs-user-plan-fallback">-</span>`;
     return `<button type="button" class="admin-logs-user${active}" data-logs-uid="${esc(uid)}" title="${esc(email)}">
       <span class="admin-logs-user-dot" aria-hidden="true"></span>
       <span class="admin-logs-user-text">
         <span class="admin-logs-user-email">${esc(email)}</span>
-        <span class="admin-logs-user-plan">${esc(meta)}</span>
+        <span class="admin-logs-user-plan">${badges}</span>
       </span>
     </button>`;
   }).join('');
@@ -338,7 +369,7 @@ function renderSelectedSummary() {
   box.innerHTML = `
     <div class="admin-logs-selected-main">
       <strong>${esc(u.email || selectedUid)}</strong>
-      <span class="admin-logs-pill">${esc(planLabel(lic?.plan))} · ${esc(lic?.status || '-')}</span>
+      ${planBadgeHtml(lic?.plan)}${statusBadgeHtml(lic?.status)}
     </div>
     <div class="admin-logs-selected-meta">
       <span>UID: <code class="mono">${esc(selectedUid)}</code></span>
@@ -422,7 +453,7 @@ async function collectLogsForUser(uid) {
       timestamp: tsMs(lic.updatedAt || lic.createdAt),
       category: 'license',
       action: '라이선스 상태',
-      summary: `${planLabel(lic.plan)} · ${lic.status || '-'} · ${lic.method || '-'}`,
+      summary: `${planLabel(lic.plan)} · ${licenseStatusKo(lic.status)} · ${lic.method || '-'}`,
       actor: lic.method === 'admin' || lic.method === 'manual' ? '관리자' : (lic.method || '시스템'),
       result: lic.status || '-',
       before: '',
@@ -674,8 +705,8 @@ async function collectLogsForUser(uid) {
 
 function mapAuditDoc(id, data) {
   const cat = String(data.category || 'admin');
-  const beforeStr = stringifyVal(data.before);
-  const afterStr = stringifyVal(data.after);
+  const beforeStr = formatDisplayVal(data.before) || stringifyVal(data.before);
+  const afterStr = formatDisplayVal(data.after) || stringifyVal(data.after);
   const summary = data.summary
     || [beforeStr && afterStr ? `${beforeStr} → ${afterStr}` : '', data.action].filter(Boolean).join(' · ');
   return makeRow({
@@ -697,6 +728,35 @@ function stringifyVal(v) {
   if (v == null || v === '') return '';
   if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
   try { return JSON.stringify(v); } catch { return String(v); }
+}
+
+function parseMaybeJson(v) {
+  if (typeof v !== 'string') return v;
+  const s = v.trim();
+  if (!s || (s[0] !== '{' && s[0] !== '[')) return v;
+  try { return JSON.parse(s); } catch { return v; }
+}
+
+function formatDisplayVal(v) {
+  const parsed = parseMaybeJson(v);
+  if (parsed == null || parsed === '') return '';
+  if (typeof parsed === 'string' || typeof parsed === 'number' || typeof parsed === 'boolean') return String(parsed);
+  if (Array.isArray(parsed)) return parsed.map(formatDisplayVal).filter(Boolean).join(', ');
+  if (typeof parsed === 'object') {
+    if (parsed.plan != null || parsed.status != null) {
+      const parts = [];
+      if (parsed.plan) parts.push(planLabel(parsed.plan));
+      if (parsed.status) parts.push(licenseStatusKo(parsed.status));
+      if (parsed.method) parts.push(parsed.method === 'admin' || parsed.method === 'manual' ? '관리자' : String(parsed.method));
+      return parts.filter((p) => p && p !== '-').join(' · ') || '-';
+    }
+    const pairs = Object.entries(parsed)
+      .filter(([, val]) => val != null && val !== '' && typeof val !== 'object')
+      .slice(0, 4)
+      .map(([k, val]) => `${k} ${formatDisplayVal(val)}`);
+    return pairs.join(' · ') || '-';
+  }
+  return stringifyVal(parsed);
 }
 
 function formatAmount(o) {
@@ -728,7 +788,8 @@ function filterByDateAndSearch(rows) {
     if (!q) return true;
     const hay = [
       r.action, r.summary, r.actor, r.result, r.category,
-      stringifyVal(r.before), stringifyVal(r.after)
+      stringifyVal(r.before), stringifyVal(r.after),
+      formatDisplayVal(r.before), formatDisplayVal(r.after)
     ].join(' ').toLowerCase();
     return hay.includes(q);
   });
@@ -862,14 +923,14 @@ function cellsForTab(tab, r) {
     return [
       time,
       { html: esc(r.action), text: r.action },
-      { html: esc(truncate(stringifyVal(r.before) || '-', 40)), text: stringifyVal(r.before) },
-      { html: esc(truncate(stringifyVal(r.after) || r.summary || '-', 40)), text: stringifyVal(r.after) || r.summary },
+      { html: esc(truncate(formatDisplayVal(r.before) || '-', 40)), text: formatDisplayVal(r.before) },
+      { html: esc(truncate(formatDisplayVal(r.after) || r.summary || '-', 48)), text: formatDisplayVal(r.after) || r.summary },
       { html: esc(r.actor), text: r.actor },
       { html: badge(r.result), text: r.result, cls: '' }
     ];
   }
   if (tab === 'admin') {
-    const delta = [stringifyVal(r.before), stringifyVal(r.after)].filter(Boolean).join(' → ') || r.summary || '-';
+    const delta = [formatDisplayVal(r.before), formatDisplayVal(r.after)].filter(Boolean).join(' → ') || r.summary || '-';
     return [
       time,
       { html: esc(truncate(r.actor, 28)), text: r.actor },
@@ -971,8 +1032,8 @@ function detailHtml(r) {
     ['처리자', r.actor],
     ['결과', r.result],
     ['내용', r.summary],
-    ['이전', stringifyVal(r.before) || '-'],
-    ['변경', stringifyVal(r.after) || '-'],
+    ['이전', formatDisplayVal(r.before) || stringifyVal(r.before) || '-'],
+    ['변경', formatDisplayVal(r.after) || stringifyVal(r.after) || '-'],
     ['소스', r.source || '-']
   ];
   if (r.category === 'message' && r.raw) {

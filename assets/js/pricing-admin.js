@@ -90,6 +90,8 @@ function bindTabs() {
           logsTab: btn.getAttribute('data-logs-tab') || undefined,
           ticketStatus: btn.getAttribute('data-ticket-status') || undefined,
           closeDetail: btn.getAttribute('data-admin-close-detail') === '1',
+          crmMode: btn.getAttribute('data-crm-mode') || undefined,
+          detailTab: btn.getAttribute('data-crm-detail-tab') || undefined,
           source: btn
         });
         if (tab === 'pricing' && !products.length) loadAll().catch(console.error);
@@ -112,7 +114,7 @@ function bindTabs() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       if (tab === 'logs') {
-        import('./admin-user-logs.js?v=admin-console-2')
+        import('./admin-user-logs.js?v=admin-ia-1')
           .then((m) => m.showAdminUserLogsPanel?.(true))
           .catch(console.error);
         window.scrollTo({ top: 0, behavior: 'smooth' });

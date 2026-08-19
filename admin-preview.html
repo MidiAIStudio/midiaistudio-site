@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-preview-12">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-ia-1">
 
 </head>
 <body class="admin-page admin-console-page admin-preview-page portal-page">
@@ -77,29 +77,16 @@
       <nav class="admin-sidebar-nav">
         <button type="button" class="admin-nav-item" data-admin-nav="home">홈</button>
         <p class="admin-nav-group">회원 관리</p>
-        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1">전체 회원</button>
-        <p class="admin-nav-group">라이선스 관리</p>
-        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-crm-mode="license" data-crm-detail-tab="license">라이선스 현황</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="license">변경/지급 기록</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="members">회원</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="license" data-crm-detail-tab="license">라이선스</button>
         <p class="admin-nav-group">결제 관리</p>
-        <button type="button" class="admin-nav-item" data-admin-nav="payments">결제 내역</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1">사용자별 주문</button>
-        <p class="admin-nav-group">문의 관리</p>
-        <button type="button" class="admin-nav-item" data-admin-nav="tickets" data-admin-tab="tickets">전체 문의</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="tickets" data-admin-tab="tickets" data-ticket-status="open">미답변</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="tickets" data-admin-tab="tickets" data-ticket-status="answered">답변 완료</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="tickets" data-admin-tab="tickets" data-ticket-status="closed">종료</button>
-        <p class="admin-nav-group">로그</p>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="all">전체</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="license">라이선스</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="admin">관리자 작업</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="message">쪽지</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="payment">결제</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="app">앱 사용</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="hwid">HWID/기기</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs" data-logs-tab="ticket">문의</button>
-        <p class="admin-nav-group">콘텐츠</p>
-        <button type="button" class="admin-nav-item" data-admin-nav="content">공지·쪽지</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="payments">결제</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="orders">주문</button>
+        <p class="admin-nav-group">고객 지원</p>
+        <button type="button" class="admin-nav-item" data-admin-nav="tickets" data-admin-tab="tickets">문의</button>
+        <p class="admin-nav-group">운영</p>
+        <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs">로그</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="content">공지·콘텐츠</button>
         <button type="button" class="admin-nav-item" data-admin-nav="pricing" data-admin-tab="pricing">가격·상품</button>
       </nav>
       <a class="admin-sidebar-site" href="./index.html">사이트로 돌아가기</a>
@@ -107,7 +94,10 @@
     <div class="admin-console-stage">
       <div class="admin-console-pagehead">
         <button type="button" class="ghost mini-btn admin-sidebar-toggle" id="adminSidebarToggle" aria-label="메뉴">☰</button>
-        <h1 id="adminConsoleTitle">홈</h1>
+        <div class="admin-console-pagehead-text">
+          <h1 id="adminConsoleTitle">홈</h1>
+          <p class="admin-console-lead" id="adminConsoleLead"></p>
+        </div>
         <span class="admin-preview-badge">PREVIEW · 목업 데이터</span>
       </div>
   <main class="admin-console-main">
@@ -162,10 +152,7 @@
 
             <section class="admin-pricing-section" id="adminPricingSection" hidden>
               <div class="admin-section-head">
-                <div>
-                  <h3>가격 및 상품 설정</h3>
-                  <p class="muted">Region별 정가·판매가가 곧 구매 UI와 PortOne·PayPal 서버 측에 동일 반영됩니다.</p>
-                </div>
+                <p class="admin-page-lead muted">Region별 정가·판매가가 곧 구매 UI와 PortOne·PayPal 서버 측에 동일 반영됩니다.</p>
                 <div class="admin-pricing-actions">
                   <button type="button" class="secondary mini-btn" id="pricingAddProduct">상품 추가</button>
                   <button type="button" class="secondary mini-btn" id="pricingAddRegion">Region 추가</button>
@@ -452,11 +439,8 @@
 
             <section class="admin-payments-section" id="adminPaymentsSection" hidden>
               <div class="admin-section-head">
-                <div>
-                  <h3>결제 내역</h3>
-                  <p class="muted">이미 불러온 주문 데이터입니다. 행을 누르면 해당 회원 상세의 주문 서랍이 열립니다.</p>
-                </div>
-                <span id="adminPaymentsCount" class="muted"></span>
+                <p class="admin-page-lead muted">이미 불러온 주문 데이터입니다. 행을 누르면 해당 회원 상세의 주문 서랍이 열립니다.</p>
+                <span id="adminPaymentsCount" class="muted small"></span>
               </div>
               <div class="admin-list-toolbar">
                 <input id="adminPaymentsSearch" class="search-input compact" type="search" placeholder="주문번호, UID, 이메일 검색" autocomplete="off">
@@ -466,10 +450,7 @@
 
             <section class="admin-content-section" id="adminContentSection" hidden>
               <div class="admin-section-head">
-                <div>
-                  <h3>공지·쪽지</h3>
-                  <p class="muted">공지/패치노트/FAQ 작성은 기존 허브 CMS를 사용합니다. 회원 쪽지는 회원 상세 메뉴와 일괄 앱 쪽지로 보냅니다.</p>
-                </div>
+                <p class="admin-page-lead muted">공지/패치노트/FAQ 작성은 기존 허브 CMS를 사용합니다. 회원 쪽지는 회원 상세 메뉴와 일괄 앱 쪽지로 보냅니다.</p>
               </div>
               <div class="admin-home-links">
                 <a class="admin-home-link" href="./notices.html"><b>공지사항 CMS</b><small>작성 · 수정 · 고정</small></a>
@@ -481,12 +462,7 @@
             </section>
 
             <section class="admin-logs-section" id="adminLogsSection" hidden>
-              <div class="admin-section-head">
-                <div>
-                  <h3>사용자 로그</h3>
-                  <p class="muted small">사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다. 기존 로그 종류는 모두 유지됩니다.</p>
-                </div>
-              </div>
+              <div id="adminLogsTabs" class="admin-logs-tabs admin-page-tabs" role="tablist" aria-label="로그 종류"></div>
               <div class="admin-list-toolbar admin-logs-toolbar">
                 <input type="search" id="adminLogsUserSearch" class="search-input compact" placeholder="사용자 이름·이메일 검색" aria-label="사용자 검색" autocomplete="off">
                 <select id="adminLogsUserSelect" aria-label="사용자 선택">
@@ -502,7 +478,6 @@
                 <button type="button" class="secondary mini-btn" id="adminLogsRefreshBtn">새로고침</button>
               </div>
               <div id="adminLogsSelected" class="admin-logs-selected"><p class="muted">사용자를 선택하면 로그가 표시됩니다.</p></div>
-              <div id="adminLogsTabs" class="admin-logs-tabs" role="tablist" aria-label="로그 종류"></div>
               <div class="admin-logs-table-meta-row">
                 <span id="adminLogsTableMeta" class="muted small"></span>
                 <button type="button" class="secondary mini-btn" id="adminLogsLoadMore" hidden>더보기</button>
@@ -517,10 +492,28 @@
             </section>
 
             <section class="admin-tickets-section" id="adminTicketsSection" hidden>
-              <div class="admin-section-head"><h3>전체 문의</h3><span id="adminTicketCount" class="muted"></span></div>
+              <div class="admin-page-tabs" id="adminTicketTabs" role="tablist" aria-label="문의 상태">
+                <button type="button" class="admin-page-tab is-active" data-ticket-tab="all">전체 <em data-ticket-count="all">0</em></button>
+                <button type="button" class="admin-page-tab" data-ticket-tab="open">미답변 <em data-ticket-count="open">0</em></button>
+                <button type="button" class="admin-page-tab" data-ticket-tab="answered">답변완료 <em data-ticket-count="answered">0</em></button>
+                <button type="button" class="admin-page-tab" data-ticket-tab="closed">종료 <em data-ticket-count="closed">0</em></button>
+              </div>
               <div class="admin-list-toolbar">
-                <input id="adminTicketSearch" class="search-input compact" placeholder="문의 검색">
-                <select id="adminTicketStatus"><option value="all">전체</option><option value="open">미답변</option><option value="answered">답변 완료</option><option value="closed">종료</option></select>
+                <input id="adminTicketSearch" class="search-input compact" placeholder="문의 검색" aria-label="문의 검색">
+                <select id="adminTicketCategory" aria-label="유형">
+                  <option value="all">유형: 전체</option>
+                  <option value="결제">결제</option>
+                  <option value="앱">앱</option>
+                  <option value="기타">기타</option>
+                </select>
+                <select id="adminTicketDate" aria-label="기간">
+                  <option value="all">전체 기간</option>
+                  <option value="today">오늘</option>
+                  <option value="7d">7일</option>
+                  <option value="30d">30일</option>
+                </select>
+                <select id="adminTicketStatus" hidden aria-label="상태"><option value="all">전체</option><option value="open">미답변</option><option value="answered">답변완료</option><option value="closed">종료</option></select>
+                <span id="adminTicketCount" class="muted small"></span>
                 <div class="admin-ticket-bulk">
                   <button type="button" class="secondary mini-btn danger-btn" id="adminTicketDeleteSelected">선택 삭제</button>
                   <button type="button" class="secondary mini-btn danger-btn" id="adminTicketDeleteAll">전체 삭제</button>
@@ -549,6 +542,6 @@
     </div>
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
-  <script type="module" src="./assets/js/admin-preview.js?v=admin-preview-5"></script>
+  <script type="module" src="./assets/js/admin-preview.js?v=admin-ia-1"></script>
 </body>
 </html>

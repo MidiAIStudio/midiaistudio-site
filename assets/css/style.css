@@ -3345,11 +3345,15 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 .admin-logs-user-email{
   font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#eef0ff
 }
-.admin-logs-user-plan{font-size:11px;color:var(--muted);font-weight:600}
+.admin-logs-user-plan{
+  display:flex;flex-wrap:wrap;gap:4px;align-items:center;
+  font-size:11px;font-weight:600
+}
+.admin-logs-user .crm-badge{transform:none}
 .admin-logs-users .admin-logs-empty{
   padding:14px 10px;text-align:left;font-size:12px
 }
-.admin-logs-main{display:grid;grid-template-rows:auto auto auto 1fr;gap:8px;min-width:0;min-height:0;padding:0 0 0 16px}
+.admin-logs-main{display:grid;grid-template-rows:auto auto 1fr;gap:8px;min-width:0;min-height:0;padding:0 0 0 16px}
 .admin-logs-tabs{
   display:flex;flex-wrap:wrap;gap:6px;padding-bottom:2px;border-bottom:1px solid rgba(255,255,255,.06)
 }
@@ -3439,8 +3443,8 @@ body.admin-console-page{
   --admin-badge-height:20px;
   --admin-nav-item-height:34px;
   --admin-nav-item-gap:2px;
-  --admin-nav-group-gap:14px;
-  --admin-nav-group-to-item:8px;
+  --admin-nav-group-gap:12px;
+  --admin-nav-group-to-item:6px;
   --admin-stroke:rgba(255,255,255,.06);
   --admin-stroke-muted:rgba(255,255,255,.045);
   --admin-fill:rgba(255,255,255,.03);
@@ -3500,24 +3504,34 @@ body.admin-console-page > .admin-console-backdrop{
 .admin-console-page .admin-nav-group{
   margin:var(--admin-nav-group-gap) 10px var(--admin-nav-group-to-item);
   padding:0;line-height:1.2;
-  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#7b83a3
+  font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6d7594
 }
+.admin-console-page .admin-sidebar-nav > .admin-nav-item:first-child + .admin-nav-group{margin-top:10px}
 .admin-console-page .admin-nav-item{
   display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:transparent;color:#c5cbe4;
   height:var(--admin-nav-item-height);min-height:var(--admin-nav-item-height);margin:0;
-  padding:0 10px;border-radius:8px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  padding:0 10px 0 12px;border-radius:6px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;
   box-sizing:border-box;flex:none
 }
 .admin-console-page .admin-nav-item + .admin-nav-item{margin-top:var(--admin-nav-item-gap)}
 .admin-console-page .admin-nav-item:hover{background:rgba(255,255,255,.06);color:#fff;transform:none}
 .admin-console-page .admin-nav-item.is-active,
-.admin-console-page .admin-nav-item.active{background:rgba(139,92,246,.18);color:#fff;border:1px solid rgba(167,139,250,.28)}
+.admin-console-page .admin-nav-item.active{
+  background:rgba(139,92,246,.12);color:#fff;border:0;
+  box-shadow:inset 2px 0 0 rgba(167,139,250,.9)
+}
 .admin-console-page .admin-nav-item .nav-unread-badge{margin-left:auto}
 .admin-console-page .admin-console-stage{min-width:0;margin-left:var(--admin-sidebar-w)}
 .admin-console-page .admin-console-pagehead{
-  display:flex;align-items:center;gap:10px;min-height:48px;padding:6px 20px 0
+  display:flex;align-items:flex-start;gap:10px;min-height:52px;padding:10px 20px 6px
 }
-.admin-console-page .admin-console-pagehead h1{margin:0;font-size:20px;letter-spacing:-.03em}
+.admin-console-page .admin-console-pagehead-text{min-width:0;flex:1}
+.admin-console-page .admin-console-pagehead h1{margin:0;font-size:18px;font-weight:800;letter-spacing:-.03em;line-height:1.25}
+.admin-console-page .admin-console-lead,
+.admin-console-page .admin-page-lead{
+  margin:3px 0 0;font-size:13px;line-height:1.45;color:var(--muted);font-weight:500
+}
+.admin-console-page .admin-console-lead:empty{display:none}
 .admin-console-page .admin-sidebar-toggle{display:none}
 .admin-console-page .admin-console-backdrop{display:none}
 .admin-console-page .admin-console-main{padding:0 20px 20px}
@@ -3557,9 +3571,12 @@ body.admin-console-page .admin-crm-detail-pane{
 .admin-console-page .crm-stat b{font-size:15px;line-height:1.15}
 .admin-console-page .crm-stat span{margin-top:2px}
 .admin-console-page .admin-crm-toolbar,
-.admin-console-page .admin-list-toolbar{
+.admin-console-page .admin-list-toolbar,
+.admin-console-page .admin-logs-head{
   display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px;padding:0;border:0;row-gap:6px
 }
+.admin-console-page .admin-logs-head-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-left:auto}
+.admin-console-page .admin-ticket-bulk{margin-left:auto;flex:none}
 .admin-console-page .admin-crm-toolbar .search-input{flex:1 1 280px;max-width:none}
 .admin-console-page .admin-crm-filter-primary,
 .admin-console-page .admin-crm-filter-grid{display:flex;flex-wrap:wrap;gap:6px}
@@ -3673,11 +3690,12 @@ body.admin-console-page .admin-logs-toolbar select{
 }
 .admin-console-page .admin-table th{
   height:var(--admin-table-header-height);padding:0 10px;box-sizing:border-box;
-  background:var(--admin-header-fill);border-bottom:1px solid var(--admin-stroke)
+  background:var(--admin-header-fill);border-bottom:1px solid var(--admin-stroke);
+  font-size:12px;font-weight:600;color:#9aa3c2;letter-spacing:.02em
 }
 .admin-console-page .admin-table td{
   height:var(--admin-table-row-height);padding:0 10px;box-sizing:border-box;
-  border-bottom:1px solid var(--admin-stroke-muted)
+  border-bottom:1px solid var(--admin-stroke-muted);font-size:13px
 }
 .admin-console-page .admin-table tr:hover td{background:var(--admin-fill-hover)}
 .admin-console-page .admin-table td b{font-size:13px;line-height:1.25;margin:0}
@@ -3702,9 +3720,9 @@ body.admin-console-page .admin-tickets-section:not([hidden]){
 .admin-console-page .admin-tickets-section .admin-table-wrap{
   border:0;border-radius:0;background:transparent
 }
-body.admin-console-page .secondary,
+body.admin-console-page .secondary:not(.danger-btn),
 body.admin-console-page .ghost,
-body.admin-console-page button.secondary,
+body.admin-console-page button.secondary:not(.danger-btn),
 body.admin-console-page button.ghost{
   border-color:rgba(255,255,255,.08)!important;
   background:rgba(255,255,255,.04)!important;
@@ -3816,6 +3834,76 @@ body.admin-console-page .admin-block{padding:0!important;border-radius:0!importa
 @media(max-width:1100px){
   .admin-preview-page .admin-dash-grid{grid-template-columns:1fr}
 }
+
+/* Admin Console IA polish — tabs, ticket table, hierarchy */
+.admin-console-page .admin-page-tabs,
+.admin-console-page .admin-logs-tabs{
+  display:flex;flex-wrap:nowrap;align-items:stretch;gap:0;overflow-x:auto;
+  margin:0 0 10px;padding:0;border-bottom:1px solid var(--admin-stroke)
+}
+.admin-console-page .admin-page-tab,
+.admin-console-page .admin-logs-tab{
+  appearance:none;flex:none;border:0;border-bottom:2px solid transparent;border-radius:0;
+  background:transparent;color:#8b93b3;font:inherit;font-size:13px;font-weight:600;
+  padding:7px 12px 8px;cursor:pointer;white-space:nowrap
+}
+.admin-console-page .admin-page-tab em,
+.admin-console-page .admin-logs-tab em{
+  font-style:normal;margin-left:6px;font-variant-numeric:tabular-nums;font-weight:700;color:#6d7594
+}
+.admin-console-page .admin-page-tab.is-active,
+.admin-console-page .admin-logs-tab.is-active{
+  color:#f2f4ff;border-bottom-color:rgba(139,92,246,.85);background:transparent
+}
+.admin-console-page .admin-page-tab.is-active em,
+.admin-console-page .admin-logs-tab.is-active em{color:#c4b5fd}
+.admin-console-page .admin-page-tab:hover,
+.admin-console-page .admin-logs-tab:hover{color:#e8ebf8}
+.admin-console-page .admin-tickets-section .admin-list-toolbar .search-input{
+  flex:1 1 240px;min-width:180px;max-width:420px
+}
+.admin-console-page .admin-ticket-table{width:100%;min-width:760px;table-layout:fixed}
+.admin-console-page .admin-ticket-table th:nth-child(1),
+.admin-console-page .admin-ticket-table td:nth-child(1){width:36px}
+.admin-console-page .admin-ticket-table th:nth-child(2),
+.admin-console-page .admin-ticket-table td.admin-ticket-cat{width:108px;color:#9aa3c2;font-weight:600;font-size:12px}
+.admin-console-page .admin-ticket-table td.admin-ticket-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.admin-console-page .admin-ticket-table td.admin-ticket-title b,
+.admin-console-page .admin-ticket-table .admin-ticket-title-btn b{
+  color:#f4f6ff;font-size:13px;font-weight:700
+}
+.admin-console-page .admin-ticket-table td.admin-ticket-user{
+  width:220px;color:#8b93b3;font-size:12px;font-weight:500;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.admin-console-page .admin-ticket-table td.admin-ticket-status{width:96px}
+.admin-console-page .admin-ticket-table td.admin-ticket-date{
+  width:108px;color:#8b93b3;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap
+}
+.admin-console-page .admin-ticket-table .badge{
+  display:inline-flex;align-items:center;gap:5px;min-height:20px;padding:0 8px 0 6px;
+  border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0
+}
+.admin-console-page .admin-ticket-table .badge:before{
+  content:"";width:6px;height:6px;border-radius:999px;background:currentColor;opacity:.9
+}
+.admin-console-page .admin-ticket-table .badge.open{color:#fbbf24;background:rgba(251,191,36,.12)}
+.admin-console-page .admin-ticket-table .badge.pending{color:#22d3ee;background:rgba(34,211,238,.12)}
+.admin-console-page .admin-ticket-table .badge.answered{color:#34d399;background:rgba(52,211,153,.12)}
+.admin-console-page .admin-ticket-table .badge.closed{color:#9aa3c2;background:rgba(255,255,255,.06)}
+.admin-console-page .admin-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.admin-console-page .admin-member-email{color:#8b93b3;font-weight:500}
+.admin-console-page .admin-member-user b{color:#f4f6ff}
+.admin-console-page #adminTicketStatus[hidden]{display:none!important}
+.admin-console-page .danger-btn{
+  color:#fecaca!important;border-color:rgba(251,113,133,.35)!important;background:rgba(251,113,133,.12)!important
+}
+@media(max-width:1100px){
+  .admin-console-page .admin-page-tabs,
+  .admin-console-page .admin-logs-tabs{flex-wrap:nowrap}
+  .admin-console-page .admin-ticket-bulk{margin-left:0}
+}
+
 
 
 
