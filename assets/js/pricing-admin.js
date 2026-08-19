@@ -81,6 +81,7 @@ function ensureBoot() {
 
 function bindTabs() {
   document.querySelectorAll('[data-admin-tab]').forEach((btn) => {
+    if (btn.hasAttribute('data-admin-nav')) return;
     if (btn.dataset.bound === '1') return;
     btn.dataset.bound = '1';
     btn.addEventListener('click', () => {

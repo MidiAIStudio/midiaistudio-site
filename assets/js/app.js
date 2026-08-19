@@ -3995,6 +3995,7 @@ function syncAdminCmsTabs(){
 }
 function syncAdminCmsHash(postId){
   try{
+    if((document.body.dataset.adminView||'')!=='content') return;
     const hash=new URLSearchParams((location.hash||'').replace(/^#/,''));
     hash.set('view','content');
     if(adminCmsTab && adminCmsTab!=='notices') hash.set('cms', adminCmsTab); else hash.delete('cms');

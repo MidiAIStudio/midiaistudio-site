@@ -101,6 +101,16 @@ function renderAdminPageWorkTabs(view, crmMode) {
 
 export function showAdminView(view, opts = {}) {
   const next = VIEW_SECTIONS[view] ? view : 'crm';
+  if (showAdminView._busy) return;
+  showAdminView._busy = true;
+  try {
+    applyAdminView(next, opts);
+  } finally {
+    showAdminView._busy = false;
+  }
+}
+
+function applyAdminView(next, opts = {}) {
   const crmMode = next === 'crm'
     ? normalizeCrmMode(opts.crmMode, opts.detailTab)
     : (document.body.dataset.crmMode || 'members');
@@ -184,7 +194,7 @@ function bindConsole() {
 
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-admin-nav]');
-    if (btn && !btn.hasAttribute('data-admin-tab')) {
+    if (btn) {
       e.preventDefault();
       showAdminView(btn.getAttribute('data-admin-nav'), {
         logsTab: btn.getAttribute('data-logs-tab') || undefined,

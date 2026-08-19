@@ -3480,7 +3480,7 @@ body.admin-console-page > .admin-console-backdrop{
   display:block;min-height:100vh;padding-top:56px
 }
 .admin-console-page .admin-sidebar{
-  position:fixed;top:0;left:0;bottom:0;width:var(--admin-sidebar-w);z-index:40;
+  position:fixed;top:0;left:0;bottom:0;width:var(--admin-sidebar-w);z-index:70;
   overflow:auto;padding:10px 10px 12px;
   background:linear-gradient(180deg,rgba(16,18,36,.98),rgba(8,10,20,.98));
   border-right:1px solid var(--admin-stroke);
@@ -4021,7 +4021,7 @@ body.admin-console-page .admin-block{padding:0!important;border-radius:0!importa
 .admin-console-page .admin-cms-title b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .admin-console-page .admin-cms-row{cursor:pointer}
 .admin-console-page .admin-cms-row.is-hidden td{opacity:.72}
-.admin-console-page .admin-cms-drawer{position:fixed;inset:0;z-index:60;display:flex;justify-content:flex-end}
+.admin-console-page .admin-cms-drawer{position:fixed;inset:0 0 0 var(--admin-sidebar-w);z-index:60;display:flex;justify-content:flex-end}
 .admin-console-page .admin-cms-drawer[hidden]{display:none!important}
 .admin-console-page .admin-cms-drawer-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
 .admin-console-page .admin-cms-drawer-panel{
