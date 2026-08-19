@@ -104,23 +104,32 @@
 
   window.__midiaiShowAdminView = show;
 
+  function closestLicenseTab(el) {
+    if (!el) return null;
+    if (el.nodeType !== 1) el = el.parentElement;
+    var tab = el && el.closest ? el.closest('button[data-license-page], .admin-page-tab[data-license-page]') : null;
+    if (!tab || tab === document.body || tab === document.documentElement) return null;
+    var page = tab.getAttribute('data-license-page');
+    if (page !== 'status' && page !== 'history') return null;
+    return tab;
+  }
+
   function onClick(e) {
     var btn = closestNav(e.target);
-    if (!btn) {
-      var licenseBtn = e.target && (e.target.nodeType === 1 ? e.target : e.target.parentElement);
-      licenseBtn = licenseBtn && licenseBtn.closest ? licenseBtn.closest('[data-license-page]') : null;
-      if (licenseBtn) {
-        e.preventDefault();
-        show('crm', {
-          crmMode: 'license',
-          licensePage: licenseBtn.getAttribute('data-license-page') || 'status'
-        });
-      }
+    if (btn) {
+      e.preventDefault();
+      show(btn.getAttribute('data-admin-nav'), optsFromBtn(btn));
+      document.body.classList.remove('admin-sidebar-open');
       return;
     }
-    e.preventDefault();
-    show(btn.getAttribute('data-admin-nav'), optsFromBtn(btn));
-    document.body.classList.remove('admin-sidebar-open');
+    var licenseBtn = closestLicenseTab(e.target);
+    if (licenseBtn) {
+      e.preventDefault();
+      show('crm', {
+        crmMode: 'license',
+        licensePage: licenseBtn.getAttribute('data-license-page') || 'status'
+      });
+    }
   }
 
   document.addEventListener('click', onClick, true);

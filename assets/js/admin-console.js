@@ -111,7 +111,7 @@ function applyAdminView(next, opts = {}) {
   if (next === 'crm' && crmMode === 'license') {
     document.body.dataset.licensePage = opts.licensePage || 'status';
   } else {
-    document.body.dataset.licensePage = '';
+    delete document.body.dataset.licensePage;
   }
   const licenseHistory = next === 'crm' && crmMode === 'license' && document.body.dataset.licensePage === 'history';
   Object.entries(VIEW_SECTIONS).forEach(([key, id]) => {

@@ -1233,10 +1233,13 @@ function bind() {
       });
       document.body.classList.remove('admin-sidebar-open');
     }
-    const licensePageBtn = e.target.closest('[data-license-page]');
-    if (licensePageBtn) {
-      e.preventDefault();
-      showView('crm', { crmMode: 'license', licensePage: licensePageBtn.getAttribute('data-license-page') || 'status' });
+    const licensePageBtn = e.target.closest('button[data-license-page], .admin-page-tab[data-license-page]');
+    if (licensePageBtn && licensePageBtn !== document.body) {
+      const page = licensePageBtn.getAttribute('data-license-page');
+      if (page === 'status' || page === 'history') {
+        e.preventDefault();
+        showView('crm', { crmMode: 'license', licensePage: page });
+      }
     }
     const licenseTabBtn = e.target.closest('[data-license-tab]');
     if (licenseTabBtn) {
