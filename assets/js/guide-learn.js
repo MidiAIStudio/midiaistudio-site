@@ -5,6 +5,7 @@
  */
 
 import { esc } from './visual-cms.js?v=slot-scale-22';
+import { guidePagePath } from './guide-seo.js?v=guide-404-1';
 
 /** Preferential chip order for known product flows (matched by category/title/slug). */
 export const GUIDE_CHIP_PRESETS = [
@@ -77,7 +78,7 @@ export function cardMetaBits(g) {
 }
 
 export function renderGuideCard(g, pathBase) {
-  const href = `${pathBase}guide/${encodeURIComponent(g.slug || g.id)}/`;
+  const href = `${pathBase}${guidePagePath(g.slug || g.id)}`;
   const thumb = guideThumb(g);
   const badge = g.published === false ? `<span class="guide-draft-badge">초안</span>` : '';
   const meta = cardMetaBits(g);

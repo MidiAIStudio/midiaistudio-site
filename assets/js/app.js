@@ -17,8 +17,9 @@ import {
   mountMarkdownEditor,
   openMarkdownPreview,
   ensureMarkdownCss,
-  pickMarkdownSource
-} from './markdown/index.js?v=md-placeholder-1';
+  pickMarkdownSource,
+  clearDraft
+} from './markdown/index.js?v=board-edit-1';
 import { renderMidiPreviewWav as renderMidiPreviewEngine } from './board-midi-preview.js?v=gm-preview-1';
 import { patchNoteType, patchNoteVersion, patchNoteWriteFields } from './patch-note-type.js?v=patch-type-1';
 import {
@@ -6679,118 +6680,145 @@ function bindBoardEmojiPicker(){
 async function initBoardPostEditor(){
   const form=$('boardPostForm'); if(!form) return;
   updateBoardPinnedUi();
+  const submitBtn=form.querySelector('button[type="submit"]');
+  if(!currentUser){
+    if($('boardPostMsg')) $('boardPostMsg').textContent=tr('need_login');
+    if(submitBtn) submitBtn.disabled=true;
+    return;
+  }
   const id=getParam('id');
-  ensureMarkdownCss();
-  let editorHost=$('boardPostEditor')||$('boardPostContent');
-  if(editorHost && editorHost.tagName==='TEXTAREA'){
-    const wrap=document.createElement('div');
-    wrap.id='boardPostEditor';
-    editorHost.replaceWith(wrap);
-    editorHost=wrap;
+  const uid=currentUser.uid;
+  const editorToken=`${uid}:${id||'new'}`;
+  if(form._mdInitLock){
+    await form._mdInitLock;
+    if(form.dataset.editorToken===editorToken && form._mdEditor) return;
   }
-  editorHost=$('boardPostEditor');
-  const uid=currentUser?.uid||'anon';
-  const draftId=id||'new';
-  // Always remount when opening write/edit page so previous instance cannot block input
-  if(form._mdEditor){
-    try{ form._mdEditor.destroy(); }catch(_){}
-    form._mdEditor=null;
+  if(form.dataset.editorToken===editorToken && form._mdEditor){
+    form._mdEditor.refreshLayout?.();
+    if(submitBtn) submitBtn.disabled=false;
+    return;
   }
-  let initialMd='';
-  const {doc,getDoc,setDoc,addDoc,collection,serverTimestamp}=firestoreApi;
-  if(id && !form.dataset.editLoaded){
-    try{
-      const snap=await getDoc(doc(db,'boardPosts',id));
-      const d=snap.exists()?{id:snap.id,...snap.data()}:null;
-      if(!d){
-        $('boardPostMsg').textContent=tr('empty');
-        form.dataset.editLoaded='1';
-      } else if(!currentUser){
-        $('boardPostMsg').textContent=tr('need_login');
-        form.querySelector('button[type="submit"]').disabled=true;
-        form.dataset.editLoaded='1';
-      } else if(!canManageRecord(d)){
-        $('boardPostMsg').textContent=tr('no_permission');
-        form.querySelector('button[type="submit"]').disabled=true;
-        form.dataset.editLoaded='1';
-      } else {
-        $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정');
-        $('boardPostTitle').value=d.title||'';
-        initialMd=pickMarkdownSource(d);
-        existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : [];
-        renderBoardAttachmentPreview();
-        form._editingPost = d;
-        if(isAdminUser && $('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned;
-        form.querySelector('button[type="submit"]').disabled=false;
-        if($('boardPostMsg')) $('boardPostMsg').textContent='';
-        form.dataset.editLoaded='1';
-      }
-    }catch(e){ $('boardPostMsg').textContent=e.message; }
-  }
-  if(editorHost){
-    await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-    form._mdEditor=await mountMarkdownEditor(editorHost,{
-      value: initialMd,
-      height: 420,
-      draftKey: `board:${draftId}`,
-      storagePrefix: `cms-md/${uid}/board`,
-      showActions: false,
-      preferToast: false
+  form._mdInitLock=(async()=>{
+    ensureMarkdownCss();
+    let editorHost=$('boardPostEditor')||$('boardPostContent');
+    if(editorHost && editorHost.tagName==='TEXTAREA'){
+      const wrap=document.createElement('div');
+      wrap.id='boardPostEditor';
+      editorHost.replaceWith(wrap);
+      editorHost=wrap;
+    }
+    editorHost=$('boardPostEditor');
+    const draftId=id||'new';
+    let liveMd='';
+    if(form._mdEditor){
+      try{ liveMd=String(form._mdEditor.getMarkdown?.()||form._mdEditor.getValue?.()||''); }catch(_){}
+      try{ form._mdEditor.destroy(); }catch(_){}
+      form._mdEditor=null;
+    }
+    let initialMd=liveMd;
+    const {doc,getDoc,setDoc,addDoc,collection,serverTimestamp}=firestoreApi;
+    if(id && !form._editingPost){
+      try{
+        const snap=await getDoc(doc(db,'boardPosts',id));
+        const d=snap.exists()?{id:snap.id,...snap.data()}:null;
+        if(!d){
+          $('boardPostMsg').textContent=tr('empty');
+        } else if(!canManageRecord(d)){
+          $('boardPostMsg').textContent=tr('no_permission');
+          if(submitBtn) submitBtn.disabled=true;
+        } else {
+          $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정');
+          $('boardPostTitle').value=d.title||'';
+          initialMd=liveMd || pickMarkdownSource(d);
+          existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : [];
+          renderBoardAttachmentPreview();
+          form._editingPost = d;
+          if(isAdminUser && $('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned;
+          if(submitBtn) submitBtn.disabled=false;
+          if($('boardPostMsg')) $('boardPostMsg').textContent='';
+        }
+      }catch(e){ $('boardPostMsg').textContent=e.message; }
+    } else if(form._editingPost){
+      initialMd=liveMd || pickMarkdownSource(form._editingPost);
+      if(submitBtn) submitBtn.disabled=false;
+    } else if(submitBtn){
+      submitBtn.disabled=false;
+      if($('boardPostMsg')) $('boardPostMsg').textContent='';
+    }
+    if(editorHost){
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      const remount=form.dataset.editorToken && form.dataset.editorToken!==editorToken;
+      form._mdEditor=await mountMarkdownEditor(editorHost,{
+        value: initialMd,
+        height: 420,
+        draftKey: `board:${draftId}`,
+        storagePrefix: `cms-md/${uid}/board`,
+        showActions: false,
+        preferToast: false,
+        promptDraft: !remount && !liveMd
+      });
+      if(initialMd) form._mdEditor.setMarkdown(initialMd);
+      form._mdEditor.refreshLayout();
+      setTimeout(()=>form._mdEditor?.focus?.(), 80);
+    }
+    form.dataset.editorToken=editorToken;
+    if(form.dataset.bound) return;
+    bindBoardAttachmentPicker();
+    bindBoardEmojiPicker();
+    $('boardMdPreview')?.addEventListener('click', async () => {
+      const md = form._mdEditor ? (form._mdEditor.getMarkdown?.() || form._mdEditor.getValue?.() || '') : ($('boardPostContent')?.value || '');
+      await openMarkdownPreview({ markdown: md, title: '미리보기' });
     });
-    if(initialMd) form._mdEditor.setMarkdown(initialMd);
-    form._mdEditor.refreshLayout();
-    setTimeout(()=>form._mdEditor?.focus?.(), 80);
-  }
-  if(form.dataset.bound) return;
-  bindBoardAttachmentPicker();
-  bindBoardEmojiPicker();
-  $('boardMdPreview')?.addEventListener('click', async () => {
-    const md = form._mdEditor ? (form._mdEditor.getMarkdown?.() || form._mdEditor.getValue?.() || '') : ($('boardPostContent')?.value || '');
-    await openMarkdownPreview({ markdown: md, title: '미리보기' });
-  });
-  form.dataset.bound='1';
-  form.addEventListener('submit',async e=>{
-    e.preventDefault();
-    if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
-    const editing = form._editingPost || {};
-    const mdContent=(form._mdEditor?(form._mdEditor.getMarkdown?.()||form._mdEditor.getValue?.()||''):($('boardPostContent')?.value||'')).trim();
-    if(form._mdEditor && !form._mdEditor.getMarkdown && !form._mdEditor.getValue){ $('boardPostMsg').textContent='편집기가 준비되지 않았습니다.'; return; }
-    const data={title:$('boardPostTitle').value.trim(),content:mdContent,contentMarkdown:mdContent,contentFormat:'markdown',visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
-    if(!id){
-      data.uid=currentUser.uid;
-      data.email=boardEmail();
-      data.displayName=boardDisplayName();
-      data.authorLicensed=isAdminUser?false:!!currentLicenseActive;
-      if(isAdminUser) data.authorRole='admin';
-    } else if(isOwnerRecord(editing)){
-      data.email=boardEmail();
-      data.displayName=boardDisplayName();
-      data.authorLicensed=isAdminUser?false:!!currentLicenseActive;
-      if(isAdminUser) data.authorRole='admin';
-    }
-    if(isAdminUser) data.pinned=!!$('boardPostPinned')?.checked;
-    try{
-      let postId=id;
-      if(id){
-        const uploaded = await uploadBoardAttachments(id);
-        await setDoc(doc(db,'boardPosts',id),{...data,attachments:[...existingBoardAttachments,...uploaded]},{merge:true});
-        postId=id;
-      } else {
-        const ref=await addDoc(collection(db,'boardPosts'),{...data,pinned:isAdminUser&&!!$('boardPostPinned')?.checked,commentCount:0,viewCount:0,likeCount:0,attachments:[],createdAt:serverTimestamp()});
-        postId=ref.id;
-        const uploaded = await uploadBoardAttachments(postId);
-        if(uploaded.length) await setDoc(doc(db,'boardPosts',postId),{attachments:uploaded,updatedAt:serverTimestamp()},{merge:true});
+    form.dataset.bound='1';
+    form.addEventListener('submit',async e=>{
+      e.preventDefault();
+      if(!currentUser){ $('boardPostMsg').textContent=tr('need_login'); return; }
+      const editing = form._editingPost || {};
+      const mdContent=(form._mdEditor?(form._mdEditor.getMarkdown?.()||form._mdEditor.getValue?.()||''):($('boardPostContent')?.value||'')).trim();
+      if(form._mdEditor && !form._mdEditor.getMarkdown && !form._mdEditor.getValue){ $('boardPostMsg').textContent='편집기가 준비되지 않았습니다.'; return; }
+      const title=$('boardPostTitle').value.trim();
+      if(!title){ $('boardPostMsg').textContent='제목을 입력하세요.'; return; }
+      if(!mdContent){ $('boardPostMsg').textContent='본문을 입력하세요.'; return; }
+      const data={title,content:mdContent,contentMarkdown:mdContent,contentFormat:'markdown',visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
+      if(!id){
+        data.uid=currentUser.uid;
+        data.email=boardEmail();
+        data.displayName=boardDisplayName();
+        data.authorLicensed=isAdminUser?false:!!currentLicenseActive;
+        if(isAdminUser) data.authorRole='admin';
+      } else if(isOwnerRecord(editing)){
+        data.email=boardEmail();
+        data.displayName=boardDisplayName();
+        data.authorLicensed=isAdminUser?false:!!currentLicenseActive;
+        if(isAdminUser) data.authorRole='admin';
       }
-      location.href=boardPostUrl(postId);
-    }catch(err){
-      const raw=String(err?.message||err||'');
-      if(/storage\/unauthorized|does not have permission/i.test(raw)){
-        $('boardPostMsg').textContent='첨부파일 업로드 권한이 없습니다. Firebase Storage 규칙에 MIDI(audio/midi) 허용이 필요합니다.';
-      } else {
-        $('boardPostMsg').textContent=raw;
+      if(isAdminUser) data.pinned=!!$('boardPostPinned')?.checked;
+      try{
+        let postId=id;
+        if(id){
+          const uploaded = await uploadBoardAttachments(id);
+          await setDoc(doc(db,'boardPosts',id),{...data,attachments:[...existingBoardAttachments,...uploaded]},{merge:true});
+          postId=id;
+        } else {
+          const ref=await addDoc(collection(db,'boardPosts'),{...data,pinned:isAdminUser&&!!$('boardPostPinned')?.checked,commentCount:0,viewCount:0,likeCount:0,attachments:[],createdAt:serverTimestamp()});
+          postId=ref.id;
+          const uploaded = await uploadBoardAttachments(postId);
+          if(uploaded.length) await setDoc(doc(db,'boardPosts',postId),{attachments:uploaded,updatedAt:serverTimestamp()},{merge:true});
+        }
+        clearDraft(`board:${draftId}`);
+        location.href=boardPostUrl(postId);
+      }catch(err){
+        const raw=String(err?.message||err||'');
+        if(/storage\/unauthorized|does not have permission/i.test(raw)){
+          $('boardPostMsg').textContent='첨부파일 업로드 권한이 없습니다. Firebase Storage 규칙에 MIDI(audio/midi) 허용이 필요합니다.';
+        } else {
+          $('boardPostMsg').textContent=raw;
+        }
       }
-    }
-  });
+    });
+  })();
+  try{ await form._mdInitLock; }
+  finally{ form._mdInitLock=null; }
 }
 function renderBoardPost(d,err){
   const box=$('boardPostDetail'); if(!box)return;

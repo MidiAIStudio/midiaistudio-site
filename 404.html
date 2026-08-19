@@ -4,6 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>페이지를 찾을 수 없습니다 — MidiAI Studio</title>
+  <script>
+  (function () {
+    var path = (location.pathname || '').replace(/\/+$/, '');
+    var m = path.match(/\/guide\/([a-z0-9-]+)$/i);
+    if (!m) return;
+    var slug = m[1].toLowerCase();
+    if (slug === 'index') return;
+    location.replace('/guide.html?slug=' + encodeURIComponent(slug));
+  })();
+  </script>
   <meta name="description" content="요청하신 페이지를 찾을 수 없습니다. MidiAI Studio 홈으로 이동하세요.">
   <meta name="keywords" content="MidiAI Studio 404">
   <meta name="robots" content="noindex, follow">

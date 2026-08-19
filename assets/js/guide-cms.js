@@ -25,14 +25,14 @@ import {
   chaptersHtml,
   bindScrollSpy,
   bindGuideImageZoom
-} from './guide-learn.js?v=guide-learn-2';
+} from './guide-learn.js?v=guide-404-1';
 import {
   applyGuideDocumentSeo,
   guideSlugFromLocation,
   hideGuideSeoFallback,
   mediaAltForGuide,
-  prettyGuidePath
-} from './guide-seo.js?v=guide-seo-1';
+  guidePagePath
+} from './guide-seo.js?v=guide-404-1';
 
 
 const CONFIG = window.MIDIAI_CONFIG || {};
@@ -258,7 +258,7 @@ function isGuideDetailPage() {
 }
 
 function guideHref(slug) {
-  return `${pathBase()}${prettyGuidePath(slug)}`;
+  return `${pathBase()}${guidePagePath(slug)}`;
 }
 
 async function resolveAdmin(user) {

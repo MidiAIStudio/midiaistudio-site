@@ -29,6 +29,7 @@ const TOAST_DARK = 'https://uicdn.toast.com/editor/3.2.2/theme/toastui-editor-da
 const TOAST_JS = 'https://uicdn.toast.com/editor/3.2.2/toastui-editor-all.min.js';
 
 let _toastReady = null;
+const promptedDraftKeys = new Set();
 
 /** Normalize content fields from Firestore docs / forms */
 export function pickMarkdownSource(docOrValue) {
@@ -184,7 +185,8 @@ export async function mountMarkdownEditor(host, options = {}) {
     onPreview,
     placeholder = '내용을 입력하세요.',
     // Default false: reliable textarea. Toast used when explicitly enabled + healthy.
-    preferToast = false
+    preferToast = false,
+    promptDraft = true
   } = options;
 
   ensureMarkdownCss();
@@ -378,11 +380,13 @@ export async function mountMarkdownEditor(host, options = {}) {
   host.appendChild(editorHost);
 
   let initial = String(value ?? '');
-  if (draftKey) {
+  if (draftKey && promptDraft !== false) {
     const draft = loadDraft(draftKey);
-    if (draft?.value && draft.value !== initial) {
+    const draftText = String(draft?.value || '');
+    if (draftText && draftText !== initial && !promptedDraftKeys.has(draftKey)) {
+      promptedDraftKeys.add(draftKey);
       const restore = confirm('저장된 임시 초안이 있습니다. 복원할까요?');
-      if (restore) initial = draft.value;
+      if (restore) initial = draftText;
     }
   }
   pushHistory(initial);

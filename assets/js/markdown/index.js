@@ -11,7 +11,7 @@ export {
   openMarkdownPreview,
   mountMarkdownField,
   pickMarkdownSource
-} from './markdown-editor.js?v=md-placeholder-1';
+} from './markdown-editor.js?v=board-edit-1';
 
 export {
   draftKey,

@@ -75,6 +75,17 @@ export function prettyGuidePath(slug) {
   return 'guide/' + encodeURIComponent(slug) + '/';
 }
 
+export function hasStaticGuidePage(slug) {
+  return Object.prototype.hasOwnProperty.call(GUIDE_SEO, slug);
+}
+
+export function guidePagePath(slug) {
+  const s = String(slug || '').trim();
+  if (!s) return 'guide/index.html';
+  if (hasStaticGuidePage(s)) return prettyGuidePath(s);
+  return 'guide.html?slug=' + encodeURIComponent(s);
+}
+
 function upsertMeta(attr, key, value) {
   if (!value) return;
   let el = document.head.querySelector('meta[' + attr + '="' + key + '"]');

@@ -166,7 +166,7 @@ function pageHtml(slug, seo) {
   <script>window.MIDIAI_BASE_PATH='${ASSET}';</script>
   <script type="module" src="${ASSET}assets/js/config.js"></script>
   <script type="module" src="${ASSET}assets/js/app.js?v=nav-soon-1"></script>
-  <script type="module" src="${ASSET}assets/js/guide-cms.js?v=guide-seo-1"></script>
+  <script type="module" src="${ASSET}assets/js/guide-cms.js?v=guide-404-1"></script>
 </body>
 </html>
 `;
@@ -216,6 +216,17 @@ export function guideSlugFromLocation() {
 
 export function prettyGuidePath(slug) {
   return 'guide/' + encodeURIComponent(slug) + '/';
+}
+
+export function hasStaticGuidePage(slug) {
+  return Object.prototype.hasOwnProperty.call(GUIDE_SEO, slug);
+}
+
+export function guidePagePath(slug) {
+  const s = String(slug || '').trim();
+  if (!s) return 'guide/index.html';
+  if (hasStaticGuidePage(s)) return prettyGuidePath(s);
+  return 'guide.html?slug=' + encodeURIComponent(s);
 }
 
 function upsertMeta(attr, key, value) {

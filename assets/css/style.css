@@ -3436,6 +3436,10 @@ body.admin-console-page{
   --admin-card-padding:12px;
   --admin-section-gap:8px;
   --admin-badge-height:20px;
+  --admin-nav-item-height:34px;
+  --admin-nav-item-gap:2px;
+  --admin-nav-group-gap:14px;
+  --admin-nav-group-to-item:8px;
   padding-left:0!important
 }
 body.admin-console-page > .topbar,
@@ -3467,28 +3471,38 @@ body.admin-console-page > .admin-console-backdrop{
 }
 .admin-console-page .admin-sidebar{
   position:fixed;top:0;left:0;bottom:0;width:var(--admin-sidebar-w);z-index:40;
-  overflow:auto;padding:12px 10px 20px;
+  overflow:auto;padding:10px 10px 12px;
   background:linear-gradient(180deg,rgba(16,18,36,.98),rgba(8,10,20,.98));
   border-right:1px solid var(--line);
   display:flex;flex-direction:column
 }
-.admin-console-page .admin-sidebar-brand{display:flex;align-items:center;gap:10px;padding:4px 8px 12px}
+.admin-console-page .admin-sidebar-brand{display:flex;align-items:center;gap:10px;padding:2px 8px 8px;flex:none}
 .admin-console-page .admin-sidebar-brand img{border-radius:8px}
 .admin-console-page .admin-sidebar-brand strong{display:block;font-size:13px;letter-spacing:-.02em}
 .admin-console-page .admin-sidebar-brand span{display:block;font-size:11px;color:var(--muted);font-weight:700}
-.admin-console-page .admin-sidebar-nav{flex:1}
+.admin-console-page .admin-sidebar-nav{
+  flex:1;min-height:0;overflow:auto;
+  display:flex;flex-direction:column;
+  flex-wrap:nowrap!important;justify-content:flex-start!important;align-items:stretch!important;
+  gap:0!important
+}
 .admin-console-page .admin-sidebar-site{
-  display:block;margin:12px 8px 0;padding:7px 10px;border-radius:10px;
+  display:block;margin:8px 8px 0;padding:6px 10px;border-radius:8px;flex:none;
   color:#9aa3c7;text-decoration:none;font-size:12px;font-weight:700
 }
-.admin-console-page .admin-sidebar-site:hover{color:#fff;background:rgba(255,255,255,.06)}
+.admin-console-page .admin-sidebar-site:hover{color:#fff;background:rgba(255,255,255,.06);transform:none}
 .admin-console-page .admin-nav-group{
-  margin:10px 8px 4px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#7b83a3
+  margin:var(--admin-nav-group-gap) 10px var(--admin-nav-group-to-item);
+  padding:0;line-height:1.2;
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#7b83a3
 }
 .admin-console-page .admin-nav-item{
   display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:transparent;color:#c5cbe4;
-  padding:6px 10px;border-radius:8px;font:inherit;font-size:13px;font-weight:700;cursor:pointer
+  height:var(--admin-nav-item-height);min-height:var(--admin-nav-item-height);margin:0;
+  padding:0 10px;border-radius:8px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;
+  box-sizing:border-box;flex:none
 }
+.admin-console-page .admin-nav-item + .admin-nav-item{margin-top:var(--admin-nav-item-gap)}
 .admin-console-page .admin-nav-item:hover{background:rgba(255,255,255,.06);color:#fff;transform:none}
 .admin-console-page .admin-nav-item.is-active,
 .admin-console-page .admin-nav-item.active{background:rgba(139,92,246,.18);color:#fff;border:1px solid rgba(167,139,250,.28)}
