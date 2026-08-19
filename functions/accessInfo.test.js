@@ -45,8 +45,20 @@ function testPickClientIp() {
     '123.45.67.89'
   );
   assert.strictEqual(
+    pickClientIp({ 'x-forwarded-for': '10.0.0.1, 123.45.67.89, 35.191.0.2' }, '127.0.0.1'),
+    '123.45.67.89'
+  );
+  assert.strictEqual(
+    pickClientIp({ 'x-forwarded-for': '123.45.67.89, 35.191.0.2' }, '35.191.0.2'),
+    '123.45.67.89'
+  );
+  assert.strictEqual(
     pickClientIp({ 'x-appengine-user-ip': '8.8.8.8' }, '127.0.0.1'),
     '8.8.8.8'
+  );
+  assert.strictEqual(
+    pickClientIp({ 'x-forwarded-for': '35.191.12.1, 169.254.1.1' }, '35.191.12.1'),
+    ''
   );
   console.log('ok pickClientIp');
 }
@@ -72,6 +84,13 @@ function testThrottle() {
   );
   assert.strictEqual(
     shouldSkipAccessWrite({ updatedAt: { seconds: Math.floor((now - 40 * 60 * 1000) / 1000) } }, now),
+    false
+  );
+  assert.strictEqual(
+    shouldSkipAccessWrite(
+      { countryCode: 'KR', updatedAt: { seconds: Math.floor((now - 40 * 60 * 1000) / 1000) } },
+      now
+    ),
     false
   );
   assert.ok(ACCESS_INFO_THROTTLE_MS === 30 * 60 * 1000);
@@ -206,6 +225,95 @@ function testLiveGeoip() {
   assert.ok(!JSON.stringify(info).includes('8.8.8.8'));
   assert.strictEqual(info.lastIpMasked, '8.8.***.***');
   console.log('ok liveGeoip', info.countryCode);
+
+  const krLooked = geoip.lookup('211.115.80.1');
+  assert.ok(krLooked && krLooked.country === 'KR');
+  const krInfo = buildAccessInfo({ headers: {}, ip: '211.115.80.1', language: 'ko-KR', clientType: 'app' });
+  assert.strictEqual(krInfo.countryCode, 'KR');
+  assert.ok(!JSON.stringify(krInfo).includes('211.115.80.1'));
+  assert.strictEqual(krInfo.clientType, 'app');
+  console.log('ok liveGeoipKR', krInfo.countryCode, krInfo.city || '(no city)');
+}
+
+async function testIgnoresClientCountryAndUid() {
+  const writes = [];
+  const db = {
+    collection() {
+      return {
+        doc(uid) {
+          assert.strictEqual(uid, 'token-uid');
+          return {
+            async get() {
+              return { exists: true, data: () => ({ uid: 'token-uid' }) };
+            },
+            async set(data, opts) {
+              writes.push({ data, opts });
+            }
+          };
+        }
+      };
+    }
+  };
+  const adminNs = { firestore: { FieldValue: { serverTimestamp: () => 'TS' } } };
+  await recordUserAccessInfo(
+    db,
+    adminNs,
+    { uid: 'token-uid' },
+    {
+      headers: { 'x-forwarded-for': '211.115.80.1' },
+      ip: '211.115.80.1',
+      body: { uid: 'attacker-uid', countryCode: 'US', countryName: 'United States', ip: '9.9.9.9' }
+    },
+    () => ({ countryCode: 'KR', city: 'Seoul' })
+  );
+  assert.strictEqual(writes.length, 1);
+  assert.strictEqual(writes[0].data.uid, 'token-uid');
+  assert.strictEqual(writes[0].data.accessInfo.countryCode, 'KR');
+  assert.ok(!JSON.stringify(writes[0].data).includes('9.9.9.9'));
+  assert.ok(!JSON.stringify(writes[0].data).includes('attacker-uid'));
+  console.log('ok ignoresClientCountryAndUid');
+}
+
+async function testKeepsPreviousCountryOnGeoFail() {
+  const writes = [];
+  const db = {
+    collection() {
+      return {
+        doc() {
+          return {
+            async get() {
+              return {
+                exists: true,
+                data: () => ({
+                  uid: 'u1',
+                  accessInfo: {
+                    countryCode: 'KR',
+                    countryName: '대한민국',
+                    city: 'Seoul',
+                    lastIpMasked: '211.115.***.***',
+                    updatedAt: { seconds: Math.floor((Date.now() - 40 * 60 * 1000) / 1000) }
+                  }
+                })
+              };
+            },
+            async set(data) { writes.push(data); }
+          };
+        }
+      };
+    }
+  };
+  const adminNs = { firestore: { FieldValue: { serverTimestamp: () => 'TS' } } };
+  await recordUserAccessInfo(
+    db,
+    adminNs,
+    { uid: 'u1' },
+    { headers: {}, ip: '127.0.0.1', body: { clientType: 'app', language: 'ko-KR' } },
+    () => null
+  );
+  assert.strictEqual(writes.length, 1);
+  assert.strictEqual(writes[0].accessInfo.countryCode, 'KR');
+  assert.strictEqual(writes[0].accessInfo.clientType, 'app');
+  console.log('ok keepsPreviousCountryOnGeoFail');
 }
 
 testMaskIp();
@@ -216,7 +324,10 @@ testThrottle();
 testCountryFromIpNotLanguage();
 testNormalize();
 testLiveGeoip();
-testRecordWriteMasksIp().then(() => {
+testRecordWriteMasksIp()
+  .then(testIgnoresClientCountryAndUid)
+  .then(testKeepsPreviousCountryOnGeoFail)
+  .then(() => {
   console.log('accessInfo tests passed');
 }).catch((err) => {
   console.error(err);

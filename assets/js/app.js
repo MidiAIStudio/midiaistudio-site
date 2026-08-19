@@ -1964,22 +1964,44 @@ async function upsertUser(user){
   }
 }
 const ACCESS_INFO_CLIENT_THROTTLE_MS = 30 * 60 * 1000;
-const ACCESS_INFO_LS_KEY = 'midiai_accessInfo_at';
+const ACCESS_INFO_LS_PREFIX = 'midiai_accessInfo_at:';
+function accessInfoLsKey(uid){
+  return ACCESS_INFO_LS_PREFIX + String(uid || '');
+}
 function detectAccessClientType(){
   const ua = navigator.userAgent || '';
   if(/MidiAIStudio|MidiAI Studio|Electron/i.test(ua)) return 'app';
   return 'web';
 }
-function shouldRecordAccessInfoClient(){
+function shouldRecordAccessInfoClient(uid){
+  if(!uid) return false;
+  const info = currentUserDoc && currentUserDoc.accessInfo;
+  const code = String(info && info.countryCode || '').trim().toUpperCase();
+  const hasCountry = /^[A-Z]{2}$/.test(code) && code !== 'ZZ' && code !== 'XX';
   try{
-    const at = Number(localStorage.getItem(ACCESS_INFO_LS_KEY) || 0);
-    if(at && Date.now() - at < ACCESS_INFO_CLIENT_THROTTLE_MS) return false;
+    const at = Number(localStorage.getItem(accessInfoLsKey(uid)) || 0);
+    const age = at ? Date.now() - at : Infinity;
+    if(!hasCountry && !info){
+      return age >= 15000;
+    }
+    if(at && age < ACCESS_INFO_CLIENT_THROTTLE_MS) return false;
   }catch(_){}
   return true;
 }
+function markAccessInfoClientAttempt(uid, ok){
+  if(!uid) return;
+  try{
+    const value = ok
+      ? String(Date.now())
+      : String(Date.now() - ACCESS_INFO_CLIENT_THROTTLE_MS + 10*60*1000);
+    localStorage.setItem(accessInfoLsKey(uid), value);
+    try{ localStorage.removeItem('midiai_accessInfo_at'); }catch(_){}
+  }catch(_){}
+}
 /** Fire-and-forget: never blocks login / license. Server also throttles writes. */
 function recordAccessInfoQuiet(){
-  if(!currentUser || !shouldRecordAccessInfoClient()) return;
+  const uid = currentUser && currentUser.uid;
+  if(!currentUser || !uid || !shouldRecordAccessInfoClient(uid)) return;
   (async ()=>{
     try{
       const base = String(CONFIG.functionsBaseUrl || '').replace(/\/$/, '');
@@ -1996,15 +2018,10 @@ function recordAccessInfoQuiet(){
           clientType: detectAccessClientType()
         })
       });
-      if(res.ok){
-        try{ localStorage.setItem(ACCESS_INFO_LS_KEY, String(Date.now())); }catch(_){}
-      }else{
-        // Back off 10 minutes on failure so a missing Function cannot spam on every page load.
-        try{ localStorage.setItem(ACCESS_INFO_LS_KEY, String(Date.now() - ACCESS_INFO_CLIENT_THROTTLE_MS + 10*60*1000)); }catch(_){}
-      }
+      markAccessInfoClientAttempt(uid, !!res.ok);
     }catch(e){
-      console.warn('recordAccessInfo', e);
-      try{ localStorage.setItem(ACCESS_INFO_LS_KEY, String(Date.now() - ACCESS_INFO_CLIENT_THROTTLE_MS + 10*60*1000)); }catch(_){}
+      console.warn('recordAccessInfo');
+      markAccessInfoClientAttempt(uid, false);
     }
   })();
 }

@@ -88,28 +88,46 @@ function parseGoogleGeoHeaders(headers = {}) {
   return { countryCode, city };
 }
 
-function firstForwardedIp(value) {
+function forwardedIps(value) {
   return String(value || '')
     .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean)[0] || '';
+    .map((p) => stripIpv4Mapped(p.trim()))
+    .filter(Boolean);
+}
+
+/** Google Front End / LB hops that must not be Geo-IP'd as the user. */
+function isGoogleFrontendIp(ip) {
+  const s = stripIpv4Mapped(ip);
+  if (!s || s.includes(':')) return false;
+  return (
+    /^35\.191\./.test(s) ||
+    /^130\.211\./.test(s) ||
+    /^35\.190\./.test(s) ||
+    /^35\.186\./.test(s) ||
+    /^108\.177\./.test(s)
+  );
+}
+
+function isUsablePublicClientIp(ip) {
+  const s = stripIpv4Mapped(ip);
+  return !!(s && !isPrivateIp(s) && !isGoogleFrontendIp(s));
 }
 
 function pickClientIp(headers = {}, fallback = '') {
   const h = headers || {};
-  const candidates = [
+  // Prefer App Engine's client IP, then walk XFF left-to-right skipping
+  // private and Google proxy hops. Never take an arbitrary XFF slot.
+  const ordered = [
     h['x-appengine-user-ip'],
-    h['x-forwarded-for'] && firstForwardedIp(h['x-forwarded-for']),
+    ...forwardedIps(h['x-forwarded-for']),
     h['fastly-client-ip'],
     h['x-real-ip'],
     fallback
   ];
-  for (const c of candidates) {
-    const ip = stripIpv4Mapped(c);
-    if (ip && !isPrivateIp(ip)) return ip;
+  for (const c of ordered) {
+    if (isUsablePublicClientIp(c)) return stripIpv4Mapped(c);
   }
-  const any = stripIpv4Mapped(fallback);
-  return any || '';
+  return '';
 }
 
 function accessUpdatedAtMs(prev) {
@@ -209,6 +227,7 @@ async function recordUserAccessInfo(db, adminNs, decoded, req, lookupGeo) {
 
   const ip = pickClientIp(req.headers || {}, req.ip || '');
   const body = req.body || {};
+  // Clients must not supply country/IP. Ignore spoof fields if present.
   const accessInfo = buildAccessInfo({
     headers: req.headers || {},
     ip,
@@ -216,6 +235,13 @@ async function recordUserAccessInfo(db, adminNs, decoded, req, lookupGeo) {
     clientType: body.clientType,
     lookupGeo
   });
+  const prevCode = prev ? normalizeCountryCode(prev.countryCode) : '';
+  if (!accessInfo.countryCode && prevCode) {
+    accessInfo.countryCode = prevCode;
+    accessInfo.countryName = prev.countryName || countryNameFor(prevCode);
+    if (!accessInfo.city && prev.city) accessInfo.city = prev.city;
+    if (!accessInfo.lastIpMasked && prev.lastIpMasked) accessInfo.lastIpMasked = prev.lastIpMasked;
+  }
 
   await ref.set(
     {
@@ -235,6 +261,7 @@ module.exports = {
   maskIp,
   isPrivateIp,
   pickClientIp,
+  isGoogleFrontendIp,
   parseGoogleGeoHeaders,
   shouldSkipAccessWrite,
   normalizeCountryCode,
