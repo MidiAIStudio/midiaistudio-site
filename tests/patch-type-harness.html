@@ -14,18 +14,22 @@
   <script type="module">
     import { patchNoteType, patchNoteVersion } from '../assets/js/patch-note-type.js';
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    function kindBadge(item, extra=''){
+    function badge(kind, text){
+      return `<span class="patch-badge patch-badge--${kind}">${text}</span>`;
+    }
+    function kindBadge(item){
       const type = patchNoteType(item);
-      return `<span class="patch-kind-badge is-${type}${extra?` ${extra}`:''}">${type==='web'?'WEB':'APP'}</span>`;
+      return badge(type, type==='web'?'WEB':'APP');
     }
     function listTitle(x){
       const ver = patchNoteVersion(x);
-      return `${kindBadge(x)}${ver?`<span class="badge active">v${esc(ver)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span>`;
+      return `${kindBadge(x)}${ver?badge('version', `v${esc(ver)}`):''}<span class="hub-col-title-text">${esc(x.title)}</span>`;
     }
     const rows = [
       {id:'web1', type:'web', title:'자유게시판 MIDI 미리듣기 개선', createdAt:{seconds:1}, viewCount:3},
       {id:'app162', version:'1.6.2', title:'업데이트', createdAt:{seconds:1}, viewCount:10},
-      {id:'app161', version:'1.6.1', title:'업데이트(중요)', createdAt:{seconds:1}, viewCount:8}
+      {id:'app161', version:'1.6.1', title:'업데이트(중요)', createdAt:{seconds:1}, viewCount:8},
+      {id:'app160', version:'1.6.0', title:'업데이트', createdAt:{seconds:1}, viewCount:6}
     ];
     let no = rows.length;
     document.getElementById('patchList').innerHTML =
@@ -36,13 +40,13 @@
     document.getElementById('patchDetail').innerHTML = `
       <article class="hub-post-detail hub-patch-detail" id="detailWeb">
         <div class="patch-head"><div class="patch-head-main">
-          <div class="patch-head-kicker">${kindBadge(d,'is-detail')}</div>
+          <div class="patch-head-kicker">${kindBadge(d)}</div>
           <h1 class="patch-detail-title">${esc(d.title)}</h1>
         </div></div>
       </article>
       <article class="hub-post-detail hub-patch-detail" id="detailApp" style="margin-top:16px">
         <div class="patch-head"><div class="patch-head-main">
-          <div class="patch-head-kicker">${kindBadge(app,'is-detail')}<span class="patch-version-pill">v${esc(patchNoteVersion(app))}</span></div>
+          <div class="patch-head-kicker">${kindBadge(app)}${badge('version', `v${esc(patchNoteVersion(app))}`)}</div>
           <h1 class="patch-detail-title">${esc(app.title)}</h1>
         </div></div>
       </article>`;

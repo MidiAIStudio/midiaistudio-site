@@ -1057,12 +1057,20 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .hub-page .hub-col-views{color:#c7cbe4;font-size:12px}
 .hub-page .hub-notice-row .hub-col-title small{display:none}
 .hub-page .hub-notice-row .hub-col-title b{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.25}
-.hub-page .hub-notice-row .hub-col-title .hub-col-title-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.hub-page .hub-notice-row .hub-col-title .hub-col-title-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;line-height:1.25}
 .hub-page .hub-notice-row .hub-col-title .badge{margin-right:0;flex-shrink:0;padding:2px 7px;font-size:11px;line-height:1.15;vertical-align:baseline}
-.patch-kind-badge{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;margin:0;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.04em;line-height:1.25}
-.patch-kind-badge.is-app{color:#9aa3bb;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12)}
-.patch-kind-badge.is-web{color:#8eb8d4;background:rgba(34,211,238,.07);border:1px solid rgba(34,211,238,.16)}
-.hub-page .hub-notice-row .hub-col-title .patch-kind-badge{margin-top:0}
+.hub-page .patch-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  box-sizing:border-box;flex-shrink:0;
+  height:18px;min-height:18px;margin:0;padding:0 7px;
+  border:1px solid transparent;border-radius:6px;
+  font-size:10px;font-weight:800;letter-spacing:.04em;line-height:1;
+  vertical-align:middle;position:static;transform:none
+}
+.hub-page .patch-badge--app{color:#c5c0ff;background:rgba(139,92,246,.16);border-color:rgba(167,139,250,.34)}
+.hub-page .patch-badge--web{color:#8eeaff;background:rgba(34,211,238,.12);border-color:rgba(34,211,238,.30)}
+.hub-page .patch-badge--version{color:#8ff3c5;background:rgba(54,211,153,.14);border-color:rgba(54,211,153,.32)}
+@media(max-width:900px){.hub-page .hub-notice-row .hub-col-title b{gap:5px}}
 .hub-page .post-card-head h1 .badge{margin-right:8px;vertical-align:middle;font-size:13px}
 .hub-page .hub-ticket-head,.hub-page .hub-ticket-row{grid-template-columns:minmax(0,1fr) 100px 90px 110px}
 .hub-page .hub-col-cat{color:#c7cbe4;font-size:12px}
@@ -1169,10 +1177,8 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .hub-page .patch-back-link:hover{color:#fff}
 .hub-page .patch-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,.07)}
 .hub-page .patch-head-main{min-width:0;flex:1}
-.hub-page .patch-head-kicker{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
-.hub-page .patch-head-kicker .patch-version-pill{margin-bottom:0}
-.hub-page .patch-kind-badge.is-detail{font-size:11px;padding:3px 8px}
-.hub-page .patch-version-pill{display:inline-flex;padding:4px 10px;border-radius:999px;background:rgba(54,211,153,.12);border:1px solid rgba(54,211,153,.28);color:#8ff3c5;font-size:12px;font-weight:900;margin-bottom:10px}
+.hub-page .patch-head-kicker{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.hub-page .patch-head-kicker .patch-badge{height:18px;min-height:18px}
 .hub-page .patch-detail-title{margin:0 0 6px;font-size:clamp(16px,1.8vw,18px);line-height:1.4;letter-spacing:-.02em;color:#fff;font-weight:800}
 .hub-page .patch-meta-line{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin:0;color:rgba(154,160,191,.88);font-size:11px!important;font-weight:700;line-height:1.35!important;letter-spacing:.01em}
 .hub-page .patch-meta-line span{display:inline-flex;align-items:center;gap:4px;font-size:inherit!important;line-height:inherit!important}

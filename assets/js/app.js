@@ -883,14 +883,17 @@ function patchTocHtml(sections){
   if(sections.length <= 1 || sections.length > 6) return '';
   return `<nav class="patch-toc" aria-label="${esc(tt('목차'))}"><ol>${sections.map((s,i)=>`<li><a href="#patch-section-${i}">${esc(s.title.replace(/^[\p{Extended_Pictographic}\uFE0F\s]+/u, '') || s.title)}</a></li>`).join('')}</ol></nav>`;
 }
+function patchBadgeHtml(kind, text, extraClass=''){
+  const cls = extraClass ? ` ${extraClass}` : '';
+  return `<span class="patch-badge patch-badge--${kind}${cls}">${text}</span>`;
+}
 function patchKindBadgeHtml(item, extraClass=''){
   const type = patchNoteType(item);
-  const cls = extraClass ? ` ${extraClass}` : '';
-  return `<span class="patch-kind-badge is-${type}${cls}">${type === 'web' ? 'WEB' : 'APP'}</span>`;
+  return patchBadgeHtml(type, type === 'web' ? 'WEB' : 'APP', extraClass);
 }
 function patchListTitleHtml(x){
   const ver = patchNoteVersion(x);
-  return `${patchKindBadgeHtml(x)}${ver?`<span class="badge active">v${esc(ver)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span>`;
+  return `${patchKindBadgeHtml(x)}${ver?patchBadgeHtml('version', `v${esc(ver)}`):''}<span class="hub-col-title-text">${esc(x.title)}</span>`;
 }
 function patchNavLabel(item){
   const ver = patchNoteVersion(item);
@@ -943,7 +946,7 @@ function patchDetailHtml(d, nav=null){
     </header>
     <div class="patch-head">
       <div class="patch-head-main">
-        <div class="patch-head-kicker">${patchKindBadgeHtml(d,'is-detail')}${version?`<span class="patch-version-pill">v${esc(version)}</span>`:''}</div>
+        <div class="patch-head-kicker">${patchKindBadgeHtml(d)}${version?patchBadgeHtml('version', `v${esc(version)}`):''}</div>
         <h1 class="patch-detail-title">${esc(d.title || '')}</h1>
         <p class="patch-meta-line"><span>${esc(noticeAuthor(d))}</span><span>${esc(fmtListDate(d.createdAt))}</span><span>${esc(tt('조회'))} ${Number(d.viewCount || 0)}</span></p>
         ${toc}

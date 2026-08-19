@@ -39,52 +39,106 @@ try{
   await page.waitForFunction(()=> window.__patchHarnessReady === true, { timeout: 10000 });
 
   const desktop = await page.evaluate(()=>{
+    const box = (el)=>{
+      if(!el) return null;
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      const parent = el.parentElement.getBoundingClientRect();
+      return {
+        text: el.textContent.trim(),
+        height: Number(r.height.toFixed(2)),
+        center: Number((r.top + r.height/2).toFixed(2)),
+        offset: Number((r.top - parent.top).toFixed(2)),
+        radius: cs.borderRadius,
+        fontSize: cs.fontSize,
+        lineHeight: cs.lineHeight,
+        fontWeight: cs.fontWeight,
+        paddingTop: cs.paddingTop,
+        paddingBottom: cs.paddingBottom,
+        marginTop: cs.marginTop,
+        borderWidth: cs.borderTopWidth,
+        color: cs.color,
+        display: cs.display
+      };
+    };
     const rows = [...document.querySelectorAll('.hub-notice-row')];
+    const appRow = rows.find((r)=> r.querySelector('.patch-badge--version')?.textContent.includes('1.6.2'));
+    const webRow = rows.find((r)=> r.querySelector('.patch-badge--web'));
     const body = document.querySelector('.hub-list-body');
+    const app = box(appRow?.querySelector('.patch-badge--app'));
+    const version = box(appRow?.querySelector('.patch-badge--version'));
+    const title = box(appRow?.querySelector('.hub-col-title-text'));
+    const web = box(webRow?.querySelector('.patch-badge--web'));
     return {
       items: rows.map((row)=>({
-        kind: row.querySelector('.patch-kind-badge')?.textContent?.trim() || '',
-        version: row.querySelector('.badge.active')?.textContent?.trim() || '',
+        kind: row.querySelector('.patch-badge--app, .patch-badge--web')?.textContent?.trim() || '',
+        version: row.querySelector('.patch-badge--version')?.textContent?.trim() || '',
         title: row.querySelector('.hub-col-title-text')?.textContent?.trim() || '',
         height: Math.round(row.getBoundingClientRect().height)
       })),
       overflow: body.scrollWidth > body.clientWidth + 2,
-      webDetailVersion: document.querySelector('#detailWeb .patch-version-pill')?.textContent || '',
+      app, web, version, title,
+      webDetailVersion: document.querySelector('#detailWeb .patch-badge--version')?.textContent || '',
       appDetail: {
-        kind: document.querySelector('#detailApp .patch-kind-badge')?.textContent?.trim() || '',
-        version: document.querySelector('#detailApp .patch-version-pill')?.textContent?.trim() || ''
+        kind: document.querySelector('#detailApp .patch-badge--app')?.textContent?.trim() || '',
+        version: document.querySelector('#detailApp .patch-badge--version')?.textContent?.trim() || ''
       }
     };
   });
+
   const web = desktop.items.find((x)=> x.kind === 'WEB');
-  const app = desktop.items.find((x)=> x.version === 'v1.6.2');
-  if(!web) fail('WEB row missing');
-  if(web.version) fail('WEB row showed version: ' + web.version);
-  if(!web.title.includes('미리듣기')) fail('WEB title missing');
-  if(!app || app.kind !== 'APP') fail('legacy v1.6.2 not APP: ' + JSON.stringify(app));
+  const app162 = desktop.items.find((x)=> x.version === 'v1.6.2');
+  const app161 = desktop.items.find((x)=> x.version === 'v1.6.1');
+  const app160 = desktop.items.find((x)=> x.version === 'v1.6.0');
+  if(!web || web.version) fail('WEB row invalid: ' + JSON.stringify(web));
+  if(!app162 || app162.kind !== 'APP') fail('v1.6.2 row invalid');
+  if(!app161 || app161.kind !== 'APP') fail('v1.6.1 row invalid');
+  if(!app160 || app160.kind !== 'APP') fail('v1.6.0 row invalid');
   if(desktop.overflow) fail('desktop overflow');
   if(desktop.webDetailVersion) fail('WEB detail showed version');
   if(desktop.appDetail.kind !== 'APP' || desktop.appDetail.version !== 'v1.6.2') fail('APP detail mismatch');
+
+  const {app, version, web: webBadge, title} = desktop;
+  for(const [name, el] of [['APP', app], ['WEB', webBadge], ['VERSION', version]]){
+    if(!el) fail(name + ' missing');
+    if(el.height !== 18) fail(name + ' height ' + el.height);
+    if(el.radius !== '6px') fail(name + ' radius ' + el.radius);
+    if(el.fontSize !== '10px') fail(name + ' font-size ' + el.fontSize);
+    if(el.lineHeight !== '10px') fail(name + ' line-height ' + el.lineHeight);
+    if(el.paddingTop !== '0px' || el.paddingBottom !== '0px') fail(name + ' padding ' + el.paddingTop);
+    if(el.marginTop !== '0px') fail(name + ' margin-top ' + el.marginTop);
+    if(el.borderWidth !== '1px') fail(name + ' border ' + el.borderWidth);
+    if(el.fontWeight !== '800') fail(name + ' weight ' + el.fontWeight);
+  }
+  if(Math.abs(app.center - version.center) > 0.6) fail('APP/VERSION center mismatch ' + app.center + ' vs ' + version.center);
+  if(Math.abs(app.center - title.center) > 1.2) fail('APP/title center mismatch ' + app.center + ' vs ' + title.center);
+  if(app.color === 'rgb(154, 163, 187)' || app.color === 'rgb(154,163,187)') fail('APP still gray');
 
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await page.evaluate(()=>{
     const rows = [...document.querySelectorAll('.hub-notice-row')];
     const body = document.querySelector('.hub-list-body') || document.body;
+    const appRow = rows.find((r)=> r.querySelector('.patch-badge--version')?.textContent.includes('1.6.2'));
+    const app = appRow?.querySelector('.patch-badge--app')?.getBoundingClientRect();
+    const ver = appRow?.querySelector('.patch-badge--version')?.getBoundingClientRect();
     return {
       items: rows.map((row)=>({
-        kind: row.querySelector('.patch-kind-badge')?.textContent?.trim() || '',
-        version: row.querySelector('.badge.active')?.textContent?.trim() || '',
+        kind: row.querySelector('.patch-badge--app, .patch-badge--web')?.textContent?.trim() || '',
+        version: row.querySelector('.patch-badge--version')?.textContent?.trim() || '',
         title: row.querySelector('.hub-col-title-text')?.textContent?.trim() || '',
         height: Math.round(row.getBoundingClientRect().height)
       })),
-      overflowX: body.scrollWidth > document.documentElement.clientWidth + 4
+      overflowX: body.scrollWidth > document.documentElement.clientWidth + 4,
+      centerDelta: app && ver ? Math.abs((app.top + app.height/2) - (ver.top + ver.height/2)) : 99
     };
   });
   if(mobile.items.some((x)=> !x.kind)) fail('mobile missing kind badge');
   if(mobile.items.some((x)=> x.height > 160)) fail('mobile row too tall ' + JSON.stringify(mobile.items));
   if(mobile.overflowX) fail('mobile horizontal overflow');
+  if(mobile.centerDelta > 0.6) fail('mobile APP/VERSION misaligned ' + mobile.centerDelta);
 
-  console.log('desktop', desktop);
+  console.log('desktop metrics', { app, web: webBadge, version, title });
+  console.log('desktop rows', desktop.items);
   console.log('mobile', mobile);
   if(errors.length) fail('page errors: ' + errors.join(' | '));
   console.log('e2e patch-type harness pass');
