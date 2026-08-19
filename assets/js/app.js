@@ -19,6 +19,7 @@ import {
   ensureMarkdownCss,
   pickMarkdownSource
 } from './markdown/index.js?v=md-placeholder-1';
+import { renderMidiPreviewWav as renderMidiPreviewEngine } from './board-midi-preview.js?v=gm-preview-1';
 import {
   configureAdminUserLogs,
   initAdminUserLogs,
@@ -6074,31 +6075,18 @@ function boardMidiContentType(file){
   return 'audio/midi';
 }
 function ensureMidiPlayerLib(){
-  if(window.Tone && getToneMidi()) return Promise.resolve();
+  if(window.Tone?.Offline) return Promise.resolve();
   if(midiPlayerLibPromise) return midiPlayerLibPromise;
   midiPlayerLibPromise = new Promise((resolve, reject)=>{
     const fail = ()=>{ midiPlayerLibPromise=null; reject(new Error('MIDI 엔진 로드 실패')); };
-    const load = (src, next)=>{
-      const s=document.createElement('script');
-      s.src=src;
-      s.async=true;
-      s.onload=next;
-      s.onerror=fail;
-      document.head.appendChild(s);
-    };
-    load('https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js', ()=>{
-      load('https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.28/build/Midi.js', ()=>{
-        if(window.Tone && getToneMidi()) resolve();
-        else fail();
-      });
-    });
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js';
+    s.async=true;
+    s.onload=()=>{ if(window.Tone?.Offline) resolve(); else fail(); };
+    s.onerror=fail;
+    document.head.appendChild(s);
   });
   return midiPlayerLibPromise;
-}
-function getToneMidi(){
-  if(typeof window.Midi === 'function') return window.Midi;
-  if(typeof window.Midi?.Midi === 'function') return window.Midi.Midi;
-  return null;
 }
 function boardSafeFilename(name){
   const raw = String(name || 'attachment').normalize('NFKC');
@@ -6192,60 +6180,47 @@ async function boardMidiBytes(path, url){
   }
   throw new Error('MIDI 파일을 가져오지 못했습니다. Functions(boardFileProxy) 배포와 Storage 경로를 확인하세요.');
 }
-async function renderMidiPreviewWav(midiArrayBuffer, maxSec=40){
+async function renderMidiPreviewWav(midiArrayBuffer, maxSec=40, opts={}){
   await ensureMidiPlayerLib();
-  const Tone = window.Tone;
-  const MidiCtor = getToneMidi();
-  if(!Tone?.Offline || !MidiCtor) throw new Error('미리듣기 엔진 없음');
-  const midi = new MidiCtor(midiArrayBuffer);
-  const dur = Math.min(Math.max(Number(midi.duration)||1, 0.5), maxSec);
-  const rendered = await Tone.Offline(() => {
-    const synth = new Tone.PolySynth(Tone.Synth, {
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.005, decay: 0.1, sustain: 0.25, release: 0.3 }
-    }).toDestination();
-    synth.maxPolyphony = 48;
-    synth.volume.value = -9;
-    midi.tracks.forEach(track=>{
-      track.notes.forEach(note=>{
-        if(note.time >= maxSec) return;
-        const len = Math.min(Math.max(0.04, note.duration), Math.max(0.04, maxSec - note.time));
-        try{ synth.triggerAttackRelease(note.name, len, note.time, Math.max(0.12, Math.min(1, note.velocity))); }catch(_){}
-      });
-    });
-  }, dur);
-  const audioBuffer = typeof rendered?.get === 'function' ? rendered.get() : rendered;
-  if(!audioBuffer || !audioBuffer.getChannelData) throw new Error('미리듣기 변환 실패');
-  return audioBufferToWavBlob(audioBuffer);
+  const result = await renderMidiPreviewEngine(midiArrayBuffer, maxSec, opts);
+  return audioBufferToWavBlob(result.audioBuffer);
 }
-async function makeBoardMidiPreviewUrl(path, url, cacheKey){
+async function makeBoardMidiPreviewUrl(path, url, cacheKey, onStatus){
   if(boardMidiPreviewCache.has(cacheKey)) return boardMidiPreviewCache.get(cacheKey);
-  const buf = await boardMidiBytes(path, url);
-  const wav = await renderMidiPreviewWav(buf, 40);
-  const obj = URL.createObjectURL(wav);
-  boardMidiPreviewCache.set(cacheKey, obj);
-  return obj;
+  const inflightKey = cacheKey + ':pending';
+  if(boardMidiPreviewCache.has(inflightKey)) return boardMidiPreviewCache.get(inflightKey);
+  const job = (async ()=>{
+    try{
+      const buf = await boardMidiBytes(path, url);
+      const wav = await renderMidiPreviewWav(buf, 40, { onStatus });
+      const obj = URL.createObjectURL(wav);
+      boardMidiPreviewCache.set(cacheKey, obj);
+      return obj;
+    }finally{
+      boardMidiPreviewCache.delete(inflightKey);
+    }
+  })();
+  boardMidiPreviewCache.set(inflightKey, job);
+  return job;
 }
 function boardAttachmentItemHtml(a, idx, editable=false){
   const type = boardFileType(a);
   const name = esc(a.name || a.fileName || 'attachment');
   const url = esc(a.url || '');
   const path = esc(a.path || boardStoragePathFromUrl(a.url) || '');
-  const previewUrl = esc(a.previewUrl || '');
   const badge = type === 'video' ? '🎥 영상' : type === 'midi' ? '🎹 MIDI' : '🖼️ 사진';
   const remove = editable ? `<button type="button" class="secondary mini-btn danger-btn" data-remove-existing-attachment="${idx}">삭제</button>` : '';
   if(type === 'midi'){
-    const hasPreview = !!a.previewUrl;
     return `<figure class="board-attachment-item board-attachment-midi">
       <div class="board-midi-card">
         <div class="board-midi-row">
           <span class="board-midi-badge"><span class="board-midi-badge-icon" aria-hidden="true">🎹</span> MIDI</span>
           <b class="board-midi-name" title="${name}">${name}</b>
-          ${editable?'':`${hasPreview?'':`<button type="button" class="board-midi-play-btn" data-midi-preview="${url}" data-midi-path="${path}" aria-label="미리듣기">미리듣기</button>`}
+          ${editable?'':`<button type="button" class="board-midi-play-btn" data-midi-preview="${url}" data-midi-path="${path}" aria-label="미리듣기">미리듣기</button>
           <a class="board-midi-dl" href="${url}" target="_blank" rel="noopener noreferrer" download>다운로드</a>`}
           ${remove}
         </div>
-        <audio class="board-midi-audio" controls preload="none" ${hasPreview?`src="${previewUrl}"`:'hidden'}></audio>
+        <audio class="board-midi-audio" controls preload="none" hidden></audio>
         <p class="board-midi-msg muted" hidden></p>
       </div>
     </figure>`;
@@ -6271,9 +6246,10 @@ async function prepareBoardMidiPreview(btn){
   if(!url || !audio) return;
   btn.disabled = true;
   btn.textContent = '변환중…';
-  setBoardMidiMsg(card, 'MIDI → 오디오 미리듣기 변환 중 (첫 40초)…');
+  setBoardMidiMsg(card, '악기 음원 준비 중…');
   try{
-    const preview = await makeBoardMidiPreviewUrl(path, url, url);
+    document.querySelectorAll('.board-midi-audio').forEach((el)=>{ if(el !== audio) try{ el.pause(); }catch(_){ } });
+    const preview = await makeBoardMidiPreviewUrl(path, url, url, (msg)=>setBoardMidiMsg(card, msg));
     audio.src = preview;
     audio.hidden = false;
     setBoardMidiMsg(card, '미리듣기 준비됨 · 재생 버튼을 누르세요');
@@ -6292,6 +6268,13 @@ function hydrateBoardMidiPlayers(root=document){
     if(btn.dataset.bound) return;
     btn.dataset.bound='1';
     btn.addEventListener('click',()=>prepareBoardMidiPreview(btn));
+  });
+  root.querySelectorAll?.('.board-midi-audio').forEach(audio=>{
+    if(audio.dataset.bound) return;
+    audio.dataset.bound='1';
+    audio.addEventListener('play',()=>{
+      document.querySelectorAll('.board-midi-audio').forEach((el)=>{ if(el!==audio) try{ el.pause(); }catch(_){ } });
+    });
   });
 }
 function renderBoardAttachmentPreview(){
@@ -6354,19 +6337,6 @@ async function uploadBoardAttachments(postId){
     await uploadBytes(fileRef, file, { contentType });
     const url = await getDownloadURL(fileRef);
     const item = { type: boardFileType(file), mime: contentType, name: file.name, size: file.size, path, url };
-    if(isBoardMidi(file)){
-      try{
-        if(msg) msg.textContent = `MIDI 미리듣기 생성 중... ${i+1}/${selectedBoardFiles.length}`;
-        const wav = await renderMidiPreviewWav(await file.arrayBuffer(), 40);
-        const previewPath = `board/${currentUser.uid}/${postId}/${Date.now()}_${i}_preview.wav`;
-        const previewRef = ref(storage, previewPath);
-        await uploadBytes(previewRef, wav, { contentType: 'audio/wav' });
-        item.previewUrl = await getDownloadURL(previewRef);
-        item.previewPath = previewPath;
-      }catch(err){
-        console.warn('midi preview upload skipped', err);
-      }
-    }
     uploaded.push(item);
   }
   return uploaded;

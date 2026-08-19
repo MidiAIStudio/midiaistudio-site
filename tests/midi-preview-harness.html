@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIDI GM preview harness</title>
+</head>
+<body>
+  <p>Load a MIDI, then render with the board GM engine.</p>
+  <input id="file" type="file" accept=".mid,.midi">
+  <button id="go" type="button">Render 6s preview</button>
+  <pre id="log"></pre>
+  <audio id="player" controls></audio>
+  <script src="https://cdn.jsdelivr.net/npm/tone@14.8.49/build/Tone.js"></script>
+  <script type="module">
+    import { parseMidiPerformance, renderMidiPreviewWav, GM_DISPLAY_NAMES } from '../assets/js/board-midi-preview.js';
+    const log = (m)=>{ document.getElementById('log').textContent += m + '\n'; };
+    document.getElementById('go').onclick = async ()=>{
+      const file = document.getElementById('file').files[0];
+      if(!file){ log('no file'); return; }
+      const buf = await file.arrayBuffer();
+      const parsed = parseMidiPerformance(buf);
+      log(JSON.stringify(parsed.tracks.map(t=>({
+        track: t.index, ch: t.channels.map(c=>c+1), prog: t.programs,
+        inst: t.programs.map(p=>p==='drums'?'drums':GM_DISPLAY_NAMES[p]), n: t.noteCount
+      })), null, 2));
+      const { audioBuffer, loadedPrograms, fallbackPrograms } = await renderMidiPreviewWav(buf, 6, {
+        onStatus: (s)=>log(s)
+      });
+      log('loaded ' + loadedPrograms.join(',') + ' fallback ' + fallbackPrograms.join(','));
+      const wav = audioBufferToWav(audioBuffer);
+      document.getElementById('player').src = URL.createObjectURL(wav);
+      await document.getElementById('player').play();
+    };
+    function audioBufferToWav(audioBuffer){
+      const numChannels = audioBuffer.numberOfChannels;
+      const sampleRate = audioBuffer.sampleRate;
+      const samples = audioBuffer.length;
+      const buffer = new ArrayBuffer(44 + samples * numChannels * 2);
+      const view = new DataView(buffer);
+      const w = (o,s)=>{ for(let i=0;i<s.length;i++) view.setUint8(o+i, s.charCodeAt(i)); };
+      w(0,'RIFF'); view.setUint32(4, 36+samples*numChannels*2, true); w(8,'WAVE'); w(12,'fmt ');
+      view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,numChannels,true);
+      view.setUint32(24,sampleRate,true); view.setUint32(28,sampleRate*numChannels*2,true);
+      view.setUint16(32,numChannels*2,true); view.setUint16(34,16,true); w(36,'data');
+      view.setUint32(40,samples*numChannels*2,true);
+      let o=44; const ch=[]; for(let c=0;c<numChannels;c++) ch.push(audioBuffer.getChannelData(c));
+      for(let i=0;i<samples;i++) for(let c=0;c<numChannels;c++){
+        let s=Math.max(-1,Math.min(1,ch[c][i]));
+        view.setInt16(o, s<0?s*0x8000:s*0x7fff, true); o+=2;
+      }
+      return new Blob([buffer], {type:'audio/wav'});
+    }
+  </script>
+</body>
+</html>
