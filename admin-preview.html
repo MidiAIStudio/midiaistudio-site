@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-ia-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-cms-1">
 
 </head>
 <body class="admin-page admin-console-page admin-preview-page portal-page">
@@ -86,7 +86,7 @@
         <button type="button" class="admin-nav-item" data-admin-nav="tickets" data-admin-tab="tickets">문의</button>
         <p class="admin-nav-group">운영</p>
         <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs">로그</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="content">공지·콘텐츠</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="content">콘텐츠</button>
         <button type="button" class="admin-nav-item" data-admin-nav="pricing" data-admin-tab="pricing">가격·상품</button>
       </nav>
       <a class="admin-sidebar-site" href="./index.html">사이트로 돌아가기</a>
@@ -98,6 +98,7 @@
           <h1 id="adminConsoleTitle">홈</h1>
           <p class="admin-console-lead" id="adminConsoleLead"></p>
         </div>
+        <div class="admin-work-tabs-slot" id="adminWorkTabsSlot"></div>
         <span class="admin-preview-badge">PREVIEW · 목업 데이터</span>
       </div>
   <main class="admin-console-main">
@@ -219,34 +220,61 @@
 
             <div class="admin-crm" id="adminCrm" hidden>
               <aside class="admin-crm-list-pane">
-                <div class="admin-crm-stats" id="adminCrmStats" aria-label="회원 통계"></div>
+                <div class="admin-page-tabs admin-work-status-tabs" id="adminCrmWorkTabs" hidden role="tablist"></div>
+                <div class="admin-crm-stats" id="adminCrmStats" aria-label="업무 통계"></div>
                 <div class="admin-crm-toolbar">
                   <input id="adminUserSearch" class="search-input compact" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
-                  <div class="admin-crm-filter-primary">
-                    <select id="adminUserLicenseStatus" aria-label="License">
-                      <option value="all">라이선스: 전체</option>
-                      <option value="trial">체험판</option>
-                      <option value="lifetime">평생</option>
-                      <option value="period">기간제</option>
-                      <option value="favorites">★ 즐겨찾기</option>
-                    </select>
-                    <select id="adminUserSort" aria-label="정렬">
-                      <option value="lastLogin">최근 로그인</option>
-                      <option value="createdAt">가입일</option>
+                  <div class="admin-crm-toolbar-actions" id="adminCrmToolbarActions">
+                    <div class="admin-crm-filter-wrap" id="adminCrmFilterWrap">
+                      <button type="button" class="secondary mini-btn admin-crm-filter-btn" id="adminCrmFilterBtn" aria-haspopup="true" aria-expanded="false">필터</button>
+                      <div class="admin-crm-filter-popover" id="adminCrmFilterPopover" hidden role="dialog" aria-label="회원 필터">
+                        <div class="admin-crm-filter-row">
+                          <label for="adminUserLicenseStatus">라이선스</label>
+                          <select id="adminUserLicenseStatus">
+                            <option value="all">전체</option>
+                            <option value="trial">체험판</option>
+                            <option value="lifetime">평생</option>
+                            <option value="period">기간제</option>
+                            <option value="favorites">★ 즐겨찾기</option>
+                          </select>
+                        </div>
+                        <div class="admin-crm-filter-row">
+                          <label for="adminCrmFilterOrders">결제</label>
+                          <select id="adminCrmFilterOrders">
+                            <option value="all">전체</option>
+                            <option value="has">있음</option>
+                            <option value="none">없음</option>
+                          </select>
+                        </div>
+                        <div class="admin-crm-filter-row">
+                          <label for="adminCrmFilterTickets">문의</label>
+                          <select id="adminCrmFilterTickets">
+                            <option value="all">전체</option>
+                            <option value="has">있음</option>
+                            <option value="none">없음</option>
+                          </select>
+                        </div>
+                        <div class="admin-crm-filter-row">
+                          <label for="adminCrmFilterActivity">활동 상태</label>
+                          <select id="adminCrmFilterActivity">
+                            <option value="all">전체</option>
+                            <option value="idle7">7일 미접속</option>
+                            <option value="idle30">30일 미접속</option>
+                          </select>
+                        </div>
+                        <div class="admin-crm-filter-foot">
+                          <button type="button" class="ghost mini-btn" id="adminCrmFilterReset">초기화</button>
+                          <button type="button" class="secondary mini-btn" id="adminCrmFilterApply">적용</button>
+                        </div>
+                      </div>
+                    </div>
+                    <select id="adminUserSort" class="admin-crm-sort" aria-label="정렬">
+                      <option value="lastLogin">최근 접속순</option>
+                      <option value="lastLoginAsc">오래된 접속순</option>
+                      <option value="createdAt">최근 가입순</option>
+                      <option value="createdAtAsc">오래된 가입순</option>
                       <option value="name">이름</option>
-                      <option value="lastPayment">최근 결제</option>
-                    </select>
-                  </div>
-                  <div class="admin-crm-filter-grid" id="adminCrmFilterAdvanced">
-                    <select id="adminCrmFilterOrders" aria-label="결제">
-                      <option value="all">결제: 전체</option>
-                      <option value="has">있음</option>
-                      <option value="none">없음</option>
-                    </select>
-                    <select id="adminCrmFilterTickets" aria-label="문의">
-                      <option value="all">문의: 전체</option>
-                      <option value="has">있음</option>
-                      <option value="none">없음</option>
+                      <option value="lastPayment">최근 결제순</option>
                     </select>
                   </div>
                 </div>
@@ -259,7 +287,9 @@
                   </div>
                 </div>
                 <div class="admin-crm-list-head">
-                  <label class="admin-crm-check"><input type="checkbox" id="adminCrmSelectAll" aria-label="전체 선택"><span id="adminUserCount" class="muted"></span></label>
+                  <label class="admin-crm-check" id="adminCrmSelectAllWrap"><input type="checkbox" id="adminCrmSelectAll" aria-label="전체 선택"></label>
+                  <span id="adminUserCount" class="muted"></span>
+                  <span id="adminCrmFilterHint" class="muted small"></span>
                 </div>
                 <div id="adminUserList" class="admin-crm-virtual" tabindex="0"><p class="muted">회원 불러오는 중...</p></div>
                 <div class="admin-crm-pager" id="adminCrmPager" hidden></div>
@@ -404,20 +434,21 @@
                     <div id="adminCrmPosts" class="admin-crm-table-wrap admin-crm-posts-wrap"></div>
                   </div>
 
-                  <div class="admin-crm-card admin-crm-card-dense" id="adminCrmMemoCard" data-tab-panel="audit">
-                    <div class="admin-crm-card-head"><h3>관리자 메모</h3><span class="muted small" id="adminCrmMemoStatus"></span></div>
-                    <textarea id="adminCrmUserMemo" rows="2" placeholder="예: VIP / 원격지원 완료 / HWID 초기화 2회 / 환불 진행중"></textarea>
-                    <div class="admin-crm-memo-history" id="adminCrmMemoHistory"></div>
-                  </div>
-
-                  <div class="admin-crm-bottom-grid" data-tab-panel="audit">
-                    <div class="admin-crm-card admin-crm-card-dense">
-                      <div class="admin-crm-card-head"><h3>Timeline</h3><button type="button" class="ghost mini-btn" data-crm-action="open-logs">로그 보기</button></div>
-                      <div id="adminCrmTimeline" class="admin-crm-timeline"></div>
+                  <div class="admin-crm-audit-stack" id="adminCrmAuditStack" data-tab-panel="overview audit">
+                    <div class="admin-crm-bottom-grid">
+                      <div class="admin-crm-card admin-crm-card-dense">
+                        <div class="admin-crm-card-head"><h3>Timeline</h3><button type="button" class="ghost mini-btn" data-crm-action="open-logs">로그 보기</button></div>
+                        <div id="adminCrmTimeline" class="admin-crm-timeline"></div>
+                      </div>
+                      <div class="admin-crm-card admin-crm-card-dense admin-crm-feed-card">
+                        <div class="admin-crm-card-head"><h3>Recent Activity</h3></div>
+                        <div id="adminCrmRecentFeed" class="admin-crm-recent-feed"></div>
+                      </div>
                     </div>
-                    <div class="admin-crm-card admin-crm-card-dense admin-crm-feed-card">
-                      <div class="admin-crm-card-head"><h3>Recent Activity</h3></div>
-                      <div id="adminCrmRecentFeed" class="admin-crm-recent-feed"></div>
+                    <div class="admin-crm-card admin-crm-card-dense" id="adminCrmMemoCard">
+                      <div class="admin-crm-card-head"><h3>관리자 메모</h3><span class="muted small" id="adminCrmMemoStatus"></span></div>
+                      <textarea id="adminCrmUserMemo" rows="2" placeholder="예: VIP / 원격지원 완료 / HWID 초기화 2회 / 환불 진행중"></textarea>
+                      <div class="admin-crm-memo-history" id="adminCrmMemoHistory"></div>
                     </div>
                   </div>
                 </div>
@@ -449,15 +480,49 @@
             </section>
 
             <section class="admin-content-section" id="adminContentSection" hidden>
-              <div class="admin-section-head">
-                <p class="admin-page-lead muted">공지/패치노트/FAQ 작성은 기존 허브 CMS를 사용합니다. 회원 쪽지는 회원 상세 메뉴와 일괄 앱 쪽지로 보냅니다.</p>
+              <div class="admin-page-tabs" id="adminCmsTabs" role="tablist" aria-label="콘텐츠 종류">
+                <button type="button" class="admin-page-tab is-active" data-cms-tab="notices">공지사항</button>
+                <button type="button" class="admin-page-tab" data-cms-tab="patches">패치노트</button>
+                <button type="button" class="admin-page-tab" data-cms-tab="faq">FAQ</button>
+                <button type="button" class="admin-page-tab" data-cms-tab="board">자유게시판</button>
               </div>
-              <div class="admin-home-links">
-                <a class="admin-home-link" href="./notices.html"><b>공지사항 CMS</b><small>작성 · 수정 · 고정</small></a>
-                <a class="admin-home-link" href="./patch-notes.html"><b>패치노트 CMS</b><small>APP / WEB 구분 포함</small></a>
-                <a class="admin-home-link" href="./faq.html"><b>FAQ CMS</b><small>질문 · 답변 · 순서</small></a>
-                <a class="admin-home-link" href="./board.html"><b>자유게시판</b><small>숨김 · 고정 · 삭제</small></a>
-                <button type="button" class="admin-home-link" data-admin-nav="crm" data-admin-tab="crm"><b>회원 쪽지</b><small>상세 ⋯ 메뉴 / 일괄 앱 쪽지</small></button>
+              <div class="admin-crm-toolbar admin-cms-toolbar">
+                <input id="adminCmsSearch" class="search-input compact" type="search" placeholder="제목, 내용, 작성자 검색" autocomplete="off">
+                <div class="admin-crm-toolbar-actions">
+                  <div class="admin-crm-filter-wrap" id="adminCmsFilterWrap">
+                    <button type="button" class="secondary mini-btn admin-crm-filter-btn" id="adminCmsFilterBtn" aria-haspopup="true" aria-expanded="false">필터</button>
+                    <div class="admin-crm-filter-popover" id="adminCmsFilterPopover" hidden role="dialog" aria-label="콘텐츠 필터">
+                      <div class="admin-crm-filter-row">
+                        <label for="adminCmsStatus">상태</label>
+                        <select id="adminCmsStatus">
+                          <option value="all">전체</option>
+                          <option value="visible">공개</option>
+                          <option value="hidden">비공개</option>
+                          <option value="pinned">고정</option>
+                        </select>
+                      </div>
+                      <div class="admin-crm-filter-foot">
+                        <button type="button" class="ghost mini-btn" id="adminCmsFilterReset">초기화</button>
+                        <button type="button" class="secondary mini-btn" id="adminCmsFilterApply">적용</button>
+                      </div>
+                    </div>
+                  </div>
+                  <button type="button" class="primary mini-btn" id="adminCmsNewBtn">+ 새 글</button>
+                </div>
+              </div>
+              <div class="admin-cms-list-head">
+                <span id="adminCmsCount" class="muted"></span>
+              </div>
+              <div id="adminCmsList" class="admin-table-wrap admin-console-table-wrap"><p class="muted">콘텐츠 불러오는 중...</p></div>
+              <div class="admin-cms-drawer" id="adminCmsDrawer" hidden>
+                <div class="admin-cms-drawer-backdrop" data-cms-close="1"></div>
+                <aside class="admin-cms-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="adminCmsDrawerTitle">
+                  <header class="admin-cms-drawer-head">
+                    <h3 id="adminCmsDrawerTitle">콘텐츠</h3>
+                    <button type="button" class="ghost mini-btn" data-cms-close="1">닫기</button>
+                  </header>
+                  <div id="adminCmsDrawerBody"></div>
+                </aside>
               </div>
             </section>
 
@@ -542,6 +607,6 @@
     </div>
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
-  <script type="module" src="./assets/js/admin-preview.js?v=admin-ia-1"></script>
+  <script type="module" src="./assets/js/admin-preview.js?v=admin-cms-1"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@ const VIEW_TITLES = {
   tickets: '문의 관리',
   logs: '로그',
   pricing: '가격·상품',
-  content: '공지·콘텐츠'
+  content: '콘텐츠'
 };
 
 const CRM_TITLES = {
@@ -28,17 +28,17 @@ const CRM_TITLES = {
 
 const VIEW_LEADS = {
   home: '운영 현황을 한눈에 보고 주요 관리 화면으로 이동합니다.',
-  payments: '전체 결제·주문 내역입니다. 행을 누르면 해당 회원 상세가 열립니다.',
+  payments: '거래·PG·결제 상태를 확인합니다. 행을 누르면 해당 회원 주문이 열립니다.',
   tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
   logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
   pricing: 'Region별 정가·판매가와 할인·팝업을 관리합니다.',
-  content: '공지·패치노트·FAQ와 회원 쪽지 경로입니다.'
+  content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.'
 };
 
 const CRM_LEADS = {
-  members: '회원을 검색하고 상세·일괄 작업을 수행합니다.',
-  license: '회원별 라이선스 현황입니다. 변경·지급 기록은 로그 → 라이선스에서 확인합니다.',
-  orders: '회원별 주문 여부입니다. 전체 결제는 결제 메뉴에서 봅니다.'
+  members: '회원을 검색하고 계정 상태와 주요 정보를 확인합니다.',
+  license: '회원별 라이선스 상태를 확인하고 지급·변경·만료를 관리합니다.',
+  orders: '사용자별 주문과 결제 상태를 확인합니다.'
 };
 
 function normalizeCrmMode(mode, detailTab) {
@@ -83,14 +83,38 @@ function setPagehead(view, crmMode) {
   }
 }
 
+function renderAdminPageWorkTabs(view, crmMode) {
+  const slot = $('adminWorkTabsSlot');
+  if (!slot) return;
+  if (view === 'crm' && crmMode === 'license') {
+    const page = document.body.dataset.licensePage || 'status';
+    slot.hidden = false;
+    slot.innerHTML = `<div class="admin-page-tabs admin-page-tabs-inline" role="tablist" aria-label="라이선스 화면">
+      <button type="button" class="admin-page-tab${page !== 'history' ? ' is-active' : ''}" data-license-page="status">현황</button>
+      <button type="button" class="admin-page-tab${page === 'history' ? ' is-active' : ''}" data-license-page="history">변경/지급 기록</button>
+    </div>`;
+    return;
+  }
+  slot.hidden = true;
+  slot.innerHTML = '';
+}
+
 export function showAdminView(view, opts = {}) {
   const next = VIEW_SECTIONS[view] ? view : 'crm';
   const crmMode = next === 'crm'
     ? normalizeCrmMode(opts.crmMode, opts.detailTab)
     : (document.body.dataset.crmMode || 'members');
+  if (next === 'crm' && crmMode === 'license') {
+    document.body.dataset.licensePage = opts.licensePage || 'status';
+  } else {
+    document.body.dataset.licensePage = '';
+  }
+  const licenseHistory = next === 'crm' && crmMode === 'license' && document.body.dataset.licensePage === 'history';
   Object.entries(VIEW_SECTIONS).forEach(([key, id]) => {
     const el = $(id);
-    if (el) el.hidden = key !== next;
+    if (!el) return;
+    if (licenseHistory) el.hidden = key !== 'logs';
+    else el.hidden = key !== next;
   });
   document.body.dataset.adminView = next;
   if (next === 'crm') {
@@ -102,11 +126,16 @@ export function showAdminView(view, opts = {}) {
         : 'overview';
   }
   setPagehead(next, next === 'crm' ? crmMode : undefined);
+  renderAdminPageWorkTabs(next, next === 'crm' ? crmMode : undefined);
+  if (licenseHistory) {
+    const lead = $('adminConsoleLead');
+    if (lead) lead.textContent = '기존 라이선스 로그에서 변경·지급 기록을 확인합니다.';
+  }
 
-  if (next === 'logs') {
-    import('./admin-user-logs.js?v=admin-ia-1').then((m) => {
+  if (next === 'logs' || licenseHistory) {
+    import('./admin-user-logs.js?v=admin-overview-1').then((m) => {
       m.showAdminUserLogsPanel?.(true);
-      if (opts.logsTab) m.setAdminLogsTab?.(opts.logsTab);
+      m.setAdminLogsTab?.(opts.logsTab || (licenseHistory ? 'license' : undefined) || 'license');
       if (opts.uid) m.selectAdminLogsUser?.(opts.uid);
     }).catch(console.error);
   }
@@ -123,13 +152,27 @@ export function showAdminView(view, opts = {}) {
     const crm = $('adminCrm');
     crm?.classList.remove('is-detail-open');
   }
-  setSidebarActive(next, next === 'crm' ? crmMode : undefined, opts.source);
+  setSidebarActive(licenseHistory ? 'crm' : next, next === 'crm' || licenseHistory ? crmMode : undefined, opts.source);
+  if (next === 'crm') {
+    try { window.__midiaiOnAdminCrmMode?.(crmMode, opts); } catch (_) {}
+  }
+  if (next === 'content') {
+    const cmsTab = opts.cmsTab || document.body.dataset.cmsTab;
+    try { window.__midiaiOnAdminCms?.(cmsTab, { cmsId: opts.cmsId }); } catch (_) {}
+  } else {
+    try { window.__midiaiOnAdminCms?.('', { close: true }); } catch (_) {}
+  }
   try {
     const hash = new URLSearchParams();
-    hash.set('view', next);
+    hash.set('view', licenseHistory ? 'crm' : next);
     if (opts.logsTab) hash.set('log', opts.logsTab);
+    if (licenseHistory) hash.set('log', 'license');
     if (opts.ticketStatus && opts.ticketStatus !== 'all') hash.set('ticket', opts.ticketStatus);
-    if (next === 'crm' && crmMode && crmMode !== 'members') hash.set('crm', crmMode);
+    if ((next === 'crm' || licenseHistory) && crmMode && crmMode !== 'members') hash.set('crm', crmMode);
+    if (licenseHistory) hash.set('lic', 'history');
+    const cmsTab = opts.cmsTab || document.body.dataset.cmsTab;
+    if (next === 'content' && cmsTab && cmsTab !== 'notices') hash.set('cms', cmsTab);
+    if (next === 'content' && opts.cmsId) hash.set('post', opts.cmsId);
     history.replaceState(null, '', `#${hash.toString()}`);
   } catch (_) {}
 }
@@ -153,6 +196,14 @@ function bindConsole() {
       });
       document.body.classList.remove('admin-sidebar-open');
     }
+    const licensePageBtn = e.target.closest('[data-license-page]');
+    if (licensePageBtn) {
+      e.preventDefault();
+      showAdminView('crm', {
+        crmMode: 'license',
+        licensePage: licensePageBtn.getAttribute('data-license-page') || 'status'
+      });
+    }
   });
 
   $('adminSidebarToggle')?.addEventListener('click', (e) => {
@@ -169,15 +220,21 @@ function bindConsole() {
     logsTab: params.get('log') || undefined,
     ticketStatus: params.get('ticket') || undefined,
     crmMode: params.get('crm') || undefined,
-    detailTab: params.get('crm') === 'license' ? 'license' : undefined
+    detailTab: params.get('crm') === 'license' ? 'license' : undefined,
+    licensePage: params.get('lic') === 'history' ? 'history' : (params.get('crm') === 'license' ? 'status' : undefined),
+    cmsTab: params.get('cms') || undefined,
+    cmsId: params.get('post') || undefined
   });
   window.addEventListener('hashchange', () => {
     const next = new URLSearchParams((location.hash || '').replace(/^#/, ''));
-    showAdminView(next.get('view') || 'home', {
+      showAdminView(next.get('view') || 'home', {
       logsTab: next.get('log') || undefined,
       ticketStatus: next.get('ticket') || undefined,
       crmMode: next.get('crm') || undefined,
-      detailTab: next.get('crm') === 'license' ? 'license' : undefined
+      detailTab: next.get('crm') === 'license' ? 'license' : undefined,
+      licensePage: next.get('lic') === 'history' ? 'history' : (next.get('crm') === 'license' ? 'status' : undefined),
+      cmsTab: next.get('cms') || undefined,
+      cmsId: next.get('post') || undefined
     });
   });
 }

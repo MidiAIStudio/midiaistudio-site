@@ -114,7 +114,7 @@ function bindTabs() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       if (tab === 'logs') {
-        import('./admin-user-logs.js?v=admin-ia-1')
+        import('./admin-user-logs.js?v=admin-overview-1')
           .then((m) => m.showAdminUserLogsPanel?.(true))
           .catch(console.error);
         window.scrollTo({ top: 0, behavior: 'smooth' });
