@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>patch type harness</title>
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body class="hub-page" style="margin:0;background:#070914;color:#fff">
+  <main class="wrap hub-shell" style="padding:20px">
+    <div id="patchList"></div>
+    <div id="patchDetail" style="margin-top:24px"></div>
+  </main>
+  <script type="module">
+    import { patchNoteType, patchNoteVersion } from '../assets/js/patch-note-type.js';
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function kindBadge(item, extra=''){
+      const type = patchNoteType(item);
+      return `<span class="patch-kind-badge is-${type}${extra?` ${extra}`:''}">${type==='web'?'WEB':'APP'}</span>`;
+    }
+    function listTitle(x){
+      const ver = patchNoteVersion(x);
+      return `${kindBadge(x)}${ver?`<span class="badge active">v${esc(ver)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span>`;
+    }
+    const rows = [
+      {id:'web1', type:'web', title:'자유게시판 MIDI 미리듣기 개선', createdAt:{seconds:1}, viewCount:3},
+      {id:'app162', version:'1.6.2', title:'업데이트', createdAt:{seconds:1}, viewCount:10},
+      {id:'app161', version:'1.6.1', title:'업데이트(중요)', createdAt:{seconds:1}, viewCount:8}
+    ];
+    let no = rows.length;
+    document.getElementById('patchList').innerHTML =
+      `<div class="hub-list-head hub-notice-head"><span>번호</span><span>제목</span><span>글쓴이</span><span>작성일</span><span>조회</span></div>
+       <div class="hub-list-body">${rows.map((x)=>`<a class="hub-list-row hub-notice-row" href="#${x.id}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${listTitle(x)}</b></div><div class="hub-col-author">MidiAI Studio</div><div class="hub-col-date">2026.08.19</div><div class="hub-col-views">${x.viewCount}</div></a>`).join('')}</div>`;
+    const d = rows[0];
+    const app = rows[1];
+    document.getElementById('patchDetail').innerHTML = `
+      <article class="hub-post-detail hub-patch-detail" id="detailWeb">
+        <div class="patch-head"><div class="patch-head-main">
+          <div class="patch-head-kicker">${kindBadge(d,'is-detail')}</div>
+          <h1 class="patch-detail-title">${esc(d.title)}</h1>
+        </div></div>
+      </article>
+      <article class="hub-post-detail hub-patch-detail" id="detailApp" style="margin-top:16px">
+        <div class="patch-head"><div class="patch-head-main">
+          <div class="patch-head-kicker">${kindBadge(app,'is-detail')}<span class="patch-version-pill">v${esc(patchNoteVersion(app))}</span></div>
+          <h1 class="patch-detail-title">${esc(app.title)}</h1>
+        </div></div>
+      </article>`;
+    window.__patchHarnessReady = true;
+  </script>
+</body>
+</html>

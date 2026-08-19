@@ -20,6 +20,7 @@ import {
   pickMarkdownSource
 } from './markdown/index.js?v=md-placeholder-1';
 import { renderMidiPreviewWav as renderMidiPreviewEngine } from './board-midi-preview.js?v=gm-preview-1';
+import { patchNoteType, patchNoteVersion, patchNoteWriteFields } from './patch-note-type.js?v=patch-type-1';
 import {
   configureAdminUserLogs,
   initAdminUserLogs,
@@ -882,14 +883,46 @@ function patchTocHtml(sections){
   if(sections.length <= 1 || sections.length > 6) return '';
   return `<nav class="patch-toc" aria-label="${esc(tt('목차'))}"><ol>${sections.map((s,i)=>`<li><a href="#patch-section-${i}">${esc(s.title.replace(/^[\p{Extended_Pictographic}\uFE0F\s]+/u, '') || s.title)}</a></li>`).join('')}</ol></nav>`;
 }
+function patchKindBadgeHtml(item, extraClass=''){
+  const type = patchNoteType(item);
+  const cls = extraClass ? ` ${extraClass}` : '';
+  return `<span class="patch-kind-badge is-${type}${cls}">${type === 'web' ? 'WEB' : 'APP'}</span>`;
+}
+function patchListTitleHtml(x){
+  const ver = patchNoteVersion(x);
+  return `${patchKindBadgeHtml(x)}${ver?`<span class="badge active">v${esc(ver)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span>`;
+}
+function patchNavLabel(item){
+  const ver = patchNoteVersion(item);
+  return ver ? `v${ver}` : (item?.title || '');
+}
+function patchNoteFormFields(d={}, extra=[]){
+  return [
+    {name:'type', label:'구분', type:'segment', value:patchNoteType(d) || 'app', options:[{value:'app', label:'APP'},{value:'web', label:'WEB'}]},
+    {name:'version', label:'버전', value:d.version||'', required:true, showWhen:{name:'type', value:'app'}},
+    {name:'title', label:'제목', value:d.title||'', required:true},
+    {name:'content', label:'내용', type:'markdown', value:d.contentValue ?? '', required:true, draftKey:d.draftKey || 'hub:patchNotes:new'},
+    ...extra
+  ];
+}
+function normalizePatchNoteWrite(data){
+  const result = patchNoteWriteFields(data);
+  if(!result.ok){
+    alert('버전을 입력하세요.');
+    return null;
+  }
+  const out = {...data, ...result.fields};
+  if(result.type !== 'app') delete out.version;
+  return out;
+}
 function patchNavHtml(nav){
   if(!nav || (!nav.prev && !nav.next)) return '';
-  const newer = nav.prev ? `<a class="patch-nav-link is-newer" href="./patch-note.html?id=${encodeURIComponent(nav.prev.id)}"><span>${esc(tt('최신'))}</span><b>${nav.prev.version?`v${esc(nav.prev.version)}`:esc(nav.prev.title||'')}</b></a>` : '';
-  const older = nav.next ? `<a class="patch-nav-link is-older" href="./patch-note.html?id=${encodeURIComponent(nav.next.id)}"><span>${esc(tt('이전'))}</span><b>${nav.next.version?`v${esc(nav.next.version)}`:esc(nav.next.title||'')}</b></a>` : '';
+  const newer = nav.prev ? `<a class="patch-nav-link is-newer" href="./patch-note.html?id=${encodeURIComponent(nav.prev.id)}"><span>${esc(tt('최신'))}</span><b>${esc(patchNavLabel(nav.prev))}</b></a>` : '';
+  const older = nav.next ? `<a class="patch-nav-link is-older" href="./patch-note.html?id=${encodeURIComponent(nav.next.id)}"><span>${esc(tt('이전'))}</span><b>${esc(patchNavLabel(nav.next))}</b></a>` : '';
   return `<nav class="patch-detail-nav" aria-label="${esc(tt('버전 이동'))}">${newer}${older}</nav>`;
 }
 function patchDetailHtml(d, nav=null){
-  const version = d.version ? esc(d.version) : '';
+  const version = patchNoteVersion(d);
   let bodyHtml = '';
   let toc = '';
   if(isMarkdownContent(d)){
@@ -910,7 +943,7 @@ function patchDetailHtml(d, nav=null){
     </header>
     <div class="patch-head">
       <div class="patch-head-main">
-        ${version?`<span class="patch-version-pill">v${version}</span>`:''}
+        <div class="patch-head-kicker">${patchKindBadgeHtml(d,'is-detail')}${version?`<span class="patch-version-pill">v${esc(version)}</span>`:''}</div>
         <h1 class="patch-detail-title">${esc(d.title || '')}</h1>
         <p class="patch-meta-line"><span>${esc(noticeAuthor(d))}</span><span>${esc(fmtListDate(d.createdAt))}</span><span>${esc(tt('조회'))} ${Number(d.viewCount || 0)}</span></p>
         ${toc}
@@ -1558,13 +1591,13 @@ async function createHubAdminPost(kind){
       return;
     }
     if(kind==='patchNotes'){
-      data = await openEditModal(hubAdminLabels().writePatch, [
-        {name:'version', label:'버전', value:'', required:true},
-        {name:'title', label:'제목', value:'', required:true},
-        {name:'content', label:'내용', type:'markdown', value:'', required:true, draftKey:'hub:patchNotes:new'}
-      ]);
+      data = await openEditModal(hubAdminLabels().writePatch, patchNoteFormFields({type:'app', contentValue:'', draftKey:'hub:patchNotes:new'}));
       if(!data) return;
-      const id = await adminAdd('patchNotes',{version:data.version, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||''});
+      data = normalizePatchNoteWrite(data);
+      if(!data) return;
+      const payload = {type:data.type, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||''};
+      if(data.type === 'app') payload.version = data.version;
+      const id = await adminAdd('patchNotes', payload);
       if(id) location.href = `./patch-note.html?id=${encodeURIComponent(id)}`;
       return;
     }
@@ -2332,7 +2365,13 @@ function renderHomePatches(rows, err){
   const box=$('homePatches'); if(!box) return;
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!rows?.length){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-  box.innerHTML=`<div class="home-updates-list">${rows.map(x=>`<a class="home-update-item" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><span class="home-update-tag is-patch">${x.version?`v${esc(x.version)}`:tt('패치')}</span><b>${esc(x.title)}</b><em>${esc(fmtListDate(x.createdAt))}</em></a>`).join('')}</div>`;
+  box.innerHTML=`<div class="home-updates-list">${rows.map(x=>{
+    const kind=patchNoteType(x);
+    const ver=patchNoteVersion(x);
+    const tag=kind==='app' && ver ? `v${esc(ver)}` : (kind==='web' ? 'WEB' : tt('패치'));
+    const tagClass=kind==='web' ? 'is-web' : 'is-patch';
+    return `<a class="home-update-item" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><span class="home-update-tag ${tagClass}">${tag}</span><b>${esc(x.title)}</b><em>${esc(fmtListDate(x.createdAt))}</em></a>`;
+  }).join('')}</div>`;
 }
 async function initHomePage(){
   if(!db) return;
@@ -2517,7 +2556,7 @@ function renderPatchNotes(rows,err){
   if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   let no=rows.length;
-  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${x.version?`<span class="badge active">v${esc(x.version)}</span>`:''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`).join('')}</div>`;
+  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${patchListTitleHtml(x)}</b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`).join('')}</div>`;
   bindSearch(list);
 }
 function listenPatchNotes(){ if($('patchList')) listenVisibleDocs('patchNotes',renderPatchNotes); }
@@ -3523,8 +3562,9 @@ function openEditModal(title, fields, opts={}){
 
     // Build DOM first (including markdown hosts) — mount editors only after visible
     for (const f of fields) {
-      const row = document.createElement(f.type === 'markdown' ? 'div' : 'label');
-      row.className = 'edit-field' + (f.type === 'markdown' ? ' edit-field-markdown' : '');
+      const row = document.createElement(f.type === 'markdown' || f.type === 'segment' ? 'div' : 'label');
+      row.className = 'edit-field' + (f.type === 'markdown' ? ' edit-field-markdown' : '') + (f.type === 'segment' ? ' edit-field-segment' : '');
+      row.dataset.field = f.name;
       row.innerHTML = `<span>${esc(f.label || f.name)}</span>`;
       let input;
       if (f.type === 'markdown') {
@@ -3534,6 +3574,29 @@ function openEditModal(title, fields, opts={}){
         row.appendChild(host);
         body.appendChild(row);
         mdHosts[f.name] = { host, field: f };
+        continue;
+      } else if (f.type === 'segment') {
+        const wrap = document.createElement('div');
+        wrap.className = 'edit-segment';
+        wrap.setAttribute('role', 'radiogroup');
+        wrap.setAttribute('aria-label', f.label || f.name);
+        const selected = String(f.value || (f.options?.[0]?.value || ''));
+        (f.options || []).forEach(opt => {
+          const lab = document.createElement('label');
+          lab.className = 'edit-segment-opt';
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = f.name;
+          radio.value = opt.value;
+          if (String(opt.value) === selected) radio.checked = true;
+          const cap = document.createElement('span');
+          cap.textContent = opt.label || opt.value;
+          lab.appendChild(radio);
+          lab.appendChild(cap);
+          wrap.appendChild(lab);
+        });
+        row.appendChild(wrap);
+        body.appendChild(row);
         continue;
       } else if (f.type === 'textarea') {
         input = document.createElement('textarea');
@@ -3559,13 +3622,36 @@ function openEditModal(title, fields, opts={}){
         input.value = f.value ?? '';
       }
       input.name = f.name;
-      if (f.required) input.required = true;
+      if (f.required && !f.showWhen) input.required = true;
       row.appendChild(input);
       body.appendChild(row);
     }
 
     overlay.appendChild(form);
     document.body.appendChild(overlay);
+
+    const fieldControlValue = (name) => {
+      const el = form.elements[name];
+      if(!el) return '';
+      return String(el.value || '');
+    };
+    const syncConditionalFields = () => {
+      fields.forEach(f => {
+        if(!f.showWhen) return;
+        const show = fieldControlValue(f.showWhen.name) === f.showWhen.value;
+        const row = body.querySelector(`[data-field="${CSS.escape(f.name)}"]`);
+        if(row) row.classList.toggle('hidden', !show);
+        const input = form.elements[f.name];
+        if(input && input instanceof HTMLElement){
+          if(show && f.required) input.required = true;
+          else input.removeAttribute('required');
+        }
+      });
+    };
+    syncConditionalFields();
+    form.addEventListener('change', e => {
+      if(fields.some(f => f.showWhen && f.showWhen.name === e.target?.name)) syncConditionalFields();
+    });
 
     // Wait until modal is painted, then mount editors
     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -3624,6 +3710,8 @@ function openEditModal(title, fields, opts={}){
           if (mdField && !data[mdField.name]) { alert('내용을 입력하세요.'); return; }
           if (mdField && !mdEditors[mdField.name]) { alert('편집기가 준비되지 않았습니다.'); return; }
         }
+        const missing = fields.find(f => f.required && f.showWhen && fieldControlValue(f.showWhen.name) === f.showWhen.value && !data[f.name]);
+        if (missing) { alert(`${missing.label || missing.name}을(를) 입력하세요.`); return; }
         close(data);
       } catch (err) {
         console.error(err);
@@ -3642,7 +3730,7 @@ function openEditModal(title, fields, opts={}){
     });
     overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
     modalEscapeClose(overlay, close);
-    const first = form.querySelector('input:not([type=checkbox]),textarea,select');
+    const first = form.querySelector('.edit-field:not(.hidden) input:not([type=checkbox]):not([type=radio]), .edit-field:not(.hidden) textarea, .edit-field:not(.hidden) select');
     if (first) setTimeout(() => first.focus(), 40);
     else {
       const firstMd = Object.values(mdEditors)[0];
@@ -3788,7 +3876,10 @@ function filterRows(rows, searchId, statusId, fields){
       || (status === 'open' && (x.status || 'open') === 'open')
       || (status === 'answered' && x.status === 'answered')
       || (status === 'closed' && x.status === 'closed');
-    const hay = fields.map(f => x[f] || '').join(' ').toLowerCase();
+    const hay = fields.map(f => {
+      if(f === 'type') return patchNoteType(x);
+      return x[f] || '';
+    }).join(' ').toLowerCase();
     return statusOk && (!q || hay.includes(q));
   });
 }
@@ -3803,7 +3894,11 @@ function adminActions(collectionName, id){
 function renderAdminPostTable(kind){
   const cfg = {
     notices: {box:'adminNoticeList', count:'adminNoticeCount', rows:adminNoticeRows, search:'adminNoticeSearch', status:'adminNoticeStatus', collection:'announcements', fields:['title','content'], title:x=>esc(x.title||'-'), sub:x=>x.pinned?'상단 고정':'', date:x=>fmtDate(x.createdAt)},
-    patches: {box:'adminPatchList', count:'adminPatchCount', rows:adminPatchRows, search:'adminPatchSearch', status:'adminPatchStatus', collection:'patchNotes', fields:['version','title','content'], title:x=>`${x.version?`v${esc(x.version)} · `:''}${esc(x.title||'-')}`, sub:x=>'', date:x=>fmtDate(x.createdAt)},
+    patches: {box:'adminPatchList', count:'adminPatchCount', rows:adminPatchRows, search:'adminPatchSearch', status:'adminPatchStatus', collection:'patchNotes', fields:['type','version','title','content'], title:x=>{
+      const kind=patchNoteType(x);
+      const ver=patchNoteVersion(x);
+      return `${kind==='web'?'WEB':'APP'}${ver?` · v${esc(ver)}`:''} · ${esc(x.title||'-')}`;
+    }, sub:x=>'', date:x=>fmtDate(x.createdAt)},
     faq: {box:'adminFaqList', count:'adminFaqCount', rows:adminFaqRows, search:'adminFaqSearch', status:'adminFaqStatus', collection:'faq', fields:['question','answer'], title:x=>esc(x.question||'-'), sub:x=>`#${esc(x.order||'')}`, date:x=>fmtDate(x.createdAt)}
   }[kind];
   const box=$(cfg.box); if(!box)return;
@@ -4001,12 +4096,17 @@ async function editAdminPost(raw){
       data.contentMarkdown=data.content;
       data.updatedAt=serverTimestamp();
     } else if(collectionName==='patchNotes'){
-      data = await openEditModal('패치노트 수정', [
-        {name:'version', label:'버전', value:d.version||'', required:true},
-        {name:'title', label:'제목', value:d.title||'', required:true},
-        {name:'content', label:'내용', type:'markdown', value:pickMarkdownSource(d), required:true, draftKey:`hub:patchNotes:${id}`},
+      data = await openEditModal('패치노트 수정', patchNoteFormFields({
+        type:patchNoteType(d),
+        version:d.version||'',
+        title:d.title||'',
+        contentValue:pickMarkdownSource(d),
+        draftKey:`hub:patchNotes:${id}`
+      }, [
         {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
-      ]);
+      ]));
+      if(!data)return;
+      data = normalizePatchNoteWrite(data);
       if(!data)return;
       data.contentFormat='markdown';
       data.contentMarkdown=data.content;
