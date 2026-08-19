@@ -1,0 +1,127 @@
+/**
+ * Admin sidebar navigation — classic script (not a module).
+ * Runs even if app.js / admin-console.js fail to load.
+ */
+(function () {
+  var SECTIONS = {
+    home: 'adminHomeSection',
+    crm: 'adminCrm',
+    payments: 'adminPaymentsSection',
+    tickets: 'adminTicketsSection',
+    logs: 'adminLogsSection',
+    pricing: 'adminPricingSection',
+    content: 'adminContentSection'
+  };
+  var TITLES = {
+    home: '홈',
+    crm: '회원',
+    payments: '결제',
+    tickets: '문의 관리',
+    logs: '로그',
+    pricing: '가격·상품',
+    content: '콘텐츠'
+  };
+  var CRM_TITLES = { members: '회원', license: '라이선스', orders: '주문' };
+
+  function $(id) { return document.getElementById(id); }
+
+  function closestNav(el) {
+    if (!el) return null;
+    if (el.nodeType !== 1) el = el.parentElement;
+    return el && el.closest ? el.closest('[data-admin-nav]') : null;
+  }
+
+  function optsFromBtn(btn) {
+    return {
+      logsTab: btn.getAttribute('data-logs-tab') || undefined,
+      ticketStatus: btn.getAttribute('data-ticket-status') || undefined,
+      closeDetail: btn.getAttribute('data-admin-close-detail') === '1',
+      crmMode: btn.getAttribute('data-crm-mode') || undefined,
+      detailTab: btn.getAttribute('data-crm-detail-tab') || undefined,
+      source: btn
+    };
+  }
+
+  function basicShow(view, opts) {
+    opts = opts || {};
+    var next = SECTIONS[view] ? view : 'home';
+    var crmMode = next === 'crm'
+      ? (opts.crmMode || opts.detailTab || 'members')
+      : undefined;
+    if (crmMode === 'license' || crmMode === 'orders' || crmMode === 'members') {
+      /* keep */
+    } else if (opts.detailTab === 'license') {
+      crmMode = 'license';
+    } else if (next === 'crm') {
+      crmMode = 'members';
+    }
+    var licenseHistory = next === 'crm' && crmMode === 'license' && (opts.licensePage || '') === 'history';
+    Object.keys(SECTIONS).forEach(function (key) {
+      var el = $(SECTIONS[key]);
+      if (!el) return;
+      el.hidden = licenseHistory ? key !== 'logs' : key !== next;
+    });
+    document.body.setAttribute('data-admin-view', next);
+    if (next === 'crm' && crmMode) document.body.setAttribute('data-crm-mode', crmMode);
+    else document.body.removeAttribute('data-crm-mode');
+    if (licenseHistory) document.body.setAttribute('data-license-page', 'history');
+    else if (next === 'crm' && crmMode === 'license') document.body.setAttribute('data-license-page', 'status');
+    else document.body.removeAttribute('data-license-page');
+    var title = $('adminConsoleTitle');
+    if (title) {
+      title.textContent = next === 'crm' ? (CRM_TITLES[crmMode] || TITLES.crm) : (TITLES[next] || '관리자');
+    }
+    var sidebarBtns = document.querySelectorAll('.admin-sidebar [data-admin-nav]');
+    var source = opts.source && opts.source.closest ? opts.source.closest('.admin-sidebar [data-admin-nav]') : null;
+    Array.prototype.forEach.call(sidebarBtns, function (btn) {
+      var on = source ? btn === source : (
+        btn.getAttribute('data-admin-nav') === next &&
+        (next !== 'crm' || (btn.getAttribute('data-crm-mode') || 'members') === (crmMode || 'members'))
+      );
+      btn.classList.toggle('is-active', on);
+      btn.classList.toggle('active', on);
+    });
+    try {
+      var hash = new URLSearchParams();
+      hash.set('view', licenseHistory ? 'crm' : next);
+      if (next === 'crm' && crmMode && crmMode !== 'members') hash.set('crm', crmMode);
+      if (licenseHistory) {
+        hash.set('crm', 'license');
+        hash.set('lic', 'history');
+      }
+      history.replaceState(null, '', '#' + hash.toString());
+    } catch (_) {}
+  }
+
+  function show(view, opts) {
+    var core = window.__midiaiShowAdminViewCore;
+    if (typeof core === 'function') {
+      core(view, opts || {});
+      return;
+    }
+    basicShow(view, opts);
+  }
+
+  window.__midiaiShowAdminView = show;
+
+  function onClick(e) {
+    var btn = closestNav(e.target);
+    if (!btn) {
+      var licenseBtn = e.target && (e.target.nodeType === 1 ? e.target : e.target.parentElement);
+      licenseBtn = licenseBtn && licenseBtn.closest ? licenseBtn.closest('[data-license-page]') : null;
+      if (licenseBtn) {
+        e.preventDefault();
+        show('crm', {
+          crmMode: 'license',
+          licensePage: licenseBtn.getAttribute('data-license-page') || 'status'
+        });
+      }
+      return;
+    }
+    e.preventDefault();
+    show(btn.getAttribute('data-admin-nav'), optsFromBtn(btn));
+    document.body.classList.remove('admin-sidebar-open');
+  }
+
+  document.addEventListener('click', onClick, true);
+})();

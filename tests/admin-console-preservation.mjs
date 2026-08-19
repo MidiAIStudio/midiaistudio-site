@@ -69,6 +69,8 @@ mustInclude(html, 'href="./patch-notes.html"', 'cms patch');
 mustInclude(html, 'href="./faq.html"', 'cms faq');
 mustInclude(html, 'href="./board.html"', 'cms board');
 mustInclude(html, 'class="admin-sidebar"', 'sidebar');
+mustInclude(html, 'admin-nav.js', 'classic nav script');
+mustInclude(consoleJs, '__midiaiShowAdminViewCore', 'nav core hook');
 assert.ok(!html.includes('admin-float-nav'), 'old floating nav must be removed');
 
 mustInclude(app, 'applyAdminCrmStatFilter', 'stat filter handler');

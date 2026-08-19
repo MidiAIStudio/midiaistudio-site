@@ -1207,6 +1207,8 @@ function bindPreviewFilterPopover() {
 
 function bind() {
   document.documentElement.classList.add('sidebar-ready');
+  window.__midiaiShowAdminViewCore = showView;
+  window.__midiaiShowAdminView = showView;
   $('admin')?.classList.remove('admin-locked');
   $('adminCrmStats') && ($('adminCrmStats').innerHTML = crmStatsHtml());
   bindPreviewFilterPopover();

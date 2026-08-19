@@ -101,13 +101,7 @@ function renderAdminPageWorkTabs(view, crmMode) {
 
 export function showAdminView(view, opts = {}) {
   const next = VIEW_SECTIONS[view] ? view : 'crm';
-  if (showAdminView._busy) return;
-  showAdminView._busy = true;
-  try {
-    applyAdminView(next, opts);
-  } finally {
-    showAdminView._busy = false;
-  }
+  applyAdminView(next, opts);
 }
 
 function applyAdminView(next, opts = {}) {
@@ -190,31 +184,8 @@ function applyAdminView(next, opts = {}) {
 function bindConsole() {
   if (document.body.dataset.adminConsoleBound) return;
   document.body.dataset.adminConsoleBound = '1';
+  window.__midiaiShowAdminViewCore = showAdminView;
   window.__midiaiShowAdminView = showAdminView;
-
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-admin-nav]');
-    if (btn) {
-      e.preventDefault();
-      showAdminView(btn.getAttribute('data-admin-nav'), {
-        logsTab: btn.getAttribute('data-logs-tab') || undefined,
-        ticketStatus: btn.getAttribute('data-ticket-status') || undefined,
-        closeDetail: btn.getAttribute('data-admin-close-detail') === '1',
-        crmMode: btn.getAttribute('data-crm-mode') || undefined,
-        detailTab: btn.getAttribute('data-crm-detail-tab') || undefined,
-        source: btn
-      });
-      document.body.classList.remove('admin-sidebar-open');
-    }
-    const licensePageBtn = e.target.closest('[data-license-page]');
-    if (licensePageBtn) {
-      e.preventDefault();
-      showAdminView('crm', {
-        crmMode: 'license',
-        licensePage: licensePageBtn.getAttribute('data-license-page') || 'status'
-      });
-    }
-  });
 
   $('adminSidebarToggle')?.addEventListener('click', (e) => {
     e.stopPropagation();

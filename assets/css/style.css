@@ -3476,11 +3476,28 @@ body.admin-console-page > .admin-console-backdrop{
 .admin-console-page .admin-logs-section[hidden],
 .admin-console-page .admin-tickets-section[hidden],
 .admin-console-page .admin-crm[hidden]{display:none!important}
+body.admin-console-page[data-admin-view="home"] #adminHomeSection,
+body.admin-console-page:not([data-admin-view]) #adminHomeSection{display:block!important}
+body.admin-console-page[data-admin-view]:not([data-admin-view="home"]) #adminHomeSection{display:none!important}
+body.admin-console-page[data-admin-view="crm"]:not([data-license-page="history"]) #adminCrm{display:block!important}
+body.admin-console-page:not([data-admin-view="crm"]) #adminCrm,
+body.admin-console-page[data-license-page="history"] #adminCrm{display:none!important}
+body.admin-console-page[data-admin-view="payments"] #adminPaymentsSection{display:block!important}
+body.admin-console-page:not([data-admin-view="payments"]) #adminPaymentsSection{display:none!important}
+body.admin-console-page[data-admin-view="content"] #adminContentSection{display:block!important}
+body.admin-console-page:not([data-admin-view="content"]) #adminContentSection{display:none!important}
+body.admin-console-page[data-admin-view="pricing"] #adminPricingSection{display:block!important}
+body.admin-console-page:not([data-admin-view="pricing"]) #adminPricingSection{display:none!important}
+body.admin-console-page[data-admin-view="tickets"] #adminTicketsSection{display:block!important}
+body.admin-console-page:not([data-admin-view="tickets"]) #adminTicketsSection{display:none!important}
+body.admin-console-page[data-admin-view="logs"] #adminLogsSection,
+body.admin-console-page[data-license-page="history"] #adminLogsSection{display:block!important}
+body.admin-console-page:not([data-admin-view="logs"]):not([data-license-page="history"]) #adminLogsSection{display:none!important}
 .admin-console-page .admin-console{
   display:block;min-height:100vh;padding-top:56px
 }
 .admin-console-page .admin-sidebar{
-  position:fixed;top:0;left:0;bottom:0;width:var(--admin-sidebar-w);z-index:70;
+  position:fixed;top:0;left:0;bottom:0;width:var(--admin-sidebar-w);z-index:200;pointer-events:auto;
   overflow:auto;padding:10px 10px 12px;
   background:linear-gradient(180deg,rgba(16,18,36,.98),rgba(8,10,20,.98));
   border-right:1px solid var(--admin-stroke);
@@ -4021,6 +4038,8 @@ body.admin-console-page .admin-block{padding:0!important;border-radius:0!importa
 .admin-console-page .admin-cms-title b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .admin-console-page .admin-cms-row{cursor:pointer}
 .admin-console-page .admin-cms-row.is-hidden td{opacity:.72}
+body.admin-console-page .admin-crm-drawer{position:fixed;inset:0 0 0 var(--admin-sidebar-w);z-index:60;display:flex;justify-content:flex-end}
+body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
 .admin-console-page .admin-cms-drawer{position:fixed;inset:0 0 0 var(--admin-sidebar-w);z-index:60;display:flex;justify-content:flex-end}
 .admin-console-page .admin-cms-drawer[hidden]{display:none!important}
 .admin-console-page .admin-cms-drawer-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.45)}
