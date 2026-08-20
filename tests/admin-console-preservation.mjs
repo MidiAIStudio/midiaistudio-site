@@ -79,6 +79,8 @@ mustInclude(app, 'adminDeleteUser', 'delete handler');
 mustInclude(app, 'notifyAdminAppMessage', 'app message handler');
 mustInclude(app, 'saveAdminCrmAllChanges', 'license save handler');
 mustInclude(app, 'openAdminCrmOrderDrawer', 'order drawer handler');
+mustInclude(app, 'adminDeleteOrder', 'order delete handler');
+mustInclude(app, 'groupAdminOrdersByBuyer', 'order grouping');
 mustInclude(app, 'adminQuickLicense', 'license grant handler');
 mustInclude(app, 'writeAdminAuditLog', 'audit log handler');
 mustInclude(app, "getAttribute('data-bulk')", 'bulk action wiring');

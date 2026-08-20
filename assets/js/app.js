@@ -82,6 +82,7 @@ let adminCrmPage = 1;
 let adminCrmSearchTimer = null;
 let adminCrmMemoTimer = null;
 let adminCrmExpandedHwid = new Set();
+let adminCrmOrderOpen = new Set();
 const ADMIN_CRM_PAGE_SIZE = 15;
 const ADMIN_CRM_ROW_H = 48;
 let adminCrmHwidRevealed = false;
@@ -5891,7 +5892,11 @@ function renderAdminUserTable(){
     }
     adminCrmFilteredRows = getAdminOrderRows();
     renderAdminCrmStats(adminCrmFilteredRows);
-    renderAdminCrmFilterHint(adminCrmFilteredRows.length, (adminOrderRows||[]).length, '건');
+    const groupN = groupAdminOrdersByBuyer(adminCrmFilteredRows).length;
+    const countEl=$('adminUserCount');
+    if(countEl) countEl.textContent = `${groupN}명 · ${adminCrmFilteredRows.length}건`;
+    const hint=$('adminCrmFilterHint');
+    if(hint) hint.textContent = adminCrmFilteredRows.length===(adminOrderRows||[]).length ? '' : `필터 ${adminCrmFilteredRows.length}건`;
     updateAdminCrmBulkbar();
     if(!adminCrmFilteredRows.length){
       box.innerHTML=`<div class="empty-card">${esc(adminCrmEmptyMessage('orders'))}</div>`;
@@ -5954,6 +5959,9 @@ window.__midiaiOnAdminCms = function(tab, opts={}){
   setAdminCmsTab(nextTab, { openId: opts.cmsId || opts.postId || '' });
 };
 function adminCrmTotalPages(){
+  if(adminCrmMode()==='orders'){
+    return Math.max(1, Math.ceil(groupAdminOrdersByBuyer(adminCrmFilteredRows).length / ADMIN_CRM_PAGE_SIZE));
+  }
   return Math.max(1, Math.ceil(adminCrmFilteredRows.length / ADMIN_CRM_PAGE_SIZE));
 }
 function paintAdminCrmPagedList(){
@@ -5973,10 +5981,16 @@ function paintAdminCrmPagedList(){
     return;
   }
   if(mode==='orders'){
+    const groups = groupAdminOrdersByBuyer(adminCrmFilteredRows);
+    const pages = adminCrmTotalPages();
+    if(adminCrmPage > pages) adminCrmPage = pages;
+    if(adminCrmPage < 1) adminCrmPage = 1;
+    const start = (adminCrmPage - 1) * ADMIN_CRM_PAGE_SIZE;
+    const slice = groups.slice(start, start + ADMIN_CRM_PAGE_SIZE);
     box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-order-table"><thead><tr>
-      <th>주문번호</th><th>사용자</th><th>상품</th><th>결제수단</th><th>결제금액</th><th>결제상태</th><th>결제일</th><th>취소/환불</th><th>관리</th>
-    </tr></thead><tbody>${slice.map(o=>adminCrmOrderRowHtml(o)).join('')}</tbody></table></div>`;
-    renderAdminCrmPager(pages, total, '건');
+      <th>사용자</th><th>주문</th><th>최근 상품</th><th>최근 결제</th><th>최근 상태</th><th>최근 결제일</th>
+    </tr></thead><tbody>${slice.map(g=>adminCrmOrderGroupHtml(g)).join('')}</tbody></table></div>`;
+    renderAdminCrmPager(pages, groups.length, '명');
     return;
   }
   box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-member-table"><thead><tr>
@@ -6027,23 +6041,86 @@ function adminCrmLicenseRowHtml(u){
     <td><button type="button" class="ghost mini-btn" data-admin-uid="${esc(uid)}">관리</button></td>
   </tr>`;
 }
-function adminCrmOrderRowHtml(o){
-  const uid=String(o.uid||o.userId||o.customerUid||'');
-  const user=findAdminUserRow(uid);
+function adminOrderBuyerKey(o){
+  const uid=String(o?.uid||o?.userId||o?.customerUid||'').trim();
+  if(uid) return uid;
+  const email=String(o?.email||'').trim().toLowerCase();
+  if(email) return `email:${email}`;
+  return `order:${o?.id||o?.paymentId||o?.paypalOrderId||Math.random()}`;
+}
+function groupAdminOrdersByBuyer(orders){
+  const map=new Map();
+  (orders||[]).forEach(o=>{
+    const key=adminOrderBuyerKey(o);
+    if(!map.has(key)) map.set(key, []);
+    map.get(key).push(o);
+  });
+  return [...map.entries()].map(([buyerKey, items])=>{
+    items.sort((a,b)=>adminOrderWhenSec(b)-adminOrderWhenSec(a));
+    const latest=items[0];
+    return {
+      buyerKey,
+      uid: String(latest?.uid||latest?.userId||latest?.customerUid||''),
+      items,
+      latest
+    };
+  }).sort((a,b)=>adminOrderWhenSec(b.latest)-adminOrderWhenSec(a.latest));
+}
+function adminOrderMethodsSummary(items){
+  const labels=[...new Set((items||[]).map(o=>adminPaymentMethodLabel(o.paymentMethod||o.provider||o.method||'-')))];
+  if(!labels.length) return '-';
+  if(labels.length===1) return labels[0];
+  return `${labels[0]} 외 ${labels.length-1}`;
+}
+function adminCrmOrderChildRowHtml(o){
+  const key=o.id||'';
   const id=adminOrderDisplayId(o);
-  const key=o.id||o.paymentId||o.paypalOrderId||'';
-  const name=user?.displayName || user?.email || uid || '-';
-  return `<tr class="admin-crm-member-row" data-pay-uid="${esc(uid)}" data-pay-order="${esc(key)}">
+  const del = key
+    ? `<button type="button" class="secondary mini-btn danger-btn" data-order-delete="${esc(key)}">삭제</button>`
+    : '-';
+  return `<tr class="admin-order-child-row">
     <td class="mono admin-order-id" title="${esc(id)}">${esc(id)}</td>
-    <td class="admin-member-email" title="${esc(user?.email||uid)}">${esc(name)}</td>
     <td title="${esc(adminOrderProductName(o))}">${esc(adminOrderProductName(o))}</td>
     <td>${esc(adminPaymentMethodLabel(o.paymentMethod||o.provider||o.method||'-'))}</td>
     <td>${esc(adminOrderAmountText(o))}</td>
     <td>${adminPaymentStatusBadgeHtml(o.status)}</td>
     <td>${esc(fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt))}</td>
     <td class="admin-order-refund" title="${esc(adminOrderRefundText(o))}">${esc(adminOrderRefundText(o))}</td>
-    <td><button type="button" class="ghost mini-btn">상세</button></td>
+    <td>${del}</td>
   </tr>`;
+}
+function adminCrmOrderGroupHtml(g){
+  const latest=g.latest||{};
+  const uid=g.uid;
+  const user=uid ? findAdminUserRow(uid) : null;
+  const name=user?.displayName || user?.email || latest.email || uid || '-';
+  const email=user?.email || latest.email || '';
+  const open=adminCrmOrderOpen.has(g.buyerKey);
+  const n=g.items.length;
+  return `<tr class="admin-order-group${open?' is-open':''}" data-order-group="${esc(g.buyerKey)}">
+    <td class="admin-order-buyer">
+      <span class="admin-order-caret" aria-hidden="true">▸</span>
+      <span>
+        <b>${esc(name)}</b>
+        ${email && email!==name ? `<small>${esc(email)}</small>` : ''}
+      </span>
+    </td>
+    <td>${n}건</td>
+    <td title="${esc(adminOrderProductName(latest))}">${esc(adminOrderProductName(latest))}</td>
+    <td>${esc(adminOrderMethodsSummary(g.items))}</td>
+    <td>${adminPaymentStatusBadgeHtml(latest.status)}</td>
+    <td>${esc(fmtDate(latest.completedAt||latest.verifiedAt||latest.createdAt||latest.updatedAt))}</td>
+  </tr>
+  <tr class="admin-order-expand"${open?'':' hidden'}>
+    <td colspan="6">
+      <table class="admin-table admin-order-nested"><thead><tr>
+        <th>주문번호</th><th>상품</th><th>결제수단</th><th>결제금액</th><th>결제상태</th><th>결제일</th><th>취소/환불</th><th>관리</th>
+      </tr></thead><tbody>${g.items.map(o=>adminCrmOrderChildRowHtml(o)).join('')}</tbody></table>
+    </td>
+  </tr>`;
+}
+function adminCrmOrderRowHtml(o){
+  return adminCrmOrderChildRowHtml(o);
 }
 function renderAdminCrmPager(pages, total, unit='명'){
   const pager=$('adminCrmPager'); if(!pager) return;
@@ -6104,16 +6181,20 @@ function onAdminCrmListClick(e){
     updateAdminCrmBulkbar();
     return;
   }
-  const orderRow = e.target.closest('[data-pay-order]');
-  if(orderRow && adminCrmMode()==='orders'){
-    const uid=orderRow.getAttribute('data-pay-uid');
-    const key=orderRow.getAttribute('data-pay-order');
-    if(!uid) return;
-    selectAdminCrmUser(uid);
-    setTimeout(()=>{
-      setAdminCrmDetailTab('payments');
-      openAdminCrmOrderDrawer(uid, key);
-    }, 200);
+  const del = e.target.closest('[data-order-delete]');
+  if(del){
+    e.preventDefault();
+    e.stopPropagation();
+    adminDeleteOrder(del.getAttribute('data-order-delete'));
+    return;
+  }
+  const group = e.target.closest('[data-order-group]');
+  if(group && adminCrmMode()==='orders'){
+    const key=group.getAttribute('data-order-group');
+    if(!key) return;
+    if(adminCrmOrderOpen.has(key)) adminCrmOrderOpen.delete(key);
+    else adminCrmOrderOpen.add(key);
+    paintAdminCrmPagedList();
     return;
   }
   const card = e.target.closest('[data-admin-uid]');
@@ -7469,6 +7550,30 @@ async function adminDeleteUser(uid, silent=false){
     if(!silent) adminFlash(`회원 삭제 · ${esc(userDocId)}`);
     if(selectedAdminUid===uid){ selectedAdminUid=null; renderAdminCrmDetail(null); }
   }catch(e){ alert(e.message); }
+}
+async function adminDeleteOrder(orderId){
+  if(!isAdminUser) return alert(tr('no_permission'));
+  const id=String(orderId||'').trim();
+  if(!id) return;
+  const row=(adminOrderRows||[]).find(o=>(o.id||o.paymentId||o.paypalOrderId)===id);
+  const docId=row?.id || id;
+  if(!confirm(`주문 ${adminOrderDisplayId(row||{id:docId})} 을(를) 삭제할까요?\n결제 기록만 삭제되고 라이선스는 유지됩니다.`)) return;
+  try{
+    const {doc,deleteDoc}=firestoreApi;
+    await deleteDoc(doc(db,'orders', docId));
+    const uid=String(row?.uid||row?.userId||row?.customerUid||'unknown');
+    writeAdminAuditLog({
+      targetUserId: uid,
+      targetEmail: row?.email || findAdminUserRow(uid)?.email || '',
+      category: 'payment',
+      action: '주문 삭제',
+      before: { id: docId, status: row?.status || '', amount: row?.amount ?? null },
+      after: null,
+      result: 'success',
+      summary: adminOrderDisplayId(row||{id:docId})
+    });
+    adminFlash('주문 삭제됨');
+  }catch(e){ alert(e.message||e); }
 }
 async function loadAdminLicenses(){
   if(!firestoreApi || !db) return;

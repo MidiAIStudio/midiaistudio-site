@@ -3561,12 +3561,27 @@ body.admin-console-page:not([data-admin-view="logs"]):not([data-license-page="hi
 .admin-console-page .admin-crm-toolbar [hidden],
 .admin-console-page #adminCrmSelectAllWrap[hidden]{display:none!important}
 .admin-console-page .admin-crm-license-grants{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
-.admin-console-page .admin-license-table,
-.admin-console-page .admin-order-table{min-width:1040px;width:100%}
+.admin-console-page .admin-license-table{min-width:1040px;width:100%}
+.admin-console-page .admin-order-table{min-width:0;width:100%;max-width:960px}
 .admin-console-page .admin-license-table th,
 .admin-console-page .admin-license-table td,
 .admin-console-page .admin-order-table th,
 .admin-console-page .admin-order-table td{padding:0 10px;vertical-align:middle;white-space:nowrap}
+.admin-console-page .admin-order-group{cursor:pointer}
+.admin-console-page .admin-order-group:hover td{background:var(--admin-fill-hover)}
+.admin-console-page .admin-order-group.is-open td{background:rgba(139,92,246,.08)}
+.admin-console-page .admin-order-buyer{display:flex;align-items:center;gap:8px;white-space:normal}
+.admin-console-page .admin-order-buyer b{display:block;font-size:13px}
+.admin-console-page .admin-order-buyer small{display:block;color:#8b93b3;font-size:11px}
+.admin-console-page .admin-order-caret{
+  flex:none;display:inline-block;width:12px;color:#8b93b3;transition:transform .15s ease
+}
+.admin-console-page .admin-order-group.is-open .admin-order-caret{transform:rotate(90deg)}
+.admin-console-page .admin-order-expand>td{padding:0 0 10px 28px;background:transparent;white-space:normal}
+.admin-console-page .admin-order-nested{min-width:0;width:100%;margin:0;border:1px solid var(--admin-stroke);border-radius:8px;overflow:hidden}
+.admin-console-page .admin-order-nested th,
+.admin-console-page .admin-order-nested td{height:34px;font-size:12px}
+.admin-console-page tr.admin-order-expand[hidden]{display:none!important}
 .admin-console-page .admin-order-id,
 .admin-console-page .admin-order-refund{
   max-width:180px;overflow:hidden;text-overflow:ellipsis

@@ -530,7 +530,18 @@ function renderCrmWork() {
       const hay = [o.id, o.uid, o.email, u?.name, o.product, o.status].join(' ').toLowerCase();
       return !q || hay.includes(q);
     });
-    $('adminUserCount') && ($('adminUserCount').textContent = `${rows.length} / ${ORDERS.length}`);
+    const groups = [];
+    const map = new Map();
+    rows.forEach((o) => {
+      const key = o.uid || o.email || o.id;
+      if (!map.has(key)) {
+        const g = { key, uid: o.uid, items: [] };
+        map.set(key, g);
+        groups.push(g);
+      }
+      map.get(key).items.push(o);
+    });
+    $('adminUserCount') && ($('adminUserCount').textContent = `${groups.length}명 · ${rows.length}건`);
     if (hint) hint.textContent = rows.length === ORDERS.length ? '' : `필터 ${rows.length}건`;
     if (!rows.length) {
       emptyMsg(({
@@ -542,25 +553,38 @@ function renderCrmWork() {
       })[orderTab] || '해당하는 주문이 없습니다.');
       return;
     }
+    if (!window.__midiaiPreviewOrderOpen) window.__midiaiPreviewOrderOpen = new Set();
+    const openSet = window.__midiaiPreviewOrderOpen;
     box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-order-table"><thead><tr>
-      <th>주문번호</th><th>사용자</th><th>상품</th><th>결제수단</th><th>결제금액</th><th>결제상태</th><th>결제일</th><th>취소/환불</th><th>관리</th>
-    </tr></thead><tbody>${rows.map((o) => {
-      const u = memberByUid(o.uid);
-      return `<tr class="admin-crm-member-row" data-pay-uid="${o.uid}" data-pay-order="${o.id}">
-        <td class="mono admin-order-id" title="${o.id}">${o.id}</td>
-        <td class="admin-member-email">${u?.name || o.email}</td>
-        <td>${o.product}</td>
-        <td>${o.method}</td>
-        <td>${o.amount}</td>
-        <td>${payStatusBadge(o.status)}</td>
-        <td>${o.date}</td>
-        <td>${o.refund || (o.status === '환불' ? o.status : '-')}</td>
-        <td><button type="button" class="ghost mini-btn">상세</button></td>
+      <th>사용자</th><th>주문</th><th>최근 상품</th><th>최근 결제</th><th>최근 상태</th><th>최근 결제일</th>
+    </tr></thead><tbody>${groups.map((g) => {
+      const latest = g.items[0];
+      const u = memberByUid(g.uid);
+      const name = u?.name || latest.email || g.uid;
+      const open = openSet.has(g.key);
+      const methods = [...new Set(g.items.map((o) => o.method))];
+      const methodLabel = methods.length > 1 ? `${methods[0]} 외 ${methods.length - 1}` : (methods[0] || '-');
+      return `<tr class="admin-order-group${open ? ' is-open' : ''}" data-order-group="${g.key}">
+        <td class="admin-order-buyer"><span class="admin-order-caret">▸</span><span><b>${name}</b>${u?.email ? `<small>${u.email}</small>` : ''}</span></td>
+        <td>${g.items.length}건</td>
+        <td>${latest.product}</td>
+        <td>${methodLabel}</td>
+        <td>${payStatusBadge(latest.status)}</td>
+        <td>${latest.date}</td>
+      </tr>
+      <tr class="admin-order-expand"${open ? '' : ' hidden'}>
+        <td colspan="6"><table class="admin-table admin-order-nested"><thead><tr>
+          <th>주문번호</th><th>상품</th><th>결제수단</th><th>결제금액</th><th>결제상태</th><th>결제일</th><th>취소/환불</th><th>관리</th>
+        </tr></thead><tbody>${g.items.map((o) => `<tr>
+          <td class="mono">${o.id}</td><td>${o.product}</td><td>${o.method}</td><td>${o.amount}</td>
+          <td>${payStatusBadge(o.status)}</td><td>${o.date}</td><td>${o.refund || (o.status === '환불' ? o.status : '-')}</td>
+          <td><button type="button" class="secondary mini-btn danger-btn" data-order-delete="${o.id}">삭제</button></td>
+        </tr>`).join('')}</tbody></table></td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
     if (pager) {
       pager.hidden = false;
-      pager.innerHTML = `<button type="button" class="ghost mini-btn" disabled>이전</button><span class="admin-crm-pager-info">1 / 1</span><button type="button" class="ghost mini-btn" disabled>다음</button><span class="admin-crm-pager-info muted">1–${rows.length} · ${rows.length}건</span>`;
+      pager.innerHTML = `<button type="button" class="ghost mini-btn" disabled>이전</button><span class="admin-crm-pager-info">1 / 1</span><button type="button" class="ghost mini-btn" disabled>다음</button><span class="admin-crm-pager-info muted">1–${groups.length} · ${groups.length}명</span>`;
     }
     return;
   }
@@ -1345,6 +1369,26 @@ function bind() {
         if (act === 'ban') applyPreviewLicense({ licenseStatus: 'banned' }, { notice: '미리보기 — 라이선스 정지 (실제 데이터 변경 없음)' });
         else previewNotice('미리보기 — 실제 데이터는 변경되지 않습니다');
       }
+    }
+    const delOrder = e.target.closest('[data-order-delete]');
+    if (delOrder) {
+      const id = delOrder.getAttribute('data-order-delete');
+      const idx = ORDERS.findIndex((o) => o.id === id);
+      if (idx >= 0 && confirm('이 주문을 삭제할까요? (미리보기)')) {
+        ORDERS.splice(idx, 1);
+        previewNotice('미리보기 — 주문 삭제됨 (실제 데이터 변경 없음)');
+        renderCrmWork();
+      }
+      return;
+    }
+    const orderGroupRow = e.target.closest('[data-order-group]');
+    if (orderGroupRow) {
+      if (!window.__midiaiPreviewOrderOpen) window.__midiaiPreviewOrderOpen = new Set();
+      const key = orderGroupRow.getAttribute('data-order-group');
+      if (window.__midiaiPreviewOrderOpen.has(key)) window.__midiaiPreviewOrderOpen.delete(key);
+      else window.__midiaiPreviewOrderOpen.add(key);
+      renderCrmWork();
+      return;
     }
     const pay = e.target.closest('[data-pay-uid]');
     if (pay && !e.target.closest('[data-admin-nav]')) {
