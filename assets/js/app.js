@@ -26,8 +26,9 @@ import {
   configureAdminUserLogs,
   initAdminUserLogs,
   writeAdminAuditLog,
-  refreshAdminUserLogsUsers
-} from './admin-user-logs.js?v=admin-logs-1';
+  refreshAdminUserLogsUsers,
+  formatAdminLogLabel
+} from './admin-user-logs.js?v=admin-content-wide-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -6898,7 +6899,7 @@ function renderAdminCrmUsage(uid){
           <h4 class="admin-crm-usage-proofs-title">최근 증빙</h4>
           <div class="admin-crm-proof-list">
           ${proofs.map(p=>`<div class="admin-crm-proof-item">
-            <span class="admin-crm-proof-label">기능</span><span class="admin-crm-proof-value">${esc(p.feature || '-')}</span>
+            <span class="admin-crm-proof-label">기능</span><span class="admin-crm-proof-value">${esc(formatAdminLogLabel(p.feature) || p.feature || '-')}</span>
             <span class="admin-crm-proof-label">서버 기록 시각</span><span class="admin-crm-proof-value">${esc(fmtTs(p.createdAt))}</span>
             <span class="admin-crm-proof-label">60초 초과 여부</span><span class="admin-crm-proof-value">${p.durationCategory==='over_60s' ? '60초 초과' : '아니오'}</span>
             <span class="admin-crm-proof-label">앱 버전</span><span class="admin-crm-proof-value">${esc(p.appVersion || '-')}</span>

@@ -3452,8 +3452,9 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 }
 .admin-logs-table td{
   padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.045);color:#e7e9fb;
-  vertical-align:middle;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  vertical-align:middle;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
 }
+.admin-logs-table td:last-child{max-width:none;min-width:168px}
 .admin-logs-tr{cursor:pointer}
 .admin-logs-tr:hover td{background:rgba(255,255,255,.035)}
 .admin-logs-tr.is-open td{background:rgba(34,211,238,.06)}
@@ -3512,7 +3513,7 @@ body.admin-console-page{
   --admin-fill:rgba(255,255,255,.03);
   --admin-fill-hover:rgba(255,255,255,.045);
   --admin-header-fill:rgba(9,11,22,.94);
-  --admin-content-max:1000px;
+  --admin-content-max:1280px;
   --admin-content-gutter:32px;
   padding-left:0!important;
   background:
@@ -3793,15 +3794,17 @@ body.admin-console-page .admin-crm-detail-pane{
 .admin-console-page .admin-logs-table{
   min-width:0;width:100%
 }
+.admin-console-page .admin-logs-table td{max-width:320px}
+.admin-console-page .admin-logs-table td:last-child{max-width:none;min-width:180px}
 .admin-console-page .admin-member-table{min-width:0;width:100%}
 .admin-console-page .admin-member-table th,
 .admin-console-page .admin-member-table td{padding:0 10px;vertical-align:middle;white-space:nowrap}
 .admin-console-page .admin-member-email,
 .admin-console-page .admin-member-country{
-  max-width:220px;overflow:hidden;text-overflow:ellipsis
+  max-width:280px;overflow:hidden;text-overflow:ellipsis
 }
 .admin-console-page .admin-member-user{
-  max-width:220px;
+  max-width:260px;
 }
 .admin-console-page .admin-member-user .admin-crm-card-avatar{
   vertical-align:middle;margin-right:6px

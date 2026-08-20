@@ -20,6 +20,119 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[c]));
 
+/** Display-only labels. Do not write these back to Firestore. */
+const LOG_FEATURE_LABELS = {
+  midi_editor_export: 'MIDI 편집 내보내기',
+  midi_editor_full_export: 'MIDI 편집 전체 내보내기',
+  midieditorfullexport: 'MIDI 편집 전체 내보내기',
+  score_editor_export: '악보 편집 내보내기',
+  score_editor_full_export: '악보 편집 전체 내보내기',
+  scoreeditorfullexport: '악보 편집 전체 내보내기',
+  piano_full_convert: 'Piano 전체 변환',
+  pianofullconvert: 'Piano 전체 변환',
+  orchestra_full_convert: 'Orchestra 전체 변환',
+  orchestrafullconvert: 'Orchestra 전체 변환',
+  youtube_to_midi: 'YouTube → MIDI 변환',
+  audio_to_midi: '오디오 → MIDI 변환',
+  pdf_to_midi: 'PDF → MIDI 변환',
+  musicxml_export: 'MusicXML 내보내기',
+  library_save: '라이브러리 저장',
+  midi_editor: 'MIDI 편집',
+  score_editor: '악보 편집'
+};
+const LOG_DURATION_LABELS = {
+  over_60s: '60초 초과',
+  over60s: '60초 초과',
+  under_60s: '60초 이하',
+  under60s: '60초 이하',
+  below_60s: '60초 이하',
+  le_60s: '60초 이하'
+};
+const LOG_PLAN_LABELS = {
+  lifetime: '평생',
+  trial: '체험판',
+  period: '기간제',
+  banned: '정지'
+};
+const LOG_TOKEN_LABELS = {
+  midi: 'MIDI',
+  editor: '편집',
+  export: '내보내기',
+  full: '전체',
+  convert: '변환',
+  score: '악보',
+  piano: 'Piano',
+  orchestra: 'Orchestra',
+  youtube: 'YouTube',
+  audio: '오디오',
+  pdf: 'PDF',
+  musicxml: 'MusicXML',
+  library: '라이브러리',
+  save: '저장',
+  open: '열기',
+  preview: '미리보기',
+  login: '로그인'
+};
+
+function looksLikeEventId(s) {
+  const v = String(s || '').trim();
+  if (!v) return false;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v)) return true;
+  if (/^[0-9a-f]{16,}$/i.test(v)) return true;
+  if (/^[0-9a-f-]{8,}\.\.\.$/i.test(v)) return true;
+  return false;
+}
+
+function logLabelKey(s) {
+  return String(s || '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+export function formatAdminLogLabel(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw || raw === '-') return raw;
+  if (looksLikeEventId(raw)) return '';
+  const key = logLabelKey(raw);
+  if (LOG_FEATURE_LABELS[key] || LOG_FEATURE_LABELS[raw]) return LOG_FEATURE_LABELS[key] || LOG_FEATURE_LABELS[raw];
+  if (LOG_DURATION_LABELS[key]) return LOG_DURATION_LABELS[key];
+  if (LOG_PLAN_LABELS[key]) return LOG_PLAN_LABELS[key];
+  if (/^[a-z][a-z0-9]*(_[a-z0-9]+)+$/i.test(raw) || /^[a-z]+[A-Z]/.test(raw) || /[-]/.test(raw) && /^[a-z0-9-]+$/i.test(raw)) {
+    const tokens = raw
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/[_-]+/g, ' ')
+      .trim()
+      .split(/\s+/);
+    return tokens.map((t) => LOG_TOKEN_LABELS[t.toLowerCase()] || t).join(' ').replace(/\s+/g, ' ').trim();
+  }
+  return raw;
+}
+
+export function formatAdminLogAction(row) {
+  const raw = row?.raw || {};
+  const code = raw.feature || row?.columns?.work || row?.action;
+  const labeled = formatAdminLogLabel(code);
+  return labeled || row?.action || '-';
+}
+
+export function formatAdminLogSummary(row) {
+  const raw = row?.raw || {};
+  if (row?.category === 'app' || raw.feature || raw.durationCategory) {
+    const parts = [
+      formatAdminLogLabel(raw.durationCategory),
+      formatAdminLogLabel(raw.licensePlan),
+      raw.appVersion ? `앱 ${raw.appVersion}` : ''
+    ].filter(Boolean);
+    if (parts.length) return parts.join(' · ');
+  }
+  const bits = String(row?.summary || '')
+    .split(/\s*·\s*/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s) => formatAdminLogLabel(s))
+    .filter(Boolean);
+  if (bits.length) return bits.join(' · ');
+  return row?.summary || '-';
+}
+
 function $(id) { return document.getElementById(id); }
 
 let api = {
@@ -996,6 +1109,7 @@ function filterByDateAndSearch(rows) {
     if (!q) return true;
     const hay = [
       r.action, r.summary, r.actor, r.result, r.category,
+      formatAdminLogAction(r), formatAdminLogSummary(r),
       stringifyVal(r.before), stringifyVal(r.after),
       formatDisplayVal(r.before), formatDisplayVal(r.after)
     ].join(' ').toLowerCase();
@@ -1121,16 +1235,26 @@ function rowHtml(r) {
   const cells = cellsForTab(activeTab, r);
   const detail = open ? detailHtml(r) : '';
   return `<tr class="admin-logs-tr${open ? ' is-open' : ''}" data-logs-row="${esc(r.id)}">${
-    cells.map((c) => `<td title="${esc(String(c.text || '').replace(/<[^>]+>/g, ''))}"><span class="${esc(c.cls || '')}">${c.html}</span></td>`).join('')
+    cells.map((c) => `<td title="${esc(c.title || String(c.text || '').replace(/<[^>]+>/g, ''))}"><span class="${esc(c.cls || '')}">${c.html}</span></td>`).join('')
   }</tr>${detail}`;
 }
 
+function logActionCell(r) {
+  const display = formatAdminLogAction(r);
+  const orig = String(r.action || '');
+  return { html: esc(display), text: display, title: orig && orig !== display ? orig : display };
+}
+function logSummaryCell(r, max = 48) {
+  const display = formatAdminLogSummary(r);
+  const orig = String(r.summary || '');
+  return { html: esc(truncate(display, max)), text: display, title: orig && orig !== display ? orig : display };
+}
 function cellsForTab(tab, r) {
   const time = { html: esc(fmtTs(r.timestamp)), text: fmtTs(r.timestamp), cls: 'admin-logs-time' };
   if (tab === 'license') {
     return [
       time,
-      { html: esc(r.action), text: r.action },
+      logActionCell(r),
       { html: esc(truncate(formatDisplayVal(r.before) || '-', 40)), text: formatDisplayVal(r.before) },
       { html: esc(truncate(formatDisplayVal(r.after) || r.summary || '-', 48)), text: formatDisplayVal(r.after) || r.summary },
       { html: esc(r.actor), text: r.actor },
@@ -1141,9 +1265,9 @@ function cellsForTab(tab, r) {
     const delta = [formatDisplayVal(r.before), formatDisplayVal(r.after)].filter(Boolean).join(' → ') || r.summary || '-';
     return [
       time,
-      { html: esc(truncate(r.actor, 28)), text: r.actor },
-      { html: esc(r.action), text: r.action },
-      { html: esc(truncate(delta, 48)), text: delta },
+      { html: esc(truncate(r.actor, 36)), text: r.actor },
+      logActionCell(r),
+      { html: esc(truncate(delta, 64)), text: delta },
       { html: badge(r.result), text: r.result },
       { html: esc(truncate(selectedUid, 18)), text: selectedUid }
     ];
@@ -1156,10 +1280,10 @@ function cellsForTab(tab, r) {
     return [
       time,
       { html: badge(kind, 'cat'), text: kind },
-      { html: esc(truncate(title, 40)), text: title },
+      { html: esc(truncate(title, 56)), text: title },
       { html: esc(c.sender || r.actor), text: c.sender || r.actor },
       { html: badge(c.read || r.result), text: c.read || r.result },
-      { html: esc(truncate(body, 36)), text: body }
+      { html: esc(truncate(body, 72)), text: body }
     ];
   }
   if (tab === 'payment') {
@@ -1177,9 +1301,9 @@ function cellsForTab(tab, r) {
     const c = r.columns || {};
     return [
       time,
-      { html: esc(r.action), text: r.action },
+      logActionCell(r),
       { html: esc(c.version || r.raw?.appVersion || '-'), text: c.version || r.raw?.appVersion },
-      { html: esc(truncate(r.summary, 40)), text: r.summary },
+      logSummaryCell(r, 64),
       { html: esc(r.actor), text: r.actor },
       { html: badge(r.result), text: r.result }
     ];
@@ -1189,7 +1313,7 @@ function cellsForTab(tab, r) {
     const after = maskIfHwid(r.after);
     return [
       time,
-      { html: esc(r.action), text: r.action },
+      logActionCell(r),
       { html: esc(before || '-'), text: before, cls: 'mono' },
       { html: esc(after || '-'), text: after, cls: 'mono' },
       { html: esc(r.actor), text: r.actor },
@@ -1200,18 +1324,18 @@ function cellsForTab(tab, r) {
     const title = r.raw?.ticket?.title || r.raw?.title || (r.action.includes('문의') ? r.summary : '-') || '-';
     return [
       time,
-      { html: esc(r.action), text: r.action },
+      logActionCell(r),
       { html: esc(truncate(title, 36)), text: title },
       { html: esc(r.actor), text: r.actor },
       { html: badge(r.result), text: r.result },
-      { html: esc(truncate(r.summary, 36)), text: r.summary }
+      logSummaryCell(r, 56)
     ];
   }
   return [
     time,
     { html: badge(categoryLabel(r.category), 'cat'), text: categoryLabel(r.category) },
-    { html: esc(r.action), text: r.action },
-    { html: esc(truncate(r.summary, 48)), text: r.summary },
+    logActionCell(r),
+    logSummaryCell(r, 72),
     { html: esc(truncate(r.actor, 24)), text: r.actor },
     { html: badge(r.result), text: r.result }
   ];
@@ -1250,10 +1374,10 @@ function detailHtml(r) {
   const fields = [
     ['일시', fmtTs(r.timestamp)],
     ['구분', categoryLabel(r.category)],
-    ['작업', r.action],
+    ['작업', formatAdminLogAction(r)],
     ['처리자', r.actor],
     ['결과', r.result],
-    ['내용', r.summary],
+    ['내용', formatAdminLogSummary(r)],
     ['이전', formatDisplayVal(r.before) || stringifyVal(r.before) || '-'],
     ['변경', formatDisplayVal(r.after) || stringifyVal(r.after) || '-'],
     ['소스', r.source || '-']

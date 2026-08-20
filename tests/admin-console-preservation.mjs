@@ -90,8 +90,8 @@ mustInclude(app, 'renderAdminPaymentsTable', 'payments table');
 mustInclude(app, "classList.contains('admin-console-page')", 'skip public sidebar on admin console');
 
 mustInclude(consoleJs, 'export function showAdminView', 'view switcher');
-mustInclude(logsJs, 'export function setAdminLogsTab', 'logs tab api');
-mustInclude(logsJs, 'export function selectAdminLogsUser', 'logs user api');
+mustInclude(logsJs, 'export function formatAdminLogAction', 'log display filter');
+mustInclude(logsJs, 'midi_editor_export', 'app feature label');
 mustInclude(css, '.admin-console-page .admin-sidebar', 'console css scoped');
 mustInclude(css, '.admin-console-page .admin-crm-detail [data-tab-panel]', 'detail tab css');
 mustInclude(css, '.admin-console-page .admin-crm.is-row-expand .admin-crm-detail-pane', 'member row expand css');
