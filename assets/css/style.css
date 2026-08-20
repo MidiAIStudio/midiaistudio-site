@@ -3713,17 +3713,18 @@ body.admin-console-page .admin-crm-detail-pane{
 .admin-console-page .admin-crm-detail[data-tab="overview"] #adminCrmUsageCard.is-collapsed{display:none}
 .admin-console-page .admin-crm-detail[data-tab="overview"] #adminCrmAuditStack,
 .admin-console-page .admin-crm-detail[data-tab="audit"] #adminCrmAuditStack{
-  display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.9fr);gap:12px 16px;align-items:start
+  display:grid;grid-template-columns:minmax(0,1.15fr) minmax(260px,.85fr);gap:12px;align-items:start
 }
 .admin-console-page .admin-crm-detail[data-tab="overview"] .admin-crm-bottom-grid,
 .admin-console-page .admin-crm-detail[data-tab="audit"] .admin-crm-bottom-grid{
   display:grid;grid-template-columns:1fr;gap:10px
 }
 .admin-console-page .admin-crm-dash-grid{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 12px
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 14px
 }
 .admin-console-page .admin-crm-dash-sec{
-  min-width:0;padding:8px 10px 10px;border-radius:8px;background:var(--admin-fill)
+  min-width:0;padding:12px 14px;border-radius:10px;
+  border:1px solid var(--admin-stroke);background:rgba(255,255,255,.035)
 }
 .admin-console-page .admin-crm-dash-head{
   display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 6px
@@ -3862,12 +3863,34 @@ body.admin-console-page button.ghost{
   background:rgba(255,255,255,.04)!important;
   box-shadow:none!important
 }
-.admin-console-page .admin-crm-license-form{gap:6px}
-.admin-console-page .admin-crm-license-form .form-split{gap:6px}
+.admin-console-page .admin-crm-license-form{display:grid;gap:8px;max-width:640px}
+.admin-console-page .admin-crm-license-form .form-split{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;max-width:640px}
+.admin-console-page .admin-crm-license-form label{display:grid;gap:4px;font-size:12px;font-weight:700;color:#9aa3c2}
 .admin-console-page .admin-crm-license-form select,
 .admin-console-page .admin-crm-license-form input[type="date"]{
-  height:var(--admin-control-height);min-height:var(--admin-control-height);
+  width:100%;height:var(--admin-control-height);min-height:var(--admin-control-height);
   padding:0 10px;border-radius:8px;box-sizing:border-box
+}
+.admin-console-page .admin-crm-license-form textarea{width:100%;max-width:100%;min-height:72px;resize:vertical;box-sizing:border-box}
+.admin-console-page .admin-crm.is-detail-open .admin-crm-detail{
+  max-width:960px;width:100%;padding:0 0 72px;max-height:none;opacity:1;transform:none
+}
+.admin-console-page .admin-crm.is-detail-open .admin-crm-detail-head{
+  display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;
+  gap:10px 12px;margin:0 0 12px;padding:12px 14px;
+  border:1px solid var(--admin-stroke);border-radius:12px;background:rgba(255,255,255,.03)
+}
+.admin-console-page .admin-crm.is-detail-open .admin-crm-card,
+body.admin-console-page .admin-crm.is-detail-open .admin-crm-card{
+  max-width:960px;margin:0 0 12px;padding:12px 14px;border-radius:10px;
+  border:1px solid var(--admin-stroke);background:rgba(255,255,255,.03)
+}
+.admin-console-page .admin-crm.is-detail-open .admin-crm-card-dense{margin-bottom:12px;border-bottom:1px solid var(--admin-stroke)}
+.admin-console-page .admin-crm.is-detail-open #adminCrmLicenseCard{max-width:680px}
+@media(max-width:720px){
+  .admin-console-page .admin-crm.is-detail-open .admin-crm-detail-head{grid-template-columns:1fr}
+  .admin-console-page .admin-crm-dash-grid,
+  .admin-console-page .admin-crm-license-form .form-split{grid-template-columns:1fr}
 }
 body.admin-console-page .admin-logs-section{
   min-height:0;gap:8px
