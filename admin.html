@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-compact-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-pricing-toolbar-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -121,7 +121,7 @@
                 <button type="button" class="admin-home-link" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="members"><b>회원 관리</b><small>검색 · 필터 · 일괄 작업</small></button>
                 <button type="button" class="admin-home-link" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="orders"><b>결제</b><small>주문자별 주문 · 결제</small></button>
                 <button type="button" class="admin-home-link" data-admin-nav="tickets" data-admin-tab="tickets"><b>문의 관리</b><small>접수 · 답변 · 종료</small></button>
-                <button type="button" class="admin-home-link" data-admin-nav="logs" data-admin-tab="logs"><b>로그</b><small>라이선스 · 쪽지 · 결제</small></button>
+                <button type="button" class="admin-home-link" data-admin-nav="logs" data-admin-tab="logs"><b>로그</b><small>회원별 이력 · 라이선스 · 결제</small></button>
                 <button type="button" class="admin-home-link" data-admin-nav="pricing" data-admin-tab="pricing"><b>가격·상품</b><small>Region · 할인 · 팝업</small></button>
                 <button type="button" class="admin-home-link" data-admin-nav="content"><b>콘텐츠</b><small>공지 · 패치노트 · FAQ · 게시판</small></button>
               </div>
@@ -129,12 +129,17 @@
 
 
             <section class="admin-pricing-section" id="adminPricingSection" hidden>
-              <div class="admin-section-head">
+              <div class="admin-section-head admin-pricing-head">
                 <p class="admin-page-lead muted">Region별 정가·판매가가 곧 구매 UI와 PortOne·PayPal 서버 측에 동일 반영됩니다.</p>
                 <div class="admin-pricing-actions">
-                  <button type="button" class="secondary mini-btn" id="pricingAddProduct">상품 추가</button>
-                  <button type="button" class="secondary mini-btn" id="pricingAddRegion">Region 추가</button>
-                  <button type="button" class="primary mini-btn" id="pricingSaveBtn">저장</button>
+                  <div class="admin-pricing-actions-create">
+                    <button type="button" class="secondary mini-btn" id="pricingAddProduct">상품 추가</button>
+                    <button type="button" class="secondary mini-btn" id="pricingAddRegion">Region 추가</button>
+                  </div>
+                  <div class="admin-pricing-actions-save">
+                    <button type="button" class="secondary mini-btn" id="pricingSavePromoBtn">할인/팝업 저장</button>
+                    <button type="button" class="primary mini-btn" id="pricingSaveBtn">저장</button>
+                  </div>
                 </div>
               </div>
               <div id="pricingSaveMsg" class="admin-flash hidden"></div>
@@ -145,7 +150,6 @@
                     <h4>할인 · 이벤트</h4>
                     <p class="muted small">할인 뱃지·기간과 홈 팝업 문구를 관리합니다. 기간이 지나면 자동으로 꺼집니다.</p>
                   </div>
-                  <button type="button" class="primary mini-btn" id="pricingSavePromoBtn">할인/팝업 저장</button>
                 </div>
                 <div class="pricing-promo-grid">
                   <label class="pricing-check"><input type="checkbox" id="promoEnabled"> 할인 캠페인 사용</label>
@@ -503,39 +507,58 @@
             </section>
 
             <section class="admin-logs-section" id="adminLogsSection" hidden>
-              <div id="adminLogsTabs" class="admin-logs-tabs admin-page-tabs" role="tablist" aria-label="로그 종류"></div>
-              <div class="admin-logs-head">
-                <div class="admin-logs-head-actions">
-                  <input type="search" id="adminLogsTableSearch" class="search-input compact" placeholder="로그 내용 검색" aria-label="로그 검색">
-                  <select id="adminLogsDateFilter" aria-label="기간">
-                    <option value="all">전체 기간</option>
-                    <option value="today">오늘</option>
-                    <option value="7d">7일</option>
-                    <option value="30d">30일</option>
-                  </select>
-                  <button type="button" class="secondary mini-btn" id="adminLogsRefreshBtn">새로고침</button>
-                </div>
-              </div>
               <div class="admin-logs-layout">
                 <aside class="admin-logs-users" aria-label="사용자 목록">
                   <div class="admin-logs-users-head">
-                    <h4 class="admin-logs-users-title">사용자</h4>
-                    <input type="search" id="adminLogsUserSearch" class="search-input compact admin-logs-user-search" placeholder="이메일 검색" aria-label="이메일 검색">
+                    <div class="admin-logs-users-title-row">
+                      <h4 class="admin-logs-users-title">사용자</h4>
+                      <span id="adminLogsUserCount" class="admin-logs-user-count">0</span>
+                    </div>
+                    <input type="search" id="adminLogsUserSearch" class="search-input compact admin-logs-user-search" placeholder="이름·이메일·UID 검색" aria-label="사용자 검색" autocomplete="off">
+                    <div class="admin-logs-user-filters" id="adminLogsUserFilters" role="group" aria-label="라이선스 필터">
+                      <button type="button" class="admin-logs-chip is-active" data-logs-user-filter="all">전체</button>
+                      <button type="button" class="admin-logs-chip" data-logs-user-filter="trial">체험</button>
+                      <button type="button" class="admin-logs-chip" data-logs-user-filter="lifetime">평생</button>
+                      <button type="button" class="admin-logs-chip" data-logs-user-filter="period">기간</button>
+                      <button type="button" class="admin-logs-chip" data-logs-user-filter="banned">차단</button>
+                    </div>
                   </div>
                   <div id="adminLogsUserList" class="admin-logs-user-list"><div class="admin-logs-empty">사용자 불러오는 중…</div></div>
                 </aside>
                 <div class="admin-logs-main">
-                  <div id="adminLogsSelected" class="admin-logs-selected"><p class="muted">왼쪽에서 사용자를 선택하세요.</p></div>
-                  <div class="admin-logs-table-meta-row">
+                  <div id="adminLogsSelected" class="admin-logs-selected"><p class="muted">왼쪽에서 회원을 선택하면 이력이 표시됩니다.</p></div>
+                  <div id="adminLogsTabs" class="admin-logs-tabs admin-page-tabs" role="tablist" aria-label="로그 종류">
+                    <button type="button" class="admin-logs-tab is-active" data-logs-tab="all">전체 <em>0</em></button>
+                    <button type="button" class="admin-logs-tab" data-logs-tab="license">라이선스 <em>0</em></button>
+                    <button type="button" class="admin-logs-tab" data-logs-tab="admin">관리자 작업 <em>0</em></button>
+                    <button type="button" class="admin-logs-tab" data-logs-tab="message">쪽지/알림 <em>0</em></button>
+                    <button type="button" class="admin-logs-tab" data-logs-tab="payment">결제 <em>0</em></button>
+                    <button type="button" class="admin-logs-tab" data-logs-tab="app">앱 사용 <em>0</em></button>
+                    <button type="button" class="admin-logs-tab" data-logs-tab="hwid">HWID/기기 <em>0</em></button>
+                    <button type="button" class="admin-logs-tab" data-logs-tab="ticket">문의 <em>0</em></button>
+                  </div>
+                  <div class="admin-logs-head">
                     <span id="adminLogsTableMeta" class="muted small"></span>
-                    <button type="button" class="secondary mini-btn" id="adminLogsLoadMore" hidden>더보기</button>
+                    <div class="admin-logs-head-actions">
+                      <input type="search" id="adminLogsTableSearch" class="search-input compact" placeholder="작업·내용·처리자 검색" aria-label="로그 검색">
+                      <select id="adminLogsDateFilter" aria-label="기간">
+                        <option value="all">전체 기간</option>
+                        <option value="today">오늘</option>
+                        <option value="7d">7일</option>
+                        <option value="30d">30일</option>
+                      </select>
+                      <button type="button" class="secondary mini-btn" id="adminLogsRefreshBtn">새로고침</button>
+                    </div>
                   </div>
                   <div class="admin-logs-table-wrap">
                     <table class="admin-logs-table" aria-label="사용자 로그">
                       <thead id="adminLogsTableHead"></thead>
                       <tbody id="adminLogsTableBody"></tbody>
                     </table>
-                    <div id="adminLogsEmpty" class="admin-logs-empty-panel">사용자를 선택하면 로그가 표시됩니다.</div>
+                    <div id="adminLogsEmpty" class="admin-logs-empty-panel">왼쪽에서 회원을 선택하면 이력이 표시됩니다.</div>
+                  </div>
+                  <div class="admin-logs-table-foot">
+                    <button type="button" class="secondary mini-btn" id="adminLogsLoadMore" hidden>더보기</button>
                   </div>
                 </div>
               </div>
@@ -590,8 +613,8 @@
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=admin-orders-1"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=admin-nav-4"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=admin-pay-1"></script>
+  <script type="module" src="./assets/js/app.js?v=admin-member-expand-1"></script>
+  <script type="module" src="./assets/js/pricing-admin.js?v=admin-pricing-toolbar-1"></script>
+  <script type="module" src="./assets/js/admin-console.js?v=admin-logs-1"></script>
 </body>
 </html>

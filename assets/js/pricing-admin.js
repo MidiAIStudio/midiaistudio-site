@@ -115,7 +115,7 @@ function bindTabs() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
       if (tab === 'logs') {
-        import('./admin-user-logs.js?v=admin-overview-1')
+        import('./admin-user-logs.js?v=admin-logs-1')
           .then((m) => m.showAdminUserLogsPanel?.(true))
           .catch(console.error);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -212,15 +212,7 @@ async function loadAll() {
       // still render fallback item below
       const root = $('pricingProductList');
       if (root) {
-        root.insertAdjacentHTML('beforeend', products.map((p) => {
-          const kr = p.regions?.KR;
-          const gl = p.regions?.Global;
-          return `<button type="button" class="pricing-product-item is-active" data-product-id="${esc(p.id)}">
-            <strong>${esc(p.name || p.id)}</strong>
-            <span class="muted">로컬 시드(미저장)</span>
-            <span class="mono small">${kr ? `KRW ${Number(kr.salePrice).toLocaleString('ko-KR')}` : '-'} · ${gl ? `USD ${gl.salePrice}` : '-'}</span>
-          </button>`;
-        }).join(''));
+        root.insertAdjacentHTML('beforeend', products.map((p) => pricingProductItemHtml(p, '로컬 시드(미저장)')).join(''));
         root.querySelectorAll('[data-product-id]').forEach((btn) => {
           btn.addEventListener('click', () => selectProduct(btn.getAttribute('data-product-id')));
         });
@@ -255,6 +247,20 @@ async function loadAll() {
   }
 }
 
+function pricingProductItemHtml(p, note) {
+  const kr = p.regions?.KR;
+  const gl = p.regions?.Global;
+  const active = p.id === selectedId ? ' is-active' : '';
+  const on = p.status !== 'paused';
+  const status = `<span class="badge ${on ? 'active' : 'none'}">${on ? '판매중' : '판매중지'}</span>`;
+  const custom = p.badge ? `<span class="badge pending">${esc(p.badge)}</span>` : '';
+  const meta = note || `정렬 ${esc(p.order ?? 0)}`;
+  return `<button type="button" class="pricing-product-item${active}" data-product-id="${esc(p.id)}">
+    <span class="pricing-product-item-top"><strong>${esc(p.name || p.id)}</strong><span class="pricing-product-item-badges">${status}${custom}</span></span>
+    <span class="muted">${esc(meta)}</span>
+    <span class="mono small">${kr ? `KRW ${Number(kr.salePrice).toLocaleString('ko-KR')}` : '-'} · ${gl ? `USD ${gl.salePrice}` : '-'}</span>
+  </button>`;
+}
 function renderList() {
   const root = $('pricingProductList');
   if (!root) return;
@@ -262,17 +268,7 @@ function renderList() {
     root.innerHTML = '<p class="muted">상품이 없습니다. [상품 추가]를 눌러주세요.</p>';
     return;
   }
-  root.innerHTML = products.map((p) => {
-    const kr = p.regions?.KR;
-    const gl = p.regions?.Global;
-    const active = p.id === selectedId ? ' is-active' : '';
-    const status = p.status === 'active' ? '판매중' : '판매중지';
-    return `<button type="button" class="pricing-product-item${active}" data-product-id="${esc(p.id)}">
-      <strong>${esc(p.name || p.id)}</strong>
-      <span class="muted">${esc(status)} · 정렬 ${esc(p.order ?? 0)}</span>
-      <span class="mono small">${kr ? `KRW ${Number(kr.salePrice).toLocaleString('ko-KR')}` : '-'} · ${gl ? `USD ${gl.salePrice}` : '-'}</span>
-    </button>`;
-  }).join('');
+  root.innerHTML = products.map((p) => pricingProductItemHtml(p)).join('');
   root.querySelectorAll('[data-product-id]').forEach((btn) => {
     btn.addEventListener('click', () => selectProduct(btn.getAttribute('data-product-id')));
   });

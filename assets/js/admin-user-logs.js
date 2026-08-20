@@ -3,6 +3,8 @@
  * Existing CRM / Timeline / Recent Activity are left untouched.
  */
 const PAGE_SIZE = 80;
+const USER_LIST_LIMIT = 80;
+const LOGS_UID_KEY = 'midiai-admin-logs-uid';
 const TABS = [
   { id: 'all', label: '전체' },
   { id: 'license', label: '라이선스' },
@@ -37,6 +39,7 @@ let activeTab = 'all';
 let dateRange = 'all';
 let tableQuery = '';
 let userQuery = '';
+let userFilter = 'all';
 let loadToken = 0;
 let allRows = [];
 let visibleLimit = PAGE_SIZE;
@@ -53,6 +56,25 @@ function tsMs(v) {
   const d = v instanceof Date ? v : new Date(v);
   const n = d.getTime();
   return Number.isFinite(n) ? n : 0;
+}
+
+function fmtAgo(ms) {
+  if (!ms) return '';
+  const d = Date.now() - ms;
+  if (d < 0) return fmtTs(ms);
+  if (d < 60000) return '방금';
+  if (d < 3600000) return `${Math.floor(d / 60000)}분 전`;
+  if (d < 86400000) return `${Math.floor(d / 3600000)}시간 전`;
+  if (d < 7 * 86400000) return `${Math.floor(d / 86400000)}일 전`;
+  try {
+    return new Date(ms).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+function lastSeenMs(u) {
+  return tsMs(u?.lastLogin || u?.lastSeenAt || u?.updatedAt || 0);
 }
 
 function fmtTs(ms) {
@@ -246,6 +268,19 @@ function bindUi() {
       renderUserList();
     });
   }
+  const filters = $('adminLogsUserFilters');
+  if (filters && !filters.dataset.bound) {
+    filters.dataset.bound = '1';
+    filters.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-logs-user-filter]');
+      if (!btn) return;
+      userFilter = btn.getAttribute('data-logs-user-filter') || 'all';
+      filters.querySelectorAll('[data-logs-user-filter]').forEach((el) => {
+        el.classList.toggle('is-active', el === btn);
+      });
+      renderUserList();
+    });
+  }
   const refresh = $('adminLogsRefreshBtn');
   if (refresh && !refresh.dataset.bound) {
     refresh.dataset.bound = '1';
@@ -261,6 +296,7 @@ function bindUi() {
       tableQuery = tableSearch.value.trim().toLowerCase();
       visibleLimit = PAGE_SIZE;
       renderTable();
+      renderTabs();
     });
   }
   const dateSel = $('adminLogsDateFilter');
@@ -281,76 +317,233 @@ function bindUi() {
       renderTable();
     });
   }
+  const section = $('adminLogsSection');
+  if (section && !section.dataset.bound) {
+    section.dataset.bound = '1';
+    section.addEventListener('click', (e) => {
+      const copyUid = e.target.closest('[data-logs-copy-uid]');
+      if (copyUid) {
+        e.preventDefault();
+        copyText(selectedUid).then((ok) => flashBtn(copyUid, ok ? '복사됨' : '실패'));
+        return;
+      }
+      const openMember = e.target.closest('[data-logs-open-member]');
+      if (openMember && selectedUid) {
+        e.preventDefault();
+        if (typeof window.__midiaiShowAdminView === 'function') {
+          window.__midiaiShowAdminView('crm', { uid: selectedUid, crmMode: 'members' });
+        }
+        return;
+      }
+      const copyRaw = e.target.closest('[data-logs-copy-id]');
+      if (copyRaw) {
+        e.preventDefault();
+        e.stopPropagation();
+        const raw = copyRawFor(copyRaw.getAttribute('data-logs-copy-id'));
+        copyText(raw).then((ok) => flashBtn(copyRaw, ok ? '복사됨' : '실패'));
+      }
+    });
+  }
+  const list = $('adminLogsUserList');
+  if (list && !list.dataset.keys) {
+    list.dataset.keys = '1';
+    list.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+      const buttons = [...list.querySelectorAll('[data-logs-uid]')];
+      if (!buttons.length) return;
+      e.preventDefault();
+      const cur = buttons.findIndex((b) => b.getAttribute('data-logs-uid') === selectedUid);
+      const next = e.key === 'ArrowDown'
+        ? Math.min(buttons.length - 1, Math.max(0, cur) + 1)
+        : Math.max(0, (cur < 0 ? 0 : cur) - 1);
+      const uid = buttons[next]?.getAttribute('data-logs-uid');
+      if (uid) {
+        selectUser(uid);
+        buttons[next].focus();
+      }
+    });
+  }
+  bindTabs();
+}
+
+function bindTabs() {
+  const host = $('adminLogsTabs');
+  if (!host || host.dataset.bound) return;
+  host.dataset.bound = '1';
+  host.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-logs-tab]');
+    if (!btn || !host.contains(btn)) return;
+    activeTab = btn.getAttribute('data-logs-tab') || 'all';
+    expandedId = '';
+    visibleLimit = PAGE_SIZE;
+    renderTabs();
+    renderTable();
+    syncLogsHash();
+  });
 }
 
 function renderTabs() {
   const host = $('adminLogsTabs');
   if (!host) return;
-  const counts = countByCategory(filterByDateAndSearch(allRows));
-  host.innerHTML = TABS.map((t) => {
-    const n = t.id === 'all' ? counts.all : (counts[t.id] || 0);
-    const active = activeTab === t.id ? ' is-active' : '';
-    return `<button type="button" class="admin-logs-tab${active}" data-logs-tab="${esc(t.id)}">${esc(t.label)} <em>${n}</em></button>`;
-  }).join('');
+  bindTabs();
+  const counts = countByCategory(selectedUid ? filterByDateAndSearch(allRows) : []);
   host.querySelectorAll('[data-logs-tab]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      activeTab = btn.getAttribute('data-logs-tab') || 'all';
-      expandedId = '';
-      visibleLimit = PAGE_SIZE;
-      renderTabs();
-      renderTable();
-      try {
-        const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
-        hash.set('view', 'logs');
-        if (activeTab === 'all') hash.delete('log');
-        else hash.set('log', activeTab);
-        history.replaceState(null, '', `#${hash.toString()}`);
-      } catch (_) {}
-    });
+    const id = btn.getAttribute('data-logs-tab');
+    const n = id === 'all' ? counts.all : (counts[id] || 0);
+    btn.classList.toggle('is-active', activeTab === id);
+    let em = btn.querySelector('em');
+    if (!em) {
+      em = document.createElement('em');
+      btn.appendChild(em);
+    }
+    em.textContent = String(n);
   });
+}
+
+function filteredUsers() {
+  const users = (api.getUsers() || []).slice();
+  users.sort((a, b) => {
+    const seen = lastSeenMs(b) - lastSeenMs(a);
+    if (seen) return seen;
+    return String(a.email || '').localeCompare(String(b.email || ''), 'ko');
+  });
+  return users.filter((u) => {
+    if (!userMatchesFilter(u)) return false;
+    if (!userQuery) return true;
+    const hay = [u.email, u.displayName, u.uid, u.id].join(' ').toLowerCase();
+    return hay.includes(userQuery);
+  });
+}
+
+function userMatchesFilter(u) {
+  if (userFilter === 'all') return true;
+  const lic = api.getLicense(userUid(u));
+  const plan = String(lic?.plan || '').toLowerCase();
+  const status = String(lic?.status || '').toLowerCase();
+  if (userFilter === 'banned') return status === 'banned' || status === 'suspended';
+  if (userFilter === 'trial') return plan === 'trial';
+  if (userFilter === 'lifetime') return plan === 'lifetime';
+  if (userFilter === 'period') return plan === 'period' || plan === 'monthly';
+  return true;
 }
 
 function renderUserList() {
   const host = $('adminLogsUserList');
   if (!host) return;
-  const users = (api.getUsers() || []).slice();
-  users.sort((a, b) => String(a.email || '').localeCompare(String(b.email || ''), 'ko'));
-  const filtered = users.filter((u) => {
-    if (!userQuery) return true;
-    const hay = [u.email, u.displayName, u.uid, u.id].join(' ').toLowerCase();
-    return hay.includes(userQuery);
-  });
+  const filtered = filteredUsers();
+  const countEl = $('adminLogsUserCount');
+  if (countEl) countEl.textContent = String(filtered.length);
   if (!filtered.length) {
-    host.innerHTML = `<div class="admin-logs-empty">사용자 없음</div>`;
+    host.innerHTML = `<div class="admin-logs-empty">조건에 맞는 사용자가 없습니다.</div>`;
     return;
   }
-  host.innerHTML = filtered.map((u) => {
+  const extra = filtered.length > USER_LIST_LIMIT
+    ? `<div class="admin-logs-empty">상위 ${USER_LIST_LIMIT}명만 표시합니다. 검색으로 좁혀 주세요.</div>`
+    : '';
+  host.innerHTML = filtered.slice(0, USER_LIST_LIMIT).map((u) => {
     const uid = userUid(u);
     const lic = api.getLicense(uid);
     const email = u.email || uid || '-';
+    const name = u.displayName || '';
     const active = uid === selectedUid ? ' is-active' : '';
-    const badges = `${planBadgeHtml(lic?.plan)}${statusBadgeHtml(lic?.status)}` || `<span class="admin-logs-user-plan-fallback">-</span>`;
-    return `<button type="button" class="admin-logs-user${active}" data-logs-uid="${esc(uid)}" title="${esc(email)}">
+    const badges = `${planBadgeHtml(lic?.plan)}${statusBadgeHtml(lic?.status)}`;
+    const seen = fmtAgo(lastSeenMs(u));
+    const title = name ? `${name} · ${email}` : email;
+    return `<button type="button" class="admin-logs-user${active}" data-logs-uid="${esc(uid)}" title="${esc(title)}">
       <span class="admin-logs-user-dot" aria-hidden="true"></span>
       <span class="admin-logs-user-text">
-        <span class="admin-logs-user-email">${esc(email)}</span>
-        <span class="admin-logs-user-plan">${badges}</span>
+        <span class="admin-logs-user-email">${esc(name || email)}</span>
+        ${name ? `<span class="admin-logs-user-sub">${esc(email)}</span>` : ''}
+        <span class="admin-logs-user-plan">${badges || '<span class="admin-logs-user-plan-fallback">라이선스 없음</span>'}</span>
+        ${seen ? `<span class="admin-logs-user-seen">${esc(seen)}</span>` : ''}
       </span>
     </button>`;
-  }).join('');
+  }).join('') + extra;
   host.querySelectorAll('[data-logs-uid]').forEach((btn) => {
     btn.addEventListener('click', () => selectUser(btn.getAttribute('data-logs-uid') || ''));
   });
 }
 
+function persistUid(uid) {
+  try {
+    if (uid) sessionStorage.setItem(LOGS_UID_KEY, uid);
+    else sessionStorage.removeItem(LOGS_UID_KEY);
+  } catch (_) {}
+}
+
+function restoreUid() {
+  if (selectedUid) return true;
+  try {
+    const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    const fromHash = hash.get('uid');
+    if (fromHash) {
+      selectUser(fromHash);
+      return true;
+    }
+    const stored = sessionStorage.getItem(LOGS_UID_KEY) || '';
+    if (stored) {
+      selectUser(stored);
+      return true;
+    }
+  } catch (_) {}
+  return false;
+}
+
+function syncLogsHash() {
+  try {
+    const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+    hash.set('view', 'logs');
+    if (activeTab === 'all') hash.delete('log');
+    else hash.set('log', activeTab);
+    if (selectedUid) hash.set('uid', selectedUid);
+    else hash.delete('uid');
+    history.replaceState(null, '', `#${hash.toString()}`);
+  } catch (_) {}
+}
+
+async function copyText(text) {
+  const s = String(text || '');
+  if (!s) return false;
+  try {
+    await navigator.clipboard.writeText(s);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = s;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function flashBtn(btn, label) {
+  if (!btn) return;
+  const prev = btn.dataset.prevLabel || btn.textContent;
+  btn.dataset.prevLabel = prev;
+  btn.textContent = label;
+  clearTimeout(Number(btn.dataset.flashTimer || 0));
+  btn.dataset.flashTimer = String(setTimeout(() => {
+    btn.textContent = btn.dataset.prevLabel || prev;
+  }, 1200));
+}
+
 function selectUser(uid) {
-  if (!uid || uid === selectedUid) {
-    if (uid === selectedUid) loadSelectedLogs({ force: true });
+  if (!uid) return;
+  if (uid === selectedUid) {
+    loadSelectedLogs({ force: true });
     return;
   }
   selectedUid = uid;
   expandedId = '';
   visibleLimit = PAGE_SIZE;
+  persistUid(uid);
+  syncLogsHash();
   renderUserList();
   renderSelectedSummary();
   loadSelectedLogs({ force: true });
@@ -360,20 +553,35 @@ function renderSelectedSummary() {
   const box = $('adminLogsSelected');
   if (!box) return;
   if (!selectedUid) {
-    box.innerHTML = `<p class="muted">왼쪽에서 사용자를 선택하세요.</p>`;
+    box.innerHTML = `<p class="muted">왼쪽에서 회원을 선택하면 이력이 표시됩니다.</p>`;
     return;
   }
   const u = findUser(selectedUid) || {};
   const lic = api.getLicense(selectedUid);
   const hwid = u.hwid || lic?.hwid || '';
+  const name = u.displayName || u.email || selectedUid;
+  const email = u.email && u.displayName ? u.email : '';
+  const initial = String(name).trim().slice(0, 1).toUpperCase() || '?';
+  const seen = fmtAgo(lastSeenMs(u));
   box.innerHTML = `
-    <div class="admin-logs-selected-main">
-      <strong>${esc(u.email || selectedUid)}</strong>
-      ${planBadgeHtml(lic?.plan)}${statusBadgeHtml(lic?.status)}
-    </div>
-    <div class="admin-logs-selected-meta">
-      <span>UID: <code class="mono">${esc(selectedUid)}</code></span>
-      <span>HWID: <code class="mono">${esc(maskHwid(hwid))}</code></span>
+    <div class="admin-logs-identity">
+      <span class="admin-crm-card-avatar is-fallback">${esc(initial)}</span>
+      <div class="admin-logs-identity-main">
+        <div class="admin-logs-identity-top">
+          <strong>${esc(name)}</strong>
+          ${planBadgeHtml(lic?.plan)}${statusBadgeHtml(lic?.status)}
+        </div>
+        ${email ? `<small>${esc(email)}</small>` : ''}
+        <div class="admin-logs-selected-meta">
+          <span>UID <code class="mono">${esc(selectedUid)}</code>
+            <button type="button" class="ghost mini-btn" data-logs-copy-uid>복사</button></span>
+          ${seen ? `<span>최근 접속 ${esc(seen)}</span>` : ''}
+          <span>HWID <code class="mono">${esc(maskHwid(hwid))}</code></span>
+        </div>
+      </div>
+      <div class="admin-logs-identity-actions">
+        <button type="button" class="secondary mini-btn" data-logs-open-member>회원 상세</button>
+      </div>
     </div>`;
 }
 
@@ -838,7 +1046,7 @@ function renderTable() {
     host.innerHTML = '';
     if (empty) {
       empty.hidden = false;
-      empty.textContent = '사용자를 선택하면 로그가 표시됩니다.';
+      empty.textContent = '왼쪽에서 회원을 선택하면 이력이 표시됩니다.';
     }
     if (meta) meta.textContent = '';
     if (more) more.hidden = true;
@@ -865,7 +1073,7 @@ function renderTable() {
       empty.hidden = false;
       empty.textContent = lastError
         ? `로그를 불러오지 못했습니다. ${lastError}`
-        : '기록 없음';
+        : '이 조건에 맞는 기록이 없습니다. 기간·검색·탭을 바꿔 보세요.';
     }
     if (meta) meta.textContent = lastError ? '일부 소스 오류 가능' : '';
     if (more) more.hidden = true;
@@ -1016,9 +1224,23 @@ function maskIfHwid(v) {
   return truncate(s, 40);
 }
 
+function badgeTone(text, kind) {
+  const s = String(text || '').toLowerCase();
+  if (kind === 'cat') return s || 'muted';
+  if (/성공|정상|완료|결제완료|읽음|paid|success|active|ok/.test(s)) return 'ok';
+  if (/실패|차단|만료|환불|fail|banned|expired|error|refund/.test(s)) return 'bad';
+  if (/대기|미확인|pending|open|created/.test(s)) return 'warn';
+  return 'muted';
+}
+
 function badge(text, kind = 'result') {
   const t = String(text || '-');
-  return `<span class="admin-logs-badge admin-logs-badge-${esc(kind)}">${esc(t)}</span>`;
+  return `<span class="admin-logs-badge admin-logs-badge-${esc(kind)} is-${esc(badgeTone(t, kind))}">${esc(t)}</span>`;
+}
+
+function copyRawFor(id) {
+  const r = allRows.find((x) => x.id === id);
+  try { return JSON.stringify(r?.raw || r || {}, null, 2); } catch { return ''; }
 }
 
 function detailHtml(r) {
@@ -1050,6 +1272,10 @@ function detailHtml(r) {
   }
   return `<tr class="admin-logs-detail-row"><td colspan="6">
     <div class="admin-logs-detail">
+      <div class="admin-logs-detail-head">
+        <span>상세</span>
+        <button type="button" class="ghost mini-btn" data-logs-copy-id="${esc(r.id)}">원본 복사</button>
+      </div>
       <dl>${fields.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
       ${rawPretty ? `<pre class="admin-logs-raw">${esc(rawPretty)}</pre>` : ''}
     </div>
@@ -1070,7 +1296,7 @@ export function showAdminUserLogsPanel(show) {
     ensureBoot();
     renderUserList();
     if (selectedUid) loadSelectedLogs({ force: true });
-    else renderMain();
+    else if (!restoreUid()) renderMain();
   }
 }
 

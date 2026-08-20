@@ -94,5 +94,9 @@ mustInclude(logsJs, 'export function setAdminLogsTab', 'logs tab api');
 mustInclude(logsJs, 'export function selectAdminLogsUser', 'logs user api');
 mustInclude(css, '.admin-console-page .admin-sidebar', 'console css scoped');
 mustInclude(css, '.admin-console-page .admin-crm-detail [data-tab-panel]', 'detail tab css');
+mustInclude(css, '.admin-console-page .admin-crm.is-row-expand .admin-crm-detail-pane', 'member row expand css');
+mustInclude(app, 'parkAdminCrmDetail', 'member detail park');
+mustInclude(app, 'mountAdminCrmDetailInMemberRow', 'member detail mount');
+mustInclude(html, 'admin-pricing-actions-save', 'pricing action groups');
 
 console.log('admin-console-preservation: PASS', requiredIds.length, 'ids');

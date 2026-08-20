@@ -111,6 +111,7 @@ let memberQuickFilter = '';
 let preferredDetailTab = 'overview';
 let licensePage = 'status';
 let licenseTab = 'all';
+let licenseOpen = '';
 let orderTab = 'all';
 let cmsTab = 'notices';
 let cmsStatusApplied = 'all';
@@ -190,13 +191,19 @@ function syncLicenseDatesToPlan() {
     if ($('adminLicenseExpiresAt') && !$('adminLicenseExpiresAt').value) $('adminLicenseExpiresAt').value = addDays(PREVIEW_TODAY, 30);
   }
 }
-function applyPreviewLicense(patch, { tab = 'license', notice } = {}) {
-  const u = memberByUid(selectedUid);
+function applyPreviewLicense(patch, { tab = 'license', notice, uid } = {}) {
+  const target = uid || selectedUid;
+  const u = memberByUid(target);
   if (!u) return;
   Object.assign(u, patch);
   u.changedAt = fmtDot(PREVIEW_TODAY);
   u.issuedBy = patch.issuedBy || '관리자';
-  openDetail(selectedUid, { tab });
+  if (crmMode === 'license') {
+    licenseOpen = target;
+    renderCrmWork();
+  } else {
+    openDetail(target, { tab, forceOpen: true });
+  }
   setSaveEnabled(false);
   previewNotice(notice || '미리보기 — 실제 라이선스 데이터는 변경되지 않습니다');
 }
@@ -517,6 +524,10 @@ function renderMembers() {
   renderCrmWork();
 }
 function renderCrmWork() {
+  parkPreviewCrmDetail();
+  if (crmMode !== 'members') {
+    $('adminCrm')?.classList.remove('is-row-expand', 'is-detail-open');
+  }
   syncPreviewWorkChrome();
   const q = ($('adminUserSearch')?.value || '').trim().toLowerCase();
   const box = $('adminUserList');
@@ -613,9 +624,11 @@ function renderCrmWork() {
     }
     box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-license-table"><thead><tr>
       <th>사용자</th><th>이메일</th><th>라이선스</th><th>상태</th><th>시작일</th><th>만료일</th><th>최근 변경</th><th>지급/변경 주체</th><th>관리</th>
-    </tr></thead><tbody>${rows.map((u) => `
-      <tr class="admin-crm-member-row${selectedUid === u.uid ? ' is-selected' : ''}" data-admin-uid="${u.uid}">
-        <td class="admin-member-user"><span class="admin-crm-card-avatar is-fallback">${u.name.slice(0, 1)}</span><span><b>${u.name}</b></span></td>
+    </tr></thead><tbody>${rows.map((u) => {
+      const open = licenseOpen === u.uid;
+      return `
+      <tr class="admin-license-row${open ? ' is-open' : ''}" data-license-row="${u.uid}">
+        <td class="admin-member-user"><span class="admin-order-caret" aria-hidden="true">▸</span><span class="admin-crm-card-avatar is-fallback">${u.name.slice(0, 1)}</span><span><b>${u.name}</b></span></td>
         <td class="admin-member-email" title="${u.email}">${u.email}</td>
         <td>${planBadge(u.plan)}</td>
         <td>${licenseStatusBadge(u)}</td>
@@ -623,8 +636,29 @@ function renderCrmWork() {
         <td>${u.plan === 'lifetime' ? '없음' : (u.expiresAt ? fmtDot(u.expiresAt) : '-')}</td>
         <td>${u.changedAt || '-'}</td>
         <td>${u.issuedBy || '-'}</td>
-        <td><button type="button" class="ghost mini-btn" data-admin-uid="${u.uid}">관리</button></td>
-      </tr>`).join('')}</tbody></table></div>`;
+        <td><button type="button" class="ghost mini-btn">${open ? '접기' : '관리'}</button></td>
+      </tr>
+      <tr class="admin-license-expand"${open ? '' : ' hidden'}>
+        <td colspan="9">
+          <div class="admin-license-expand-inner" data-license-uid="${u.uid}">
+            <div class="admin-license-expand-meta">
+              <span>UID <code class="mono">${u.uid}</code></span>
+              <span>상태 ${licenseStatusBadge(u)}</span>
+              <span>현재 ${planBadge(u.plan)}</span>
+            </div>
+            <div class="admin-crm-license-grants">
+              <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${u.uid}">체험판 지급</button>
+              <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${u.uid}">평생 지급</button>
+              <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${u.uid}">활성화</button>
+              <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${u.uid}">정지</button>
+            </div>
+            <div class="admin-license-expand-actions">
+              <button type="button" class="ghost mini-btn" data-license-member="${u.uid}">회원 상세</button>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
     if (pager) {
       pager.hidden = false;
       pager.innerHTML = `<button type="button" class="ghost mini-btn" disabled>이전</button><span class="admin-crm-pager-info">1 / 1</span><button type="button" class="ghost mini-btn" disabled>다음</button><span class="admin-crm-pager-info muted">1–${rows.length} · ${rows.length}명</span>`;
@@ -667,10 +701,12 @@ function renderCrmWork() {
   }
   box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-member-table"><thead><tr>
     <th class="admin-col-check"></th><th>사용자</th><th>이메일</th><th>가입일</th><th>권한</th><th>라이선스</th><th>상태</th><th>국가</th><th>최근 접속</th><th>주문</th><th>문의</th>
-  </tr></thead><tbody>${rows.map((u) => `
-    <tr class="admin-crm-member-row${selectedUid === u.uid ? ' is-selected' : ''}" data-admin-uid="${u.uid}">
+  </tr></thead><tbody>${rows.map((u) => {
+    const open = selectedUid === u.uid;
+    return `
+    <tr class="admin-crm-member-row${open ? ' is-selected is-open' : ''}" data-admin-uid="${u.uid}">
       <td><label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-check="${u.uid}" ${selected.has(u.uid) ? 'checked' : ''}></label></td>
-      <td class="admin-member-user"><span class="admin-crm-card-avatar is-fallback">${u.name.slice(0, 1)}</span><span><b>${u.fav ? '<span class="crm-fav-mark">★</span>' : ''}${u.name}</b></span></td>
+      <td class="admin-member-user"><span class="admin-order-caret" aria-hidden="true">▸</span><span class="admin-crm-card-avatar is-fallback">${u.name.slice(0, 1)}</span><span><b>${u.fav ? '<span class="crm-fav-mark">★</span>' : ''}${u.name}</b></span></td>
       <td class="admin-member-email" title="${u.email}">${u.email}</td>
       <td class="admin-member-joined">${u.joined || '-'}</td>
       <td>${roleBadge(u.role)}</td>
@@ -680,19 +716,55 @@ function renderCrmWork() {
       <td>${u.seen}</td>
       <td>${u.orders}</td>
       <td>${u.tickets}</td>
-    </tr>`).join('')}</tbody></table></div>`;
+    </tr>${open ? `
+    <tr class="admin-member-expand">
+      <td colspan="11"><div class="admin-member-expand-inner" id="adminCrmMemberExpandHost"></div></td>
+    </tr>` : ''}`;
+  }).join('')}</tbody></table></div>`;
   if (pager) {
     pager.hidden = false;
     pager.innerHTML = `<button type="button" class="ghost mini-btn" disabled>이전</button><span class="admin-crm-pager-info">1 / 1</span><button type="button" class="ghost mini-btn" disabled>다음</button><span class="admin-crm-pager-info muted">1–${rows.length} · ${rows.length}명</span>`;
   }
+  mountPreviewCrmDetailInRow();
 }
 
+function parkPreviewCrmDetail() {
+  const pane = $('adminCrmDetail');
+  if (!pane) return;
+  const empty = $('adminCrmEmpty');
+  const body = $('adminCrmDetailBody');
+  const save = $('adminCrmFloatSave');
+  if (empty && empty.parentElement !== pane) pane.insertBefore(empty, pane.firstChild);
+  if (body && body.parentElement !== pane) {
+    const before = save && save.parentElement === pane ? save : null;
+    pane.insertBefore(body, before);
+  }
+  if (save && save.parentElement !== pane) pane.appendChild(save);
+}
+function mountPreviewCrmDetailInRow() {
+  const crm = $('adminCrm');
+  const host = $('adminCrmMemberExpandHost');
+  const body = $('adminCrmDetailBody');
+  const save = $('adminCrmFloatSave');
+  if (!host || !body || crmMode !== 'members' || !selectedUid) {
+    crm?.classList.remove('is-row-expand');
+    return;
+  }
+  crm?.classList.add('is-row-expand');
+  host.appendChild(body);
+  if (save) host.appendChild(save);
+}
 function openDetail(uid, opts = {}) {
   const u = memberByUid(uid);
   if (!u) return;
+  if (crmMode === 'members' && !opts.forceOpen && selectedUid === uid && $('adminCrm')?.classList.contains('is-row-expand')) {
+    closeDetail();
+    return;
+  }
   selectedUid = uid;
   const body = $('adminCrmDetailBody');
   $('adminCrm')?.classList.add('is-detail-open');
+  $('adminCrm')?.classList.toggle('is-row-expand', crmMode === 'members');
   $('adminCrmEmpty')?.classList.add('is-hidden');
   body?.classList.remove('is-hidden');
   body?.classList.add('is-fading');
@@ -786,7 +858,8 @@ function openDetail(uid, opts = {}) {
 
 function closeDetail() {
   selectedUid = '';
-  $('adminCrm')?.classList.remove('is-detail-open');
+  parkPreviewCrmDetail();
+  $('adminCrm')?.classList.remove('is-detail-open', 'is-row-expand');
   $('adminCrmEmpty')?.classList.remove('is-hidden');
   $('adminCrmDetailBody')?.classList.add('is-hidden');
   const save = $('adminCrmFloatSave');
@@ -906,7 +979,7 @@ function renderLogs() {
 
 function renderPricingMock() {
   const list = $('pricingProductList');
-  if (list) list.innerHTML = '<button type="button" class="pricing-product-item is-active"><b>MidiAI Studio License</b><small>KR · Global</small></button>';
+  if (list) list.innerHTML = '<button type="button" class="pricing-product-item is-active"><span class="pricing-product-item-top"><strong>MidiAI Studio License</strong><span class="pricing-product-item-badges"><span class="badge active">판매중</span><span class="badge pending">Lifetime</span></span></span><small>KR · Global</small></button>';
   const editor = $('pricingEditor');
   if (editor) editor.innerHTML = '<p class="muted">미리보기입니다. 실제 상품 저장은 관리자 로그인 후 <code>admin.html</code>에서 합니다.</p>';
 }
@@ -1311,14 +1384,37 @@ function bind() {
     const dashUser = e.target.closest('.admin-dash-user[data-admin-uid]');
     if (dashUser) {
       showView('crm', { crmMode: 'members' });
-      openDetail(dashUser.getAttribute('data-admin-uid'));
+      openDetail(dashUser.getAttribute('data-admin-uid'), { forceOpen: true });
     }
     const dashLog = e.target.closest('[data-dash-log-uid]');
     if (dashLog) showView('logs', { logsTab: 'admin', uid: dashLog.getAttribute('data-dash-log-uid') });
     const dashTicket = e.target.closest('[data-dash-ticket]');
     if (dashTicket) showView('tickets', { ticketStatus: dashTicket.getAttribute('data-dash-ticket') === 'open' ? 'open' : 'all' });
+    const licenseGrant = e.target.closest('[data-license-grant]');
+    if (licenseGrant) {
+      const uid = licenseGrant.getAttribute('data-license-uid');
+      const kind = licenseGrant.getAttribute('data-license-grant');
+      if (kind === 'trial') applyPreviewLicense({ plan: 'trial', licenseStatus: 'active', startsAt: PREVIEW_TODAY, expiresAt: '', issuedBy: '관리자' }, { uid, notice: '미리보기 — 체험판 지급 (실제 데이터 변경 없음)' });
+      else if (kind === 'lifetime') applyPreviewLicense({ plan: 'lifetime', licenseStatus: 'active', startsAt: '', expiresAt: '', issuedBy: '관리자' }, { uid, notice: '미리보기 — 평생 지급 (실제 데이터 변경 없음)' });
+      else if (kind === 'ban') applyPreviewLicense({ licenseStatus: 'banned' }, { uid, notice: '미리보기 — 라이선스 정지 (실제 데이터 변경 없음)' });
+      else applyPreviewLicense({ licenseStatus: 'active' }, { uid, notice: '미리보기 — 라이선스 활성화 (실제 데이터 변경 없음)' });
+      return;
+    }
+    const licenseMember = e.target.closest('[data-license-member]');
+    if (licenseMember) {
+      showView('crm', { crmMode: 'members' });
+      openDetail(licenseMember.getAttribute('data-license-member'), { forceOpen: true });
+      return;
+    }
+    const licenseRow = e.target.closest('#adminUserList [data-license-row]');
+    if (licenseRow && crmMode === 'license' && !e.target.closest('input,select,textarea,[data-license-grant],[data-license-member]')) {
+      const uid = licenseRow.getAttribute('data-license-row');
+      licenseOpen = licenseOpen === uid ? '' : uid;
+      renderCrmWork();
+      return;
+    }
     const row = e.target.closest('#adminUserList [data-admin-uid]');
-    if (row && !e.target.closest('[data-crm-check]')) openDetail(row.getAttribute('data-admin-uid'));
+    if (row && !e.target.closest('[data-crm-check], .admin-member-expand')) openDetail(row.getAttribute('data-admin-uid'));
     const check = e.target.closest('[data-crm-check]');
     if (check) {
       const uid = check.getAttribute('data-crm-check');
@@ -1398,7 +1494,7 @@ function bind() {
     if (pay && !e.target.closest('[data-admin-nav]')) {
       const fromOrders = !!pay.closest('#adminUserList');
       showView('crm', { crmMode: fromOrders ? 'orders' : 'members', detailTab: 'payments' });
-      openDetail(pay.getAttribute('data-pay-uid'), { tab: 'payments' });
+      openDetail(pay.getAttribute('data-pay-uid'), { tab: 'payments', forceOpen: true });
     }
     const logTabBtn = e.target.closest('[data-log-tab]');
     if (logTabBtn) {

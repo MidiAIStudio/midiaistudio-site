@@ -27,7 +27,7 @@ import {
   initAdminUserLogs,
   writeAdminAuditLog,
   refreshAdminUserLogsUsers
-} from './admin-user-logs.js?v=admin-overview-1';
+} from './admin-user-logs.js?v=admin-logs-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -83,6 +83,7 @@ let adminCrmSearchTimer = null;
 let adminCrmMemoTimer = null;
 let adminCrmExpandedHwid = new Set();
 let adminCrmOrderOpen = new Set();
+let adminCrmLicenseOpen = '';
 const ADMIN_CRM_PAGE_SIZE = 15;
 const ADMIN_CRM_ROW_H = 48;
 let adminCrmHwidRevealed = false;
@@ -5947,9 +5948,14 @@ function renderAdminUserTable(){
   paintAdminCrmPagedList();
   renderAdminPaymentsTable();
 }
-window.__midiaiOnAdminCrmMode = function(){
+window.__midiaiOnAdminCrmMode = function(mode, opts={}){
   adminCrmPage = 1;
+  if(mode !== 'members'){
+    parkAdminCrmDetail();
+    $('adminCrm')?.classList.remove('is-row-expand', 'is-detail-open');
+  }
   if(isAdminUser) renderAdminUserTable();
+  if(opts?.uid) selectAdminCrmUser(opts.uid, { forceOpen: true, tab: opts.detailTab || opts.tab });
 };
 window.__midiaiOnAdminCms = function(tab, opts={}){
   if(opts.close){ closeAdminCmsDrawer(); return; }
@@ -5965,6 +5971,7 @@ function adminCrmTotalPages(){
   return Math.max(1, Math.ceil(adminCrmFilteredRows.length / ADMIN_CRM_PAGE_SIZE));
 }
 function paintAdminCrmPagedList(){
+  parkAdminCrmDetail();
   const box=$('adminUserList'); if(!box || !adminCrmFilteredRows.length) return;
   const total = adminCrmFilteredRows.length;
   const pages = adminCrmTotalPages();
@@ -5998,17 +6005,19 @@ function paintAdminCrmPagedList(){
     <th>사용자</th><th>이메일</th><th>가입일</th><th>권한</th><th>라이선스</th><th>상태</th><th>국가</th><th>최근 접속</th><th>주문</th><th>문의</th>
   </tr></thead><tbody>${slice.map(u=>adminCrmMemberRowHtml(u)).join('')}</tbody></table></div>`;
   renderAdminCrmPager(pages, total, '명');
+  mountAdminCrmDetailInMemberRow();
 }
 function adminCrmMemberRowHtml(u){
   const uid=u.uid;
-  const selected = selectedAdminUid===uid ? ' is-selected' : '';
+  const open = selectedAdminUid===uid;
+  const selected = open ? ' is-selected is-open' : '';
   const checked = adminCrmSelected.has(uid) ? 'checked' : '';
   const fav = u.isFav ? '<span class="crm-fav-mark" aria-hidden="true">★</span>' : '';
   const country = adminAccessCountryLine(u) || '-';
   const seen = fmtRelative(u.lastLogin||u.lastSeenAt);
   return `<tr class="admin-crm-member-row${selected}" data-admin-uid="${esc(uid)}">
     <td><label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-check="${esc(uid)}" ${checked}></label></td>
-    <td class="admin-member-user">${adminCrmAvatarHtml(u)}<span><b>${fav}${esc(u.displayName||'Google User')}</b></span></td>
+    <td class="admin-member-user"><span class="admin-order-caret" aria-hidden="true">▸</span>${adminCrmAvatarHtml(u)}<span><b>${fav}${esc(u.displayName||'Google User')}</b></span></td>
     <td class="admin-member-email" title="${esc(u.email||'')}">${esc(u.email||'-')}</td>
     <td class="admin-member-joined">${esc(fmtListDate(u.createdAt))}</td>
     <td>${adminRoleBadgeHtml(u.role)}</td>
@@ -6018,19 +6027,25 @@ function adminCrmMemberRowHtml(u){
     <td>${esc(seen)}</td>
     <td>${Number(u.orderCount||0)}</td>
     <td>${Number(u.ticketCount||0)}</td>
-  </tr>`;
+  </tr>${open ? `
+  <tr class="admin-member-expand">
+    <td colspan="11"><div class="admin-member-expand-inner" id="adminCrmMemberExpandHost"></div></td>
+  </tr>` : ''}`;
 }
 function adminCrmLicenseRowHtml(u){
   const uid=u.uid;
   const view=u.licenseView || adminLicenseView(u);
   const lic=view.license;
-  const selected = selectedAdminUid===uid ? ' is-selected' : '';
+  const open = adminCrmLicenseOpen===uid;
   const start = lic?.startsAt ? fmtListDate(lic.startsAt) : '-';
   const end = view.plan==='lifetime' ? '없음' : (lic?.expiresAt ? fmtListDate(lic.expiresAt) : '-');
   const changed = lic?.updatedAt ? fmtRelative(lic.updatedAt) : '-';
   const actor = lic?.method ? adminLicenseMethodLabel(lic.method) : '-';
-  return `<tr class="admin-crm-member-row${selected}" data-admin-uid="${esc(uid)}">
-    <td class="admin-member-user">${adminCrmAvatarHtml(u)}<span><b>${esc(u.displayName||'Google User')}</b></span></td>
+  return `<tr class="admin-license-row${open?' is-open':''}" data-license-row="${esc(uid)}">
+    <td class="admin-member-user">
+      <span class="admin-order-caret" aria-hidden="true">▸</span>
+      ${adminCrmAvatarHtml(u)}<span><b>${esc(u.displayName||'Google User')}</b></span>
+    </td>
     <td class="admin-member-email" title="${esc(u.email||'')}">${esc(u.email||'-')}</td>
     <td>${adminPlanBadgeFromView(view)}</td>
     <td>${adminLicenseStatusBadgeHtml(view)}</td>
@@ -6038,8 +6053,65 @@ function adminCrmLicenseRowHtml(u){
     <td>${esc(end)}</td>
     <td>${esc(changed)}</td>
     <td>${esc(actor)}</td>
-    <td><button type="button" class="ghost mini-btn" data-admin-uid="${esc(uid)}">관리</button></td>
+    <td><button type="button" class="ghost mini-btn" data-license-toggle="${esc(uid)}">${open?'접기':'관리'}</button></td>
+  </tr>
+  <tr class="admin-license-expand"${open?'':' hidden'}>
+    <td colspan="9">${adminCrmLicenseExpandInnerHtml(u, view)}</td>
   </tr>`;
+}
+function adminCrmLicenseExpandInnerHtml(u, view){
+  const uid=u.uid;
+  const lic=(view||u.licenseView||adminLicenseView(u)).license;
+  const plan=view?.plan || normalizePlan(lic) || 'trial';
+  const start=toDateInputValue(lic?.startsAt);
+  const end=toDateInputValue(lic?.expiresAt);
+  const memo=lic?.memo || '';
+  return `<div class="admin-license-expand-inner" data-license-uid="${esc(uid)}">
+    <div class="admin-license-expand-meta">
+      <span>UID <code class="mono">${esc(uid)}</code></span>
+      <span>상태 ${adminLicenseStatusBadgeHtml(view||adminLicenseView(u))}</span>
+      <span>현재 ${adminPlanBadgeFromView(view||adminLicenseView(u))}</span>
+    </div>
+    <div class="admin-crm-license-form admin-license-inline-form">
+      <div class="form-split">
+        <label>라이선스
+          <select data-lic-plan>
+            <option value="trial"${plan==='trial'?' selected':''}>체험판</option>
+            <option value="lifetime"${plan==='lifetime'?' selected':''}>평생</option>
+            <option value="period"${plan==='period'?' selected':''}>기간제</option>
+          </select>
+        </label>
+        <label>메모
+          <input type="text" data-lic-memo value="${esc(memo)}" placeholder="라이선스 메모">
+        </label>
+      </div>
+      <div class="form-split">
+        <label>시작일
+          <input type="date" data-lic-starts value="${esc(start)}">
+        </label>
+        <label>만료일
+          <input type="date" data-lic-expires value="${esc(end)}">
+        </label>
+      </div>
+      <div class="admin-crm-license-grants">
+        <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${esc(uid)}">체험판 지급</button>
+        <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${esc(uid)}">평생 지급</button>
+        <button type="button" class="secondary mini-btn" data-license-grant="period" data-license-uid="${esc(uid)}">기간제 지급</button>
+        <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${esc(uid)}">활성화</button>
+        <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${esc(uid)}">정지</button>
+      </div>
+      <div class="admin-license-expand-actions">
+        <button type="button" class="primary mini-btn" data-license-save="${esc(uid)}">저장</button>
+        <button type="button" class="ghost mini-btn" data-license-member="${esc(uid)}">회원 상세</button>
+        <button type="button" class="ghost mini-btn" data-license-logs="${esc(uid)}">로그</button>
+      </div>
+    </div>
+  </div>`;
+}
+function toggleAdminLicenseExpand(uid){
+  if(!uid) return;
+  adminCrmLicenseOpen = adminCrmLicenseOpen===uid ? '' : uid;
+  paintAdminCrmPagedList();
 }
 function adminOrderBuyerKey(o){
   const uid=String(o?.uid||o?.userId||o?.customerUid||'').trim();
@@ -6197,9 +6269,142 @@ function onAdminCrmListClick(e){
     paintAdminCrmPagedList();
     return;
   }
+  if(adminCrmMode()==='license'){
+    const grant = e.target.closest('[data-license-grant]');
+    if(grant){
+      e.preventDefault();
+      e.stopPropagation();
+      adminLicenseExpandGrant(grant);
+      return;
+    }
+    const save = e.target.closest('[data-license-save]');
+    if(save){
+      e.preventDefault();
+      e.stopPropagation();
+      saveAdminLicenseInline(save.getAttribute('data-license-save'), save.closest('.admin-license-expand-inner'));
+      return;
+    }
+    const member = e.target.closest('[data-license-member]');
+    if(member){
+      e.preventDefault();
+      e.stopPropagation();
+      const uid = member.getAttribute('data-license-member');
+      if(typeof window.__midiaiShowAdminView==='function'){
+        window.__midiaiShowAdminView('crm', { crmMode: 'members', uid });
+      } else {
+        selectAdminCrmUser(uid, { forceOpen: true });
+      }
+      return;
+    }
+    const logs = e.target.closest('[data-license-logs]');
+    if(logs){
+      e.preventDefault();
+      e.stopPropagation();
+      if(typeof window.__midiaiShowAdminView==='function'){
+        window.__midiaiShowAdminView('logs', { uid: logs.getAttribute('data-license-logs'), logsTab: 'license' });
+      }
+      return;
+    }
+    if(e.target.closest('input,select,textarea')) return;
+    const row = e.target.closest('[data-license-row]');
+    if(row){
+      toggleAdminLicenseExpand(row.getAttribute('data-license-row'));
+      return;
+    }
+    return;
+  }
+  if(e.target.closest('.admin-member-expand')) return;
   const card = e.target.closest('[data-admin-uid]');
   if(!card) return;
   selectAdminCrmUser(card.getAttribute('data-admin-uid'));
+}
+function adminLicenseExpandGrant(btn){
+  const uid=btn.getAttribute('data-license-uid');
+  const kind=btn.getAttribute('data-license-grant');
+  if(!uid || !kind) return;
+  const wrap=btn.closest('.admin-license-expand-inner');
+  const lic=licenseForUid(uid);
+  if(kind==='trial') return adminQuickLicense(`${uid}:trial:active`, false, { days: 7 });
+  if(kind==='lifetime') return adminQuickLicense(`${uid}:lifetime:active`, false, { clearDates: true });
+  if(kind==='activate') return adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:active`);
+  if(kind==='ban') return adminQuickLicense(`${uid}:${normalizePlan(lic)}:banned`);
+  if(kind==='period' && wrap){
+    const plan=wrap.querySelector('[data-lic-plan]');
+    const start=wrap.querySelector('[data-lic-starts]');
+    const end=wrap.querySelector('[data-lic-expires]');
+    if(plan) plan.value='period';
+    if(start && !start.value) start.value = toDateInputValue(new Date());
+    if(end && !end.value){
+      const d=new Date(); d.setDate(d.getDate()+30);
+      end.value = toDateInputValue(d);
+    }
+    end?.focus();
+    adminFlash('기간제 · 시작일·만료일 확인 후 저장하세요');
+  }
+}
+async function saveAdminLicenseInline(uid, wrap){
+  if(!isAdminUser || !uid || !wrap) return;
+  const planRaw=wrap.querySelector('[data-lic-plan]')?.value||'';
+  const licenseMemo=wrap.querySelector('[data-lic-memo]')?.value||'';
+  let startsAt=wrap.querySelector('[data-lic-starts]')?.value||'';
+  let expiresAt=wrap.querySelector('[data-lic-expires]')?.value||'';
+  if(!planRaw) return alert('라이선스 유형을 선택해 주세요.');
+  const wantsClearDates = planRaw==='lifetime' || planRaw==='trial';
+  if(wantsClearDates){ startsAt=''; expiresAt=''; }
+  if(planRaw==='period' && startsAt && expiresAt && startsAt > expiresAt){
+    return alert('시작일이 만료일보다 늦을 수 없습니다.');
+  }
+  try{
+    const {doc,setDoc,serverTimestamp,deleteField}=firestoreApi;
+    let savePlan=normalizeAdminLicensePlanForSave(planRaw, expiresAt, startsAt);
+    if(!['trial','lifetime','period'].includes(savePlan)) savePlan='trial';
+    const clearDates = savePlan==='lifetime' || savePlan==='trial';
+    const startsAtTs = clearDates ? null : dateInputToStartTimestamp(startsAt);
+    const expiresAtTs = clearDates ? null : dateInputToEndTimestamp(expiresAt);
+    const payload={
+      licensed: true,
+      plan: savePlan,
+      status: 'active',
+      method:'manual',
+      memo:licenseMemo,
+      updatedAt:serverTimestamp()
+    };
+    if(clearDates){
+      payload.startsAt = deleteField();
+      payload.expiresAt = deleteField();
+    } else {
+      payload.startsAt = startsAtTs || deleteField();
+      payload.expiresAt = expiresAtTs || deleteField();
+    }
+    const prev=licenseForUid(uid);
+    await setDoc(doc(db,'licenses',uid), payload, {merge:true});
+    patchAdminLicenseCache(uid, {
+      licensed: true,
+      plan: savePlan,
+      status: 'active',
+      method: 'manual',
+      memo: licenseMemo,
+      startsAt: startsAtTs,
+      expiresAt: expiresAtTs,
+      updatedAt: new Date()
+    });
+    try{ await notifyLicenseChange(uid, {plan:savePlan, status:'active'}); }catch(err){ console.error(err); }
+    writeAdminAuditLog({
+      targetUserId: uid,
+      targetEmail: findAdminUserRow(uid)?.email || '',
+      category: 'license',
+      action: '라이선스 변경',
+      before: { plan: prev?.plan, startsAt: prev?.startsAt || null, expiresAt: prev?.expiresAt || null, memo: prev?.memo || '' },
+      after: { plan: savePlan, status: 'active', startsAt: clearDates ? null : startsAt, expiresAt: clearDates ? null : expiresAt, memo: licenseMemo, method: 'manual' },
+      result: 'success',
+      summary: `${prev?.plan||'-'} → ${savePlan}`
+    });
+    adminFlash(`${tr('saved')} · ${esc(uid)}`);
+    adminCrmLicenseOpen = uid;
+    renderAdminUserTable();
+  }catch(e){
+    alert(e.message||e);
+  }
 }
 function updateAdminCrmBulkbar(){
   const bar=$('adminCrmBulkbar'); if(!bar) return;
@@ -6217,21 +6422,80 @@ function updateAdminCrmBulkbar(){
     all.indeterminate = !all.checked && visibleIds.some(id=>adminCrmSelected.has(id));
   }
 }
-function selectAdminCrmUser(uid){
+function selectAdminCrmUser(uid, opts={}){
   if(!uid || !isAdminUser) return;
-  if(selectedAdminUid===uid){ renderAdminCrmDetail(uid); $('adminCrm')?.classList.add('is-detail-open'); setAdminCrmDetailTab($('adminCrmDetailBody')?.dataset.tab || 'overview'); return; }
+  const onMembers = adminCrmMode()==='members';
+  if(onMembers && !opts.forceOpen && selectedAdminUid===uid && $('adminCrm')?.classList.contains('is-row-expand')){
+    closeAdminCrmMemberExpand();
+    return;
+  }
+  const same = selectedAdminUid===uid;
   selectedAdminUid = uid;
-  adminCrmHwidRevealed = false;
-  adminCrmPostSelected.clear();
+  if(!same){
+    adminCrmHwidRevealed = false;
+    adminCrmPostSelected.clear();
+  }
   $('adminCrm')?.classList.add('is-detail-open');
-  setAdminCrmDetailTab(document.body.dataset.crmDetailTab || 'overview');
+  $('adminCrm')?.classList.toggle('is-row-expand', onMembers);
+  if(opts.tab) setAdminCrmDetailTab(opts.tab);
+  else if(!same) setAdminCrmDetailTab(document.body.dataset.crmDetailTab || 'overview');
+  else setAdminCrmDetailTab($('adminCrmDetailBody')?.dataset.tab || 'overview');
+  if(onMembers) ensureAdminCrmPageForUid(uid);
   paintAdminCrmVirtualList();
+  if(same){
+    renderAdminCrmDetail(uid);
+    return;
+  }
   showAdminCrmSkeleton(true);
   clearTimeout(adminCrmDetailTimer);
   adminCrmDetailTimer = setTimeout(()=>{
     renderAdminCrmDetail(uid);
     showAdminCrmSkeleton(false);
   }, 120);
+}
+function closeAdminCrmMemberExpand(){
+  selectedAdminUid=null;
+  parkAdminCrmDetail();
+  renderAdminCrmDetail(null);
+  paintAdminCrmPagedList();
+}
+function ensureAdminCrmPageForUid(uid){
+  const idx=adminCrmFilteredRows.findIndex(u=>u.uid===uid);
+  if(idx<0) return;
+  adminCrmPage = Math.floor(idx / ADMIN_CRM_PAGE_SIZE) + 1;
+}
+function parkAdminCrmDetail(){
+  const pane=$('adminCrmDetail');
+  if(!pane) return;
+  const empty=$('adminCrmEmpty');
+  const sk=$('adminCrmSkeleton');
+  const body=$('adminCrmDetailBody');
+  const save=$('adminCrmFloatSave');
+  if(empty && empty.parentElement!==pane) pane.insertBefore(empty, pane.firstChild);
+  if(sk && sk.parentElement!==pane){
+    const before = body && body.parentElement===pane ? body : (save && save.parentElement===pane ? save : null);
+    pane.insertBefore(sk, before);
+  }
+  if(body && body.parentElement!==pane){
+    const before = save && save.parentElement===pane ? save : null;
+    pane.insertBefore(body, before);
+  }
+  if(save && save.parentElement!==pane) pane.appendChild(save);
+}
+function mountAdminCrmDetailInMemberRow(){
+  const crm=$('adminCrm');
+  const host=$('adminCrmMemberExpandHost');
+  const body=$('adminCrmDetailBody');
+  const sk=$('adminCrmSkeleton');
+  const save=$('adminCrmFloatSave');
+  if(!host || !body || adminCrmMode()!=='members' || !selectedAdminUid){
+    crm?.classList.remove('is-row-expand');
+    return;
+  }
+  crm?.classList.add('is-row-expand');
+  if(sk) host.appendChild(sk);
+  host.appendChild(body);
+  if(save) host.appendChild(save);
 }
 function showAdminCrmSkeleton(on){
   const sk=$('adminCrmSkeleton');
@@ -6444,9 +6708,10 @@ function renderAdminCrmDetail(uid, opts={}){
   const sk=$('adminCrmSkeleton');
   sk?.classList.add('is-hidden');
   if(!uid){
+    parkAdminCrmDetail();
     empty?.classList.remove('is-hidden');
     body?.classList.add('is-hidden');
-    $('adminCrm')?.classList.remove('is-detail-open');
+    $('adminCrm')?.classList.remove('is-detail-open', 'is-row-expand');
     setAdminCrmDirty(false);
     const fb=$('adminCrmFloatSave'); if(fb) fb.hidden=true;
     renderAdminCrmDetail._lastUid = '';
@@ -7114,8 +7379,11 @@ function renderAdminPaymentsTable(){
       const uid=row.getAttribute('data-pay-uid');
       const key=row.getAttribute('data-pay-order');
       if(!uid) return;
-      if(typeof window.__midiaiShowAdminView==='function') window.__midiaiShowAdminView('crm');
-      selectAdminCrmUser(uid);
+      if(typeof window.__midiaiShowAdminView==='function'){
+        window.__midiaiShowAdminView('crm', { crmMode: 'members', uid });
+      } else {
+        selectAdminCrmUser(uid, { forceOpen: true });
+      }
       setTimeout(()=>{
         setAdminCrmDetailTab('payments');
         openAdminCrmOrderDrawer(uid, key);
@@ -7140,9 +7408,7 @@ function bindAdminCrmDetailActions(){
     const action=btn.getAttribute('data-crm-action');
     if(action==='close-order-drawer'){ closeAdminCrmOrderDrawer(); return; }
     if(action==='back-list'){
-      selectedAdminUid=null;
-      renderAdminCrmDetail(null);
-      paintAdminCrmVirtualList();
+      closeAdminCrmMemberExpand();
       return;
     }
     const uid=selectedAdminUid;

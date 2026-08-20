@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-compact-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-pricing-toolbar-1">
 
 </head>
 <body class="admin-page admin-console-page admin-preview-page portal-page" data-admin-view="home">
@@ -151,12 +151,17 @@
 
 
             <section class="admin-pricing-section" id="adminPricingSection" hidden>
-              <div class="admin-section-head">
+              <div class="admin-section-head admin-pricing-head">
                 <p class="admin-page-lead muted">Region별 정가·판매가가 곧 구매 UI와 PortOne·PayPal 서버 측에 동일 반영됩니다.</p>
                 <div class="admin-pricing-actions">
-                  <button type="button" class="secondary mini-btn" id="pricingAddProduct">상품 추가</button>
-                  <button type="button" class="secondary mini-btn" id="pricingAddRegion">Region 추가</button>
-                  <button type="button" class="primary mini-btn" id="pricingSaveBtn">저장</button>
+                  <div class="admin-pricing-actions-create">
+                    <button type="button" class="secondary mini-btn" id="pricingAddProduct">상품 추가</button>
+                    <button type="button" class="secondary mini-btn" id="pricingAddRegion">Region 추가</button>
+                  </div>
+                  <div class="admin-pricing-actions-save">
+                    <button type="button" class="secondary mini-btn" id="pricingSavePromoBtn">할인/팝업 저장</button>
+                    <button type="button" class="primary mini-btn" id="pricingSaveBtn">저장</button>
+                  </div>
                 </div>
               </div>
               <div id="pricingSaveMsg" class="admin-flash hidden"></div>
@@ -167,7 +172,6 @@
                     <h4>할인 · 이벤트</h4>
                     <p class="muted small">할인 뱃지·기간과 홈 팝업 문구를 관리합니다. 기간이 지나면 자동으로 꺼집니다.</p>
                   </div>
-                  <button type="button" class="primary mini-btn" id="pricingSavePromoBtn">할인/팝업 저장</button>
                 </div>
                 <div class="pricing-promo-grid">
                   <label class="pricing-check"><input type="checkbox" id="promoEnabled"> 할인 캠페인 사용</label>
@@ -607,6 +611,6 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
-  <script type="module" src="./assets/js/admin-preview.js?v=admin-pay-1"></script>
+  <script type="module" src="./assets/js/admin-preview.js?v=admin-pricing-toolbar-1"></script>
 </body>
 </html>

@@ -30,7 +30,7 @@ const VIEW_LEADS = {
   home: '운영 현황을 한눈에 보고 주요 관리 화면으로 이동합니다.',
   payments: '주문자별로 묶어 주문·결제를 확인하고 삭제합니다.',
   tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
-  logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
+  logs: '회원별 라이선스·결제·문의·앱 사용 이력을 조회합니다.',
   pricing: 'Region별 정가·판매가와 할인·팝업을 관리합니다.',
   content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.'
 };
@@ -141,9 +141,9 @@ function applyAdminView(next, opts = {}) {
   }
 
   if (next === 'logs' || licenseHistory) {
-    import('./admin-user-logs.js?v=admin-overview-1').then((m) => {
+    import('./admin-user-logs.js?v=admin-logs-1').then((m) => {
       m.showAdminUserLogsPanel?.(true);
-      m.setAdminLogsTab?.(opts.logsTab || (licenseHistory ? 'license' : undefined) || 'license');
+      m.setAdminLogsTab?.(opts.logsTab || (licenseHistory ? 'license' : 'all'));
       if (opts.uid) m.selectAdminLogsUser?.(opts.uid);
     }).catch(console.error);
   }
@@ -158,7 +158,7 @@ function applyAdminView(next, opts = {}) {
   if (next === 'crm' && opts.closeDetail) {
     document.querySelector('[data-crm-action="back-list"]')?.click();
     const crm = $('adminCrm');
-    crm?.classList.remove('is-detail-open');
+    crm?.classList.remove('is-detail-open', 'is-row-expand');
   }
   setSidebarActive(licenseHistory ? 'crm' : next, next === 'crm' || licenseHistory ? crmMode : undefined, opts.source);
   if (next === 'crm') {
@@ -175,6 +175,7 @@ function applyAdminView(next, opts = {}) {
     hash.set('view', licenseHistory ? 'crm' : next);
     if (opts.logsTab) hash.set('log', opts.logsTab);
     if (licenseHistory) hash.set('log', 'license');
+    if (opts.uid) hash.set('uid', opts.uid);
     if (opts.ticketStatus && opts.ticketStatus !== 'all') hash.set('ticket', opts.ticketStatus);
     if ((next === 'crm' || licenseHistory) && crmMode && crmMode !== 'members') hash.set('crm', crmMode);
     if (licenseHistory) hash.set('lic', 'history');
@@ -203,6 +204,7 @@ function bindConsole() {
   const initial = params.get('view') || 'home';
   showAdminView(initial, {
     logsTab: params.get('log') || undefined,
+    uid: params.get('uid') || undefined,
     ticketStatus: params.get('ticket') || undefined,
     crmMode: params.get('crm') || undefined,
     detailTab: params.get('crm') === 'license' ? 'license' : undefined,
@@ -214,6 +216,7 @@ function bindConsole() {
     const next = new URLSearchParams((location.hash || '').replace(/^#/, ''));
       showAdminView(next.get('view') || 'home', {
       logsTab: next.get('log') || undefined,
+      uid: next.get('uid') || undefined,
       ticketStatus: next.get('ticket') || undefined,
       crmMode: next.get('crm') || undefined,
       detailTab: next.get('crm') === 'license' ? 'license' : undefined,
