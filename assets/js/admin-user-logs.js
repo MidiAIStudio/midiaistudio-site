@@ -1367,41 +1367,87 @@ function copyRawFor(id) {
   try { return JSON.stringify(r?.raw || r || {}, null, 2); } catch { return ''; }
 }
 
+function isBlankDetail(v) {
+  const s = String(v ?? '').trim();
+  return !s || s === '-' || s === '{}' || s === 'null';
+}
+
+function pushDetail(list, label, value) {
+  if (isBlankDetail(value)) return;
+  const v = String(value).trim();
+  if (list.some(([, existing]) => existing === v)) return;
+  list.push([label, v]);
+}
+
+function detailSections(r) {
+  const facts = [];
+  const blocks = [];
+  const raw = r.raw || {};
+  const cat = r.category;
+  pushDetail(facts, '일시', fmtTs(r.timestamp));
+  if (cat === 'message') {
+    const kind = r.columns?.kind || (String(r.action || '').includes('쪽지') ? '쪽지' : '알림');
+    pushDetail(facts, '종류', kind);
+    pushDetail(facts, '발송자', raw.actorName || r.columns?.sender || r.actor);
+    pushDetail(facts, '상태', raw.read === true ? '읽음' : (r.result || '미확인'));
+    const title = raw.postTitle || r.columns?.title || '';
+    const body = raw.preview || raw.body || raw.content || '';
+    pushDetail(blocks, '제목', title);
+    if (body && body !== title) pushDetail(blocks, '내용', body);
+    return { facts, blocks };
+  }
+  pushDetail(facts, '작업', formatAdminLogAction(r));
+  pushDetail(facts, '처리자', r.actor);
+  pushDetail(facts, '결과', r.result);
+  if (cat === 'payment') {
+    const c = r.columns || {};
+    pushDetail(facts, '상품', c.product);
+    pushDetail(facts, '결제수단', c.method);
+    pushDetail(facts, '금액', c.amount);
+    pushDetail(blocks, '결제 ID', c.paymentId);
+    return { facts, blocks };
+  }
+  if (cat === 'hwid') {
+    pushDetail(blocks, '이전 HWID', stringifyVal(r.before));
+    pushDetail(blocks, '변경 HWID', stringifyVal(r.after));
+    return { facts, blocks };
+  }
+  if (cat === 'app') {
+    pushDetail(facts, '앱 버전', raw.appVersion || r.columns?.version);
+    pushDetail(blocks, '내용', formatAdminLogSummary(r));
+    return { facts, blocks };
+  }
+  if (cat === 'ticket') {
+    pushDetail(blocks, '제목', raw.ticket?.title || raw.title);
+    pushDetail(blocks, '내용', raw.content || formatAdminLogSummary(r));
+    return { facts, blocks };
+  }
+  const before = formatDisplayVal(r.before) || stringifyVal(r.before);
+  const after = formatDisplayVal(r.after) || stringifyVal(r.after);
+  pushDetail(blocks, '이전', before);
+  pushDetail(blocks, '변경', after);
+  const summary = formatAdminLogSummary(r);
+  if (summary && summary !== before && summary !== after && summary !== formatAdminLogAction(r)) {
+    pushDetail(blocks, '내용', summary);
+  }
+  return { facts, blocks };
+}
+
+function detailPairHtml(pairs, cls) {
+  if (!pairs.length) return '';
+  return `<dl class="${esc(cls)}">${pairs.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`;
+}
+
 function detailHtml(r) {
-  const rawPretty = (() => {
-    try { return JSON.stringify(r.raw || {}, null, 2); } catch { return ''; }
-  })();
-  const fields = [
-    ['일시', fmtTs(r.timestamp)],
-    ['구분', categoryLabel(r.category)],
-    ['작업', formatAdminLogAction(r)],
-    ['처리자', r.actor],
-    ['결과', r.result],
-    ['내용', formatAdminLogSummary(r)],
-    ['이전', formatDisplayVal(r.before) || stringifyVal(r.before) || '-'],
-    ['변경', formatDisplayVal(r.after) || stringifyVal(r.after) || '-'],
-    ['소스', r.source || '-']
-  ];
-  if (r.category === 'message' && r.raw) {
-    fields.push(['제목', r.raw.postTitle || '-']);
-    fields.push(['본문', r.raw.preview || '-']);
-    fields.push(['발송자', r.raw.actorName || r.actor]);
-    fields.push(['읽음', r.raw.read === true ? '읽음' : '미확인']);
-  }
-  if (r.category === 'hwid') {
-    const fullBefore = stringifyVal(r.before);
-    const fullAfter = stringifyVal(r.after);
-    if (fullBefore) fields.push(['이전 HWID (전체)', fullBefore]);
-    if (fullAfter) fields.push(['변경 HWID (전체)', fullAfter]);
-  }
+  const { facts, blocks } = detailSections(r);
   return `<tr class="admin-logs-detail-row"><td colspan="6">
     <div class="admin-logs-detail">
       <div class="admin-logs-detail-head">
         <span>상세</span>
         <button type="button" class="ghost mini-btn" data-logs-copy-id="${esc(r.id)}">원본 복사</button>
       </div>
-      <dl>${fields.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
-      ${rawPretty ? `<pre class="admin-logs-raw">${esc(rawPretty)}</pre>` : ''}
+      ${detailPairHtml(facts, 'admin-logs-detail-facts')}
+      ${detailPairHtml(blocks, 'admin-logs-detail-blocks')}
     </div>
   </td></tr>`;
 }

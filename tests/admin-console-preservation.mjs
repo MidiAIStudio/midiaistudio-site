@@ -90,8 +90,9 @@ mustInclude(app, 'renderAdminPaymentsTable', 'payments table');
 mustInclude(app, "classList.contains('admin-console-page')", 'skip public sidebar on admin console');
 
 mustInclude(consoleJs, 'export function showAdminView', 'view switcher');
-mustInclude(logsJs, 'export function formatAdminLogAction', 'log display filter');
-mustInclude(logsJs, 'midi_editor_export', 'app feature label');
+mustInclude(logsJs, 'function detailSections', 'readable log detail');
+mustInclude(css, 'admin-logs-detail-facts', 'log detail facts layout');
+assert.ok(!logsJs.includes('admin-logs-raw'), 'raw JSON must stay hidden in log detail');
 mustInclude(css, '.admin-console-page .admin-sidebar', 'console css scoped');
 mustInclude(css, '.admin-console-page .admin-crm-detail [data-tab-panel]', 'detail tab css');
 mustInclude(css, '.admin-console-page .admin-crm.is-row-expand .admin-crm-detail-pane', 'member row expand css');

@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-content-wide-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-crm-head-memo-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -303,6 +303,11 @@
                         <p class="mono small admin-crm-uid" id="adminCrmUid"></p>
                       </div>
                     </div>
+                    <div class="admin-crm-card admin-crm-card-dense admin-crm-head-memo" id="adminCrmMemoCard">
+                      <div class="admin-crm-card-head"><h3>관리자 메모</h3><span class="muted small" id="adminCrmMemoStatus"></span></div>
+                      <textarea id="adminCrmUserMemo" rows="2" placeholder="예: VIP / 원격지원 완료 / HWID 초기화 2회 / 환불 진행중"></textarea>
+                      <div class="admin-crm-memo-history" id="adminCrmMemoHistory"></div>
+                    </div>
                     <div class="admin-crm-head-actions">
                       <button type="button" class="ghost admin-crm-fav-btn" id="adminCrmFavBtn" data-crm-action="toggle-fav" title="즐겨찾기">☆</button>
                       <div class="admin-crm-menu-wrap">
@@ -424,11 +429,6 @@
                         <div class="admin-crm-card-head"><h3>Recent Activity</h3></div>
                         <div id="adminCrmRecentFeed" class="admin-crm-recent-feed"></div>
                       </div>
-                    </div>
-                    <div class="admin-crm-card admin-crm-card-dense" id="adminCrmMemoCard">
-                      <div class="admin-crm-card-head"><h3>관리자 메모</h3><span class="muted small" id="adminCrmMemoStatus"></span></div>
-                      <textarea id="adminCrmUserMemo" rows="2" placeholder="예: VIP / 원격지원 완료 / HWID 초기화 2회 / 환불 진행중"></textarea>
-                      <div class="admin-crm-memo-history" id="adminCrmMemoHistory"></div>
                     </div>
                   </div>
                 </div>
@@ -613,8 +613,8 @@
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=admin-content-wide-1"></script>
+  <script type="module" src="./assets/js/app.js?v=admin-license-expand-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=admin-pricing-toolbar-1"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=admin-content-wide-1"></script>
+  <script type="module" src="./assets/js/admin-console.js?v=admin-logs-detail-1"></script>
 </body>
 </html>

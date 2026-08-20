@@ -28,7 +28,7 @@ import {
   writeAdminAuditLog,
   refreshAdminUserLogsUsers,
   formatAdminLogLabel
-} from './admin-user-logs.js?v=admin-content-wide-1';
+} from './admin-user-logs.js?v=admin-logs-detail-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const $ = (id) => document.getElementById(id);
@@ -6069,9 +6069,11 @@ function adminCrmLicenseExpandInnerHtml(u, view){
   const memo=lic?.memo || '';
   return `<div class="admin-license-expand-inner" data-license-uid="${esc(uid)}">
     <div class="admin-license-expand-meta">
-      <span>UID <code class="mono">${esc(uid)}</code></span>
-      <span>상태 ${adminLicenseStatusBadgeHtml(view||adminLicenseView(u))}</span>
-      <span>현재 ${adminPlanBadgeFromView(view||adminLicenseView(u))}</span>
+      <span class="admin-license-expand-flags">
+        <span>상태 ${adminLicenseStatusBadgeHtml(view||adminLicenseView(u))}</span>
+        <span>현재 ${adminPlanBadgeFromView(view||adminLicenseView(u))}</span>
+      </span>
+      <span class="admin-license-expand-uid">UID <code class="mono">${esc(uid)}</code></span>
     </div>
     <div class="admin-crm-license-form admin-license-inline-form">
       <div class="form-split">
@@ -6082,11 +6084,6 @@ function adminCrmLicenseExpandInnerHtml(u, view){
             <option value="period"${plan==='period'?' selected':''}>기간제</option>
           </select>
         </label>
-        <label>메모
-          <input type="text" data-lic-memo value="${esc(memo)}" placeholder="라이선스 메모">
-        </label>
-      </div>
-      <div class="form-split">
         <label>시작일
           <input type="date" data-lic-starts value="${esc(start)}">
         </label>
@@ -6094,17 +6091,22 @@ function adminCrmLicenseExpandInnerHtml(u, view){
           <input type="date" data-lic-expires value="${esc(end)}">
         </label>
       </div>
-      <div class="admin-crm-license-grants">
-        <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${esc(uid)}">체험판 지급</button>
-        <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${esc(uid)}">평생 지급</button>
-        <button type="button" class="secondary mini-btn" data-license-grant="period" data-license-uid="${esc(uid)}">기간제 지급</button>
-        <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${esc(uid)}">활성화</button>
-        <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${esc(uid)}">정지</button>
-      </div>
-      <div class="admin-license-expand-actions">
-        <button type="button" class="primary mini-btn" data-license-save="${esc(uid)}">저장</button>
-        <button type="button" class="ghost mini-btn" data-license-member="${esc(uid)}">회원 상세</button>
-        <button type="button" class="ghost mini-btn" data-license-logs="${esc(uid)}">로그</button>
+      <label>메모
+        <textarea data-lic-memo rows="2" placeholder="라이선스 메모">${esc(memo)}</textarea>
+      </label>
+      <div class="admin-license-expand-toolbar">
+        <div class="admin-crm-license-grants">
+          <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${esc(uid)}">체험판 지급</button>
+          <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${esc(uid)}">평생 지급</button>
+          <button type="button" class="secondary mini-btn" data-license-grant="period" data-license-uid="${esc(uid)}">기간제 지급</button>
+          <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${esc(uid)}">활성화</button>
+          <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${esc(uid)}">정지</button>
+        </div>
+        <div class="admin-license-expand-actions">
+          <button type="button" class="primary mini-btn" data-license-save="${esc(uid)}">저장</button>
+          <button type="button" class="ghost mini-btn" data-license-member="${esc(uid)}">회원 상세</button>
+          <button type="button" class="ghost mini-btn" data-license-logs="${esc(uid)}">로그</button>
+        </div>
       </div>
     </div>
   </div>`;

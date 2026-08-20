@@ -642,18 +642,45 @@ function renderCrmWork() {
         <td colspan="9">
           <div class="admin-license-expand-inner" data-license-uid="${u.uid}">
             <div class="admin-license-expand-meta">
-              <span>UID <code class="mono">${u.uid}</code></span>
-              <span>상태 ${licenseStatusBadge(u)}</span>
-              <span>현재 ${planBadge(u.plan)}</span>
+              <span class="admin-license-expand-flags">
+                <span>상태 ${licenseStatusBadge(u)}</span>
+                <span>현재 ${planBadge(u.plan)}</span>
+              </span>
+              <span class="admin-license-expand-uid">UID <code class="mono">${u.uid}</code></span>
             </div>
-            <div class="admin-crm-license-grants">
-              <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${u.uid}">체험판 지급</button>
-              <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${u.uid}">평생 지급</button>
-              <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${u.uid}">활성화</button>
-              <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${u.uid}">정지</button>
-            </div>
-            <div class="admin-license-expand-actions">
-              <button type="button" class="ghost mini-btn" data-license-member="${u.uid}">회원 상세</button>
+            <div class="admin-crm-license-form admin-license-inline-form">
+              <div class="form-split">
+                <label>라이선스
+                  <select data-lic-plan>
+                    <option value="trial"${u.plan==='trial'?' selected':''}>체험판</option>
+                    <option value="lifetime"${u.plan==='lifetime'?' selected':''}>평생</option>
+                    <option value="period"${u.plan==='period'?' selected':''}>기간제</option>
+                  </select>
+                </label>
+                <label>시작일
+                  <input type="date" data-lic-starts value="${u.startsAt || ''}">
+                </label>
+                <label>만료일
+                  <input type="date" data-lic-expires value="${u.expiresAt || ''}">
+                </label>
+              </div>
+              <label>메모
+                <textarea data-lic-memo rows="2" placeholder="라이선스 메모">${u.licenseMemo || ''}</textarea>
+              </label>
+              <div class="admin-license-expand-toolbar">
+                <div class="admin-crm-license-grants">
+                  <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${u.uid}">체험판 지급</button>
+                  <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${u.uid}">평생 지급</button>
+                  <button type="button" class="secondary mini-btn" data-license-grant="period" data-license-uid="${u.uid}">기간제 지급</button>
+                  <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${u.uid}">활성화</button>
+                  <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${u.uid}">정지</button>
+                </div>
+                <div class="admin-license-expand-actions">
+                  <button type="button" class="primary mini-btn" data-license-save="${u.uid}">저장</button>
+                  <button type="button" class="ghost mini-btn" data-license-member="${u.uid}">회원 상세</button>
+                  <button type="button" class="ghost mini-btn" data-license-logs="${u.uid}">로그</button>
+                </div>
+              </div>
             </div>
           </div>
         </td>
@@ -1396,8 +1423,28 @@ function bind() {
       const kind = licenseGrant.getAttribute('data-license-grant');
       if (kind === 'trial') applyPreviewLicense({ plan: 'trial', licenseStatus: 'active', startsAt: PREVIEW_TODAY, expiresAt: '', issuedBy: '관리자' }, { uid, notice: '미리보기 — 체험판 지급 (실제 데이터 변경 없음)' });
       else if (kind === 'lifetime') applyPreviewLicense({ plan: 'lifetime', licenseStatus: 'active', startsAt: '', expiresAt: '', issuedBy: '관리자' }, { uid, notice: '미리보기 — 평생 지급 (실제 데이터 변경 없음)' });
+      else if (kind === 'period') applyPreviewLicense({ plan: 'period', licenseStatus: 'active', startsAt: PREVIEW_TODAY, expiresAt: addDays(PREVIEW_TODAY, 30), issuedBy: '관리자' }, { uid, notice: '미리보기 — 기간제 지급 (실제 데이터 변경 없음)' });
       else if (kind === 'ban') applyPreviewLicense({ licenseStatus: 'banned' }, { uid, notice: '미리보기 — 라이선스 정지 (실제 데이터 변경 없음)' });
       else applyPreviewLicense({ licenseStatus: 'active' }, { uid, notice: '미리보기 — 라이선스 활성화 (실제 데이터 변경 없음)' });
+      return;
+    }
+    const licenseSave = e.target.closest('[data-license-save]');
+    if (licenseSave) {
+      const uid = licenseSave.getAttribute('data-license-save');
+      const wrap = licenseSave.closest('.admin-license-expand-inner');
+      const patch = {
+        startsAt: wrap?.querySelector('[data-lic-starts]')?.value || '',
+        expiresAt: wrap?.querySelector('[data-lic-expires]')?.value || '',
+        licenseMemo: wrap?.querySelector('[data-lic-memo]')?.value || ''
+      };
+      const plan = wrap?.querySelector('[data-lic-plan]')?.value;
+      if (plan) patch.plan = plan;
+      applyPreviewLicense(patch, { uid, notice: '미리보기 — 라이선스 저장 (실제 데이터 변경 없음)' });
+      return;
+    }
+    const licenseLogs = e.target.closest('[data-license-logs]');
+    if (licenseLogs) {
+      showView('logs', { logsTab: 'license', uid: licenseLogs.getAttribute('data-license-logs') });
       return;
     }
     const licenseMember = e.target.closest('[data-license-member]');
@@ -1407,7 +1454,7 @@ function bind() {
       return;
     }
     const licenseRow = e.target.closest('#adminUserList [data-license-row]');
-    if (licenseRow && crmMode === 'license' && !e.target.closest('input,select,textarea,[data-license-grant],[data-license-member]')) {
+    if (licenseRow && crmMode === 'license' && !e.target.closest('input,select,textarea,[data-license-grant],[data-license-member],[data-license-save],[data-license-logs]')) {
       const uid = licenseRow.getAttribute('data-license-row');
       licenseOpen = licenseOpen === uid ? '' : uid;
       renderCrmWork();
