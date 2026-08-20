@@ -23,12 +23,12 @@ const VIEW_TITLES = {
 const CRM_TITLES = {
   members: '회원',
   license: '라이선스',
-  orders: '주문'
+  orders: '결제'
 };
 
 const VIEW_LEADS = {
   home: '운영 현황을 한눈에 보고 주요 관리 화면으로 이동합니다.',
-  payments: '거래·PG·결제 상태를 확인합니다. 행을 누르면 해당 회원 주문이 열립니다.',
+  payments: '주문자별로 묶어 주문·결제를 확인하고 삭제합니다.',
   tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
   logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
   pricing: 'Region별 정가·판매가와 할인·팝업을 관리합니다.',
@@ -38,7 +38,7 @@ const VIEW_LEADS = {
 const CRM_LEADS = {
   members: '회원을 검색하고 계정 상태와 주요 정보를 확인합니다.',
   license: '회원별 라이선스 상태를 확인하고 지급·변경·만료를 관리합니다.',
-  orders: '사용자별 주문과 결제 상태를 확인합니다.'
+  orders: '주문자별로 묶어 주문·결제를 확인하고 삭제합니다.'
 };
 
 function normalizeCrmMode(mode, detailTab) {
@@ -100,6 +100,10 @@ function renderAdminPageWorkTabs(view, crmMode) {
 }
 
 export function showAdminView(view, opts = {}) {
+  if (view === 'payments') {
+    applyAdminView('crm', { ...opts, crmMode: 'orders', closeDetail: opts.closeDetail !== false });
+    return;
+  }
   const next = VIEW_SECTIONS[view] ? view : 'crm';
   applyAdminView(next, opts);
 }

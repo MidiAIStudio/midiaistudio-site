@@ -80,8 +80,7 @@
         <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="members">회원</button>
         <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="license" data-crm-detail-tab="license">라이선스</button>
         <p class="admin-nav-group">결제 관리</p>
-        <button type="button" class="admin-nav-item" data-admin-nav="payments">결제</button>
-        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="orders">주문</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="orders">결제</button>
         <p class="admin-nav-group">고객 지원</p>
         <button type="button" class="admin-nav-item" data-admin-nav="tickets" data-admin-tab="tickets">문의</button>
         <p class="admin-nav-group">운영</p>
@@ -122,7 +121,7 @@
                 <section class="admin-dash-panel">
                   <header class="admin-dash-panel-head">
                     <h3>최근 결제</h3>
-                    <button type="button" class="ghost mini-btn" data-admin-nav="payments">전체 보기 →</button>
+                    <button type="button" class="ghost mini-btn" data-admin-nav="crm" data-crm-mode="orders" data-admin-close-detail="1">전체 보기 →</button>
                   </header>
                   <div id="dashPaymentsBody"></div>
                 </section>
@@ -607,7 +606,7 @@
     </div>
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
-  <script src="./assets/js/admin-nav.js?v=admin-nav-4"></script>
-  <script type="module" src="./assets/js/admin-preview.js?v=admin-orders-1"></script>
+  <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
+  <script type="module" src="./assets/js/admin-preview.js?v=admin-pay-1"></script>
 </body>
 </html>

@@ -21,7 +21,7 @@
     pricing: '가격·상품',
     content: '콘텐츠'
   };
-  var CRM_TITLES = { members: '회원', license: '라이선스', orders: '주문' };
+  var CRM_TITLES = { members: '회원', license: '라이선스', orders: '결제' };
 
   function $(id) { return document.getElementById(id); }
 
@@ -94,6 +94,12 @@
   }
 
   function show(view, opts) {
+    opts = opts || {};
+    if (view === 'payments') {
+      view = 'crm';
+      opts.crmMode = opts.crmMode || 'orders';
+      if (opts.closeDetail == null) opts.closeDetail = true;
+    }
     var core = window.__midiaiShowAdminViewCore;
     if (typeof core === 'function') {
       core(view, opts || {});
