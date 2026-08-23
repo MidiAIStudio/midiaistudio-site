@@ -148,14 +148,9 @@ export function isDiscountCampaignActive(now = new Date()) {
   return inDateRange(p.discountStartsAt, p.discountEndsAt, now);
 }
 
-/** Home sale popup window (can differ from discount period) */
+/** Home sale popup window — promotions collection only (legacy pricingConfig promo ignored). */
 export function isPromoPopupActive(now = new Date()) {
-  if (activeHomepagePromotions(cache.promotions || [], { now }).length) return true;
-  const p = getPromoConfig();
-  if (!p.popupEnabled) return false;
-  const start = p.popupStartsAt || p.discountStartsAt;
-  const end = p.popupEndsAt || p.discountEndsAt;
-  return inDateRange(start, end, now);
+  return activeHomepagePromotions(cache.promotions || [], { now }).length > 0;
 }
 
 export function getActiveHomepagePromotions(lifetimeOwned = false, now = new Date()) {
@@ -221,6 +216,7 @@ export function checkoutContext(lang, preferKoreanPath = false) {
     displaySale: formatMoney(sale, rp.currency, lang),
     displayList: formatMoney(list, rp.currency, lang),
     discount: discount,
+    discountEndsAt: catalogCharge.discountEndsAt || '',
     discountCampaignActive: discount > 0,
     saleUntil: promoBadgeText(lang),
     orderName: rp.orderName || product.name || 'MidiAI Studio Lifetime License',

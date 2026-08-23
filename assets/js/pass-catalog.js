@@ -125,6 +125,7 @@ export function applyPublicPassCatalog(products = []) {
         listPriceKrw: list,
         effectivePrice: sale,
         discountPercent: Number(p.discountPercent || 0),
+        discountEndsAt: p.discountEndsAt || '',
         badge: p.badge || '',
         popular: p.badge === 'recommended' || !!p.popular,
         savePercent: p.savePercent != null ? p.savePercent : null,

@@ -17,6 +17,7 @@ const passEntitlement = require(join(root, 'functions/passEntitlement.js'));
 const { pathToFileURL } = await import('url');
 const browser = await import(pathToFileURL(join(root, 'assets/js/catalog-engine.js')).href);
 const storefront = await import(pathToFileURL(join(root, 'assets/js/storefront-render.js')).href);
+const pricingMod = await import(pathToFileURL(join(root, 'assets/js/pricing.js')).href);
 
 const checks = [];
 function check(name, fn) {
@@ -196,11 +197,13 @@ check('storefront_card_renders_discount', () => {
     listPriceKrw: 29900,
     effectivePrice: 20930,
     discountPercent: 30,
+    discountEndsAt: '2026-07-31T14:59:59.000Z',
     durationDays: 30,
     saleOk: true
   }, { lang: 'ko', preview: true });
   assert.match(html, /20,930원/);
   assert.match(html, /30% OFF/);
+  assert.match(html, /7월 31일까지/);
   assert.match(html, /disabled/);
 });
 check('force_promo_preview_window', () => {
@@ -308,6 +311,33 @@ check('popup_html_shows_both_product_names', () => {
   assert.match(html, /20,930원/);
   assert.match(html, /48,930원/);
   assert.doesNotMatch(html, /sale-promo-lead/); // empty body hidden
+});
+check('isPromoPopupActive_promotions_only', () => {
+  const cache = pricingMod.getPricingCache();
+  const prevPromos = cache.promotions;
+  const prevPromo = cache.promo;
+  try {
+    cache.promotions = [];
+    cache.promo = {
+      enabled: true,
+      popupEnabled: true,
+      popupStartsAt: '2020-01-01',
+      popupEndsAt: '2099-12-31'
+    };
+    assert.equal(pricingMod.isPromoPopupActive(new Date('2026-08-23')), false);
+    cache.promotions = [{
+      enabled: true,
+      archived: false,
+      homepagePopupEnabled: true,
+      startsAt: '2020-01-01T00:00:00.000Z',
+      endsAt: '2099-01-01T00:00:00.000Z',
+      productIds: ['PASS_30D']
+    }];
+    assert.equal(pricingMod.isPromoPopupActive(new Date('2026-08-23')), true);
+  } finally {
+    cache.promotions = prevPromos;
+    cache.promo = prevPromo;
+  }
 });
 check('popup_html_uses_shared_renderer', () => {
   const copy = storefront.buildPromotionPopupCopy({

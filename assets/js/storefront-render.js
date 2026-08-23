@@ -180,6 +180,12 @@ export function renderProductCard(view, options = {}) {
     ? `<span class="purchase-plan-off-pill" data-preview-hl="discount">${escHtml(String(view.discountPercent))}% OFF</span>`
     : '';
 
+  const discountUntil = options.discountUntil
+    || (view?.discountEndsAt ? formatPromoUntilLabel(view.discountEndsAt, lang) : '');
+  const untilHtml = discounted && discountUntil
+    ? `<p class="purchase-plan-discount-until" data-preview-hl="discount-until">${escHtml(discountUntil)}</p>`
+    : '';
+
   const priceHtml = discounted
     ? `<div class="purchase-plan-price-block" data-preview-hl="price">
         <div class="purchase-plan-price-was">${escHtml(formatKrw(list))}</div>
@@ -229,6 +235,7 @@ export function renderProductCard(view, options = {}) {
     </div>
     ${pausedNote}
     ${priceHtml}
+    ${untilHtml}
     <p class="purchase-plan-unit" data-preview-hl="unit">${escHtml(unit)}</p>
     ${packSave}
     ${purchaseCardFeaturesHtml(features)}

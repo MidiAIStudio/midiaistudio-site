@@ -8,10 +8,9 @@ import {
   isDiscountCampaignActive,
   isPromoPopupActive,
   promoBadgeText,
-  promoPopupCopy,
   getActiveHomepagePromotions,
   getPricingCache
-} from './pricing.js?v=price-sot-1';
+} from './pricing.js?v=promo-multi-popup-3';
 import {
   loadCreditProducts,
   getCreditProduct,
@@ -41,7 +40,7 @@ import {
   getPassCatalogSource,
   isPassCatalogReady,
   useSeedPassFallback
-} from './pass-catalog.js?v=promo-multi-popup-1';
+} from './pass-catalog.js?v=promo-multi-popup-3';
 import {
   renderProductCard,
   purchaseCardFeaturesHtml,
@@ -49,7 +48,7 @@ import {
   buildPromotionPopupCopy,
   resolvePromotionProducts,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=promo-multi-popup-1';
+} from './storefront-render.js?v=promo-multi-popup-3';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -1671,6 +1670,7 @@ function renderPurchasePlanGrid(){
       effectivePrice: lifeDiscounted ? Number(lifeCtx.salePrice) : Number(lifeCtx.salePrice || lifeCtx.listPrice || 0),
       krw: Number(String(unlimitedPrice).replace(/[^\d]/g, '') || lifeCtx.salePrice || 0),
       discountPercent: lifeDiscounted ? Number(lifeCtx.discount || 0) : 0,
+      discountEndsAt: lifeDiscounted ? (lifeCtx.discountEndsAt || '') : '',
       saleOk: true
     };
     // Prefer display strings from checkout when available (KRW formatted already in ctx).
@@ -12592,7 +12592,7 @@ function initSidebarNav(){
   });
 }
 
-const SALE_PROMO_HIDE_KEY = 'midiai_sale_promo_hide_day';
+const SALE_PROMO_HIDE_KEY = 'midiai_sale_promo_hide_day'; // legacy dismiss key (unused for new promotions popup)
 
 function promoDismissKey(promo){
   const id = String(promo?.promotionId || promo?.id || 'legacy');
@@ -12604,20 +12604,17 @@ function salePromoCopy(){
   const uiLang = lang === 'en' || lang === 'ja' ? lang : 'ko';
   const promos = getActiveHomepagePromotions(!!currentLicenseLifetime);
   const promo = promos[0];
-  if(promo){
-    const pricing = getPricingCache();
-    const catalog = pricing?.products || [];
-    const resolved = resolvePromotionProducts(promo, catalog, {
-      lang: uiLang,
-      maxVisible: PROMO_POPUP_MAX_VISIBLE,
-      forceActive: false
-    });
-    return buildPromotionPopupCopy(promo, {
-      discountPercent: resolved.discountPercent
-    }, uiLang, resolved);
-  }
-  const ctx = checkoutContext(uiLang, uiLang === 'ko');
-  return { ...promoPopupCopy(uiLang, ctx), products: [], hiddenCount: 0, moreLabel: '', promo: null };
+  if(!promo) return null;
+  const pricing = getPricingCache();
+  const catalog = pricing?.products || [];
+  const resolved = resolvePromotionProducts(promo, catalog, {
+    lang: uiLang,
+    maxVisible: PROMO_POPUP_MAX_VISIBLE,
+    forceActive: false
+  });
+  return buildPromotionPopupCopy(promo, {
+    discountPercent: resolved.discountPercent
+  }, uiLang, resolved);
 }
 
 function todayKey(){
@@ -12631,19 +12628,18 @@ function shouldShowSalePromo(){
   if(!home) return false;
   if(currentLicenseLifetime) return false;
   const copy = salePromoCopy();
+  if(!copy || !copy.promo) return false;
   try{
-    if(copy.promo && localStorage.getItem(promoDismissKey(copy.promo)) === '1') return false;
-    if(!copy.promo && localStorage.getItem(SALE_PROMO_HIDE_KEY)===todayKey()) return false;
+    if(localStorage.getItem(promoDismissKey(copy.promo)) === '1') return false;
   }catch(_){}
-  return true;
+  return !!(copy.title || (copy.products && copy.products.length));
 }
 
 function closeSalePromo(root, hideToday){
   if(hideToday){
     try{
       const copy = salePromoCopy();
-      if(copy.promo) localStorage.setItem(promoDismissKey(copy.promo), '1');
-      else localStorage.setItem(SALE_PROMO_HIDE_KEY, todayKey());
+      if(copy?.promo) localStorage.setItem(promoDismissKey(copy.promo), '1');
     }catch(_){}
   }
   root.classList.remove('is-open');
@@ -12654,6 +12650,7 @@ function closeSalePromo(root, hideToday){
 function openSalePromoPopup(){
   if(document.querySelector('.sale-promo-backdrop')) return;
   const t=salePromoCopy();
+  if(!t || !t.promo) return;
   const base=window.MIDIAI_BASE_PATH||'./';
   const purchaseHref = t.href || (lang==='en' ? `${base}en/purchase.html` : lang==='ja' ? `${base}ja/purchase.html` : `${base}purchase.html`);
   const overlay=document.createElement('div');
