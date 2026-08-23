@@ -31,6 +31,63 @@ function check(name, fn) {
 
 check('server_isPass_TEST', () => assert.equal(catalogEngine.isPassProductId('TEST_PASS_ADMIN_E2E'), true));
 check('server_isLicense_TEST', () => assert.equal(catalogEngine.isLicenseProductId('TEST_PASS_ADMIN_E2E'), true));
+check('findCatalogProduct_by_doc_id', () => {
+  const rows = [
+    { productId: 'LIFETIME', docId: 'lifetime', type: 'lifetime', nameKo: 'Lifetime Full' },
+    { productId: 'PASS_90D', docId: 'PASS_90D', type: 'full_pass', nameKo: '90일 Full' }
+  ];
+  assert.equal(browser.findCatalogProduct(rows, 'lifetime')?.productId, 'LIFETIME');
+  assert.equal(browser.findCatalogProduct(rows, 'PASS_90D')?.docId, 'PASS_90D');
+});
+check('findCatalogProduct_not_by_name', () => {
+  const rows = [{ productId: 'LIFETIME', docId: 'lifetime', nameKo: '60일 Full', type: 'lifetime' }];
+  assert.equal(browser.findCatalogProduct(rows, '60일 Full'), null);
+});
+check('edit_target_mismatch_detected', () => {
+  const msg = browser.editTargetMismatchMessage('PASS_30D', 'LIFETIME');
+  assert.match(msg, /불일치/);
+});
+check('edit_target_match_ok', () => {
+  assert.equal(browser.editTargetMismatchMessage('PASS_30D', 'PASS_30D'), '');
+});
+check('hydrate_existing_doc_skips_seed_name', () => {
+  const h = browser.hydrateLegacyProduct({
+    id: 'lifetime',
+    productId: 'LIFETIME',
+    type: 'lifetime',
+    nameKo: '60일 Full',
+    listPriceKrw: 69000,
+    updatedAt: { seconds: 1 }
+  });
+  assert.equal(h.nameKo, '60일 Full');
+  assert.equal(h.docId, 'lifetime');
+  assert.equal(h.type, 'lifetime');
+  assert.equal(h.listPriceKrw, 69000);
+});
+check('hydrate_missing_doc_uses_seed', () => {
+  const h = browser.hydrateLegacyProduct({ id: 'PASS_7D', productId: 'PASS_7D', type: 'full_pass' });
+  assert.equal(h.nameKo, '7일 Full');
+  assert.equal(h.durationDays, 7);
+});
+check('bump_version_price', () => {
+  assert.equal(browser.bumpVersion({ productVersion: 2 }, { priceChanged: true }), 3);
+});
+check('bump_version_status_only', () => {
+  assert.equal(browser.bumpVersion({ productVersion: 2 }, { priceChanged: false, durationChanged: false, nameChanged: false }), 2);
+});
+check('compute_charge_archived', () => {
+  const charge = browser.computeCharge({ productId: 'PASS_90D', type: 'full_pass', listPriceKrw: 49900, status: 'archived' });
+  assert.equal(charge.ok, false);
+  assert.equal(charge.code, 'SALE_DISABLED');
+});
+check('compute_charge_paused', () => {
+  const charge = browser.computeCharge({ productId: 'PASS_7D', type: 'full_pass', listPriceKrw: 7900, status: 'paused' });
+  assert.equal(charge.ok, false);
+});
+check('firestore_doc_id_lifetime', () => {
+  assert.equal(browser.firestoreDocId('LIFETIME'), 'lifetime');
+  assert.equal(browser.firestoreDocId('PASS_30D'), 'PASS_30D');
+});
 check('server_canon_duration_prefers_catalog', () => assert.equal(passEntitlement.passDurationDays('PASS_7D', 30), 30));
 check('server_canon_duration_fallback', () => assert.equal(passEntitlement.passDurationDays('PASS_7D', 0), 7));
 check('server_custom_duration', () => assert.equal(passEntitlement.passDurationDays('TEST_PASS_ADMIN_E2E', 14), 14));

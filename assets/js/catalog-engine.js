@@ -235,6 +235,30 @@ export function firestoreDocId(productId) {
   return pid === 'LIFETIME' ? LIFETIME_DOC_ID : pid;
 }
 
+/** Resolve a catalog row by Firestore doc id or canonical productId. */
+export function findCatalogProduct(products, key) {
+  const raw = String(key || '').trim();
+  if (!raw) return null;
+  const norm = normalizeProductId(raw);
+  const docId = raw === LIFETIME_DOC_ID ? LIFETIME_DOC_ID : firestoreDocId(norm);
+  return (products || []).find((p) => (
+    p.docId === raw
+    || p.docId === docId
+    || normalizeProductId(p.productId) === norm
+  )) || null;
+}
+
+/** Guard against UI/draft product mismatch before persisting admin edits. */
+export function editTargetMismatchMessage(draftProductId, formProductId) {
+  const draft = normalizeProductId(draftProductId);
+  const form = normalizeProductId(formProductId);
+  if (!draft || !form) return '편집 대상 상품을 확인할 수 없습니다. 페이지를 새로고침하세요.';
+  if (draft !== form) {
+    return `편집 대상 불일치 (${draft} ≠ ${form}). 페이지를 새로고침한 뒤 다시 선택하세요.`;
+  }
+  return '';
+}
+
 export function isSeedProduct(productId) {
   return CANONICAL_IDS.includes(normalizeProductId(productId));
 }
@@ -716,8 +740,19 @@ export function fromDatetimeLocalValue(value) {
 }
 
 export function hydrateLegacyProduct(doc) {
-  const id = normalizeProductId(doc?.id || doc?.productId);
+  const rawDocId = String(doc?.id || doc?.docId || '').trim();
+  const id = normalizeProductId(doc?.productId || rawDocId);
+  const resolvedDocId = rawDocId === LIFETIME_DOC_ID ? LIFETIME_DOC_ID : (rawDocId || firestoreDocId(id));
   const seed = SEED_PRODUCTS.find((p) => p.productId === id) || {};
+  const hasFirestoreDoc = !!(doc && (
+    doc.updatedAt != null
+    || doc.createdAt != null
+    || doc.listPriceKrw != null
+    || doc.nameKo != null
+    || doc.status != null
+    || doc.productVersion != null
+    || doc.pricingVersion != null
+  ));
   const regions = doc?.regions || {};
   const kr = regions.KR || {};
   const global = regions.Global || {};
@@ -739,25 +774,26 @@ export function hydrateLegacyProduct(doc) {
   if (type === 'lifetime') entitlement = 'lifetime';
   else if (type === 'full_pass') entitlement = 'full_pass';
   else entitlement = entitlement || 'credits';
+  const seedFallback = hasFirestoreDoc ? {} : seed;
   return {
-    ...seed,
+    ...seedFallback,
     ...doc,
     productId: id,
-    docId: id === 'LIFETIME' ? LIFETIME_DOC_ID : (doc?.id || id),
+    docId: resolvedDocId,
     type,
-    nameKo: doc?.nameKo || (typeof doc?.name === 'string' ? doc.name : seed.nameKo),
-    nameEn: doc?.nameEn || seed.nameEn,
-    nameJa: doc?.nameJa || seed.nameJa,
-    creditAmount: type === 'credit_pack' ? Number(doc?.creditAmount ?? seed.creditAmount ?? 0) : 0,
+    nameKo: doc?.nameKo || (typeof doc?.name === 'string' ? doc.name : (hasFirestoreDoc ? '' : seed.nameKo)),
+    nameEn: doc?.nameEn || (hasFirestoreDoc ? '' : seed.nameEn),
+    nameJa: doc?.nameJa || (hasFirestoreDoc ? '' : seed.nameJa),
+    creditAmount: type === 'credit_pack' ? Number(doc?.creditAmount ?? (hasFirestoreDoc ? 0 : seed.creditAmount ?? 0)) : 0,
     durationDays: type === 'full_pass' ? durationDays : 0,
     entitlement,
     listPriceKrw,
-    listPriceUsd: doc?.listPriceUsd != null ? doc.listPriceUsd : (global.listPrice != null ? global.listPrice : seed.listPriceUsd),
-    status: doc?.status || 'active',
-    sortOrder: Number(doc?.sortOrder ?? doc?.order ?? seed.sortOrder ?? 0),
-    badge: doc?.badge || seed.badge || '',
-    packSavePercent: doc?.packSavePercent != null ? doc.packSavePercent : seed.packSavePercent,
-    productVersion: Number(doc?.productVersion || doc?.pricingVersion || seed.productVersion || 1),
+    listPriceUsd: doc?.listPriceUsd != null ? doc.listPriceUsd : (global.listPrice != null ? global.listPrice : (hasFirestoreDoc ? null : seed.listPriceUsd)),
+    status: doc?.status || (hasFirestoreDoc ? 'active' : (seed.status || 'active')),
+    sortOrder: Number(doc?.sortOrder ?? doc?.order ?? (hasFirestoreDoc ? 0 : seed.sortOrder ?? 0)),
+    badge: doc?.badge ?? (hasFirestoreDoc ? '' : (seed.badge || '')),
+    packSavePercent: doc?.packSavePercent != null ? doc.packSavePercent : (hasFirestoreDoc ? null : seed.packSavePercent),
+    productVersion: Number(doc?.productVersion || doc?.pricingVersion || (hasFirestoreDoc ? 1 : seed.productVersion || 1)),
     productDiscount: { ...emptyDiscount(), ...(doc?.productDiscount || {}) },
     regions: regions,
     hasPurchases: doc?.hasPurchases === true

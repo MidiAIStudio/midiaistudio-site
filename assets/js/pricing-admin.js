@@ -7,7 +7,9 @@ import {
   canonicalPassDurationDays,
   computeCharge,
   creditChangeWarning,
+  editTargetMismatchMessage,
   emptyDiscount,
+  findCatalogProduct,
   findDiscountConflicts,
   firestoreDocId,
   formatKrw,
@@ -24,7 +26,7 @@ import {
   validateProductFields,
   validatePromotionFields,
   windowStatus
-} from './catalog-engine.js?v=product-full-edit-1';
+} from './catalog-engine.js?v=product-save-regression-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -38,6 +40,7 @@ let isAdmin = false;
 let products = [];
 let promotions = [];
 let selectedId = null;
+let selectedDocId = null;
 let selectedPromoId = null;
 let draft = null;
 let promoDraft = null;
@@ -48,6 +51,20 @@ let deletedProductIds = new Set();
 let purchaseHistoryByProduct = {};
 
 function $(id) { return document.getElementById(id); }
+
+function dedupeProducts(rows) {
+  const byDoc = new Map();
+  for (const row of rows || []) {
+    const docId = String(row?.docId || firestoreDocId(row?.productId)).trim();
+    if (!docId) continue;
+    const prev = byDoc.get(docId);
+    if (!prev || Number(row?.updatedAt?.seconds || row?.updatedAt?._seconds || 0)
+      >= Number(prev?.updatedAt?.seconds || prev?.updatedAt?._seconds || 0)) {
+      byDoc.set(docId, { ...row, docId });
+    }
+  }
+  return [...byDoc.values()];
+}
 
 function productDeleteEval(p) {
   if (!p) return { deletable: false, reason: 'missing', message: '' };
@@ -352,9 +369,9 @@ async function loadAll() {
     try { await ensureSeed(); } catch (e) { console.warn('catalog seed', e); }
     const { collection, getDocs } = fs;
     const prodSnap = await getDocs(collection(db, 'products'));
-    products = prodSnap.docs
+    products = dedupeProducts(prodSnap.docs
       .map((d) => hydrateLegacyProduct({ id: d.id, ...d.data() }))
-      .filter((p) => !['POINT_5', 'POINT_30', 'POINT_100'].includes(p.productId))
+      .filter((p) => !['POINT_5', 'POINT_30', 'POINT_100'].includes(p.productId)))
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || String(a.productId).localeCompare(b.productId));
     await loadPurchaseHistory();
     try {
@@ -368,8 +385,8 @@ async function loadAll() {
     renderSummary();
     renderList();
     renderPromoList();
-    if (!selectedId && products[0]) selectProduct(products[0].productId);
-    else if (selectedId) selectProduct(selectedId);
+    if (!selectedDocId && !selectedId && products[0]) selectProduct(products[0].docId || products[0].productId);
+    else if (selectedDocId || selectedId) selectProduct(selectedDocId || selectedId);
     if (!selectedPromoId && promotions[0]) selectPromo(promotions[0].id);
   } catch (e) {
     setListStatus(`<p class="muted">불러오기 실패: ${esc(e.message || e)}</p>`);
@@ -421,7 +438,7 @@ function renderList() {
   }
   root.innerHTML = products.map((p) => {
     const charge = computeCharge(p, promotions);
-    const active = selectedId === p.productId ? ' is-active' : '';
+    const active = (selectedDocId && p.docId === selectedDocId) || selectedId === p.productId ? ' is-active' : '';
     const status = p.status === 'active' ? '판매중' : p.status === 'paused' ? '중지' : '보관';
     const list = formatKrw(p.listPriceKrw);
     const sale = charge.ok ? formatKrw(charge.effectivePrice) : '-';
@@ -453,7 +470,7 @@ function renderList() {
     const deleteHint = delEval.deletable
       ? ''
       : `<span class="muted small pricing-product-delete-hint">${esc(delEval.message)}</span>`;
-    return `<button type="button" class="pricing-product-item${active}" data-product-id="${esc(p.productId)}">
+    return `<button type="button" class="pricing-product-item${active}" data-product-id="${esc(p.productId)}" data-doc-id="${esc(p.docId || firestoreDocId(p.productId))}">
       <span class="pricing-product-item-top"><strong>${esc(p.nameKo || p.productId)}</strong><span class="badge">${esc(status)}</span></span>
       <span class="pricing-product-item-main">${line2}</span>
       ${bits.length ? `<span class="muted small">${esc(bits.join(' · '))}</span>` : ''}
@@ -461,15 +478,19 @@ function renderList() {
       <span class="muted small pricing-product-item-id">${esc(p.productId)}</span>
     </button>`;
   }).join('');
-  root.querySelectorAll('[data-product-id]').forEach((btn) => {
-    btn.addEventListener('click', () => selectProduct(btn.getAttribute('data-product-id')));
+  root.querySelectorAll('[data-doc-id]').forEach((btn) => {
+    btn.addEventListener('click', () => selectProduct(btn.getAttribute('data-doc-id') || btn.getAttribute('data-product-id')));
   });
 }
 
-function selectProduct(id) {
-  selectedId = normalizeProductId(id);
-  const product = products.find((p) => p.productId === selectedId);
-  if (!product) return;
+function selectProduct(key) {
+  const product = findCatalogProduct(products, key);
+  if (!product) {
+    flash('선택한 상품을 찾을 수 없습니다. 목록을 새로고침하세요.', false);
+    return;
+  }
+  selectedDocId = product.docId || firestoreDocId(product.productId);
+  selectedId = normalizeProductId(product.productId);
   draft = JSON.parse(JSON.stringify(product));
   renderList();
   renderEditor();
@@ -686,9 +707,11 @@ async function saveDraft() {
     return;
   }
   syncDraftFromForm();
+  const mismatch = editTargetMismatchMessage(draft.productId, $('draftProductId')?.value || draft.productId);
+  if (mismatch) throw new Error(`상품 저장 실패: ${mismatch}`);
   const errors = validateProductFields(draft, { isNew: false });
-  if (errors.length) throw new Error(errors[0]);
-  const current = products.find((p) => p.productId === draft.productId) || {};
+  if (errors.length) throw new Error(`상품 저장 실패: ${errors[0]}`);
+  const current = findCatalogProduct(products, selectedDocId || draft.productId) || {};
   const nextProducts = products.map((p) => (p.productId === draft.productId ? draft : p));
   const conflicts = findDiscountConflicts(nextProducts, promotions);
   if (conflicts.length) throw new Error(`CONFLICT: ${conflicts[0].productId}에 할인이 겹칩니다.`);
@@ -720,7 +743,10 @@ async function saveDraft() {
       || String(current.nameJa || '') !== String(draft.nameJa || '')
   });
   const { doc, setDoc, serverTimestamp } = fs;
-  const docId = firestoreDocId(draft.productId);
+  const docId = selectedDocId || firestoreDocId(draft.productId);
+  if (docId !== firestoreDocId(draft.productId)) {
+    throw new Error(`상품 저장 실패: document id 불일치 (${docId} ≠ ${firestoreDocId(draft.productId)})`);
+  }
   const payload = {
     productId: draft.productId,
     type: isPass ? 'full_pass' : (isLife ? 'lifetime' : 'credit_pack'),
@@ -811,9 +837,10 @@ async function saveDraft() {
   await audit('product_update', `${draft.productId} 저장`, {
     price: current.listPriceKrw, credits: current.creditAmount, version: current.productVersion
   }, { price: draft.listPriceKrw, credits: draft.creditAmount, version });
-  flash(`${draft.productId} · ${formatKrw(expectedPrice)} 저장 완료 (구매 페이지 새로고침 후 반영)`);
+  flash('상품이 저장되었습니다.');
   await loadAll();
-  const refreshed = products.find((p) => p.productId === draft.productId);
+  selectProduct(docId);
+  const refreshed = findCatalogProduct(products, docId);
   if (refreshed && Number(refreshed.listPriceKrw) !== expectedPrice) {
     flash(`저장은 됐지만 목록 갱신이 ${formatKrw(refreshed.listPriceKrw)}입니다. 페이지를 새로고침하세요.`, false);
   }
@@ -927,6 +954,7 @@ async function deleteProduct() {
   await deleteDoc(doc(db, 'products', firestoreDocId(draft.productId)));
   await audit('product_delete', `${draft.productId} 삭제`, draft, null);
   selectedId = null;
+  selectedDocId = null;
   flash('상품을 삭제했습니다.');
   await loadAll();
 }
@@ -1118,6 +1146,9 @@ async function archivePromo() {
   flash('이벤트를 보관했습니다.');
   await loadAll();
 }
+
+const pricingAdminApi = { initPricingAdmin, setPricingAdminAuth };
+if (typeof window !== 'undefined') window.__midiaiPricingAdmin = pricingAdminApi;
 
 if ((location.pathname.split('/').pop() || '') === 'admin.html') {
   initPricingAdmin();

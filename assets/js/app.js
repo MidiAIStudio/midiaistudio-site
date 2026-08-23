@@ -2604,9 +2604,9 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
-  import('./pricing-admin.js?v=product-delete-policy-1').then((m)=>{
-    m.initPricingAdmin({ db, firestoreApi, isAdmin: true });
-  }).catch((e)=>console.warn('pricing-admin', e));
+  try {
+    window.__midiaiPricingAdmin?.setPricingAdminAuth({ db, firestoreApi, isAdmin: true });
+  } catch (e) { console.warn('pricing-admin auth', e); }
   try{
     configureAdminUserLogs({
       db,

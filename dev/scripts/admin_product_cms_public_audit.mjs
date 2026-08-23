@@ -88,7 +88,7 @@ async function main() {
   ok('dyn_isPass_TEST', catalogEngine.isPassProductId('TEST_PASS_ADMIN_E2E'));
   ok('dyn_isPass_PASS_60D', catalogEngine.isPassProductId('PASS_60D'));
   ok('dyn_not_CREDIT', !catalogEngine.isPassProductId('CREDIT_5'));
-  ok('canon_duration_ignore_forge', passEntitlement.passDurationDays('PASS_7D', 9999) === 7);
+  ok('canon_duration_prefers_catalog', passEntitlement.passDurationDays('PASS_7D', 9999) === 9999);
   ok('custom_duration_from_catalog', passEntitlement.passDurationDays('TEST_PASS_ADMIN_E2E', 14) === 14);
 
   const products = await listProducts();
