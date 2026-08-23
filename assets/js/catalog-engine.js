@@ -492,27 +492,54 @@ function discountSpecForProduct(promo, productId, currency = 'KRW') {
 }
 
 function productDiscountCandidate(product, currency, now) {
-  let raw = product?.productDiscount || {};
-  if (String(currency).toUpperCase() === 'USD') {
-    raw = product?.productDiscountUsd || {};
-    if (raw.enabled !== true) return null;
-  } else if (raw.enabled !== true) return null;
-  if (!isWindowActive(true, raw.startsAt, raw.endsAt, now)) return null;
-  return {
-    type: raw.type || 'percent',
-    value: raw.value,
-    startsAt: raw.startsAt,
-    endsAt: raw.endsAt,
-    source: 'product',
-    promotionId: ''
+  // Product-level discounts are deprecated — promotions are the sole discount SoT.
+  // Legacy enabled productDiscount fields are ignored at runtime (migration clears them).
+  return null;
+}
+
+/** Active or scheduled promotion that targets this product (first match by start time). */
+export function findActivePromotionForProduct(productId, promotions = [], now = new Date()) {
+  const pid = normalizeProductId(productId);
+  const matches = (promotions || []).filter((promo) => {
+    if (promo.archived === true || promo.enabled !== true) return false;
+    if (!productTargets(promo, pid)) return false;
+    const st = windowStatus(true, promo.startsAt, promo.endsAt, now);
+    return st === 'active' || st === 'scheduled';
+  });
+  if (!matches.length) return null;
+  matches.sort((a, b) => {
+    const sa = parseTime(a.startsAt)?.getTime() || 0;
+    const sb = parseTime(b.startsAt)?.getTime() || 0;
+    return sa - sb;
+  });
+  return matches[0];
+}
+
+export function promoWindowLabel(promo, now = new Date()) {
+  if (promo?.archived === true) return '보관';
+  const st = windowStatus(promo?.enabled === true, promo?.startsAt, promo?.endsAt, now);
+  if (st === 'active') return '진행중';
+  if (st === 'scheduled') return '예정';
+  if (st === 'ended') return '종료';
+  return '중지';
+}
+
+export function formatPromoDateRange(startsAt, endsAt) {
+  const fmt = (iso) => {
+    const d = parseTime(iso);
+    if (!d) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
   };
+  const a = fmt(startsAt);
+  const b = fmt(endsAt);
+  if (a && b) return `${a} ~ ${b}`;
+  return a || b || '';
 }
 
 export function pickEffectiveDiscount(product, promotions = [], now = new Date(), currency = 'KRW') {
   const pid = normalizeProductId(product?.productId || product?.id);
   const candidates = [];
-  const own = productDiscountCandidate(product, currency, now);
-  if (own) candidates.push(own);
   for (const promo of promotions || []) {
     if (promo.archived === true || promo.enabled !== true) continue;
     if (!productTargets(promo, pid)) continue;
@@ -523,9 +550,6 @@ export function pickEffectiveDiscount(product, promotions = [], now = new Date()
   }
   if (!candidates.length) return { chosen: null, candidates };
   candidates.sort((a, b) => {
-    const rankA = a.source === 'product' ? 0 : 1;
-    const rankB = b.source === 'product' ? 0 : 1;
-    if (rankA !== rankB) return rankA - rankB;
     const sa = parseTime(a.startsAt)?.getTime() || 0;
     const sb = parseTime(b.startsAt)?.getTime() || 0;
     if (sa !== sb) return sa - sb;
@@ -619,10 +643,6 @@ export function findDiscountConflicts(products, promotions, ignorePromotionId = 
   for (const product of products || []) {
     const pid = normalizeProductId(product.productId || product.id);
     const windows = [];
-    const pd = product.productDiscount || {};
-    if (pd.enabled === true && ['scheduled', 'active'].includes(windowStatus(true, pd.startsAt, pd.endsAt))) {
-      windows.push(['product', pd.startsAt, pd.endsAt]);
-    }
     for (const promo of live.filter((p) => productTargets(p, pid))) {
       windows.push([String(promo.promotionId || promo.id || 'promo'), promo.startsAt, promo.endsAt]);
     }
@@ -709,7 +729,9 @@ export function validateProductFields(payload, { isNew = false } = {}) {
     if (!(Number(payload.listPriceUsd) > 0)) errors.push('USD 가격은 0보다 커야 합니다.');
   }
   const disc = payload?.productDiscount || {};
-  if (disc.enabled === true) errors.push(...validateDiscount(disc, price));
+  if (disc.enabled === true) {
+    errors.push('상품 할인은 프로모션 탭에서만 관리합니다. 상품 할인 설정을 끄거나 프로모션으로 옮겨주세요.');
+  }
   return errors;
 }
 

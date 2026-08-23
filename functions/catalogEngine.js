@@ -104,30 +104,26 @@ function productTargets(promo, productId) {
 function pickEffectiveDiscount(product, promotions = [], now = new Date(), currency = 'KRW') {
   const pid = normalizeProductId(product?.productId || product?.id);
   const candidates = [];
-  let raw = product?.productDiscount || {};
-  if (String(currency).toUpperCase() === 'USD') raw = product?.productDiscountUsd || {};
-  if (raw && raw.enabled === true && isWindowActive(true, raw.startsAt, raw.endsAt, now)) {
-    candidates.push({
-      source: 'product',
-      type: raw.type || 'percent',
-      value: Number(raw.value) || 0,
-      endsAt: raw.endsAt || '',
-      promotionId: ''
-    });
-  }
+  // Product-level discounts deprecated — promotions are sole discount SoT.
   for (const promo of promotions || []) {
+    if (promo.archived === true || promo.enabled === false) continue;
     if (!productTargets(promo, pid)) continue;
     if (!isWindowActive(promo.enabled !== false, promo.startsAt, promo.endsAt, now)) continue;
     candidates.push({
       source: 'promo',
       type: promo.type || promo.discountType || 'percent',
       value: Number(promo.value != null ? promo.value : promo.discountValue) || 0,
+      startsAt: promo.startsAt || '',
       endsAt: promo.endsAt || '',
       promotionId: promo.promotionId || promo.id || ''
     });
   }
   if (!candidates.length) return { chosen: null };
-  candidates.sort((a, b) => Number(b.value) - Number(a.value));
+  candidates.sort((a, b) => {
+    const sa = parseTime(a.startsAt)?.getTime() || 0;
+    const sb = parseTime(b.startsAt)?.getTime() || 0;
+    return sa - sb;
+  });
   return { chosen: candidates[0] };
 }
 

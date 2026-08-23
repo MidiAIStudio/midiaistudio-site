@@ -93,16 +93,113 @@ check('pass_ignores_stale_packSavePercent', () => {
 check('pass_promo_separate_from_bundle', () => {
   const catalog = [
     { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, status: 'active' },
-    {
-      productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, status: 'active',
-      productDiscount: { enabled: true, type: 'percent', value: 10, startsAt: '2020-01-01T00:00:00.000Z', endsAt: '2099-01-01T00:00:00.000Z' }
-    }
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, status: 'active' }
   ];
-  const view = browser.publicProductView(catalog[1], [], new Date(), 'ko', null, catalog);
+  const promos = [{
+    enabled: true,
+    archived: false,
+    type: 'percent',
+    value: 10,
+    startsAt: '2020-01-01T00:00:00.000Z',
+    endsAt: '2099-01-01T00:00:00.000Z',
+    productIds: ['PASS_90D']
+  }];
+  const view = browser.publicProductView(catalog[1], promos, new Date(), 'ko', null, catalog);
   assert.equal(view.savePercent, 22);
   assert.equal(view.discountPercent, 10);
-  assert.notEqual(view.savePercent + view.discountPercent, view.discountPercent); // both present separately
-  assert.equal(view.savePercent + view.discountPercent, 32); // combined math exists but UI must not show 32%
+  assert.notEqual(view.savePercent + view.discountPercent, view.discountPercent);
+  assert.equal(view.effectivePrice, 62910);
+});
+check('promo_none_regular_price', () => {
+  const p = { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, status: 'active' };
+  const charge = browser.computeCharge(p, [], new Date());
+  assert.equal(charge.ok, true);
+  assert.equal(charge.effectivePrice, 29900);
+  assert.equal(charge.discount, null);
+});
+check('promo_30pct_20930', () => {
+  const p = { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, status: 'active' };
+  const promos = [{
+    enabled: true,
+    archived: false,
+    type: 'percent',
+    value: 30,
+    startsAt: '2020-01-01T00:00:00.000Z',
+    endsAt: '2099-01-01T00:00:00.000Z',
+    productIds: ['PASS_30D']
+  }];
+  const charge = browser.computeCharge(p, promos, new Date());
+  assert.equal(charge.effectivePrice, 20930);
+  assert.equal(charge.discountPercent, 30);
+});
+check('stale_product_discount_ignored', () => {
+  const p = {
+    productId: 'PASS_30D',
+    type: 'full_pass',
+    durationDays: 30,
+    listPriceKrw: 29900,
+    status: 'active',
+    productDiscount: {
+      enabled: true,
+      type: 'percent',
+      value: 30,
+      startsAt: '2020-01-01T00:00:00.000Z',
+      endsAt: '2099-01-01T00:00:00.000Z'
+    }
+  };
+  const charge = browser.computeCharge(p, [], new Date());
+  assert.equal(charge.effectivePrice, 29900);
+  assert.equal(charge.discount, null);
+});
+check('promo_90d_30pct_bundle_separate', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, status: 'active' },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, status: 'active' }
+  ];
+  const promos = [{
+    enabled: true,
+    archived: false,
+    type: 'percent',
+    value: 30,
+    startsAt: '2020-01-01T00:00:00.000Z',
+    endsAt: '2099-01-01T00:00:00.000Z',
+    productIds: ['PASS_90D']
+  }];
+  const view = browser.publicProductView(catalog[1], promos, new Date(), 'ko', null, catalog);
+  assert.equal(view.savePercent, 22);
+  assert.equal(view.discountPercent, 30);
+  assert.equal(view.effectivePrice, 48930);
+});
+check('validate_reject_product_discount_enabled', () => {
+  const errs = browser.validateProductFields({
+    productId: 'PASS_30D',
+    type: 'full_pass',
+    durationDays: 30,
+    listPriceKrw: 29900,
+    productDiscount: {
+      enabled: true,
+      type: 'percent',
+      value: 10,
+      startsAt: '2026-01-01T00:00:00.000Z',
+      endsAt: '2026-02-01T00:00:00.000Z'
+    }
+  });
+  assert.ok(errs.some((e) => /프로모션/.test(e)));
+});
+check('server_stale_product_discount_ignored', () => {
+  const p = {
+    productId: 'PASS_30D',
+    listPriceKrw: 29900,
+    productDiscount: {
+      enabled: true,
+      type: 'percent',
+      value: 30,
+      startsAt: '2020-01-01T00:00:00.000Z',
+      endsAt: '2099-01-01T00:00:00.000Z'
+    }
+  };
+  const charge = catalogEngine.computeCharge(p, [], new Date());
+  assert.equal(charge.effectivePrice, 29900);
 });
 check('pass_bundle_labels_i18n', () => {
   const catalog = [

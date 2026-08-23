@@ -3229,6 +3229,16 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .pricing-disc-preview-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:13px}
 .pricing-disc-preview-row strong{font-size:15px;font-weight:800}
 .pricing-disc-preview-meta{margin:2px 0 0;font-size:12px;font-weight:700;color:#67e8f9}
+.pricing-active-promo{display:grid;gap:8px;margin-bottom:10px}
+.pricing-active-promo-card{display:grid;gap:4px;padding:12px;border:1px solid var(--site-stroke);border-radius:10px;background:rgba(255,255,255,.02)}
+.pricing-active-promo-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pricing-active-promo-disc{margin:0;font-size:13px;font-weight:700;color:#67e8f9}
+.pricing-active-promo-price{margin:0;font-size:14px;font-weight:800}
+.pricing-promo-empty{display:grid;gap:8px;padding:24px 12px;text-align:center}
+.pricing-promo-preview{display:grid;gap:6px;margin-top:8px}
+.pricing-promo-preview-section{margin-top:12px;padding-top:12px;border-top:1px solid var(--site-stroke)}
+.pricing-list-pane-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.pricing-list-pane-head h4{margin:0}
 .pricing-savings-compare{display:grid;gap:8px;margin:0 0 8px}
 .pricing-savings-compare .pricing-disc-preview-row strong{font-size:13px;font-weight:700}
 .pricing-lang-block{margin:0 0 14px}

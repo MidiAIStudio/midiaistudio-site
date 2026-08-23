@@ -12,10 +12,12 @@ import {
   editTargetMismatchMessage,
   emptyDiscount,
   findCatalogProduct,
+  findActivePromotionForProduct,
   findDiscountConflicts,
   firestoreDocId,
   formatKrw,
   formatPassBundleSavingsLabel,
+  formatPromoDateRange,
   fromDatetimeLocalValue,
   hydrateLegacyProduct,
   evaluateProductDeletable,
@@ -24,13 +26,14 @@ import {
   normalizeProductId,
   priceChangeWarning,
   productTypeLabel,
+  promoWindowLabel,
   resolvePassSavingsReferenceId,
   toDatetimeLocalValue,
   unitPrice,
   validateProductFields,
   validatePromotionFields,
   windowStatus
-} from './catalog-engine.js?v=product-pass-savings-1';
+} from './catalog-engine.js?v=product-promo-unify-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -251,6 +254,12 @@ function bindUi() {
   bind('pricingArchiveBtn', () => archiveProduct().catch((e) => flash(e.message || e, false)));
   bind('pricingDeleteBtn', () => deleteProduct().catch((e) => flash(e.message || e, false)));
   bind('pricingAddPromo', () => startNewPromo());
+  bind('pricingAddPromoInline', () => startNewPromo());
+  bind('pricingPromoEmptyCreate', () => startNewPromo());
+  bind('draftViewPromoBtn', () => {
+    if (draft?.productId) openPromotionForProduct(draft.productId);
+    else setPane('promos');
+  });
   bind('pricingSavePromoBtn', () => savePromo().catch((e) => flash(e.message || e, false)));
   bind('pricingClonePromoBtn', () => clonePromo().catch((e) => flash(e.message || e, false)));
   bind('pricingArchivePromoBtn', () => archivePromo().catch((e) => flash(e.message || e, false)));
@@ -258,10 +267,14 @@ function bindUi() {
   bind('pricingCreateCancel', () => closeAddModal());
   bind('newProductType', () => syncCreateModalFields(), 'change');
   ['draftNameKo', 'draftNameEn', 'draftNameJa', 'draftCredits', 'draftDurationDays', 'draftPriceKrw', 'draftPriceUsd',
-    'draftStatus', 'draftSort', 'draftBadge', 'draftDescKo', 'draftDescEn', 'draftDescJa',
-    'draftDiscEnabled', 'draftDiscType', 'draftDiscValue', 'draftDiscStart', 'draftDiscEnd'
+    'draftStatus', 'draftSort', 'draftBadge', 'draftDescKo', 'draftDescEn', 'draftDescJa'
   ].forEach((id) => bind(id, () => syncDraftFromForm(), 'input'));
-  ['draftDiscEnabled', 'draftDiscType', 'draftStatus', 'draftBadge'].forEach((id) => bind(id, () => syncDraftFromForm(), 'change'));
+  ['draftStatus', 'draftBadge'].forEach((id) => bind(id, () => syncDraftFromForm(), 'change'));
+  ['promoNameKo', 'promoNameEn', 'promoNameJa', 'promoValue', 'promoStart', 'promoEnd',
+    'promoPopupTitleKo', 'promoPopupTitleEn', 'promoPopupTitleJa', 'promoPopupBodyKo', 'promoPopupBodyEn', 'promoPopupBodyJa',
+    'promoPopupCtaKo', 'promoPopupCtaEn', 'promoPopupCtaJa', 'promoCtaUrl'
+  ].forEach((id) => bind(id, () => renderPromoPreview(), 'input'));
+  ['promoEnabledFlag', 'promoType', 'promoPopupEnabled'].forEach((id) => bind(id, () => renderPromoPreview(), 'change'));
 }
 
 function setPane(next) {
@@ -367,6 +380,68 @@ async function ensureSeed() {
   }
 }
 
+async function migrateStaleProductDiscounts() {
+  if (!db || !fs) return;
+  const { doc, setDoc, collection, addDoc, serverTimestamp } = fs;
+  let migrated = 0;
+  for (const p of products) {
+    const pd = p.productDiscount || {};
+    if (pd.enabled !== true) continue;
+    const pid = normalizeProductId(p.productId);
+    const st = windowStatus(true, pd.startsAt, pd.endsAt);
+    const docId = p.docId || firestoreDocId(pid);
+    if (st === 'ended') {
+      await setDoc(doc(db, 'products', docId), {
+        productDiscount: emptyDiscount(),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+      p.productDiscount = emptyDiscount();
+      continue;
+    }
+    const duplicate = promotions.find((pr) => (
+      pr.archived !== true
+      && pr.enabled === true
+      && (pr.productIds || []).some((item) => normalizeProductId(item) === pid)
+      && String(pr.type || 'percent') === String(pd.type || 'percent')
+      && Number(pr.value) === Number(pd.value)
+      && String(pr.startsAt || '') === String(pd.startsAt || '')
+      && String(pr.endsAt || '') === String(pd.endsAt || '')
+    ));
+    if (!duplicate) {
+      const label = `${p.nameKo || pid} 할인 (마이그레이션)`;
+      await addDoc(collection(db, 'promotions'), {
+        nameKo: label,
+        nameEn: label,
+        nameJa: label,
+        enabled: true,
+        archived: false,
+        type: pd.type || 'percent',
+        value: Number(pd.value || 0),
+        productIds: [pid],
+        productOverrides: {},
+        startsAt: pd.startsAt || new Date().toISOString(),
+        endsAt: pd.endsAt || new Date(Date.now() + 7 * 86400000).toISOString(),
+        homepagePopupEnabled: false,
+        version: 1,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      migrated += 1;
+    }
+    await setDoc(doc(db, 'products', docId), {
+      productDiscount: emptyDiscount(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    p.productDiscount = emptyDiscount();
+  }
+  if (migrated > 0) {
+    const { collection, getDocs } = fs;
+    const promoSnap = await getDocs(collection(db, 'promotions'));
+    promotions = promoSnap.docs.map((d) => ({ id: d.id, promotionId: d.id, ...d.data() }))
+      .sort((a, b) => String(b.startsAt || '').localeCompare(String(a.startsAt || '')));
+  }
+}
+
 async function loadAll() {
   if (loading || !db || !fs || !isAdmin) return;
   loading = true;
@@ -388,12 +463,25 @@ async function loadAll() {
       promotions = [];
       console.warn('promotions', e);
     }
+    try {
+      await migrateStaleProductDiscounts();
+    } catch (e) {
+      console.warn('product discount migration', e);
+    }
     renderSummary();
     renderList();
     renderPromoList();
     if (!selectedDocId && !selectedId && products[0]) selectProduct(products[0].docId || products[0].productId);
     else if (selectedDocId || selectedId) selectProduct(selectedDocId || selectedId);
-    if (!selectedPromoId && promotions[0]) selectPromo(promotions[0].id);
+    if (selectedPromoId && promotions.find((p) => p.id === selectedPromoId)) {
+      selectPromo(selectedPromoId);
+    } else if (promoDraft && !promoDraft.id) {
+      renderPromoEditor();
+    } else {
+      selectedPromoId = '';
+      promoDraft = null;
+      renderPromoEditor();
+    }
   } catch (e) {
     setListStatus(`<p class="muted">불러오기 실패: ${esc(e.message || e)}</p>`);
   } finally {
@@ -428,12 +516,6 @@ function badgeLabel(badge) {
   return '';
 }
 
-function discountEndsLabel(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  return `${d.getMonth() + 1}월 ${d.getDate()}일까지`;
-}
 
 function renderList() {
   const root = $('pricingProductList');
@@ -564,14 +646,6 @@ function renderEditor() {
   fill('draftDescKo', draft.descriptionKo || '');
   fill('draftDescEn', draft.descriptionEn || '');
   fill('draftDescJa', draft.descriptionJa || '');
-  const disc = draft.productDiscount || emptyDiscount();
-  check('draftDiscEnabled', disc.enabled === true);
-  fill('draftDiscType', disc.type || 'percent');
-  fill('draftDiscValue', disc.value || '');
-  fill('draftDiscStart', toDatetimeLocalValue(disc.startsAt));
-  fill('draftDiscEnd', toDatetimeLocalValue(disc.endsAt));
-  updateDiscValueLabel(disc.type || 'percent');
-  updateDiscountVisibility(disc.enabled === true);
   const usdHint = $('draftUsdHint');
   if (usdHint) {
     if (isPass) {
@@ -595,23 +669,50 @@ function renderEditor() {
     delHint.textContent = delEval.deletable ? '' : delEval.message;
     delHint.hidden = delEval.deletable;
   }
-  renderPreview();
+  renderActivePromotion();
   renderPassSavingsCompare();
 }
 
-function updateDiscValueLabel(type) {
-  const title = $('draftDiscValueTitle');
-  const unit = $('draftDiscValueUnit');
-  const amount = type === 'amount';
-  if (title) title.textContent = amount ? '할인금액' : '할인율';
-  if (unit) unit.textContent = amount ? '원' : '%';
+function renderActivePromotion() {
+  const body = $('draftActivePromoBody');
+  if (!body || !draft) return;
+  const now = new Date();
+  const promo = findActivePromotionForProduct(draft.productId, promotions, now);
+  if (!promo) {
+    body.innerHTML = '<p class="muted">현재 적용 중인 프로모션이 없습니다.</p>';
+    return;
+  }
+  const charge = computeCharge(draft, promotions, now);
+  const st = promoWindowLabel(promo, now);
+  const discLabel = promo.type === 'amount'
+    ? `${Number(promo.value || 0).toLocaleString('ko-KR')}원 할인`
+    : `${charge.discountPercent || promo.value}% 할인`;
+  body.innerHTML = `<div class="pricing-active-promo-card">
+    <div class="pricing-active-promo-head"><strong>${esc(promo.nameKo || promo.id)}</strong><span class="badge">${esc(st)}</span></div>
+    <p class="pricing-active-promo-disc">${esc(discLabel)}</p>
+    <p class="pricing-active-promo-price">${esc(formatKrw(charge.basePrice))} → ${esc(formatKrw(charge.effectivePrice))}</p>
+    <p class="muted small">${esc(formatPromoDateRange(promo.startsAt, promo.endsAt))}</p>
+  </div>`;
 }
 
-function updateDiscountVisibility(enabled) {
-  const fields = $('draftDiscFields');
-  const offNote = $('draftDiscOffNote');
-  if (fields) fields.hidden = !enabled;
-  if (offNote) offNote.hidden = !!enabled;
+function openPromotionForProduct(productId) {
+  const pid = normalizeProductId(productId);
+  const now = new Date();
+  const match = promotions.find((p) => {
+    if (p.archived === true) return false;
+    const targets = (p.productIds || []).map(normalizeProductId);
+    if (!targets.includes(pid)) return false;
+    const st = windowStatus(p.enabled === true, p.startsAt, p.endsAt, now);
+    return st === 'active' || st === 'scheduled';
+  });
+  setPane('promos');
+  if (match) selectPromo(match.id);
+  else {
+    selectedPromoId = '';
+    promoDraft = null;
+    renderPromoList();
+    renderPromoEditor();
+  }
 }
 
 function syncDraftFromForm() {
@@ -641,16 +742,7 @@ function syncDraftFromForm() {
   draft.descriptionKo = $('draftDescKo')?.value || '';
   draft.descriptionEn = $('draftDescEn')?.value || '';
   draft.descriptionJa = $('draftDescJa')?.value || '';
-  const discType = $('draftDiscType')?.value || 'percent';
-  draft.productDiscount = {
-    enabled: !!$('draftDiscEnabled')?.checked,
-    type: discType,
-    value: Number($('draftDiscValue')?.value || 0),
-    startsAt: fromDatetimeLocalValue($('draftDiscStart')?.value),
-    endsAt: fromDatetimeLocalValue($('draftDiscEnd')?.value)
-  };
-  updateDiscValueLabel(discType);
-  updateDiscountVisibility(draft.productDiscount.enabled === true);
+  draft.productDiscount = emptyDiscount();
   const usdHint = $('draftUsdHint');
   if (usdHint) {
     if (isPass) {
@@ -663,7 +755,7 @@ function syncDraftFromForm() {
         : 'USD 미설정 · PayPal 판매 안 함';
     }
   }
-  renderPreview();
+  renderActivePromotion();
   renderPassSavingsCompare();
 }
 
@@ -718,35 +810,6 @@ function renderPassSavingsCompare() {
   setT('draftSaveAmount', formatKrw(savings.savingAmount));
   setT('draftSavePercent', `약 ${savings.savingPercent}%`);
   setT('draftSaveHint', formatPassBundleSavingsLabel(savings, 'ko') + ' · 자동 계산 (직접 입력 불가)');
-}
-
-function renderPreview() {
-  if (!draft) return;
-  const charge = computeCharge(draft, promotions);
-  const setT = (id, t) => { const el = $(id); if (el) el.textContent = t; };
-  setT('previewList', formatKrw(charge.basePrice));
-  setT('previewSale', charge.ok ? formatKrw(charge.effectivePrice) : (charge.code || '-'));
-  if (charge.discount && charge.discountPercent) {
-    const until = discountEndsLabel(charge.discountEndsAt || draft.productDiscount?.endsAt);
-    const kind = charge.discount.type === 'amount'
-      ? `${Number(charge.discount.value).toLocaleString('ko-KR')}원 할인`
-      : `${charge.discountPercent}% 할인`;
-    setT('previewPct', until ? `${kind} · ${until}` : kind);
-  } else {
-    setT('previewPct', '할인 없음');
-  }
-  if (draft.type === 'credit_pack') {
-    const saleUnit = unitPrice(charge.effectivePrice, draft.creditAmount);
-    setT('previewUnit', saleUnit ? `1 Credit 약 ${saleUnit.toLocaleString('ko-KR')}원` : '');
-  } else if (draft.type === 'full_pass' || isPassProductId(draft.productId)) {
-    const days = Number(draft.durationDays || canonicalPassDurationDays(draft.productId) || 0);
-    setT('previewUnit', days > 0
-      ? `${days}일 Full · 변환 횟수 제한 없음 · 자동결제 없음`
-      : '기간 Full · 변환 횟수 제한 없음');
-  } else {
-    setT('previewUnit', 'Lifetime Full · 영구 이용 · 자동결제 없음');
-  }
-  setT('previewSaleUnit', '');
 }
 
 async function saveDraft() {
@@ -850,7 +913,7 @@ async function saveDraft() {
       : null,
     productVersion: version,
     pricingVersion: version,
-    productDiscount: draft.productDiscount,
+    productDiscount: emptyDiscount(),
     plan: isLife ? 'lifetime' : (isPass ? 'period' : 'credits'),
     updatedAt: serverTimestamp()
   };
@@ -1048,6 +1111,28 @@ function promoStatus(p) {
   return windowStatus(p.enabled === true && p.archived !== true, p.startsAt, p.endsAt);
 }
 
+function promoTargetNames(p) {
+  return (p.productIds || []).map((id) => {
+    const prod = products.find((x) => normalizeProductId(x.productId) === normalizeProductId(id));
+    return prod?.nameKo || id;
+  }).join(' · ') || '-';
+}
+
+function promoListSort(a, b) {
+  const rank = { active: 0, scheduled: 1, ended: 2, disabled: 3 };
+  const ra = rank[promoStatus(a)] ?? 4;
+  const rb = rank[promoStatus(b)] ?? 4;
+  if (ra !== rb) return ra - rb;
+  return String(b.startsAt || '').localeCompare(String(a.startsAt || ''));
+}
+
+function formatPromoListDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso).slice(0, 10);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 function renderPromoList() {
   const root = $('pricingPromoList');
   if (!root) return;
@@ -1055,15 +1140,17 @@ function renderPromoList() {
     root.innerHTML = '<p class="muted">이벤트가 없습니다.</p>';
     return;
   }
-  root.innerHTML = promotions.map((p) => {
-    const st = promoStatus(p);
-    const targets = (p.productIds || []).join(' / ') || '-';
+  const rows = [...promotions].sort(promoListSort);
+  root.innerHTML = rows.map((p) => {
+    const st = promoWindowLabel(p);
+    const targets = promoTargetNames(p);
     const disc = p.type === 'amount' ? `${Number(p.value || 0).toLocaleString('ko-KR')}원` : `${p.value}%`;
     const active = selectedPromoId === p.id ? ' is-active' : '';
+    const range = `${formatPromoListDate(p.startsAt)} ~ ${formatPromoListDate(p.endsAt)}`;
     return `<button type="button" class="pricing-product-item${active}" data-promo-id="${esc(p.id)}">
       <span class="pricing-product-item-top"><strong>${esc(p.nameKo || p.promotionId || p.id)}</strong><span class="badge">${esc(st)}</span></span>
-      <span class="muted small">${esc(targets)}</span>
-      <span class="muted small">${esc(disc)} · ${esc(String(p.startsAt || '').slice(0, 16))} ~ ${esc(String(p.endsAt || '').slice(0, 16))}</span>
+      <span class="pricing-product-item-main">${esc(disc)} · ${esc(targets)}</span>
+      <span class="muted small">${esc(range)}</span>
       <span class="muted small">팝업 ${p.homepagePopupEnabled ? 'ON' : 'OFF'}</span>
     </button>`;
   }).join('');
@@ -1155,8 +1242,47 @@ function renderPromoEditor() {
   const box = $('promoProductTargets');
   if (box) {
     const selected = new Set((promoDraft.productIds || []).map(normalizeProductId));
-    box.innerHTML = products.map((p) => `<label class="pricing-check"><input type="checkbox" data-promo-target="${esc(p.productId)}" ${selected.has(p.productId) ? 'checked' : ''}> ${esc(p.nameKo || p.productId)}</label>`).join('');
+    box.innerHTML = products
+      .filter((p) => p.status !== 'archived')
+      .map((p) => `<label class="pricing-check"><input type="checkbox" data-promo-target="${esc(p.productId)}" ${selected.has(normalizeProductId(p.productId)) ? 'checked' : ''}> ${esc(p.nameKo || p.productId)}</label>`)
+      .join('');
+    box.querySelectorAll('[data-promo-target]').forEach((el) => {
+      el.addEventListener('change', () => renderPromoPreview());
+    });
   }
+  renderPromoPreview();
+}
+
+function renderPromoPreview() {
+  const body = $('promoPreviewBody');
+  if (!body || !promoDraft) return;
+  readPromoForm();
+  const type = promoDraft.type || 'percent';
+  const value = Number(promoDraft.value || 0);
+  const targets = promoDraft.productIds || [];
+  if (!targets.length || !(value > 0)) {
+    body.innerHTML = '<p class="muted">대상 상품과 할인 값을 선택하면 미리보기가 표시됩니다.</p>';
+    return;
+  }
+  const head = type === 'amount'
+    ? `${value.toLocaleString('ko-KR')}원 할인`
+    : `${value}% 할인`;
+  const synthetic = {
+    enabled: true,
+    archived: false,
+    type,
+    value,
+    startsAt: promoDraft.startsAt,
+    endsAt: promoDraft.endsAt,
+    productIds: targets.map(normalizeProductId)
+  };
+  const lines = targets.map((tid) => {
+    const p = products.find((x) => normalizeProductId(x.productId) === normalizeProductId(tid));
+    if (!p) return '';
+    const charge = computeCharge(p, [synthetic], new Date());
+    return `<div class="pricing-disc-preview-row"><span>${esc(p.nameKo || tid)}</span><strong>${esc(formatKrw(charge.basePrice))} → ${esc(formatKrw(charge.effectivePrice))}</strong></div>`;
+  }).filter(Boolean).join('');
+  body.innerHTML = `<p class="pricing-active-promo-disc">${esc(head)}</p>${lines || '<p class="muted">대상 상품을 찾을 수 없습니다.</p>'}`;
 }
 
 function readPromoForm() {
@@ -1232,7 +1358,13 @@ async function archivePromo() {
   await loadAll();
 }
 
-const pricingAdminApi = { initPricingAdmin, setPricingAdminAuth };
+const pricingAdminApi = {
+  initPricingAdmin,
+  setPricingAdminAuth,
+  openPromotionForProduct,
+  selectPromotion: selectPromo,
+  setPricingPane: setPane
+};
 if (typeof window !== 'undefined') window.__midiaiPricingAdmin = pricingAdminApi;
 
 if ((location.pathname.split('/').pop() || '') === 'admin.html') {

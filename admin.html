@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=product-pass-savings-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=product-promo-unify-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -132,7 +132,7 @@
               <div class="admin-section-head admin-pricing-head">
                 <div>
                   <h3>가격·상품</h3>
-                  <p class="admin-page-lead muted">상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.</p>
+                  <p class="admin-page-lead muted">상품 정가·속성은 상품 탭, 기간 할인·이벤트는 프로모션 탭에서 관리합니다.</p>
                   <p class="muted small pricing-delete-policy-note" id="pricingDeletePolicyNote">결제 이력이 있는 상품은 거래 기록 보존을 위해 삭제할 수 없습니다. 판매를 중단하려면 보관을 사용하세요.</p>
                 </div>
                 <div class="admin-pricing-actions">
@@ -226,35 +226,12 @@
                           <p class="muted small pricing-field-hint" id="draftSaveHint">30일권 3회 구매 대비 자동 계산됩니다.</p>
                         </section>
 
-                        <section class="pricing-edit-section">
-                          <h4 class="pricing-section-title">할인 설정</h4>
-                          <label class="pricing-check pricing-disc-toggle"><input type="checkbox" id="draftDiscEnabled"> 할인 사용</label>
-                          <p class="muted small" id="draftDiscOffNote">현재 할인 없음</p>
-                          <div id="draftDiscFields" class="pricing-disc-fields" hidden>
-                            <div class="pricing-form-grid">
-                              <label>할인 방식
-                                <select id="draftDiscType">
-                                  <option value="percent">정률</option>
-                                  <option value="amount">정액</option>
-                                </select>
-                              </label>
-                              <label id="draftDiscValueLabel"><span id="draftDiscValueTitle">할인율</span>
-                                <span class="pricing-input-suffix">
-                                  <input id="draftDiscValue" type="number" min="0" step="1">
-                                  <span class="pricing-suffix-label" id="draftDiscValueUnit">%</span>
-                                </span>
-                              </label>
-                              <label>시작 <input id="draftDiscStart" type="datetime-local"></label>
-                              <label>종료 <input id="draftDiscEnd" type="datetime-local"></label>
-                            </div>
-                            <div class="pricing-disc-preview" aria-live="polite">
-                              <div class="pricing-disc-preview-row"><span class="muted">정가</span><strong id="previewList">-</strong></div>
-                              <div class="pricing-disc-preview-row"><span class="muted">할인가</span><strong id="previewSale">-</strong></div>
-                              <p class="pricing-disc-preview-meta" id="previewPct">-</p>
-                              <p class="muted small" id="previewUnit"></p>
-                              <p class="muted small" id="previewSaleUnit" hidden></p>
-                            </div>
+                        <section class="pricing-edit-section" id="draftActivePromoSection">
+                          <h4 class="pricing-section-title">적용 중인 프로모션</h4>
+                          <div id="draftActivePromoBody" class="pricing-active-promo" aria-live="polite">
+                            <p class="muted">현재 적용 중인 프로모션이 없습니다.</p>
                           </div>
+                          <button type="button" class="secondary mini-btn" id="draftViewPromoBtn">프로모션 보기</button>
                         </section>
 
                         <section class="pricing-edit-section">
@@ -307,11 +284,18 @@
               <div id="pricingPromosPane" hidden>
                 <div class="pricing-layout">
                   <aside class="pricing-list-pane">
-                    <h4>할인 이벤트</h4>
+                    <div class="pricing-list-pane-head">
+                      <h4>할인 이벤트</h4>
+                      <button type="button" class="secondary mini-btn" id="pricingAddPromoInline">+ 이벤트 추가</button>
+                    </div>
                     <div id="pricingPromoList" class="pricing-product-list"><p class="muted">이벤트가 없습니다.</p></div>
                   </aside>
                   <div class="pricing-editor-pane">
-                    <p class="muted" id="pricingPromoEmpty">이벤트를 선택하거나 추가하세요.</p>
+                    <div id="pricingPromoEmpty" class="pricing-promo-empty">
+                      <p class="muted">등록된 프로모션이 없습니다.</p>
+                      <p class="muted small">기간 할인이나 홈페이지 이벤트를 만들 수 있습니다.</p>
+                      <button type="button" class="primary mini-btn" id="pricingPromoEmptyCreate">첫 프로모션 만들기</button>
+                    </div>
                     <div id="pricingPromoForm" hidden>
                       <section class="pricing-edit-section">
                         <h4>이벤트</h4>
@@ -332,6 +316,12 @@
                         </div>
                         <h4 class="pricing-subhead">대상 상품</h4>
                         <div id="promoProductTargets" class="pricing-target-list"></div>
+                        <section class="pricing-edit-section pricing-promo-preview-section" id="promoPreviewSection">
+                          <h4 class="pricing-section-title">적용 결과</h4>
+                          <div id="promoPreviewBody" class="pricing-promo-preview" aria-live="polite">
+                            <p class="muted">대상 상품과 할인 값을 선택하면 미리보기가 표시됩니다.</p>
+                          </div>
+                        </section>
                       </section>
                       <section class="pricing-edit-section">
                         <h4>홈 팝업</h4>
@@ -795,8 +785,8 @@
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=product-pass-savings-1"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=product-pass-savings-1"></script>
+  <script type="module" src="./assets/js/app.js?v=product-promo-unify-1"></script>
+  <script type="module" src="./assets/js/pricing-admin.js?v=product-promo-unify-1"></script>
   <script type="module" src="./assets/js/admin-console.js?v=payment-menu-detail-1"></script>
 </body>
 </html>
