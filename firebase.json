@@ -71,6 +71,24 @@
     ],
     "headers": [
       {
+        "source": "/assets/js/app.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, max-age=0"
+          }
+        ]
+      },
+      {
+        "source": "/assets/js/app.p0-hotfix.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, max-age=0"
+          }
+        ]
+      },
+      {
         "source": "**/*.html",
         "headers": [
           {

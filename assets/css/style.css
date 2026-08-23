@@ -4235,7 +4235,7 @@ body.admin-console-page .admin-crm-detail-pane{
 }
 .admin-console-page .admin-crm-detail-tabs button.is-active{color:#fff;background:rgba(139,92,246,.2);border-color:rgba(167,139,250,.4)}
 .admin-console-page .admin-crm-detail [data-tab-panel]{display:none}
-.admin-console-page .admin-crm-detail #adminCrmPointsCard{display:none!important}
+.admin-console-page .admin-crm-detail #adminCrmPointsCard{display:block}
 .admin-console-page .admin-crm-detail[data-tab="overview"] [data-tab-panel~="overview"],
 .admin-console-page .admin-crm-detail[data-tab="access"] [data-tab-panel~="access"],
 .admin-console-page .admin-crm-detail[data-tab="device"] [data-tab-panel~="device"],
