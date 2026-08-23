@@ -722,8 +722,10 @@ function normalizePlan(lic){
   const plan=String(lic?.plan||'').toLowerCase().trim();
   // Explicit lifetime always wins — admin save clears dates; leftover bounds must not flip type.
   if(plan==='lifetime') return 'lifetime';
+  // Revoked period must not stay "period" for paid badges / filters.
+  if(lic?.revokedAt && (plan==='period' || plan==='monthly')) return 'trial';
   if(plan==='monthly') return 'period';
-  if(!plan && licenseTsMs(lic?.expiresAt)) return 'period';
+  if(!plan && licenseTsMs(lic?.expiresAt) && !lic?.revokedAt) return 'period';
   if(plan==='trial' || plan==='period') return plan;
   // developer/admin were mistaken "plans"; missing/unknown → trial
   return 'trial';
@@ -833,6 +835,7 @@ function patchAdminLicenseCache(uid, patch){
   const next = { ...prev, ...patch };
   if(Object.prototype.hasOwnProperty.call(patch, 'startsAt') && !patch.startsAt) delete next.startsAt;
   if(Object.prototype.hasOwnProperty.call(patch, 'expiresAt') && !patch.expiresAt) delete next.expiresAt;
+  if(Object.prototype.hasOwnProperty.call(patch, 'passProductId') && !patch.passProductId) delete next.passProductId;
   adminLicenseCache[s] = next;
   Object.values(adminIdentityCache).forEach(idn=>{
     if(!idn) return;
@@ -847,6 +850,60 @@ function patchAdminLicenseCache(uid, patch){
   if(idx>=0) adminLicenseRows[idx]=next;
   else adminLicenseRows.push(next);
   adminLicensesLoaded = true;
+  try{ authorLicenseCache.delete(s); }catch(_){ /* ignore */ }
+}
+
+/** Re-read licenses/{uid} after refund/sync so CRM badges do not keep stale "7일 Full". */
+async function refreshAdminLicenseFromServer(uid){
+  const s=String(uid||'').trim();
+  if(!s || !db || !firestoreApi?.doc || !firestoreApi?.getDoc) return null;
+  const {doc,getDoc}=firestoreApi;
+  const aliases = [...adminUidAliases(s)];
+  const ids = aliases.length ? aliases : [s];
+  let chosen = null;
+  let chosenId = s;
+  for(const id of ids){
+    try{
+      const snap = await getDoc(doc(db,'licenses', id));
+      if(snap.exists()){
+        chosen = snap.data() || {};
+        chosenId = id;
+        break;
+      }
+    }catch(_){ /* try next alias */ }
+  }
+  if(!chosen){
+    // Clear stale paid badge if doc missing after revoke.
+    patchAdminLicenseCache(s, {
+      plan: 'trial',
+      status: 'active',
+      licensed: true,
+      passProductId: null,
+      startsAt: null,
+      expiresAt: null,
+      updatedAt: adminLicenseCacheNow()
+    });
+    return licenseForUid(s);
+  }
+  const next = { ...chosen, id: chosenId, uid: chosenId };
+  patchAdminLicenseCache(chosenId, next);
+  if(chosenId !== s) patchAdminLicenseCache(s, next);
+  return next;
+}
+
+function refreshAdminLicenseViews(uid){
+  const s=String(uid||'').trim();
+  try{
+    if(selectedAdminUid && (selectedAdminUid===s || adminUidAliases(selectedAdminUid).has(s))){
+      renderAdminCrmDetail(selectedAdminUid, { keepTab: true });
+    }
+  }catch(_){ /* ignore */ }
+  try{
+    if(typeof paintAdminCrmPagedList==='function') paintAdminCrmPagedList();
+    else renderAdminUserTable({ keepOrder: true });
+  }catch(_){
+    try{ renderAdminUserTable({ keepOrder: true }); }catch(__){ /* ignore */ }
+  }
 }
 function fmtCompactDateTime(v){
   try{
@@ -6821,6 +6878,17 @@ function adminLicenseKind(lic){
 function adminPlanBadgeHtml(lic){
   if(!adminLicensesLoaded) return `<span class="crm-badge is-loading"><i></i>확인 중</span>`;
   if(!lic) return `<span class="crm-badge is-none"><i></i>라이선스 확인 필요</span>`;
+  const status = normalizeStatus(lic);
+  // Revoked/expired must never render as paid "7일 Full" even if passProductId leftovers remain.
+  if(status==='banned') return `<span class="crm-badge is-banned"><i></i>${esc(adminLicenseStatusLabel('banned'))}</span>`;
+  if(status==='expired' || lic.revokedAt){
+    const planAfter = normalizePlan(lic);
+    if(planAfter==='lifetime' && !lic.revokedAt) {
+      /* fall through */
+    } else if(planAfter!=='lifetime'){
+      return `<span class="crm-badge is-trial"><i></i>${esc(adminLicenseTypeLabel('trial'))}</span>`;
+    }
+  }
   const plan = normalizePlan(lic);
   if(plan==='lifetime') return `<span class="crm-badge is-lifetime"><i></i>${esc(adminLicenseTypeLabel('lifetime'))}</span>`;
   if(plan==='period'){
@@ -6981,7 +7049,7 @@ function adminLicenseWorkMatch(row, tab){
 }
 function adminOrderStatusGroup(status){
   const s=String(status||'').toLowerCase();
-  if(s==='completed' || s==='paid') return 'paid';
+  if(s==='completed' || s==='paid' || s==='verified' || s==='license_issued') return 'paid';
   if(s==='failed') return 'failed';
   if(s==='cancelled' || s==='canceled' || s==='refunded' || s==='partially_refunded' || s==='refund_review_required' || s==='duplicate_refunded' || s==='duplicate_refund_failed') return 'refund';
   if(s==='pending' || s==='open') return 'pending';
@@ -7026,14 +7094,28 @@ function adminOrderAmountTotals(rows, groups){
 }
 function adminOrderRefundText(o){
   const group=adminOrderStatusGroup(o?.status);
+  const raw=String(o?.status||'').toLowerCase();
+  const rawAmount = (o?.refundedAmount!=null && o.refundedAmount!=='')
+    ? o.refundedAmount
+    : ((o?.cancelledAmount!=null && o.cancelledAmount!=='') ? o.cancelledAmount : null);
+  const amount = Number(rawAmount);
+  const hasRefundMoney = Number.isFinite(amount) && amount > 0;
+
+  // 0 / missing 은 환불 미발생 — 필드 존재만으로 "환불 0" 표시하지 않음.
+  if(!hasRefundMoney){
+    if(group==='refund') return adminPaymentStatusLabel(o.status);
+    return '-';
+  }
+
+  const amountLabel = `${amount.toLocaleString('ko-KR')}원`;
+  if(raw==='partially_refunded') return `부분환불 ${amountLabel}`;
+
   const bits=[];
   const when=o?.refundedAt || o?.cancelledAt || o?.refundAt;
   if(when) bits.push(fmtListDate(when));
-  if(o?.refundedAmount!=null && o.refundedAmount!=='') bits.push(`환불 ${Number(o.refundedAmount).toLocaleString('ko-KR')}`);
+  bits.push(`환불 ${amountLabel}`);
   if(o?.refundReason) bits.push(String(o.refundReason));
-  if(bits.length) return bits.join(' · ');
-  if(group==='refund') return adminPaymentStatusLabel(o.status);
-  return '-';
+  return bits.join(' · ');
 }
 function adminPaymentStatusBadgeHtml(status){
   const s=String(status||'').toLowerCase();
@@ -7591,7 +7673,7 @@ function renderAdminUserTable(opts={}){
     renderAdminCrmStats(adminCrmFilteredRows);
     const groupN = groupAdminOrdersByBuyer(adminCrmFilteredRows).length;
     const countEl=$('adminUserCount');
-    if(countEl) countEl.textContent = `${groupN}명 · ${adminCrmFilteredRows.length}건`;
+    if(countEl) countEl.textContent = `${adminCrmFilteredRows.length}건 · ${groupN}명`;
     const hint=$('adminCrmFilterHint');
     if(hint) hint.textContent = adminCrmFilteredRows.length===(adminOrderRows||[]).length ? '' : `필터 ${adminCrmFilteredRows.length}건`;
     updateAdminCrmBulkbar();
@@ -7666,7 +7748,7 @@ window.__midiaiOnAdminCms = function(tab, opts={}){
 };
 function adminCrmTotalPages(){
   if(adminCrmMode()==='orders'){
-    return Math.max(1, Math.ceil(groupAdminOrdersByBuyer(adminCrmFilteredRows).length / ADMIN_CRM_PAGE_SIZE));
+    return Math.max(1, Math.ceil((adminCrmFilteredRows||[]).length / ADMIN_CRM_PAGE_SIZE));
   }
   return Math.max(1, Math.ceil(adminCrmFilteredRows.length / ADMIN_CRM_PAGE_SIZE));
 }
@@ -7688,16 +7770,15 @@ function paintAdminCrmPagedList(){
     return;
   }
   if(mode==='orders'){
-    const groups = groupAdminOrdersByBuyer(adminCrmFilteredRows);
     const pages = adminCrmTotalPages();
     if(adminCrmPage > pages) adminCrmPage = pages;
     if(adminCrmPage < 1) adminCrmPage = 1;
     const start = (adminCrmPage - 1) * ADMIN_CRM_PAGE_SIZE;
-    const slice = groups.slice(start, start + ADMIN_CRM_PAGE_SIZE);
-    box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-order-table"><thead><tr>
-      <th>사용자</th><th>주문</th><th>최근 상품</th><th>최근 결제</th><th>최근 상태</th><th>최근 결제일</th>
-    </tr></thead><tbody>${slice.map(g=>adminCrmOrderGroupHtml(g)).join('')}</tbody></table></div>`;
-    renderAdminCrmPager(pages, groups.length, '명');
+    const slice = adminCrmFilteredRows.slice(start, start + ADMIN_CRM_PAGE_SIZE);
+    box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-order-table admin-payment-flat-table"><thead><tr>
+      <th>주문번호</th><th>사용자</th><th>상품</th><th>결제수단</th><th>결제금액</th><th>결제상태</th><th>결제일</th><th>취소/환불</th><th>관리</th>
+    </tr></thead><tbody>${slice.map(o=>adminPaymentMenuRowHtml(o)).join('')}</tbody></table></div>`;
+    renderAdminCrmPager(pages, adminCrmFilteredRows.length, '건');
     return;
   }
   box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-member-table"><thead><tr>
@@ -7865,6 +7946,58 @@ function adminCrmOrderChildRowHtml(o){
     <td>${actions}</td>
   </tr>`;
 }
+/** Compact 2-line user cell for flat payment list (name + email). */
+function adminPaymentUserCellHtml(o){
+  const uid=String(o?.uid||o?.userId||o?.customerUid||'').trim();
+  const user=uid ? findAdminUserRow(uid) : null;
+  let name=String(user?.displayName||o?.displayName||o?.name||'').trim();
+  if(!name || /^undefined$/i.test(name) || /^null$/i.test(name)) name='';
+  let email=String(user?.email||o?.email||'').trim();
+  if(!email || /^undefined$/i.test(email) || /^null$/i.test(email)) email='';
+  let primary='';
+  let secondary='';
+  if(name){
+    primary=name;
+    secondary=email && email!==name ? email : '';
+  } else if(email){
+    primary=email;
+  } else if(uid){
+    primary='-';
+    secondary=uid;
+  }
+  if(!primary && !secondary){
+    return `<td class="admin-payment-user"><span class="admin-payment-user-name">-</span></td>`;
+  }
+  const title=[name||'', email||'', (!name && !email ? uid : '')].filter(Boolean).join(' · ') || primary;
+  return `<td class="admin-payment-user" title="${esc(title)}">
+    <span class="admin-payment-user-name">${esc(primary)}</span>
+    ${secondary?`<span class="admin-payment-user-email">${esc(secondary)}</span>`:''}
+  </td>`;
+}
+/** Flat payment-menu row — same detail opener as member CRM orders. */
+function adminPaymentMenuRowHtml(o){
+  const key=o.id||o.paymentId||o.paypalOrderId||'';
+  const uid=String(o.uid||o.userId||o.customerUid||'');
+  const id=adminOrderDisplayId(o);
+  const detail = key
+    ? `<button type="button" class="secondary mini-btn" data-order-detail="${esc(key)}" data-order-uid="${esc(uid)}" title="주문 상세 · PortOne 동기화/취소">상세</button>`
+    : '-';
+  return `<tr class="admin-payment-menu-row" data-order-row-id="${esc(key)}" data-order-uid="${esc(uid)}">
+    <td class="mono admin-order-id" title="${esc(id)}">${esc(id)}</td>
+    ${adminPaymentUserCellHtml(o)}
+    <td title="${esc(adminOrderProductName(o))}">${esc(adminOrderProductName(o))}</td>
+    <td>${esc(adminPaymentMethodLabel(o.paymentMethod||o.provider||o.method||'-'))}</td>
+    <td>${esc(adminOrderAmountText(o))}</td>
+    <td>${adminPaymentStatusBadgeHtml(o.status)}</td>
+    <td>${esc(fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt))}</td>
+    <td class="admin-order-refund" title="${esc(adminOrderRefundText(o))}">${esc(adminOrderRefundText(o))}</td>
+    <td><div class="admin-order-row-actions">${detail}</div></td>
+  </tr>`;
+}
+/** Shared entry: member detail payments + 결제 메뉴 both open the same drawer. */
+function openAdminPaymentDetail(uid, orderKey){
+  return openAdminCrmOrderDrawer(uid, orderKey);
+}
 function adminCrmOrderGroupHtml(g){
   const latest=g.latest||{};
   const uid=g.uid;
@@ -7967,7 +8100,7 @@ function onAdminCrmListClick(e){
       const row = (adminOrderRows||[]).find(o=>(o.id||o.paymentId||o.paypalOrderId)===orderKey);
       uid = String(row?.uid||row?.userId||row?.customerUid||'');
     }
-    if(orderKey && uid) openAdminCrmOrderDrawer(uid, orderKey);
+    if(orderKey && uid) openAdminPaymentDetail(uid, orderKey);
     else if(orderKey) alert('이 주문에 연결된 회원 UID를 찾을 수 없습니다.');
     return;
   }
@@ -8449,6 +8582,24 @@ function renderAdminCrmDetail(uid, opts={}){
     renderAdminCrmDetail._lastUid = '';
     return;
   }
+  // If payment is refunded but CRM cache still shows period (e.g. "7일 Full"), refresh licenses/{uid}.
+  if(!opts.skipLicenseRefresh && !renderAdminCrmDetail._refreshing){
+    const cached = licenseForUid(uid);
+    const hasRefundedPass = adminOrdersForUid(uid).some(o=>{
+      const st=String(o.status||'').toLowerCase();
+      const pid=String(o.productId||'').toUpperCase();
+      const isPass = pid.startsWith('PASS_') || String(o.plan||'').toLowerCase()==='period';
+      return isPass && (st==='refunded'||st==='cancelled'||st==='canceled'||o.licenseRevoked===true);
+    });
+    const cacheLooksPeriod = cached && (normalizePlan(cached)==='period' || !!cached.passProductId);
+    if(hasRefundedPass && cacheLooksPeriod){
+      renderAdminCrmDetail._refreshing = true;
+      refreshAdminLicenseFromServer(uid).then(()=>{
+        renderAdminCrmDetail._refreshing = false;
+        renderAdminCrmDetail(uid, { ...opts, skipLicenseRefresh: true });
+      }).catch(()=>{ renderAdminCrmDetail._refreshing = false; });
+    }
+  }
   const user = findAdminUserRow(uid);
   if(!user){
     empty?.classList.remove('is-hidden');
@@ -8793,8 +8944,8 @@ function renderAdminCrmOrders(uid, showAll){
   box.querySelectorAll('[data-order-id]').forEach(row=>{
     if(row.dataset.bound) return;
     row.dataset.bound='1';
-    row.addEventListener('click',()=>openAdminCrmOrderDrawer(uid, row.getAttribute('data-order-id')));
-    row.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openAdminCrmOrderDrawer(uid, row.getAttribute('data-order-id')); }});
+    row.addEventListener('click',()=>openAdminPaymentDetail(uid, row.getAttribute('data-order-id')));
+    row.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openAdminPaymentDetail(uid, row.getAttribute('data-order-id')); }});
   });
 }
 function isAdminPortOneOrder(o){
@@ -8813,7 +8964,8 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
   const drawer=$('adminCrmOrderDrawer');
   const body=$('adminCrmOrderDrawerBody');
   if(!drawer||!body) return;
-  const found = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+  const found = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey)
+    || (adminOrderRows||[]).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
   if(!found){ body.innerHTML=`<p class="muted">주문을 찾을 수 없습니다.</p>`; drawer.hidden=false; return; }
   const o = Object.assign({}, found, overlay||{});
   const user = findAdminUserRow(uid);
@@ -8826,13 +8978,20 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
   const portone = isAdminPortOneOrder(o);
   const paymentId = o.paymentId || o.id || orderKey;
   const statusGroup = adminOrderStatusGroup(o.status);
+  const rawStatus = String(o.status || '').toLowerCase();
   const providerSt = String(o.providerStatus || o.rawStatus || '').toUpperCase().replace(/^PAYMENT_STATUS_/, '');
   const providerAlreadyCancelled =
     providerSt === 'CANCELLED' || providerSt === 'CANCELED'
     || (Number(o.cancelledAmount || o.refundedAmount || 0) > 0 && Number(o.paidAmount ?? -1) === 0);
-  // 이미 PortOne CANCELLED면 취소 API 재호출 UI를 숨기고 동기화만 유도한다.
-  const canCancel = portone && (statusGroup==='paid' || statusGroup==='pending') && !providerAlreadyCancelled;
-  const alreadyRefund = statusGroup==='refund';
+  const isPartial = rawStatus === 'partially_refunded';
+  const isReview = rawStatus === 'refund_review_required';
+  // 전액환불·부분환불·검토 필요면 전액 취소 버튼 숨김. PAID(결제완료)만 노출.
+  const canCancel = portone
+    && (statusGroup==='paid' || statusGroup==='pending')
+    && !providerAlreadyCancelled
+    && !isPartial
+    && !isReview;
+  const alreadyRefund = statusGroup==='refund' && !isPartial && !isReview;
   const needsSync = portone && providerAlreadyCancelled && statusGroup==='paid';
   const productLabel = adminOrderProductName(o);
   const licenseLabel = (()=>{
@@ -8876,7 +9035,9 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
         ${canCancel?`<button type="button" class="secondary mini-btn danger-btn" data-portone-cancel="${esc(paymentId)}">결제 취소</button>`:''}
       </div>
       ${needsSync?`<p class="admin-portone-sync-hint">PortOne은 이미 CANCELLED입니다. 취소 API를 다시 보내지 말고 <b>상태 동기화</b>로 내부 주문·라이선스를 맞추세요.</p>`:''}
-      ${alreadyRefund && !canCancel && !needsSync?`<p class="muted small">이미 취소/환불 상태입니다. 동기화로 PortOne·라이선스를 맞출 수 있습니다.</p>`:''}
+      ${alreadyRefund && !canCancel && !needsSync?`<p class="muted small">이미 전액 취소/환불 상태입니다. 동기화로 PortOne·라이선스를 맞출 수 있습니다.</p>`:''}
+      ${isPartial?`<p class="muted small">부분환불 상태입니다. 이 메뉴에서 임의 전액취소는 제공하지 않습니다.</p>`:''}
+      ${isReview?`<p class="muted small">환불 검토가 필요합니다. 전액취소 버튼은 숨겨져 있습니다.</p>`:''}
       <p class="muted small">[결제 취소]는 PortOne 전액 환불 + 권한 회수입니다. 목록의 [삭제](내부 기록 삭제)와 다릅니다.</p>
     </div>`:''}`;
   const syncBtn=body.querySelector('[data-portone-sync]');
@@ -8889,7 +9050,7 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
   }
   drawer.hidden=false;
 }
-function applyAdminPortOneOrderOverlay(uid, orderKey, result){
+async function applyAdminPortOneOrderOverlay(uid, orderKey, result){
   const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
   const overlay = {
     status: result.status,
@@ -8907,8 +9068,10 @@ function applyAdminPortOneOrderOverlay(uid, orderKey, result){
     licenseRevokeReason: result.entitlement && result.entitlement.kind==='license' ? result.entitlement.reason : undefined,
     licenseRevokeAction: result.entitlement && result.entitlement.licenseAction,
     entitlementStatus: result.entitlement && result.entitlement.kind==='license'
-      ? (result.entitlement.action==='review' ? 'refund_review_required' : 'revoked')
-      : undefined
+      ? (result.entitlement.action==='review' ? 'refund_review_required'
+        : (result.entitlement.action==='none' ? (o?.entitlementStatus || 'revoked') : 'revoked'))
+      : undefined,
+    licenseRecomputeStatus: result.licenseRecomputeStatus || (result.entitlement && result.entitlement.licenseAction) || undefined
   };
   if(o) Object.assign(o, overlay);
   // Also patch canonical row in adminOrderRows if different reference
@@ -8916,13 +9079,44 @@ function applyAdminPortOneOrderOverlay(uid, orderKey, result){
   (adminOrderRows||[]).forEach(row=>{
     if((row.id||row.paymentId||row.paypalOrderId)===key) Object.assign(row, overlay);
   });
+
+  // Optimistic trial patch when server converted period → trial (before getDoc returns).
+  const licAct = result.entitlement && result.entitlement.licenseAction;
+  if(licAct === 'converted_to_trial'){
+    patchAdminLicenseCache(uid, {
+      plan: 'trial',
+      status: 'active',
+      licensed: true,
+      passProductId: null,
+      startsAt: null,
+      expiresAt: null,
+      revokedAt: adminLicenseCacheNow(),
+      method: 'portone_refund',
+      updatedAt: adminLicenseCacheNow()
+    });
+  }
+
   paintAdminCrmOrderDrawer(uid, orderKey, overlay);
   if(adminCrmMode()==='orders'){
     renderAdminOrderWorkStats();
     renderAdminWorkStatusTabs('orders');
     try{ paintAdminCrmPagedList(); }catch(_){ try{ renderAdminUserTable({ keepOrder: true }); }catch(__){ /* ignore */ } }
+    // List re-render must not drop the open payment detail drawer.
+    paintAdminCrmOrderDrawer(uid, orderKey, overlay);
   }
   renderAdminPaymentsTable();
+
+  // Always re-fetch licenses/{uid} after PortOne sync — order UI can update while CRM badge stays stale.
+  const touchedLicense = !!(overlay.licenseRevoked || licAct || result.entitlement?.kind==='license'
+    || result.status==='refunded' || result.status==='cancelled');
+  if(touchedLicense && uid){
+    try{
+      await refreshAdminLicenseFromServer(uid);
+    }catch(err){
+      console.warn('refreshAdminLicenseFromServer', err);
+    }
+    refreshAdminLicenseViews(uid);
+  }
   return overlay;
 }
 function closeAdminPortOneCancelModal(){
@@ -8983,7 +9177,7 @@ async function runAdminPortOneCancel(uid, orderKey, paymentId, reason, btn){
   try{
     const result = await callFunctionJson('adminCancelPortOnePayment', { paymentId, reason });
     closeAdminPortOneCancelModal();
-    applyAdminPortOneOrderOverlay(uid, orderKey, result);
+    await applyAdminPortOneOrderOverlay(uid, orderKey, result);
     adminFlash(result.message || '결제가 전액 취소되었습니다.');
     // Refresh license view for this user if CRM open
     if(selectedAdminUid===uid){
@@ -9008,7 +9202,7 @@ async function syncAdminPortOneOrder(uid, orderKey, btn){
   if(btn){ btn.disabled=true; btn.textContent='동기화 중...'; }
   try{
     const result = await callFunctionJson('syncPortOnePaymentStatus', { paymentId });
-    applyAdminPortOneOrderOverlay(uid, orderKey, result);
+    await applyAdminPortOneOrderOverlay(uid, orderKey, result);
     adminFlash(result.status==='refund_review_required' ? 'PortOne 동기화 완료 · 환불 검토가 필요합니다.' : 'PortOne 상태를 동기화했습니다.');
   }catch(err){
     alert(err?.message || 'PortOne 동기화에 실패했습니다.');
@@ -9372,44 +9566,26 @@ function renderAdminPaymentsTable(){
   const rows=all.slice().sort((a,b)=>adminTsSec(b.completedAt||b.verifiedAt||b.createdAt||b.updatedAt)-adminTsSec(a.completedAt||a.verifiedAt||a.createdAt||a.updatedAt)).filter(o=>{
     if(!q) return true;
     const user=findAdminUserRow(o.uid||o.userId||o.customerUid);
-    const hay=[o.id,o.uid,o.userId,o.email,user?.email,user?.displayName,adminOrderDisplayId(o),o.paymentId,o.paypalOrderId,o.status].join(' ').toLowerCase();
+    const hay=[o.id,o.uid,o.userId,o.email,user?.email,user?.displayName,adminOrderDisplayId(o),o.paymentId,o.paypalOrderId,o.status,adminOrderProductName(o)].join(' ').toLowerCase();
     return hay.includes(q);
   });
   $('adminPaymentsCount') && ($('adminPaymentsCount').textContent=`${rows.length} / ${all.length}`);
   if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  box.innerHTML=`<table class="admin-table admin-payments-table"><thead><tr><th>주문번호</th><th>사용자</th><th>수단</th><th>금액</th><th>상태</th><th>결제일</th></tr></thead><tbody>${rows.map(o=>{
-    const uid=String(o.uid||o.userId||o.customerUid||'');
-    const user=findAdminUserRow(uid);
-    const id=adminOrderDisplayId(o);
-    const key=o.id||o.paymentId||o.paypalOrderId||'';
-    const amount=o.amount!=null?`${Number(o.amount).toLocaleString('ko-KR')} ${o.currency||'KRW'}`:'-';
-    const when=fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
-    return `<tr data-pay-uid="${esc(uid)}" data-pay-order="${esc(key)}">
-      <td class="mono">${esc(id)}</td>
-      <td title="${esc(user?.email||uid)}">${esc(user?.email||uid||'-')}</td>
-      <td>${esc(adminPaymentMethodLabel(o.paymentMethod||o.provider||o.method||'-'))}</td>
-      <td>${esc(amount)}</td>
-      <td>${esc(adminPaymentStatusLabel(o.status||'-'))}</td>
-      <td>${esc(when)}</td>
-    </tr>`;
-  }).join('')}</tbody></table>`;
+  box.innerHTML=`<table class="admin-table admin-payments-table admin-payment-flat-table"><thead><tr><th>주문번호</th><th>사용자</th><th>상품</th><th>결제수단</th><th>결제금액</th><th>결제상태</th><th>결제일</th><th>취소/환불</th><th>관리</th></tr></thead><tbody>${rows.map(o=>adminPaymentMenuRowHtml(o)).join('')}</tbody></table>`;
   if(!box.dataset.payBound){
     box.dataset.payBound='1';
     box.addEventListener('click', e=>{
-      const row=e.target.closest('[data-pay-uid]');
-      if(!row) return;
-      const uid=row.getAttribute('data-pay-uid');
-      const key=row.getAttribute('data-pay-order');
-      if(!uid) return;
-      if(typeof window.__midiaiShowAdminView==='function'){
-        window.__midiaiShowAdminView('crm', { crmMode: 'members', uid });
-      } else {
-        selectAdminCrmUser(uid, { forceOpen: true });
+      const detail=e.target.closest('[data-order-detail]');
+      if(!detail) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const orderKey=detail.getAttribute('data-order-detail')||'';
+      let uid=detail.getAttribute('data-order-uid')||'';
+      if(!uid && orderKey){
+        const row=(adminOrderRows||[]).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+        uid=String(row?.uid||row?.userId||row?.customerUid||'');
       }
-      setTimeout(()=>{
-        setAdminCrmDetailTab('payments');
-        openAdminCrmOrderDrawer(uid, key);
-      }, 200);
+      if(orderKey && uid) openAdminPaymentDetail(uid, orderKey);
     });
   }
 }

@@ -3937,6 +3937,22 @@ body.admin-console-page:not([data-admin-view="logs"]):not([data-license-page="hi
 .admin-console-page .admin-order-buyer{display:flex;align-items:center;gap:8px;white-space:normal}
 .admin-console-page .admin-order-buyer b{display:block;font-size:13px}
 .admin-console-page .admin-order-buyer small{display:block;color:#8b93b3;font-size:11px}
+.admin-console-page .admin-payment-flat-table .admin-payment-user{
+  min-width:132px;max-width:200px;white-space:normal;vertical-align:middle
+}
+.admin-console-page .admin-payment-flat-table .admin-payment-user-name,
+.admin-console-page .admin-payment-flat-table .admin-payment-user-email{
+  display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px
+}
+.admin-console-page .admin-payment-flat-table .admin-payment-user-name{
+  font-size:13px;font-weight:600;color:var(--admin-text,#e8ecff);line-height:1.25
+}
+.admin-console-page .admin-payment-flat-table .admin-payment-user-email{
+  margin-top:2px;font-size:11px;font-weight:500;color:#8b93b3;line-height:1.2
+}
+.admin-console-page .admin-payment-flat-table .admin-order-id{
+  max-width:120px;overflow:hidden;text-overflow:ellipsis
+}
 .admin-console-page .admin-order-caret{
   flex:none;display:inline-block;width:12px;color:#8b93b3;transition:transform .15s ease
 }

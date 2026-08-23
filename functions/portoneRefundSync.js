@@ -224,12 +224,6 @@ function decideLicenseRevoke({
   if (!isFullCancel) {
     return { action: 'none', reason: 'not_cancelled' };
   }
-  if (grant && (grant.status === 'revoked' || grant.revokedAt)) {
-    return { action: 'none', reason: 'already_revoked' };
-  }
-  if (order && (order.licenseRevoked === true || order.entitlementStatus === 'revoked')) {
-    return { action: 'none', reason: 'already_revoked_on_order' };
-  }
 
   const productId = catalogEngine.normalizeProductId(
     (grant && grant.productId) || (order && order.productId) || ''
@@ -247,6 +241,35 @@ function decideLicenseRevoke({
   const licPay = String(
     (license && (license.portonePaymentId || license.paymentId || license.lastPortonePaymentId)) || ''
   ).trim();
+
+  const grantAlreadyRevoked = !!(grant && (grant.status === 'revoked' || grant.revokedAt));
+  const orderAlreadyRevoked = !!(order && (order.licenseRevoked === true || order.entitlementStatus === 'revoked'));
+
+  // Order/grant already marked revoked, but licenses/{uid} still looks like an active period.
+  // Force grant-based recompute so UI/materialized state cannot stay on "7일 Full".
+  if ((grantAlreadyRevoked || orderAlreadyRevoked) && stalePeriodMaterialization(license)) {
+    if (licPlan === 'lifetime') {
+      return {
+        action: 'revoke_grant_only',
+        reason: 'stale_pass_while_lifetime',
+        productId,
+        durationDays
+      };
+    }
+    return {
+      action: 'revoke_pass',
+      reason: 'reconcile_stale_period_license',
+      productId,
+      durationDays
+    };
+  }
+
+  if (grantAlreadyRevoked) {
+    return { action: 'none', reason: 'already_revoked' };
+  }
+  if (orderAlreadyRevoked) {
+    return { action: 'none', reason: 'already_revoked_on_order' };
+  }
 
   if (kind === 'lifetime' || productId === 'LIFETIME') {
     // Safe auto-revoke only when the live license is still bound to this payment.
@@ -279,6 +302,20 @@ function decideLicenseRevoke({
   }
 
   return { action: 'review', reason: 'unknown_grant_kind', productId };
+}
+
+/** True when licenses/{uid} still presents as a paid period after grant revoke. */
+function stalePeriodMaterialization(license) {
+  if (!license) return false;
+  const plan = String(license.plan || '').toLowerCase();
+  if (plan === 'lifetime') return false;
+  if (['period', 'monthly', 'yearly', 'annual', 'subscription', 'pass', 'full_pass'].includes(plan)) {
+    return true;
+  }
+  if (license.passProductId && plan !== 'trial') return true;
+  const endMs = passEntitlement.licenseTsMs(license.expiresAt);
+  if (plan === 'trial' && endMs > Date.now()) return true;
+  return false;
 }
 
 function buildTrialLicensePatch(FieldValue, extra = {}) {
@@ -648,6 +685,21 @@ async function syncPortOnePayment({
           : (revoked ? 'revoked' : String(entitlement.action || ''));
       patchBase.licenseRevokeReason = entitlement.reason || '';
       if (entitlement.licenseAction) patchBase.licenseRevokeAction = entitlement.licenseAction;
+      if (entitlement.action === 'revoke_pass') {
+        if (entitlement.licenseAction === 'converted_to_trial' || entitlement.licenseAction === 'recomputed') {
+          patchBase.licenseRecomputeStatus = 'ok';
+          patchBase.entitlementSyncStatus = 'ok';
+        } else if (entitlement.licenseAction === 'refund_review_required') {
+          patchBase.licenseRecomputeStatus = 'failed';
+          patchBase.entitlementSyncStatus = 'review';
+        } else {
+          patchBase.licenseRecomputeStatus = 'pending';
+          patchBase.entitlementSyncStatus = 'pending';
+        }
+      } else if (alreadyRevoked) {
+        patchBase.licenseRecomputeStatus = 'ok';
+        patchBase.entitlementSyncStatus = 'ok';
+      }
     }
     if ((isFullCancel || isPartial) && amounts.cancelledAt) {
       patchBase.refundAt = amounts.cancelledAt;
@@ -728,8 +780,13 @@ function shouldReconcileOrder(order, nowMs = Date.now(), staleMs = 6 * 60 * 60 *
   const needsEntitlementFix =
     (status === 'refunded' || status === 'cancelled' || status === 'canceled')
     && order.licenseIssued === true
-    && order.licenseRevoked !== true
-    && order.entitlementStatus !== 'revoked';
+    && (
+      order.licenseRevoked !== true
+      || order.entitlementStatus !== 'revoked'
+      || order.licenseRecomputeStatus === 'failed'
+      || order.licenseRecomputeStatus === 'pending'
+      || String(order.licenseRevokeReason || '') === 'reconcile_stale_period_license'
+    );
   if (!candidates.has(status) && !needsEntitlementFix) return false;
   if (KEEP_STATUS.has(status)) return false;
   const last = passEntitlement.licenseTsMs(order.lastSyncedAt);
@@ -753,6 +810,7 @@ module.exports = {
   creditGrantFromOrder,
   decideCreditReclaim,
   decideLicenseRevoke,
+  stalePeriodMaterialization,
   cancellationEventIds,
   findOrderRefs,
   syncPortOnePayment,

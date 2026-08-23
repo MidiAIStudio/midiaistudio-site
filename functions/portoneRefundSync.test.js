@@ -84,13 +84,28 @@ function testLicenseRevoke() {
 
   const already = m.decideLicenseRevoke({
     grant: { kind: 'pass', productId: 'PASS_7D', status: 'revoked', revokedAt: 'x' },
-    order: { productId: 'PASS_7D' },
-    license: { plan: 'trial' },
+    order: { productId: 'PASS_7D', licenseRevoked: true, entitlementStatus: 'revoked' },
+    license: { plan: 'period', passProductId: 'PASS_7D', expiresAt: { seconds: Math.floor(Date.now() / 1000) + 7 * 86400 } },
     paymentId: 'pay_a',
     isFullCancel: true,
     isPartial: false
   });
-  assert.strictEqual(already.action, 'none');
+  assert.strictEqual(already.action, 'revoke_pass');
+  assert.strictEqual(already.reason, 'reconcile_stale_period_license');
+
+  const alreadyClean = m.decideLicenseRevoke({
+    grant: { kind: 'pass', productId: 'PASS_7D', status: 'revoked', revokedAt: 'x' },
+    order: { productId: 'PASS_7D', licenseRevoked: true, entitlementStatus: 'revoked' },
+    license: { plan: 'trial', status: 'active' },
+    paymentId: 'pay_a',
+    isFullCancel: true,
+    isPartial: false
+  });
+  assert.strictEqual(alreadyClean.action, 'none');
+
+  assert.strictEqual(m.stalePeriodMaterialization({ plan: 'period', passProductId: 'PASS_7D' }), true);
+  assert.strictEqual(m.stalePeriodMaterialization({ plan: 'trial' }), false);
+  assert.strictEqual(m.stalePeriodMaterialization({ plan: 'lifetime' }), false);
 
   const partial = m.decideLicenseRevoke({
     grant: { kind: 'pass', productId: 'PASS_7D', status: 'active' },

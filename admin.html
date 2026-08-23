@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-order-detail-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=payment-user-col-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -119,7 +119,7 @@
               <div class="admin-crm-stats" id="adminHomeStats" aria-label="회원 통계"></div>
               <div class="admin-home-links">
                 <button type="button" class="admin-home-link" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="members"><b>회원 관리</b><small>검색 · 필터 · 일괄 작업</small></button>
-                <button type="button" class="admin-home-link" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="orders"><b>결제</b><small>주문자별 주문 · 결제</small></button>
+                <button type="button" class="admin-home-link" data-admin-nav="crm" data-admin-tab="crm" data-admin-close-detail="1" data-crm-mode="orders"><b>결제</b><small>주문 상세 · PortOne 동기화/취소</small></button>
                 <button type="button" class="admin-home-link" data-admin-nav="tickets" data-admin-tab="tickets"><b>문의 관리</b><small>접수 · 답변 · 종료</small></button>
                 <button type="button" class="admin-home-link" data-admin-nav="logs" data-admin-tab="logs"><b>로그</b><small>회원별 이력 · 라이선스 · 결제</small></button>
                 <button type="button" class="admin-home-link" data-admin-nav="pricing" data-admin-tab="pricing"><b>가격·상품</b><small>Credit · Lifetime · 할인 · 팝업</small></button>
@@ -619,7 +619,7 @@
 
             <section class="admin-payments-section" id="adminPaymentsSection" hidden>
               <div class="admin-section-head">
-                <p class="admin-page-lead muted">거래·PG·결제 상태 목록입니다. 행을 누르면 해당 회원 주문이 열립니다.</p>
+                <p class="admin-page-lead muted">주문 목록에서 [상세]로 PortOne 상태 동기화·결제 취소를 처리합니다. 회원 상세와 동일한 결제 drawer를 사용합니다.</p>
                 <span id="adminPaymentsCount" class="muted small"></span>
               </div>
               <div class="admin-list-toolbar">
@@ -782,8 +782,8 @@
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=admin-order-detail-1"></script>
+  <script type="module" src="./assets/js/app.js?v=payment-user-col-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=product-delete-policy-1"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=admin-logs-detail-1"></script>
+  <script type="module" src="./assets/js/admin-console.js?v=payment-menu-detail-1"></script>
 </body>
 </html>
