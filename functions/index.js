@@ -470,7 +470,8 @@ async function releasePurchaseLock(uid, paymentId, finalStatus = 'released') {
 /**
  * Pre-check before opening PortOne checkout.
  * Auth uid only — never trusts client license flags.
- * Body: { paymentId, productId? }
+ * Body: { paymentId, productId? } — productId may be LIFETIME, PASS_7D/30D/90D,
+ * or legacy PortOne SKU (midiai-lifetime).
  */
 exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) => {
   if (cors(req, res)) return;
@@ -481,9 +482,25 @@ exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) =>
       return res.status(401).json({ ok: false, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
     }
     const { paymentId, productId } = req.body || {};
+    const rawPid = String(productId || 'LIFETIME').trim();
+    let pid = catalogEngine.normalizeProductId(rawPid);
+    if (!catalogEngine.isLicenseProductId(pid)) {
+      // Legacy PortOne Lifetime channel SKU from older clients.
+      if (rawPid === 'midiai-lifetime' || /^midiai[-_]?lifetime$/i.test(rawPid)) {
+        pid = 'LIFETIME';
+      }
+    }
+    if (!catalogEngine.isLicenseProductId(pid)) {
+      return res.status(400).json({
+        ok: false,
+        eligible: false,
+        code: 'PRODUCT_MISMATCH',
+        message: '상품 정보가 일치하지 않습니다.'
+      });
+    }
     let product;
     try {
-      product = await serverKrProduct();
+      product = await loadRegionCharge('KR', catalogEngine.firestoreDocId(pid));
     } catch (prodErr) {
       return res.status(prodErr.status || 400).json({
         ok: false,
@@ -492,9 +509,7 @@ exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) =>
         message: prodErr.message || '상품을 구매할 수 없습니다.'
       });
     }
-    if (productId && productId !== product.productId) {
-      return res.status(400).json({ ok: false, eligible: false, message: '상품 정보가 일치하지 않습니다.' });
-    }
+    const canonicalPid = catalogEngine.normalizeProductId(product.productCanonicalId || pid);
 
     const license = await readUserLicense(user.uid);
     if (isActiveLifetimeLicense(license)) {
@@ -535,11 +550,16 @@ exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) =>
         amount: product.amount,
         currency: product.currency,
         orderName: product.orderName,
-        productId: product.productId,
+        // Prefer canonical catalog id for quotes; PortOne channel SKU stays in productId for Lifetime.
+        productId: catalogEngine.isPassProductId(canonicalPid)
+          ? canonicalPid
+          : (product.productId || canonicalPid),
+        productCanonicalId: canonicalPid,
         productDocId: product.productDocId,
-        region: product.region,
-        pricingVersion: product.pricingVersion,
-        listPrice: product.listPrice
+        entitlement: product.entitlement || (catalogEngine.isPassProductId(canonicalPid) ? 'full_pass' : 'lifetime'),
+        durationDays: catalogEngine.isPassProductId(canonicalPid)
+          ? passEntitlement.passDurationDays(canonicalPid, product.durationDays)
+          : 0
       }
     });
   } catch (err) {

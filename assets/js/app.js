@@ -11263,9 +11263,10 @@ async function requestKakaoPayPayment(){
     paypalStatus(t.kakaoPreparing || 'Opening KakaoPay checkout...');
     let eligibility;
     try{
+      // Canonical catalog id (LIFETIME / PASS_*) — not PortOne channel SKU.
       eligibility = await callFunctionJson('checkPurchaseEligibility', {
         paymentId: paymentIdValue,
-        productId
+        productId: selectedPid
       });
     }catch(eligErr){
       const msg = eligErr?.message || t.purchaseInProgress || '구매 가능 여부 확인에 실패했습니다.';
