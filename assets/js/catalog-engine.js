@@ -152,11 +152,12 @@ export const SEED_PRODUCTS = [
     status: 'active',
     sortOrder: 7,
     badge: '',
-    packSavePercent: 16,
+    packSavePercent: null,
     productVersion: 1,
     orderNameKo: 'MidiAI Studio 90일 Full 이용권',
     orderNameEn: 'MidiAI Studio 90-Day Full Pass',
-    productDiscount: emptyDiscount()
+    productDiscount: emptyDiscount(),
+    savingsReferenceProductId: 'PASS_30D'
   },
   {
     productId: 'LIFETIME',
@@ -358,7 +359,12 @@ export function unitPrice(price, credits) {
   return Math.round(Number(price) / c);
 }
 
+/** Credit-pack unit savings vs starter pack only. Pass products must use computePassBundleSavings. */
 export function packSavingsPercent(product, starterUnit) {
+  const pid = normalizeProductId(product?.productId || product?.id);
+  if (product?.type === 'full_pass' || isPassProductId(pid) || pid === 'LIFETIME') {
+    return null;
+  }
   if (product?.packSavePercent != null && product.packSavePercent !== '') {
     return Number(product.packSavePercent);
   }
@@ -368,6 +374,91 @@ export function packSavingsPercent(product, starterUnit) {
   const unit = price / credits;
   if (unit >= starterUnit) return null;
   return Math.round((1 - unit / starterUnit) * 100);
+}
+
+/**
+ * Default reference for period-pass bundle compare.
+ * Explicit savingsReferenceProductId wins; otherwise PASS_30D.
+ */
+export function resolvePassSavingsReferenceId(product) {
+  const explicit = normalizeProductId(product?.savingsReferenceProductId || '');
+  if (explicit && explicit !== 'LIFETIME') return explicit;
+  return 'PASS_30D';
+}
+
+/**
+ * Period-pass bundle savings vs a shorter reference pass.
+ * SoT: live catalog listPriceKrw + durationDays (never stale packSavePercent).
+ * Returns null when comparison is impossible or not actually cheaper.
+ */
+export function computePassBundleSavings(product, catalogProducts = []) {
+  const pid = normalizeProductId(product?.productId || product?.id);
+  if (!(product?.type === 'full_pass' || isPassProductId(pid))) return null;
+  if (pid === 'LIFETIME') return null;
+
+  const currentDays = Math.floor(Number(product?.durationDays || 0));
+  const currentPrice = Math.round(Number(product?.listPriceKrw || 0));
+  if (!(currentDays > 0) || !(currentPrice > 0)) return null;
+
+  const refId = resolvePassSavingsReferenceId(product);
+  if (!refId || refId === pid) return null;
+
+  const ref = findCatalogProduct(catalogProducts, refId)
+    || (catalogProducts || []).find((p) => normalizeProductId(p?.productId || p?.id) === refId)
+    || null;
+  if (!ref) return null;
+
+  const refDays = Math.floor(Number(
+    ref.durationDays != null
+      ? ref.durationDays
+      : (PASS_DURATION_DAYS[refId] || 0)
+  ));
+  const refPrice = Math.round(Number(ref.listPriceKrw || 0));
+  if (!(refDays > 0) || !(refPrice > 0)) return null;
+  if (refDays >= currentDays) return null;
+  if (currentDays % refDays !== 0) return null;
+
+  const quantity = currentDays / refDays;
+  if (!(quantity >= 2) || quantity !== Math.floor(quantity)) return null;
+
+  const comparisonPrice = refPrice * quantity;
+  if (!(comparisonPrice > 0)) return null;
+  if (currentPrice >= comparisonPrice) return null;
+
+  const savingAmount = comparisonPrice - currentPrice;
+  if (!(savingAmount > 0)) return null;
+
+  const savingPercentExact = (savingAmount / comparisonPrice) * 100;
+  const savingPercent = Math.round(savingPercentExact);
+  if (!(savingPercent > 0)) return null;
+
+  return {
+    ok: true,
+    productId: pid,
+    referenceProductId: refId,
+    referenceNameKo: ref.nameKo || `${refDays}일 Full`,
+    referenceNameEn: ref.nameEn || `${refDays}-Day Full`,
+    referenceNameJa: ref.nameJa || `${refDays}日 Full`,
+    referenceDays: refDays,
+    quantity,
+    referenceUnitPrice: refPrice,
+    comparisonPrice,
+    currentPrice,
+    savingAmount,
+    savingPercent,
+    savingPercentExact
+  };
+}
+
+export function formatPassBundleSavingsLabel(savings, lang = 'ko') {
+  if (!savings?.ok) return '';
+  const q = Number(savings.quantity);
+  const pct = Number(savings.savingPercent);
+  const days = Number(savings.referenceDays);
+  if (!(q > 0) || !(pct > 0) || !(days > 0)) return '';
+  if (lang === 'en') return `Save about ${pct}% vs. ${q} × ${days}-day passes`;
+  if (lang === 'ja') return `${days}日プラン${q}回分と比べて約${pct}%お得`;
+  return `${days}일권 ${q}회 대비 약 ${pct}% 절약`;
 }
 
 export function productTargets(promo, productId) {
@@ -688,7 +779,7 @@ export function starterUnitFromProducts(products) {
   return unitPrice(Number(five.listPriceKrw || 0), Number(five.creditAmount || 0));
 }
 
-export function publicProductView(product, promotions = [], now = new Date(), lang = 'ko', starterUnit = null) {
+export function publicProductView(product, promotions = [], now = new Date(), lang = 'ko', starterUnit = null, catalogProducts = null) {
   const charge = computeCharge(product, promotions, now, 'KRW');
   const credits = Number(product?.creditAmount || 0);
   const badge = String(product?.badge || '');
@@ -701,6 +792,19 @@ export function publicProductView(product, promotions = [], now = new Date(), la
       ? product.durationDays
       : (PASS_DURATION_DAYS[pid] || 0)
   );
+  const catalog = Array.isArray(catalogProducts) ? catalogProducts : [];
+  let savePercent = null;
+  let bundleSavings = null;
+  let savingsLabel = '';
+  if (type === 'full_pass' || isPassProductId(pid)) {
+    bundleSavings = computePassBundleSavings(product, catalog);
+    if (bundleSavings?.ok) {
+      savePercent = bundleSavings.savingPercent;
+      savingsLabel = formatPassBundleSavingsLabel(bundleSavings, lang);
+    }
+  } else if (type === 'credit_pack') {
+    savePercent = packSavingsPercent(product, starterUnit);
+  }
   return {
     productId: pid,
     type,
@@ -727,7 +831,9 @@ export function publicProductView(product, promotions = [], now = new Date(), la
     promotionId: charge.discount?.promotionId || '',
     perUseKrw: charge.unitPrice,
     perUseApprox: !!(charge.unitPrice && credits && (Number(charge.effectivePrice) % credits !== 0)),
-    savePercent: packSavingsPercent(product, starterUnit),
+    savePercent,
+    bundleSavings: bundleSavings || null,
+    savingsLabel,
     badge,
     popular: ['recommended', 'popular', 'best'].includes(badge) || product?.popular === true,
     sortOrder: Number(product?.sortOrder || product?.order || 0),
@@ -738,7 +844,8 @@ export function publicProductView(product, promotions = [], now = new Date(), la
     usd: product?.listPriceUsd,
     paypalEnabled: !!charge.paypalEnabled,
     saleOk: charge.ok === true,
-    saleCode: charge.code || ''
+    saleCode: charge.code || '',
+    savingsReferenceProductId: product?.savingsReferenceProductId || (type === 'full_pass' ? resolvePassSavingsReferenceId(product) : '')
   };
 }
 
@@ -832,7 +939,9 @@ export function hydrateLegacyProduct(doc) {
     productVersion: Number(doc?.productVersion || doc?.pricingVersion || (hasFirestoreDoc ? 1 : seed.productVersion || 1)),
     productDiscount: { ...emptyDiscount(), ...(doc?.productDiscount || {}) },
     regions: regions,
-    hasPurchases: doc?.hasPurchases === true
+    hasPurchases: doc?.hasPurchases === true,
+    savingsReferenceProductId: doc?.savingsReferenceProductId
+      || (type === 'full_pass' ? (seed.savingsReferenceProductId || '') : '')
   };
 }
 

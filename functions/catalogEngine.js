@@ -210,7 +210,8 @@ const SEED_PRODUCTS = [
     status: 'active',
     sortOrder: 7,
     badge: '',
-    packSavePercent: 16,
+    packSavePercent: null,
+    savingsReferenceProductId: 'PASS_30D',
     orderNameKo: 'MidiAI Studio 90일 Full 이용권',
     orderNameEn: 'MidiAI Studio 90-Day Full Pass',
     productDiscount: emptyDiscount()

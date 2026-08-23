@@ -11,35 +11,43 @@ import {
   PASS_PRODUCT_IDS,
   isPassProductId,
   normalizeProductId,
-  getPassProductsFromCatalog
-} from './catalog-engine.js?v=product-full-edit-1';
+  getPassProductsFromCatalog,
+  computePassBundleSavings,
+  formatPassBundleSavingsLabel
+} from './catalog-engine.js?v=product-pass-savings-1';
 
 export { isPassProductId, PASS_PRODUCT_IDS, PASS_DURATION_DAYS };
 
 export const FALLBACK_PASS_PRODUCTS = SEED_PRODUCTS
   .filter((p) => p.type === 'full_pass')
-  .map((p) => ({
-    productId: p.productId,
-    type: 'full_pass',
-    entitlement: 'full_pass',
-    durationDays: p.durationDays,
-    nameKo: p.nameKo,
-    nameEn: p.nameEn,
-    nameJa: p.nameJa,
-    descriptionKo: p.descriptionKo,
-    descriptionEn: p.descriptionEn,
-    krw: p.listPriceKrw,
-    listPriceKrw: p.listPriceKrw,
-    effectivePrice: p.listPriceKrw,
-    badge: p.badge || '',
-    popular: p.badge === 'recommended',
-    savePercent: p.packSavePercent || null,
-    sortOrder: p.sortOrder || 0,
-    orderNameKo: p.orderNameKo,
-    orderNameEn: p.orderNameEn,
-    status: 'active',
-    saleOk: true
-  }));
+  .map((p) => {
+    const passes = SEED_PRODUCTS.filter((x) => x.type === 'full_pass');
+    const bundle = computePassBundleSavings(p, passes);
+    return {
+      productId: p.productId,
+      type: 'full_pass',
+      entitlement: 'full_pass',
+      durationDays: p.durationDays,
+      nameKo: p.nameKo,
+      nameEn: p.nameEn,
+      nameJa: p.nameJa,
+      descriptionKo: p.descriptionKo,
+      descriptionEn: p.descriptionEn,
+      krw: p.listPriceKrw,
+      listPriceKrw: p.listPriceKrw,
+      effectivePrice: p.listPriceKrw,
+      badge: p.badge || '',
+      popular: p.badge === 'recommended',
+      savePercent: bundle?.savingPercent || null,
+      savingsLabel: bundle ? formatPassBundleSavingsLabel(bundle, 'ko') : '',
+      bundleSavings: bundle || null,
+      sortOrder: p.sortOrder || 0,
+      orderNameKo: p.orderNameKo,
+      orderNameEn: p.orderNameEn,
+      status: 'active',
+      saleOk: true
+    };
+  });
 
 /** Empty until public/Firestore catalog loads — never show seed prices on first paint. */
 let cache = [];
@@ -119,7 +127,9 @@ export function applyPublicPassCatalog(products = []) {
         discountPercent: Number(p.discountPercent || 0),
         badge: p.badge || '',
         popular: p.badge === 'recommended' || !!p.popular,
-        savePercent: p.savePercent != null ? p.savePercent : (p.packSavePercent || null),
+        savePercent: p.savePercent != null ? p.savePercent : null,
+        savingsLabel: p.savingsLabel || '',
+        bundleSavings: p.bundleSavings || null,
         sortOrder: Number(p.sortOrder || 0),
         orderNameKo: p.orderNameKo || '',
         orderNameEn: p.orderNameEn || '',

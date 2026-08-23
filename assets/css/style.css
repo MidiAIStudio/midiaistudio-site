@@ -3229,6 +3229,8 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .pricing-disc-preview-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font-size:13px}
 .pricing-disc-preview-row strong{font-size:15px;font-weight:800}
 .pricing-disc-preview-meta{margin:2px 0 0;font-size:12px;font-weight:700;color:#67e8f9}
+.pricing-savings-compare{display:grid;gap:8px;margin:0 0 8px}
+.pricing-savings-compare .pricing-disc-preview-row strong{font-size:13px;font-weight:700}
 .pricing-lang-block{margin:0 0 14px}
 .pricing-lang-label{display:block;margin:0 0 6px;font-size:12px;font-weight:700;color:var(--muted)}
 .pricing-advanced{border-bottom:0;padding-bottom:0}

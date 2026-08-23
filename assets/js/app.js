@@ -31,7 +31,7 @@ import {
   isPassProductId,
   isLicenseProductId,
   normalizeProductId as normalizeCatalogProductId
-} from './catalog-engine.js?v=product-full-edit-1';
+} from './catalog-engine.js?v=product-pass-savings-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -41,7 +41,7 @@ import {
   getPassCatalogSource,
   isPassCatalogReady,
   useSeedPassFallback
-} from './pass-catalog.js?v=product-full-edit-1';
+} from './pass-catalog.js?v=product-pass-savings-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -1634,8 +1634,15 @@ function renderPurchasePlanGrid(){
       : (lang === 'ja'
         ? (pack.descriptionJa || '変換回数制限なし · Full機能 · 自動更新なし')
         : (pack.descriptionKo || '변환 횟수 제한 없음 · Full 기능 이용 · 자동결제 없음')));
-    const packSave = (!discounted && pack.savePercent)
-      ? `<span class="purchase-plan-save">${esc(lang==='en' ? `About ${pack.savePercent}% vs 3×30-day` : (lang==='ja' ? `30日×3回より約${pack.savePercent}%お得` : `30일권 3회 대비 약 ${pack.savePercent}% 절약`))}</span>`
+    const packSave = (!discounted && (pack.savingsLabel || pack.savePercent))
+      ? `<span class="purchase-plan-save">${esc(
+        pack.savingsLabel
+        || (lang === 'en'
+          ? `Save about ${pack.savePercent}% vs. shorter passes`
+          : (lang === 'ja'
+            ? `約${pack.savePercent}%お得`
+            : `약 ${pack.savePercent}% 절약`))
+      )}</span>`
       : `<span class="purchase-plan-save" aria-hidden="true"></span>`;
     const eventOff = discounted
       ? `<span class="purchase-plan-off-pill">${esc(String(pack.discountPercent))}% OFF</span>`
@@ -3929,10 +3936,10 @@ async function refreshPricingUi(){
     });
     const starter = starterUnitFromProducts(all);
     if (creditProducts.length) {
-      applyPublicCreditCatalog(creditProducts.map((p) => publicProductView(p, pricing.promotions || [], new Date(), lang, starter)));
+      applyPublicCreditCatalog(creditProducts.map((p) => publicProductView(p, pricing.promotions || [], new Date(), lang, starter, all)));
     }
     if (passProducts.length) {
-      applyPublicPassCatalog(passProducts.map((p) => publicProductView(p, pricing.promotions || [], new Date(), lang, starter)));
+      applyPublicPassCatalog(passProducts.map((p) => publicProductView(p, pricing.promotions || [], new Date(), lang, starter, all)));
     } else {
       console.warn('CATALOG_FALLBACK_USED', { reason: 'no_pass_products_in_firestore' });
       hydratePassCatalogFromPublic({ passes: [] });

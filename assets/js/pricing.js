@@ -3,7 +3,7 @@
  * Display only; Cloud Functions remain source of truth for charge amounts.
  */
 
-import { computeCharge, hydrateLegacyProduct, activeHomepagePromotions } from './catalog-engine.js?v=product-mapping-forensic-1';
+import { computeCharge, hydrateLegacyProduct, activeHomepagePromotions } from './catalog-engine.js?v=product-pass-savings-1';
 
 const DEFAULT_PRODUCT_ID = 'lifetime';
 

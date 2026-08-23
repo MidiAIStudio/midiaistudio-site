@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=payment-user-col-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=product-pass-savings-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -211,6 +211,19 @@
                             </label>
                           </div>
                           <p class="muted small pricing-field-hint" id="draftUsdHint">USD 미설정 · PayPal 판매 안 함</p>
+                        </section>
+
+                        <section class="pricing-edit-section" id="draftPassSavingsWrap" hidden>
+                          <h4 class="pricing-section-title">가격 비교</h4>
+                          <div class="pricing-savings-compare" aria-live="polite">
+                            <div class="pricing-disc-preview-row"><span class="muted">기준 상품</span><strong id="draftSaveRefName">-</strong></div>
+                            <div class="pricing-disc-preview-row"><span class="muted">기준 수량</span><strong id="draftSaveQty">-</strong></div>
+                            <div class="pricing-disc-preview-row"><span class="muted">비교 가격</span><strong id="draftSaveCompare">-</strong></div>
+                            <div class="pricing-disc-preview-row"><span class="muted">현재 가격</span><strong id="draftSaveCurrent">-</strong></div>
+                            <div class="pricing-disc-preview-row"><span class="muted">절약 금액</span><strong id="draftSaveAmount">-</strong></div>
+                            <div class="pricing-disc-preview-row"><span class="muted">절약률</span><strong id="draftSavePercent">-</strong></div>
+                          </div>
+                          <p class="muted small pricing-field-hint" id="draftSaveHint">30일권 3회 구매 대비 자동 계산됩니다.</p>
                         </section>
 
                         <section class="pricing-edit-section">
@@ -782,8 +795,8 @@
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=product-mapping-forensic-1"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=product-mapping-forensic-1"></script>
+  <script type="module" src="./assets/js/app.js?v=product-pass-savings-1"></script>
+  <script type="module" src="./assets/js/pricing-admin.js?v=product-pass-savings-1"></script>
   <script type="module" src="./assets/js/admin-console.js?v=payment-menu-detail-1"></script>
 </body>
 </html>

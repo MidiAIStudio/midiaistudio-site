@@ -6,6 +6,7 @@ import {
   bumpVersion,
   canonicalPassDurationDays,
   computeCharge,
+  computePassBundleSavings,
   creditChangeWarning,
   assertSaveTargetInvariant,
   editTargetMismatchMessage,
@@ -14,6 +15,7 @@ import {
   findDiscountConflicts,
   firestoreDocId,
   formatKrw,
+  formatPassBundleSavingsLabel,
   fromDatetimeLocalValue,
   hydrateLegacyProduct,
   evaluateProductDeletable,
@@ -22,12 +24,13 @@ import {
   normalizeProductId,
   priceChangeWarning,
   productTypeLabel,
+  resolvePassSavingsReferenceId,
   toDatetimeLocalValue,
   unitPrice,
   validateProductFields,
   validatePromotionFields,
   windowStatus
-} from './catalog-engine.js?v=product-mapping-forensic-1';
+} from './catalog-engine.js?v=product-pass-savings-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -464,8 +467,9 @@ function renderList() {
     const bits = [];
     if (discounted) bits.push(discountLabel(p));
     else if (p.type === 'credit_pack' && p.packSavePercent) bits.push(`약 ${p.packSavePercent}% 절약`);
-    else if ((p.type === 'full_pass' || isPassProductId(p.productId)) && p.packSavePercent) {
-      bits.push(`약 ${p.packSavePercent}% 절약`);
+    else if (p.type === 'full_pass' || isPassProductId(p.productId)) {
+      const bundle = computePassBundleSavings(p, products);
+      if (bundle?.ok) bits.push(formatPassBundleSavingsLabel(bundle, 'ko'));
     }
     const badge = badgeLabel(p.badge);
     if (badge) bits.push(badge);
@@ -592,6 +596,7 @@ function renderEditor() {
     delHint.hidden = delEval.deletable;
   }
   renderPreview();
+  renderPassSavingsCompare();
 }
 
 function updateDiscValueLabel(type) {
@@ -659,12 +664,60 @@ function syncDraftFromForm() {
     }
   }
   renderPreview();
+  renderPassSavingsCompare();
 }
 
 function isCreditType(p) {
   if (!p) return false;
   if (p.type === 'lifetime' || p.type === 'full_pass' || isPassProductId(p.productId)) return false;
   return true;
+}
+
+function renderPassSavingsCompare() {
+  const wrap = $('draftPassSavingsWrap');
+  if (!wrap) return;
+  if (!draft) {
+    wrap.hidden = true;
+    return;
+  }
+  const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
+  if (!isPass) {
+    wrap.hidden = true;
+    return;
+  }
+  // Live catalog: use other products' persisted prices + current draft price/duration.
+  const catalogForCalc = products.map((p) => (
+    normalizeProductId(p.productId) === normalizeProductId(draft.productId)
+      ? { ...p, ...draft, listPriceKrw: draft.listPriceKrw, durationDays: draft.durationDays }
+      : p
+  ));
+  if (!catalogForCalc.some((p) => normalizeProductId(p.productId) === normalizeProductId(draft.productId))) {
+    catalogForCalc.push({ ...draft });
+  }
+  const probe = {
+    ...draft,
+    savingsReferenceProductId: draft.savingsReferenceProductId || resolvePassSavingsReferenceId(draft)
+  };
+  const savings = computePassBundleSavings(probe, catalogForCalc);
+  wrap.hidden = false;
+  const setT = (id, t) => { const el = $(id); if (el) el.textContent = t; };
+  if (!savings?.ok) {
+    setT('draftSaveRefName', '-');
+    setT('draftSaveQty', '-');
+    setT('draftSaveCompare', '-');
+    setT('draftSaveCurrent', formatKrw(draft.listPriceKrw));
+    setT('draftSaveAmount', '-');
+    setT('draftSavePercent', '절약 없음 (표시 안 함)');
+    setT('draftSaveHint', '기준 상품 기간으로 정확히 나누어지고 실제 절약이 있을 때만 표시됩니다.');
+    return;
+  }
+  setT('draftSaveRefName', savings.referenceNameKo || savings.referenceProductId);
+  setT('draftSaveQty', `${savings.quantity}회`);
+  setT('draftSaveCompare', formatKrw(savings.comparisonPrice));
+  setT('draftSaveCurrent', formatKrw(savings.currentPrice));
+  setT('draftSaveAmount', formatKrw(savings.savingAmount));
+  setT('draftSavePercent', `약 ${savings.savingPercent}%`);
+  setT('draftSaveHint', formatPassBundleSavingsLabel(savings, 'ko') + ' · 자동 계산 (직접 입력 불가)');
 }
 
 function renderPreview() {
@@ -790,7 +843,11 @@ async function saveDraft() {
     sortOrder: Number(draft.sortOrder),
     order: Number(draft.sortOrder),
     badge: draft.badge,
-    packSavePercent: draft.packSavePercent ?? null,
+    // Pass bundle savings are runtime-derived — never persist stale packSavePercent.
+    packSavePercent: isPass || isLife ? null : (draft.packSavePercent ?? null),
+    savingsReferenceProductId: isPass
+      ? (draft.savingsReferenceProductId || resolvePassSavingsReferenceId(draft) || 'PASS_30D')
+      : null,
     productVersion: version,
     pricingVersion: version,
     productDiscount: draft.productDiscount,

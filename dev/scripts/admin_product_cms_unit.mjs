@@ -31,6 +31,88 @@ function check(name, fn) {
 
 check('server_isPass_TEST', () => assert.equal(catalogEngine.isPassProductId('TEST_PASS_ADMIN_E2E'), true));
 check('server_isLicense_TEST', () => assert.equal(catalogEngine.isLicenseProductId('TEST_PASS_ADMIN_E2E'), true));
+check('pass_bundle_savings_22', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, nameKo: '30일 Full' },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, nameKo: '90일 Full', savingsReferenceProductId: 'PASS_30D' }
+  ];
+  const s = browser.computePassBundleSavings(catalog[1], catalog);
+  assert.equal(s.ok, true);
+  assert.equal(s.quantity, 3);
+  assert.equal(s.comparisonPrice, 89700);
+  assert.equal(s.savingAmount, 19800);
+  assert.equal(s.savingPercent, 22);
+  assert.match(browser.formatPassBundleSavingsLabel(s, 'ko'), /약 22% 절약/);
+});
+check('pass_bundle_savings_11', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900 },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 79900 }
+  ];
+  const s = browser.computePassBundleSavings(catalog[1], catalog);
+  assert.equal(s.savingPercent, 11);
+});
+check('pass_bundle_hidden_equal', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900 },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 89700 }
+  ];
+  assert.equal(browser.computePassBundleSavings(catalog[1], catalog), null);
+});
+check('pass_bundle_hidden_more_expensive', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900 },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 95000 }
+  ];
+  assert.equal(browser.computePassBundleSavings(catalog[1], catalog), null);
+});
+check('pass_bundle_30_vs_7_hidden', () => {
+  const catalog = [
+    { productId: 'PASS_7D', type: 'full_pass', durationDays: 7, listPriceKrw: 9900 },
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900 }
+  ];
+  assert.equal(browser.computePassBundleSavings(catalog[1], catalog), null);
+});
+check('pass_bundle_7d_hidden', () => {
+  const catalog = [
+    { productId: 'PASS_7D', type: 'full_pass', durationDays: 7, listPriceKrw: 9900 },
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900 }
+  ];
+  assert.equal(browser.computePassBundleSavings(catalog[0], catalog), null);
+});
+check('pass_ignores_stale_packSavePercent', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900 },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, packSavePercent: 16 }
+  ];
+  const view = browser.publicProductView(catalog[1], [], new Date(), 'ko', null, catalog);
+  assert.equal(view.savePercent, 22);
+  assert.match(view.savingsLabel, /22%/);
+  assert.equal(browser.packSavingsPercent(catalog[1], 1300), null);
+});
+check('pass_promo_separate_from_bundle', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, status: 'active' },
+    {
+      productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, status: 'active',
+      productDiscount: { enabled: true, type: 'percent', value: 10, startsAt: '2020-01-01T00:00:00.000Z', endsAt: '2099-01-01T00:00:00.000Z' }
+    }
+  ];
+  const view = browser.publicProductView(catalog[1], [], new Date(), 'ko', null, catalog);
+  assert.equal(view.savePercent, 22);
+  assert.equal(view.discountPercent, 10);
+  assert.notEqual(view.savePercent + view.discountPercent, view.discountPercent); // both present separately
+  assert.equal(view.savePercent + view.discountPercent, 32); // combined math exists but UI must not show 32%
+});
+check('pass_bundle_labels_i18n', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900 },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900 }
+  ];
+  const s = browser.computePassBundleSavings(catalog[1], catalog);
+  assert.match(browser.formatPassBundleSavingsLabel(s, 'en'), /Save about 22%/);
+  assert.match(browser.formatPassBundleSavingsLabel(s, 'ja'), /約22%お得/);
+});
 check('assert_save_target_ok', () => {
   const r = browser.assertSaveTargetInvariant({
     selectedDocId: 'PASS_7D',
