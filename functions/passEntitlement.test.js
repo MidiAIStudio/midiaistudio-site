@@ -209,6 +209,18 @@ function testTimezoneDisplay() {
   console.log('ok timezone display sanity');
 }
 
+function testCatalogPrefersGrantDays() {
+  // Catalog ID PASS_7D with grant.durationDays=7 must not become 30 after catalog edit.
+  const T = Date.parse('2026-08-01T00:00:00.000Z');
+  assert.strictEqual(pe.passDurationDays('PASS_7D', 30), 30);
+  assert.strictEqual(pe.passDurationDays('PASS_7D', 7), 7);
+  const r = pe.recomputePeriodEntitlementFromGrants([
+    grant('a', 'PASS_7D', T, 7)
+  ], new Date(T + 2 * pe.DAY_MS));
+  assert.strictEqual(r.expiresAt.getTime(), T + 7 * pe.DAY_MS);
+  console.log('ok catalog prefers grant days');
+}
+
 testPurchaseStacking();
 testRecomputeCases();
 testRefundRecompute();
@@ -216,4 +228,5 @@ testSubtractionCounterexample();
 testExpiredGrantChain();
 testPurchaseMatchesRecompute();
 testTimezoneDisplay();
+testCatalogPrefersGrantDays();
 console.log('all passEntitlement tests passed');

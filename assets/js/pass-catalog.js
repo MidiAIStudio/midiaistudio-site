@@ -12,7 +12,7 @@ import {
   isPassProductId,
   normalizeProductId,
   getPassProductsFromCatalog
-} from './catalog-engine.js?v=dyn-catalog-1';
+} from './catalog-engine.js?v=product-full-edit-1';
 
 export { isPassProductId, PASS_PRODUCT_IDS, PASS_DURATION_DAYS };
 
@@ -74,12 +74,12 @@ export function getPassProduct(productId) {
 }
 
 export function passDurationDays(product) {
+  const n = Number(product?.durationDays);
+  if (Number.isFinite(n) && n > 0) return Math.floor(n);
   const id = normalizeProductId(product?.productId);
   if (Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, id)) {
     return PASS_DURATION_DAYS[id];
   }
-  const n = Number(product?.durationDays);
-  if (Number.isFinite(n) && n > 0) return Math.floor(n);
   return 0;
 }
 

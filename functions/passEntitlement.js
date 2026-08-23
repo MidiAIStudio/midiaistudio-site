@@ -22,14 +22,15 @@ function isCanonicalPassProductId(productId) {
 }
 
 /**
- * Duration SoT: canonical SKUs always use fixed map (ignore forged catalog/client days).
- * Custom CMS passes use Firestore catalogDays only.
+ * Duration SoT: prefer catalog/grant snapshot days when present.
+ * Canonical PASS_* map is fallback only for legacy rows missing durationDays.
+ * Never parse productId ("PASS_7D") as the live entitlement length when catalogDays is set.
  */
 function passDurationDays(productId, catalogDays) {
-  const pid = String(productId || '').trim().toUpperCase();
-  if (isCanonicalPassProductId(pid)) return PASS_DURATION_DAYS[pid];
   const fromCatalog = Number(catalogDays);
   if (Number.isFinite(fromCatalog) && fromCatalog > 0) return Math.floor(fromCatalog);
+  const pid = String(productId || '').trim().toUpperCase();
+  if (Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, pid)) return PASS_DURATION_DAYS[pid];
   return 0;
 }
 

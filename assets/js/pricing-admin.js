@@ -24,7 +24,7 @@ import {
   validateProductFields,
   validatePromotionFields,
   windowStatus
-} from './catalog-engine.js?v=product-delete-policy-1';
+} from './catalog-engine.js?v=product-full-edit-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -525,8 +525,8 @@ function renderEditor() {
   if (creditsInput) creditsInput.disabled = !isCredit;
   const durationInput = $('draftDurationDays');
   if (durationInput) {
-    durationInput.disabled = isCanonicalPassProductId(draft.productId);
-    durationInput.readOnly = isCanonicalPassProductId(draft.productId);
+    durationInput.disabled = !isPass;
+    durationInput.readOnly = !isPass;
   }
   fill('draftPriceKrw', draft.listPriceKrw);
   fill('draftPriceUsd', draft.listPriceUsd == null ? '' : draft.listPriceUsd);
@@ -596,11 +596,7 @@ function syncDraftFromForm() {
   if (isCreditType(draft)) draft.creditAmount = Number($('draftCredits')?.value || 0);
   else draft.creditAmount = 0;
   if (isPass) {
-    if (isCanonicalPassProductId(draft.productId)) {
-      draft.durationDays = canonicalPassDurationDays(draft.productId);
-    } else {
-      draft.durationDays = Number($('draftDurationDays')?.value || 0);
-    }
+    draft.durationDays = Number($('draftDurationDays')?.value || 0);
     draft.entitlement = 'full_pass';
   } else {
     draft.durationDays = 0;
@@ -700,20 +696,31 @@ async function saveDraft() {
   const warnCredits = draft.type === 'credit_pack'
     ? creditChangeWarning(current.creditAmount, draft.creditAmount)
     : '';
-  const warn = warnPrice || warnCredits;
+  const curDays = Number(current.durationDays || 0);
+  const nextDays = Number(draft.durationDays || 0);
+  const warnDuration = (isPassProductId(draft.productId) || draft.type === 'full_pass')
+    && curDays > 0 && nextDays > 0 && curDays !== nextDays
+    ? `이용 기간이 ${curDays}일 → ${nextDays}일로 변경됩니다.\n이미 구매한 사용자의 남은 기간은 변경되지 않으며, 이후 신규 구매에만 적용됩니다.`
+    : '';
+  const warn = warnPrice || warnCredits || warnDuration;
   if (warn && !window.confirm(warn)) {
     flash('저장이 취소되었습니다.', false);
     return;
   }
+  const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
+  const isLife = draft.type === 'lifetime';
   const version = bumpVersion(current, {
     priceChanged: Number(current.listPriceKrw) !== Number(draft.listPriceKrw),
     creditsChanged: draft.type === 'credit_pack'
-      && Number(current.creditAmount) !== Number(draft.creditAmount)
+      && Number(current.creditAmount) !== Number(draft.creditAmount),
+    durationChanged: isPass
+      && Number(current.durationDays || 0) !== Number(draft.durationDays || 0),
+    nameChanged: String(current.nameKo || '') !== String(draft.nameKo || '')
+      || String(current.nameEn || '') !== String(draft.nameEn || '')
+      || String(current.nameJa || '') !== String(draft.nameJa || '')
   });
   const { doc, setDoc, serverTimestamp } = fs;
   const docId = firestoreDocId(draft.productId);
-  const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
-  const isLife = draft.type === 'lifetime';
   const payload = {
     productId: draft.productId,
     type: isPass ? 'full_pass' : (isLife ? 'lifetime' : 'credit_pack'),
@@ -725,11 +732,7 @@ async function saveDraft() {
     descriptionEn: draft.descriptionEn,
     descriptionJa: draft.descriptionJa,
     creditAmount: isPass || isLife ? 0 : Number(draft.creditAmount),
-    durationDays: isPass
-      ? (isCanonicalPassProductId(draft.productId)
-        ? canonicalPassDurationDays(draft.productId)
-        : Number(draft.durationDays || 0))
-      : 0,
+    durationDays: isPass ? Math.max(0, Math.floor(Number(draft.durationDays) || 0)) : 0,
     entitlement: isLife ? 'lifetime' : (isPass ? 'full_pass' : 'credits'),
     listPriceKrw: Number(draft.listPriceKrw),
     listPriceUsd: draft.listPriceUsd,
@@ -748,6 +751,11 @@ async function saveDraft() {
     const prevRegions = draft.regions || {};
     const prevKr = prevRegions.KR || {};
     const price = Number(draft.listPriceKrw);
+    // Prefer current display name for new PortOne orderName (do not keep stale seed names).
+    const krOrderName = draft.orderNameKo
+      || draft.nameKo
+      || prevKr.orderName
+      || (isLife ? 'MidiAI Studio Lifetime Full' : draft.productId);
     payload.regions = {
       ...prevRegions,
       KR: {
@@ -756,9 +764,7 @@ async function saveDraft() {
         currency: 'KRW',
         listPrice: price,
         salePrice: price,
-        orderName: draft.orderNameKo
-          || prevKr.orderName
-          || (isLife ? 'MidiAI Studio Lifetime Full' : (draft.nameKo || draft.productId)),
+        orderName: krOrderName,
         portoneProductId: prevKr.portoneProductId || (isLife ? 'midiai-lifetime' : draft.productId)
       }
     };
@@ -770,7 +776,7 @@ async function saveDraft() {
         currency: 'USD',
         listPrice: draft.listPriceUsd != null ? Number(draft.listPriceUsd) : (prevGlobal.listPrice != null ? Number(prevGlobal.listPrice) : 89),
         salePrice: draft.listPriceUsd != null ? Number(draft.listPriceUsd) : (prevGlobal.salePrice != null ? Number(prevGlobal.salePrice) : 89),
-        orderName: draft.orderNameEn || prevGlobal.orderName || 'MidiAI Studio Lifetime Full'
+        orderName: draft.orderNameEn || draft.nameEn || prevGlobal.orderName || 'MidiAI Studio Lifetime Full'
       };
       payload.plan = 'lifetime';
       payload.name = draft.nameKo || draft.nameEn || 'Lifetime Full';
@@ -830,9 +836,7 @@ async function createProductFromModal() {
   const nameKo = $('newProductName')?.value || '';
   const credits = Number($('newProductCredits')?.value || 0);
   const durationDays = type === 'full_pass'
-    ? (isCanonicalPassProductId(productId)
-      ? canonicalPassDurationDays(productId)
-      : Number($('newProductDuration')?.value || 0))
+    ? Number($('newProductDuration')?.value || canonicalPassDurationDays(productId) || 0)
     : 0;
   const price = Number($('newProductPrice')?.value || 0);
   const payload = {

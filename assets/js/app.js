@@ -31,7 +31,7 @@ import {
   isPassProductId,
   isLicenseProductId,
   normalizeProductId as normalizeCatalogProductId
-} from './catalog-engine.js?v=dyn-catalog-1';
+} from './catalog-engine.js?v=product-full-edit-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -41,7 +41,7 @@ import {
   getPassCatalogSource,
   isPassCatalogReady,
   useSeedPassFallback
-} from './pass-catalog.js?v=dyn-catalog-1';
+} from './pass-catalog.js?v=product-full-edit-1';
 import {
   renderMarkdown,
   renderMarkdownInto,

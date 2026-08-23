@@ -31,7 +31,8 @@ function check(name, fn) {
 
 check('server_isPass_TEST', () => assert.equal(catalogEngine.isPassProductId('TEST_PASS_ADMIN_E2E'), true));
 check('server_isLicense_TEST', () => assert.equal(catalogEngine.isLicenseProductId('TEST_PASS_ADMIN_E2E'), true));
-check('server_canon_duration', () => assert.equal(passEntitlement.passDurationDays('PASS_7D', 9999), 7));
+check('server_canon_duration_prefers_catalog', () => assert.equal(passEntitlement.passDurationDays('PASS_7D', 30), 30));
+check('server_canon_duration_fallback', () => assert.equal(passEntitlement.passDurationDays('PASS_7D', 0), 7));
 check('server_custom_duration', () => assert.equal(passEntitlement.passDurationDays('TEST_PASS_ADMIN_E2E', 14), 14));
 check('browser_isPass_TEST', () => assert.equal(browser.isPassProductId('TEST_PASS_ADMIN_E2E'), true));
 check('browser_isCanonical_only_seed', () => {
@@ -103,14 +104,32 @@ check('validate_reject_duration_0', () => {
   }, { isNew: true });
   assert.ok(errs.some((e) => /기간/.test(e)));
 });
-check('validate_reject_canon_duration_change', () => {
+check('validate_allow_canon_duration_change', () => {
   const errs = browser.validateProductFields({
     productId: 'PASS_7D',
     type: 'full_pass',
-    durationDays: 14,
-    listPriceKrw: 7900
+    durationDays: 30,
+    listPriceKrw: 29900,
+    nameKo: '1개월 Full'
   }, { isNew: false });
-  assert.ok(errs.some((e) => /고정/.test(e)));
+  assert.deepEqual(errs, []);
+});
+check('refund_uses_grant_days_not_catalog', () => {
+  const T = Date.parse('2026-08-01T00:00:00.000Z');
+  const DAY = passEntitlement.DAY_MS;
+  const grants = [{
+    paymentId: 'old7',
+    productId: 'PASS_7D',
+    kind: 'pass',
+    durationDays: 7,
+    grantedAt: { seconds: Math.floor(T / 1000) },
+    status: 'active'
+  }];
+  assert.equal(passEntitlement.passDurationDays('PASS_7D', 30), 30);
+  assert.equal(passEntitlement.passDurationDays('PASS_7D', grants[0].durationDays), 7);
+  const r = passEntitlement.recomputePeriodEntitlementFromGrants(grants, new Date(T + 2 * DAY));
+  assert.equal(r.plan, 'period');
+  assert.equal(r.expiresAt.getTime(), T + 7 * DAY);
 });
 check('seed_delete_protected_ids', () => {
   assert.equal(browser.isSeedProduct('PASS_7D'), true);

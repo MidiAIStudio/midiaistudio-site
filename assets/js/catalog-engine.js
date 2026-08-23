@@ -183,7 +183,7 @@ export const SEED_PRODUCTS = [
   }
 ];
 
-// Canonical PASS_7D/30D/90D stay seed-locked; custom PASS_* / TEST_* IDs are CMS-managed.
+// Canonical PASS_7D/30D/90D are seed-created if missing; duration/name remain CMS-editable after create.
 const PRODUCT_ID_RE = /^(CREDIT_[1-9][0-9]{0,5}|PASS_[A-Z0-9_]{1,32}|TEST_[A-Z0-9_]{1,40}|LIFETIME)$/i;
 const MAX_LIST_PRICE_KRW = 10_000_000;
 
@@ -537,10 +537,6 @@ export function validateProductFields(payload, { isNew = false } = {}) {
       errors.push('이용 기간(일)이 너무 큽니다.');
     }
     if (Number(payload?.creditAmount || 0) > 0) errors.push('기간 이용권에는 Credit 지급량을 설정할 수 없습니다.');
-    const canon = PASS_DURATION_DAYS[normalizeProductId(pid)];
-    if (canon != null && days !== canon) {
-      errors.push(`${normalizeProductId(pid)}의 이용 기간은 ${canon}일로 고정되어 있습니다. 기간을 바꾸려면 새 Product ID를 만드세요.`);
-    }
   }
 
   if (isLife) {
@@ -621,9 +617,9 @@ export function creditChangeWarning(oldAmount, newAmount) {
   return '';
 }
 
-export function bumpVersion(product, { priceChanged, creditsChanged }) {
+export function bumpVersion(product, { priceChanged, creditsChanged, durationChanged, nameChanged }) {
   const current = Number(product?.productVersion || product?.pricingVersion || 1);
-  return (priceChanged || creditsChanged) ? current + 1 : current;
+  return (priceChanged || creditsChanged || durationChanged || nameChanged) ? current + 1 : current;
 }
 
 export function starterUnitFromProducts(products) {
