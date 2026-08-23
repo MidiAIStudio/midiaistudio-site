@@ -2,7 +2,15 @@
  * Shared storefront HTML for purchase cards + homepage promo popup.
  * Used by purchase.html (app.js) and admin live preview (pricing-admin.js).
  */
-import { formatKrw, localizePromo } from './catalog-engine.js?v=admin-live-preview-1';
+import {
+  formatKrw,
+  localizePromo,
+  formatPromoUntilLabel,
+  resolvePromotionProducts,
+  promotionTargetIds
+} from './catalog-engine.js?v=promo-multi-popup-1';
+
+export { resolvePromotionProducts, promotionTargetIds, formatPromoUntilLabel };
 
 export function escHtml(s) {
   return String(s ?? '').replace(/[&<>'"]/g, (c) => ({
@@ -230,8 +238,10 @@ export function renderProductCard(view, options = {}) {
 
 /**
  * Build homepage sale promo copy object (shared with admin preview).
+ * Prefer passing `resolved` from resolvePromotionProducts(catalog).
+ * Legacy single priceCtx still accepted for fallback / old callers.
  */
-export function buildPromotionPopupCopy(promo, priceCtx = {}, lang = 'ko') {
+export function buildPromotionPopupCopy(promo, priceCtx = {}, lang = 'ko', resolved = null) {
   const ui = storefrontUiCopy(lang);
   if (!promo) {
     return {
@@ -241,42 +251,92 @@ export function buildPromotionPopupCopy(promo, priceCtx = {}, lang = 'ko') {
       until: '',
       was: priceCtx.was || '',
       now: priceCtx.now || '',
+      products: [],
+      hiddenCount: 0,
       cta: ui.defaultCta,
       href: './purchase.html',
       hideToday: ui.hideToday,
       close: ui.close,
+      moreLabel: '',
       promo: null
     };
   }
   const ends = promo._originalEndsAt || promo.endsAt || '';
   let until = localizePromo(promo, 'badge', lang);
-  if (!until && ends) {
-    const d = new Date(ends);
-    if (!Number.isNaN(d.getTime())) {
-      until = lang === 'en'
-        ? `Until ${d.getMonth() + 1}/${d.getDate()}`
-        : lang === 'ja'
-          ? `${d.getMonth() + 1}月${d.getDate()}日まで`
-          : `${d.getMonth() + 1}월 ${d.getDate()}일까지`;
-    }
-  }
-  const disc = Number(priceCtx.discountPercent || 0);
+  if (!until && ends) until = formatPromoUntilLabel(ends, lang);
+
+  const products = Array.isArray(resolved?.visible)
+    ? resolved.visible
+    : (Array.isArray(resolved?.products) ? resolved.products : []);
+  const hiddenCount = Number(resolved?.hiddenCount || 0);
+  const disc = Number(
+    resolved?.discountPercent
+    || priceCtx.discountPercent
+    || (String(promo.type || '').toLowerCase() === 'percent' ? promo.value : 0)
+    || 0
+  );
   if (!until && disc > 0) {
     until = lang === 'en' ? `${disc}% OFF` : lang === 'ja' ? `${disc}% OFF` : `${disc}% 할인`;
   }
+
+  const first = products[0];
+  const was = first?.listLabel || priceCtx.was || '';
+  const nowPrice = first?.saleLabel || priceCtx.now || '';
+
+  const moreLabel = hiddenCount > 0
+    ? (lang === 'en'
+      ? `+ ${hiddenCount} more discounted product${hiddenCount > 1 ? 's' : ''}`
+      : lang === 'ja'
+        ? `ほか${hiddenCount}件の割引商品`
+        : `외 ${hiddenCount}개 할인 상품`)
+    : '';
+
+  const defaultCta = products.length > 1
+    ? (lang === 'en' ? 'See discounted products' : lang === 'ja' ? '割引商品を見る' : '할인 상품 보기')
+    : ui.defaultCta;
+
   return {
     badge: localizePromo(promo, 'badge', lang) || (disc > 0 ? `${disc}% OFF` : 'Sale'),
     title: localizePromo(promo, 'popupTitle', lang) || localizePromo(promo, 'name', lang),
     lead: localizePromo(promo, 'popupBody', lang),
-    until: until || localizePromo(promo, 'badge', lang),
-    was: priceCtx.was || '',
-    now: priceCtx.now || '',
-    cta: localizePromo(promo, 'popupCta', lang) || ui.defaultCta,
+    until: until || '',
+    was,
+    now: nowPrice,
+    products,
+    hiddenCount,
+    moreLabel,
+    cta: localizePromo(promo, 'popupCta', lang) || defaultCta,
     href: promo.ctaUrl || './purchase.html',
     hideToday: ui.hideToday,
     close: ui.close,
     promo
   };
+}
+
+function renderPromoProductRows(products = [], options = {}) {
+  const count = products.length;
+  if (!count) return '';
+  const single = count === 1 && !options.forceCompact;
+  if (single) {
+    const p = products[0];
+    return `<div class="sale-promo-products is-single" data-preview-hl="popup-price">
+      <div class="sale-promo-product-name" data-preview-hl="popup-product-name">${escHtml(p.name)}</div>
+      <div class="sale-promo-price-box">
+        <div class="sale-promo-was">${escHtml(p.listLabel)}</div>
+        <div class="sale-promo-now"><strong>${escHtml(p.saleLabel)}</strong></div>
+      </div>
+    </div>`;
+  }
+  return `<div class="sale-promo-products is-multi" data-preview-hl="popup-price">
+    ${products.map((p) => `<div class="sale-promo-product-row" data-product-id="${escHtml(p.productId)}">
+      <div class="sale-promo-product-name">${escHtml(p.name)}</div>
+      <div class="sale-promo-product-prices">
+        <span class="sale-promo-was">${escHtml(p.listLabel)}</span>
+        <span class="sale-promo-arrow" aria-hidden="true">→</span>
+        <strong class="sale-promo-sale">${escHtml(p.saleLabel)}</strong>
+      </div>
+    </div>`).join('')}
+  </div>`;
 }
 
 /**
@@ -297,16 +357,39 @@ export function renderPromotionPopupHtml(copy, options = {}) {
         <button type="button" class="sale-promo-close-link" data-close>${escHtml(t.close || '')}</button>`
     : `<button type="button" class="sale-promo-close-link" disabled>${escHtml(t.close || '')}</button>`;
 
+  const lead = String(t.lead || '').trim();
+  const leadHtml = lead
+    ? `<p class="sale-promo-lead" data-preview-hl="popup-body">${escHtml(lead)}</p>`
+    : '';
+
+  const products = Array.isArray(t.products) ? t.products : [];
+  let productsHtml = '';
+  if (products.length) {
+    productsHtml = renderPromoProductRows(products, { forceCompact: products.length > 1 });
+  } else if (t.was || t.now) {
+    // Legacy single-price fallback (no catalog resolution available)
+    productsHtml = `<div class="sale-promo-price-box" data-preview-hl="popup-price">
+      <div class="sale-promo-was">${escHtml(t.was || '')}</div>
+      <div class="sale-promo-now"><strong>${escHtml(t.now || '')}</strong></div>
+    </div>`;
+  }
+
+  const moreHtml = t.moreLabel
+    ? `<p class="sale-promo-more">${escHtml(t.moreLabel)}</p>`
+    : '';
+  const untilHtml = t.until
+    ? `<p class="sale-promo-until" data-preview-hl="popup-until">${escHtml(t.until)}</p>`
+    : '';
+
   return `<div class="sale-promo-backdrop${preview ? ' is-open is-preview' : ''}" role="dialog" aria-modal="true" aria-label="${escHtml(t.title || '')}">
     <div class="sale-promo-modal">
       <button type="button" class="sale-promo-x" aria-label="${escHtml(t.close || '')}" ${preview ? 'disabled' : ''}>×</button>
       <span class="sale-promo-badge" data-preview-hl="popup-badge">${escHtml(t.badge || '')}</span>
       <h2 class="sale-promo-title" data-preview-hl="popup-title">${escHtml(t.title || '')}</h2>
-      <p class="sale-promo-lead" data-preview-hl="popup-body">${escHtml(t.lead || '')}</p>
-      <div class="sale-promo-price-box" data-preview-hl="popup-price">
-        <div class="sale-promo-was">${escHtml(t.was || '')}</div>
-        <div class="sale-promo-now"><strong>${escHtml(t.now || '')}</strong><span data-preview-hl="popup-until">${escHtml(t.until || '')}</span></div>
-      </div>
+      ${leadHtml}
+      ${productsHtml}
+      ${moreHtml}
+      ${untilHtml}
       <div class="sale-promo-actions">
         ${ctaHtml}
         ${hideHtml}
@@ -334,3 +417,6 @@ export function forcePromoWindowForPreview(promo, now = new Date()) {
   }
   return clone;
 }
+
+/** Max products shown in popup before "+ N more". */
+export const PROMO_POPUP_MAX_VISIBLE = 3;

@@ -14,7 +14,7 @@ import {
   getPassProductsFromCatalog,
   computePassBundleSavings,
   formatPassBundleSavingsLabel
-} from './catalog-engine.js?v=admin-live-preview-1';
+} from './catalog-engine.js?v=promo-multi-popup-1';
 
 export { isPassProductId, PASS_PRODUCT_IDS, PASS_DURATION_DAYS };
 

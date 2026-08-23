@@ -31,7 +31,7 @@ import {
   isPassProductId,
   isLicenseProductId,
   normalizeProductId as normalizeCatalogProductId
-} from './catalog-engine.js?v=admin-live-preview-1';
+} from './catalog-engine.js?v=promo-multi-popup-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -41,13 +41,15 @@ import {
   getPassCatalogSource,
   isPassCatalogReady,
   useSeedPassFallback
-} from './pass-catalog.js?v=admin-live-preview-1';
+} from './pass-catalog.js?v=promo-multi-popup-1';
 import {
   renderProductCard,
   purchaseCardFeaturesHtml,
   renderPromotionPopupHtml,
-  buildPromotionPopupCopy
-} from './storefront-render.js?v=admin-live-preview-1';
+  buildPromotionPopupCopy,
+  resolvePromotionProducts,
+  PROMO_POPUP_MAX_VISIBLE
+} from './storefront-render.js?v=promo-multi-popup-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -12598,30 +12600,24 @@ function promoDismissKey(promo){
   return `midiai_promo_dismiss_${id}_v${ver}`;
 }
 
-function promoPopupPriceContext(promo, uiLang){
-  const pid = String((promo?.productIds || [])[0] || 'LIFETIME').toUpperCase();
-  if(pid.startsWith('CREDIT_')){
-    const pack = getCreditProducts().find((p) => p.productId === pid);
-    if(pack){
-      const list = Number(pack.listPriceKrw || pack.basePrice || pack.krw || 0);
-      const sale = Number(pack.effectivePrice != null ? pack.effectivePrice : pack.krw || 0);
-      return { was: formatKrw(list), now: formatKrw(sale) };
-    }
-  }
-  const ctx = checkoutContext(uiLang, uiLang === 'ko');
-  return { was: ctx.displayList, now: ctx.displaySale };
-}
-
 function salePromoCopy(){
   const uiLang = lang === 'en' || lang === 'ja' ? lang : 'ko';
   const promos = getActiveHomepagePromotions(!!currentLicenseLifetime);
   const promo = promos[0];
   if(promo){
-    const price = promoPopupPriceContext(promo, uiLang);
-    return buildPromotionPopupCopy(promo, price, uiLang);
+    const pricing = getPricingCache();
+    const catalog = pricing?.products || [];
+    const resolved = resolvePromotionProducts(promo, catalog, {
+      lang: uiLang,
+      maxVisible: PROMO_POPUP_MAX_VISIBLE,
+      forceActive: false
+    });
+    return buildPromotionPopupCopy(promo, {
+      discountPercent: resolved.discountPercent
+    }, uiLang, resolved);
   }
   const ctx = checkoutContext(uiLang, uiLang === 'ko');
-  return { ...promoPopupCopy(uiLang, ctx), promo: null };
+  return { ...promoPopupCopy(uiLang, ctx), products: [], hiddenCount: 0, moreLabel: '', promo: null };
 }
 
 function todayKey(){

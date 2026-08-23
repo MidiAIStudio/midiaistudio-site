@@ -885,6 +885,136 @@ export function localizePromo(promo, field, lang) {
   return String(promo?.[`${field}${suffix}`] || promo?.[`${field}Ko`] || promo?.[`${field}En`] || '');
 }
 
+/** Canonical multi-product target IDs from a promotion (legacy single-field fallback). */
+export function promotionTargetIds(promo) {
+  const raw = promo?.productIds || promo?.targetProductIds || [];
+  if (Array.isArray(raw) && raw.length) {
+    return [...new Set(raw.map((id) => normalizeProductId(id)).filter(Boolean))];
+  }
+  const single = promo?.productId || promo?.targetProductId || '';
+  const pid = normalizeProductId(single);
+  return pid ? [pid] : [];
+}
+
+function localizedProductName(product, lang = 'ko') {
+  if (!product) return '';
+  const suffix = lang === 'en' ? 'En' : lang === 'ja' ? 'Ja' : 'Ko';
+  const named = product[`name${suffix}`] || product.nameKo || product.nameEn || product.nameJa || product.name || '';
+  if (named) return String(named);
+  const pid = normalizeProductId(product.productId || product.id);
+  const days = Number(product.durationDays || PASS_DURATION_DAYS[pid] || 0);
+  if (pid === 'LIFETIME') return 'Lifetime';
+  if (days > 0) {
+    if (lang === 'en') return `${days}-Day Full`;
+    if (lang === 'ja') return `${days}日 Full`;
+    return `${days}일 Full`;
+  }
+  return pid;
+}
+
+/**
+ * Resolve promotion targets against live catalog + canonical discount engine.
+ * Shared by Admin 적용 결과, Admin popup preview, and public home popup.
+ *
+ * @returns {{
+ *   products: Array<{productId,name,listPriceKrw,salePriceKrw,discountPercent,listLabel,saleLabel,product}>,
+ *   visible: same (capped for popup),
+ *   hiddenCount: number,
+ *   discountPercent: number,
+ *   discountType: string,
+ *   discountValue: number
+ * }}
+ */
+export function resolvePromotionProducts(promo, catalog = [], {
+  lang = 'ko',
+  now = new Date(),
+  maxVisible = Infinity,
+  forceActive = false
+} = {}) {
+  const ids = promotionTargetIds(promo);
+  const empty = {
+    products: [],
+    visible: [],
+    hiddenCount: 0,
+    discountPercent: 0,
+    discountType: String(promo?.type || 'percent'),
+    discountValue: Number(promo?.value || 0)
+  };
+  if (!promo || !ids.length) return empty;
+
+  let chargePromo = promo;
+  if (forceActive) {
+    chargePromo = {
+      ...promo,
+      enabled: true,
+      archived: false,
+      startsAt: new Date(now.getTime() - 60_000).toISOString(),
+      endsAt: (promo.endsAt && new Date(promo.endsAt) > now)
+        ? promo.endsAt
+        : new Date(now.getTime() + 7 * 86_400_000).toISOString()
+    };
+  }
+
+  const byId = new Map();
+  for (const p of catalog || []) {
+    byId.set(normalizeProductId(p.productId || p.id), p);
+  }
+
+  const products = [];
+  let maxDiscPct = 0;
+  for (const pid of ids) {
+    const product = byId.get(pid);
+    if (!product) continue;
+    const charge = computeCharge(
+      { ...product, status: 'active' },
+      [chargePromo],
+      now,
+      'KRW'
+    );
+    const list = Number(charge.basePrice != null ? charge.basePrice : product.listPriceKrw || 0);
+    const sale = Number(charge.ok ? charge.effectivePrice : list);
+    const discPct = Number(charge.discountPercent || 0);
+    if (discPct > maxDiscPct) maxDiscPct = discPct;
+    products.push({
+      productId: pid,
+      name: localizedProductName(product, lang),
+      nameKo: product.nameKo || '',
+      nameEn: product.nameEn || '',
+      nameJa: product.nameJa || '',
+      listPriceKrw: list,
+      salePriceKrw: sale,
+      discountPercent: discPct,
+      listLabel: formatKrw(list),
+      saleLabel: formatKrw(sale),
+      product
+    });
+  }
+
+  const cap = Number.isFinite(maxVisible) && maxVisible > 0 ? Math.floor(maxVisible) : products.length;
+  const visible = products.slice(0, cap);
+  return {
+    products,
+    visible,
+    hiddenCount: Math.max(0, products.length - visible.length),
+    discountPercent: maxDiscPct || (
+      String(promo.type || 'percent').toLowerCase() === 'percent' ? Number(promo.value || 0) : 0
+    ),
+    discountType: String(promo.type || 'percent'),
+    discountValue: Number(promo.value || 0)
+  };
+}
+
+export function formatPromoUntilLabel(endsAt, lang = 'ko') {
+  const d = parseTime(endsAt);
+  if (!d) return '';
+  if (lang === 'en') {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `Until ${months[d.getMonth()]} ${d.getDate()}`;
+  }
+  if (lang === 'ja') return `${d.getMonth() + 1}月${d.getDate()}日まで`;
+  return `${d.getMonth() + 1}월 ${d.getDate()}일까지`;
+}
+
 export function formatKrw(amount) {
   return `${Number(amount || 0).toLocaleString('ko-KR')}원`;
 }

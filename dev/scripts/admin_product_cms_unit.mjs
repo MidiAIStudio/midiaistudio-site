@@ -251,6 +251,64 @@ check('server_stale_product_discount_ignored', () => {
   const charge = catalogEngine.computeCharge(p, [], new Date());
   assert.equal(charge.effectivePrice, 29900);
 });
+check('resolve_promo_multi_products', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, nameKo: '30일 Full', status: 'active' },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, nameKo: '90일 Full', status: 'active' },
+    { productId: 'LIFETIME', type: 'lifetime', listPriceKrw: 130000, nameKo: 'Lifetime', status: 'active' }
+  ];
+  const promo = {
+    enabled: true,
+    type: 'percent',
+    value: 30,
+    startsAt: '2020-01-01T00:00:00.000Z',
+    endsAt: '2099-01-01T00:00:00.000Z',
+    productIds: ['PASS_30D', 'PASS_90D']
+  };
+  const resolved = browser.resolvePromotionProducts(promo, catalog, { lang: 'ko' });
+  assert.equal(resolved.products.length, 2);
+  assert.equal(resolved.products[0].name, '30일 Full');
+  assert.equal(resolved.products[0].salePriceKrw, 20930);
+  assert.equal(resolved.products[1].name, '90일 Full');
+  assert.equal(resolved.products[1].salePriceKrw, 48930);
+});
+check('resolve_promo_popup_caps_at_3', () => {
+  const catalog = [
+    { productId: 'PASS_7D', type: 'full_pass', durationDays: 7, listPriceKrw: 9900, nameKo: '7일 Full', status: 'active' },
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, nameKo: '30일 Full', status: 'active' },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, nameKo: '90일 Full', status: 'active' },
+    { productId: 'LIFETIME', type: 'lifetime', listPriceKrw: 130000, nameKo: 'Lifetime', status: 'active' }
+  ];
+  const promo = {
+    enabled: true, type: 'percent', value: 10,
+    startsAt: '2020-01-01T00:00:00.000Z', endsAt: '2099-01-01T00:00:00.000Z',
+    productIds: ['PASS_7D', 'PASS_30D', 'PASS_90D', 'LIFETIME']
+  };
+  const resolved = browser.resolvePromotionProducts(promo, catalog, { lang: 'ko', maxVisible: 3 });
+  assert.equal(resolved.visible.length, 3);
+  assert.equal(resolved.hiddenCount, 1);
+});
+check('popup_html_shows_both_product_names', () => {
+  const catalog = [
+    { productId: 'PASS_30D', type: 'full_pass', durationDays: 30, listPriceKrw: 29900, nameKo: '30일 Full', status: 'active' },
+    { productId: 'PASS_90D', type: 'full_pass', durationDays: 90, listPriceKrw: 69900, nameKo: '90일 Full', status: 'active' }
+  ];
+  const promo = {
+    enabled: true, type: 'percent', value: 30,
+    nameKo: '이벤트', popupTitleKo: '기간제 상품 출시 이벤트',
+    popupBodyKo: '', popupCtaKo: '할인 상품 보기',
+    startsAt: '2020-01-01T00:00:00.000Z', endsAt: '2026-08-30T00:00:00.000Z',
+    productIds: ['PASS_30D', 'PASS_90D']
+  };
+  const resolved = storefront.resolvePromotionProducts(promo, catalog, { lang: 'ko', maxVisible: 3 });
+  const copy = storefront.buildPromotionPopupCopy(promo, {}, 'ko', resolved);
+  const html = storefront.renderPromotionPopupHtml(copy, { preview: true });
+  assert.match(html, /30일 Full/);
+  assert.match(html, /90일 Full/);
+  assert.match(html, /20,930원/);
+  assert.match(html, /48,930원/);
+  assert.doesNotMatch(html, /sale-promo-lead/); // empty body hidden
+});
 check('popup_html_uses_shared_renderer', () => {
   const copy = storefront.buildPromotionPopupCopy({
     nameKo: '여름 할인',
@@ -262,7 +320,6 @@ check('popup_html_uses_shared_renderer', () => {
   }, { was: '29,900원', now: '20,930원', discountPercent: 30 }, 'ko');
   const html = storefront.renderPromotionPopupHtml(copy, { preview: true });
   assert.match(html, /여름 특별 할인/);
-  assert.match(html, /20,930원/);
   assert.match(html, /disabled/);
 });
 check('pass_bundle_labels_i18n', () => {

@@ -34,15 +34,18 @@ import {
   validatePromotionFields,
   windowStatus,
   publicProductView,
-  isWindowActive
-} from './catalog-engine.js?v=admin-live-preview-1';
+  isWindowActive,
+  resolvePromotionProducts,
+  promotionTargetIds
+} from './catalog-engine.js?v=promo-multi-popup-1';
 import {
   renderProductCard,
   renderPromotionPopupHtml,
   buildPromotionPopupCopy,
   forcePromoWindowForPreview,
-  storefrontUiCopy
-} from './storefront-render.js?v=admin-live-preview-1';
+  storefrontUiCopy,
+  PROMO_POPUP_MAX_VISIBLE
+} from './storefront-render.js?v=promo-multi-popup-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -536,22 +539,15 @@ function renderLivePreview() {
         ? '<p class="muted pricing-preview-popup-off">홈 팝업 표시가 꺼져 있습니다.</p>'
         : '<p class="muted pricing-preview-popup-off">표시할 홈 팝업 프로모션이 없습니다.</p>';
     } else {
-      const targetId = normalizeProductId((srcPromo.productIds || [])[0] || '');
-      const targetProd = catalog.find((p) => normalizeProductId(p.productId) === targetId)
-        || catalog.find((p) => normalizeProductId(p.productId) === 'LIFETIME')
-        || catalog[0];
-      const charge = targetProd
-        ? computeCharge(
-          { ...targetProd, status: 'active' },
-          [srcPromo],
-          new Date()
-        )
-        : null;
+      const resolved = resolvePromotionProducts(srcPromo, catalog, {
+        lang: previewLang,
+        now: new Date(),
+        maxVisible: PROMO_POPUP_MAX_VISIBLE,
+        forceActive: true
+      });
       const copy = buildPromotionPopupCopy(srcPromo, {
-        was: formatKrw(charge?.basePrice || targetProd?.listPriceKrw || 0),
-        now: formatKrw(charge?.effectivePrice || targetProd?.listPriceKrw || 0),
-        discountPercent: charge?.discountPercent || 0
-      }, previewLang);
+        discountPercent: resolved.discountPercent
+      }, previewLang, resolved);
       popupRoot.innerHTML = renderPromotionPopupHtml(copy, { preview: true, showHideToday: false });
     }
   }
@@ -1568,34 +1564,27 @@ function renderPromoPreview() {
   const body = $('promoPreviewBody');
   if (!body || !promoDraft) return;
   readPromoForm();
-  const type = promoDraft.type || 'percent';
+  const targets = promotionTargetIds(promoDraft);
   const value = Number(promoDraft.value || 0);
-  const targets = promoDraft.productIds || [];
   if (!targets.length || !(value > 0)) {
     body.innerHTML = '<p class="muted">대상 상품과 할인 값을 선택하면 미리보기가 표시됩니다.</p>';
     scheduleLivePreview();
     return;
   }
-  const head = type === 'amount'
-    ? `${value.toLocaleString('ko-KR')}원 할인`
-    : `${value}% 할인`;
-  const synthetic = forcePromoWindowForPreview({
-    enabled: true,
-    archived: false,
-    type,
-    value,
-    startsAt: promoDraft.startsAt,
-    endsAt: promoDraft.endsAt,
-    productIds: targets.map(normalizeProductId)
-  });
   const catalog = buildPreviewCatalog();
-  const lines = targets.map((tid) => {
-    const p = catalog.find((x) => normalizeProductId(x.productId) === normalizeProductId(tid));
-    if (!p) return '';
-    const charge = computeCharge({ ...p, status: 'active' }, [synthetic], new Date());
-    return `<div class="pricing-disc-preview-row"><span>${esc(p.nameKo || tid)}</span><strong>${esc(formatKrw(charge.basePrice))} → ${esc(formatKrw(charge.effectivePrice))}</strong></div>`;
-  }).filter(Boolean).join('');
-  body.innerHTML = `<p class="pricing-active-promo-disc">${esc(head)}</p>${lines || '<p class="muted">대상 상품을 찾을 수 없습니다.</p>'}`;
+  const resolved = resolvePromotionProducts(promoDraft, catalog, {
+    lang: 'ko',
+    forceActive: true,
+    maxVisible: Infinity
+  });
+  const head = resolved.discountType === 'amount'
+    ? `${Number(resolved.discountValue || 0).toLocaleString('ko-KR')}원 할인`
+    : `${resolved.discountPercent || value}% 할인`;
+  const countLine = `<p class="muted small">대상 상품 ${resolved.products.length}개</p>`;
+  const lines = resolved.products.map((p) => (
+    `<div class="pricing-disc-preview-row"><span>${esc(p.name)}</span><strong>${esc(p.listLabel)} → ${esc(p.saleLabel)}</strong></div>`
+  )).join('');
+  body.innerHTML = `${countLine}<p class="pricing-active-promo-disc">${esc(head)}</p>${lines || '<p class="muted">대상 상품을 찾을 수 없습니다.</p>'}`;
   scheduleLivePreview();
 }
 

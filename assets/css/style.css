@@ -2608,17 +2608,47 @@ article .board-attachment-item figcaption b{
 .sale-promo-badge{display:inline-flex;align-items:center;justify-content:center;text-align:center;line-height:1;gap:6px;padding:7px 11px;border-radius:999px;border:1px solid rgba(34,211,238,.34);background:rgba(34,211,238,.12);color:#9af2ff;font-size:12px;font-weight:900;letter-spacing:.02em;position:relative}
 .sale-promo-title{margin:14px 0 8px;font-size:clamp(24px,4vw,30px);letter-spacing:-.04em;line-height:1.15;position:relative}
 .sale-promo-lead{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.65;position:relative}
-.sale-promo-price-box{display:grid;gap:6px;padding:16px 18px;border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.28);margin-bottom:18px;position:relative}
+.sale-promo-products{display:grid;gap:8px;margin:0 0 14px;position:relative}
+.sale-promo-products.is-single .sale-promo-product-name{
+  margin:0 0 8px;font-size:15px;font-weight:800;letter-spacing:-.02em;color:#e8eefc
+}
+.sale-promo-product-row{
+  display:grid;gap:4px;padding:10px 12px;border-radius:14px;
+  border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.28)
+}
+.sale-promo-product-row .sale-promo-product-name{
+  margin:0;font-size:13px;font-weight:800;letter-spacing:-.02em;color:#e8eefc
+}
+.sale-promo-product-prices{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px;min-width:0
+}
+.sale-promo-product-prices .sale-promo-was{
+  color:#9aa0bd;font-size:13px;font-weight:700;text-decoration:line-through;text-decoration-thickness:1px
+}
+.sale-promo-product-prices .sale-promo-arrow{color:rgba(255,255,255,.35);font-size:12px}
+.sale-promo-product-prices .sale-promo-sale{
+  font-size:18px;font-weight:800;letter-spacing:-.03em;line-height:1.15;
+  background:linear-gradient(135deg,#fff,#bfefff 50%,#d7c7ff);-webkit-background-clip:text;background-clip:text;color:transparent
+}
+.sale-promo-more{margin:0 0 10px;text-align:center;color:var(--muted);font-size:12px;font-weight:700}
+.sale-promo-until{margin:0 0 14px;text-align:center;color:#9af2ff;font-size:13px;font-weight:900;position:relative}
+.sale-promo-price-box{display:grid;gap:6px;padding:16px 18px;border-radius:18px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.28);margin-bottom:0;position:relative}
+.sale-promo-products.is-single .sale-promo-price-box{margin-bottom:0}
 .sale-promo-was{color:#9aa0bd;font-size:15px;font-weight:700;text-decoration:line-through;text-decoration-thickness:2px}
 .sale-promo-now{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .sale-promo-now strong{font-size:clamp(34px,6vw,44px);letter-spacing:-.05em;line-height:1;background:linear-gradient(135deg,#fff,#bfefff 50%,#d7c7ff);-webkit-background-clip:text;background-clip:text;color:transparent}
 .sale-promo-now span{color:#9af2ff;font-size:13px;font-weight:900}
-.sale-promo-actions{display:grid;gap:10px;position:relative}
+.sale-promo-actions{display:grid;gap:10px;position:relative;margin-top:4px}
 .sale-promo-actions .primary{width:100%;justify-content:center;text-align:center;padding:14px 18px}
 .sale-promo-hide{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;user-select:none}
 .sale-promo-hide input{width:auto;accent-color:#22d3ee}
 .sale-promo-close-link{border:0;background:transparent;color:#9aa0bd;font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:4px}
-@media(max-width:480px){.sale-promo-modal{padding:22px 18px 18px;border-radius:22px}.sale-promo-now strong{font-size:34px}}
+@media(max-width:480px){
+  .sale-promo-modal{padding:22px 18px 18px;border-radius:22px;max-height:min(92vh,720px);overflow:auto}
+  .sale-promo-now strong{font-size:34px}
+  .sale-promo-product-prices .sale-promo-sale{font-size:16px}
+  .sale-promo-product-row{padding:9px 10px}
+}
 
 /* Workflow SEO + Guide Visual CMS */
 .workflow-seo{padding-top:28px;padding-bottom:48px}
