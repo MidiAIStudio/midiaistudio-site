@@ -2,12 +2,15 @@
  * PortOne cancel/refund sync.
  * Webhook bodies are never trusted for money or entitlements — payment is re-fetched.
  * Credit reclaim never drives wallet balance below 0.
- * Lifetime / pass: no automatic license revoke (admin review).
+ * Period (pass) full cancel: revoke only the grant tied to this paymentId.
+ * Lifetime: revoke only when license is still bound to this payment; else review.
+ * Partial cancel: never auto-revoke entitlements.
  */
 'use strict';
 
 const crypto = require('crypto');
 const catalogEngine = require('./catalogEngine');
+const passEntitlement = require('./passEntitlement');
 
 const EVENT_COLLECTION = 'portoneRefundEvents';
 const WEBHOOK_COLLECTION = 'portoneWebhookDeliveries';
@@ -84,14 +87,23 @@ function extractWebhookType(body) {
 function parsePortOneAmounts(payment) {
   const amount = (payment && payment.amount) || {};
   const total = num(amount.total, 0);
-  const paid = num(amount.paid, total);
-  const cancelled = num(amount.cancelled != null ? amount.cancelled : amount.canceled, 0);
+  let paid = num(amount.paid, total);
+  let cancelled = num(amount.cancelled != null ? amount.cancelled : amount.canceled, 0);
+  const st = String((payment && payment.status) || '').toUpperCase().replace(/^PAYMENT_STATUS_/, '');
+  // PortOne full cancel: status CANCELLED but amount fields may be sparse.
+  if ((st === 'CANCELLED' || st === 'CANCELED') && cancelled <= 0 && total > 0) {
+    cancelled = total;
+    paid = 0;
+  }
+  if ((st === 'CANCELLED' || st === 'CANCELED') && paid > 0 && cancelled >= paid) {
+    paid = 0;
+  }
   const list = Array.isArray(payment && payment.cancellations)
     ? payment.cancellations
     : (Array.isArray(payment && payment.cancels) ? payment.cancels : []);
   const ok = list.filter((c) => {
-    const st = String((c && c.status) || '').toUpperCase();
-    return !st || st === 'SUCCEEDED' || st === 'SUCCESS' || st === 'COMPLETED';
+    const cst = String((c && c.status) || '').toUpperCase();
+    return !cst || cst === 'SUCCEEDED' || cst === 'SUCCESS' || cst === 'COMPLETED';
   });
   const cancellationIds = ok
     .map((c) => String((c && (c.id || c.cancellationId || c.pgCancellationId)) || '').trim())
@@ -111,12 +123,14 @@ function mapProviderStatus(providerStatus, amounts, previousStatus) {
   const cancelled = num(amounts && amounts.cancelled, 0);
   const prev = String(previousStatus || '').toLowerCase();
   if (KEEP_STATUS.has(prev)) return prev;
-  if (prev === 'refund_review_required') return 'refund_review_required';
+  // Do not permanently lock refund_review_required — later sync may complete revoke.
   if (st === 'PARTIAL_CANCELLED' || st === 'PARTIAL_CANCELED' || (paid > 0 && cancelled > 0)) {
     return 'partially_refunded';
   }
   if (st === 'CANCELLED' || st === 'CANCELED' || (paid <= 0 && cancelled > 0)) {
-    return PAID_LIKE.has(prev) || prev === 'completed' ? 'refunded' : 'cancelled';
+    return PAID_LIKE.has(prev) || prev === 'completed' || prev === 'refund_review_required'
+      ? 'refunded'
+      : 'cancelled';
   }
   if (st === 'PAID' || st === 'PAY_PENDING' || st === 'PENDING' || st === 'VIRTUAL_ACCOUNT_ISSUED') {
     if (prev === 'completed') return 'completed';
@@ -162,34 +176,140 @@ function decideCreditReclaim({
   grantAmount,
   unusedBalance,
   alreadyReclaimed = 0,
-  cancelledAmount = 0,
-  originalAmount = 0,
   isFullCancel = true
 }) {
   const grant = Math.max(0, Math.round(num(grantAmount, 0)));
   const done = Math.max(0, Math.round(num(alreadyReclaimed, 0)));
   const remainingGrant = Math.max(0, grant - done);
   if (remainingGrant <= 0) return { action: 'none', reclaim: 0, reason: 'already_reclaimed' };
-  let want = remainingGrant;
   if (!isFullCancel) {
-    const orig = num(originalAmount, 0);
-    const canc = num(cancelledAmount, 0);
-    if (orig > 0) want = Math.max(0, Math.floor((grant * canc) / orig) - done);
+    return {
+      action: 'review',
+      reclaim: 0,
+      reason: 'partial_cancel_no_auto_reclaim',
+      requested: remainingGrant
+    };
   }
-  want = Math.min(remainingGrant, Math.max(0, Math.round(want)));
-  if (want <= 0) return { action: 'none', reclaim: 0, reason: 'nothing_due' };
   if (unusedBalance == null || !Number.isFinite(Number(unusedBalance))) {
-    return { action: 'review', reclaim: 0, reason: 'unknown_balance', requested: want };
+    return { action: 'review', reclaim: 0, reason: 'unknown_balance', requested: remainingGrant };
   }
   const bal = Math.max(0, Math.round(Number(unusedBalance)));
-  if (bal >= want) return { action: 'reclaim', reclaim: want, reason: 'unused_sufficient' };
+  if (bal >= remainingGrant) {
+    return { action: 'reclaim', reclaim: remainingGrant, reason: 'unused_sufficient' };
+  }
   return {
     action: 'review',
     reclaim: 0,
     reason: 'insufficient_unused',
     unusedBalance: bal,
-    requested: want
+    requested: remainingGrant
   };
+}
+
+/**
+ * Decide how to revoke the entitlement tied to this payment only.
+ * Never wipes all user licenses — only grant for this paymentId.
+ */
+function decideLicenseRevoke({
+  grant,
+  order,
+  license,
+  paymentId,
+  isFullCancel,
+  isPartial
+}) {
+  if (isPartial) {
+    return { action: 'review', reason: 'partial_cancel_no_auto_revoke' };
+  }
+  if (!isFullCancel) {
+    return { action: 'none', reason: 'not_cancelled' };
+  }
+  if (grant && (grant.status === 'revoked' || grant.revokedAt)) {
+    return { action: 'none', reason: 'already_revoked' };
+  }
+  if (order && (order.licenseRevoked === true || order.entitlementStatus === 'revoked')) {
+    return { action: 'none', reason: 'already_revoked_on_order' };
+  }
+
+  const productId = catalogEngine.normalizeProductId(
+    (grant && grant.productId) || (order && order.productId) || ''
+  );
+  const kind = String((grant && grant.kind) || '').toLowerCase()
+    || (productId === 'LIFETIME' ? 'lifetime' : (catalogEngine.isPassProductId(productId) ? 'pass' : ''));
+  const durationDays = Math.max(
+    0,
+    Math.floor(num(
+      (grant && grant.durationDays) != null ? grant.durationDays : (order && order.durationDays),
+      passEntitlement.passDurationDays(productId, 0)
+    ))
+  );
+  const licPlan = String((license && license.plan) || '').toLowerCase();
+  const licPay = String(
+    (license && (license.portonePaymentId || license.paymentId || license.lastPortonePaymentId)) || ''
+  ).trim();
+
+  if (kind === 'lifetime' || productId === 'LIFETIME') {
+    // Safe auto-revoke only when the live license is still bound to this payment.
+    if (licPlan === 'lifetime' && licPay && licPay === String(paymentId)) {
+      return {
+        action: 'revoke_lifetime',
+        reason: 'lifetime_tied_to_payment',
+        productId
+      };
+    }
+    return { action: 'review', reason: 'lifetime_ambiguous', productId };
+  }
+
+  if (kind === 'pass' || catalogEngine.isPassProductId(productId) || String((order && order.plan) || '') === 'period') {
+    // Never touch a current Lifetime license when refunding a pass payment.
+    if (licPlan === 'lifetime') {
+      return {
+        action: 'revoke_grant_only',
+        reason: 'pass_refund_while_lifetime_active',
+        productId,
+        durationDays
+      };
+    }
+    return {
+      action: 'revoke_pass',
+      reason: 'pass_full_cancel',
+      productId,
+      durationDays
+    };
+  }
+
+  return { action: 'review', reason: 'unknown_grant_kind', productId };
+}
+
+function buildTrialLicensePatch(FieldValue, extra = {}) {
+  return Object.assign({
+    licensed: true,
+    plan: 'trial',
+    status: 'active',
+    startsAt: FieldValue.delete(),
+    expiresAt: FieldValue.delete(),
+    passProductId: FieldValue.delete(),
+    expireReason: FieldValue.delete(),
+    expiredAt: FieldValue.delete(),
+    revokedAt: FieldValue.serverTimestamp(),
+    revokeReason: 'portone_full_cancel',
+    updatedAt: FieldValue.serverTimestamp()
+  }, extra);
+}
+
+function buildPassShortenPatch(FieldValue, nextExpiresMs, grant, extra = {}) {
+  if (nextExpiresMs <= Date.now()) {
+    return buildTrialLicensePatch(FieldValue, extra);
+  }
+  return Object.assign({
+    licensed: true,
+    plan: 'period',
+    status: 'active',
+    expiresAt: new Date(nextExpiresMs),
+    updatedAt: FieldValue.serverTimestamp(),
+    lastRevokePaymentId: String((grant && grant.paymentId) || ''),
+    lastRevokeReason: 'portone_full_cancel'
+  }, extra);
 }
 
 function cancellationEventIds(paymentId, amounts) {
@@ -285,6 +405,7 @@ function buildSnapshotPatch(paymentId, payment, amounts, status, providerStatus,
 async function syncPortOnePayment({
   db,
   FieldValue,
+  Timestamp,
   paymentId,
   payment,
   source = 'unknown',
@@ -300,6 +421,7 @@ async function syncPortOnePayment({
   const providerStatus = String((payment && payment.status) || '');
   const eventIds = cancellationEventIds(pid, amounts);
   const orderRefs = await findOrderRefs(db, pid);
+  const grantRef = db.collection('entitlementGrants').doc(pid);
 
   const result = await db.runTransaction(async (tx) => {
     const orderSnaps = await Promise.all(orderRefs.map((ref) => tx.get(ref)));
@@ -326,32 +448,61 @@ async function syncPortOnePayment({
 
     let entitlement = { kind: 'none', action: 'none' };
     let walletInfo = { balance: null, ref: null, kind: '' };
+    let licenseSnap = null;
+    let grantSnap = null;
+    let userGrantsSnap = null;
 
-    const applyEntitlement =
-      newEvents.length > 0
-      && (isFullCancel || isPartial)
-      && !KEEP_STATUS.has(prevStatus.toLowerCase())
-      && prevStatus.toLowerCase() !== 'refund_review_required';
+    if (uid) {
+      licenseSnap = await tx.get(db.collection('licenses').doc(uid));
+    }
+    grantSnap = await tx.get(grantRef);
 
-    if (applyEntitlement && isCreditOrder(primary) && uid) {
+    const shouldTouchEntitlement =
+      (isFullCancel || isPartial)
+      && !KEEP_STATUS.has(prevStatus.toLowerCase());
+
+    if (shouldTouchEntitlement && isCreditOrder(primary) && uid) {
       walletInfo = await readWallet(tx, db, uid);
       const decision = decideCreditReclaim({
         grantAmount: creditGrantFromOrder(primary),
         unusedBalance: walletInfo.balance,
         alreadyReclaimed: num(primary.creditsReclaimed, 0),
-        cancelledAmount: amounts.cancelled,
-        originalAmount: num(primary.amount, amounts.total),
         isFullCancel
       });
-      entitlement = { kind: 'credit', action: decision.action, reclaim: decision.reclaim, reason: decision.reason };
+      entitlement = {
+        kind: 'credit',
+        action: decision.action,
+        reclaim: decision.reclaim,
+        reason: decision.reason
+      };
       if (decision.action === 'review') nextStatus = 'refund_review_required';
-    } else if (applyEntitlement && isLicenseOrder(primary)) {
-      entitlement = { kind: 'license', action: 'review', reason: 'no_auto_revoke' };
-      nextStatus = 'refund_review_required';
-      if (uid) await tx.get(db.collection('licenses').doc(uid));
-      await tx.get(db.collection('entitlementGrants').doc(pid));
+    } else if (shouldTouchEntitlement && isLicenseOrder(primary)) {
+      const grant = grantSnap.exists ? (grantSnap.data() || {}) : null;
+      const license = licenseSnap && licenseSnap.exists ? (licenseSnap.data() || {}) : null;
+      const decision = decideLicenseRevoke({
+        grant,
+        order: primary,
+        license,
+        paymentId: pid,
+        isFullCancel,
+        isPartial
+      });
+      entitlement = {
+        kind: 'license',
+        action: decision.action,
+        reason: decision.reason,
+        productId: decision.productId || '',
+        durationDays: decision.durationDays || 0
+      };
+      if (decision.action === 'review') nextStatus = 'refund_review_required';
+      if (uid && (decision.action === 'revoke_pass' || decision.action === 'revoke_grant_only')) {
+        userGrantsSnap = await tx.get(
+          db.collection('entitlementGrants').where('uid', '==', uid)
+        );
+      }
     }
 
+    // --- Credit reclaim (idempotent via creditsReclaimed + ledger doc id) ---
     if (entitlement.action === 'reclaim' && walletInfo.ref && uid && entitlement.reclaim > 0) {
       const nextBal = Math.max(0, num(walletInfo.balance, 0) - entitlement.reclaim);
       const walletPatch = { updatedAt: FieldValue.serverTimestamp() };
@@ -369,12 +520,109 @@ async function syncPortOnePayment({
       }, { merge: true });
     }
 
-    if (entitlement.kind === 'license') {
-      tx.set(db.collection('entitlementGrants').doc(pid), {
-        refundReviewRequired: true,
-        refundReviewReason: 'portone_cancel_no_auto_revoke',
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
+    // --- License / grant revoke (idempotent via grant.revokedAt) ---
+    if (entitlement.kind === 'license' && uid) {
+      const grant = grantSnap.exists ? (grantSnap.data() || {}) : {};
+      const license = licenseSnap && licenseSnap.exists ? (licenseSnap.data() || {}) : {};
+      const act = entitlement.action;
+
+      if (act === 'revoke_pass' || act === 'revoke_grant_only' || act === 'revoke_lifetime') {
+        tx.set(grantRef, {
+          paymentId: pid,
+          uid,
+          productId: entitlement.productId || grant.productId || primary.productId || '',
+          kind: grant.kind || (entitlement.action === 'revoke_lifetime' ? 'lifetime' : 'pass'),
+          durationDays: entitlement.durationDays || grant.durationDays || primary.durationDays || 0,
+          status: 'revoked',
+          revokedAt: FieldValue.serverTimestamp(),
+          revokeReason: 'portone_full_cancel',
+          revokeSource: source,
+          sourcePaymentId: pid,
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
+
+      if (act === 'revoke_pass' && licenseSnap && licenseSnap.exists) {
+        const grantDocs = userGrantsSnap ? userGrantsSnap.docs : [];
+        const grantsForRecompute = grantDocs.map((d) => {
+          const data = d.data() || {};
+          if (d.id === pid) {
+            return Object.assign({ paymentId: d.id, sourcePaymentId: d.id }, data, { status: 'revoked' });
+          }
+          return Object.assign({ paymentId: d.id, sourcePaymentId: d.id }, data);
+        });
+        if (!grantsForRecompute.length && grantSnap.exists) {
+          grantsForRecompute.push(Object.assign(
+            { paymentId: pid, sourcePaymentId: pid },
+            grantSnap.data() || {},
+            { status: 'revoked' }
+          ));
+        }
+
+        const recomputed = passEntitlement.recomputePeriodEntitlementFromGrants(
+          grantsForRecompute,
+          new Date()
+        );
+        const extra = {
+          lastRevokePaymentId: pid,
+          lastRevokeReason: 'portone_full_cancel'
+        };
+        if (String(license.portonePaymentId || '') === pid) {
+          extra.portonePaymentId = FieldValue.delete();
+        }
+
+        if (recomputed.needsReview) {
+          entitlement.licenseAction = 'refund_review_required';
+          nextStatus = 'refund_review_required';
+          tx.set(grantRef, {
+            paymentId: pid,
+            uid,
+            refundReviewRequired: true,
+            refundReviewReason: recomputed.reason || 'pass_recompute_review',
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+        } else if (recomputed.plan === 'trial') {
+          tx.set(
+            db.collection('licenses').doc(uid),
+            buildTrialLicensePatch(FieldValue, extra),
+            { merge: true }
+          );
+          entitlement.licenseAction = 'converted_to_trial';
+        } else {
+          const patch = passEntitlement.buildPeriodLicensePatchFromRecompute(recomputed, {
+            FieldValue,
+            Timestamp,
+            extra
+          });
+          if (patch) {
+            tx.set(db.collection('licenses').doc(uid), patch, { merge: true });
+            entitlement.licenseAction = 'recomputed';
+          } else {
+            entitlement.licenseAction = 'refund_review_required';
+            nextStatus = 'refund_review_required';
+          }
+        }
+      } else if (act === 'revoke_lifetime' && licenseSnap && licenseSnap.exists) {
+        tx.set(
+          db.collection('licenses').doc(uid),
+          buildTrialLicensePatch(FieldValue, {
+            portonePaymentId: FieldValue.delete(),
+            method: 'portone_refund'
+          }),
+          { merge: true }
+        );
+        entitlement.licenseAction = 'converted_to_trial';
+      } else if (act === 'revoke_grant_only') {
+        entitlement.licenseAction = 'grant_revoked_license_untouched';
+      } else if (act === 'review') {
+        tx.set(grantRef, {
+          paymentId: pid,
+          uid,
+          refundReviewRequired: true,
+          refundReviewReason: entitlement.reason || 'portone_cancel_review',
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
     }
 
     const patchBase = buildSnapshotPatch(
@@ -387,8 +635,19 @@ async function syncPortOnePayment({
       if (entitlement.reclaim) patchBase.creditsReclaimed = FieldValue.increment(entitlement.reclaim);
     }
     if (entitlement.kind === 'license') {
-      patchBase.licenseRevoked = false;
-      patchBase.licenseRefundReview = true;
+      const revokedActs = new Set(['revoke_pass', 'revoke_lifetime', 'revoke_grant_only']);
+      const alreadyRevoked = entitlement.action === 'none'
+        && entitlement.reason
+        && String(entitlement.reason).startsWith('already_revoked');
+      const revoked = revokedActs.has(entitlement.action) || alreadyRevoked;
+      patchBase.licenseRevoked = !!revoked && entitlement.action !== 'review';
+      patchBase.licenseRefundReview = entitlement.action === 'review';
+      patchBase.entitlementStatus =
+        entitlement.action === 'review'
+          ? 'refund_review_required'
+          : (revoked ? 'revoked' : String(entitlement.action || ''));
+      patchBase.licenseRevokeReason = entitlement.reason || '';
+      if (entitlement.licenseAction) patchBase.licenseRevokeAction = entitlement.licenseAction;
     }
     if ((isFullCancel || isPartial) && amounts.cancelledAt) {
       patchBase.refundAt = amounts.cancelledAt;
@@ -450,6 +709,36 @@ async function recordWebhookDelivery(db, FieldValue, webhookId, payload) {
   return { duplicate: false };
 }
 
+/**
+ * Pick PortOne orders that still look paid / partially refunded and are stale for reconcile.
+ */
+function shouldReconcileOrder(order, nowMs = Date.now(), staleMs = 6 * 60 * 60 * 1000) {
+  if (!order) return false;
+  const provider = String(order.provider || '').toLowerCase();
+  const method = String(order.paymentMethod || order.method || '').toLowerCase();
+  const isPortOne = provider === 'portone' || method.includes('kakao') || !!order.portonePaymentId
+    || (!!order.paymentId && !order.paypalOrderId && !order.paypalCaptureId);
+  if (!isPortOne) return false;
+  const status = String(order.status || '').toLowerCase();
+  const candidates = new Set([
+    'completed', 'paid', 'verified', 'license_issued',
+    'partially_refunded', 'refund_review_required'
+  ]);
+  // Money already marked refunded but entitlement not revoked — still needs pipeline.
+  const needsEntitlementFix =
+    (status === 'refunded' || status === 'cancelled' || status === 'canceled')
+    && order.licenseIssued === true
+    && order.licenseRevoked !== true
+    && order.entitlementStatus !== 'revoked';
+  if (!candidates.has(status) && !needsEntitlementFix) return false;
+  if (KEEP_STATUS.has(status)) return false;
+  const last = passEntitlement.licenseTsMs(order.lastSyncedAt);
+  if (!last) return true;
+  // Entitlement-fix candidates re-check sooner even if recently synced under old policy.
+  if (needsEntitlementFix) return (nowMs - last) >= Math.min(staleMs, 30 * 60 * 1000);
+  return (nowMs - last) >= staleMs;
+}
+
 module.exports = {
   EVENT_COLLECTION,
   WEBHOOK_COLLECTION,
@@ -463,8 +752,12 @@ module.exports = {
   isLicenseOrder,
   creditGrantFromOrder,
   decideCreditReclaim,
+  decideLicenseRevoke,
   cancellationEventIds,
   findOrderRefs,
   syncPortOnePayment,
-  recordWebhookDelivery
+  recordWebhookDelivery,
+  shouldReconcileOrder,
+  buildTrialLicensePatch,
+  buildPassShortenPatch
 };

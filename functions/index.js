@@ -37,7 +37,9 @@ function cors(req, res, methods = 'POST, OPTIONS') {
   const allowOrigin =
     allowedOrigins.includes(origin) ||
     origin.startsWith('http://localhost:') ||
-    origin.startsWith('http://127.0.0.1:')
+    origin.startsWith('http://127.0.0.1:') ||
+    /^https:\/\/midiaistudio(--[a-z0-9-]+)?\.web\.app$/i.test(origin) ||
+    /^https:\/\/midiaistudio(--[a-z0-9-]+)?\.firebaseapp\.com$/i.test(origin)
       ? origin
       : allowedOrigins[0];
 
@@ -76,6 +78,7 @@ async function applyPortOneRefundSync(paymentId, source, actorUid) {
   return portoneRefundSync.syncPortOnePayment({
     db,
     FieldValue: admin.firestore.FieldValue,
+    Timestamp: admin.firestore.Timestamp,
     paymentId,
     payment,
     source,
@@ -1271,7 +1274,13 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
         currency: product.currency,
         grantedAt: now,
         revokedAt: null,
-        status: 'active'
+        status: 'active',
+        sourcePaymentId: paymentId,
+        expiresAtAfterGrant: isPass ? licensePayload.expiresAt : null,
+        previousExpiresAt: isPass && licenseData && licenseData.expiresAt
+          ? licenseData.expiresAt
+          : null,
+        previousPlan: licenseData ? String(licenseData.plan || '') : ''
       }, { merge: true });
       issued = true;
     });
@@ -1718,7 +1727,7 @@ exports.portoneWebhook = functions.https.onRequest(async (req, res) => {
 });
 
 /**
- * Admin: re-fetch PortOne payment and sync order / credit / review flags.
+ * Admin: re-fetch PortOne payment and sync order / credit / license revoke.
  * Client cannot send secret, amount, uid, or status overrides.
  */
 exports.syncPortOnePaymentStatus = functions.https.onRequest(async (req, res) => {
@@ -1739,4 +1748,331 @@ exports.syncPortOnePaymentStatus = functions.https.onRequest(async (req, res) =>
       message: err.message || 'PortOne 상태 동기화에 실패했습니다.'
     });
   }
+});
+
+/**
+ * Admin full-cancel PortOne payment from MidiAI console.
+ * Body: { paymentId, reason? } only — amount/uid/product from server + PortOne.
+ * Then runs the same applyPortOneRefundSync pipeline as webhook/manual sync.
+ */
+exports.adminCancelPortOnePayment = functions.https.onRequest(async (req, res) => {
+  if (cors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
+  try {
+    const adminUser = await requireAdmin(req);
+    const paymentId = String((req.body || {}).paymentId || '').trim();
+    const reason = String((req.body || {}).reason || '고객 요청').trim().slice(0, 200) || '고객 요청';
+    if (!paymentId) {
+      return res.status(400).json({ ok: false, message: 'paymentId가 없습니다.' });
+    }
+
+    // Ignore client amount/uid/product spoof fields entirely.
+    const orderRefs = await portoneRefundSync.findOrderRefs(db, paymentId);
+    let orderSnap = null;
+    for (const ref of orderRefs) {
+      const s = await ref.get();
+      if (s.exists) { orderSnap = s; break; }
+    }
+    if (!orderSnap) {
+      return res.status(404).json({ ok: false, message: '주문을 찾을 수 없습니다.', code: 'ORDER_NOT_FOUND' });
+    }
+    const order = orderSnap.data() || {};
+    const orderUid = String(order.uid || order.userId || '');
+    const productId = String(order.productId || '');
+    const amount = Number(order.amount);
+    const currency = String(order.currency || 'KRW');
+    const prevStatus = String(order.status || '').toLowerCase();
+
+    if (order.paypalOrderId || order.paypalCaptureId) {
+      return res.status(400).json({ ok: false, message: 'PayPal 결제는 이 메뉴에서 취소할 수 없습니다.', code: 'NOT_PORTONE' });
+    }
+
+    let providerPayment;
+    try {
+      providerPayment = await fetchPortOnePayment(paymentId);
+    } catch (err) {
+      return res.status(err.status || 502).json({
+        ok: false,
+        code: 'PROVIDER_LOOKUP_FAILED',
+        message: err.message || 'PortOne 결제 조회에 실패했습니다. 내부 상태는 변경하지 않았습니다.'
+      });
+    }
+
+    const amountsBefore = portoneRefundSync.parsePortOneAmounts(providerPayment);
+    const providerStatus = String(providerPayment.status || '').toUpperCase().replace(/^PAYMENT_STATUS_/, '');
+    const isFullCancelAlready = amountsBefore.paid <= 0 && amountsBefore.cancelled > 0
+      || providerStatus === 'CANCELLED' || providerStatus === 'CANCELED';
+    const isPartial = amountsBefore.paid > 0 && amountsBefore.cancelled > 0
+      || providerStatus === 'PARTIAL_CANCELLED' || providerStatus === 'PARTIAL_CANCELED';
+    const isPaid = providerStatus === 'PAID'
+      || (amountsBefore.paid > 0 && amountsBefore.cancelled <= 0 && !isFullCancelAlready);
+
+    let cancelCalled = false;
+    let cancelResult = null;
+    let path = 'unknown';
+
+    if (isPartial && !isFullCancelAlready) {
+      path = 'partial_existing';
+      const sync = await applyPortOneRefundSync(paymentId, 'admin_cancel_partial', adminUser.uid);
+      return res.json({
+        ok: true,
+        path,
+        cancelCalled: false,
+        message: 'PortOne에서 부분취소된 결제입니다. 전액취소는 실행하지 않았습니다.',
+        status: sync.status,
+        providerStatus: sync.providerStatus,
+        refundedAmount: sync.refundedAmount,
+        cancelledAmount: sync.cancelledAmount,
+        entitlement: sync.entitlement,
+        sync
+      });
+    }
+
+    if (isFullCancelAlready) {
+      path = 'already_cancelled';
+    } else if (isPaid) {
+      path = 'cancel_then_sync';
+      const cancelAmount = Number.isFinite(amount) && amount > 0
+        ? amount
+        : (amountsBefore.paid > 0 ? amountsBefore.paid : amountsBefore.total);
+      try {
+        cancelResult = await cancelPortOnePayment(paymentId, reason, cancelAmount);
+        cancelCalled = true;
+      } catch (err) {
+        // Race: webhook/console already cancelled — treat as already cancelled if re-fetch says so.
+        let again;
+        try { again = await fetchPortOnePayment(paymentId); } catch (_) { again = null; }
+        const am = again ? portoneRefundSync.parsePortOneAmounts(again) : null;
+        const st = String((again && again.status) || '').toUpperCase();
+        if (am && (am.paid <= 0 && am.cancelled > 0 || st === 'CANCELLED' || st === 'CANCELED')) {
+          path = 'already_cancelled_race';
+          providerPayment = again;
+        } else {
+          return res.status(400).json({
+            ok: false,
+            code: 'PROVIDER_CANCEL_FAILED',
+            message: err.message || 'PortOne 결제 취소에 실패했습니다.',
+            cancelCalled: true
+          });
+        }
+      }
+      if (cancelCalled) {
+        try {
+          providerPayment = await fetchPortOnePayment(paymentId);
+        } catch (err) {
+          return res.status(502).json({
+            ok: false,
+            code: 'PROVIDER_CANCELLED_VERIFY_FAILED',
+            message: 'PortOne 결제는 취소 요청되었으나 재조회에 실패했습니다. [PortOne 상태 동기화]로 내부 상태를 맞춰 주세요.',
+            cancelCalled: true,
+            portoneCancelOk: true
+          });
+        }
+        const verify = portoneRefundSync.parsePortOneAmounts(providerPayment);
+        const vst = String(providerPayment.status || '').toUpperCase();
+        const verifiedFull = (verify.paid <= 0 && verify.cancelled > 0)
+          || vst === 'CANCELLED' || vst === 'CANCELED';
+        if (!verifiedFull) {
+          return res.status(409).json({
+            ok: false,
+            code: 'PROVIDER_CANCEL_NOT_CONFIRMED',
+            message: 'PortOne 취소 후 전액취소 상태를 확인하지 못했습니다. [PortOne 상태 동기화]를 실행해 주세요.',
+            cancelCalled: true,
+            providerStatus: vst,
+            paidAmount: verify.paid,
+            cancelledAmount: verify.cancelled
+          });
+        }
+      }
+    } else {
+      return res.status(409).json({
+        ok: false,
+        code: 'PROVIDER_NOT_CANCELLABLE',
+        message: `PortOne 상태가 취소 가능한 PAID가 아닙니다 (${providerStatus || 'unknown'}).`,
+        providerStatus
+      });
+    }
+
+    let sync;
+    try {
+      sync = await applyPortOneRefundSync(paymentId, 'admin_cancel', adminUser.uid);
+    } catch (err) {
+      return res.status(500).json({
+        ok: false,
+        code: 'INTERNAL_SYNC_FAILED',
+        message: cancelCalled
+          ? 'PortOne 결제는 취소되었으나 내부 상태 동기화에 실패했습니다. [PortOne 상태 동기화]를 실행해 주세요.'
+          : (err.message || '내부 동기화에 실패했습니다.'),
+        cancelCalled,
+        portoneCancelOk: !!cancelCalled
+      });
+    }
+
+    const entitlement = sync.entitlement || {};
+    const licenseRevoked = entitlement.kind === 'license' && (
+      ['revoke_pass', 'revoke_lifetime', 'revoke_grant_only'].includes(entitlement.action)
+      || (entitlement.action === 'none' && String(entitlement.reason || '').startsWith('already_revoked'))
+    );
+
+    // Audit (Admin SDK — no secrets)
+    try {
+      await db.collection('adminAuditLogs').add({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        targetUserId: orderUid || '',
+        category: 'payment',
+        action: 'portone_payment_cancelled',
+        actorId: adminUser.uid,
+        actorEmail: adminUser.email || '',
+        result: 'ok',
+        summary: `${productId || 'payment'} 전액취소 · ${Number(sync.refundedAmount || amount || 0).toLocaleString('ko-KR')} ${currency}`,
+        before: { status: prevStatus, providerStatus },
+        after: {
+          status: sync.status,
+          providerStatus: sync.providerStatus,
+          refundedAmount: sync.refundedAmount,
+          path,
+          cancelCalled,
+          licenseRevoked,
+          entitlementAction: entitlement.action || '',
+          reason
+        },
+        paymentId,
+        productId
+      });
+    } catch (auditErr) {
+      console.warn('adminCancelPortOnePayment audit', auditErr && auditErr.message);
+    }
+
+    // User notification (idempotent per payment)
+    if (orderUid && (licenseRevoked || sync.status === 'refunded' || sync.status === 'cancelled')) {
+      try {
+        const productLabel = productId === 'PASS_7D' ? '7일 Full'
+          : productId === 'PASS_30D' ? '30일 Full'
+            : productId === 'PASS_90D' ? '90일 Full'
+              : productId === 'LIFETIME' ? 'Lifetime Full'
+                : (order.productName || order.orderName || productId || '이용권');
+        const refundAmt = Number(sync.refundedAmount != null ? sync.refundedAmount : amount) || 0;
+        const notifId = `payment_cancel_${paymentId}`.slice(0, 140);
+        const notifRef = db.collection('users').doc(orderUid).collection('notifications').doc(notifId);
+        const exists = await notifRef.get();
+        if (!exists.exists) {
+          const bodyParts = [
+            `${productLabel} 결제가 취소되었습니다.`,
+            refundAmt > 0 ? `결제금액 ${refundAmt.toLocaleString('ko-KR')}원이 환불 처리되었습니다.` : '',
+            licenseRevoked ? '해당 라이선스가 종료되었습니다.' : ''
+          ].filter(Boolean);
+          await notifRef.set({
+            type: 'license_change',
+            sourceType: 'payment_cancel',
+            sourceId: paymentId,
+            paymentId,
+            plan: String(order.plan || ''),
+            status: 'revoked',
+            actorUid: adminUser.uid,
+            actorName: 'MidiAI Studio',
+            postTitle: '결제 취소 완료',
+            preview: bodyParts.join(' ').slice(0, 160),
+            read: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+        }
+      } catch (notifErr) {
+        console.warn('adminCancelPortOnePayment notify', notifErr && notifErr.message);
+      }
+    }
+
+    const msg = path === 'already_cancelled' || path === 'already_cancelled_race'
+      ? (licenseRevoked
+        ? '이미 PortOne에서 취소된 결제입니다. 내부 상태와 라이선스를 보정했습니다.'
+        : '이미 PortOne에서 취소된 결제입니다. 내부 결제 상태를 보정했습니다.')
+      : (licenseRevoked
+        ? '결제가 전액 취소되었습니다. 해당 결제로 지급된 라이선스도 회수되었습니다.'
+        : '결제가 전액 취소되었습니다.');
+
+    return res.json({
+      ok: true,
+      path,
+      cancelCalled,
+      message: msg,
+      paymentId,
+      status: sync.status,
+      providerStatus: sync.providerStatus,
+      paidAmount: sync.paidAmount,
+      refundedAmount: sync.refundedAmount,
+      cancelledAmount: sync.cancelledAmount,
+      cancelledAt: sync.cancelledAt,
+      entitlement: sync.entitlement,
+      licenseRevoked,
+      productId,
+      amount: Number.isFinite(amount) ? amount : null,
+      currency,
+      reason
+    });
+  } catch (err) {
+    console.error('adminCancelPortOnePayment', err && err.message ? err.message : err);
+    return res.status(err.status || 500).json({
+      ok: false,
+      message: err.message || '결제 취소에 실패했습니다.'
+    });
+  }
+});
+
+/**
+ * Webhook-miss safety net: re-check recent PortOne paid / review orders.
+ * Uses the same applyPortOneRefundSync pipeline as webhook + manual sync.
+ */
+exports.reconcilePortOnePayments = onSchedule({
+  schedule: 'every 12 hours',
+  timeZone: 'Asia/Seoul'
+}, async () => {
+  const nowMs = Date.now();
+  const since = admin.firestore.Timestamp.fromDate(
+    new Date(nowMs - 30 * 24 * 60 * 60 * 1000)
+  );
+  const statuses = [
+    'completed', 'paid', 'verified', 'license_issued',
+    'partially_refunded', 'refund_review_required',
+    'refunded', 'cancelled'
+  ];
+  const seen = new Set();
+  let checked = 0;
+  let synced = 0;
+  let errors = 0;
+  for (const status of statuses) {
+    let snap;
+    try {
+      snap = await db.collection('orders')
+        .where('status', '==', status)
+        .where('createdAt', '>=', since)
+        .limit(40)
+        .get();
+    } catch (err) {
+      // Fallback without createdAt composite index.
+      try {
+        snap = await db.collection('orders').where('status', '==', status).limit(40).get();
+      } catch (err2) {
+        console.warn('reconcilePortOnePayments query', status, err2 && err2.message);
+        continue;
+      }
+    }
+    for (const doc of snap.docs) {
+      const data = doc.data() || {};
+      const paymentId = String(data.paymentId || doc.id || '').trim();
+      if (!paymentId || seen.has(paymentId)) continue;
+      if (!portoneRefundSync.shouldReconcileOrder({ ...data, paymentId }, nowMs)) continue;
+      // Skip clearly non-PortOne (PayPal) rows.
+      if (data.paypalOrderId || data.paypalCaptureId) continue;
+      seen.add(paymentId);
+      checked += 1;
+      try {
+        await applyPortOneRefundSync(paymentId, 'reconcile', '');
+        synced += 1;
+      } catch (err) {
+        errors += 1;
+        console.warn('reconcilePortOnePayments sync', paymentId.slice(0, 8), err && err.message);
+      }
+    }
+  }
+  console.log('reconcilePortOnePayments done', { checked, synced, errors, unique: seen.size });
+  return null;
 });

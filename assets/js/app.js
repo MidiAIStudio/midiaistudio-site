@@ -731,8 +731,11 @@ function normalizePlan(lic){
 function normalizeStatus(lic){
   if(!lic) return 'active';
   const status=String(lic.status||'').toLowerCase().trim();
+  const plan=String(lic.plan||'').toLowerCase().trim();
   if(status==='banned' || status==='suspended') return 'banned';
-  if(status==='expired' || status==='refunded') return 'expired';
+  if(status==='expired' || status==='refunded' || status==='revoked') return 'expired';
+  // PortOne cancel revoke left a paid plan flag with revokedAt — not usable even if expiresAt is future.
+  if(lic.revokedAt && (plan==='period' || plan==='lifetime' || plan==='monthly')) return 'expired';
   if((status==='active' || !status || status==='none' || status==='inactive') && !licenseDateBoundsActive(lic) && licenseTsMs(lic.expiresAt)){
     return 'expired';
   }
@@ -7470,7 +7473,7 @@ function renderAdminOrderWorkStats(){
     ${card('failed', counts.failed, '결제 실패')}
     ${card('refund', counts.refund, '취소/환불')}
     ${card('today', todayPaid, '오늘 결제')}
-    ${amount ? `<div class="crm-stat is-amount"><b>${esc(amount)}</b><span>결제 금액</span></div>` : ''}`;
+    ${amount ? `<div class="crm-stat is-amount"><b>${esc(amount)}</b><span>결제완료 금액</span></div>` : ''}`;
 }
 function renderAdminCrmStats(rows){
   renderAdminHomeMemberStats();
@@ -7838,12 +7841,20 @@ function adminOrderMethodsSummary(items){
   return `${labels[0]} 외 ${labels.length-1}`;
 }
 function adminCrmOrderChildRowHtml(o){
-  const key=o.id||'';
+  const key=o.id||o.paymentId||o.paypalOrderId||'';
+  const uid=String(o.uid||o.userId||o.customerUid||'');
   const id=adminOrderDisplayId(o);
+  const detail = key
+    ? `<button type="button" class="secondary mini-btn" data-order-detail="${esc(key)}" data-order-uid="${esc(uid)}" title="주문 상세 · PortOne 동기화/취소">상세</button>`
+    : '';
+  // PortOne 결제 추적용 주문은 hard delete를 숨기지 않되, 상세와 혼동되지 않게 보조 버튼으로 둔다.
   const del = key
-    ? `<button type="button" class="secondary mini-btn danger-btn" data-order-delete="${esc(key)}">삭제</button>`
+    ? `<button type="button" class="ghost mini-btn admin-order-delete-btn" data-order-delete="${esc(key)}" title="내부 주문 기록만 삭제 (환불/회수 아님)">삭제</button>`
+    : '';
+  const actions = (detail || del)
+    ? `<div class="admin-order-row-actions">${detail}${del}</div>`
     : '-';
-  return `<tr class="admin-order-child-row">
+  return `<tr class="admin-order-child-row" data-order-row-id="${esc(key)}" data-order-uid="${esc(uid)}">
     <td class="mono admin-order-id" title="${esc(id)}">${esc(id)}</td>
     <td title="${esc(adminOrderProductName(o))}">${esc(adminOrderProductName(o))}</td>
     <td>${esc(adminPaymentMethodLabel(o.paymentMethod||o.provider||o.method||'-'))}</td>
@@ -7851,7 +7862,7 @@ function adminCrmOrderChildRowHtml(o){
     <td>${adminPaymentStatusBadgeHtml(o.status)}</td>
     <td>${esc(fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt))}</td>
     <td class="admin-order-refund" title="${esc(adminOrderRefundText(o))}">${esc(adminOrderRefundText(o))}</td>
-    <td>${del}</td>
+    <td>${actions}</td>
   </tr>`;
 }
 function adminCrmOrderGroupHtml(g){
@@ -7944,6 +7955,20 @@ function onAdminCrmListClick(e){
     const uid = check.getAttribute('data-crm-check');
     if(check.checked) adminCrmSelected.add(uid); else adminCrmSelected.delete(uid);
     updateAdminCrmBulkbar();
+    return;
+  }
+  const detail = e.target.closest('[data-order-detail]');
+  if(detail){
+    e.preventDefault();
+    e.stopPropagation();
+    const orderKey = detail.getAttribute('data-order-detail') || '';
+    let uid = detail.getAttribute('data-order-uid') || '';
+    if(!uid && orderKey){
+      const row = (adminOrderRows||[]).find(o=>(o.id||o.paymentId||o.paypalOrderId)===orderKey);
+      uid = String(row?.uid||row?.userId||row?.customerUid||'');
+    }
+    if(orderKey && uid) openAdminCrmOrderDrawer(uid, orderKey);
+    else if(orderKey) alert('이 주문에 연결된 회원 UID를 찾을 수 없습니다.');
     return;
   }
   const del = e.target.closest('[data-order-delete]');
@@ -8791,6 +8816,7 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
   const found = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
   if(!found){ body.innerHTML=`<p class="muted">주문을 찾을 수 없습니다.</p>`; drawer.hidden=false; return; }
   const o = Object.assign({}, found, overlay||{});
+  const user = findAdminUserRow(uid);
   const licIssued = o.licenseIssued===true || o.status==='completed' || o.status==='paid' || !!o.issuedAt;
   const receipt = o.receiptUrl || o.receipt || o.invoiceUrl || '';
   const currency = o.currency || 'KRW';
@@ -8799,33 +8825,182 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
   const refundWhen = o.refundedAt || o.cancelledAt || o.refundAt;
   const portone = isAdminPortOneOrder(o);
   const paymentId = o.paymentId || o.id || orderKey;
+  const statusGroup = adminOrderStatusGroup(o.status);
+  const providerSt = String(o.providerStatus || o.rawStatus || '').toUpperCase().replace(/^PAYMENT_STATUS_/, '');
+  const providerAlreadyCancelled =
+    providerSt === 'CANCELLED' || providerSt === 'CANCELED'
+    || (Number(o.cancelledAmount || o.refundedAmount || 0) > 0 && Number(o.paidAmount ?? -1) === 0);
+  // 이미 PortOne CANCELLED면 취소 API 재호출 UI를 숨기고 동기화만 유도한다.
+  const canCancel = portone && (statusGroup==='paid' || statusGroup==='pending') && !providerAlreadyCancelled;
+  const alreadyRefund = statusGroup==='refund';
+  const needsSync = portone && providerAlreadyCancelled && statusGroup==='paid';
+  const productLabel = adminOrderProductName(o);
+  const licenseLabel = (()=>{
+    const pid=String(o.productId||'').toUpperCase();
+    if(pid==='PASS_7D') return '7일';
+    if(pid==='PASS_30D') return '30일';
+    if(pid==='PASS_90D') return '90일';
+    if(pid==='LIFETIME' || String(o.plan||'')==='lifetime') return 'Lifetime';
+    if(o.durationDays) return `${o.durationDays}일`;
+    return o.plan || '-';
+  })();
+  const entitlementLabel =
+    o.licenseRevoked===true || o.entitlementStatus==='revoked'
+      ? '회수됨'
+      : (o.licenseRefundReview || o.status==='refund_review_required'
+        ? '환불 검토 필요'
+        : (licIssued ? '활성' : '-'));
   body.innerHTML = `
     <dl class="admin-crm-order-dl">
-      <div><dt>주문번호</dt><dd class="mono">${esc(o.paymentId||o.paypalOrderId||o.id||'-')}</dd></div>
-      <div><dt>Payment ID</dt><dd class="mono">${esc(o.paymentId||o.portoneTransactionId||o.paypalCaptureId||'-')}</dd></div>
-      <div><dt>PG</dt><dd>${esc(o.provider||o.pg||'-')}</dd></div>
-      <div><dt>결제수단</dt><dd>${esc(adminPaymentMethodLabel(o.paymentMethod||o.method||'-'))}</dd></div>
+      <div><dt>상품</dt><dd>${esc(productLabel)}</dd></div>
+      <div><dt>사용자</dt><dd>${esc(user?.email || user?.displayName || uid || '-')}</dd></div>
       <div><dt>결제금액</dt><dd>${esc(adminOrderMoneyText(o.amount, currency))}</dd></div>
+      <div><dt>결제수단</dt><dd>${esc(adminPaymentMethodLabel(o.paymentMethod||o.method||'-'))}</dd></div>
+      <div><dt>결제상태</dt><dd>${adminPaymentStatusBadgeHtml(o.status||'-')}</dd></div>
+      <div><dt>PortOne 상태</dt><dd>${esc(o.providerStatus||o.rawStatus||'-')}</dd></div>
       <div><dt>실결제</dt><dd>${esc(adminOrderMoneyText(paidShow, currency))}</dd></div>
       <div><dt>환불금액</dt><dd>${esc(adminOrderMoneyText(refundShow, currency))}</dd></div>
-      <div><dt>상태</dt><dd>${adminPaymentStatusBadgeHtml(o.status||'-')}</dd></div>
-      <div><dt>PG 상태</dt><dd>${esc(o.providerStatus||o.rawStatus||'-')}</dd></div>
-      <div><dt>결제시간</dt><dd>${esc(fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt))}</dd></div>
-      <div><dt>환불일시</dt><dd>${esc(refundWhen?fmtDate(refundWhen):'-')}</dd></div>
+      <div><dt>결제일</dt><dd>${esc(fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt))}</dd></div>
+      <div><dt>환불일</dt><dd>${esc(refundWhen?fmtDate(refundWhen):'-')}</dd></div>
+      <div><dt>지급 라이선스</dt><dd>${esc(licenseLabel)}</dd></div>
+      <div><dt>라이선스 상태</dt><dd>${esc(entitlementLabel)}${o.licenseRevokeReason?` · ${esc(o.licenseRevokeReason)}`:''}</dd></div>
+      <div><dt>주문번호</dt><dd class="mono">${esc(o.paymentId||o.paypalOrderId||o.id||'-')}</dd></div>
       <div><dt>마지막 동기화</dt><dd>${esc(o.lastSyncedAt?fmtDate(o.lastSyncedAt):'-')}</dd></div>
-      <div><dt>웹훅 결과</dt><dd>${esc(o.verificationStatus||o.rawStatus||o.webhookStatus||'-')}</dd></div>
-      <div><dt>자동 라이선스 지급</dt><dd>${licIssued?'지급됨':'미지급/해당없음'}</dd></div>
-      ${o.licenseRefundReview?`<div><dt>라이선스</dt><dd>자동 회수하지 않음 · 관리자 검토</dd></div>`:''}
-      ${o.creditsReclaimStatus?`<div><dt>크레딧 회수</dt><dd>${esc(o.creditsReclaimStatus==='reclaim'?'회수됨':o.creditsReclaimStatus==='review'?'검토 필요':String(o.creditsReclaimStatus))}${o.creditsReclaimReason?` · ${esc(o.creditsReclaimReason)}`:''}</dd></div>`:''}
+      ${o.creditsReclaimStatus?`<div><dt>크레딧 회수</dt><dd>${esc(o.creditsReclaimStatus==='reclaim'?'회수됨':o.creditsReclaimStatus==='review'?'검토 필요':String(o.creditsReclaimStatus))}</dd></div>`:''}
       <div><dt>관리 메모</dt><dd>${esc(o.memo||o.adminMemo||o.refundReason||'-')}</dd></div>
       <div><dt>영수증</dt><dd>${receipt?`<a href="${esc(receipt)}" target="_blank" rel="noopener">영수증 열기</a>`:'없음'}</dd></div>
     </dl>
-    ${portone?`<div class="admin-crm-order-sync"><button type="button" class="secondary mini-btn" data-portone-sync="${esc(paymentId)}">PortOne 상태 동기화</button><p class="muted small">콘솔 취소가 안 보이면 서버에서 PortOne 원장을 다시 조회합니다. 시크릿은 브라우저에 두지 않습니다.</p></div>`:''}`;
+    ${portone?`<div class="admin-crm-order-sync">
+      <div class="admin-crm-order-actions">
+        <button type="button" class="secondary mini-btn" data-portone-sync="${esc(paymentId)}">PortOne 상태 동기화</button>
+        ${canCancel?`<button type="button" class="secondary mini-btn danger-btn" data-portone-cancel="${esc(paymentId)}">결제 취소</button>`:''}
+      </div>
+      ${needsSync?`<p class="admin-portone-sync-hint">PortOne은 이미 CANCELLED입니다. 취소 API를 다시 보내지 말고 <b>상태 동기화</b>로 내부 주문·라이선스를 맞추세요.</p>`:''}
+      ${alreadyRefund && !canCancel && !needsSync?`<p class="muted small">이미 취소/환불 상태입니다. 동기화로 PortOne·라이선스를 맞출 수 있습니다.</p>`:''}
+      <p class="muted small">[결제 취소]는 PortOne 전액 환불 + 권한 회수입니다. 목록의 [삭제](내부 기록 삭제)와 다릅니다.</p>
+    </div>`:''}`;
   const syncBtn=body.querySelector('[data-portone-sync]');
   if(syncBtn){
     syncBtn.addEventListener('click',()=>syncAdminPortOneOrder(uid, orderKey, syncBtn));
   }
+  const cancelBtn=body.querySelector('[data-portone-cancel]');
+  if(cancelBtn){
+    cancelBtn.addEventListener('click',()=>openAdminPortOneCancelModal(uid, orderKey));
+  }
   drawer.hidden=false;
+}
+function applyAdminPortOneOrderOverlay(uid, orderKey, result){
+  const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+  const overlay = {
+    status: result.status,
+    providerStatus: result.providerStatus,
+    paidAmount: result.paidAmount,
+    refundedAmount: result.refundedAmount,
+    cancelledAmount: result.cancelledAmount,
+    refundedAt: result.cancelledAt,
+    lastSyncedAt: new Date().toISOString(),
+    creditsReclaimStatus: result.entitlement && result.entitlement.kind==='credit' ? result.entitlement.action : undefined,
+    creditsReclaimReason: result.entitlement && result.entitlement.kind==='credit' ? result.entitlement.reason : undefined,
+    licenseRevoked: result.licenseRevoked === true || (result.entitlement && result.entitlement.kind==='license'
+      && ['revoke_pass','revoke_lifetime','revoke_grant_only'].includes(result.entitlement.action)),
+    licenseRefundReview: result.entitlement && result.entitlement.kind==='license' && result.entitlement.action==='review',
+    licenseRevokeReason: result.entitlement && result.entitlement.kind==='license' ? result.entitlement.reason : undefined,
+    licenseRevokeAction: result.entitlement && result.entitlement.licenseAction,
+    entitlementStatus: result.entitlement && result.entitlement.kind==='license'
+      ? (result.entitlement.action==='review' ? 'refund_review_required' : 'revoked')
+      : undefined
+  };
+  if(o) Object.assign(o, overlay);
+  // Also patch canonical row in adminOrderRows if different reference
+  const key = o?.id || o?.paymentId || orderKey;
+  (adminOrderRows||[]).forEach(row=>{
+    if((row.id||row.paymentId||row.paypalOrderId)===key) Object.assign(row, overlay);
+  });
+  paintAdminCrmOrderDrawer(uid, orderKey, overlay);
+  if(adminCrmMode()==='orders'){
+    renderAdminOrderWorkStats();
+    renderAdminWorkStatusTabs('orders');
+    try{ paintAdminCrmPagedList(); }catch(_){ try{ renderAdminUserTable({ keepOrder: true }); }catch(__){ /* ignore */ } }
+  }
+  renderAdminPaymentsTable();
+  return overlay;
+}
+function closeAdminPortOneCancelModal(){
+  document.getElementById('adminPortOneCancelBackdrop')?.remove();
+}
+function openAdminPortOneCancelModal(uid, orderKey){
+  const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+  if(!o) return;
+  const user = findAdminUserRow(uid);
+  const paymentId = o.paymentId || o.id || orderKey;
+  const amount = Number(o.amount);
+  const amountLabel = Number.isFinite(amount)
+    ? `${amount.toLocaleString('ko-KR')}원`
+    : adminOrderMoneyText(o.amount, o.currency||'KRW');
+  const productLabel = adminOrderProductName(o);
+  closeAdminPortOneCancelModal();
+  const backdrop=document.createElement('div');
+  backdrop.id='adminPortOneCancelBackdrop';
+  backdrop.className='edit-modal-backdrop';
+  backdrop.innerHTML=`<div class="edit-modal admin-portone-cancel-modal" role="dialog" aria-modal="true" aria-labelledby="adminPortOneCancelTitle">
+    <div class="edit-modal-head">
+      <h3 id="adminPortOneCancelTitle">결제를 취소하시겠습니까?</h3>
+      <button type="button" class="edit-modal-x" data-cancel-close aria-label="close">×</button>
+    </div>
+    <div class="edit-modal-body">
+      <dl class="admin-crm-order-dl admin-portone-cancel-summary">
+        <div><dt>상품</dt><dd>${esc(productLabel)}</dd></div>
+        <div><dt>사용자</dt><dd>${esc(user?.email||uid||'-')}</dd></div>
+        <div><dt>결제금액</dt><dd>${esc(adminOrderMoneyText(o.amount, o.currency||'KRW'))}</dd></div>
+        <div><dt>결제수단</dt><dd>${esc(adminPaymentMethodLabel(o.paymentMethod||o.method||'-'))}</dd></div>
+      </dl>
+      <p class="admin-portone-cancel-warn">결제를 취소하면 결제금액이 전액 환불되며, 이 결제로 지급된 라이선스가 회수됩니다.</p>
+      <label class="edit-field"><span>취소 사유</span>
+        <input type="text" id="adminPortOneCancelReason" value="고객 요청" maxlength="200" autocomplete="off">
+      </label>
+    </div>
+    <div class="edit-modal-actions">
+      <button type="button" class="ghost" data-cancel-close>닫기</button>
+      <button type="button" class="primary danger-btn" data-cancel-confirm>${esc(amountLabel)} 전액 취소</button>
+    </div>
+  </div>`;
+  document.body.appendChild(backdrop);
+  const close=()=>closeAdminPortOneCancelModal();
+  backdrop.querySelectorAll('[data-cancel-close]').forEach(btn=>btn.addEventListener('click', close));
+  backdrop.addEventListener('click', e=>{ if(e.target===backdrop) close(); });
+  const confirmBtn=backdrop.querySelector('[data-cancel-confirm]');
+  confirmBtn?.addEventListener('click', ()=>{
+    const reason = ($('adminPortOneCancelReason')?.value || '고객 요청').trim() || '고객 요청';
+    runAdminPortOneCancel(uid, orderKey, paymentId, reason, confirmBtn).catch(err=>{
+      alert(err?.message || '결제 취소에 실패했습니다.');
+    });
+  });
+}
+async function runAdminPortOneCancel(uid, orderKey, paymentId, reason, btn){
+  if(runAdminPortOneCancel._busy) return;
+  runAdminPortOneCancel._busy = paymentId;
+  if(btn){ btn.disabled=true; btn.textContent='취소 처리 중...'; }
+  try{
+    const result = await callFunctionJson('adminCancelPortOnePayment', { paymentId, reason });
+    closeAdminPortOneCancelModal();
+    applyAdminPortOneOrderOverlay(uid, orderKey, result);
+    adminFlash(result.message || '결제가 전액 취소되었습니다.');
+    // Refresh license view for this user if CRM open
+    if(selectedAdminUid===uid){
+      try{ renderAdminCrmDetail(uid); }catch(_){ /* ignore */ }
+    }
+  }catch(err){
+    const code = err?.code || err?.data?.code;
+    if(code==='PROVIDER_CANCELLED_VERIFY_FAILED' || code==='INTERNAL_SYNC_FAILED'){
+      alert(err.message || 'PortOne 결제는 취소되었으나 내부 상태 동기화가 필요합니다.');
+      try{ await syncAdminPortOneOrder(uid, orderKey); }catch(_){ /* ignore */ }
+    } else {
+      throw err;
+    }
+  }finally{
+    runAdminPortOneCancel._busy = '';
+    if(btn){ btn.disabled=false; btn.textContent='전액 취소'; }
+  }
 }
 async function syncAdminPortOneOrder(uid, orderKey, btn){
   const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
@@ -8833,20 +9008,7 @@ async function syncAdminPortOneOrder(uid, orderKey, btn){
   if(btn){ btn.disabled=true; btn.textContent='동기화 중...'; }
   try{
     const result = await callFunctionJson('syncPortOnePaymentStatus', { paymentId });
-    const overlay = {
-      status: result.status,
-      providerStatus: result.providerStatus,
-      paidAmount: result.paidAmount,
-      refundedAmount: result.refundedAmount,
-      cancelledAmount: result.cancelledAmount,
-      refundedAt: result.cancelledAt,
-      lastSyncedAt: new Date().toISOString(),
-      creditsReclaimStatus: result.entitlement && result.entitlement.action,
-      creditsReclaimReason: result.entitlement && result.entitlement.reason,
-      licenseRefundReview: result.entitlement && result.entitlement.kind==='license'
-    };
-    if(o) Object.assign(o, overlay);
-    paintAdminCrmOrderDrawer(uid, orderKey, overlay);
+    applyAdminPortOneOrderOverlay(uid, orderKey, result);
     adminFlash(result.status==='refund_review_required' ? 'PortOne 동기화 완료 · 환불 검토가 필요합니다.' : 'PortOne 상태를 동기화했습니다.');
   }catch(err){
     alert(err?.message || 'PortOne 동기화에 실패했습니다.');
@@ -8854,11 +9016,23 @@ async function syncAdminPortOneOrder(uid, orderKey, btn){
   }
 }
 function openAdminCrmOrderDrawer(uid, orderKey){
-  paintAdminCrmOrderDrawer(uid, orderKey);
-  const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+  const key = String(orderKey || '').trim();
+  let resolvedUid = String(uid || '').trim();
+  if(!resolvedUid && key){
+    const row = (adminOrderRows||[]).find(o=>(o.id||o.paymentId||o.paypalOrderId)===key);
+    resolvedUid = String(row?.uid||row?.userId||row?.customerUid||'');
+  }
+  if(!key) return;
+  if(!resolvedUid){
+    alert('이 주문에 연결된 회원 UID를 찾을 수 없습니다.');
+    return;
+  }
+  paintAdminCrmOrderDrawer(resolvedUid, key);
+  const o = adminOrdersForUid(resolvedUid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===key)
+    || (adminOrderRows||[]).find(x=>(x.id||x.paymentId||x.paypalOrderId)===key);
   if(o && isAdminPortOneOrder(o) && !openAdminCrmOrderDrawer._syncing){
     openAdminCrmOrderDrawer._syncing=true;
-    syncAdminPortOneOrder(uid, orderKey).finally(()=>{ openAdminCrmOrderDrawer._syncing=false; });
+    syncAdminPortOneOrder(resolvedUid, key).finally(()=>{ openAdminCrmOrderDrawer._syncing=false; });
   }
 }
 function closeAdminCrmOrderDrawer(){
@@ -9673,7 +9847,14 @@ async function adminDeleteOrder(orderId){
   if(!id) return;
   const row=(adminOrderRows||[]).find(o=>(o.id||o.paymentId||o.paypalOrderId)===id);
   const docId=row?.id || id;
-  if(!confirm(`주문 ${adminOrderDisplayId(row||{id:docId})} 을(를) 삭제할까요?\n결제 기록만 삭제되고 라이선스는 유지됩니다.`)) return;
+  const portone = isAdminPortOneOrder(row||{});
+  const statusGroup = adminOrderStatusGroup(row?.status);
+  const warn = portone
+    ? `\n\n주의: PortOne 결제/환불·라이선스 추적에 쓰는 주문입니다.\n[삭제]는 내부 Firestore 기록만 지웁니다. 실제 환불·권한 회수가 아닙니다.\n환불이 필요하면 주문 [상세] → [결제 취소] 또는 [PortOne 상태 동기화]를 사용하세요.`
+    : `\n결제 기록만 삭제되고 라이선스는 유지됩니다.`;
+  if(portone && (statusGroup==='paid' || statusGroup==='refund')){
+    if(!confirm(`주문 ${adminOrderDisplayId(row||{id:docId})} 을(를) 정말 삭제할까요?${warn}\n\n삭제하면 관리자 집계·동기화 추적이 어려워질 수 있습니다.`)) return;
+  } else if(!confirm(`주문 ${adminOrderDisplayId(row||{id:docId})} 을(를) 삭제할까요?${warn}`)) return;
   try{
     const {doc,deleteDoc}=firestoreApi;
     await deleteDoc(doc(db,'orders', docId));

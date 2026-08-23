@@ -1,5 +1,7 @@
 'use strict';
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 const PASS_DURATION_DAYS = Object.freeze({
   PASS_7D: 7,
   PASS_30D: 30,
@@ -43,6 +45,26 @@ function licenseTsMs(v) {
   return sec ? sec * 1000 : 0;
 }
 
+function isGrantRevoked(grant) {
+  if (!grant) return true;
+  const st = String(grant.status || '').toLowerCase();
+  if (st === 'revoked' || st === 'cancelled' || st === 'canceled') return true;
+  return !!(grant.revokedAt != null && grant.revokedAt !== '');
+}
+
+function isPassGrant(grant) {
+  if (!grant) return false;
+  const kind = String(grant.kind || '').toLowerCase();
+  if (kind === 'pass' || kind === 'period' || kind === 'full_pass') return true;
+  return isPassProductId(grant.productId);
+}
+
+function grantGrantedAtMs(grant) {
+  const fromGranted = licenseTsMs(grant && grant.grantedAt);
+  if (fromGranted) return fromGranted;
+  return licenseTsMs(grant && grant.createdAt);
+}
+
 /**
  * Stack duration onto remaining pass: base = max(now, currentExpiresAt).
  * Duration is exact N*24h from base (not calendar month arithmetic).
@@ -61,7 +83,7 @@ function computePassExpiresAt(existingLicense, durationDays, now = new Date()) {
     ['period', 'monthly', 'yearly', 'annual', 'subscription', 'pass', 'full_pass'].includes(plan) &&
     currentEnd > nowMs;
   const baseMs = periodActive ? Math.max(nowMs, currentEnd) : nowMs;
-  return new Date(baseMs + days * 24 * 60 * 60 * 1000);
+  return new Date(baseMs + days * DAY_MS);
 }
 
 function buildPassLicensePayload({
@@ -108,12 +130,112 @@ function buildPassLicensePayload({
   };
 }
 
+/**
+ * Rebuild the current period entitlement from non-revoked pass grants.
+ * Only grants in the active continuous chain affect startsAt/expiresAt.
+ */
+function recomputePeriodEntitlementFromGrants(grants, now = new Date()) {
+  const nowMs = now instanceof Date ? now.getTime() : Date.now();
+  const list = Array.isArray(grants) ? grants : [];
+
+  const passRows = list.filter(isPassGrant);
+  const activeRows = passRows.filter((g) => !isGrantRevoked(g));
+
+  const normalized = activeRows
+    .map((g) => ({
+      grant: g,
+      grantedAtMs: grantGrantedAtMs(g),
+      durationDays: passDurationDays(g.productId, g.durationDays)
+    }))
+    .filter((row) => row.durationDays > 0);
+
+  const withTime = normalized.filter((row) => row.grantedAtMs > 0);
+  const missingTime = normalized.length - withTime.length;
+
+  if (withTime.length === 0) {
+    if (passRows.length > 0 && missingTime > 0) {
+      return { needsReview: true, reason: 'legacy_grants_missing_granted_at' };
+    }
+    return {
+      plan: 'trial',
+      licensed: true,
+      status: 'active',
+      startsAt: null,
+      expiresAt: null,
+      passProductId: null
+    };
+  }
+
+  withTime.sort((a, b) => a.grantedAtMs - b.grantedAtMs);
+
+  let chainStartMs = null;
+  let chainEndMs = null;
+  let lastProductId = null;
+
+  for (const row of withTime) {
+    const { grantedAtMs, durationDays, grant } = row;
+    if (chainEndMs == null || chainEndMs <= grantedAtMs) {
+      chainStartMs = grantedAtMs;
+      chainEndMs = grantedAtMs + durationDays * DAY_MS;
+    } else {
+      chainEndMs = chainEndMs + durationDays * DAY_MS;
+    }
+    lastProductId = String(grant.productId || '').trim().toUpperCase() || lastProductId;
+  }
+
+  if (!chainEndMs || chainEndMs <= nowMs) {
+    return {
+      plan: 'trial',
+      licensed: true,
+      status: 'active',
+      startsAt: null,
+      expiresAt: null,
+      passProductId: null
+    };
+  }
+
+  return {
+    plan: 'period',
+    licensed: true,
+    status: 'active',
+    startsAt: new Date(chainStartMs),
+    expiresAt: new Date(chainEndMs),
+    passProductId: lastProductId || null
+  };
+}
+
+function buildPeriodLicensePatchFromRecompute(result, { FieldValue, Timestamp, extra = {} }) {
+  if (!result || result.needsReview) return null;
+  if (result.plan === 'trial') return null;
+
+  const patch = {
+    licensed: true,
+    plan: 'period',
+    status: 'active',
+    startsAt: Timestamp.fromDate(result.startsAt),
+    expiresAt: Timestamp.fromDate(result.expiresAt),
+    passProductId: result.passProductId || FieldValue.delete(),
+    expireReason: FieldValue.delete(),
+    expiredAt: FieldValue.delete(),
+    revokedAt: FieldValue.delete(),
+    revokeReason: FieldValue.delete(),
+    updatedAt: FieldValue.serverTimestamp()
+  };
+  return Object.assign(patch, extra);
+}
+
 module.exports = {
+  DAY_MS,
   PASS_DURATION_DAYS,
   isPassProductId,
   isCanonicalPassProductId,
   passDurationDays,
   licenseTsMs,
+  isGrantRevoked,
+  isPassGrant,
+  grantGrantedAtMs,
   computePassExpiresAt,
-  buildPassLicensePayload
+  buildPassLicensePayload,
+  recomputePeriodEntitlementFromGrants,
+  buildPeriodLicensePatchFromRecompute
 };
