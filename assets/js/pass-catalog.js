@@ -12,7 +12,7 @@ import {
   isPassProductId,
   normalizeProductId,
   getPassProductsFromCatalog
-} from './catalog-engine.js?v=price-sot-1';
+} from './catalog-engine.js?v=dyn-catalog-1';
 
 export { isPassProductId, PASS_PRODUCT_IDS, PASS_DURATION_DAYS };
 
@@ -49,7 +49,10 @@ function isOnSalePass(product) {
   const status = String(product?.status || 'active');
   if (status === 'paused' || status === 'archived' || status === 'disabled') return false;
   if (product?.saleOk === false) return false;
-  return isPassProductId(product?.productId);
+  const id = product?.productId;
+  return isPassProductId(id)
+    || product?.type === 'full_pass'
+    || product?.entitlement === 'full_pass';
 }
 
 export function getPassCatalogSource() {
@@ -72,9 +75,12 @@ export function getPassProduct(productId) {
 
 export function passDurationDays(product) {
   const id = normalizeProductId(product?.productId);
+  if (Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, id)) {
+    return PASS_DURATION_DAYS[id];
+  }
   const n = Number(product?.durationDays);
   if (Number.isFinite(n) && n > 0) return Math.floor(n);
-  return PASS_DURATION_DAYS[id] || 0;
+  return 0;
 }
 
 export function useSeedPassFallback(reason = 'unknown') {
@@ -86,7 +92,12 @@ export function useSeedPassFallback(reason = 'unknown') {
 
 export function applyPublicPassCatalog(products = []) {
   const mapped = (products || [])
-    .filter((p) => isPassProductId(p.productId || p.id))
+    .filter((p) => {
+      const id = p.productId || p.id;
+      return isPassProductId(id)
+        || p.type === 'full_pass'
+        || p.entitlement === 'full_pass';
+    })
     .map((p) => {
       const productId = normalizeProductId(p.productId || p.id);
       const list = Number(p.listPriceKrw || p.krw || 0);
@@ -101,6 +112,7 @@ export function applyPublicPassCatalog(products = []) {
         nameJa: p.nameJa || p.name || productId,
         descriptionKo: p.descriptionKo || '',
         descriptionEn: p.descriptionEn || '',
+        descriptionJa: p.descriptionJa || '',
         krw: sale,
         listPriceKrw: list,
         effectivePrice: sale,

@@ -24,7 +24,7 @@ import {
   validateProductFields,
   validatePromotionFields,
   windowStatus
-} from './catalog-engine.js?v=price-sot-1';
+} from './catalog-engine.js?v=dyn-catalog-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -742,8 +742,20 @@ async function createProductFromModal() {
     productDiscount: emptyDiscount(),
     plan: type === 'lifetime' ? 'lifetime' : (type === 'full_pass' ? 'period' : 'credits')
   };
+  if (type === 'full_pass' || type === 'lifetime') {
+    payload.regions = {
+      KR: {
+        payment: 'portone',
+        currency: 'KRW',
+        listPrice: price,
+        salePrice: price,
+        orderName: nameKo || productId,
+        portoneProductId: type === 'lifetime' ? 'midiai-lifetime' : productId
+      }
+    };
+  }
   const errors = validateProductFields(payload, { isNew: true });
-  if (products.some((p) => p.productId === productId)) errors.push('이미 있는 상품 ID입니다.');
+  if (products.some((p) => p.productId === productId)) errors.push('이미 존재하는 상품 ID입니다.');
   if (errors.length) throw new Error(errors[0]);
   const { doc, setDoc, serverTimestamp } = fs;
   await setDoc(doc(db, 'products', firestoreDocId(productId)), {

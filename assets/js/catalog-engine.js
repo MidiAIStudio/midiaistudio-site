@@ -183,7 +183,9 @@ export const SEED_PRODUCTS = [
   }
 ];
 
-const PRODUCT_ID_RE = /^(CREDIT_[1-9][0-9]{0,5}|PASS_(7|30|90)D|LIFETIME)$/i;
+// Canonical PASS_7D/30D/90D stay seed-locked; custom PASS_* / TEST_* IDs are CMS-managed.
+const PRODUCT_ID_RE = /^(CREDIT_[1-9][0-9]{0,5}|PASS_[A-Z0-9_]{1,32}|TEST_[A-Z0-9_]{1,40}|LIFETIME)$/i;
+const MAX_LIST_PRICE_KRW = 10_000_000;
 
 export function normalizeProductId(productId) {
   const key = String(productId || '').trim();
@@ -194,10 +196,22 @@ export function normalizeProductId(productId) {
   return upper;
 }
 
-
-export function isPassProductId(productId) {
+/** Seed-bound 7/30/90 day SKUs only. */
+export function isCanonicalPassProductId(productId) {
   const pid = normalizeProductId(productId);
   return Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, pid);
+}
+
+/**
+ * Any Full Pass SKU: canonical or Admin-created (PASS_* / TEST_*).
+ * Lifetime and Credit packs are excluded.
+ */
+export function isPassProductId(productId) {
+  const pid = normalizeProductId(productId);
+  if (isCanonicalPassProductId(pid)) return true;
+  if (/^PASS_[A-Z0-9_]+$/.test(pid)) return true;
+  if (/^TEST_[A-Z0-9_]+$/.test(pid)) return true;
+  return false;
 }
 
 export function isLicenseProductId(productId) {
@@ -496,7 +510,7 @@ export function validateProductFields(payload, { isNew = false } = {}) {
   if (isNew) {
     if (!pid) errors.push('상품 ID가 필요합니다.');
     else if (!PRODUCT_ID_RE.test(pid)) {
-      errors.push('상품 ID는 CREDIT_숫자, PASS_7D/30D/90D 또는 LIFETIME 형식이어야 합니다.');
+      errors.push('상품 ID는 CREDIT_숫자, PASS_*, TEST_*, 또는 LIFETIME 형식이어야 합니다.');
     }
   }
   const ptype = String(payload?.type || '').trim();
@@ -515,7 +529,13 @@ export function validateProductFields(payload, { isNew = false } = {}) {
 
   if (isPass) {
     const days = Number(payload?.durationDays || 0);
-    if (!(days > 0)) errors.push('기간 이용권은 이용 기간(일)이 1 이상이어야 합니다.');
+    if (!Number.isFinite(days) || days !== Math.floor(days)) {
+      errors.push('이용 기간(일)은 정수여야 합니다.');
+    } else if (!(days > 0)) {
+      errors.push('기간 이용권은 이용 기간(일)이 1 이상이어야 합니다.');
+    } else if (days > 3660) {
+      errors.push('이용 기간(일)이 너무 큽니다.');
+    }
     if (Number(payload?.creditAmount || 0) > 0) errors.push('기간 이용권에는 Credit 지급량을 설정할 수 없습니다.');
     const canon = PASS_DURATION_DAYS[normalizeProductId(pid)];
     if (canon != null && days !== canon) {
@@ -528,8 +548,16 @@ export function validateProductFields(payload, { isNew = false } = {}) {
     if (Number(payload?.creditAmount || 0) > 0) errors.push('Lifetime에는 Credit 지급량을 설정할 수 없습니다.');
   }
 
-  const price = Number(payload?.listPriceKrw || 0);
-  if (!(price > 0)) errors.push('정가는 1원 이상이어야 합니다.');
+  const price = Number(payload?.listPriceKrw);
+  if (payload?.listPriceKrw === '' || payload?.listPriceKrw == null || Number.isNaN(price)) {
+    errors.push('정가는 숫자여야 합니다.');
+  } else if (!(price > 0)) {
+    errors.push('정가는 1원 이상이어야 합니다.');
+  } else if (price > MAX_LIST_PRICE_KRW) {
+    errors.push(`정가는 ${MAX_LIST_PRICE_KRW.toLocaleString('ko-KR')}원 이하여야 합니다.`);
+  } else if (price !== Math.floor(price)) {
+    errors.push('정가는 정수(원)여야 합니다.');
+  }
   if (payload?.listPriceUsd != null && payload.listPriceUsd !== '') {
     if (!(Number(payload.listPriceUsd) > 0)) errors.push('USD 가격은 0보다 커야 합니다.');
   }
@@ -621,6 +649,12 @@ export function publicProductView(product, promotions = [], now = new Date(), la
     productId: pid,
     type,
     name,
+    nameKo: product?.nameKo || '',
+    nameEn: product?.nameEn || '',
+    nameJa: product?.nameJa || '',
+    descriptionKo: product?.descriptionKo || '',
+    descriptionEn: product?.descriptionEn || '',
+    descriptionJa: product?.descriptionJa || '',
     credits,
     points: credits,
     creditAmount: credits,
@@ -741,11 +775,6 @@ export function productTypeLabel(typeOrProduct) {
   if (raw === 'lifetime' || pid === 'LIFETIME') return 'Lifetime';
   if (raw === 'full_pass' || isPassProductId(pid)) return '기간 이용권';
   return 'Credit';
-}
-
-export function isCanonicalPassProductId(productId) {
-  const pid = normalizeProductId(productId);
-  return Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, pid);
 }
 
 export function canonicalPassDurationDays(productId) {

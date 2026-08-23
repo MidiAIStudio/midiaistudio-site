@@ -31,7 +31,7 @@ import {
   isPassProductId,
   isLicenseProductId,
   normalizeProductId as normalizeCatalogProductId
-} from './catalog-engine.js?v=price-sot-1';
+} from './catalog-engine.js?v=dyn-catalog-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -41,7 +41,7 @@ import {
   getPassCatalogSource,
   isPassCatalogReady,
   useSeedPassFallback
-} from './pass-catalog.js?v=price-flash-1';
+} from './pass-catalog.js?v=dyn-catalog-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -1558,14 +1558,16 @@ function renderPurchasePlanGrid(){
     const list = Number(pack.listPriceKrw || pack.krw);
     const sale = Number(pack.effectivePrice != null ? pack.effectivePrice : pack.krw);
     const discounted = Number(pack.discountPercent || 0) > 0 && sale < list;
-    const title = lang === 'en'
-      ? `${days}-Day Full`
-      : (lang === 'ja' ? `${days}日 Full` : `${days}일 Full`);
-    const uses = lang === 'en'
-      ? 'Unlimited conversions · Full features · No auto-renewal'
+    const title = (lang === 'en'
+      ? (pack.nameEn || `${days}-Day Full`)
       : (lang === 'ja'
-        ? '変換回数制限なし · Full機能 · 自動更新なし'
-        : '변환 횟수 제한 없음 · Full 기능 이용 · 자동결제 없음');
+        ? (pack.nameJa || `${days}日 Full`)
+        : (pack.nameKo || `${days}일 Full`)));
+    const uses = (lang === 'en'
+      ? (pack.descriptionEn || 'Unlimited conversions · Full features · No auto-renewal')
+      : (lang === 'ja'
+        ? (pack.descriptionJa || '変換回数制限なし · Full機能 · 自動更新なし')
+        : (pack.descriptionKo || '변환 횟수 제한 없음 · Full 기능 이용 · 자동결제 없음')));
     const packSave = (!discounted && pack.savePercent)
       ? `<span class="purchase-plan-save">${esc(lang==='en' ? `About ${pack.savePercent}% vs 3×30-day` : (lang==='ja' ? `30日×3回より約${pack.savePercent}%お得` : `30일권 3회 대비 약 ${pack.savePercent}% 절약`))}</span>`
       : `<span class="purchase-plan-save" aria-hidden="true"></span>`;
@@ -3696,7 +3698,11 @@ async function refreshPricingUi(){
     const creditProducts = all.filter((p) => String(p.productId || p.id || '').toUpperCase().startsWith('CREDIT_'));
     const passProducts = all.filter((p) => {
       const id = String(p.productId || p.id || '').toUpperCase();
-      return p.type === 'full_pass' || id.startsWith('PASS_');
+      return p.type === 'full_pass'
+        || p.entitlement === 'full_pass'
+        || isPassProductId(id)
+        || id.startsWith('PASS_')
+        || id.startsWith('TEST_');
     });
     const starter = starterUnitFromProducts(all);
     if (creditProducts.length) {

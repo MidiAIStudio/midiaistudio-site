@@ -8,14 +8,27 @@ const PASS_DURATION_DAYS = Object.freeze({
 
 function isPassProductId(productId) {
   const pid = String(productId || '').trim().toUpperCase();
+  if (Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, pid)) return true;
+  if (/^PASS_[A-Z0-9_]+$/.test(pid)) return true;
+  if (/^TEST_[A-Z0-9_]+$/.test(pid)) return true;
+  return false;
+}
+
+function isCanonicalPassProductId(productId) {
+  const pid = String(productId || '').trim().toUpperCase();
   return Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, pid);
 }
 
+/**
+ * Duration SoT: canonical SKUs always use fixed map (ignore forged catalog/client days).
+ * Custom CMS passes use Firestore catalogDays only.
+ */
 function passDurationDays(productId, catalogDays) {
   const pid = String(productId || '').trim().toUpperCase();
+  if (isCanonicalPassProductId(pid)) return PASS_DURATION_DAYS[pid];
   const fromCatalog = Number(catalogDays);
   if (Number.isFinite(fromCatalog) && fromCatalog > 0) return Math.floor(fromCatalog);
-  return PASS_DURATION_DAYS[pid] || 0;
+  return 0;
 }
 
 function licenseTsMs(v) {
@@ -98,6 +111,7 @@ function buildPassLicensePayload({
 module.exports = {
   PASS_DURATION_DAYS,
   isPassProductId,
+  isCanonicalPassProductId,
   passDurationDays,
   licenseTsMs,
   computePassExpiresAt,

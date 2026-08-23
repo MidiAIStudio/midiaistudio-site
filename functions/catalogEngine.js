@@ -29,6 +29,14 @@ function normalizeProductId(productId) {
 }
 
 function isPassProductId(productId) {
+  const pid = normalizeProductId(productId);
+  if (Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, pid)) return true;
+  if (/^PASS_[A-Z0-9_]+$/.test(pid)) return true;
+  if (/^TEST_[A-Z0-9_]+$/.test(pid)) return true;
+  return false;
+}
+
+function isCanonicalPassProductId(productId) {
   return Object.prototype.hasOwnProperty.call(PASS_DURATION_DAYS, normalizeProductId(productId));
 }
 
@@ -294,6 +302,7 @@ module.exports = {
   SEED_PRODUCTS,
   normalizeProductId,
   isPassProductId,
+  isCanonicalPassProductId,
   isLicenseProductId,
   firestoreDocId,
   applyDiscount,
