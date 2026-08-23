@@ -3343,11 +3343,17 @@ function paintProfileCreditStrip(){
   const buyHref = lifetimePurchaseHref();
   const accountHref = accountPageHref('#plan');
   const kicker = lang==='en' ? 'Current plan' : lang==='ja' ? '現在の利用券' : '현재 이용권';
+  const bal = creditAccountState.balance;
+  const showBal = Number.isFinite(Number(bal)) && Number(bal) > 0;
+  const balHtml = showBal
+    ? `<span class="topbar-profile-credit-balance">${esc(creditBalanceText(bal))}</span>`
+    : '';
   if(plan === 'lifetime' && active){
     box.innerHTML = `<a class="topbar-profile-credit-main" href="${esc(accountHref)}">
       <span class="topbar-profile-credit-kicker">${esc(kicker)}</span>
       <strong>Lifetime Full</strong>
       <span>${esc(lang==='en' ? 'No time limit' : lang==='ja' ? '期限なし' : '기간 제한 없음')}</span>
+      ${balHtml}
     </a>`;
     return;
   }
@@ -3361,7 +3367,17 @@ function paintProfileCreditStrip(){
       <span class="topbar-profile-credit-kicker">${esc(kicker)}</span>
       <strong>${esc(label)}</strong>
       ${detail ? `<span>${esc(detail)}</span>` : ''}
+      ${balHtml}
     </a>`;
+    return;
+  }
+  if(showBal){
+    box.innerHTML = `<a class="topbar-profile-credit-main" href="${esc(accountHref)}">
+      <span class="topbar-profile-credit-kicker">${esc(lang==='en' ? 'Credits' : lang==='ja' ? 'クレジット' : '보유 크레딧')}</span>
+      <strong>${esc(creditBalanceText(bal))}</strong>
+      <span>${esc(lang==='en' ? '1 Credit per AI conversion' : lang==='ja' ? 'AI変換1回=1クレジット' : 'AI 변환 1회 = 1 크레딧')}</span>
+    </a>
+    <a class="topbar-profile-credit-buy" href="${esc(buyHref)}">${esc(lang==='en' ? 'View plans' : lang==='ja' ? '利用券を購入' : '이용권 구매')}</a>`;
     return;
   }
   box.innerHTML = `<a class="topbar-profile-credit-main" href="${esc(accountHref)}">
@@ -3372,7 +3388,6 @@ function paintProfileCreditStrip(){
 }
 
 function accountCreditCardHtml(){
-  // Public account page: entitlement only (no Credit balance / charge / history).
   const d = accountLicenseDoc;
   const plan = normalizePlan(d);
   const active = isLicenseCurrentlyActive(d);
@@ -3391,6 +3406,15 @@ function accountCreditCardHtml(){
   } else {
     detail = lang==='en' ? 'Up to 1 minute per conversion' : lang==='ja' ? '変換あたり最大1分' : '변환당 최대 1분';
   }
+  const bal = creditAccountState.balance;
+  const showBal = Number.isFinite(Number(bal));
+  const balBlock = showBal
+    ? `<div class="account-credit-balance-row">
+        <p class="account-credit-balance-label">${esc(lang==='en' ? 'Credits' : lang==='ja' ? 'クレジット' : '보유 크레딧')}</p>
+        <p class="account-credit-balance-value"><strong>${esc(creditBalanceText(bal))}</strong></p>
+        <button type="button" class="ghost mini-btn" id="accountCreditHistoryBtn">${esc(lang==='en' ? 'Credit history' : lang==='ja' ? 'クレジット履歴' : 'Credit 사용 내역')}</button>
+      </div>`
+    : '';
   const buy = (plan !== 'lifetime' || !active)
     ? `<div class="account-panel-actions"><a class="primary mini-btn" href="${esc(lifetimePurchaseHref())}">${esc(lang==='en' ? 'View plans' : lang==='ja' ? '利用券を見る' : '이용권 보기')}</a></div>`
     : '';
@@ -3399,13 +3423,17 @@ function accountCreditCardHtml(){
     <div class="account-panel-body" id="accountCreditBody">
       <p class="account-license-title is-plan-${esc(plan || 'trial')}">${esc(planLabel)}</p>
       ${detail ? `<p class="muted">${esc(detail)}</p>` : ''}
+      ${balBlock}
       ${buy}
     </div>
   </article>`;
 }
 
 function bindAccountCreditCard(){
-  // Public Credit history / refresh removed — panel is entitlement-only.
+  const btn = $('accountCreditHistoryBtn');
+  if(!btn || btn.dataset.bound === '1') return;
+  btn.dataset.bound = '1';
+  btn.addEventListener('click', ()=> openCreditHistoryModal());
 }
 
 function closeCreditHistoryModal(){
@@ -3414,20 +3442,59 @@ function closeCreditHistoryModal(){
 }
 
 function openCreditHistoryModal(){
-  // Public Credit ledger UI retired; keep no-op for any leftover callers.
   closeCreditHistoryModal();
+  if(!currentUser){
+    alert(tr('need_login') || '로그인이 필요합니다.');
+    return;
+  }
+  const title = lang==='en' ? 'Credit history' : lang==='ja' ? 'クレジット履歴' : 'Credit 사용 내역';
+  const backdrop = document.createElement('div');
+  backdrop.id = 'creditHistoryBackdrop';
+  backdrop.className = 'modal-backdrop is-open';
+  backdrop.innerHTML = `<div class="modal credit-history-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <header class="modal-head">
+      <h3>${esc(title)}</h3>
+      <button type="button" class="ghost mini-btn" id="creditHistoryClose">${esc(lang==='en' ? 'Close' : lang==='ja' ? '閉じる' : '닫기')}</button>
+    </header>
+    <p class="muted small" id="creditHistoryBalance">${esc(creditBalanceText(creditAccountState.balance))}</p>
+    <div class="credit-history-list" id="creditHistoryList"><p class="muted small">${esc(lang==='en' ? 'Loading…' : '불러오는 중…')}</p></div>
+  </div>`;
+  document.body.appendChild(backdrop);
+  backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeCreditHistoryModal(); });
+  $('creditHistoryClose')?.addEventListener('click', closeCreditHistoryModal);
+  loadCreditHistoryModal();
 }
 
-function creditHistoryRowsHtml(){
-  return '';
+function creditHistoryRowsHtml(items){
+  const rows = Array.isArray(items) ? items : [];
+  if(!rows.length){
+    return `<p class="muted small">${esc(lang==='en' ? 'No credit history yet.' : lang==='ja' ? '履歴がありません。' : '사용 내역이 없습니다.')}</p>`;
+  }
+  return `<ul class="credit-history-ul">${rows.map((item)=>{
+    const amt = Number(item?.amount || 0);
+    const after = item?.balanceAfter != null ? creditBalanceText(item.balanceAfter) : '';
+    return `<li>
+      <span class="credit-history-when">${esc(fmtCreditStamp(item?.createdAt))}</span>
+      <span class="credit-history-title">${esc(creditLedgerTitle(item))}</span>
+      <strong class="credit-history-delta">${esc(formatCreditDelta(amt))}</strong>
+      ${after ? `<span class="credit-history-after muted">${esc(after)}</span>` : ''}
+    </li>`;
+  }).join('')}</ul>`;
 }
 
 async function loadCreditHistoryModal(){
-  return;
+  const list = $('creditHistoryList');
+  if(!list) return;
+  try{
+    const { items } = await fetchOwnCreditLedger({ limit: 30, freshToken: false });
+    creditAccountState.items = items;
+    list.innerHTML = creditHistoryRowsHtml(items);
+  }catch(err){
+    list.innerHTML = `<p class="muted small">${esc(err?.message || 'failed')}</p>`;
+  }
 }
 
 async function refreshOwnCredits({ freshToken=false, ledger=false, reason='' }={}){
-  // Keep balance fetch for purchase/trial gates; never render Credit public UX.
   if(!currentUser){
     resetCreditAccountState();
     return;
@@ -3446,8 +3513,12 @@ async function refreshOwnCredits({ freshToken=false, ledger=false, reason='' }={
     creditAccountState.balance = bal;
     creditAccountState.error = false;
     creditAccountState.fetchedAt = Date.now();
-    // Do not fetch/display ledger on public pages.
-    void ledger;
+    if(ledger){
+      try{
+        const data = await fetchOwnCreditLedger({ limit: 10, freshToken: false });
+        if(currentUser && currentUser.uid === uid) creditAccountState.items = data.items;
+      }catch(_){ /* history optional */ }
+    }
   }catch(err){
     console.warn('credit refresh', reason, err);
     if(!currentUser || currentUser.uid !== uid) return;
@@ -4912,8 +4983,14 @@ async function markTicketReplyRead(ticketId){
   if(ticketReadInFlight.has(ticketId)) return;
   ticketReadInFlight.add(ticketId);
   try{
-    const {doc, updateDoc} = firestoreApi;
+    const {doc, updateDoc, serverTimestamp} = firestoreApi;
     await updateDoc(doc(db,'supportTickets',ticketId), { replyRead:true, replyNotified:true });
+    const bellMatches = userNotifyRows.filter(n => n.type === 'ticket_reply' && n.ticketId === ticketId && n.read !== true);
+    if(bellMatches.length){
+      await Promise.all(bellMatches.map(n =>
+        updateDoc(doc(db,'users',currentUser.uid,'notifications',n.id), { read:true, readAt:serverTimestamp() })
+      ));
+    }
   }catch(e){ console.error('markTicketReplyRead', e); }
   finally{ ticketReadInFlight.delete(ticketId); }
 }
@@ -8726,6 +8803,9 @@ function renderAdminCrmDetail(uid, opts={}){
   if(uidChanged || renderAdminCrmUsage._uid !== canonicalUid){
     renderAdminCrmUsage(canonicalUid);
   }
+  if(uidChanged || renderAdminCrmPoints._uid !== canonicalUid){
+    renderAdminCrmPoints(canonicalUid);
+  }
   captureAdminCrmBaseline();
 }
 function bindAdminCrmUsageCollapse(){
@@ -8833,7 +8913,10 @@ function renderAdminCrmUsage(uid){
 }
 function renderAdminCrmPoints(uid){
   const box=$('adminCrmPoints');
+  const card=$('adminCrmPointsCard');
+  if(card) card.hidden = false;
   if(!box) return;
+  renderAdminCrmPoints._uid = uid || '';
   if(!uid){
     box.innerHTML='<p class="muted small">회원을 선택하세요.</p>';
     return;
@@ -8845,23 +8928,35 @@ function renderAdminCrmPoints(uid){
       if(String(selectedAdminUid || '') !== String(uid)) return;
       const purchases = Array.isArray(data.purchases) ? data.purchases.slice(0, 8) : [];
       const jobs = Array.isArray(data.jobs) ? data.jobs.slice(0, 8) : [];
+      const ledger = Array.isArray(data.ledger) ? data.ledger.slice(0, 12) : [];
       box.innerHTML = `
         <div class="admin-crm-points-meta">
-          <span class="crm-chip"><em>잔액</em>${esc(String(data.balance ?? 0))}</span>
+          <span class="crm-chip"><em>잔액</em>${esc(String(data.balance ?? 0))} Credits</span>
           <span class="crm-chip"><em>구매</em>${esc(String(data.purchasedTotal ?? 0))}</span>
           <span class="crm-chip"><em>사용</em>${esc(String(data.consumedTotal ?? 0))}</span>
           <span class="crm-chip"><em>지급</em>${esc(String(data.grantedTotal ?? 0))}</span>
           <span class="crm-chip"><em>회수</em>${esc(String(data.deductedTotal ?? 0))}</span>
         </div>
+        <div class="admin-crm-points-quick" role="group" aria-label="빠른 지급">
+          <button type="button" class="secondary mini-btn" data-crm-action="grant-points" data-amount="1">+1</button>
+          <button type="button" class="secondary mini-btn" data-crm-action="grant-points" data-amount="3">+3</button>
+          <button type="button" class="secondary mini-btn" data-crm-action="grant-points" data-amount="5">+5</button>
+          <button type="button" class="secondary mini-btn" data-crm-action="grant-points" data-amount="10">+10</button>
+        </div>
         <form class="admin-crm-points-form" id="adminCrmPointsForm">
-          <input type="number" id="adminPointAmount" min="1" step="1" value="10" aria-label="크레딧 수량">
-          <input type="text" id="adminPointReason" placeholder="사유" aria-label="사유">
+          <input type="number" id="adminPointAmount" min="1" step="1" value="5" aria-label="크레딧 수량">
+          <input type="text" id="adminPointReason" placeholder="사유 (선택)" aria-label="사유">
           <button type="button" class="secondary mini-btn" data-crm-action="grant-points">지급</button>
           <button type="button" class="secondary mini-btn danger-btn" data-crm-action="deduct-points">회수</button>
         </form>
-        <p class="muted small">최근 구매 ${esc(String(purchases.length))} · 최근 작업 ${esc(String(jobs.length))}</p>
+        <p class="muted small">최근 구매 ${esc(String(purchases.length))} · 최근 작업 ${esc(String(jobs.length))}${ledger.length ? ` · 원장 ${ledger.length}` : ''}</p>
         <ul class="admin-crm-ledger">
-          ${purchases.length ? purchases.map((p)=>`<li><span>${esc(p.productId || p.provider || p.id || 'purchase')}</span><strong>+${esc(String(p.credits ?? p.points ?? 0))}</strong></li>`).join('') : '<li>구매 기록 없음</li>'}
+          ${ledger.length ? ledger.map((row)=>{
+            const amt = Number(row.amount || 0);
+            const sign = amt > 0 ? '+' : '';
+            return `<li><span>${esc(row.displayTitle || row.type || row.id || 'ledger')}</span><strong>${esc(sign + String(amt))}</strong></li>`;
+          }).join('') : ''}
+          ${purchases.length ? purchases.map((p)=>`<li><span>${esc(p.productId || p.provider || p.id || 'purchase')}</span><strong>+${esc(String(p.credits ?? p.points ?? 0))}</strong></li>`).join('') : (!ledger.length ? '<li>구매 기록 없음</li>' : '')}
           ${jobs.map((j)=>{
             const cost = Number(j.creditCost ?? j.cost ?? 0);
             const status = String(j.status || '');
@@ -9670,7 +9765,13 @@ function bindAdminCrmDetailActions(){
       if(!hwid) return;
       try{ await navigator.clipboard.writeText(hwid); adminFlash('HWID 복사됨'); }catch{ alert(hwid); }
     }
-    else if(action==='grant-points') await adminAdjustSelectedPoints(1);
+    else if(action==='grant-points'){
+      const quick = Number(btn.getAttribute('data-amount') || 0);
+      if(Number.isInteger(quick) && quick > 0 && $('adminPointAmount')){
+        $('adminPointAmount').value = String(quick);
+      }
+      await adminAdjustSelectedPoints(1);
+    }
     else if(action==='deduct-points') await adminAdjustSelectedPoints(-1);
     else if(action==='grant-trial') await adminQuickLicense(`${uid}:trial:active`, false, { days: 7 });
     else if(action==='grant-lifetime') await adminQuickLicense(`${uid}:lifetime:active`, false, { clearDates: true });
@@ -11327,18 +11428,6 @@ async function markNotificationRead(notifyId, n=null){
     await markTicketReplyRead(row.ticketId);
   }
   return true;
-}
-async function markTicketReplyRead(ticketId){
-  if(!currentUser || !ticketId || !firestoreApi?.updateDoc) return;
-  if(ticketReadInFlight.has(ticketId)) return;
-  ticketReadInFlight.add(ticketId);
-  try{
-    const {doc, updateDoc} = firestoreApi;
-    await updateDoc(doc(db,'supportTickets',ticketId), { replyRead:true, replyNotified:true });
-    const bellMatches = userNotifyRows.filter(n => n.type === 'ticket_reply' && n.ticketId === ticketId && n.read !== true);
-    await Promise.all(bellMatches.map(n => markNotificationRead(n.id, n)));
-  }catch(e){ console.error('markTicketReplyRead', e); }
-  finally{ ticketReadInFlight.delete(ticketId); }
 }
 function notifyTargetHref(n){
   const base = window.MIDIAI_BASE_PATH || './';
