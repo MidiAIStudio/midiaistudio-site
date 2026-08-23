@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=product-promo-unify-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=admin-live-preview-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -154,6 +154,9 @@
                 <button type="button" data-pricing-pane="promos">프로모션</button>
               </div>
 
+              <div class="pricing-workspace">
+              <div class="pricing-workspace-main">
+
               <div id="pricingProductsPane">
                 <div class="pricing-layout">
                   <aside class="pricing-list-pane">
@@ -167,10 +170,10 @@
                         <section class="pricing-edit-section">
                           <h4 class="pricing-section-title">기본 정보</h4>
                           <div class="pricing-form-grid">
-                            <label>상품명 <input id="draftNameKo" type="text" autocomplete="off"></label>
+                            <label>상품명 <input id="draftNameKo" type="text" autocomplete="off" data-preview-field="title"></label>
                             <label>상품 유형 <input id="draftType" type="text" readonly></label>
                             <label>판매 상태
-                              <select id="draftStatus">
+                              <select id="draftStatus" data-preview-field="status">
                                 <option value="active">판매중</option>
                                 <option value="paused">판매중지</option>
                                 <option value="archived">보관</option>
@@ -180,14 +183,14 @@
                             <label id="draftCreditsWrap">Credit 지급량 <input id="draftCredits" type="number" min="1" step="1"></label>
                             <label id="draftDurationWrap" hidden>이용 기간
                               <span class="pricing-input-suffix">
-                                <input id="draftDurationDays" type="number" min="1" step="1">
+                                <input id="draftDurationDays" type="number" min="1" step="1" data-preview-field="unit">
                                 <span class="pricing-suffix-label">일</span>
                               </span>
                             </label>
                             <label id="draftDurationEntitlementWrap" hidden>권한 <input id="draftDurationEntitlement" type="text" value="Full" readonly></label>
                             <label id="draftEntitlementWrap" hidden>권한 <input id="draftEntitlement" type="text" value="Lifetime" readonly></label>
                             <label>대표 Badge
-                              <select id="draftBadge">
+                              <select id="draftBadge" data-preview-field="badge">
                                 <option value="">없음</option>
                                 <option value="recommended">추천</option>
                                 <option value="popular">인기</option>
@@ -202,7 +205,7 @@
                           <div class="pricing-form-grid">
                             <label>KR 정가
                               <span class="pricing-input-suffix">
-                                <input id="draftPriceKrw" type="number" min="1" step="1">
+                                <input id="draftPriceKrw" type="number" min="1" step="1" data-preview-field="price">
                                 <span class="pricing-suffix-label">원</span>
                               </span>
                             </label>
@@ -241,16 +244,16 @@
                             <span class="pricing-lang-label">상품명</span>
                             <div class="pricing-form-grid pricing-form-grid-3">
                               <label>KO <input id="draftNameKoDisplay" type="text" readonly tabindex="-1"></label>
-                              <label>EN <input id="draftNameEn" type="text"></label>
-                              <label>JA <input id="draftNameJa" type="text"></label>
+                              <label>EN <input id="draftNameEn" type="text" data-preview-field="title"></label>
+                              <label>JA <input id="draftNameJa" type="text" data-preview-field="title"></label>
                             </div>
                           </div>
                           <div class="pricing-lang-block">
                             <span class="pricing-lang-label">상품 설명</span>
                             <div class="pricing-form-grid pricing-form-grid-3">
-                              <label>KO <input id="draftDescKo" type="text" placeholder="실제 상품 설명 (Badge와 별개)"></label>
-                              <label>EN <input id="draftDescEn" type="text"></label>
-                              <label>JA <input id="draftDescJa" type="text"></label>
+                              <label>KO <input id="draftDescKo" type="text" placeholder="실제 상품 설명 (Badge와 별개)" data-preview-field="desc"></label>
+                              <label>EN <input id="draftDescEn" type="text" data-preview-field="desc"></label>
+                              <label>JA <input id="draftDescJa" type="text" data-preview-field="desc"></label>
                             </div>
                           </div>
                         </section>
@@ -300,19 +303,19 @@
                       <section class="pricing-edit-section">
                         <h4>이벤트</h4>
                         <div class="pricing-form-grid">
-                          <label>이벤트명 KO <input id="promoNameKo" type="text"></label>
-                          <label>이벤트명 EN <input id="promoNameEn" type="text"></label>
-                          <label>이벤트명 JA <input id="promoNameJa" type="text"></label>
+                          <label>이벤트명 KO <input id="promoNameKo" type="text" data-preview-field="popup-title"></label>
+                          <label>이벤트명 EN <input id="promoNameEn" type="text" data-preview-field="popup-title"></label>
+                          <label>이벤트명 JA <input id="promoNameJa" type="text" data-preview-field="popup-title"></label>
                           <label class="pricing-check"><input type="checkbox" id="promoEnabledFlag"> 사용</label>
                           <label>할인 방식
-                            <select id="promoType">
+                            <select id="promoType" data-preview-field="discount">
                               <option value="percent">정률</option>
                               <option value="amount">정액</option>
                             </select>
                           </label>
-                          <label>할인율/금액 <input id="promoValue" type="number" min="0"></label>
+                          <label>할인율/금액 <input id="promoValue" type="number" min="0" data-preview-field="discount"></label>
                           <label>시작 <input id="promoStart" type="datetime-local"></label>
-                          <label>종료 <input id="promoEnd" type="datetime-local"></label>
+                          <label>종료 <input id="promoEnd" type="datetime-local" data-preview-field="popup-until"></label>
                         </div>
                         <h4 class="pricing-subhead">대상 상품</h4>
                         <div id="promoProductTargets" class="pricing-target-list"></div>
@@ -328,15 +331,15 @@
                         <div class="pricing-form-grid">
                           <label class="pricing-check"><input type="checkbox" id="promoPopupEnabled"> 홈 팝업 표시</label>
                           <label>CTA URL <input id="promoCtaUrl" type="text"></label>
-                          <label>팝업 제목 KO <input id="promoPopupTitleKo" type="text"></label>
-                          <label>팝업 제목 EN <input id="promoPopupTitleEn" type="text"></label>
-                          <label>팝업 제목 JA <input id="promoPopupTitleJa" type="text"></label>
-                          <label>팝업 본문 KO <textarea id="promoPopupBodyKo" rows="2"></textarea></label>
-                          <label>팝업 본문 EN <textarea id="promoPopupBodyEn" rows="2"></textarea></label>
-                          <label>팝업 본문 JA <textarea id="promoPopupBodyJa" rows="2"></textarea></label>
-                          <label>CTA KO <input id="promoPopupCtaKo" type="text"></label>
-                          <label>CTA EN <input id="promoPopupCtaEn" type="text"></label>
-                          <label>CTA JA <input id="promoPopupCtaJa" type="text"></label>
+                          <label>팝업 제목 KO <input id="promoPopupTitleKo" type="text" data-preview-field="popup-title"></label>
+                          <label>팝업 제목 EN <input id="promoPopupTitleEn" type="text" data-preview-field="popup-title"></label>
+                          <label>팝업 제목 JA <input id="promoPopupTitleJa" type="text" data-preview-field="popup-title"></label>
+                          <label>팝업 본문 KO <textarea id="promoPopupBodyKo" rows="2" data-preview-field="popup-body"></textarea></label>
+                          <label>팝업 본문 EN <textarea id="promoPopupBodyEn" rows="2" data-preview-field="popup-body"></textarea></label>
+                          <label>팝업 본문 JA <textarea id="promoPopupBodyJa" rows="2" data-preview-field="popup-body"></textarea></label>
+                          <label>CTA KO <input id="promoPopupCtaKo" type="text" data-preview-field="popup-cta"></label>
+                          <label>CTA EN <input id="promoPopupCtaEn" type="text" data-preview-field="popup-cta"></label>
+                          <label>CTA JA <input id="promoPopupCtaJa" type="text" data-preview-field="popup-cta"></label>
                         </div>
                       </section>
                       <div class="pricing-editor-actions">
@@ -348,6 +351,44 @@
                   </div>
                 </div>
               </div>
+
+              </div><!-- /.pricing-workspace-main -->
+
+              <aside class="pricing-live-preview" id="pricingLivePreview" aria-label="실시간 고객 화면 미리보기">
+                <div class="pricing-live-preview-head">
+                  <div class="pricing-live-preview-title-row">
+                    <h4>실시간 미리보기</h4>
+                    <span id="pricingPreviewSaveState" class="pricing-preview-save-state is-saved">✓ 저장된 상태</span>
+                  </div>
+                  <p id="pricingPreviewBanner" class="pricing-preview-banner" hidden>● 편집 중 프로모션 미리보기</p>
+                  <div class="pricing-preview-toolbar" role="toolbar">
+                    <div class="pricing-preview-seg" role="group" aria-label="미리보기 화면">
+                      <button type="button" class="is-active" data-preview-view="purchase">구매 페이지</button>
+                      <button type="button" data-preview-view="popup">홈 팝업</button>
+                    </div>
+                    <div class="pricing-preview-seg" role="group" aria-label="언어">
+                      <button type="button" class="is-active" data-preview-lang="ko">KO</button>
+                      <button type="button" data-preview-lang="en">EN</button>
+                      <button type="button" data-preview-lang="ja">JA</button>
+                    </div>
+                    <div class="pricing-preview-seg" role="group" aria-label="디바이스">
+                      <button type="button" class="is-active" data-preview-device="desktop">Desktop</button>
+                      <button type="button" data-preview-device="mobile">Mobile</button>
+                    </div>
+                  </div>
+                </div>
+                <div id="pricingPreviewStage" class="pricing-preview-stage is-desktop">
+                  <div id="pricingPreviewPurchase" class="purchase-plan-grid pricing-preview-grid" role="list"></div>
+                  <div id="pricingPreviewPopupHost" class="pricing-preview-popup-host" hidden>
+                    <div class="pricing-preview-home-context" aria-hidden="true">
+                      <div class="pricing-preview-home-hero"></div>
+                      <div class="pricing-preview-home-label">홈페이지 컨텍스트</div>
+                    </div>
+                    <div id="pricingPreviewPopup" class="pricing-preview-popup-mount"></div>
+                  </div>
+                </div>
+              </aside>
+              </div><!-- /.pricing-workspace -->
 
               <div id="pricingCreateModal" class="pricing-modal" hidden>
                 <div class="pricing-modal-card">
@@ -785,8 +826,8 @@
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=product-promo-unify-1"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=product-promo-unify-1"></script>
+  <script type="module" src="./assets/js/app.js?v=admin-live-preview-1"></script>
+  <script type="module" src="./assets/js/pricing-admin.js?v=admin-live-preview-1"></script>
   <script type="module" src="./assets/js/admin-console.js?v=payment-menu-detail-1"></script>
 </body>
 </html>

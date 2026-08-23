@@ -32,8 +32,17 @@ import {
   unitPrice,
   validateProductFields,
   validatePromotionFields,
-  windowStatus
-} from './catalog-engine.js?v=product-promo-unify-1';
+  windowStatus,
+  publicProductView,
+  isWindowActive
+} from './catalog-engine.js?v=admin-live-preview-1';
+import {
+  renderProductCard,
+  renderPromotionPopupHtml,
+  buildPromotionPopupCopy,
+  forcePromoWindowForPreview,
+  storefrontUiCopy
+} from './storefront-render.js?v=admin-live-preview-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -56,6 +65,13 @@ let loading = false;
 let pane = 'products';
 let deletedProductIds = new Set();
 let purchaseHistoryByProduct = {};
+let previewLang = 'ko';
+let previewView = 'purchase';
+let previewDevice = 'desktop';
+let previewTimer = null;
+let previewHighlightKey = '';
+let previewBaselineProduct = null;
+let previewBaselinePromo = null;
 
 function $(id) { return document.getElementById(id); }
 
@@ -273,8 +289,286 @@ function bindUi() {
   ['promoNameKo', 'promoNameEn', 'promoNameJa', 'promoValue', 'promoStart', 'promoEnd',
     'promoPopupTitleKo', 'promoPopupTitleEn', 'promoPopupTitleJa', 'promoPopupBodyKo', 'promoPopupBodyEn', 'promoPopupBodyJa',
     'promoPopupCtaKo', 'promoPopupCtaEn', 'promoPopupCtaJa', 'promoCtaUrl'
-  ].forEach((id) => bind(id, () => renderPromoPreview(), 'input'));
-  ['promoEnabledFlag', 'promoType', 'promoPopupEnabled'].forEach((id) => bind(id, () => renderPromoPreview(), 'change'));
+  ].forEach((id) => bind(id, () => {
+    renderPromoPreview();
+    scheduleLivePreview(document.activeElement?.getAttribute?.('data-preview-field') || '');
+  }, 'input'));
+  ['promoEnabledFlag', 'promoType', 'promoPopupEnabled'].forEach((id) => bind(id, () => {
+    renderPromoPreview();
+    scheduleLivePreview(document.activeElement?.getAttribute?.('data-preview-field') || 'discount');
+  }, 'change'));
+  document.querySelectorAll('[data-preview-view]').forEach((btn) => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', () => {
+      previewView = btn.getAttribute('data-preview-view') === 'popup' ? 'popup' : 'purchase';
+      syncPreviewToolbar();
+      renderLivePreview();
+    });
+  });
+  document.querySelectorAll('[data-preview-lang]').forEach((btn) => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', () => {
+      previewLang = btn.getAttribute('data-preview-lang') || 'ko';
+      syncPreviewToolbar();
+      renderLivePreview();
+    });
+  });
+  document.querySelectorAll('[data-preview-device]').forEach((btn) => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', () => {
+      previewDevice = btn.getAttribute('data-preview-device') === 'mobile' ? 'mobile' : 'desktop';
+      syncPreviewToolbar();
+      renderLivePreview();
+    });
+  });
+  // Field-level highlight while typing
+  document.querySelectorAll('[data-preview-field]').forEach((el) => {
+    if (el.dataset.hlBound === '1') return;
+    el.dataset.hlBound = '1';
+    el.addEventListener('focus', () => {
+      previewHighlightKey = el.getAttribute('data-preview-field') || '';
+    });
+    el.addEventListener('input', () => {
+      previewHighlightKey = el.getAttribute('data-preview-field') || '';
+    });
+  });
+}
+
+function syncPreviewToolbar() {
+  document.querySelectorAll('[data-preview-view]').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.getAttribute('data-preview-view') === previewView);
+  });
+  document.querySelectorAll('[data-preview-lang]').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.getAttribute('data-preview-lang') === previewLang);
+  });
+  document.querySelectorAll('[data-preview-device]').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.getAttribute('data-preview-device') === previewDevice);
+  });
+  const stage = $('pricingPreviewStage');
+  if (stage) {
+    stage.classList.toggle('is-desktop', previewDevice === 'desktop');
+    stage.classList.toggle('is-mobile', previewDevice === 'mobile');
+  }
+  const purchase = $('pricingPreviewPurchase');
+  const popupHost = $('pricingPreviewPopupHost');
+  if (purchase) purchase.hidden = previewView !== 'purchase';
+  if (popupHost) popupHost.hidden = previewView !== 'popup';
+}
+
+function scheduleLivePreview(highlightKey = '') {
+  if (highlightKey) previewHighlightKey = highlightKey;
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => {
+    previewTimer = null;
+    renderLivePreview();
+  }, 80);
+}
+
+function snapshotComparableProduct(p) {
+  if (!p) return '';
+  return JSON.stringify({
+    productId: normalizeProductId(p.productId),
+    nameKo: p.nameKo || '',
+    nameEn: p.nameEn || '',
+    nameJa: p.nameJa || '',
+    descriptionKo: p.descriptionKo || '',
+    descriptionEn: p.descriptionEn || '',
+    descriptionJa: p.descriptionJa || '',
+    listPriceKrw: Number(p.listPriceKrw || 0),
+    listPriceUsd: p.listPriceUsd == null ? null : Number(p.listPriceUsd),
+    status: p.status || 'active',
+    sortOrder: Number(p.sortOrder || 0),
+    badge: p.badge || '',
+    durationDays: Number(p.durationDays || 0),
+    creditAmount: Number(p.creditAmount || 0)
+  });
+}
+
+function snapshotComparablePromo(p) {
+  if (!p) return '';
+  return JSON.stringify({
+    id: p.id || '',
+    nameKo: p.nameKo || '',
+    nameEn: p.nameEn || '',
+    nameJa: p.nameJa || '',
+    enabled: p.enabled === true,
+    type: p.type || 'percent',
+    value: Number(p.value || 0),
+    startsAt: p.startsAt || '',
+    endsAt: p.endsAt || '',
+    productIds: [...(p.productIds || [])].map(normalizeProductId).sort(),
+    homepagePopupEnabled: p.homepagePopupEnabled === true,
+    popupTitleKo: p.popupTitleKo || '',
+    popupTitleEn: p.popupTitleEn || '',
+    popupTitleJa: p.popupTitleJa || '',
+    popupBodyKo: p.popupBodyKo || '',
+    popupBodyEn: p.popupBodyEn || '',
+    popupBodyJa: p.popupBodyJa || '',
+    popupCtaKo: p.popupCtaKo || '',
+    popupCtaEn: p.popupCtaEn || '',
+    popupCtaJa: p.popupCtaJa || '',
+    ctaUrl: p.ctaUrl || ''
+  });
+}
+
+function updatePreviewSaveState() {
+  const el = $('pricingPreviewSaveState');
+  if (!el) return;
+  let dirty = false;
+  if (pane === 'products' && draft) {
+    dirty = snapshotComparableProduct(draft) !== snapshotComparableProduct(previewBaselineProduct);
+  } else if (pane === 'promos' && promoDraft) {
+    dirty = snapshotComparablePromo(promoDraft) !== snapshotComparablePromo(previewBaselinePromo);
+  }
+  el.classList.toggle('is-saved', !dirty);
+  el.classList.toggle('is-dirty', dirty);
+  el.textContent = dirty ? '● 저장되지 않은 변경' : '✓ 저장된 상태';
+}
+
+function buildPreviewCatalog() {
+  const catalog = products.map((p) => ({ ...p }));
+  if (draft?.productId) {
+    const pid = normalizeProductId(draft.productId);
+    const idx = catalog.findIndex((p) => normalizeProductId(p.productId) === pid);
+    if (idx >= 0) catalog[idx] = { ...catalog[idx], ...draft };
+    else catalog.push({ ...draft });
+  }
+  return catalog;
+}
+
+function buildPreviewPromotions({ forceDraftPromo = false } = {}) {
+  const now = new Date();
+  let list = (promotions || []).map((p) => ({ ...p }));
+  if (promoDraft && (forceDraftPromo || pane === 'promos')) {
+    const draftId = promoDraft.id || '';
+    list = list.filter((p) => !draftId || p.id !== draftId);
+    const forced = forcePromoWindowForPreview(promoDraft, now);
+    if (forced && promoDraft.enabled !== false) {
+      const targets = new Set((forced.productIds || []).map(normalizeProductId));
+      // Drop overlapping live promos on same targets so draft is the clear SoT in preview.
+      list = list.filter((p) => {
+        if (p.archived === true || p.enabled !== true) return true;
+        if (!isWindowActive(true, p.startsAt, p.endsAt, now)
+          && windowStatus(true, p.startsAt, p.endsAt, now) !== 'scheduled') {
+          return true;
+        }
+        const overlap = (p.productIds || []).some((id) => targets.has(normalizeProductId(id)));
+        return !overlap;
+      });
+      list.push(forced);
+    }
+  }
+  return list;
+}
+
+function renderLivePreview() {
+  const purchaseRoot = $('pricingPreviewPurchase');
+  const popupRoot = $('pricingPreviewPopup');
+  if (!purchaseRoot && !popupRoot) return;
+  syncPreviewToolbar();
+  updatePreviewSaveState();
+
+  const catalog = buildPreviewCatalog();
+  const forceDraft = pane === 'promos' && !!promoDraft;
+  const promoList = buildPreviewPromotions({ forceDraftPromo: forceDraft });
+  const banner = $('pricingPreviewBanner');
+  if (banner) {
+    const show = forceDraft && promoDraft;
+    banner.hidden = !show;
+    if (show) {
+      const st = windowStatus(promoDraft.enabled === true, promoDraft.startsAt, promoDraft.endsAt);
+      banner.textContent = st === 'active'
+        ? '● 편집 중 프로모션 미리보기'
+        : '● 편집 중 프로모션 미리보기 (이 프로모션 적용 시)';
+    }
+  }
+
+  const storefrontProducts = catalog.filter((p) => {
+    const pid = normalizeProductId(p.productId);
+    return isPassProductId(pid) || pid === 'LIFETIME' || p.type === 'full_pass' || p.type === 'lifetime';
+  }).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)
+    || String(a.productId).localeCompare(String(b.productId)));
+
+  const views = storefrontProducts.map((p) => {
+    const view = publicProductView(p, promoList, new Date(), previewLang, null, catalog);
+    // publicProductView uses computeCharge which nulls price when paused — restore list for preview display.
+    if (String(p.status) === 'paused' || String(p.status) === 'archived') {
+      view.listPriceKrw = Number(p.listPriceKrw || 0);
+      view.effectivePrice = Number(p.listPriceKrw || 0);
+      view.krw = view.effectivePrice;
+      view.saleOk = false;
+      view.status = p.status;
+    }
+    return view;
+  });
+
+  // Purchase grid: show active + currently edited (even if paused/archived). Hide other archived.
+  const editPid = draft?.productId ? normalizeProductId(draft.productId) : '';
+  const visible = views.filter((v) => {
+    if (v.status === 'archived' && normalizeProductId(v.productId) !== editPid) return false;
+    if (v.status === 'paused' && normalizeProductId(v.productId) !== editPid) {
+      // Still show other paused? Spec: 판매중지 shows message for that product. Others stay hidden from storefront.
+      return false;
+    }
+    return v.status === 'active' || normalizeProductId(v.productId) === editPid;
+  });
+
+  if (purchaseRoot) {
+    const ui = storefrontUiCopy(previewLang);
+    purchaseRoot.innerHTML = visible.map((v) => renderProductCard(v, {
+      lang: previewLang,
+      preview: true,
+      selected: editPid && normalizeProductId(v.productId) === editPid,
+      ui
+    })).join('') || '<p class="muted">미리볼 판매 상품이 없습니다.</p>';
+  }
+
+  if (popupRoot) {
+    const srcPromo = forceDraft && promoDraft
+      ? forcePromoWindowForPreview(promoDraft)
+      : (promoList.find((p) => p.homepagePopupEnabled === true && p.enabled === true) || null);
+    if (!srcPromo || (forceDraft && promoDraft && promoDraft.homepagePopupEnabled !== true && pane === 'promos')) {
+      const off = promoDraft && pane === 'promos' && promoDraft.homepagePopupEnabled !== true;
+      popupRoot.innerHTML = off
+        ? '<p class="muted pricing-preview-popup-off">홈 팝업 표시가 꺼져 있습니다.</p>'
+        : '<p class="muted pricing-preview-popup-off">표시할 홈 팝업 프로모션이 없습니다.</p>';
+    } else {
+      const targetId = normalizeProductId((srcPromo.productIds || [])[0] || '');
+      const targetProd = catalog.find((p) => normalizeProductId(p.productId) === targetId)
+        || catalog.find((p) => normalizeProductId(p.productId) === 'LIFETIME')
+        || catalog[0];
+      const charge = targetProd
+        ? computeCharge(
+          { ...targetProd, status: 'active' },
+          [srcPromo],
+          new Date()
+        )
+        : null;
+      const copy = buildPromotionPopupCopy(srcPromo, {
+        was: formatKrw(charge?.basePrice || targetProd?.listPriceKrw || 0),
+        now: formatKrw(charge?.effectivePrice || targetProd?.listPriceKrw || 0),
+        discountPercent: charge?.discountPercent || 0
+      }, previewLang);
+      popupRoot.innerHTML = renderPromotionPopupHtml(copy, { preview: true, showHideToday: false });
+    }
+  }
+
+  if (previewHighlightKey) {
+    flashPreviewHighlight(previewHighlightKey);
+  }
+}
+
+function flashPreviewHighlight(key) {
+  const stage = $('pricingPreviewStage');
+  if (!stage || !key) return;
+  stage.querySelectorAll('.is-preview-hl').forEach((el) => el.classList.remove('is-preview-hl'));
+  stage.querySelectorAll(`[data-preview-hl="${key}"]`).forEach((el) => {
+    el.classList.add('is-preview-hl');
+    setTimeout(() => el.classList.remove('is-preview-hl'), 700);
+  });
 }
 
 function setPane(next) {
@@ -286,6 +580,7 @@ function setPane(next) {
   const promosPane = $('pricingPromosPane');
   if (productsPane) productsPane.hidden = pane !== 'products';
   if (promosPane) promosPane.hidden = pane !== 'promos';
+  scheduleLivePreview();
 }
 
 function setListStatus(html) {
@@ -486,6 +781,7 @@ async function loadAll() {
     setListStatus(`<p class="muted">불러오기 실패: ${esc(e.message || e)}</p>`);
   } finally {
     loading = false;
+    scheduleLivePreview();
   }
 }
 
@@ -581,8 +877,10 @@ function selectProduct(key) {
   selectedDocId = product.docId || firestoreDocId(product.productId);
   selectedId = normalizeProductId(product.productId);
   draft = JSON.parse(JSON.stringify(product));
+  previewBaselineProduct = JSON.parse(JSON.stringify(product));
   renderList();
   renderEditor();
+  scheduleLivePreview();
 }
 
 function fill(id, value) {
@@ -757,6 +1055,7 @@ function syncDraftFromForm() {
   }
   renderActivePromotion();
   renderPassSavingsCompare();
+  scheduleLivePreview(document.activeElement?.getAttribute?.('data-preview-field') || '');
 }
 
 function isCreditType(p) {
@@ -986,6 +1285,9 @@ async function saveDraft() {
     price: current.listPriceKrw, credits: current.creditAmount, version: current.productVersion
   }, { price: draft.listPriceKrw, credits: draft.creditAmount, version });
   flash('상품이 저장되었습니다.');
+  previewBaselineProduct = draft ? JSON.parse(JSON.stringify(draft)) : null;
+  updatePreviewSaveState();
+  scheduleLivePreview();
   await loadAll();
   selectProduct(docId);
   const refreshed = findCatalogProduct(products, docId);
@@ -1197,17 +1499,22 @@ function emptyPromo() {
 function startNewPromo() {
   promoDraft = emptyPromo();
   selectedPromoId = '';
+  previewBaselinePromo = emptyPromo();
+  previewBaselinePromo.enabled = true;
   renderPromoList();
   renderPromoEditor();
   setPane('promos');
+  scheduleLivePreview();
 }
 
 function selectPromo(id) {
   selectedPromoId = id;
   const found = promotions.find((p) => p.id === id);
   promoDraft = found ? JSON.parse(JSON.stringify(found)) : emptyPromo();
+  previewBaselinePromo = found ? JSON.parse(JSON.stringify(found)) : null;
   renderPromoList();
   renderPromoEditor();
+  scheduleLivePreview();
 }
 
 function renderPromoEditor() {
@@ -1247,10 +1554,14 @@ function renderPromoEditor() {
       .map((p) => `<label class="pricing-check"><input type="checkbox" data-promo-target="${esc(p.productId)}" ${selected.has(normalizeProductId(p.productId)) ? 'checked' : ''}> ${esc(p.nameKo || p.productId)}</label>`)
       .join('');
     box.querySelectorAll('[data-promo-target]').forEach((el) => {
-      el.addEventListener('change', () => renderPromoPreview());
+      el.addEventListener('change', () => {
+        renderPromoPreview();
+        scheduleLivePreview('discount');
+      });
     });
   }
   renderPromoPreview();
+  scheduleLivePreview();
 }
 
 function renderPromoPreview() {
@@ -1262,12 +1573,13 @@ function renderPromoPreview() {
   const targets = promoDraft.productIds || [];
   if (!targets.length || !(value > 0)) {
     body.innerHTML = '<p class="muted">대상 상품과 할인 값을 선택하면 미리보기가 표시됩니다.</p>';
+    scheduleLivePreview();
     return;
   }
   const head = type === 'amount'
     ? `${value.toLocaleString('ko-KR')}원 할인`
     : `${value}% 할인`;
-  const synthetic = {
+  const synthetic = forcePromoWindowForPreview({
     enabled: true,
     archived: false,
     type,
@@ -1275,14 +1587,16 @@ function renderPromoPreview() {
     startsAt: promoDraft.startsAt,
     endsAt: promoDraft.endsAt,
     productIds: targets.map(normalizeProductId)
-  };
+  });
+  const catalog = buildPreviewCatalog();
   const lines = targets.map((tid) => {
-    const p = products.find((x) => normalizeProductId(x.productId) === normalizeProductId(tid));
+    const p = catalog.find((x) => normalizeProductId(x.productId) === normalizeProductId(tid));
     if (!p) return '';
-    const charge = computeCharge(p, [synthetic], new Date());
+    const charge = computeCharge({ ...p, status: 'active' }, [synthetic], new Date());
     return `<div class="pricing-disc-preview-row"><span>${esc(p.nameKo || tid)}</span><strong>${esc(formatKrw(charge.basePrice))} → ${esc(formatKrw(charge.effectivePrice))}</strong></div>`;
   }).filter(Boolean).join('');
   body.innerHTML = `<p class="pricing-active-promo-disc">${esc(head)}</p>${lines || '<p class="muted">대상 상품을 찾을 수 없습니다.</p>'}`;
+  scheduleLivePreview();
 }
 
 function readPromoForm() {
@@ -1333,6 +1647,8 @@ async function savePromo() {
     startsAt: payload.startsAt, endsAt: payload.endsAt, productIds: payload.productIds
   });
   flash('이벤트를 저장했습니다.');
+  previewBaselinePromo = promoDraft ? JSON.parse(JSON.stringify(promoDraft)) : null;
+  updatePreviewSaveState();
   await loadAll();
 }
 

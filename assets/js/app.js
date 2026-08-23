@@ -31,7 +31,7 @@ import {
   isPassProductId,
   isLicenseProductId,
   normalizeProductId as normalizeCatalogProductId
-} from './catalog-engine.js?v=product-promo-unify-1';
+} from './catalog-engine.js?v=admin-live-preview-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -41,7 +41,13 @@ import {
   getPassCatalogSource,
   isPassCatalogReady,
   useSeedPassFallback
-} from './pass-catalog.js?v=product-promo-unify-1';
+} from './pass-catalog.js?v=admin-live-preview-1';
+import {
+  renderProductCard,
+  purchaseCardFeaturesHtml,
+  renderPromotionPopupHtml,
+  buildPromotionPopupCopy
+} from './storefront-render.js?v=admin-live-preview-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -1619,110 +1625,84 @@ function renderPurchasePlanGrid(){
   const packs = getPassProducts();
   const cards = packs.map((pack)=>{
     const selected = !locked && selectedPurchaseId === pack.productId;
-    const isRecommended = pack.badge === 'recommended' || !!pack.popular;
-    const days = passDurationDays(pack);
-    const list = Number(pack.listPriceKrw || pack.krw);
-    const sale = Number(pack.effectivePrice != null ? pack.effectivePrice : pack.krw);
-    const discounted = Number(pack.discountPercent || 0) > 0 && sale < list;
-    const title = (lang === 'en'
-      ? (pack.nameEn || `${days}-Day Full`)
-      : (lang === 'ja'
-        ? (pack.nameJa || `${days}日 Full`)
-        : (pack.nameKo || `${days}일 Full`)));
-    const uses = (lang === 'en'
-      ? (pack.descriptionEn || 'Unlimited conversions · Full features · No auto-renewal')
-      : (lang === 'ja'
-        ? (pack.descriptionJa || '変換回数制限なし · Full機能 · 自動更新なし')
-        : (pack.descriptionKo || '변환 횟수 제한 없음 · Full 기능 이용 · 자동결제 없음')));
-    const packSave = (!discounted && (pack.savingsLabel || pack.savePercent))
-      ? `<span class="purchase-plan-save">${esc(
-        pack.savingsLabel
-        || (lang === 'en'
-          ? `Save about ${pack.savePercent}% vs. shorter passes`
-          : (lang === 'ja'
-            ? `約${pack.savePercent}%お得`
-            : `약 ${pack.savePercent}% 절약`))
-      )}</span>`
-      : `<span class="purchase-plan-save" aria-hidden="true"></span>`;
-    const eventOff = discounted
-      ? `<span class="purchase-plan-off-pill">${esc(String(pack.discountPercent))}% OFF</span>`
-      : '';
-    const priceHtml = discounted
-      ? `<div class="purchase-plan-price-block">
-          <div class="purchase-plan-price-was">${esc(formatKrw(list))}</div>
-          <div class="purchase-plan-price-row">
-            <div class="purchase-plan-price purchase-plan-price-now">${esc(formatKrw(sale))}</div>
-            ${eventOff}
-          </div>
-        </div>`
-      : `<div class="purchase-plan-price-block">
-          <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
-          <div class="purchase-plan-price-row">
-            <div class="purchase-plan-price">${esc(formatKrw(sale))}</div>
-          </div>
-        </div>`;
-    const btnLabel = locked ? (pt.btnNoNeed || '추가 구매 불필요') : pt.buy;
-    const badgeHtml = isRecommended
-      ? `<span class="purchase-plan-badge is-rec">${esc(pt.recommended || '추천')}</span>`
-      : '';
-    const cardMods = [
-      selected ? ' is-selected' : '',
-      isRecommended ? ' is-recommended' : '',
-      locked ? ' is-locked' : ''
-    ].join('');
-    return `<article class="purchase-plan-card${cardMods}" data-purchase-id="${esc(pack.productId)}" role="listitem" ${locked?'aria-disabled="true"':''}>
-      <div class="purchase-plan-head">
-        <h3>${esc(title)}</h3>
-        ${badgeHtml}
-      </div>
-      <p class="purchase-plan-uses">${esc(uses)}</p>
-      ${priceHtml}
-      <p class="purchase-plan-unit">${esc(lang==='en' ? `${days}-day Full Pass · one-time` : (lang==='ja' ? `${days}日 Full 利用権 · 1回払い` : `${days}일 Full 이용권 · 1회 결제`))}</p>
-      ${packSave}
-      ${purchaseCardFeaturesHtml(passFeatures)}
-      <button type="button" class="purchase-plan-buy" data-purchase-buy="${esc(pack.productId)}" ${locked?'disabled aria-disabled="true"':''}>${esc(btnLabel)}</button>
-    </article>`;
+    return renderProductCard(pack, {
+      lang,
+      selected,
+      locked,
+      features: passFeatures,
+      buyLabel: locked ? (pt.btnNoNeed || '추가 구매 불필요') : pt.buy,
+      ui: {
+        recommended: pt.recommended || '추천',
+        buy: pt.buy,
+        paused: '',
+        archived: '',
+        btnPaused: '',
+        passFeatures,
+        lifeFeatures: pt.cardFeaturesLife,
+        unitPass: (days) => (lang === 'en'
+          ? `${days}-day Full Pass · one-time`
+          : (lang === 'ja' ? `${days}日 Full 利用権 · 1回払い` : `${days}일 Full 이용권 · 1회 결제`)),
+        unitLife: pt.unlimitedUnit || 'Lifetime Full · 1회 결제',
+        hideToday: '',
+        close: '',
+        defaultCta: ''
+      }
+    });
   });
   const lifeSelected = locked || selectedPurchaseId === 'LIFETIME';
   const lifeBtn = locked ? (pt.btnCurrentPlan || '현재 이용 중') : pt.buy;
   const lifeCtx = purchaseCheckout();
   const unlimitedPrice = lifeCtx.displaySale || purchaseDisplayPrice();
   const lifeDiscounted = !locked && Number(lifeCtx.discount || 0) > 0 && Number(lifeCtx.salePrice) < Number(lifeCtx.listPrice);
-  const lifePriceHtml = lifeDiscounted
-    ? `<div class="purchase-plan-price-block">
-        <div class="purchase-plan-price-was">${esc(lifeCtx.displayList)}</div>
-        <div class="purchase-plan-price-row">
-          <div class="purchase-plan-price purchase-plan-price-now">${esc(lifeCtx.displaySale)}</div>
-          <span class="purchase-plan-off-pill">${esc(String(lifeCtx.discount))}% OFF</span>
-        </div>
-      </div>`
-    : `<div class="purchase-plan-price-block">
-        <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
-        <div class="purchase-plan-price-row">
-          <div class="purchase-plan-price">${esc(unlimitedPrice)}</div>
-        </div>
-      </div>`;
   if(locked || isSelling(getDefaultProduct())){
-    cards.push(`<article class="purchase-plan-card${lifeSelected?' is-selected':''}${locked?' is-locked is-current-plan':''}" data-purchase-id="LIFETIME" role="listitem" ${locked?'aria-disabled="true"':''}>
-      <div class="purchase-plan-head">
-        <h3>${esc(pt.unlimitedTitle || 'Lifetime')}</h3>
-      </div>
-      <p class="purchase-plan-uses">${esc(pt.unlimitedUses)}</p>
-      ${lifePriceHtml}
-      <p class="purchase-plan-unit">${esc(pt.unlimitedUnit)}</p>
-      <span class="purchase-plan-save" aria-hidden="true"></span>
-      ${purchaseCardFeaturesHtml(pt.cardFeaturesLife)}
-      <button type="button" class="purchase-plan-buy" data-purchase-buy="LIFETIME" ${locked?'disabled aria-disabled="true"':''}>${esc(lifeBtn)}</button>
-    </article>`);
+    const lifeView = {
+      productId: 'LIFETIME',
+      type: 'lifetime',
+      status: 'active',
+      nameKo: pt.unlimitedTitle || 'Lifetime',
+      nameEn: pt.unlimitedTitle || 'Lifetime',
+      nameJa: pt.unlimitedTitle || 'Lifetime',
+      descriptionKo: pt.unlimitedUses,
+      descriptionEn: pt.unlimitedUses,
+      descriptionJa: pt.unlimitedUses,
+      listPriceKrw: Number(lifeCtx.listPrice || 0),
+      effectivePrice: lifeDiscounted ? Number(lifeCtx.salePrice) : Number(lifeCtx.salePrice || lifeCtx.listPrice || 0),
+      krw: Number(String(unlimitedPrice).replace(/[^\d]/g, '') || lifeCtx.salePrice || 0),
+      discountPercent: lifeDiscounted ? Number(lifeCtx.discount || 0) : 0,
+      saleOk: true
+    };
+    // Prefer display strings from checkout when available (KRW formatted already in ctx).
+    if (lifeDiscounted) {
+      lifeView.listPriceKrw = Number(lifeCtx.listPrice);
+      lifeView.effectivePrice = Number(lifeCtx.salePrice);
+    } else if (lifeCtx.listPrice != null) {
+      lifeView.listPriceKrw = Number(lifeCtx.listPrice);
+      lifeView.effectivePrice = Number(lifeCtx.salePrice != null ? lifeCtx.salePrice : lifeCtx.listPrice);
+    }
+    cards.push(renderProductCard(lifeView, {
+      lang,
+      selected: lifeSelected,
+      locked,
+      features: pt.cardFeaturesLife,
+      buyLabel: lifeBtn,
+      extraClass: locked ? 'is-current-plan' : '',
+      ui: {
+        recommended: pt.recommended || '추천',
+        buy: pt.buy,
+        paused: '',
+        archived: '',
+        btnPaused: '',
+        passFeatures,
+        lifeFeatures: pt.cardFeaturesLife,
+        unitPass: () => '',
+        unitLife: pt.unlimitedUnit || 'Lifetime Full · 1회 결제',
+        hideToday: '',
+        close: '',
+        defaultCta: ''
+      }
+    }));
   }
   grid.innerHTML = cards.join('');
-}
-function purchaseCardFeaturesHtml(rows){
-  return `<ul class="purchase-plan-features">${(rows || []).map((row)=>{
-    const label = Array.isArray(row) ? row[0] : (row.label || '');
-    const value = Array.isArray(row) ? row[1] : (row.value || '');
-    return `<li><span>${esc(label)}</span><strong>${esc(value)}</strong></li>`;
-  }).join('')}</ul>`;
 }
 function renderPurchaseTrialRow(){
   const el = $('purchaseTrialRow');
@@ -12638,19 +12618,7 @@ function salePromoCopy(){
   const promo = promos[0];
   if(promo){
     const price = promoPopupPriceContext(promo, uiLang);
-    return {
-      badge: localizePromo(promo, 'badge', uiLang) || 'Sale',
-      title: localizePromo(promo, 'popupTitle', uiLang) || localizePromo(promo, 'name', uiLang),
-      lead: localizePromo(promo, 'popupBody', uiLang),
-      until: localizePromo(promo, 'badge', uiLang),
-      was: price.was,
-      now: price.now,
-      cta: localizePromo(promo, 'popupCta', uiLang) || (uiLang==='en'?'See pricing':uiLang==='ja'?'料金を見る':'가격 보기'),
-      href: promo.ctaUrl || '',
-      hideToday: uiLang === 'en' ? "Don't show again" : uiLang === 'ja' ? '表示しない' : '다시 보지 않기',
-      close: uiLang === 'en' ? 'Close' : uiLang === 'ja' ? '閉じる' : '닫기',
-      promo
-    };
+    return buildPromotionPopupCopy(promo, price, uiLang);
   }
   const ctx = checkoutContext(uiLang, uiLang === 'ko');
   return { ...promoPopupCopy(uiLang, ctx), promo: null };
@@ -12693,36 +12661,19 @@ function openSalePromoPopup(){
   const base=window.MIDIAI_BASE_PATH||'./';
   const purchaseHref = t.href || (lang==='en' ? `${base}en/purchase.html` : lang==='ja' ? `${base}ja/purchase.html` : `${base}purchase.html`);
   const overlay=document.createElement('div');
-  overlay.className='sale-promo-backdrop';
-  overlay.setAttribute('role','dialog');
-  overlay.setAttribute('aria-modal','true');
-  overlay.setAttribute('aria-label', t.title);
-  overlay.innerHTML=`
-    <div class="sale-promo-modal">
-      <button type="button" class="sale-promo-x" aria-label="${esc(t.close)}">×</button>
-      <span class="sale-promo-badge">${esc(t.badge)}</span>
-      <h2 class="sale-promo-title">${esc(t.title)}</h2>
-      <p class="sale-promo-lead">${esc(t.lead)}</p>
-      <div class="sale-promo-price-box">
-        <div class="sale-promo-was">${esc(t.was)}</div>
-        <div class="sale-promo-now"><strong>${esc(t.now)}</strong><span>${esc(t.until)}</span></div>
-      </div>
-      <div class="sale-promo-actions">
-        <a class="primary" href="${esc(purchaseHref)}">${esc(t.cta)}</a>
-        <label class="sale-promo-hide"><input type="checkbox" id="salePromoHideToday"> ${esc(t.hideToday)}</label>
-        <button type="button" class="sale-promo-close-link" data-close>${esc(t.close)}</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  requestAnimationFrame(()=>overlay.classList.add('is-open'));
+  overlay.innerHTML = renderPromotionPopupHtml(t, { purchaseHref, preview: false });
+  const root = overlay.firstElementChild;
+  if(!root) return;
+  document.body.appendChild(root);
+  requestAnimationFrame(()=>root.classList.add('is-open'));
 
-  const dismiss=()=>closeSalePromo(overlay, !!overlay.querySelector('#salePromoHideToday')?.checked);
-  overlay.querySelector('.sale-promo-x')?.addEventListener('click', dismiss);
-  overlay.querySelector('[data-close]')?.addEventListener('click', dismiss);
-  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) dismiss(); });
+  const dismiss=()=>closeSalePromo(root, !!root.querySelector('#salePromoHideToday')?.checked);
+  root.querySelector('.sale-promo-x')?.addEventListener('click', dismiss);
+  root.querySelector('[data-close]')?.addEventListener('click', dismiss);
+  root.addEventListener('click', (e)=>{ if(e.target===root) dismiss(); });
   const onKey=(e)=>{ if(e.key==='Escape') dismiss(); };
   document.addEventListener('keydown', onKey);
-  overlay._cleanup=()=>document.removeEventListener('keydown', onKey);
+  root._cleanup=()=>document.removeEventListener('keydown', onKey);
 }
 
 function initSalePromoPopup(){

@@ -16,6 +16,7 @@ const passEntitlement = require(join(root, 'functions/passEntitlement.js'));
 // Browser validateProductFields — evaluate by importing? catalog-engine is ESM.
 const { pathToFileURL } = await import('url');
 const browser = await import(pathToFileURL(join(root, 'assets/js/catalog-engine.js')).href);
+const storefront = await import(pathToFileURL(join(root, 'assets/js/storefront-render.js')).href);
 
 const checks = [];
 function check(name, fn) {
@@ -186,6 +187,55 @@ check('validate_reject_product_discount_enabled', () => {
   });
   assert.ok(errs.some((e) => /프로모션/.test(e)));
 });
+check('storefront_card_renders_discount', () => {
+  const html = storefront.renderProductCard({
+    productId: 'PASS_30D',
+    type: 'full_pass',
+    status: 'active',
+    nameKo: '30일 Full',
+    listPriceKrw: 29900,
+    effectivePrice: 20930,
+    discountPercent: 30,
+    durationDays: 30,
+    saleOk: true
+  }, { lang: 'ko', preview: true });
+  assert.match(html, /20,930원/);
+  assert.match(html, /30% OFF/);
+  assert.match(html, /disabled/);
+});
+check('force_promo_preview_window', () => {
+  const forced = storefront.forcePromoWindowForPreview({
+    enabled: true,
+    type: 'percent',
+    value: 30,
+    startsAt: '2099-01-01T00:00:00.000Z',
+    endsAt: '2099-02-01T00:00:00.000Z',
+    productIds: ['PASS_30D']
+  });
+  const p = { productId: 'PASS_30D', type: 'full_pass', listPriceKrw: 29900, status: 'active' };
+  const charge = browser.computeCharge(p, [forced], new Date());
+  assert.equal(charge.effectivePrice, 20930);
+});
+check('preview_ignores_stale_product_discount', () => {
+  const p = {
+    productId: 'PASS_30D',
+    type: 'full_pass',
+    listPriceKrw: 29900,
+    status: 'active',
+    productDiscount: {
+      enabled: true, type: 'percent', value: 50,
+      startsAt: '2020-01-01T00:00:00.000Z', endsAt: '2099-01-01T00:00:00.000Z'
+    }
+  };
+  const promos = [{
+    enabled: true, archived: false, type: 'percent', value: 10,
+    startsAt: '2020-01-01T00:00:00.000Z', endsAt: '2099-01-01T00:00:00.000Z',
+    productIds: ['PASS_30D']
+  }];
+  const charge = browser.computeCharge(p, promos, new Date());
+  assert.equal(charge.effectivePrice, 26910);
+  assert.equal(charge.discountPercent, 10);
+});
 check('server_stale_product_discount_ignored', () => {
   const p = {
     productId: 'PASS_30D',
@@ -200,6 +250,20 @@ check('server_stale_product_discount_ignored', () => {
   };
   const charge = catalogEngine.computeCharge(p, [], new Date());
   assert.equal(charge.effectivePrice, 29900);
+});
+check('popup_html_uses_shared_renderer', () => {
+  const copy = storefront.buildPromotionPopupCopy({
+    nameKo: '여름 할인',
+    popupTitleKo: '여름 특별 할인',
+    popupBodyKo: '기간 한정',
+    popupCtaKo: '지금 구매하기',
+    endsAt: '2026-08-30T00:00:00.000Z',
+    productIds: ['PASS_30D']
+  }, { was: '29,900원', now: '20,930원', discountPercent: 30 }, 'ko');
+  const html = storefront.renderPromotionPopupHtml(copy, { preview: true });
+  assert.match(html, /여름 특별 할인/);
+  assert.match(html, /20,930원/);
+  assert.match(html, /disabled/);
 });
 check('pass_bundle_labels_i18n', () => {
   const catalog = [

@@ -3203,7 +3203,72 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 @media(max-width:980px){
   .pricing-promo-grid,.pricing-promo-copy{grid-template-columns:1fr}
 }
-.pricing-layout{display:grid;grid-template-columns:minmax(220px,.9fr) minmax(0,1.6fr);gap:16px;align-items:start}
+.pricing-layout{display:grid;grid-template-columns:minmax(200px,.75fr) minmax(0,1.25fr);gap:16px;align-items:start}
+.pricing-workspace{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(360px,.95fr);gap:18px;align-items:start;margin-top:12px}
+.pricing-workspace-main{min-width:0}
+.pricing-live-preview{
+  position:sticky;top:12px;padding:14px;border:1px solid var(--site-stroke);border-radius:16px;
+  background:rgba(0,0,0,.28);max-height:calc(100vh - 40px);overflow:auto
+}
+.pricing-live-preview-head{display:grid;gap:10px;margin-bottom:12px}
+.pricing-live-preview-title-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.pricing-live-preview-title-row h4{margin:0;font-size:15px}
+.pricing-preview-save-state{font-size:12px;font-weight:700;color:rgba(154,242,255,.9)}
+.pricing-preview-save-state.is-dirty{color:#fbbf24}
+.pricing-preview-banner{
+  margin:0;padding:8px 10px;border-radius:10px;border:1px solid rgba(251,191,36,.35);
+  background:rgba(251,191,36,.08);color:#fde68a;font-size:12px;font-weight:700
+}
+.pricing-preview-toolbar{display:flex;flex-wrap:wrap;gap:8px}
+.pricing-preview-seg{display:inline-flex;flex-wrap:wrap;gap:0;border:1px solid var(--site-stroke);border-radius:10px;overflow:hidden}
+.pricing-preview-seg button{
+  margin:0;border:0;border-right:1px solid var(--site-stroke);border-radius:0;
+  background:transparent;color:var(--muted);font:inherit;font-size:11px;font-weight:700;
+  padding:6px 9px;cursor:pointer
+}
+.pricing-preview-seg button:last-child{border-right:0}
+.pricing-preview-seg button.is-active{background:rgba(34,211,238,.12);color:#9af2ff}
+.pricing-preview-stage{min-height:280px}
+.pricing-preview-stage.is-mobile{max-width:390px;margin:0 auto}
+.pricing-preview-grid.purchase-plan-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0
+}
+.pricing-preview-stage.is-mobile .pricing-preview-grid.purchase-plan-grid{grid-template-columns:1fr}
+.pricing-preview-grid .purchase-plan-card{cursor:default;pointer-events:none}
+.pricing-preview-grid .purchase-plan-buy{pointer-events:none}
+.purchase-plan-card.is-preview-paused{opacity:.78}
+.purchase-plan-card.is-preview-archived{opacity:.65;border-style:dashed}
+.pricing-preview-paused-note,.pricing-preview-archived-note{color:#fbbf24!important}
+.pricing-preview-popup-host{position:relative;min-height:420px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.pricing-preview-home-context{position:absolute;inset:0;pointer-events:none}
+.pricing-preview-home-hero{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 20% 10%,rgba(34,211,238,.18),transparent 45%),
+    radial-gradient(ellipse at 80% 0%,rgba(139,92,246,.14),transparent 40%),
+    linear-gradient(180deg,#0b1020 0%,#12182c 55%,#0a0e1a 100%)
+}
+.pricing-preview-home-label{
+  position:absolute;top:14px;left:16px;z-index:1;font-size:11px;font-weight:800;
+  letter-spacing:.04em;color:rgba(255,255,255,.45);text-transform:uppercase
+}
+.pricing-preview-popup-mount{position:relative;z-index:2;min-height:420px;display:grid;place-items:center;padding:18px}
+.pricing-preview-popup-mount .sale-promo-backdrop{
+  position:relative;inset:auto;opacity:1;pointer-events:none;background:rgba(0,0,0,.45);
+  width:100%;min-height:380px;padding:16px;backdrop-filter:blur(8px)
+}
+.pricing-preview-popup-mount .sale-promo-modal{transform:none;pointer-events:none}
+.pricing-preview-popup-off{position:relative;z-index:2;text-align:center;padding:48px 16px}
+.is-preview-hl{
+  outline:1px solid rgba(34,211,238,.55)!important;
+  outline-offset:2px;
+  background-color:rgba(34,211,238,.08)!important;
+  transition:outline-color .2s ease,background-color .2s ease
+}
+@media(max-width:1100px){
+  .pricing-workspace{grid-template-columns:1fr}
+  .pricing-live-preview{position:static;max-height:none}
+}
 .pricing-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 14px}
 .pricing-summary > div{padding:10px 12px;border:1px solid var(--site-stroke);border-radius:10px;background:rgba(0,0,0,.18);display:grid;gap:2px}
 .pricing-summary strong{font-size:18px}
