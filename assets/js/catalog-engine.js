@@ -781,3 +781,43 @@ export function canonicalPassDurationDays(productId) {
   const pid = normalizeProductId(productId);
   return PASS_DURATION_DAYS[pid] || 0;
 }
+
+/** Lifetime is required for PortOne/PayPal license issuance paths — not deletable. */
+export function isSystemRequiredProduct(productId) {
+  return normalizeProductId(productId) === 'LIFETIME';
+}
+
+/**
+ * Admin delete eligibility — history + system dependency, not seed membership.
+ * @param {object} product hydrated catalog product
+ * @param {{ orderCount?: number, creditCount?: number }} history live counts from orders / creditPurchases
+ */
+export function evaluateProductDeletable(product, history = {}) {
+  const pid = normalizeProductId(product?.productId || product?.id);
+  if (isSystemRequiredProduct(pid)) {
+    return {
+      deletable: false,
+      reason: 'system_required',
+      message: '시스템 필수 상품 · 삭제 불가'
+    };
+  }
+  const orderCount = Number(history.orderCount || 0);
+  const creditCount = Number(history.creditCount || 0);
+  const hasPaymentHistory = product?.hasPurchases === true || orderCount > 0;
+  const hasCreditGrantHistory = creditCount > 0;
+  if (hasPaymentHistory) {
+    return {
+      deletable: false,
+      reason: 'payment_history',
+      message: '결제 기록 있음 · 보관만 가능'
+    };
+  }
+  if (hasCreditGrantHistory) {
+    return {
+      deletable: false,
+      reason: 'credit_grant_history',
+      message: 'Credit 지급 기록 있음 · 보관만 가능'
+    };
+  }
+  return { deletable: true, reason: 'no_history', message: '' };
+}

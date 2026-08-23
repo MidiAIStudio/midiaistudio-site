@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=portone-refund-sync-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=product-delete-policy-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -133,6 +133,7 @@
                 <div>
                   <h3>가격·상품</h3>
                   <p class="admin-page-lead muted">상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.</p>
+                  <p class="muted small pricing-delete-policy-note" id="pricingDeletePolicyNote">결제 이력이 있는 상품은 거래 기록 보존을 위해 삭제할 수 없습니다. 판매를 중단하려면 보관을 사용하세요.</p>
                 </div>
                 <div class="admin-pricing-actions">
                   <div class="admin-pricing-actions-create">
@@ -281,7 +282,8 @@
                           <button type="button" class="secondary mini-btn" id="pricingCloneBtn">상품 복제</button>
                           <span class="pricing-actions-spacer" aria-hidden="true"></span>
                           <button type="button" class="secondary mini-btn" id="pricingArchiveBtn">보관</button>
-                          <button type="button" class="secondary mini-btn danger-btn" id="pricingDeleteBtn" hidden>삭제</button>
+                          <button type="button" class="secondary mini-btn danger-btn" id="pricingDeleteBtn">삭제</button>
+                          <span class="muted small pricing-delete-hint" id="pricingDeleteHint" hidden></span>
                         </div>
                       </div>
                     </div>
@@ -781,7 +783,7 @@
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
   <script type="module" src="./assets/js/app.js?v=portone-refund-sync-1"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=credit-delete-1"></script>
+  <script type="module" src="./assets/js/pricing-admin.js?v=product-delete-policy-1"></script>
   <script type="module" src="./assets/js/admin-console.js?v=admin-logs-detail-1"></script>
 </body>
 </html>

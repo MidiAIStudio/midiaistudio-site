@@ -3230,6 +3230,9 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .pricing-advanced[open] > .pricing-advanced-summary::before{transform:rotate(90deg)}
 .pricing-advanced .pricing-form-grid input[readonly]{opacity:.78}
 .pricing-editor-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid rgba(148,163,184,.14)}
+.pricing-delete-hint,.pricing-product-delete-hint{display:block;width:100%;margin:0;line-height:1.45}
+.pricing-delete-policy-note{margin:6px 0 0;max-width:52rem;line-height:1.45}
+.pricing-editor-actions .pricing-delete-hint{width:auto;flex:1 1 100%;margin-top:2px}
 .pricing-actions-spacer{flex:1 1 12px;min-width:8px}
 .pricing-product-item-main{font-size:13px;font-weight:600;color:rgba(226,232,240,.9)}
 .pricing-product-item-id{opacity:.7;font-size:11px!important}

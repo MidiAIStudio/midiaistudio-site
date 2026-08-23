@@ -116,6 +116,34 @@ check('seed_delete_protected_ids', () => {
   assert.equal(browser.isSeedProduct('PASS_7D'), true);
   assert.equal(browser.isSeedProduct('TEST_PASS_ADMIN_E2E'), false);
 });
+check('delete_lifetime_system_required', () => {
+  const r = browser.evaluateProductDeletable({ productId: 'LIFETIME', type: 'lifetime' }, { orderCount: 0, creditCount: 0 });
+  assert.equal(r.deletable, false);
+  assert.equal(r.reason, 'system_required');
+});
+check('delete_credit_no_history', () => {
+  const r = browser.evaluateProductDeletable({ productId: 'CREDIT_5', type: 'credit_pack' }, { orderCount: 0, creditCount: 0 });
+  assert.equal(r.deletable, true);
+  assert.equal(r.reason, 'no_history');
+});
+check('delete_pass_no_history', () => {
+  const r = browser.evaluateProductDeletable({ productId: 'PASS_7D', type: 'full_pass' }, { orderCount: 0, creditCount: 0 });
+  assert.equal(r.deletable, true);
+});
+check('delete_blocked_payment_history', () => {
+  const r = browser.evaluateProductDeletable({ productId: 'CREDIT_30', type: 'credit_pack' }, { orderCount: 2, creditCount: 0 });
+  assert.equal(r.deletable, false);
+  assert.equal(r.reason, 'payment_history');
+});
+check('delete_blocked_credit_grant', () => {
+  const r = browser.evaluateProductDeletable({ productId: 'TEST_CREDIT', type: 'credit_pack' }, { orderCount: 0, creditCount: 1 });
+  assert.equal(r.deletable, false);
+  assert.equal(r.reason, 'credit_grant_history');
+});
+check('delete_seed_not_auto_blocked', () => {
+  const r = browser.evaluateProductDeletable({ productId: 'CREDIT_100', type: 'credit_pack', hasPurchases: false }, { orderCount: 0, creditCount: 0 });
+  assert.equal(r.deletable, true);
+});
 
 const failed = checks.filter((c) => !c.pass);
 console.log(`\n${checks.length - failed.length}/${checks.length} PASS`);

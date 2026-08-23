@@ -13,9 +13,9 @@ import {
   formatKrw,
   fromDatetimeLocalValue,
   hydrateLegacyProduct,
+  evaluateProductDeletable,
   isCanonicalPassProductId,
   isPassProductId,
-  isSeedProduct,
   normalizeProductId,
   priceChangeWarning,
   productTypeLabel,
@@ -24,7 +24,7 @@ import {
   validateProductFields,
   validatePromotionFields,
   windowStatus
-} from './catalog-engine.js?v=dyn-catalog-1';
+} from './catalog-engine.js?v=product-delete-policy-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -44,19 +44,93 @@ let promoDraft = null;
 let booted = false;
 let loading = false;
 let pane = 'products';
+let deletedProductIds = new Set();
+let purchaseHistoryByProduct = {};
 
 function $(id) { return document.getElementById(id); }
 
-function isCreditCatalogProduct(p) {
-  if (!p) return false;
-  const id = normalizeProductId(p.productId || p.id);
-  return p.type === 'credit_pack' || id.startsWith('CREDIT_') || id.startsWith('POINT_');
+function productDeleteEval(p) {
+  if (!p) return { deletable: false, reason: 'missing', message: '' };
+  const pid = normalizeProductId(p.productId || p.id);
+  const history = p._history || purchaseHistoryByProduct[pid] || { orderCount: 0, creditCount: 0 };
+  return evaluateProductDeletable(p, history);
 }
 
 function canDeleteCatalogProduct(p) {
-  if (!p) return false;
-  if (isCreditCatalogProduct(p)) return true;
-  return !isSeedProduct(p.productId) && p.hasPurchases !== true;
+  return productDeleteEval(p).deletable;
+}
+
+function deleteBlockMessage(reason) {
+  if (reason === 'system_required') {
+    return '시스템 필수 상품은 삭제할 수 없습니다.';
+  }
+  if (reason === 'credit_grant_history') {
+    return 'Credit 지급 기록이 있는 상품은 삭제할 수 없습니다. 판매를 중단하려면 \'보관\'을 사용하세요.';
+  }
+  return '결제 기록이 있는 상품은 삭제할 수 없습니다. 판매를 중단하려면 \'보관\'을 사용하세요.';
+}
+
+function orderHistoryProductId(data) {
+  const canonical = normalizeProductId(data?.productCanonicalId || '');
+  if (canonical && purchaseHistoryByProduct[canonical] != null) return canonical;
+  const raw = String(data?.productId || '').trim();
+  if (raw) {
+    const pid = normalizeProductId(raw);
+    if (purchaseHistoryByProduct[pid] != null) return pid;
+    if (/lifetime/i.test(raw)) return 'LIFETIME';
+  }
+  return canonical || normalizeProductId(raw) || null;
+}
+
+async function loadPurchaseHistory() {
+  purchaseHistoryByProduct = {};
+  for (const p of products) {
+    const pid = normalizeProductId(p.productId);
+    purchaseHistoryByProduct[pid] = { orderCount: 0, creditCount: 0 };
+  }
+  if (!db || !fs) return;
+  const { collection, getDocs, doc, getDoc } = fs;
+  try {
+    const cfgSnap = await getDoc(doc(db, 'pricingConfig', 'main'));
+    const rawDeleted = cfgSnap.exists?.() ? (cfgSnap.data()?.deletedProductIds || []) : [];
+    deletedProductIds = new Set(rawDeleted.map((id) => normalizeProductId(id)));
+  } catch (e) {
+    console.warn('deletedProductIds', e);
+    deletedProductIds = new Set();
+  }
+  try {
+    const orderSnap = await getDocs(collection(db, 'orders'));
+    for (const d of orderSnap.docs) {
+      const pid = orderHistoryProductId(d.data());
+      if (pid && purchaseHistoryByProduct[pid]) purchaseHistoryByProduct[pid].orderCount += 1;
+    }
+  } catch (e) {
+    console.warn('order history scan', e);
+  }
+  try {
+    const cpSnap = await getDocs(collection(db, 'creditPurchases'));
+    for (const d of cpSnap.docs) {
+      const pid = normalizeProductId(d.data()?.productId || '');
+      if (pid && purchaseHistoryByProduct[pid]) purchaseHistoryByProduct[pid].creditCount += 1;
+    }
+  } catch (e) {
+    console.warn('creditPurchases history scan', e);
+  }
+  for (const p of products) {
+    const pid = normalizeProductId(p.productId);
+    p._history = purchaseHistoryByProduct[pid] || { orderCount: 0, creditCount: 0 };
+    if (p._history.orderCount > 0) p.hasPurchases = true;
+  }
+}
+
+async function recordCatalogDeletion(productId) {
+  const pid = normalizeProductId(productId);
+  const { doc, setDoc, serverTimestamp, arrayUnion } = fs;
+  await setDoc(doc(db, 'pricingConfig', 'main'), {
+    deletedProductIds: arrayUnion(pid),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  deletedProductIds.add(pid);
 }
 
 function flash(msg, ok = true) {
@@ -200,10 +274,17 @@ async function audit(action, summary, before, after) {
 
 async function ensureSeed() {
   const { collection, getDocs, doc, setDoc, serverTimestamp, getDoc } = fs;
+  const cfgSnap = await getDoc(doc(db, 'pricingConfig', 'main'));
+  const tombstones = new Set(
+    (cfgSnap.exists?.() ? (cfgSnap.data()?.deletedProductIds || []) : []).map((id) => normalizeProductId(id))
+  );
+  deletedProductIds = tombstones;
   const snap = await getDocs(collection(db, 'products'));
   const existing = new Set(snap.docs.map((d) => normalizeProductId(d.id)));
   for (const seed of SEED_PRODUCTS) {
     if (seed.type === 'credit_pack') continue;
+    const pid = normalizeProductId(seed.productId);
+    if (tombstones.has(pid)) continue;
     const docId = firestoreDocId(seed.productId);
     if (existing.has(seed.productId) || snap.docs.some((d) => d.id === docId)) continue;
     const payload = {
@@ -238,8 +319,9 @@ async function ensureSeed() {
     await setDoc(doc(db, 'products', docId), payload, { merge: true });
   }
   // Existing product prices are never rewritten here (Firestore is SoT).
-  // CREDIT_* sales pause only (ledger/engine kept).
+  // CREDIT_* sales pause only (ledger/engine kept). Skip admin-deleted credits.
   for (const creditId of ['CREDIT_5', 'CREDIT_30', 'CREDIT_100']) {
+    if (tombstones.has(creditId)) continue;
     try {
       const ref = doc(db, 'products', firestoreDocId(creditId));
       const snapDoc = await getDoc(ref);
@@ -274,6 +356,7 @@ async function loadAll() {
       .map((d) => hydrateLegacyProduct({ id: d.id, ...d.data() }))
       .filter((p) => !['POINT_5', 'POINT_30', 'POINT_100'].includes(p.productId))
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || String(a.productId).localeCompare(b.productId));
+    await loadPurchaseHistory();
     try {
       const promoSnap = await getDocs(collection(db, 'promotions'));
       promotions = promoSnap.docs.map((d) => ({ id: d.id, promotionId: d.id, ...d.data() }))
@@ -366,10 +449,15 @@ function renderList() {
     }
     const badge = badgeLabel(p.badge);
     if (badge) bits.push(badge);
+    const delEval = productDeleteEval(p);
+    const deleteHint = delEval.deletable
+      ? ''
+      : `<span class="muted small pricing-product-delete-hint">${esc(delEval.message)}</span>`;
     return `<button type="button" class="pricing-product-item${active}" data-product-id="${esc(p.productId)}">
       <span class="pricing-product-item-top"><strong>${esc(p.nameKo || p.productId)}</strong><span class="badge">${esc(status)}</span></span>
       <span class="pricing-product-item-main">${line2}</span>
       ${bits.length ? `<span class="muted small">${esc(bits.join(' · '))}</span>` : ''}
+      ${deleteHint}
       <span class="muted small pricing-product-item-id">${esc(p.productId)}</span>
     </button>`;
   }).join('');
@@ -469,7 +557,16 @@ function renderEditor() {
     }
   }
   const del = $('pricingDeleteBtn');
-  if (del) del.hidden = !canDeleteCatalogProduct(draft);
+  const delHint = $('pricingDeleteHint');
+  const delEval = productDeleteEval(draft);
+  if (del) {
+    del.hidden = false;
+    del.disabled = !delEval.deletable;
+  }
+  if (delHint) {
+    delHint.textContent = delEval.deletable ? '' : delEval.message;
+    delHint.hidden = delEval.deletable;
+  }
   renderPreview();
 }
 
@@ -816,14 +913,13 @@ async function archiveProduct() {
 }
 
 async function deleteProduct() {
-  if (!draft || !canDeleteCatalogProduct(draft)) {
-    throw new Error('기본 이용권(기간제/Lifetime)은 삭제할 수 없습니다. 판매중지/보관만 가능합니다.');
+  const delEval = productDeleteEval(draft);
+  if (!draft || !delEval.deletable) {
+    throw new Error(deleteBlockMessage(delEval.reason));
   }
-  const extra = draft.hasPurchases
-    ? '\n결제 기록은 유지되고, 판매 목록에서만 제거됩니다.'
-    : '';
-  if (!window.confirm(`${draft.productId} 상품을 삭제할까요?${extra}`)) return;
+  if (!window.confirm('이 상품을 삭제하시겠습니까?\n삭제된 상품은 가격표와 판매 목록에서 제거됩니다.')) return;
   const { doc, deleteDoc } = fs;
+  await recordCatalogDeletion(draft.productId);
   await deleteDoc(doc(db, 'products', firestoreDocId(draft.productId)));
   await audit('product_delete', `${draft.productId} 삭제`, draft, null);
   selectedId = null;
