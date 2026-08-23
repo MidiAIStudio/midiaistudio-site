@@ -340,6 +340,7 @@ function crmStatsHtml() {
     card('all', MEMBERS.length, '전체 회원', selected),
     card('active', nowActive, '활성', selected),
     card('lifetime', MEMBERS.filter((u) => u.plan === 'lifetime').length, '평생', selected),
+    card('period', MEMBERS.filter((u) => u.plan === 'period').length, '기간제', selected),
     card('trial', MEMBERS.filter((u) => u.plan === 'trial').length, '체험판', selected),
     card('today', MEMBERS.filter((u) => u.joined === '2026.08.19').length, '오늘 가입', selected)
   ].join('');
@@ -456,8 +457,8 @@ function syncPreviewWorkChrome() {
     }
   } else {
     stats && (stats.innerHTML = crmStatsHtml());
-    stats?.classList.remove('is-cols-6');
-    stats?.classList.add('is-cols-5');
+    stats?.classList.remove('is-cols-5');
+    stats?.classList.add('is-cols-6');
     updatePreviewFilterButton();
     if (tabs) { tabs.hidden = true; tabs.innerHTML = ''; }
   }

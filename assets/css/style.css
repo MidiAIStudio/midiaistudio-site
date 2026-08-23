@@ -2032,6 +2032,9 @@ article.purchase-plan-card .purchase-plan-badge.is-best{border-color:rgba(255,25
 @supports ((-webkit-background-clip:text) or (background-clip:text)){
 .purchase-plan-card .purchase-plan-price{background:linear-gradient(135deg,#fff 0%,#bfefff 45%,#d7c7ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 }
+.purchase-plan-card.is-loading{cursor:default;pointer-events:none;opacity:.72}
+.purchase-plan-card.is-loading:hover{border-color:rgba(255,255,255,.12)}
+.purchase-plan-price-skeleton{letter-spacing:.12em!important;color:rgba(247,247,251,.28)!important;background:none!important;-webkit-background-clip:unset!important;background-clip:unset!important}
 .purchase-plan-off-pill{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:999px;border:1px solid rgba(34,211,238,.32);background:rgba(34,211,238,.1);color:#9af2ff;font-size:10px;font-weight:700;letter-spacing:.02em;line-height:1;white-space:nowrap}
 article.purchase-plan-card .purchase-plan-off-pill{font-size:10px;line-height:1}
 .purchase-plan-card .purchase-plan-unit{margin:0;min-height:16px;color:rgba(154,163,199,.88);font-size:12px;font-weight:600}

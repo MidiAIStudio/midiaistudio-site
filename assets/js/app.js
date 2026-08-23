@@ -38,8 +38,10 @@ import {
   passDurationDays,
   applyPublicPassCatalog,
   hydratePassCatalogFromPublic,
-  getPassCatalogSource
-} from './pass-catalog.js?v=price-sot-1';
+  getPassCatalogSource,
+  isPassCatalogReady,
+  useSeedPassFallback
+} from './pass-catalog.js?v=price-flash-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -1116,6 +1118,13 @@ function isPointCheckout(){
   const id = normalizeCreditProductId(selectedPurchaseId);
   return isPurchasePage && String(id || '').startsWith('CREDIT_');
 }
+function isPassCheckout(){
+  if(purchaseActionsLocked()) return false;
+  return isPurchasePage && isPassProductId(selectedPurchaseId);
+}
+function selectedPassPack(){
+  return getPassProduct(selectedPurchaseId);
+}
 function selectedPointPack(){
   return getCreditProduct(selectedPointProductId || selectedPurchaseId);
 }
@@ -1187,17 +1196,20 @@ function pointCopy(){
     ],
     confirmCredits:(n)=>`Confirm purchase`,
     confirmLifetime:'Buy Lifetime Full',
+    confirmPass:(days)=>`Buy ${days}-Day Full`,
     payAmountLabel:'Amount',
     grantLabelShort:'Grant',
     licenseLabel:'License',
     aiUnlimited:'Unlimited',
     termLabel:'Term',
     termPermanent:'No time limit',
+    termDays:(days)=>`${days} days`,
     payMethod:'Payment method',
     payAccount:'Account',
     kakaoPay:'KakaoPay',
     confirmLeadCredits:(n)=>`After payment, access will be assigned to this account.`,
     confirmLeadLifetime:'After payment, a Lifetime Full license will be assigned to this account.',
+    confirmLeadPass:(days)=>`After payment, a ${days}-day Full Pass will be assigned to this account.`,
     cancel:'Cancel',
     payNow:(price)=>`Pay ${price}`,
     openingPay:'Opening checkout...',
@@ -1307,17 +1319,20 @@ function pointCopy(){
     ],
     confirmCredits:(n)=>`購入を確認`,
     confirmLifetime:'Lifetime Full を購入',
+    confirmPass:(days)=>`${days}日 Full を購入`,
     payAmountLabel:'支払金額',
     grantLabelShort:'付与',
     licenseLabel:'ライセンス',
     aiUnlimited:'無制限',
     termLabel:'利用期間',
     termPermanent:'期間制限なし',
+    termDays:(days)=>`${days}日`,
     payMethod:'決済手段',
     payAccount:'アカウント',
     kakaoPay:'KakaoPay',
     confirmLeadCredits:(n)=>`決済完了後、このアカウントに利用権が付与されます。`,
     confirmLeadLifetime:'決済完了後、このアカウントに Lifetime Fullが付与されます。',
+    confirmLeadPass:(days)=>`決済完了後、このアカウントに ${days}日 Full利用権が付与されます。`,
     cancel:'キャンセル',
     payNow:(price)=>`${price} を支払う`,
     openingPay:'決済画面を開いています...',
@@ -1432,17 +1447,20 @@ function pointCopy(){
     ],
     confirmCredits:(n)=>`구매 확인`,
     confirmLifetime:'Lifetime Full 구매',
+    confirmPass:(days)=>`${days}일 Full 구매`,
     payAmountLabel:'결제금액',
     grantLabelShort:'지급',
     licenseLabel:'라이선스',
     aiUnlimited:'무제한',
     termLabel:'이용기간',
     termPermanent:'기간 제한 없음',
+    termDays:(days)=>`${days}일`,
     payMethod:'결제수단',
     payAccount:'결제 계정',
     kakaoPay:'카카오페이',
     confirmLeadCredits:(n)=>`결제 완료 후 해당 계정에 이용권이 지급됩니다.`,
     confirmLeadLifetime:'결제 완료 후 해당 계정에 Lifetime Full이 지급됩니다.',
+    confirmLeadPass:(days)=>`결제 완료 후 해당 계정에 ${days}일 Full 이용권이 지급됩니다.`,
     cancel:'취소',
     payNow:(price)=>`${price} 결제`,
     openingPay:'결제창 여는 중...',
@@ -1490,6 +1508,9 @@ function syncPurchaseUrl(){
   if(isPointCheckout()){
     url.searchParams.set('product', 'credits');
     url.searchParams.set('pack', selectedPurchaseId);
+  } else if(isPassCheckout()){
+    url.searchParams.set('product', 'pass');
+    url.searchParams.set('pack', selectedPurchaseId);
   } else {
     url.searchParams.delete('product');
     url.searchParams.delete('pack');
@@ -1501,6 +1522,29 @@ function renderPurchasePlanGrid(){
   if(!grid) return;
   const pt = pointCopy();
   const locked = purchaseActionsLocked();
+  // Avoid painting SEED prices (e.g. 7,900) before Firestore/public catalog arrives.
+  if(!isPassCatalogReady()){
+    grid.setAttribute('aria-busy', 'true');
+    const loadingLabel = lang==='en' ? 'Loading prices…' : (lang==='ja' ? '価格を読み込み中…' : '가격 불러오는 중…');
+    grid.innerHTML = [7, 30, 90, 'life'].map((key, i)=>{
+      const title = key === 'life'
+        ? (pt.unlimitedTitle || 'Lifetime')
+        : (lang==='en' ? `${key}-Day Full` : (lang==='ja' ? `${key}日 Full` : `${key}일 Full`));
+      return `<article class="purchase-plan-card is-loading" aria-hidden="true" data-purchase-skeleton="${esc(String(key))}">
+        <div class="purchase-plan-head"><h3>${esc(title)}</h3></div>
+        <p class="purchase-plan-uses">${i === 0 ? esc(loadingLabel) : '&nbsp;'}</p>
+        <div class="purchase-plan-price-block">
+          <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
+          <div class="purchase-plan-price-row"><div class="purchase-plan-price purchase-plan-price-skeleton">······</div></div>
+        </div>
+        <p class="purchase-plan-unit">&nbsp;</p>
+        <span class="purchase-plan-save" aria-hidden="true"></span>
+        <button type="button" class="purchase-plan-buy" disabled aria-disabled="true">&nbsp;</button>
+      </article>`;
+    }).join('');
+    return;
+  }
+  grid.removeAttribute('aria-busy');
   const passFeatures = pt.cardFeaturesPass || [
     ['변환 횟수', '제한 없음'],
     ['Full 기능', '이용 가능'],
@@ -1675,8 +1719,8 @@ function selectPurchasePlan(id, opts={}){
   const raw = String(id || 'PASS_30D').trim().toUpperCase();
   const next = normalizeCreditProductId(raw);
   if(isPassProductId(next) || next === 'PASS_30D' || isPassProductId(raw)){
-    const pid = isPassProductId(next) ? next : raw;
-    selectedPurchaseId = getPassProduct(pid)?.productId || 'PASS_30D';
+    const pid = isPassProductId(next) ? next : (isPassProductId(raw) ? raw : 'PASS_30D');
+    selectedPurchaseId = getPassProduct(pid)?.productId || pid;
     purchaseMode = 'pass';
   } else if(next === 'LIFETIME' || raw === 'LIFETIME' || raw === 'UNLIMITED'){
     selectedPurchaseId = 'LIFETIME';
@@ -1734,26 +1778,26 @@ function bindPurchaseModeUi(){
 async function initPurchasePoints(){
   if(!isPurchasePage) return;
   bindPurchaseModeUi();
+  // First paint: loading skeleton only (no seed 7,900 flash).
+  applyPurchaseModeUi();
   try{
     await loadCreditProducts(CONFIG.functionsBaseUrl);
   }catch(_){}
-  // Apply CF public catalog passes immediately (same Firestore SoT as Admin).
-  // refreshPricingUi below prefers live client Firestore when available.
   try{
     if(Array.isArray(window.__midiaiPassCatalog) && window.__midiaiPassCatalog.length){
       hydratePassCatalogFromPublic({ passes: window.__midiaiPassCatalog });
       applyPurchaseModeUi();
     }
   }catch(_){}
-  // Wait briefly for Firebase init (initAuth is async and starts in parallel).
   for(let i = 0; i < 40 && !(db && firestoreApi); i += 1){
     await new Promise((r)=>setTimeout(r, 50));
   }
-  // Prefer Firestore catalog before first paint of plan cards (avoid seed prices sticking).
   if(db && firestoreApi){
     try{ await refreshPricingUi(); }catch(_){}
   }
-  if(getPassCatalogSource() !== 'firestore'){
+  if(!isPassCatalogReady()){
+    useSeedPassFallback('initPurchasePoints_no_catalog');
+  } else if(getPassCatalogSource() !== 'firestore'){
     console.warn('CATALOG_FALLBACK_USED', { reason: 'initPurchasePoints', source: getPassCatalogSource() });
   }
   if(purchaseActionsLocked()){
@@ -1874,20 +1918,39 @@ function openPurchaseConfirmModal(){
   if(!body) return;
   const pt = pointCopy();
   const points = isPointCheckout();
-  const pack = selectedPointPack();
-  const credits = packCredits(pack);
-  const packList = Number(pack?.listPriceKrw || pack?.basePrice || pack?.krw || 0);
-  const packSale = Number(pack?.effectivePrice != null ? pack.effectivePrice : pack?.krw || 0);
-  const packDiscounted = points && pack?.discountPercent > 0 && packSale < packList;
-  const priceText = points ? formatKrw(packSale || pack?.krw) : purchaseDisplayPrice();
-  const lifeCtx = points ? null : purchaseCheckout();
-  const lifeDiscounted = !points && Number(lifeCtx?.discount || 0) > 0 && Number(lifeCtx.salePrice) < Number(lifeCtx.listPrice);
+  const pass = isPassCheckout();
+  const creditPack = points ? selectedPointPack() : null;
+  const passPack = pass ? selectedPassPack() : null;
+  const credits = packCredits(creditPack);
+  const days = pass ? passDurationDays(passPack || { productId: selectedPurchaseId }) : 0;
+  const packList = points
+    ? Number(creditPack?.listPriceKrw || creditPack?.basePrice || creditPack?.krw || 0)
+    : (pass ? Number(passPack?.listPriceKrw || passPack?.krw || 0) : 0);
+  const packSale = points
+    ? Number(creditPack?.effectivePrice != null ? creditPack.effectivePrice : creditPack?.krw || 0)
+    : (pass ? Number(passPack?.effectivePrice != null ? passPack.effectivePrice : passPack?.krw || 0) : 0);
+  const packDiscounted = (points || pass)
+    && Number((points ? creditPack : passPack)?.discountPercent || 0) > 0
+    && packSale < packList;
+  const priceText = points || pass
+    ? formatKrw(packSale || (points ? creditPack?.krw : passPack?.krw) || 0)
+    : purchaseDisplayPrice();
+  const lifeCtx = (points || pass) ? null : purchaseCheckout();
+  const lifeDiscounted = !points && !pass && Number(lifeCtx?.discount || 0) > 0 && Number(lifeCtx.salePrice) < Number(lifeCtx.listPrice);
   const email = currentUser?.email || currentUser?.uid || '';
+  const passTitle = typeof pt.confirmPass === 'function'
+    ? pt.confirmPass(days || passDurationDays({ productId: selectedPurchaseId }))
+    : `${days}일 Full 구매`;
+  const modalTitle = points
+    ? pt.confirmCredits(credits)
+    : (pass ? passTitle : pt.confirmLifetime);
+  const pendingId = selectedPurchaseId
+    || (points ? creditPack?.productId : (pass ? 'PASS_30D' : 'LIFETIME'));
   wrap.classList.remove('hidden');
   wrap.setAttribute('aria-hidden', 'false');
   if(!currentUser){
-    rememberPendingPurchase(selectedPurchaseId || (points ? pack?.productId : 'LIFETIME'));
-    body.innerHTML = `<h3 id="purchaseModalTitle">${esc(points ? pt.confirmCredits(credits) : pt.confirmLifetime)}</h3>
+    rememberPendingPurchase(pendingId);
+    body.innerHTML = `<h3 id="purchaseModalTitle">${esc(modalTitle)}</h3>
       <p class="purchase-modal-lead">${esc(pt.needLogin)}</p>
       <div class="purchase-modal-actions">
         <button type="button" class="ghost" data-purchase-modal="cancel">${esc(pt.cancel)}</button>
@@ -1895,31 +1958,51 @@ function openPurchaseConfirmModal(){
       </div>`;
     return;
   }
+  const passLicenseLabel = lang==='en'
+    ? `${days}-Day Full`
+    : (lang==='ja' ? `${days}日 Full` : `${days}일 Full`);
+  const termValue = pass
+    ? (typeof pt.termDays === 'function' ? pt.termDays(days) : `${days}일`)
+    : pt.termPermanent;
   const rows = points
     ? [
-        ...(packDiscounted ? [[ '정가', formatKrw(packList) ], [ '할인', `${pack.discountPercent}%` ]] : []),
+        ...(packDiscounted ? [[ '정가', formatKrw(packList) ], [ '할인', `${creditPack.discountPercent}%` ]] : []),
         [pt.payAmountLabel, priceText],
         [pt.grantLabelShort || pt.grantLabel || '지급', pt.grantValue(credits)],
         [pt.payMethod, pt.kakaoPay],
         [pt.payAccount, email]
       ]
-    : [
-        ...(lifeDiscounted ? [[ '정가', lifeCtx.displayList ], [ '할인', `${lifeCtx.discount}%` ]] : []),
-        [pt.payAmountLabel, priceText],
-        [pt.licenseLabel, pt.unlimitedTitle || 'Lifetime Full'],
-        [pt.usageLifetime?.[0]?.title || 'AI 변환', pt.aiUnlimited],
-        [pt.termLabel, pt.termPermanent],
-        [pt.payMethod, purchaseUsesKakao() ? pt.kakaoPay : 'PayPal'],
-        [pt.payAccount, email]
-      ];
-  const lead = points ? pt.confirmLeadCredits(credits) : pt.confirmLeadLifetime;
+    : pass
+      ? [
+          ...(packDiscounted ? [[ '정가', formatKrw(packList) ], [ '할인', `${passPack.discountPercent}%` ]] : []),
+          [pt.payAmountLabel, priceText],
+          [pt.licenseLabel, passLicenseLabel],
+          [pt.usageLifetime?.[0]?.title || 'AI 변환', pt.aiUnlimited],
+          [pt.termLabel, termValue],
+          [pt.payMethod, purchaseUsesKakao() ? pt.kakaoPay : 'PayPal'],
+          [pt.payAccount, email]
+        ]
+      : [
+          ...(lifeDiscounted ? [[ '정가', lifeCtx.displayList ], [ '할인', `${lifeCtx.discount}%` ]] : []),
+          [pt.payAmountLabel, priceText],
+          [pt.licenseLabel, pt.unlimitedTitle || 'Lifetime Full'],
+          [pt.usageLifetime?.[0]?.title || 'AI 변환', pt.aiUnlimited],
+          [pt.termLabel, pt.termPermanent],
+          [pt.payMethod, purchaseUsesKakao() ? pt.kakaoPay : 'PayPal'],
+          [pt.payAccount, email]
+        ];
+  const lead = points
+    ? pt.confirmLeadCredits(credits)
+    : (pass
+      ? (typeof pt.confirmLeadPass === 'function' ? pt.confirmLeadPass(days) : pt.confirmLeadLifetime)
+      : pt.confirmLeadLifetime);
   const payLabel = pt.payNow(priceText);
   const kakaoPayHtml = purchaseUsesKakao()
     ? `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" data-purchase-modal="pay" data-pay-label="${esc(payLabel)}">
         <span class="kakao-mark">pay</span><strong>${esc(payLabel)}</strong>
       </button>`
     : `<div id="purchaseModalPaypalSlot"></div>`;
-  body.innerHTML = `<h3 id="purchaseModalTitle">${esc(points ? pt.confirmCredits(credits) : pt.confirmLifetime)}</h3>
+  body.innerHTML = `<h3 id="purchaseModalTitle">${esc(modalTitle)}</h3>
     <dl class="purchase-modal-rows">
       ${rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}
     </dl>
@@ -3633,6 +3716,10 @@ async function refreshPricingUi(){
   }catch(e){
     console.warn('CATALOG_FALLBACK_USED', { reason: 'ensurePricing_failed', error: String(e?.message || e) });
     console.warn('refreshPricingUi', e);
+    if(isPurchasePage && !isPassCatalogReady()){
+      useSeedPassFallback('ensurePricing_failed');
+      applyPurchaseModeUi();
+    }
   }
 }
 function routeLoadPublic(){
@@ -7080,16 +7167,17 @@ function renderAdminMemberWorkStats(rows){
   const box=$('adminCrmStats');
   if(!box) return;
   bindAdminCrmStatClicksOn(box);
-  box.classList.remove('is-cols-6');
-  box.classList.add('is-cols-5');
+  box.classList.remove('is-cols-5');
+  box.classList.add('is-cols-6');
   const now=Date.now()/1000;
   const all=adminUserRows.length;
-  let active=0, trial=0, lifetime=0;
+  let active=0, trial=0, lifetime=0, period=0;
   adminUserRows.forEach(u=>{
     const view=adminLicenseView(u);
     if(view.state!=='ok' || !view.license) return;
     if(view.plan==='trial') trial++;
     if(view.plan==='lifetime') lifetime++;
+    if(view.plan==='period') period++;
     if(view.status==='active') active++;
   });
   const todayJoin=adminUserRows.filter(u=>adminTsSec(u.createdAt) && now-adminTsSec(u.createdAt) < 86400).length;
@@ -7099,6 +7187,7 @@ function renderAdminMemberWorkStats(rows){
     ${card('all', all, '전체 회원')}
     ${card('active', active, '활성')}
     ${card('lifetime', lifetime, '평생')}
+    ${card('period', period, '기간제')}
     ${card('trial', trial, '체험판')}
     ${card('today', todayJoin, '오늘 가입')}`;
   renderAdminCrmFilterHint(rows.length, all, '명');
@@ -7437,22 +7526,12 @@ function adminCrmLicenseRowHtml(u){
   const open = adminCrmLicenseOpen===uid;
   const start = lic?.startsAt ? fmtListDate(lic.startsAt) : '-';
   const end = view.plan==='lifetime' ? '없음' : (lic?.expiresAt ? fmtListDate(lic.expiresAt) : '-');
-  const passId = lic?.passProductId ? String(lic.passProductId) : '';
   const changed = lic?.updatedAt ? fmtRelative(lic.updatedAt) : '-';
   const actor = lic?.method ? adminLicenseMethodLabel(lic.method) : '-';
-  let passLabel = passId;
-  if(passId === 'PASS_7D') passLabel = '7일 Full';
-  else if(passId === 'PASS_30D') passLabel = '30일 Full';
-  else if(passId === 'PASS_90D') passLabel = '90일 Full';
-  const entitlementNote = view.plan === 'lifetime'
-    ? '현재 이용권 · Lifetime · 기간 제한 없음'
-    : (view.plan === 'period'
-      ? `현재 이용권 · ${passLabel || '기간제 Full'} · 만료 ${end}`
-      : `이용권 · ${view.plan || '-'} · Credits 별도`);
   return `<tr class="admin-license-row${open?' is-open':''}" data-license-row="${esc(uid)}">
     <td class="admin-member-user">
       <span class="admin-order-caret" aria-hidden="true">▸</span>
-      ${adminCrmAvatarHtml(u)}<span><b>${esc(u.displayName||'Google User')}</b><br><small class="muted">${esc(entitlementNote)}</small></span>
+      ${adminCrmAvatarHtml(u)}<span><b>${esc(u.displayName||'Google User')}</b></span>
     </td>
     <td class="admin-member-email" title="${esc(u.email||'')}">${esc(u.email||'-')}</td>
     <td>${adminPlanBadgeFromView(view)}</td>

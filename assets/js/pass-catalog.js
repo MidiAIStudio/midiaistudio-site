@@ -1,6 +1,9 @@
 /**
  * Display catalog for one-time Full Pass products (not subscriptions).
  * Prices are verified by Cloud Functions; this file is UI-only.
+ *
+ * Purchase UI must not paint SEED prices first (avoids 7,900 → 9,900 flash).
+ * cache starts empty (`pending`) until Firestore / public catalog hydrates.
  */
 import {
   SEED_PRODUCTS,
@@ -38,8 +41,9 @@ export const FALLBACK_PASS_PRODUCTS = SEED_PRODUCTS
     saleOk: true
   }));
 
-let cache = FALLBACK_PASS_PRODUCTS.map((p) => ({ ...p }));
-let cacheSource = 'seed_fallback';
+/** Empty until public/Firestore catalog loads — never show seed prices on first paint. */
+let cache = [];
+let cacheSource = 'pending';
 
 function isOnSalePass(product) {
   const status = String(product?.status || 'active');
@@ -50,6 +54,10 @@ function isOnSalePass(product) {
 
 export function getPassCatalogSource() {
   return cacheSource;
+}
+
+export function isPassCatalogReady() {
+  return cacheSource === 'firestore' || cacheSource === 'seed_fallback';
 }
 
 export function getPassProducts() {
@@ -67,6 +75,13 @@ export function passDurationDays(product) {
   const n = Number(product?.durationDays);
   if (Number.isFinite(n) && n > 0) return Math.floor(n);
   return PASS_DURATION_DAYS[id] || 0;
+}
+
+export function useSeedPassFallback(reason = 'unknown') {
+  console.warn('CATALOG_FALLBACK_USED', { reason, source: 'seed_fallback' });
+  cache = FALLBACK_PASS_PRODUCTS.map((p) => ({ ...p }));
+  cacheSource = 'seed_fallback';
+  return getPassProducts();
 }
 
 export function applyPublicPassCatalog(products = []) {
@@ -103,8 +118,10 @@ export function applyPublicPassCatalog(products = []) {
   if (mapped.length) {
     cache = mapped;
     cacheSource = 'firestore';
+  } else if (cacheSource === 'pending' || !cache.length) {
+    useSeedPassFallback('applyPublicPassCatalog_empty');
   } else {
-    console.warn('CATALOG_FALLBACK_USED', { reason: 'applyPublicPassCatalog_empty', source: cacheSource });
+    console.warn('CATALOG_FALLBACK_USED', { reason: 'applyPublicPassCatalog_empty_keep', source: cacheSource });
   }
   return getPassProducts();
 }
