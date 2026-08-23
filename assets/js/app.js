@@ -152,6 +152,7 @@ let adminCrmSearchTimer = null;
 let adminCrmMemoTimer = null;
 let adminCrmExpandedHwid = new Set();
 let adminCrmOrderOpen = new Set();
+let adminCrmOrderDrawerOpen = null;
 let adminCrmLicenseOpen = '';
 const ADMIN_CRM_PAGE_SIZE = 15;
 const ADMIN_CRM_ROW_H = 48;
@@ -7841,6 +7842,7 @@ function renderAdminUserTable(opts={}){
   renderAdminPaymentsTable();
 }
 window.__midiaiOnAdminCrmMode = function(mode, opts={}){
+  closeAdminCrmOrderDrawer();
   adminCrmPage = 1;
   if(mode !== 'members'){
     parkAdminCrmDetail();
@@ -9088,10 +9090,16 @@ function adminOrderMoneyText(amount, currency){
   if(!Number.isFinite(n)) return String(amount);
   return `${n.toLocaleString('ko-KR')} ${currency||'KRW'}`;
 }
+function isAdminCrmOrderDrawerOpen(uid, orderKey){
+  return !!(adminCrmOrderDrawerOpen
+    && adminCrmOrderDrawerOpen.uid === String(uid || '')
+    && adminCrmOrderDrawerOpen.key === String(orderKey || ''));
+}
 function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
   const drawer=$('adminCrmOrderDrawer');
   const body=$('adminCrmOrderDrawerBody');
   if(!drawer||!body) return;
+  if(!isAdminCrmOrderDrawerOpen(uid, orderKey)) return;
   const found = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey)
     || (adminOrderRows||[]).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
   if(!found){ body.innerHTML=`<p class="muted">주문을 찾을 수 없습니다.</p>`; drawer.hidden=false; return; }
@@ -9349,6 +9357,7 @@ function openAdminCrmOrderDrawer(uid, orderKey){
     alert('이 주문에 연결된 회원 UID를 찾을 수 없습니다.');
     return;
   }
+  adminCrmOrderDrawerOpen = { uid: resolvedUid, key };
   paintAdminCrmOrderDrawer(resolvedUid, key);
   const o = adminOrdersForUid(resolvedUid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===key)
     || (adminOrderRows||[]).find(x=>(x.id||x.paymentId||x.paypalOrderId)===key);
@@ -9358,9 +9367,11 @@ function openAdminCrmOrderDrawer(uid, orderKey){
   }
 }
 function closeAdminCrmOrderDrawer(){
+  adminCrmOrderDrawerOpen = null;
   const drawer=$('adminCrmOrderDrawer');
   if(drawer) drawer.hidden=true;
 }
+if(typeof window!=='undefined') window.__midiaiCloseAdminCrmOrderDrawer = closeAdminCrmOrderDrawer;
 if(typeof window!=='undefined' && !window.__adminCrmEscBound){
   window.__adminCrmEscBound=true;
   document.addEventListener('keydown',e=>{

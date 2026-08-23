@@ -264,6 +264,7 @@ function showView(view, opts = {}) {
     logTab = 'license';
     renderLogs();
   }
+  closePreviewOrderDrawer();
   if (next === 'crm' && opts.closeDetail) closeDetail();
   if (next === 'tickets') {
     if (opts.ticketStatus && $('adminTicketStatus')) $('adminTicketStatus').value = opts.ticketStatus;
@@ -877,8 +878,13 @@ function openDetail(uid, opts = {}) {
   renderMembers();
 }
 
+function closePreviewOrderDrawer() {
+  const drawer = $('adminCrmOrderDrawer');
+  if (drawer) drawer.hidden = true;
+}
 function closeDetail() {
   selectedUid = '';
+  closePreviewOrderDrawer();
   parkPreviewCrmDetail();
   $('adminCrm')?.classList.remove('is-detail-open', 'is-row-expand');
   $('adminCrmEmpty')?.classList.remove('is-hidden');
@@ -1680,7 +1686,7 @@ function bind() {
       else if (act === 'tickets') setDetailTab('tickets');
       else if (act === 'tickets-tab') showView('tickets');
       else if (act === 'open-logs') showView('logs', { logsTab: 'all', uid: selectedUid });
-      else if (act === 'close-order-drawer') $('adminCrmOrderDrawer') && ($('adminCrmOrderDrawer').hidden = true);
+      else if (act === 'close-order-drawer') closePreviewOrderDrawer();
       else if (act === 'hwid-reveal') {
         const code = document.querySelector('.admin-crm-hwid-value');
         if (code) code.textContent = 'ABCD-77E2-91C0-12F9';

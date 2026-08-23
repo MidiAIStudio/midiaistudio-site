@@ -109,6 +109,7 @@ export function showAdminView(view, opts = {}) {
 }
 
 function applyAdminView(next, opts = {}) {
+  try { window.__midiaiCloseAdminCrmOrderDrawer?.(); } catch (_) {}
   const crmMode = next === 'crm'
     ? normalizeCrmMode(opts.crmMode, opts.detailTab)
     : (document.body.dataset.crmMode || 'members');
