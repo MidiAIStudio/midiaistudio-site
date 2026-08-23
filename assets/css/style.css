@@ -2049,6 +2049,8 @@ body.sidebar-layout #mainNav.sidebar-nav a.active .nav-icon,body.sidebar-layout 
 
 .purchase-mode-tabs{display:none}
 .purchase-plan-grid{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px;margin:10px 0 16px;align-items:stretch;overflow:visible}
+.purchase-plan-grid.is-catalog-loading{grid-template-columns:1fr;min-height:220px;place-items:center}
+.purchase-plan-loading{margin:0;padding:28px 16px;color:var(--muted);font-size:14px;font-weight:600;letter-spacing:-.01em;text-align:center}
 .purchase-plan-card{position:relative;display:flex;flex-direction:column;gap:6px;height:100%;min-height:0;padding:16px 14px 14px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(8,12,24,.72);color:inherit;font:inherit;text-align:left;cursor:pointer;overflow:hidden;box-sizing:border-box}
 .purchase-plan-card:hover{border-color:rgba(255,255,255,.22)}
 .purchase-plan-head{position:relative;display:flex;align-items:center;min-height:28px;height:28px}

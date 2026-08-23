@@ -10,7 +10,7 @@ import {
   promoBadgeText,
   getActiveHomepagePromotions,
   getPricingCache
-} from './pricing.js?v=promo-multi-popup-3';
+} from './pricing.js?v=promo-multi-popup-4';
 import {
   loadCreditProducts,
   getCreditProduct,
@@ -40,7 +40,7 @@ import {
   getPassCatalogSource,
   isPassCatalogReady,
   useSeedPassFallback
-} from './pass-catalog.js?v=promo-multi-popup-3';
+} from './pass-catalog.js?v=promo-multi-popup-4';
 import {
   renderProductCard,
   purchaseCardFeaturesHtml,
@@ -48,7 +48,7 @@ import {
   buildPromotionPopupCopy,
   resolvePromotionProducts,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=promo-multi-popup-3';
+} from './storefront-render.js?v=promo-multi-popup-4';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -1595,28 +1595,15 @@ function renderPurchasePlanGrid(){
   if(!grid) return;
   const pt = pointCopy();
   const locked = purchaseActionsLocked();
-  // Avoid painting SEED prices (e.g. 7,900) before Firestore/public catalog arrives.
+  // Compact loader only — never paint fake 7/30/90 cards (causes a full-page flash).
   if(!isPassCatalogReady()){
     grid.setAttribute('aria-busy', 'true');
+    grid.classList.add('is-catalog-loading');
     const loadingLabel = lang==='en' ? 'Loading prices…' : (lang==='ja' ? '価格を読み込み中…' : '가격 불러오는 중…');
-    grid.innerHTML = [7, 30, 90, 'life'].map((key, i)=>{
-      const title = key === 'life'
-        ? (pt.unlimitedTitle || 'Lifetime')
-        : (lang==='en' ? `${key}-Day Full` : (lang==='ja' ? `${key}日 Full` : `${key}일 Full`));
-      return `<article class="purchase-plan-card is-loading" aria-hidden="true" data-purchase-skeleton="${esc(String(key))}">
-        <div class="purchase-plan-head"><h3>${esc(title)}</h3></div>
-        <p class="purchase-plan-uses">${i === 0 ? esc(loadingLabel) : '&nbsp;'}</p>
-        <div class="purchase-plan-price-block">
-          <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
-          <div class="purchase-plan-price-row"><div class="purchase-plan-price purchase-plan-price-skeleton">······</div></div>
-        </div>
-        <p class="purchase-plan-unit">&nbsp;</p>
-        <span class="purchase-plan-save" aria-hidden="true"></span>
-        <button type="button" class="purchase-plan-buy" disabled aria-disabled="true">&nbsp;</button>
-      </article>`;
-    }).join('');
+    grid.innerHTML = `<p class="purchase-plan-loading" role="status">${esc(loadingLabel)}</p>`;
     return;
   }
+  grid.classList.remove('is-catalog-loading');
   grid.removeAttribute('aria-busy');
   const passFeatures = pt.cardFeaturesPass || [
     ['변환 횟수', '제한 없음'],
@@ -1832,17 +1819,46 @@ function bindPurchaseModeUi(){
     if(typeof topbarGoogleLogin === 'function') topbarGoogleLogin();
   });
 }
+const PASS_CATALOG_SESSION_KEY = 'midiai_pass_catalog_session_v1';
+
+function rememberPassCatalogSession(){
+  if(!isPassCatalogReady()) return;
+  try{
+    sessionStorage.setItem(PASS_CATALOG_SESSION_KEY, JSON.stringify({
+      at: Date.now(),
+      products: getPassProducts()
+    }));
+  }catch(_){}
+}
+
+function restorePassCatalogSession(){
+  try{
+    const raw = sessionStorage.getItem(PASS_CATALOG_SESSION_KEY);
+    if(!raw) return false;
+    const data = JSON.parse(raw);
+    if(!Array.isArray(data?.products) || !data.products.length) return false;
+    // Short TTL — avoid stale promo prices for long-lived tabs.
+    if(Date.now() - Number(data.at || 0) > 30 * 60 * 1000) return false;
+    applyPublicPassCatalog(data.products);
+    return isPassCatalogReady();
+  }catch(_){
+    return false;
+  }
+}
+
 async function initPurchasePoints(){
   if(!isPurchasePage) return;
   bindPurchaseModeUi();
-  // First paint: loading skeleton only (no seed 7,900 flash).
-  applyPurchaseModeUi();
+  // Prefer last-session catalog so revisit skips the loading flash (still refreshed below).
+  restorePassCatalogSession();
+  applyPurchaseModeUi(); // session catalog or compact loading — never fake 7/30/90 cards
   try{
     await loadCreditProducts(CONFIG.functionsBaseUrl);
   }catch(_){}
   try{
     if(Array.isArray(window.__midiaiPassCatalog) && window.__midiaiPassCatalog.length){
       hydratePassCatalogFromPublic({ passes: window.__midiaiPassCatalog });
+      rememberPassCatalogSession();
       applyPurchaseModeUi();
     }
   }catch(_){}
@@ -1857,6 +1873,7 @@ async function initPurchasePoints(){
   } else if(getPassCatalogSource() !== 'firestore'){
     console.warn('CATALOG_FALLBACK_USED', { reason: 'initPurchasePoints', source: getPassCatalogSource() });
   }
+  rememberPassCatalogSession();
   if(purchaseActionsLocked()){
     selectedPurchaseId = 'LIFETIME';
     purchaseMode = 'lifetime';
@@ -3922,6 +3939,7 @@ async function refreshPricingUi(){
     }
     if (passProducts.length) {
       applyPublicPassCatalog(passProducts.map((p) => publicProductView(p, pricing.promotions || [], new Date(), lang, starter, all)));
+      rememberPassCatalogSession();
     } else {
       console.warn('CATALOG_FALLBACK_USED', { reason: 'no_pass_products_in_firestore' });
       hydratePassCatalogFromPublic({ passes: [] });
