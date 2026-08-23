@@ -18,6 +18,8 @@ const { pathToFileURL } = await import('url');
 const browser = await import(pathToFileURL(join(root, 'assets/js/catalog-engine.js')).href);
 const storefront = await import(pathToFileURL(join(root, 'assets/js/storefront-render.js')).href);
 const pricingMod = await import(pathToFileURL(join(root, 'assets/js/pricing.js')).href);
+const creditCatalog = await import(pathToFileURL(join(root, 'assets/js/credit-catalog.js')).href);
+const creditPurchase = require(join(root, 'functions/creditPurchase.js'));
 
 const checks = [];
 function check(name, fn) {
@@ -599,6 +601,180 @@ check('delete_blocked_credit_grant', () => {
 check('delete_seed_not_auto_blocked', () => {
   const r = browser.evaluateProductDeletable({ productId: 'CREDIT_100', type: 'credit_pack', hasPurchases: false }, { orderCount: 0, creditCount: 0 });
   assert.equal(r.deletable, true);
+});
+check('reorder_sort_orders_lifetime_doc', () => {
+  const rows = browser.sortOrdersFromProductIds(['LIFETIME', 'PASS_30D', 'PASS_90D', 'PASS_7D', 'CREDIT_10']);
+  assert.equal(rows[0].productId, 'LIFETIME');
+  assert.equal(rows[0].docId, 'lifetime');
+  assert.equal(rows[0].sortOrder, 1);
+  assert.equal(rows[1].productId, 'PASS_30D');
+  assert.equal(rows[1].docId, 'PASS_30D');
+  assert.equal(rows[4].sortOrder, 5);
+});
+check('reorder_never_uses_index_as_doc', () => {
+  const rows = browser.sortOrdersFromProductIds(['PASS_90D', 'LIFETIME']);
+  assert.equal(rows[0].docId, 'PASS_90D');
+  assert.equal(rows[1].docId, 'lifetime');
+  assert.notEqual(rows[0].docId, '0');
+});
+check('reorder_preserves_name_price_duration', () => {
+  const catalog = [
+    { productId: 'PASS_30D', nameKo: '30일 Full', listPriceKrw: 19900, durationDays: 30, type: 'full_pass', sortOrder: 1 },
+    { productId: 'LIFETIME', nameKo: 'Lifetime', listPriceKrw: 129000, durationDays: 0, type: 'lifetime', sortOrder: 5 }
+  ];
+  const next = browser.applyLocalProductReorder(catalog, ['LIFETIME', 'PASS_30D']);
+  assert.equal(next[0].productId, 'LIFETIME');
+  assert.equal(next[0].sortOrder, 1);
+  assert.equal(next[0].listPriceKrw, 129000);
+  assert.equal(next[0].nameKo, 'Lifetime');
+  assert.equal(next[1].durationDays, 30);
+  assert.equal(next[1].listPriceKrw, 19900);
+});
+check('reorder_normalizes_holes', () => {
+  const catalog = [
+    { productId: 'PASS_30D', sortOrder: 1 },
+    { productId: 'PASS_90D', sortOrder: 2 },
+    { productId: 'LIFETIME', sortOrder: 5 },
+    { productId: 'PASS_7D', sortOrder: 7 },
+    { productId: 'CREDIT_10', sortOrder: 10 }
+  ];
+  const next = browser.applyLocalProductReorder(catalog, ['LIFETIME', 'PASS_30D', 'PASS_90D', 'PASS_7D', 'CREDIT_10']);
+  assert.deepEqual(next.map((p) => p.sortOrder), [1, 2, 3, 4, 5]);
+  assert.deepEqual(next.map((p) => p.productId), ['LIFETIME', 'PASS_30D', 'PASS_90D', 'PASS_7D', 'CREDIT_10']);
+});
+check('next_sort_order_is_max_plus_one', () => {
+  assert.equal(browser.nextProductSortOrder([{ sortOrder: 1 }, { sortOrder: 10 }]), 11);
+});
+check('move_product_id_up_down', () => {
+  const ids = ['PASS_30D', 'PASS_90D', 'LIFETIME'];
+  assert.deepEqual(browser.moveProductIdInOrder(ids, 'LIFETIME', -2), ['LIFETIME', 'PASS_30D', 'PASS_90D']);
+  assert.deepEqual(browser.moveProductIdInOrder(ids, 'PASS_30D', 1), ['PASS_90D', 'PASS_30D', 'LIFETIME']);
+});
+check('purchase_catalog_includes_credit_pack', () => {
+  assert.equal(browser.isPurchaseCatalogProduct({ productId: 'CREDIT_10', type: 'credit_pack' }), true);
+  assert.equal(browser.isPurchaseCatalogProduct({ productId: 'PASS_30D', type: 'full_pass' }), true);
+  assert.equal(browser.isPurchaseCatalogProduct({ productId: 'LIFETIME', type: 'lifetime' }), true);
+  assert.equal(browser.isCreditProductId('CREDIT_10'), true);
+});
+check('overlay_inserts_unsaved_credit', () => {
+  const saved = [
+    { productId: 'PASS_30D', type: 'full_pass', nameKo: '30일 Full', listPriceKrw: 29900, status: 'active', sortOrder: 1 }
+  ];
+  const draft = {
+    productId: 'CREDIT_10',
+    type: 'credit_pack',
+    nameKo: 'Credit 10',
+    creditAmount: 10,
+    listPriceKrw: 7900,
+    status: 'active',
+    sortOrder: 2
+  };
+  const catalog = browser.overlayCatalogDraft(saved, draft);
+  const visible = catalog.filter((p) => browser.isPurchaseCatalogProduct(p));
+  const credit = visible.find((p) => p.productId === 'CREDIT_10');
+  assert.ok(credit, 'unsaved CREDIT_10 must appear in preview catalog');
+  assert.equal(credit.listPriceKrw, 7900);
+  assert.equal(credit.creditAmount, 10);
+  assert.equal(saved.length, 1, 'overlay must not mutate saved catalog');
+});
+check('overlay_edits_credit_fields_live', () => {
+  const saved = [{
+    productId: 'CREDIT_10',
+    type: 'credit_pack',
+    nameKo: 'Credit 10',
+    creditAmount: 10,
+    listPriceKrw: 7900,
+    status: 'active',
+    badge: ''
+  }];
+  const next = browser.overlayCatalogDraft(saved, {
+    ...saved[0],
+    nameKo: 'Credit 10 Pack',
+    creditAmount: 12,
+    listPriceKrw: 8900,
+    badge: 'recommended'
+  });
+  assert.equal(next[0].nameKo, 'Credit 10 Pack');
+  assert.equal(next[0].creditAmount, 12);
+  assert.equal(next[0].listPriceKrw, 8900);
+  assert.equal(next[0].badge, 'recommended');
+});
+check('preview_credit_card_matches_storefront', () => {
+  const product = {
+    productId: 'CREDIT_10',
+    type: 'credit_pack',
+    nameKo: 'Credit 10',
+    creditAmount: 10,
+    listPriceKrw: 7900,
+    status: 'active'
+  };
+  const view = browser.publicProductView(product, [], new Date(), 'ko', null, [product]);
+  const html = storefront.renderProductCard(view, { lang: 'ko', preview: true });
+  assert.match(html, /Credit 10/);
+  assert.match(html, /10 Credits/);
+  assert.match(html, /7,900원/);
+  assert.match(html, /1 크레딧 = 1회 변환/);
+  assert.match(html, /구매하기/);
+  assert.doesNotMatch(html, /0일 Full/);
+  assert.doesNotMatch(html, /변환 횟수 제한 없음/);
+});
+check('storefront_sellable_follows_catalog_status', () => {
+  const active = { productId: 'CREDIT_10', type: 'credit_pack', status: 'active', creditAmount: 10, listPriceKrw: 7900 };
+  const paused = { ...active, status: 'paused' };
+  const archived = { ...active, status: 'archived' };
+  assert.equal(browser.isStorefrontSellableProduct(active), true);
+  assert.equal(browser.isStorefrontSellableProduct(paused), false);
+  assert.equal(browser.isStorefrontSellableProduct(archived), false);
+  assert.equal(browser.isCreditProductId('CREDIT_10'), true);
+  assert.equal(browser.isCreditProductId('LIFETIME'), false);
+});
+check('public_credit_catalog_only_active_dynamic_skus', () => {
+  const products = [
+    { productId: 'CREDIT_10', type: 'credit_pack', status: 'active', credits: 10, krw: 7900, sortOrder: 1 },
+    { productId: 'CREDIT_5', type: 'credit_pack', status: 'paused', credits: 5, krw: 6500, sortOrder: 2 },
+    { productId: 'CREDIT_100', type: 'credit_pack', status: 'archived', credits: 100, krw: 105000, sortOrder: 3 }
+  ];
+  const live = creditCatalog.applyPublicCreditCatalog(products);
+  assert.equal(live.some((p) => p.productId === 'CREDIT_10'), true);
+  assert.equal(live.some((p) => p.productId === 'CREDIT_5'), false);
+  assert.equal(live.some((p) => p.productId === 'CREDIT_100'), false);
+  assert.equal(creditCatalog.isCreditPackId('CREDIT_10'), true);
+});
+check('server_credit_id_and_hydrate_aliases', () => {
+  assert.equal(catalogEngine.isCreditProductId('CREDIT_10'), true);
+  assert.equal(catalogEngine.isCreditProductId('CREDIT_0'), false);
+  assert.equal(catalogEngine.isCreditProductId('CREDIT_1234567'), false);
+  assert.equal(catalogEngine.isLicenseProductId('CREDIT_10'), false);
+  const hydrated = catalogEngine.hydrateProduct('CREDIT_10', {
+    productId: 'CREDIT_10',
+    type: 'credit_pack',
+    creditAmount: 10,
+    listPriceKrw: 7900,
+    status: 'active',
+    nameKo: 'Credit 10'
+  });
+  assert.equal(hydrated.creditAmount, 10);
+  assert.equal(hydrated.listPriceKrw, 7900);
+  assert.equal(hydrated.status, 'active');
+  const paused = catalogEngine.hydrateProduct('CREDIT_10', { status: 'paused', creditAmount: 10, listPriceKrw: 7900 });
+  assert.equal(paused.status, 'paused');
+  const charge = catalogEngine.computeCharge(hydrated, [], new Date(), 'KRW');
+  assert.equal(charge.ok, true);
+  assert.equal(charge.effectivePrice, 7900);
+  assert.equal(charge.creditAmount, 10);
+});
+check('credit_kill_switch_reads_env', () => {
+  const prev = process.env.CREDIT_SALES_KILL_SWITCH;
+  process.env.CREDIT_SALES_KILL_SWITCH = 'true';
+  assert.equal(creditPurchase.creditSalesKillSwitchOn(), true);
+  process.env.CREDIT_SALES_KILL_SWITCH = 'false';
+  assert.equal(creditPurchase.creditSalesKillSwitchOn(), false);
+  if (prev == null) delete process.env.CREDIT_SALES_KILL_SWITCH;
+  else process.env.CREDIT_SALES_KILL_SWITCH = prev;
+});
+check('firestore_lifetime_doc_id_unchanged', () => {
+  assert.equal(browser.firestoreDocId('LIFETIME'), 'lifetime');
+  assert.equal(browser.firestoreDocId('CREDIT_10'), 'CREDIT_10');
 });
 
 const failed = checks.filter((c) => !c.pass);

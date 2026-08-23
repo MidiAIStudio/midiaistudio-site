@@ -10,6 +10,32 @@ export const CANONICAL_IDS = ['CREDIT_5', 'CREDIT_30', 'CREDIT_100', 'PASS_7D', 
 export const PASS_DURATION_DAYS = { PASS_7D: 7, PASS_30D: 30, PASS_90D: 90 };
 export const PASS_PRODUCT_IDS = ['PASS_7D', 'PASS_30D', 'PASS_90D'];
 
+let catalogFxRate = null;
+
+export function krwToUsd(krwAmount, krwPerUsd) {
+  const krw = Number(krwAmount);
+  const rate = Number(krwPerUsd);
+  if (!Number.isFinite(krw) || krw < 0) return null;
+  if (!Number.isFinite(rate) || rate <= 0) return null;
+  return Math.round((krw / rate) * 100) / 100;
+}
+
+export function formatUsd(amount) {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return '';
+  return `$${n.toFixed(2)}`;
+}
+
+export function setCatalogFxRate(rate) {
+  const n = Number(rate);
+  catalogFxRate = Number.isFinite(n) && n > 0 ? n : null;
+  return catalogFxRate;
+}
+
+export function getCatalogFxRate() {
+  return catalogFxRate;
+}
+
 const LEGACY_ALIASES = {
   POINT_5: 'CREDIT_5',
   POINT_30: 'CREDIT_30',
@@ -220,6 +246,48 @@ export function isLicenseProductId(productId) {
   return pid === 'LIFETIME' || isPassProductId(pid);
 }
 
+/** Credit pack SKU: CREDIT_5 / CREDIT_10 / admin-created CREDIT_*. */
+export function isCreditProductId(productId) {
+  const pid = normalizeProductId(productId);
+  return /^CREDIT_[1-9][0-9]{0,5}$/.test(pid);
+}
+
+/**
+ * Products that belong on the public purchase grid.
+ * Admin live preview uses this without CREDIT_PURCHASE_ENABLED.
+ */
+export function isPurchaseCatalogProduct(product) {
+  if (!product) return false;
+  const pid = normalizeProductId(product.productId || product.id);
+  const type = String(product.type || '');
+  if (!pid && !type) return false;
+  if (pid === 'LIFETIME' || type === 'lifetime') return true;
+  if (isPassProductId(pid) || type === 'full_pass') return true;
+  if (isCreditProductId(pid) || type === 'credit_pack') return true;
+  return false;
+}
+
+/** Public purchase grid: active catalog rows only. Paused/archived stay hidden. */
+export function isStorefrontSellableProduct(product) {
+  if (!isPurchaseCatalogProduct(product)) return false;
+  return String(product.status || 'active') === 'active';
+}
+
+/**
+ * Saved catalog as base, current admin draft overlaid.
+ * Inserts a new product that exists only in local draft (no Firestore write).
+ */
+export function overlayCatalogDraft(catalogProducts = [], draft) {
+  const catalog = (catalogProducts || []).map((p) => ({ ...p }));
+  if (!draft) return catalog;
+  const pid = normalizeProductId(draft.productId || draft.id);
+  if (!pid) return catalog;
+  const idx = catalog.findIndex((p) => normalizeProductId(p.productId || p.id) === pid);
+  if (idx >= 0) catalog[idx] = { ...catalog[idx], ...draft };
+  else catalog.push({ ...draft });
+  return catalog;
+}
+
 export function getPassProductsFromCatalog(catalogProducts = []) {
   const fromLive = (catalogProducts || []).filter(
     (p) => p && (p.type === 'full_pass' || isPassProductId(p.productId || p.id))
@@ -247,6 +315,65 @@ export function findCatalogProduct(products, key) {
     || p.docId === docId
     || normalizeProductId(p.productId) === norm
   )) || null;
+}
+
+/**
+ * Map an ordered productId list to sequential sortOrder values (1..n).
+ * Keys are immutable productId / Firestore document id — never name, index, or prior sortOrder.
+ */
+export function sortOrdersFromProductIds(productIds) {
+  const seen = new Set();
+  const rows = [];
+  for (const raw of productIds || []) {
+    const productId = normalizeProductId(raw);
+    if (!productId) throw new Error('reorder missing productId');
+    const docId = firestoreDocId(productId);
+    if (!docId) throw new Error(`reorder missing docId for ${productId}`);
+    if (seen.has(productId)) throw new Error(`reorder duplicate productId ${productId}`);
+    seen.add(productId);
+    rows.push({ productId, docId, sortOrder: rows.length + 1 });
+  }
+  return rows;
+}
+
+/** Rebuild a product array in the given productId order and assign sortOrder 1..n. Other fields stay intact. */
+export function applyLocalProductReorder(products, orderedProductIds) {
+  const byId = new Map();
+  for (const p of products || []) {
+    const id = normalizeProductId(p.productId);
+    if (id) byId.set(id, p);
+  }
+  const orders = sortOrdersFromProductIds(orderedProductIds);
+  if (orders.length !== byId.size) {
+    throw new Error('reorder productId list does not match catalog size');
+  }
+  return orders.map(({ productId, docId, sortOrder }) => {
+    const row = byId.get(productId);
+    if (!row) throw new Error(`reorder missing product ${productId}`);
+    return { ...row, productId, docId: row.docId || docId, sortOrder };
+  });
+}
+
+export function nextProductSortOrder(products) {
+  let max = 0;
+  for (const p of products || []) {
+    const n = Number(p.sortOrder);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  return max + 1;
+}
+
+export function moveProductIdInOrder(productIds, productId, delta) {
+  const ids = (productIds || []).map((id) => normalizeProductId(id)).filter(Boolean);
+  const pid = normalizeProductId(productId);
+  const from = ids.indexOf(pid);
+  if (from < 0) return ids;
+  const to = Math.max(0, Math.min(ids.length - 1, from + Number(delta || 0)));
+  if (to === from) return ids;
+  const next = ids.slice();
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
 }
 
 /** Guard against UI/draft product mismatch before persisting admin edits. */
@@ -463,8 +590,12 @@ export function formatPassBundleSavingsLabel(savings, lang = 'ko') {
 
 export function productTargets(promo, productId) {
   const pid = normalizeProductId(productId);
-  const ids = promo?.productIds || [];
-  return ids.some((item) => normalizeProductId(item) === pid);
+  const ids = promo?.productIds || promo?.productIds || promo?.targetProductIds || [];
+  if (Array.isArray(ids) && ids.length) {
+    return ids.some((item) => normalizeProductId(item) === pid);
+  }
+  const single = promo?.productId || promo?.targetProductId || '';
+  return single ? normalizeProductId(single) === pid : false;
 }
 
 function discountSpecForProduct(promo, productId, currency = 'KRW') {
@@ -558,54 +689,25 @@ export function pickEffectiveDiscount(product, promotions = [], now = new Date()
   return { chosen: candidates[0], candidates };
 }
 
-export function computeCharge(product, promotions = [], now = new Date(), currency = 'KRW') {
+export function computeCharge(product, promotions = [], now = new Date(), currency = 'KRW', options = {}) {
   const cur = String(currency || 'KRW').toUpperCase();
   const status = String(product?.status || 'active');
+  const fxRate = Number(options.fxRate != null ? options.fxRate : catalogFxRate);
   if (status === 'paused' || status === 'archived' || status === 'disabled') {
     return {
       ok: false,
       code: 'SALE_DISABLED',
-      basePrice: cur === 'USD' ? product?.listPriceUsd : Number(product?.listPriceKrw || 0),
+      basePrice: Number(product?.listPriceKrw || 0),
       effectivePrice: null,
       currency: cur,
       status
-    };
-  }
-  if (cur === 'USD') {
-    if (product?.listPriceUsd == null || product.listPriceUsd === '') {
-      return { ok: false, code: 'USD_UNSET', currency: 'USD', paypalEnabled: false };
-    }
-    const base = Number(product.listPriceUsd);
-    const { chosen, candidates } = pickEffectiveDiscount(product, promotions, now, 'USD');
-    let sale = base;
-    if (chosen) {
-      const kind = String(chosen.type || 'percent').toLowerCase();
-      if (kind === 'amount' || kind === 'fixed' || kind === 'flat') {
-        sale = Math.max(0.01, Math.round((base - Number(chosen.value || 0)) * 100) / 100);
-      } else {
-        sale = Math.round(base * (100 - Number(chosen.value || 0)) / 100 * 100) / 100;
-      }
-    }
-    return {
-      ok: true,
-      basePrice: base,
-      effectivePrice: sale,
-      currency: 'USD',
-      discount: chosen,
-      discountPercent: chosen ? displayDiscountPercent(Math.round(base * 100), Math.round(sale * 100)) : 0,
-      discountEndsAt: chosen?.endsAt || '',
-      stacked: candidates.length > 1,
-      paypalEnabled: true,
-      productVersion: Number(product.productVersion || product.pricingVersion || 1),
-      creditAmount: Number(product.creditAmount || 0),
-      entitlement: product.entitlement || product.type
     };
   }
   const base = Math.round(Number(product?.listPriceKrw || 0));
   const { chosen, candidates } = pickEffectiveDiscount(product, promotions, now, 'KRW');
   const sale = chosen ? applyDiscount(base, chosen.type, chosen.value) : base;
   const credits = Number(product?.creditAmount || 0);
-  return {
+  const krwCharge = {
     ok: true,
     basePrice: base,
     effectivePrice: sale,
@@ -614,12 +716,51 @@ export function computeCharge(product, promotions = [], now = new Date(), curren
     discountPercent: chosen ? displayDiscountPercent(base, sale) : 0,
     discountEndsAt: chosen?.endsAt || '',
     stacked: candidates.length > 1,
-    paypalEnabled: product?.listPriceUsd != null && product.listPriceUsd !== '',
+    paypalEnabled: Number.isFinite(fxRate) && fxRate > 0,
     productVersion: Number(product?.productVersion || product?.pricingVersion || 1),
     creditAmount: credits,
     entitlement: product?.entitlement || product?.type,
     unitPrice: unitPrice(sale, credits),
-    listUnitPrice: unitPrice(base, credits)
+    listUnitPrice: unitPrice(base, credits),
+    listPriceKrw: base,
+    effectivePriceKrw: sale
+  };
+  if (cur !== 'USD') return krwCharge;
+  if (!Number.isFinite(fxRate) || fxRate <= 0) {
+    return {
+      ok: false,
+      code: 'FX_UNAVAILABLE',
+      currency: 'USD',
+      paypalEnabled: false,
+      listPriceKrw: base,
+      effectivePriceKrw: sale,
+      discount: chosen,
+      discountPercent: krwCharge.discountPercent
+    };
+  }
+  const baseUsd = krwToUsd(base, fxRate);
+  const saleUsd = krwToUsd(sale, fxRate);
+  if (baseUsd == null || saleUsd == null || !(saleUsd > 0)) {
+    return { ok: false, code: 'FX_UNAVAILABLE', currency: 'USD', paypalEnabled: false, listPriceKrw: base, effectivePriceKrw: sale };
+  }
+  return {
+    ok: true,
+    basePrice: baseUsd,
+    effectivePrice: saleUsd,
+    currency: 'USD',
+    discount: chosen,
+    discountPercent: krwCharge.discountPercent,
+    discountEndsAt: chosen?.endsAt || '',
+    stacked: candidates.length > 1,
+    paypalEnabled: true,
+    productVersion: krwCharge.productVersion,
+    creditAmount: credits,
+    entitlement: product?.entitlement || product?.type,
+    listPriceKrw: base,
+    effectivePriceKrw: sale,
+    fxRate,
+    payAmountUsd: saleUsd,
+    promotionId: chosen?.promotionId || ''
   };
 }
 
@@ -725,9 +866,7 @@ export function validateProductFields(payload, { isNew = false } = {}) {
   } else if (price !== Math.floor(price)) {
     errors.push('정가는 정수(원)여야 합니다.');
   }
-  if (payload?.listPriceUsd != null && payload.listPriceUsd !== '') {
-    if (!(Number(payload.listPriceUsd) > 0)) errors.push('USD 가격은 0보다 커야 합니다.');
-  }
+  // listPriceUsd is legacy only — USD is derived from KRW + FX. Ignore on validate.
   const disc = payload?.productDiscount || {};
   if (disc.enabled === true) {
     errors.push('상품 할인은 프로모션 탭에서만 관리합니다. 상품 할인 설정을 끄거나 프로모션으로 옮겨주세요.');
@@ -863,8 +1002,16 @@ export function publicProductView(product, promotions = [], now = new Date(), la
     productVersion: charge.productVersion || 1,
     orderNameKo: product?.orderNameKo || '',
     orderNameEn: product?.orderNameEn || '',
-    usd: product?.listPriceUsd,
-    paypalEnabled: !!charge.paypalEnabled,
+    usd: (() => {
+      const usdCharge = computeCharge(product, promotions, now, 'USD');
+      return usdCharge.ok ? usdCharge.effectivePrice : null;
+    })(),
+    usdList: (() => {
+      const usdCharge = computeCharge(product, promotions, now, 'USD');
+      return usdCharge.ok ? usdCharge.basePrice : null;
+    })(),
+    paypalEnabled: Number.isFinite(Number(getCatalogFxRate())) && Number(getCatalogFxRate()) > 0 && charge.ok === true,
+    fxUnavailable: !getCatalogFxRate(),
     saleOk: charge.ok === true,
     saleCode: charge.code || '',
     savingsReferenceProductId: product?.savingsReferenceProductId || (type === 'full_pass' ? resolvePassSavingsReferenceId(product) : '')
@@ -887,7 +1034,7 @@ export function localizePromo(promo, field, lang) {
 
 /** Canonical multi-product target IDs from a promotion (legacy single-field fallback). */
 export function promotionTargetIds(promo) {
-  const raw = promo?.productIds || promo?.targetProductIds || [];
+  const raw = promo?.productIds || promo?.productIds || promo?.targetProductIds || [];
   if (Array.isArray(raw) && raw.length) {
     return [...new Set(raw.map((id) => normalizeProductId(id)).filter(Boolean))];
   }

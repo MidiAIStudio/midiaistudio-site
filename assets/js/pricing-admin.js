@@ -15,7 +15,15 @@ import {
   findActivePromotionForProduct,
   findDiscountConflicts,
   firestoreDocId,
+  sortOrdersFromProductIds,
+  applyLocalProductReorder,
+  nextProductSortOrder,
+  moveProductIdInOrder,
   formatKrw,
+  formatUsd,
+  setCatalogFxRate,
+  getCatalogFxRate,
+  krwToUsd,
   formatPassBundleSavingsLabel,
   formatPromoDateRange,
   fromDatetimeLocalValue,
@@ -36,8 +44,12 @@ import {
   publicProductView,
   isWindowActive,
   resolvePromotionProducts,
-  promotionTargetIds
-} from './catalog-engine.js?v=promo-multi-popup-1';
+  promotionTargetIds,
+  isCreditProductId,
+  isPurchaseCatalogProduct,
+  overlayCatalogDraft,
+  starterUnitFromProducts
+} from './catalog-engine.js?v=admin-preview-draft-2';
 import {
   renderProductCard,
   renderPromotionPopupHtml,
@@ -45,7 +57,7 @@ import {
   forcePromoWindowForPreview,
   storefrontUiCopy,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=promo-multi-popup-3';
+} from './storefront-render.js?v=admin-preview-draft-2';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -75,8 +87,99 @@ let previewTimer = null;
 let previewHighlightKey = '';
 let previewBaselineProduct = null;
 let previewBaselinePromo = null;
+let adminFxMeta = null;
+let lastSavedProducts = [];
+let persistReorderRunning = false;
+let pendingReorderIds = null;
+let ignoreListClickUntil = 0;
+let dragState = null;
+let reorderStatusTimer = null;
 
 function $(id) { return document.getElementById(id); }
+
+function functionsBaseUrl() {
+  return String((window.MIDIAI_CONFIG || window.MIDIAI_CONFIG || {}).functionsBaseUrl || '').replace(/\/$/, '');
+}
+
+function formatFxStamp(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+async function refreshAdminFx() {
+  try {
+    const base = functionsBaseUrl();
+    if (!base || base.includes('PASTE_')) {
+      adminFxMeta = { ok: false };
+      setCatalogFxRate(null);
+      return;
+    }
+    const res = await fetch(`${base}/getPublicFxRate`);
+    const data = await res.json().catch(() => ({}));
+    if (data && data.ok && Number(data.rate) > 0) {
+      setCatalogFxRate(data.rate);
+      adminFxMeta = data;
+    } else {
+      adminFxMeta = { ok: false, message: data?.message || '' };
+      setCatalogFxRate(null);
+    }
+  } catch (err) {
+    console.warn('admin fx', err);
+    adminFxMeta = { ok: false };
+    setCatalogFxRate(null);
+  }
+  updateUsdPreview();
+}
+
+function updateUsdPreview() {
+  const amountEl = $('draftUsdPreviewAmount');
+  const promoEl = $('draftUsdPreviewPromo');
+  const rateEl = $('draftUsdRateLine');
+  const hintEl = $('draftUsdHint');
+  const krw = Number(draft?.listPriceKrw || $('draftPriceKrw')?.value || 0);
+  const rate = Number(getCatalogFxRate());
+  const fxOk = Number.isFinite(rate) && rate > 0;
+  if (rateEl) {
+    rateEl.textContent = fxOk
+      ? `현재 환율 1 USD = ${Math.round(rate).toLocaleString('ko-KR')} KRW${adminFxMeta?.fetchedAt ? ` · 마지막 갱신 ${formatFxStamp(adminFxMeta.fetchedAt)}` : ''} (자동 계산)`
+      : '환율 정보를 불러오지 못했습니다.';
+  }
+  if (!draft) {
+    if (amountEl) amountEl.textContent = '—';
+    if (promoEl) promoEl.hidden = true;
+    return;
+  }
+  const now = new Date();
+  const krwCharge = computeCharge(draft, promotions, now, 'KRW');
+  const usdCharge = computeCharge(draft, promotions, now, 'USD');
+  if (!fxOk || !usdCharge.ok) {
+    if (amountEl) amountEl.textContent = '—';
+    if (promoEl) {
+      promoEl.hidden = false;
+      promoEl.textContent = '환율 정보를 불러오지 못했습니다.';
+    }
+    if (hintEl) hintEl.textContent = 'KRW 가격은 저장할 수 있습니다. PayPal 판매는 환율이 복구되면 가능합니다.';
+    return;
+  }
+  const discounted = krwCharge.ok && Number(krwCharge.effectivePrice) < Number(krwCharge.basePrice);
+  if (amountEl) amountEl.textContent = formatUsd(usdCharge.effectivePrice);
+  if (promoEl) {
+    if (discounted) {
+      promoEl.hidden = false;
+      promoEl.textContent = `정가 ${formatKrw(krwCharge.basePrice)} / ${formatUsd(usdCharge.basePrice)} → 할인가 ${formatKrw(krwCharge.effectivePrice)} / ${formatUsd(usdCharge.effectivePrice)}`;
+    } else {
+      promoEl.hidden = true;
+      promoEl.textContent = '';
+    }
+  }
+  if (hintEl) {
+    hintEl.textContent = Number(krw) > 0
+      ? 'PayPal 판매 가능 · 현재 환율 기준 자동 계산. 실제 결제액은 Quote에서 확정됩니다.'
+      : 'KR 정가를 입력하면 해외 가격이 자동 계산됩니다.';
+  }
+}
 
 function dedupeProducts(rows) {
   const byDoc = new Map();
@@ -285,8 +388,8 @@ function bindUi() {
   bind('pricingCreateConfirm', () => createProductFromModal().catch((e) => flash(e.message || e, false)));
   bind('pricingCreateCancel', () => closeAddModal());
   bind('newProductType', () => syncCreateModalFields(), 'change');
-  ['draftNameKo', 'draftNameEn', 'draftNameJa', 'draftCredits', 'draftDurationDays', 'draftPriceKrw', 'draftPriceUsd',
-    'draftStatus', 'draftSort', 'draftBadge', 'draftDescKo', 'draftDescEn', 'draftDescJa'
+  ['draftNameKo', 'draftNameEn', 'draftNameJa', 'draftCredits', 'draftDurationDays', 'draftPriceKrw',
+    'draftStatus', 'draftBadge', 'draftDescKo', 'draftDescEn', 'draftDescJa'
   ].forEach((id) => bind(id, () => syncDraftFromForm(), 'input'));
   ['draftStatus', 'draftBadge'].forEach((id) => bind(id, () => syncDraftFromForm(), 'change'));
   ['promoNameKo', 'promoNameEn', 'promoNameJa', 'promoValue', 'promoStart', 'promoEnd',
@@ -338,6 +441,7 @@ function bindUi() {
       previewHighlightKey = el.getAttribute('data-preview-field') || '';
     });
   });
+  bindProductListEvents();
 }
 
 function syncPreviewToolbar() {
@@ -432,14 +536,7 @@ function updatePreviewSaveState() {
 }
 
 function buildPreviewCatalog() {
-  const catalog = products.map((p) => ({ ...p }));
-  if (draft?.productId) {
-    const pid = normalizeProductId(draft.productId);
-    const idx = catalog.findIndex((p) => normalizeProductId(p.productId) === pid);
-    if (idx >= 0) catalog[idx] = { ...catalog[idx], ...draft };
-    else catalog.push({ ...draft });
-  }
-  return catalog;
+  return overlayCatalogDraft(products, draft);
 }
 
 function buildPreviewPromotions({ forceDraftPromo = false } = {}) {
@@ -489,14 +586,13 @@ function renderLivePreview() {
     }
   }
 
-  const storefrontProducts = catalog.filter((p) => {
-    const pid = normalizeProductId(p.productId);
-    return isPassProductId(pid) || pid === 'LIFETIME' || p.type === 'full_pass' || p.type === 'lifetime';
-  }).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)
+  const storefrontProducts = catalog.filter((p) => isPurchaseCatalogProduct(p)).sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0)
     || String(a.productId).localeCompare(String(b.productId)));
 
+  // Preview ignores CREDIT_PURCHASE_ENABLED — show sellable draft cards including Credit packs.
+  const starterUnit = starterUnitFromProducts(catalog);
   const views = storefrontProducts.map((p) => {
-    const view = publicProductView(p, promoList, new Date(), previewLang, null, catalog);
+    const view = publicProductView(p, promoList, new Date(), previewLang, starterUnit, catalog);
     // publicProductView uses computeCharge which nulls price when paused — restore list for preview display.
     if (String(p.status) === 'paused' || String(p.status) === 'archived') {
       view.listPriceKrw = Number(p.listPriceKrw || 0);
@@ -739,12 +835,14 @@ async function loadAll() {
   setListStatus('<p class="muted">불러오는 중…</p>');
   try {
     try { await ensureSeed(); } catch (e) { console.warn('catalog seed', e); }
+    await refreshAdminFx();
     const { collection, getDocs } = fs;
     const prodSnap = await getDocs(collection(db, 'products'));
     products = dedupeProducts(prodSnap.docs
       .map((d) => hydrateLegacyProduct({ id: d.id, ...d.data() }))
       .filter((p) => !['POINT_5', 'POINT_30', 'POINT_100'].includes(p.productId)))
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || String(a.productId).localeCompare(b.productId));
+    lastSavedProducts = products.map((p) => ({ ...p }));
     await loadPurchaseHistory();
     try {
       const promoSnap = await getDocs(collection(db, 'promotions'));
@@ -809,6 +907,256 @@ function badgeLabel(badge) {
 }
 
 
+function cloneProductList(list) {
+  return (list || []).map((p) => ({ ...p }));
+}
+
+function setReorderStatus(kind) {
+  const el = $('pricingReorderStatus');
+  if (!el) return;
+  if (reorderStatusTimer) {
+    clearTimeout(reorderStatusTimer);
+    reorderStatusTimer = null;
+  }
+  if (!kind) {
+    el.hidden = true;
+    el.textContent = '';
+    el.className = 'pricing-reorder-status';
+    return;
+  }
+  el.hidden = false;
+  if (kind === 'saving') {
+    el.className = 'pricing-reorder-status is-saving';
+    el.textContent = '● 순서 저장 중...';
+  } else if (kind === 'saved') {
+    el.className = 'pricing-reorder-status is-saved';
+    el.textContent = '✓ 순서 저장됨';
+    reorderStatusTimer = setTimeout(() => setReorderStatus(''), 1800);
+  }
+}
+
+function syncDraftSortFromProducts() {
+  if (!draft) return;
+  const row = findCatalogProduct(products, draft.productId);
+  if (!row) return;
+  draft.sortOrder = Number(row.sortOrder || 0);
+  if (previewBaselineProduct && normalizeProductId(previewBaselineProduct.productId) === normalizeProductId(draft.productId)) {
+    previewBaselineProduct.sortOrder = draft.sortOrder;
+  }
+}
+
+function needsSortNormalize(list) {
+  return (list || []).some((p, i) => Number(p.sortOrder) !== i + 1);
+}
+
+async function persistProductOrder(productIds) {
+  if (!isAdmin) throw new Error('관리자 권한이 없습니다.');
+  if (!db || !fs) throw new Error('Firestore가 연결되지 않았습니다.');
+  const rows = sortOrdersFromProductIds(productIds);
+  if (!rows.length) throw new Error('정렬할 상품이 없습니다.');
+  const { doc, writeBatch, updateDoc } = fs;
+  const payloadOf = (sortOrder) => ({ sortOrder, order: sortOrder });
+  if (typeof writeBatch === 'function') {
+    const batch = writeBatch(db);
+    for (const row of rows) {
+      batch.update(doc(db, 'products', row.docId), payloadOf(row.sortOrder));
+    }
+    await batch.commit();
+    return;
+  }
+  if (typeof updateDoc !== 'function') throw new Error('상품 순서 저장 API를 사용할 수 없습니다.');
+  await Promise.all(rows.map((row) => updateDoc(doc(db, 'products', row.docId), payloadOf(row.sortOrder))));
+}
+
+async function flushProductReorder() {
+  if (persistReorderRunning) return;
+  persistReorderRunning = true;
+  setReorderStatus('saving');
+  try {
+    while (pendingReorderIds) {
+      const ids = pendingReorderIds;
+      pendingReorderIds = null;
+      await persistProductOrder(ids);
+      lastSavedProducts = applyLocalProductReorder(lastSavedProducts, ids);
+    }
+    lastSavedProducts = cloneProductList(products);
+    setReorderStatus('saved');
+  } catch (err) {
+    console.error('reorderProducts', err);
+    pendingReorderIds = null;
+    products = cloneProductList(lastSavedProducts);
+    syncDraftSortFromProducts();
+    renderList();
+    scheduleLivePreview();
+    setReorderStatus('');
+    flash('상품 순서 저장에 실패했습니다.', false);
+  } finally {
+    persistReorderRunning = false;
+    if (pendingReorderIds) flushProductReorder();
+  }
+}
+
+function commitProductReorder(orderedIds) {
+  const nextIds = (orderedIds || []).map((id) => normalizeProductId(id)).filter(Boolean);
+  const currentIds = products.map((p) => normalizeProductId(p.productId));
+  const sameOrder = currentIds.length === nextIds.length && currentIds.every((id, i) => id === nextIds[i]);
+  if (sameOrder && !needsSortNormalize(products)) return;
+  products = applyLocalProductReorder(products, nextIds);
+  syncDraftSortFromProducts();
+  renderList();
+  scheduleLivePreview();
+  pendingReorderIds = products.map((p) => p.productId);
+  flushProductReorder();
+}
+
+function moveProductBy(productId, delta) {
+  const next = moveProductIdInOrder(products.map((p) => p.productId), productId, delta);
+  commitProductReorder(next);
+}
+
+function listItemEls(root) {
+  return [...root.querySelectorAll('.pricing-product-item')];
+}
+
+function hideDropIndicator(root) {
+  const el = root?.querySelector('.pricing-drop-indicator');
+  if (el) el.hidden = true;
+}
+
+function positionDropIndicator(root, items, insertIndex) {
+  const el = root.querySelector('.pricing-drop-indicator');
+  if (!el || !items.length) return;
+  const listRect = root.getBoundingClientRect();
+  let y;
+  if (insertIndex <= 0) y = items[0].getBoundingClientRect().top - listRect.top;
+  else if (insertIndex >= items.length) {
+    const last = items[items.length - 1].getBoundingClientRect();
+    y = last.bottom - listRect.top;
+  } else {
+    y = items[insertIndex].getBoundingClientRect().top - listRect.top;
+  }
+  el.style.top = `${Math.max(0, y - 1)}px`;
+  el.hidden = false;
+}
+
+function startProductDrag(e, item) {
+  const root = $('pricingProductList');
+  if (!root) return;
+  const items = listItemEls(root);
+  const fromIndex = items.indexOf(item);
+  if (fromIndex < 0) return;
+  const handle = item.querySelector('[data-drag-handle]');
+  try { handle?.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+  dragState = {
+    pointerId: e.pointerId,
+    fromIndex,
+    startY: e.clientY,
+    moved: false,
+    insertIndex: fromIndex,
+    item
+  };
+  const onMove = (ev) => {
+    if (!dragState || ev.pointerId !== dragState.pointerId) return;
+    if (Math.abs(ev.clientY - dragState.startY) > 4) dragState.moved = true;
+    if (!dragState.moved) return;
+    item.classList.add('is-dragging');
+    root.classList.add('is-reordering');
+    const liveItems = listItemEls(root);
+    let insert = liveItems.length;
+    for (let i = 0; i < liveItems.length; i++) {
+      const r = liveItems[i].getBoundingClientRect();
+      if (ev.clientY < r.top + r.height / 2) {
+        insert = i;
+        break;
+      }
+    }
+    dragState.insertIndex = insert;
+    positionDropIndicator(root, liveItems, insert);
+  };
+  const onUp = (ev) => {
+    if (!dragState || ev.pointerId !== dragState.pointerId) return;
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+    document.removeEventListener('pointercancel', onUp);
+    try { handle?.releasePointerCapture(ev.pointerId); } catch (_) { /* ignore */ }
+    const { fromIndex, insertIndex, moved } = dragState;
+    hideDropIndicator(root);
+    item.classList.remove('is-dragging');
+    root.classList.remove('is-reordering');
+    dragState = null;
+    if (!moved) return;
+    ignoreListClickUntil = Date.now() + 400;
+    let to = insertIndex;
+    if (to > fromIndex) to -= 1;
+    to = Math.max(0, Math.min(products.length - 1, to));
+    const ids = products.map((p) => p.productId);
+    if (to !== fromIndex) {
+      const [movedId] = ids.splice(fromIndex, 1);
+      ids.splice(to, 0, movedId);
+    }
+    commitProductReorder(ids);
+  };
+  document.addEventListener('pointermove', onMove);
+  document.addEventListener('pointerup', onUp);
+  document.addEventListener('pointercancel', onUp);
+}
+
+function bindProductListEvents() {
+  const root = $('pricingProductList');
+  if (!root || root.dataset.reorderBound === '1') return;
+  root.dataset.reorderBound = '1';
+  root.addEventListener('click', (e) => {
+    if (Date.now() < ignoreListClickUntil) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    if (e.target.closest('[data-drag-handle]')) {
+      e.preventDefault();
+      return;
+    }
+    const item = e.target.closest('[data-doc-id]');
+    if (!item || !root.contains(item)) return;
+    const pid = item.getAttribute('data-product-id');
+    if (e.target.closest('[data-move-up]')) {
+      e.preventDefault();
+      moveProductBy(pid, -1);
+      return;
+    }
+    if (e.target.closest('[data-move-down]')) {
+      e.preventDefault();
+      moveProductBy(pid, 1);
+      return;
+    }
+    if (e.target.closest('[data-select-product]')) {
+      selectProduct(item.getAttribute('data-doc-id') || pid);
+    }
+  });
+  root.addEventListener('pointerdown', (e) => {
+    if (e.button) return;
+    const handle = e.target.closest('[data-drag-handle]');
+    if (!handle) return;
+    const item = handle.closest('[data-doc-id]');
+    if (!item) return;
+    e.preventDefault();
+    startProductDrag(e, item);
+  });
+  root.addEventListener('keydown', (e) => {
+    const item = e.target.closest('[data-doc-id]');
+    if (!item) return;
+    const pid = item.getAttribute('data-product-id');
+    const onHandle = e.target.closest('[data-drag-handle], [data-move-up], [data-move-down]');
+    if (!onHandle) return;
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveProductBy(pid, -1);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveProductBy(pid, 1);
+    }
+  });
+}
+
 function renderList() {
   const root = $('pricingProductList');
   if (!root) return;
@@ -816,12 +1164,14 @@ function renderList() {
     root.innerHTML = '<p class="muted">상품이 없습니다.</p>';
     return;
   }
-  root.innerHTML = products.map((p) => {
+  root.innerHTML = products.map((p, index) => {
     const charge = computeCharge(p, promotions);
     const active = (selectedDocId && p.docId === selectedDocId) || selectedId === p.productId ? ' is-active' : '';
     const status = p.status === 'active' ? '판매중' : p.status === 'paused' ? '중지' : '보관';
     const list = formatKrw(p.listPriceKrw);
     const sale = charge.ok ? formatKrw(charge.effectivePrice) : '-';
+    const usdCharge = computeCharge(p, promotions, new Date(), 'USD');
+    const usdBit = usdCharge.ok ? ` <span class="muted small">≈ ${esc(formatUsd(usdCharge.effectivePrice))}</span>` : '';
     const discounted = !!(charge.ok && charge.discount && Number(charge.effectivePrice) < Number(charge.basePrice));
     let line2 = '';
     if (p.type === 'lifetime') {
@@ -838,6 +1188,7 @@ function renderList() {
     } else {
       line2 = discounted ? `${esc(list)} → ${esc(sale)}` : esc(list);
     }
+    if (usdBit) line2 += usdBit;
     const bits = [];
     if (discounted) bits.push(discountLabel(p));
     else if (p.type === 'credit_pack' && p.packSavePercent) bits.push(`약 ${p.packSavePercent}% 절약`);
@@ -851,17 +1202,25 @@ function renderList() {
     const deleteHint = delEval.deletable
       ? ''
       : `<span class="muted small pricing-product-delete-hint">${esc(delEval.message)}</span>`;
-    return `<button type="button" class="pricing-product-item${active}" data-product-id="${esc(p.productId)}" data-doc-id="${esc(p.docId || firestoreDocId(p.productId))}">
-      <span class="pricing-product-item-top"><strong>${esc(p.nameKo || p.productId)}</strong><span class="badge">${esc(status)}</span></span>
-      <span class="pricing-product-item-main">${line2}</span>
-      ${bits.length ? `<span class="muted small">${esc(bits.join(' · '))}</span>` : ''}
-      ${deleteHint}
-      <span class="muted small pricing-product-item-id">${esc(p.productId)}</span>
-    </button>`;
-  }).join('');
-  root.querySelectorAll('[data-doc-id]').forEach((btn) => {
-    btn.addEventListener('click', () => selectProduct(btn.getAttribute('data-doc-id') || btn.getAttribute('data-product-id')));
-  });
+    const upDisabled = index === 0 ? ' disabled' : '';
+    const downDisabled = index === products.length - 1 ? ' disabled' : '';
+    return `<div class="pricing-product-item${active}" data-product-id="${esc(p.productId)}" data-doc-id="${esc(p.docId || firestoreDocId(p.productId))}">
+      <button type="button" class="pricing-drag-handle" data-drag-handle aria-label="드래그하여 순서 변경" title="드래그하여 순서 변경">
+        <span aria-hidden="true">⠿</span>
+      </button>
+      <button type="button" class="pricing-product-item-body" data-select-product>
+        <span class="pricing-product-item-top"><strong>${esc(p.nameKo || p.productId)}</strong><span class="badge">${esc(status)}</span></span>
+        <span class="pricing-product-item-main">${line2}</span>
+        ${bits.length ? `<span class="muted small">${esc(bits.join(' · '))}</span>` : ''}
+        ${deleteHint}
+        <span class="muted small pricing-product-item-id">${esc(p.productId)}</span>
+      </button>
+      <span class="pricing-reorder-btns">
+        <button type="button" class="pricing-reorder-btn" data-move-up aria-label="위로 이동"${upDisabled}>↑</button>
+        <button type="button" class="pricing-reorder-btn" data-move-down aria-label="아래로 이동"${downDisabled}>↓</button>
+      </span>
+    </div>`;
+  }).join('') + '<div class="pricing-drop-indicator" hidden></div>';
 }
 
 function selectProduct(key) {
@@ -933,25 +1292,12 @@ function renderEditor() {
     durationInput.readOnly = !isPass;
   }
   fill('draftPriceKrw', draft.listPriceKrw);
-  fill('draftPriceUsd', draft.listPriceUsd == null ? '' : draft.listPriceUsd);
   fill('draftStatus', draft.status || 'active');
-  fill('draftSort', draft.sortOrder || 0);
   fill('draftBadge', draft.badge || '');
   fill('draftDescKo', draft.descriptionKo || '');
   fill('draftDescEn', draft.descriptionEn || '');
   fill('draftDescJa', draft.descriptionJa || '');
-  const usdHint = $('draftUsdHint');
-  if (usdHint) {
-    if (isPass) {
-      usdHint.textContent = draft.listPriceUsd != null && draft.listPriceUsd !== ''
-        ? 'USD 설정됨 · 해외(PayPal) PASS 판매는 아직 미사용'
-        : 'USD 미설정 · 해외 판매 미사용 (KR PortOne만)';
-    } else {
-      usdHint.textContent = draft.listPriceUsd != null && draft.listPriceUsd !== ''
-        ? 'PayPal 판매 가능'
-        : 'USD 미설정 · PayPal 판매 안 함';
-    }
-  }
+  updateUsdPreview();
   const del = $('pricingDeleteBtn');
   const delHint = $('pricingDeleteHint');
   const delEval = productDeleteEval(draft);
@@ -981,10 +1327,14 @@ function renderActivePromotion() {
   const discLabel = promo.type === 'amount'
     ? `${Number(promo.value || 0).toLocaleString('ko-KR')}원 할인`
     : `${charge.discountPercent || promo.value}% 할인`;
+  const usdCharge = computeCharge(draft, promotions, now, 'USD');
+  const usdLine = usdCharge.ok
+    ? ` / ${formatUsd(usdCharge.basePrice)} → ${formatUsd(usdCharge.effectivePrice)}`
+    : '';
   body.innerHTML = `<div class="pricing-active-promo-card">
     <div class="pricing-active-promo-head"><strong>${esc(promo.nameKo || promo.id)}</strong><span class="badge">${esc(st)}</span></div>
     <p class="pricing-active-promo-disc">${esc(discLabel)}</p>
-    <p class="pricing-active-promo-price">${esc(formatKrw(charge.basePrice))} → ${esc(formatKrw(charge.effectivePrice))}</p>
+    <p class="pricing-active-promo-price">${esc(formatKrw(charge.basePrice))} → ${esc(formatKrw(charge.effectivePrice))}${esc(usdLine)}</p>
     <p class="muted small">${esc(formatPromoDateRange(promo.startsAt, promo.endsAt))}</p>
   </div>`;
 }
@@ -1028,27 +1378,13 @@ function syncDraftFromForm() {
   if (isLife) draft.entitlement = 'lifetime';
   if (isCreditType(draft)) draft.entitlement = 'credits';
   draft.listPriceKrw = Number($('draftPriceKrw')?.value || 0);
-  const usd = $('draftPriceUsd')?.value;
-  draft.listPriceUsd = usd === '' ? null : Number(usd);
   draft.status = $('draftStatus')?.value || 'active';
-  draft.sortOrder = Number($('draftSort')?.value || 0);
   draft.badge = $('draftBadge')?.value || '';
   draft.descriptionKo = $('draftDescKo')?.value || '';
   draft.descriptionEn = $('draftDescEn')?.value || '';
   draft.descriptionJa = $('draftDescJa')?.value || '';
   draft.productDiscount = emptyDiscount();
-  const usdHint = $('draftUsdHint');
-  if (usdHint) {
-    if (isPass) {
-      usdHint.textContent = draft.listPriceUsd != null && !Number.isNaN(draft.listPriceUsd)
-        ? 'USD 설정됨 · 해외(PayPal) PASS 판매는 아직 미사용'
-        : 'USD 미설정 · 해외 판매 미사용 (KR PortOne만)';
-    } else {
-      usdHint.textContent = draft.listPriceUsd != null && !Number.isNaN(draft.listPriceUsd)
-        ? 'PayPal 판매 가능'
-        : 'USD 미설정 · PayPal 판매 안 함';
-    }
-  }
+  updateUsdPreview();
   renderActivePromotion();
   renderPassSavingsCompare();
   scheduleLivePreview(document.activeElement?.getAttribute?.('data-preview-field') || '');
@@ -1196,7 +1532,6 @@ async function saveDraft() {
     durationDays: isPass ? Math.max(0, Math.floor(Number(draft.durationDays) || 0)) : 0,
     entitlement: isLife ? 'lifetime' : (isPass ? 'full_pass' : 'credits'),
     listPriceKrw: Number(draft.listPriceKrw),
-    listPriceUsd: draft.listPriceUsd,
     status: draft.status,
     sortOrder: Number(draft.sortOrder),
     order: Number(draft.sortOrder),
@@ -1239,8 +1574,6 @@ async function saveDraft() {
         ...prevGlobal,
         payment: 'paypal',
         currency: 'USD',
-        listPrice: draft.listPriceUsd != null ? Number(draft.listPriceUsd) : (prevGlobal.listPrice != null ? Number(prevGlobal.listPrice) : 89),
-        salePrice: draft.listPriceUsd != null ? Number(draft.listPriceUsd) : (prevGlobal.salePrice != null ? Number(prevGlobal.salePrice) : 89),
         orderName: draft.orderNameEn || draft.nameEn || prevGlobal.orderName || 'MidiAI Studio Lifetime Full'
       };
       payload.plan = 'lifetime';
@@ -1323,7 +1656,7 @@ async function createProductFromModal() {
     entitlement: type === 'lifetime' ? 'lifetime' : (type === 'full_pass' ? 'full_pass' : 'credits'),
     listPriceKrw: price,
     status: 'active',
-    sortOrder: products.length + 1,
+    sortOrder: nextProductSortOrder(products),
     badge: type === 'full_pass' && productId === 'PASS_30D' ? 'recommended' : '',
     productVersion: 1,
     productDiscount: emptyDiscount(),

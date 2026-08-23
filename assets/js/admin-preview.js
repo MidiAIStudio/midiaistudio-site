@@ -47,12 +47,12 @@ const ADMIN_LOG_CATS = new Set(['license', 'admin', 'message', 'hwid']);
 
 /** Preview mock adapter — derived only from this file, not production schema. */
 const MEMBERS = [
-  { uid: 'u_preview_01', name: 'M44 Praesepe', email: 'praesepe@example.com', role: 'admin', plan: 'lifetime', licenseStatus: 'active', activity: 'online', country: '🇰🇷 대한민국', seen: '방금', orders: 3, tickets: 1, fav: true, joined: '2026.03.12', startsAt: '2026-03-12', expiresAt: '', licenseMemo: 'VIP / 원격지원 완료', issuedBy: '관리자', changedAt: '2026.08.18' },
-  { uid: 'u_preview_02', name: 'Nova Lyrae', email: 'nova.lyrae@example.com', role: 'user', plan: 'trial', licenseStatus: 'active', activity: 'active', country: '🇯🇵 일본', seen: '12분 전', orders: 0, tickets: 2, fav: false, joined: '2026.08.01', startsAt: '2026-08-01', expiresAt: '', licenseMemo: '', issuedBy: '시스템', changedAt: '2026.08.01' },
-  { uid: 'u_preview_03', name: 'Orion Belt', email: 'orion.belt@example.net', role: 'user', plan: 'period', licenseStatus: 'active', activity: 'idle', country: '🇺🇸 미국', seen: '3일 전', orders: 2, tickets: 0, fav: false, joined: '2026.07.18', startsAt: '2026-07-18', expiresAt: '2026-09-18', licenseMemo: 'PayPal 기간제 30일', issuedBy: '결제', changedAt: '2026.08.09' },
-  { uid: 'u_preview_04', name: 'Vega Prime', email: 'vega.prime@example.com', role: 'user', plan: 'lifetime', licenseStatus: 'active', activity: 'offline', country: '🇰🇷 대한민국', seen: '18일 전', orders: 1, tickets: 0, fav: true, joined: '2026.05.04', startsAt: '2026-05-04', expiresAt: '', licenseMemo: '', issuedBy: 'PayPal', changedAt: '2026.05.04' },
-  { uid: 'u_preview_05', name: 'Altair Note', email: 'altair.note@example.org', role: 'user', plan: 'period', licenseStatus: 'expired', activity: 'offline', country: '', seen: '32일 전', orders: 0, tickets: 1, fav: false, joined: '2026.06.22', startsAt: '2026-06-22', expiresAt: '2026-08-10', licenseMemo: '', issuedBy: '시스템', changedAt: '2026.08.10' },
-  { uid: 'u_preview_06', name: 'Deneb Keys', email: 'deneb.keys@example.com', role: 'user', plan: 'period', licenseStatus: 'active', activity: 'active', country: '🇩🇪 독일', seen: '1시간 전', orders: 4, tickets: 3, fav: false, joined: '2026.08.14', startsAt: '2026-08-14', expiresAt: '2026-09-13', licenseMemo: '체험판 업그레이드 대기', issuedBy: '관리자', changedAt: '2026.08.14' }
+  { uid: 'u_preview_01', name: 'M44 Praesepe', email: 'praesepe@example.com', role: 'admin', plan: 'lifetime', licenseStatus: 'active', activity: 'online', country: '🇰🇷 대한민국', seen: '방금', orders: 3, tickets: 1, fav: true, joined: '2026.03.12', startsAt: '2026-03-12', expiresAt: '', licenseMemo: 'VIP / 원격지원 완료', issuedBy: '관리자', changedAt: '2026.08.18', credits: 12, hwid: 'A91C-77E2-91C0-12F9' },
+  { uid: 'u_preview_02', name: 'Nova Lyrae', email: 'nova.lyrae@example.com', role: 'user', plan: 'trial', licenseStatus: 'active', activity: 'active', country: '🇯🇵 일본', seen: '12분 전', orders: 0, tickets: 2, fav: false, joined: '2026.08.01', startsAt: '2026-08-01', expiresAt: '', licenseMemo: '', issuedBy: '시스템', changedAt: '2026.08.01', credits: 3, hwid: 'B204-11AA-44B1-90C2' },
+  { uid: 'u_preview_03', name: 'Orion Belt', email: 'orion.belt@example.net', role: 'user', plan: 'period', licenseStatus: 'active', activity: 'idle', country: '🇺🇸 미국', seen: '3일 전', orders: 2, tickets: 0, fav: false, joined: '2026.07.18', startsAt: '2026-07-18', expiresAt: '2026-09-18', licenseMemo: 'PayPal 기간제 30일', issuedBy: '결제', changedAt: '2026.08.09', credits: 8, hwid: 'C8F0-33D1-78E4-21AB' },
+  { uid: 'u_preview_04', name: 'Vega Prime', email: 'vega.prime@example.com', role: 'user', plan: 'lifetime', licenseStatus: 'active', activity: 'offline', country: '🇰🇷 대한민국', seen: '18일 전', orders: 1, tickets: 0, fav: true, joined: '2026.05.04', startsAt: '2026-05-04', expiresAt: '', licenseMemo: '', issuedBy: 'PayPal', changedAt: '2026.05.04', credits: 20, hwid: 'D17B-90C8-12A0-55E1' },
+  { uid: 'u_preview_05', name: 'Altair Note', email: 'altair.note@example.org', role: 'user', plan: 'period', licenseStatus: 'expired', activity: 'offline', country: '', seen: '32일 전', orders: 0, tickets: 1, fav: false, joined: '2026.06.22', startsAt: '2026-06-22', expiresAt: '2026-08-10', licenseMemo: '', issuedBy: '시스템', changedAt: '2026.08.10', credits: 0, hwid: '' },
+  { uid: 'u_preview_06', name: 'Deneb Keys', email: 'deneb.keys@example.com', role: 'user', plan: 'period', licenseStatus: 'active', activity: 'active', country: '🇩🇪 독일', seen: '1시간 전', orders: 4, tickets: 3, fav: false, joined: '2026.08.14', startsAt: '2026-08-14', expiresAt: '2026-09-13', licenseMemo: '체험판 업그레이드 대기', issuedBy: '관리자', changedAt: '2026.08.14', credits: 5, hwid: 'E44A-62B9-03F7-88D0' }
 ];
 
 const ORDERS = [
@@ -122,6 +122,9 @@ function memberByUid(uid) {
 }
 function memberByEmail(email) {
   return MEMBERS.find((u) => u.email === email) || null;
+}
+function idPairHtml(uid, hwid) {
+  return `<span class="admin-id-pair"><span class="admin-id-item">UID <code class="mono">${uid || '-'}</code></span><span class="admin-id-item">HWID <code class="mono">${hwid || '(없음)'}</code></span></span>`;
 }
 function previewNotice(msg) {
   const el = $('adminSaveMsg');
@@ -206,6 +209,25 @@ function applyPreviewLicense(patch, { tab = 'license', notice, uid } = {}) {
   }
   setSaveEnabled(false);
   previewNotice(notice || '미리보기 — 실제 라이선스 데이터는 변경되지 않습니다');
+}
+function previewAdjustLicenseCredits(btn, sign) {
+  const wrap = btn.closest('.admin-license-expand-inner');
+  const uid = btn.getAttribute(sign > 0 ? 'data-license-credit-grant' : 'data-license-credit-deduct') || wrap?.getAttribute('data-license-uid');
+  const u = memberByUid(uid);
+  if (!u) return;
+  const amountEl = wrap?.querySelector('[data-lic-credit-amount]');
+  const quick = Number(btn.getAttribute('data-amount') || 0);
+  if (Number.isInteger(quick) && quick > 0 && amountEl) amountEl.value = String(quick);
+  const amount = Number(amountEl?.value || 0);
+  if (!Number.isInteger(amount) || amount <= 0) {
+    previewNotice('지급/회수 수량을 입력하세요');
+    return;
+  }
+  const next = Math.max(0, Number(u.credits || 0) + (sign > 0 ? amount : -amount));
+  u.credits = next;
+  licenseOpen = uid;
+  renderCrmWork();
+  previewNotice(`미리보기 — 크레딧 ${sign > 0 ? '지급' : '회수'} ${amount} (잔액 ${next}, 실제 데이터 변경 없음)`);
 }
 function roleBadge(role) {
   return `<span class="crm-role is-${role}">${role === 'admin' ? '관리자' : '사용자'}</span>`;
@@ -608,7 +630,7 @@ function renderCrmWork() {
   if (crmMode === 'license') {
     const rows = MEMBERS.filter((u) => {
       if (!memberMatchesLicenseTab(u)) return false;
-      const hay = [u.name, u.email, u.uid].join(' ').toLowerCase();
+      const hay = [u.name, u.email, u.uid, u.hwid].join(' ').toLowerCase();
       return !q || hay.includes(q);
     });
     $('adminUserCount') && ($('adminUserCount').textContent = `${rows.length} / ${MEMBERS.length}`);
@@ -643,12 +665,13 @@ function renderCrmWork() {
       <tr class="admin-license-expand"${open ? '' : ' hidden'}>
         <td colspan="9">
           <div class="admin-license-expand-inner" data-license-uid="${u.uid}">
+            <div class="admin-license-expand-col">
             <div class="admin-license-expand-meta">
               <span class="admin-license-expand-flags">
                 <span>상태 ${licenseStatusBadge(u)}</span>
                 <span>현재 ${planBadge(u.plan)}</span>
               </span>
-              <span class="admin-license-expand-uid">UID <code class="mono">${u.uid}</code></span>
+              ${idPairHtml(u.uid, u.hwid)}
             </div>
             <div class="admin-crm-license-form admin-license-inline-form">
               <div class="form-split">
@@ -677,6 +700,25 @@ function renderCrmWork() {
                 </div>
               </div>
             </div>
+            </div>
+            <aside class="admin-license-expand-col admin-license-credit-panel" aria-label="크레딧 추가">
+              <div class="admin-license-credit-head">
+                <h3>크레딧 추가</h3>
+                <span class="admin-license-credit-balance muted small">잔액 ${u.credits ?? 0} Credits</span>
+              </div>
+              <div class="admin-crm-points-quick">
+                <button type="button" class="secondary mini-btn" data-license-credit-grant="${u.uid}" data-amount="1">+1</button>
+                <button type="button" class="secondary mini-btn" data-license-credit-grant="${u.uid}" data-amount="3">+3</button>
+                <button type="button" class="secondary mini-btn" data-license-credit-grant="${u.uid}" data-amount="5">+5</button>
+                <button type="button" class="secondary mini-btn" data-license-credit-grant="${u.uid}" data-amount="10">+10</button>
+              </div>
+              <div class="admin-crm-points-form">
+                <input type="number" data-lic-credit-amount min="1" step="1" value="5" aria-label="크레딧 수량">
+                <input type="text" data-lic-credit-reason placeholder="사유 (선택)" aria-label="사유">
+                <button type="button" class="secondary mini-btn" data-license-credit-grant="${u.uid}">지급</button>
+                <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${u.uid}">회수</button>
+              </div>
+            </aside>
           </div>
         </td>
       </tr>`;
@@ -702,7 +744,7 @@ function renderCrmWork() {
     if (memberQuickFilter === 'today' && u.joined !== '2026.08.19') return false;
     if (memberQuickFilter === 'idle7' && previewIdleDays(u) < 7) return false;
     if (memberQuickFilter === 'idle30' && previewIdleDays(u) < 30) return false;
-    const hay = [u.name, u.email, u.uid, 'hwid-preview'].join(' ').toLowerCase();
+    const hay = [u.name, u.email, u.uid, u.hwid].join(' ').toLowerCase();
     return !q || hay.includes(q);
   }).slice().sort((a, b) => {
     if (a.fav !== b.fav) return a.fav ? -1 : 1;
@@ -792,7 +834,7 @@ function openDetail(uid, opts = {}) {
   body?.classList.add('is-fading');
   $('adminCrmName') && ($('adminCrmName').textContent = u.name);
   $('adminCrmEmail') && ($('adminCrmEmail').textContent = u.email);
-  $('adminCrmUid') && ($('adminCrmUid').textContent = `UID ${u.uid}`);
+  $('adminCrmUid') && ($('adminCrmUid').innerHTML = idPairHtml(u.uid, u.hwid));
   $('adminCrmRoleBadge') && ($('adminCrmRoleBadge').innerHTML = roleBadge(u.role));
   $('adminCrmHeaderLicense') && ($('adminCrmHeaderLicense').innerHTML = licenseBadge(u));
   $('adminCrmLicenseBadge') && ($('adminCrmLicenseBadge').innerHTML = licenseBadge(u));
@@ -827,7 +869,8 @@ function openDetail(uid, opts = {}) {
         <div class="admin-crm-dash-row"><dt>상태</dt><dd>${activityBadge(u.activity)}</dd></div>
         <div class="admin-crm-dash-row"><dt>최근 접속</dt><dd>${u.seen}</dd></div>
         <div class="admin-crm-dash-row"><dt>국가</dt><dd>${u.country || '<span class="admin-crm-dash-empty">정보 없음</span>'}</dd></div>
-        <div class="admin-crm-dash-row"><dt>HWID</dt><dd>등록됨</dd></div>
+        <div class="admin-crm-dash-row"><dt>UID</dt><dd><code class="mono">${u.uid}</code></dd></div>
+        <div class="admin-crm-dash-row"><dt>HWID</dt><dd>${u.hwid ? `<code class="mono">${u.hwid}</code>` : '<span class="admin-crm-dash-empty">없음</span>'}</dd></div>
       </dl>
     </section>
     <section class="admin-crm-dash-sec">
@@ -848,7 +891,7 @@ function openDetail(uid, opts = {}) {
     </section>
   </div>`);
   $('adminCrmHwidBox') && ($('adminCrmHwidBox').innerHTML = `
-    <div class="admin-crm-hwid-inline"><span class="admin-crm-hwid-label">HWID</span><code class="mono admin-crm-hwid-value">ABCD-****-****-12F9</code></div>
+    <div class="admin-crm-hwid-inline">${idPairHtml(u.uid, u.hwid || '(없음)')}</div>
     <div class="admin-crm-hwid-actions">
       <button type="button" class="secondary mini-btn" data-crm-action="hwid-reveal">보기</button>
       <button type="button" class="secondary mini-btn" data-crm-action="hwid-copy">복사</button>
@@ -1024,6 +1067,8 @@ const PREVIEW_PROMOS = [
 let previewProductId = 'PASS_30D';
 let previewPromoId = 'summer';
 let previewPricingBound = false;
+let previewIgnoreClickUntil = 0;
+let previewDrag = null;
 
 function previewFlash(msg) {
   const el = $('pricingSaveMsg');
@@ -1047,7 +1092,6 @@ function fillPreviewProduct(id) {
   set('draftInternalType', isLife ? 'lifetime' : 'credit_pack');
   set('draftProductVersion', '1');
   set('draftStatus', 'active');
-  set('draftSort', String(p.sort));
   set('draftBadge', p.badge === '추천' ? 'recommended' : p.badge === 'Best Value' ? 'best' : '');
   set('draftCredits', isLife ? '' : String(p.credits.replace(/[^\d]/g, '')));
   const creditsWrap = $('draftCreditsWrap');
@@ -1055,7 +1099,14 @@ function fillPreviewProduct(id) {
   if (creditsWrap) creditsWrap.hidden = isLife;
   if (entitlementWrap) entitlementWrap.hidden = !isLife;
   set('draftPriceKrw', String(p.list));
-  set('draftPriceUsd', isLife ? '89' : '');
+  const amountEl = $('draftUsdPreviewAmount');
+  const promoEl = $('draftUsdPreviewPromo');
+  const rateEl = $('draftUsdRateLine');
+  const hintEl = $('draftUsdHint');
+  if (amountEl) amountEl.textContent = '환율 연동 미리보기';
+  if (promoEl) promoEl.hidden = true;
+  if (rateEl) rateEl.textContent = '실제 관리자 화면은 서버 환율로 자동 계산합니다.';
+  if (hintEl) hintEl.textContent = 'USD 직접 입력은 사용하지 않습니다. KRW가 기준입니다.';
   set('draftDescKo', p.productId === 'CREDIT_30' ? '' : p.productId === 'CREDIT_100' ? '대량' : p.productId === 'CREDIT_5' ? '소량 / 첫 구매' : '무제한 변환');
   set('draftDescEn', '');
   set('draftDescJa', '');
@@ -1113,13 +1164,152 @@ function renderPreviewProductList() {
     else if (discounted) bits.push(p.discount);
     else if (p.productId === 'CREDIT_100') bits.push('약 19% 절약');
     if (p.badge) bits.push(p.badge);
-    return `<button type="button" class="pricing-product-item${active}" data-preview-product="${p.productId}">
-      <span class="pricing-product-item-top"><strong>${p.name}</strong><span class="badge">${p.status}</span></span>
-      <span class="pricing-product-item-main">${line2}</span>
-      ${bits.length ? `<span class="muted small">${bits.join(' · ')}</span>` : ''}
-      <span class="muted small pricing-product-item-id">${p.productId}</span>
-    </button>`;
-  }).join('');
+    const idx = PREVIEW_PRODUCTS.indexOf(p);
+    const upOff = idx === 0 ? ' disabled' : '';
+    const downOff = idx === PREVIEW_PRODUCTS.length - 1 ? ' disabled' : '';
+    return `<div class="pricing-product-item${active}" data-preview-product="${p.productId}">
+      <button type="button" class="pricing-drag-handle" data-drag-handle aria-label="드래그하여 순서 변경" title="드래그하여 순서 변경"><span aria-hidden="true">⠿</span></button>
+      <button type="button" class="pricing-product-item-body" data-select-product>
+        <span class="pricing-product-item-top"><strong>${p.name}</strong><span class="badge">${p.status}</span></span>
+        <span class="pricing-product-item-main">${line2}</span>
+        ${bits.length ? `<span class="muted small">${bits.join(' · ')}</span>` : ''}
+        <span class="muted small pricing-product-item-id">${p.productId}</span>
+      </button>
+      <span class="pricing-reorder-btns">
+        <button type="button" class="pricing-reorder-btn" data-move-up aria-label="위로 이동"${upOff}>↑</button>
+        <button type="button" class="pricing-reorder-btn" data-move-down aria-label="아래로 이동"${downOff}>↓</button>
+      </span>
+    </div>`;
+  }).join('') + '<div class="pricing-drop-indicator" hidden></div>';
+}
+
+function commitPreviewProductOrder(ids) {
+  const byId = new Map(PREVIEW_PRODUCTS.map((p) => [p.productId, p]));
+  const next = [];
+  for (const id of ids) {
+    const row = byId.get(id);
+    if (!row) continue;
+    next.push(row);
+  }
+  if (next.length !== PREVIEW_PRODUCTS.length) return;
+  PREVIEW_PRODUCTS.length = 0;
+  next.forEach((row, i) => {
+    row.sort = i + 1;
+    PREVIEW_PRODUCTS.push(row);
+  });
+  renderPreviewProductList();
+  const status = $('pricingReorderStatus');
+  if (status) {
+    status.hidden = false;
+    status.className = 'pricing-reorder-status is-saved';
+    status.textContent = '✓ 순서 저장됨';
+    setTimeout(() => { status.hidden = true; }, 1400);
+  }
+}
+
+function movePreviewProduct(productId, delta) {
+  const ids = PREVIEW_PRODUCTS.map((p) => p.productId);
+  const from = ids.indexOf(productId);
+  if (from < 0) return;
+  const to = Math.max(0, Math.min(ids.length - 1, from + delta));
+  if (to === from) return;
+  const [moved] = ids.splice(from, 1);
+  ids.splice(to, 0, moved);
+  commitPreviewProductOrder(ids);
+}
+
+function bindPreviewProductReorder() {
+  const root = $('pricingProductList');
+  if (!root || root.dataset.reorderBound === '1') return;
+  root.dataset.reorderBound = '1';
+  root.addEventListener('click', (e) => {
+    if (Date.now() < previewIgnoreClickUntil) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    const item = e.target.closest('[data-preview-product]');
+    if (!item || !root.contains(item)) return;
+    const pid = item.getAttribute('data-preview-product');
+    if (e.target.closest('[data-drag-handle]')) {
+      e.preventDefault();
+      return;
+    }
+    if (e.target.closest('[data-move-up]')) {
+      e.preventDefault();
+      movePreviewProduct(pid, -1);
+      return;
+    }
+    if (e.target.closest('[data-move-down]')) {
+      e.preventDefault();
+      movePreviewProduct(pid, 1);
+      return;
+    }
+    if (e.target.closest('[data-select-product]')) fillPreviewProduct(pid);
+  });
+  root.addEventListener('pointerdown', (e) => {
+    if (e.button) return;
+    const handle = e.target.closest('[data-drag-handle]');
+    if (!handle) return;
+    const item = handle.closest('[data-preview-product]');
+    if (!item) return;
+    e.preventDefault();
+    const items = [...root.querySelectorAll('.pricing-product-item')];
+    const fromIndex = items.indexOf(item);
+    if (fromIndex < 0) return;
+    try { handle.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+    previewDrag = { pointerId: e.pointerId, fromIndex, startY: e.clientY, moved: false, insertIndex: fromIndex, item };
+    const indicator = root.querySelector('.pricing-drop-indicator');
+    const place = (insert) => {
+      if (!indicator || !items.length) return;
+      const listRect = root.getBoundingClientRect();
+      let y;
+      if (insert <= 0) y = items[0].getBoundingClientRect().top - listRect.top;
+      else if (insert >= items.length) y = items[items.length - 1].getBoundingClientRect().bottom - listRect.top;
+      else y = items[insert].getBoundingClientRect().top - listRect.top;
+      indicator.style.top = `${Math.max(0, y - 1)}px`;
+      indicator.hidden = false;
+    };
+    const onMove = (ev) => {
+      if (!previewDrag || ev.pointerId !== previewDrag.pointerId) return;
+      if (Math.abs(ev.clientY - previewDrag.startY) > 4) previewDrag.moved = true;
+      if (!previewDrag.moved) return;
+      item.classList.add('is-dragging');
+      const live = [...root.querySelectorAll('.pricing-product-item')];
+      let insert = live.length;
+      for (let i = 0; i < live.length; i++) {
+        const r = live[i].getBoundingClientRect();
+        if (ev.clientY < r.top + r.height / 2) { insert = i; break; }
+      }
+      previewDrag.insertIndex = insert;
+      place(insert);
+    };
+    const onUp = (ev) => {
+      if (!previewDrag || ev.pointerId !== previewDrag.pointerId) return;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      try { handle.releasePointerCapture(ev.pointerId); } catch (_) { /* ignore */ }
+      const { fromIndex, insertIndex, moved } = previewDrag;
+      if (indicator) indicator.hidden = true;
+      item.classList.remove('is-dragging');
+      previewDrag = null;
+      if (!moved) return;
+      previewIgnoreClickUntil = Date.now() + 400;
+      let to = insertIndex;
+      if (to > fromIndex) to -= 1;
+      to = Math.max(0, Math.min(PREVIEW_PRODUCTS.length - 1, to));
+      const ids = PREVIEW_PRODUCTS.map((p) => p.productId);
+      if (to !== fromIndex) {
+        const [movedId] = ids.splice(fromIndex, 1);
+        ids.splice(to, 0, movedId);
+      }
+      commitPreviewProductOrder(ids);
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  });
 }
 
 function fillPreviewPromo(id) {
@@ -1174,6 +1364,7 @@ function renderPricingMock() {
   fillPreviewPromo(previewPromoId);
   if (previewPricingBound) return;
   previewPricingBound = true;
+  bindPreviewProductReorder();
   document.querySelectorAll('[data-pricing-pane]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const pane = btn.getAttribute('data-pricing-pane');
@@ -1183,8 +1374,11 @@ function renderPricingMock() {
     });
   });
   $('pricingProductList')?.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-preview-product]');
-    if (btn) fillPreviewProduct(btn.getAttribute('data-preview-product'));
+    if (Date.now() < previewIgnoreClickUntil) return;
+    if (e.target.closest('[data-drag-handle], [data-move-up], [data-move-down]')) return;
+    const btn = e.target.closest('[data-select-product]');
+    const item = btn?.closest('[data-preview-product]');
+    if (item) fillPreviewProduct(item.getAttribute('data-preview-product'));
   });
   $('pricingPromoList')?.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-preview-promo]');
@@ -1626,6 +1820,16 @@ function bind() {
       else applyPreviewLicense({ licenseStatus: 'active' }, { uid, notice: '미리보기 — 라이선스 활성화 (실제 데이터 변경 없음)' });
       return;
     }
+    const licenseCreditGrant = e.target.closest('[data-license-credit-grant]');
+    if (licenseCreditGrant) {
+      previewAdjustLicenseCredits(licenseCreditGrant, 1);
+      return;
+    }
+    const licenseCreditDeduct = e.target.closest('[data-license-credit-deduct]');
+    if (licenseCreditDeduct) {
+      previewAdjustLicenseCredits(licenseCreditDeduct, -1);
+      return;
+    }
     const licenseSave = e.target.closest('[data-license-save]');
     if (licenseSave) {
       const uid = licenseSave.getAttribute('data-license-save');
@@ -1652,7 +1856,7 @@ function bind() {
       return;
     }
     const licenseRow = e.target.closest('#adminUserList [data-license-row]');
-    if (licenseRow && crmMode === 'license' && !e.target.closest('input,select,textarea,[data-license-grant],[data-license-member],[data-license-save],[data-license-logs]')) {
+    if (licenseRow && crmMode === 'license' && !e.target.closest('input,select,textarea,[data-license-grant],[data-license-member],[data-license-save],[data-license-logs],[data-license-credit-grant],[data-license-credit-deduct]')) {
       const uid = licenseRow.getAttribute('data-license-row');
       licenseOpen = licenseOpen === uid ? '' : uid;
       renderCrmWork();

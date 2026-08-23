@@ -35,9 +35,9 @@ window.MIDIAI_CONFIG = {
   portoneMode: "live", // "test" | "live"
   portoneProductId: "midiai-lifetime",
   portoneOrderName: "MidiAI Studio Lifetime License",
-  // Credit packs (CREDIT_5/30/100) are discontinued for sale; ledger/engine kept.
-  // Lifetime / Pass KakaoPay / PayPal are not gated by this flag.
-  CREDIT_PURCHASE_ENABLED: false,
-  creditPurchaseEnabled: false,
+  // Emergency only. false = sell Credit packs whose catalog status is active.
+  // true = hide/block ALL Credit sales regardless of catalog status.
+  CREDIT_SALES_KILL_SWITCH: false,
+  creditSalesKillSwitch: false,
   supportDiscordUrl: ""
 };

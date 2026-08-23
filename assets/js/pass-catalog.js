@@ -14,7 +14,7 @@ import {
   getPassProductsFromCatalog,
   computePassBundleSavings,
   formatPassBundleSavingsLabel
-} from './catalog-engine.js?v=promo-multi-popup-1';
+} from './catalog-engine.js?v=paypal-auto-fx-2';
 
 export { isPassProductId, PASS_PRODUCT_IDS, PASS_DURATION_DAYS };
 
@@ -135,7 +135,11 @@ export function applyPublicPassCatalog(products = []) {
         orderNameKo: p.orderNameKo || '',
         orderNameEn: p.orderNameEn || '',
         status: p.status || 'active',
-        saleOk: p.saleOk !== false
+        saleOk: p.saleOk !== false,
+        usd: p.usd != null ? Number(p.usd) : null,
+        usdList: p.usdList != null ? Number(p.usdList) : null,
+        paypalEnabled: p.paypalEnabled === true,
+        fxUnavailable: p.fxUnavailable === true
       };
     });
   if (mapped.length) {

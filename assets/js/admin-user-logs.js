@@ -686,10 +686,12 @@ function renderSelectedSummary() {
         </div>
         ${email ? `<small>${esc(email)}</small>` : ''}
         <div class="admin-logs-selected-meta">
-          <span>UID <code class="mono">${esc(selectedUid)}</code>
-            <button type="button" class="ghost mini-btn" data-logs-copy-uid>복사</button></span>
+          <span class="admin-id-pair">
+            <span class="admin-id-item">UID <code class="mono">${esc(selectedUid)}</code>
+              <button type="button" class="ghost mini-btn" data-logs-copy-uid>복사</button></span>
+            <span class="admin-id-item">HWID <code class="mono">${esc(maskHwid(hwid))}</code></span>
+          </span>
           ${seen ? `<span>최근 접속 ${esc(seen)}</span>` : ''}
-          <span>HWID <code class="mono">${esc(maskHwid(hwid))}</code></span>
         </div>
       </div>
       <div class="admin-logs-identity-actions">

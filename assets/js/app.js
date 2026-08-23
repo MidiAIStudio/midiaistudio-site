@@ -23,15 +23,21 @@ import {
   packCredits,
   normalizeCreditProductId,
   applyPublicCreditCatalog
-} from './credit-catalog.js?v=price-save-1';
+} from './credit-catalog.js?v=credit-live-sale-1';
 import {
   publicProductView,
   starterUnitFromProducts,
   localizePromo,
   isPassProductId,
   isLicenseProductId,
-  normalizeProductId as normalizeCatalogProductId
-} from './catalog-engine.js?v=promo-multi-popup-1';
+  isCreditProductId,
+  isStorefrontSellableProduct,
+  normalizeProductId as normalizeCatalogProductId,
+  setCatalogFxRate,
+  getCatalogFxRate,
+  formatUsd,
+  krwToUsd
+} from './catalog-engine.js?v=credit-live-sale-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -41,15 +47,16 @@ import {
   getPassCatalogSource,
   isPassCatalogReady,
   useSeedPassFallback
-} from './pass-catalog.js?v=promo-multi-popup-4';
+} from './pass-catalog.js?v=paypal-auto-fx-3';
 import {
   renderProductCard,
   purchaseCardFeaturesHtml,
   renderPromotionPopupHtml,
   buildPromotionPopupCopy,
   resolvePromotionProducts,
+  storefrontUiCopy,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=promo-multi-popup-4';
+} from './storefront-render.js?v=credit-live-sale-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -71,8 +78,11 @@ import {
 } from './admin-user-logs.js?v=admin-logs-detail-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
+function isCreditSalesKilled(){
+  return CONFIG.CREDIT_SALES_KILL_SWITCH === true || CONFIG.creditSalesKillSwitch === true;
+}
 function isCreditPurchaseEnabled(){
-  return CONFIG.CREDIT_PURCHASE_ENABLED === true || CONFIG.creditPurchaseEnabled === true;
+  return !isCreditSalesKilled();
 }
 function purchaseActionsLocked(){
   return !!currentLicenseLifetime;
@@ -85,6 +95,7 @@ const pathLang = pathLower.includes('/en/') ? 'en' : pathLower.includes('/ja/') 
 const isPurchasePage = page === 'purchase.html' || pathLower.endsWith('/purchase') || pathLower.endsWith('/purchase/');
 const isRootKoreanPurchasePage = isPurchasePage && !pathLang;
 let selectedPurchaseId = 'PASS_30D';
+let pendingPaypalQuoteId = '';
 let purchaseMode = 'lifetime';
 let selectedPointProductId = 'CREDIT_30';
 if(isPurchasePage){
@@ -94,7 +105,7 @@ if(isPurchasePage){
   const packParam = normalizeCreditProductId(packRaw);
   if(isPassProductId(packRaw) || isPassProductId(packParam)){
     selectedPurchaseId = isPassProductId(packRaw) ? packRaw : packParam;
-  } else if(packParam.startsWith('CREDIT_') && packParam !== 'CREDIT_10' && isCreditPurchaseEnabled()){
+  } else if(packParam.startsWith('CREDIT_') && isCreditPurchaseEnabled()){
     selectedPurchaseId = packParam;
   } else if(productParam === 'credits' || productParam === 'credit' || productParam === 'points' || productParam === 'point' || packParam.startsWith('POINT_') || packParam.startsWith('CREDIT_')){
     selectedPurchaseId = 'PASS_30D';
@@ -1277,6 +1288,12 @@ function pointCopy(){
     confirmLifetime:'Buy Lifetime Full',
     confirmPass:(days)=>`Buy ${days}-Day Full`,
     payAmountLabel:'Amount',
+    listPriceLabel:'List price',
+    discountLabel:'Discount',
+    payUsdLabel:'Amount (USD)',
+    fxNote:'Automatically converted from the KRW price',
+    fxError:'Could not load the exchange rate. Please try again shortly.',
+    chargedUsdNote:'Charged in USD',
     grantLabelShort:'Grant',
     licenseLabel:'License',
     aiUnlimited:'Unlimited',
@@ -1400,6 +1417,12 @@ function pointCopy(){
     confirmLifetime:'Lifetime Full を購入',
     confirmPass:(days)=>`${days}日 Full を購入`,
     payAmountLabel:'支払金額',
+    listPriceLabel:'定価',
+    discountLabel:'割引',
+    payUsdLabel:'支払額 (USD)',
+    fxNote:'韓国価格を基準に自動換算',
+    fxError:'為替レートを取得できませんでした。しばらくしてから再度お試しください。',
+    chargedUsdNote:'実際の請求通貨は USD です',
     grantLabelShort:'付与',
     licenseLabel:'ライセンス',
     aiUnlimited:'無制限',
@@ -1528,6 +1551,12 @@ function pointCopy(){
     confirmLifetime:'Lifetime Full 구매',
     confirmPass:(days)=>`${days}일 Full 구매`,
     payAmountLabel:'결제금액',
+    listPriceLabel:'정가',
+    discountLabel:'할인',
+    payUsdLabel:'결제금액 (USD)',
+    fxNote:'KRW 가격 기준 자동 환산',
+    fxError:'환율 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    chargedUsdNote:'실제 청구 통화는 USD입니다',
     grantLabelShort:'지급',
     licenseLabel:'라이선스',
     aiUnlimited:'무제한',
@@ -1616,27 +1645,37 @@ function renderPurchasePlanGrid(){
     ['Full 기능', '이용 가능'],
     ['자동결제', '없음']
   ];
-  const packs = getPassProducts();
+  const sfUi = storefrontUiCopy(lang);
+  const creditPacks = isCreditPurchaseEnabled() ? getCreditProducts() : [];
+  const passPacks = getPassProducts();
+  const packs = [...creditPacks, ...passPacks].sort((a, b) => {
+    const so = Number(a.sortOrder || 0) - Number(b.sortOrder || 0);
+    if (so) return so;
+    return String(a.productId || '').localeCompare(String(b.productId || ''));
+  });
   const cards = packs.map((pack)=>{
     const selected = !locked && selectedPurchaseId === pack.productId;
+    const isCredit = isCreditProductId(pack.productId) || pack.type === 'credit_pack';
     return renderProductCard(pack, {
       lang,
       selected,
       locked,
-      features: passFeatures,
+      features: isCredit ? (sfUi.creditFeatures || []) : passFeatures,
       buyLabel: locked ? (pt.btnNoNeed || '추가 구매 불필요') : pt.buy,
       ui: {
-        recommended: pt.recommended || '추천',
+        recommended: pt.recommended || sfUi.recommended || '추천',
         buy: pt.buy,
         paused: '',
         archived: '',
         btnPaused: '',
         passFeatures,
         lifeFeatures: pt.cardFeaturesLife,
+        creditFeatures: sfUi.creditFeatures,
         unitPass: (days) => (lang === 'en'
           ? `${days}-day Full Pass · one-time`
           : (lang === 'ja' ? `${days}日 Full 利用権 · 1回払い` : `${days}일 Full 이용권 · 1회 결제`)),
         unitLife: pt.unlimitedUnit || 'Lifetime Full · 1회 결제',
+        unitCredit: sfUi.unitCredit,
         hideToday: '',
         close: '',
         defaultCta: ''
@@ -1953,7 +1992,7 @@ function renderPurchaseUsageGuide(){
     </details>`;
 }
 function purchaseUsesKakao(){
-  return isKoreanCheckout() || isPointCheckout();
+  return isKoreanCheckout();
 }
 function purchaseAccountHref(){
   return `${window.MIDIAI_BASE_PATH || './'}account.html`;
@@ -2065,9 +2104,15 @@ function openPurchaseConfirmModal(){
   const termValue = pass
     ? (typeof pt.termDays === 'function' ? pt.termDays(days) : `${days}일`)
     : pt.termPermanent;
+  const paypalCheckout = !purchaseUsesKakao() && !points;
+  const creditIntlBlocked = points && !isKoreanCheckout();
+  const listLabel = pt.listPriceLabel || (lang==='ja' ? '定価' : lang==='en' ? 'List price' : '정가');
+  const discLabel = pt.discountLabel || (lang==='ja' ? '割引' : lang==='en' ? 'Discount' : '할인');
+  const payLabelKey = paypalCheckout ? (pt.payUsdLabel || pt.payAmountLabel) : pt.payAmountLabel;
+  const fxNote = pt.fxNote || '';
   const rows = points
     ? [
-        ...(packDiscounted ? [[ '정가', formatKrw(packList) ], [ '할인', `${creditPack.discountPercent}%` ]] : []),
+        ...(packDiscounted ? [[ listLabel, formatKrw(packList) ], [ discLabel, `${creditPack.discountPercent}%` ]] : []),
         [pt.payAmountLabel, priceText],
         [pt.grantLabelShort || pt.grantLabel || '지급', pt.grantValue(credits)],
         [pt.payMethod, pt.kakaoPay],
@@ -2075,21 +2120,21 @@ function openPurchaseConfirmModal(){
       ]
     : pass
       ? [
-          ...(packDiscounted ? [[ '정가', formatKrw(packList) ], [ '할인', `${passPack.discountPercent}%` ]] : []),
-          [pt.payAmountLabel, priceText],
+          ...(packDiscounted ? [[ listLabel, formatKrw(packList) ], [ discLabel, `${passPack.discountPercent}%` ]] : []),
+          [payLabelKey, priceText],
           [pt.licenseLabel, passLicenseLabel],
-          [pt.usageLifetime?.[0]?.title || 'AI 변환', pt.aiUnlimited],
+          [pt.usageLifetime?.[0]?.title || (lang==='ja' ? 'AI変換' : lang==='en' ? 'AI conversion' : 'AI 변환'), pt.aiUnlimited],
           [pt.termLabel, termValue],
-          [pt.payMethod, purchaseUsesKakao() ? pt.kakaoPay : 'PayPal'],
+          [pt.payMethod, paypalCheckout ? 'PayPal' : pt.kakaoPay],
           [pt.payAccount, email]
         ]
       : [
-          ...(lifeDiscounted ? [[ '정가', lifeCtx.displayList ], [ '할인', `${lifeCtx.discount}%` ]] : []),
-          [pt.payAmountLabel, priceText],
+          ...(lifeDiscounted ? [[ listLabel, lifeCtx.displayList ], [ discLabel, `${lifeCtx.discount}%` ]] : []),
+          [payLabelKey, priceText],
           [pt.licenseLabel, pt.unlimitedTitle || 'Lifetime Full'],
-          [pt.usageLifetime?.[0]?.title || 'AI 변환', pt.aiUnlimited],
+          [pt.usageLifetime?.[0]?.title || (lang==='ja' ? 'AI変換' : lang==='en' ? 'AI conversion' : 'AI 변환'), pt.aiUnlimited],
           [pt.termLabel, pt.termPermanent],
-          [pt.payMethod, purchaseUsesKakao() ? pt.kakaoPay : 'PayPal'],
+          [pt.payMethod, paypalCheckout ? 'PayPal' : pt.kakaoPay],
           [pt.payAccount, email]
         ];
   const lead = points
@@ -2102,24 +2147,81 @@ function openPurchaseConfirmModal(){
     ? `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" data-purchase-modal="pay" data-pay-label="${esc(payLabel)}">
         <span class="kakao-mark">pay</span><strong>${esc(payLabel)}</strong>
       </button>`
-    : `<div id="purchaseModalPaypalSlot"></div>`;
+    : '';
+  const creditIntlNote = creditIntlBlocked
+    ? `<p class="purchase-modal-lead">${esc(lang==='en'
+      ? 'Credit packs are sold with KakaoPay on the Korean checkout. PayPal is not available for Credit packs yet.'
+      : (lang==='ja'
+        ? 'Creditパックは韓国ページのKakaoPayでのみ購入できます。PayPalは未対応です。'
+        : 'Credit 상품은 한국어 구매 페이지의 카카오페이로만 결제할 수 있습니다. PayPal은 아직 지원되지 않습니다.'))}</p>`
+    : '';
+  const paypalPane = paypalCheckout
+    ? `<div class="purchase-modal-paypal-pane">
+        <p class="purchase-modal-paypal-amount">${esc(priceText)}</p>
+        ${fxNote ? `<p class="purchase-modal-fx-note">${esc(fxNote)}</p>` : ''}
+        ${pt.chargedUsdNote ? `<p class="purchase-modal-fx-note">${esc(pt.chargedUsdNote)}</p>` : ''}
+        <div id="purchaseModalPaypalSlot" class="purchase-modal-paypal-slot"></div>
+        <p id="purchaseModalPaypalStatus" class="muted small"></p>
+      </div>`
+    : '';
+  const modalEl = document.querySelector('#purchaseConfirmModal .purchase-modal');
+  if(modalEl) modalEl.classList.toggle('is-paypal', paypalCheckout);
   body.innerHTML = `<h3 id="purchaseModalTitle">${esc(modalTitle)}</h3>
     <dl class="purchase-modal-rows">
       ${rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}
     </dl>
     <p class="purchase-modal-lead">${esc(lead)}</p>
+    ${creditIntlNote}
     <p id="purchaseModalStatus" class="muted small"></p>
+    ${paypalPane}
     <div class="purchase-modal-actions">
-      <button type="button" class="ghost" data-purchase-modal="cancel">${esc(pt.cancel)}</button>
       ${kakaoPayHtml}
+      <button type="button" class="ghost purchase-modal-cancel" data-purchase-modal="cancel">${esc(pt.cancel)}</button>
     </div>`;
-  if(!purchaseUsesKakao()){
+  if(paypalCheckout){
     const slot = $('purchaseModalPaypalSlot');
     const mount = $('purchasePayMount');
     if(slot && mount){
       slot.appendChild(mount);
       mount.hidden = false;
     }
+    preparePaypalQuoteForModal();
+  }
+}
+async function preparePaypalQuoteForModal(){
+  pendingPaypalQuoteId = '';
+  const pt = pointCopy();
+  const statusEl = $('purchaseModalPaypalStatus') || $('purchaseModalStatus');
+  const amountEl = document.querySelector('.purchase-modal-paypal-amount');
+  if(!currentUser){
+    if(statusEl) statusEl.textContent = pt.needLogin || '';
+    return;
+  }
+  const pid = selectedPurchaseId || 'LIFETIME';
+  if(statusEl) statusEl.textContent = lang==='ja' ? '金額を確定しています…' : lang==='en' ? 'Confirming amount…' : '결제 금액을 확인하고 있습니다…';
+  try{
+    const quote = await callFunctionJson('createPurchaseQuote', { productId: pid, currency: 'USD' });
+    if(!quote?.ok && !quote?.quoteId) throw new Error(quote?.message || 'quote failed');
+    pendingPaypalQuoteId = String(quote.quoteId || '');
+    const usd = Number(quote.payAmountUsd != null ? quote.payAmountUsd : quote.finalPrice);
+    if(Number.isFinite(usd) && usd > 0){
+      const text = formatUsd(usd);
+      if(amountEl) amountEl.textContent = text;
+      const payDd = document.querySelector('.purchase-modal-rows dd');
+      document.querySelectorAll('.purchase-modal-rows div').forEach((row)=>{
+        const dt = row.querySelector('dt');
+        const dd = row.querySelector('dd');
+        if(dt && dd && /USD|支払額|Amount|결제금액/.test(dt.textContent || '')) dd.textContent = text;
+      });
+    }
+    if(statusEl) statusEl.textContent = '';
+  }catch(err){
+    console.warn('paypal quote', err);
+    pendingPaypalQuoteId = '';
+    const msg = err?.code === 'FX_UNAVAILABLE' || /환율|exchange|FX/i.test(String(err?.message||''))
+      ? (pt.fxError || err.message)
+      : (err?.message || pt.fxError);
+    if(statusEl) statusEl.textContent = msg;
   }
 }
 function fillPurchaseSuccessModal(html){
@@ -2977,7 +3079,7 @@ function accountOrderStatusInfo(o){
 }
 
 function accountOrdersCardHtml(){
-  const title = lang==='en'?'Payment history':lang==='ja'?'支払い履歴':'결제 내역';
+  const title = 'Payment history';
   const count = accountOrdersStatus==='ok' && accountOrderRows.length
     ? `<span class="account-orders-count">${accountOrderRows.length}${lang==='en'?' receipts':lang==='ja'?'件':'건'}</span>`
     : '';
@@ -2989,7 +3091,7 @@ function accountOrdersCardHtml(){
   } else if(!accountOrderRows.length){
     const buy = lang==='en'?'View plans':lang==='ja'?'利用券を見る':'이용권 보기';
     body = `<p class="muted account-orders-empty">${esc(lang==='en'?'No payments yet.':lang==='ja'?'支払い履歴はまだありません。':'결제 내역이 없습니다.')}</p>
-      <div class="account-panel-actions"><a class="secondary mini-btn" href="./purchase.html">${esc(buy)}</a></div>`;
+      <div class="account-panel-actions"><a class="secondary mini-btn account-btn account-btn-secondary" href="./purchase.html">${esc(buy)}</a></div>`;
   } else {
     body = `<ul class="account-orders-list">${accountOrderRows.map(o=>{
       const st=accountOrderStatusInfo(o);
@@ -3009,7 +3111,7 @@ function accountOrdersCardHtml(){
     }).join('')}</ul>`;
   }
   return `<article class="hub-card account-panel account-panel-orders account-panel-full" id="accountOrdersPanel">
-    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">💳</span><h2>${esc(title)}</h2>${count}</header>
+    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">▣</span><h2>${esc(title)}</h2>${count}</header>
     <div class="account-panel-body" id="accountOrdersBody">${body}</div>
   </article>`;
 }
@@ -3389,45 +3491,47 @@ function paintProfileCreditStrip(){
 }
 
 function accountCreditCardHtml(){
-  const d = accountLicenseDoc;
-  const plan = normalizePlan(d);
-  const active = isLicenseCurrentlyActive(d);
-  const title = lang==='en' ? 'Current plan' : lang==='ja' ? '現在の利用券' : '현재 이용권';
-  const planLabel = accountLicensePlanLabel(d);
-  let detail = '';
-  if(plan === 'lifetime' && active){
-    detail = lang==='en' ? 'No time limit' : lang==='ja' ? '期限なし' : '기간 제한 없음';
-  } else if(plan === 'period' && active){
-    const end = d?.expiresAt ? fmtListDate(d.expiresAt) : '';
-    const leftMs = licenseTsMs(d?.expiresAt) - Date.now();
-    const leftDays = leftMs > 0 ? Math.ceil(leftMs / 86400000) : 0;
-    if(lang==='en') detail = end ? `Until ${end}${leftDays ? ` · ${leftDays}d left` : ''}` : '';
-    else if(lang==='ja') detail = end ? `${end}まで${leftDays ? ` · 残り${leftDays}日` : ''}` : '';
-    else detail = end ? `${end}까지${leftDays ? ` · ${leftDays}일 남음` : ''}` : '';
-  } else {
-    detail = lang==='en' ? 'Up to 1 minute per conversion' : lang==='ja' ? '変換あたり最大1分' : '변환당 최대 1분';
-  }
   const bal = creditAccountState.balance;
-  const showBal = Number.isFinite(Number(bal));
-  const balBlock = showBal
-    ? `<div class="account-credit-balance-row">
-        <p class="account-credit-balance-label">${esc(lang==='en' ? 'Credits' : lang==='ja' ? 'クレジット' : '보유 크레딧')}</p>
-        <p class="account-credit-balance-value"><strong>${esc(creditBalanceText(bal))}</strong></p>
-        <button type="button" class="ghost mini-btn" id="accountCreditHistoryBtn">${esc(lang==='en' ? 'Credit history' : lang==='ja' ? 'クレジット履歴' : 'Credit 사용 내역')}</button>
-      </div>`
-    : '';
-  const buy = (plan !== 'lifetime' || !active)
-    ? `<div class="account-panel-actions"><a class="primary mini-btn" href="${esc(lifetimePurchaseHref())}">${esc(lang==='en' ? 'View plans' : lang==='ja' ? '利用券を見る' : '이용권 보기')}</a></div>`
-    : '';
+  const showBal = Number.isFinite(Number(bal)) && Number(bal) > 0;
+  if(!showBal) return '';
+  const kicker = lang==='en' ? 'Credits' : lang==='ja' ? 'クレジット' : '보유 크레딧';
+  const historyLabel = lang==='en' ? 'Credit history' : lang==='ja' ? 'クレジット履歴' : '사용 내역';
   return `<article class="hub-card account-panel account-panel-credit" id="accountCreditPanel">
-    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">◇</span><h2>${esc(title)}</h2></header>
+    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">◆</span><h2>Credit</h2></header>
     <div class="account-panel-body" id="accountCreditBody">
-      <p class="account-license-title is-plan-${esc(plan || 'trial')}">${esc(planLabel)}</p>
-      ${detail ? `<p class="muted">${esc(detail)}</p>` : ''}
-      ${balBlock}
-      ${buy}
+      <p class="account-credit-kicker">${esc(kicker)}</p>
+      <p class="account-license-title">${esc(creditBalanceText(bal))}</p>
+      <div class="account-panel-actions">
+        <button type="button" class="secondary mini-btn account-btn account-btn-secondary" id="accountCreditHistoryBtn">${esc(historyLabel)}</button>
+      </div>
     </div>
   </article>`;
+}
+
+function paintAccountCreditPanel(){
+  const grid = $('accountMeta')?.querySelector('.account-dashboard-grid');
+  if(!grid) return;
+  const html = accountCreditCardHtml();
+  const existing = $('accountCreditPanel');
+  if(!html){
+    existing?.remove();
+    return;
+  }
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  const next = wrap.firstElementChild;
+  if(!next) return;
+  if(existing) existing.replaceWith(next);
+  else {
+    const accountPanel = grid.querySelector('.account-panel-account');
+    if(accountPanel) accountPanel.after(next);
+    else {
+      const orders = $('accountOrdersPanel');
+      if(orders) orders.before(next);
+      else grid.append(next);
+    }
+  }
+  bindAccountCreditCard();
 }
 
 function bindAccountCreditCard(){
@@ -3437,7 +3541,13 @@ function bindAccountCreditCard(){
   btn.addEventListener('click', ()=> openCreditHistoryModal());
 }
 
+function onCreditHistoryEsc(e){
+  if(e.key === 'Escape') closeCreditHistoryModal();
+}
+
 function closeCreditHistoryModal(){
+  document.documentElement.classList.remove('credit-history-open');
+  document.removeEventListener('keydown', onCreditHistoryEsc);
   const backdrop = $('creditHistoryBackdrop');
   if(backdrop) backdrop.remove();
 }
@@ -3449,18 +3559,24 @@ function openCreditHistoryModal(){
     return;
   }
   const title = lang==='en' ? 'Credit history' : lang==='ja' ? 'クレジット履歴' : 'Credit 사용 내역';
+  const balLabel = lang==='en' ? 'Current balance' : lang==='ja' ? '現在の残高' : '현재 잔액';
   const backdrop = document.createElement('div');
   backdrop.id = 'creditHistoryBackdrop';
-  backdrop.className = 'modal-backdrop is-open';
-  backdrop.innerHTML = `<div class="modal credit-history-modal" role="dialog" aria-modal="true" aria-label="${esc(title)}">
-    <header class="modal-head">
-      <h3>${esc(title)}</h3>
-      <button type="button" class="ghost mini-btn" id="creditHistoryClose">${esc(lang==='en' ? 'Close' : lang==='ja' ? '閉じる' : '닫기')}</button>
+  backdrop.className = 'credit-history-backdrop';
+  backdrop.innerHTML = `<div class="credit-history-modal" role="dialog" aria-modal="true" aria-labelledby="creditHistoryTitle">
+    <header class="credit-history-head">
+      <h3 id="creditHistoryTitle">${esc(title)}</h3>
+      <button type="button" class="credit-history-x" id="creditHistoryClose" aria-label="${esc(lang==='en' ? 'Close' : lang==='ja' ? '閉じる' : '닫기')}">×</button>
     </header>
-    <p class="muted small" id="creditHistoryBalance">${esc(creditBalanceText(creditAccountState.balance))}</p>
-    <div class="credit-history-list" id="creditHistoryList"><p class="muted small">${esc(lang==='en' ? 'Loading…' : '불러오는 중…')}</p></div>
+    <div class="credit-history-balance">
+      <span class="credit-history-balance-label">${esc(balLabel)}</span>
+      <strong class="credit-history-balance-value" id="creditHistoryBalance">${esc(creditBalanceText(creditAccountState.balance))}</strong>
+    </div>
+    <div class="credit-history-body" id="creditHistoryList"><p class="muted small">${esc(lang==='en' ? 'Loading…' : '불러오는 중…')}</p></div>
   </div>`;
-  document.body.appendChild(backdrop);
+  document.documentElement.appendChild(backdrop);
+  document.documentElement.classList.add('credit-history-open');
+  document.addEventListener('keydown', onCreditHistoryEsc);
   backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) closeCreditHistoryModal(); });
   $('creditHistoryClose')?.addEventListener('click', closeCreditHistoryModal);
   loadCreditHistoryModal();
@@ -3473,12 +3589,11 @@ function creditHistoryRowsHtml(items){
   }
   return `<ul class="credit-history-ul">${rows.map((item)=>{
     const amt = Number(item?.amount || 0);
-    const after = item?.balanceAfter != null ? creditBalanceText(item.balanceAfter) : '';
+    const deltaClass = amt > 0 ? 'is-plus' : amt < 0 ? 'is-minus' : '';
     return `<li>
       <span class="credit-history-when">${esc(fmtCreditStamp(item?.createdAt))}</span>
       <span class="credit-history-title">${esc(creditLedgerTitle(item))}</span>
-      <strong class="credit-history-delta">${esc(formatCreditDelta(amt))}</strong>
-      ${after ? `<span class="credit-history-after muted">${esc(after)}</span>` : ''}
+      <strong class="credit-history-delta ${deltaClass}">${esc(formatCreditDelta(amt))}</strong>
     </li>`;
   }).join('')}</ul>`;
 }
@@ -3528,16 +3643,7 @@ async function refreshOwnCredits({ freshToken=false, ledger=false, reason='' }={
     if(currentUser && currentUser.uid === uid) creditAccountState.loading = false;
     paintProfileCreditStrip();
     if(isPurchasePage) renderPurchaseTrialRow();
-    if($('accountCreditPanel')){
-      const panel = $('accountCreditPanel');
-      const wrap = document.createElement('div');
-      wrap.innerHTML = accountCreditCardHtml();
-      const next = wrap.firstElementChild;
-      if(panel && next){
-        panel.replaceWith(next);
-        bindAccountCreditCard();
-      }
-    }
+    if($('accountMeta')) paintAccountCreditPanel();
   }
 }
 
@@ -3583,9 +3689,7 @@ function renderAccountDashboard(uid, d, downloadData){
   }
   const plan = normalizePlan(d);
   const lifetime = isLifetimeLicense(d) || (plan==='lifetime' && normalizeStatus(d)==='active');
-  const latestVersion = downloadData?.version ? `v${downloadData.version}` : '-';
   const downloadUrl = downloadData?.url || '';
-  const installedVersion = lang==='en' ? 'Check in app' : lang==='ja' ? 'アプリで確認' : '앱에서 확인';
   const planTitle = accountLicensePlanTitle(d);
   const statusLabel = accountLicenseStatusLabel(d);
   const roleLabel = accountRoleLabel();
@@ -3601,7 +3705,7 @@ function renderAccountDashboard(uid, d, downloadData){
   updateAccountProfileBadges(d);
 
   const licenseCard = `<article class="hub-card account-panel account-panel-license">
-    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">🎖</span><h2>License</h2></header>
+    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">♙</span><h2>License</h2></header>
     <div class="account-panel-body">
       <p class="account-license-title is-plan-${esc(plan)}">${esc(planTitle)}</p>
       ${accountField(lang==='en'?'Role':lang==='ja'?'権限':'권한', roleLabel)}
@@ -3612,7 +3716,7 @@ function renderAccountDashboard(uid, d, downloadData){
   </article>`;
 
   const accountCard = `<article class="hub-card account-panel account-panel-account">
-    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">👤</span><h2>${esc(lang==='en'?'Account':lang==='ja'?'アカウント':'계정 정보')}</h2></header>
+    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">♟</span><h2>Account</h2></header>
     <div class="account-panel-body">
       ${accountField(lang==='en'?'Name':lang==='ja'?'名前':'이름', name)}
       ${accountField(lang==='en'?'Email':lang==='ja'?'メール':'이메일', email)}
@@ -3620,26 +3724,10 @@ function renderAccountDashboard(uid, d, downloadData){
     </div>
   </article>`;
 
-  const dlLabel = lang==='en'?'Download latest':lang==='ja'?'最新版をダウンロード':'최신 버전 다운로드';
-  const notesLabel = lang==='en'?'Release notes':lang==='ja'?'更新履歴':'업데이트 내역 보기';
-  const dlBtn = downloadUrl
-    ? `<a class="primary mini-btn" href="${esc(downloadUrl)}" target="_blank" rel="noopener">${esc(dlLabel)}</a>`
-    : `<a class="primary mini-btn" href="./downloads.html">${esc(dlLabel)}</a>`;
-
-  const downloadCard = `<article class="hub-card account-panel account-panel-download">
-    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">⬇</span><h2>Download</h2></header>
-    <div class="account-panel-body">
-      ${accountField(lang==='en'?'Latest version':lang==='ja'?'最新バージョン':'최신 버전', latestVersion)}
-      ${accountField(lang==='en'?'Installed version':lang==='ja'?'インストール済み':'현재 설치 버전', installedVersion)}
-      <div class="account-panel-actions">${dlBtn}<a class="secondary mini-btn" href="./patch-notes.html">${esc(notesLabel)}</a></div>
-    </div>
-  </article>`;
-
   const supportLabel = lang==='en'?'Support':lang==='ja'?'サポート':'고객센터';
   const contactLabel = lang==='en'?'Contact':lang==='ja'?'お問い合わせ':'문의하기';
   const discordAttrs = discordHref.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
 
-  const creditCard = accountCreditCardHtml();
   const ordersCard = accountOrdersCardHtml();
 
   const supportCard = `<article class="hub-card account-panel account-panel-support account-panel-full">
@@ -3672,8 +3760,8 @@ function renderAccountDashboard(uid, d, downloadData){
     </article>`;
   }
 
-  box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${creditCard}${downloadCard}${ordersCard}${supportCard}${developerCard}</div>`;
-  bindAccountCreditCard();
+  box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${ordersCard}${supportCard}${developerCard}</div>`;
+  paintAccountCreditPanel();
   bindCreditAccountListeners();
   loadAccountOrders(uid);
   if(location.hash === '#credit' || location.hash === '#plan'){
@@ -4016,13 +4104,31 @@ function isGuideCmsListPath(){
   const path = location.pathname.replace(/\\/g,'/').toLowerCase();
   return /\/guide\/?(index\.html)?$/.test(path) || path.endsWith('/guide/index.html');
 }
+async function refreshPublicFxRate(){
+  try{
+    const base = String(CONFIG.functionsBaseUrl || '').replace(/\/$/, '');
+    if(!base || base.includes('PASTE_')) return null;
+    const res = await fetch(`${base}/getPublicFxRate`);
+    const data = await res.json().catch(()=>({}));
+    if(data && data.ok && Number(data.rate) > 0){
+      setCatalogFxRate(data.rate);
+      return data;
+    }
+  }catch(err){
+    console.warn('public fx', err);
+  }
+  return null;
+}
 async function refreshPricingUi(){
   if(!db || !firestoreApi) return;
   try{
+    await refreshPublicFxRate();
     await ensurePricing(db, firestoreApi);
     const pricing = getPricingCache();
     const all = pricing.products || [];
-    const creditProducts = all.filter((p) => String(p.productId || p.id || '').toUpperCase().startsWith('CREDIT_'));
+    const creditProducts = all.filter((p) => (
+      isCreditProductId(p.productId || p.id) || p.type === 'credit_pack'
+    ));
     const passProducts = all.filter((p) => {
       const id = String(p.productId || p.id || '').toUpperCase();
       return p.type === 'full_pass'
@@ -7112,6 +7218,18 @@ function maskAdminHwid(hwid){
   if(s.length<=10) return `${s.slice(0,2)}${'*'.repeat(Math.max(4,s.length-2))}`;
   return `${s.slice(0,5)}${'*'.repeat(12)}${s.slice(-4)}`;
 }
+function adminHwidOf(user, lic){
+  return String(user?.hwid || lic?.hwid || user?.license?.hwid || '').trim();
+}
+function adminUidHwidHtml(uid, hwid, { maskHwid=false }={}){
+  const id = String(uid || '').trim() || '-';
+  const raw = String(hwid || '').trim();
+  const hw = raw ? (maskHwid ? maskAdminHwid(raw) : raw) : '(없음)';
+  return `<span class="admin-id-pair">
+    <span class="admin-id-item">UID <code class="mono">${esc(id)}</code></span>
+    <span class="admin-id-item">HWID <code class="mono">${esc(hw)}</code></span>
+  </span>`;
+}
 function adminCrmMode(){
   return document.body.dataset.crmMode || 'members';
 }
@@ -7755,9 +7873,10 @@ function renderAdminUserTable(opts={}){
     }).sort((a,b)=>(b.lastLogin?.seconds||b.lastSeenAt?.seconds||0)-(a.lastLogin?.seconds||a.lastSeenAt?.seconds||0));
     $('adminUserCount') && ($('adminUserCount').textContent=`${rows.length} / ${adminUserRows.length}`);
     if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-    box.innerHTML=`<table class="admin-table user-admin-table"><thead><tr><th>회원</th><th>라이선스</th><th>HWID</th><th>최근 로그인</th><th>관리</th></tr></thead><tbody>${rows.map(u=>{
+    box.innerHTML=`<table class="admin-table user-admin-table"><thead><tr><th>회원</th><th>라이선스</th><th>UID / HWID</th><th>최근 로그인</th><th>관리</th></tr></thead><tbody>${rows.map(u=>{
       const uid=u.uid||u.id; const lic=u.license; const active=lic && lic.licensed===true && String(lic.status||'').toLowerCase()==='active';
-      return `<tr><td><b>${esc(u.displayName||'-')}</b><small>${esc(u.email||'')}<br><span class="mono">${esc(uid||'')}</span></small></td><td>${adminPlanBadgeHtml(lic)}</td><td><span class="mono">${esc(u.hwid||lic?.hwid||'-')}</span></td><td>${esc(fmtDate(u.lastLogin||u.lastSeenAt))}</td><td><div class="table-actions"><button class="secondary mini-btn" data-user-license="${esc(uid)}:lifetime:active">Lifetime</button><button class="secondary mini-btn" data-user-license="${esc(uid)}:trial:active">Trial</button><button class="secondary mini-btn danger-btn" data-user-license="${esc(uid)}:${esc(lic?.plan||'lifetime')}:banned">정지</button><button class="secondary mini-btn" data-user-hwid-reset="${esc(uid)}">HWID 초기화</button></div></td></tr>`;
+      const hwid=adminHwidOf(u, lic);
+      return `<tr><td><b>${esc(u.displayName||'-')}</b><small>${esc(u.email||'')}<br>${adminUidHwidHtml(uid, hwid)}</small></td><td>${adminPlanBadgeHtml(lic)}</td><td>${adminUidHwidHtml(uid, hwid)}</td><td>${esc(fmtDate(u.lastLogin||u.lastSeenAt))}</td><td><div class="table-actions"><button class="secondary mini-btn" data-user-license="${esc(uid)}:lifetime:active">Lifetime</button><button class="secondary mini-btn" data-user-license="${esc(uid)}:trial:active">Trial</button><button class="secondary mini-btn danger-btn" data-user-license="${esc(uid)}:${esc(lic?.plan||'lifetime')}:banned">정지</button><button class="secondary mini-btn" data-user-hwid-reset="${esc(uid)}">HWID 초기화</button></div></td></tr>`;
     }).join('')}</tbody></table>`;
     bindAdminUserActions(box);
     return;
@@ -7879,6 +7998,7 @@ function paintAdminCrmPagedList(){
       <th>사용자</th><th>이메일</th><th>라이선스</th><th>상태</th><th>시작일</th><th>만료일</th><th>최근 변경</th><th>지급/변경 주체</th><th>관리</th>
     </tr></thead><tbody>${slice.map(u=>adminCrmLicenseRowHtml(u)).join('')}</tbody></table></div>`;
     renderAdminCrmPager(pages, total, '명');
+    if(adminCrmLicenseOpen) fillAdminLicenseExpandCredits(adminCrmLicenseOpen);
     return;
   }
   if(mode==='orders'){
@@ -7960,41 +8080,61 @@ function adminCrmLicenseExpandInnerHtml(u, view){
   const end=toDateInputValue(lic?.expiresAt);
   const memo=lic?.memo || '';
   return `<div class="admin-license-expand-inner" data-license-uid="${esc(uid)}">
-    <div class="admin-license-expand-meta">
-      <span class="admin-license-expand-flags">
-        <span>상태 ${adminLicenseStatusBadgeHtml(view||adminLicenseView(u))}</span>
-        <span>현재 ${adminPlanBadgeFromView(view||adminLicenseView(u))}</span>
-      </span>
-      <span class="admin-license-expand-uid">UID <code class="mono">${esc(uid)}</code></span>
-    </div>
-    <div class="admin-crm-license-form admin-license-inline-form">
-      <div class="form-split">
-        <label>라이선스
-          <select data-lic-plan>
-            <option value="trial"${plan==='trial'?' selected':''}>체험판</option>
-            <option value="lifetime"${plan==='lifetime'?' selected':''}>평생</option>
-            <option value="period"${plan==='period'?' selected':''}>기간제</option>
-          </select>
-        </label>
-        <label>시작일
-          <input type="date" data-lic-starts value="${esc(start)}">
-        </label>
-        <label>만료일
-          <input type="date" data-lic-expires value="${esc(end)}">
-        </label>
+    <div class="admin-license-expand-col">
+      <div class="admin-license-expand-meta">
+        <span class="admin-license-expand-flags">
+          <span>상태 ${adminLicenseStatusBadgeHtml(view||adminLicenseView(u))}</span>
+          <span>현재 ${adminPlanBadgeFromView(view||adminLicenseView(u))}</span>
+        </span>
+        ${adminUidHwidHtml(uid, adminHwidOf(u, lic))}
       </div>
-      <label>메모
-        <textarea data-lic-memo rows="2" placeholder="라이선스 메모">${esc(memo)}</textarea>
-      </label>
-      <div class="admin-license-expand-toolbar">
-        <input type="hidden" data-lic-pass-product value="${esc(lic?.passProductId || '')}">
-        <div class="admin-license-expand-actions">
-          <button type="button" class="primary mini-btn" data-license-save="${esc(uid)}">저장</button>
-          <button type="button" class="ghost mini-btn" data-license-member="${esc(uid)}">회원 상세</button>
-          <button type="button" class="ghost mini-btn" data-license-logs="${esc(uid)}">로그</button>
+      <div class="admin-crm-license-form admin-license-inline-form">
+        <div class="form-split">
+          <label>라이선스
+            <select data-lic-plan>
+              <option value="trial"${plan==='trial'?' selected':''}>체험판</option>
+              <option value="lifetime"${plan==='lifetime'?' selected':''}>평생</option>
+              <option value="period"${plan==='period'?' selected':''}>기간제</option>
+            </select>
+          </label>
+          <label>시작일
+            <input type="date" data-lic-starts value="${esc(start)}">
+          </label>
+          <label>만료일
+            <input type="date" data-lic-expires value="${esc(end)}">
+          </label>
+        </div>
+        <label>메모
+          <textarea data-lic-memo rows="2" placeholder="라이선스 메모">${esc(memo)}</textarea>
+        </label>
+        <div class="admin-license-expand-toolbar">
+          <input type="hidden" data-lic-pass-product value="${esc(lic?.passProductId || '')}">
+          <div class="admin-license-expand-actions">
+            <button type="button" class="primary mini-btn" data-license-save="${esc(uid)}">저장</button>
+            <button type="button" class="ghost mini-btn" data-license-member="${esc(uid)}">회원 상세</button>
+            <button type="button" class="ghost mini-btn" data-license-logs="${esc(uid)}">로그</button>
+          </div>
         </div>
       </div>
     </div>
+    <aside class="admin-license-expand-col admin-license-credit-panel" aria-label="크레딧 추가">
+      <div class="admin-license-credit-head">
+        <h3>크레딧 추가</h3>
+        <span class="admin-license-credit-balance muted small" data-lic-credit-balance>잔액 조회 중...</span>
+      </div>
+      <div class="admin-crm-points-quick" role="group" aria-label="빠른 지급">
+        <button type="button" class="secondary mini-btn" data-license-credit-grant="${esc(uid)}" data-amount="1">+1</button>
+        <button type="button" class="secondary mini-btn" data-license-credit-grant="${esc(uid)}" data-amount="3">+3</button>
+        <button type="button" class="secondary mini-btn" data-license-credit-grant="${esc(uid)}" data-amount="5">+5</button>
+        <button type="button" class="secondary mini-btn" data-license-credit-grant="${esc(uid)}" data-amount="10">+10</button>
+      </div>
+      <div class="admin-crm-points-form">
+        <input type="number" data-lic-credit-amount min="1" step="1" value="5" aria-label="크레딧 수량">
+        <input type="text" data-lic-credit-reason placeholder="사유 (선택)" aria-label="사유">
+        <button type="button" class="secondary mini-btn" data-license-credit-grant="${esc(uid)}">지급</button>
+        <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${esc(uid)}">회수</button>
+      </div>
+    </aside>
   </div>`;
 }
 function toggleAdminLicenseExpand(uid){
@@ -8247,6 +8387,20 @@ function onAdminCrmListClick(e){
       saveAdminLicenseInline(save.getAttribute('data-license-save'), save.closest('.admin-license-expand-inner'));
       return;
     }
+    const creditGrant = e.target.closest('[data-license-credit-grant]');
+    if(creditGrant){
+      e.preventDefault();
+      e.stopPropagation();
+      adminAdjustLicenseExpandCredits(creditGrant, 1);
+      return;
+    }
+    const creditDeduct = e.target.closest('[data-license-credit-deduct]');
+    if(creditDeduct){
+      e.preventDefault();
+      e.stopPropagation();
+      adminAdjustLicenseExpandCredits(creditDeduct, -1);
+      return;
+    }
     const member = e.target.closest('[data-license-member]');
     if(member){
       e.preventDefault();
@@ -8494,11 +8648,15 @@ function refreshAdminCrmDetail(opts={}){
 }
 function renderAdminCrmHwidBox(user, lic){
   const box=$('adminCrmHwidBox'); if(!box) return;
-  const hwid = user.hwid || lic?.hwid || '';
+  const uid = adminUserUid(user) || lic?.uid || selectedAdminUid || '';
+  const hwid = adminHwidOf(user, lic);
   const shown = adminCrmHwidRevealed ? (hwid || '(없음)') : maskAdminHwid(hwid);
   box.innerHTML = `
     <div class="admin-crm-hwid-inline">
-      <span class="admin-crm-hwid-label">HWID</span>
+      <span class="admin-id-pair">
+        <span class="admin-id-item">UID <code class="mono">${esc(uid || '-')}</code></span>
+        <span class="admin-id-item admin-crm-hwid-label">HWID</span>
+      </span>
       <code class="mono admin-crm-hwid-value${adminCrmHwidRevealed?' is-revealed':''}">${esc(shown)}</code>
     </div>
     <div class="admin-crm-hwid-actions">
@@ -8608,7 +8766,8 @@ function renderAdminCrmOverview(user, view, lic, orders, tickets, posts){
   const end = view?.plan==='lifetime' ? '없음' : (lic?.expiresAt ? fmtListDate(lic.expiresAt) : '-');
   const actor = lic?.method ? adminLicenseMethodLabel(lic.method) : '-';
   const country = adminAccessCountryLine(user) || '정보 없음';
-  const hwid = user?.hwid || lic?.hwid || '';
+  const uid = adminUserUid(user) || view?.uid || '';
+  const hwid = adminHwidOf(user, lic);
   const paid = (orders||[]).filter(o=>adminOrderStatusGroup(o.status)==='paid');
   const lastPaid = paid[0];
   const lastPaidText = lastPaid
@@ -8639,7 +8798,8 @@ function renderAdminCrmOverview(user, view, lic, orders, tickets, posts){
         ${adminCrmDashRow('상태', adminActivityBadgeHtml(user))}
         ${adminCrmDashRow('최근 접속', esc(fmtRelative(user.lastLogin||user.lastSeenAt)))}
         ${adminCrmDashRow('국가', country==='정보 없음' ? `<span class="admin-crm-dash-empty">정보 없음</span>` : esc(country))}
-        ${adminCrmDashRow('HWID', hwid ? '등록됨' : `<span class="admin-crm-dash-empty">없음</span>`)}
+        ${adminCrmDashRow('UID', `<code class="mono">${esc(uid || '-')}</code>`)}
+        ${adminCrmDashRow('HWID', hwid ? `<code class="mono">${esc(hwid)}</code>` : `<span class="admin-crm-dash-empty">없음</span>`)}
       </dl>
     </section>
     <section class="admin-crm-dash-sec">
@@ -8745,7 +8905,7 @@ function renderAdminCrmDetail(uid, opts={}){
   $('adminCrmRoleBadge') && ($('adminCrmRoleBadge').innerHTML = adminRoleBadgeHtml(user.role));
   $('adminCrmHeaderLicense') && ($('adminCrmHeaderLicense').innerHTML = adminPlanBadgeFromView(view));
   $('adminCrmEmail') && ($('adminCrmEmail').textContent = user.email || '');
-  $('adminCrmUid') && ($('adminCrmUid').textContent = `UID ${canonicalUid}`);
+  $('adminCrmUid') && ($('adminCrmUid').innerHTML = adminUidHwidHtml(canonicalUid, adminHwidOf(user, lic)));
   $('adminCrmHeaderMeta') && ($('adminCrmHeaderMeta').innerHTML = `
     <span><em>가입</em> ${esc(fmtListDate(user.createdAt))}</span>
     <span><em>최근 로그인</em> ${esc(fmtRelative(user.lastLogin||user.lastSeenAt))}</span>
@@ -8915,8 +9075,6 @@ function renderAdminCrmUsage(uid){
 }
 function renderAdminCrmPoints(uid){
   const box=$('adminCrmPoints');
-  const card=$('adminCrmPointsCard');
-  if(card) card.hidden = false;
   if(!box) return;
   renderAdminCrmPoints._uid = uid || '';
   if(!uid){
@@ -8984,25 +9142,57 @@ function renderAdminCrmPoints(uid){
     }
   })();
 }
-async function adminAdjustSelectedPoints(sign){
-  const uid = selectedAdminUid;
-  if(!uid) return;
-  const amount = Number($('adminPointAmount')?.value || 0);
-  const reason = String($('adminPointReason')?.value || '').trim();
-  if(!Number.isInteger(amount) || amount <= 0){
+async function adminAdjustPointsForUid(uid, sign, { amount, reason }={}){
+  const target = String(uid || '').trim();
+  const qty = Number(amount || 0);
+  if(!target) return;
+  if(!Number.isInteger(qty) || qty <= 0){
     adminFlash('지급/회수 수량을 입력하세요');
     return;
   }
   const fnNames = sign > 0 ? ['adminGrantCredits', 'adminGrantPoints'] : ['adminDeductCredits', 'adminDeductPoints'];
   const label = sign > 0 ? '지급' : '회수';
-  if(!confirm(`${label} ${amount} 크레딧 할까요?`)) return;
+  if(!confirm(`${label} ${qty} 크레딧 할까요?`)) return;
   try{
-    const result = await callFunctionJsonFallback(fnNames, { targetUid: uid, amount, reason });
+    const result = await callFunctionJsonFallback(fnNames, { targetUid: target, amount: qty, reason: String(reason || '').trim() });
     adminFlash(`${label} 완료 · 잔액 ${result.balance ?? '-'}`);
-    renderAdminCrmPoints(uid);
+    if(selectedAdminUid === target) renderAdminCrmPoints(target);
+    return result;
   }catch(err){
     alert(`${label} 실패: ${err?.message || err}`);
   }
+}
+async function fillAdminLicenseExpandCredits(uid){
+  const wrap=document.querySelector(`.admin-license-expand-inner[data-license-uid="${CSS.escape(String(uid||''))}"]`);
+  const bal=wrap?.querySelector('[data-lic-credit-balance]');
+  if(!wrap || !bal) return;
+  try{
+    const data = await callFunctionJsonFallback(['adminCreditOverview', 'adminPointOverview'], { targetUid: uid });
+    if(adminCrmLicenseOpen !== uid) return;
+    bal.textContent = `잔액 ${Number(data.balance ?? 0)} Credits`;
+  }catch(err){
+    if(adminCrmLicenseOpen !== uid) return;
+    bal.textContent = '잔액 조회 실패';
+  }
+}
+async function adminAdjustLicenseExpandCredits(btn, sign){
+  const wrap=btn.closest('.admin-license-expand-inner');
+  const uid=btn.getAttribute(sign>0?'data-license-credit-grant':'data-license-credit-deduct') || wrap?.getAttribute('data-license-uid');
+  const amountEl=wrap?.querySelector('[data-lic-credit-amount]');
+  const quick=Number(btn.getAttribute('data-amount') || 0);
+  if(Number.isInteger(quick) && quick > 0 && amountEl) amountEl.value = String(quick);
+  const amount=Number(amountEl?.value || 0);
+  const reason=String(wrap?.querySelector('[data-lic-credit-reason]')?.value || '').trim();
+  const result = await adminAdjustPointsForUid(uid, sign, { amount, reason });
+  if(result) fillAdminLicenseExpandCredits(uid);
+}
+async function adminAdjustSelectedPoints(sign){
+  const uid = selectedAdminUid;
+  if(!uid) return;
+  await adminAdjustPointsForUid(uid, sign, {
+    amount: Number($('adminPointAmount')?.value || 0),
+    reason: String($('adminPointReason')?.value || '').trim()
+  });
 }
 function crmSlideHtml(text){
   return `<span class="crm-slide"><span class="crm-slide-text">${esc(text)}</span></span>`;
@@ -9149,6 +9339,7 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
     <dl class="admin-crm-order-dl">
       <div><dt>상품</dt><dd>${esc(productLabel)}</dd></div>
       <div><dt>사용자</dt><dd>${esc(user?.email || user?.displayName || uid || '-')}</dd></div>
+      <div><dt>UID / HWID</dt><dd>${adminUidHwidHtml(uid, adminHwidOf(user, user?.license))}</dd></div>
       <div><dt>결제금액</dt><dd>${esc(adminOrderMoneyText(o.amount, currency))}</dd></div>
       <div><dt>결제수단</dt><dd>${esc(adminPaymentMethodLabel(o.paymentMethod||o.method||'-'))}</dd></div>
       <div><dt>결제상태</dt><dd>${adminPaymentStatusBadgeHtml(o.status||'-')}</dd></div>
@@ -11909,6 +12100,11 @@ async function requestKakaoPayPointPayment(){
     paypalStatus(lang==='en' ? 'This product is not available for purchase.' : lang==='ja' ? 'この商品は現在購入できません。' : '현재 구매할 수 없는 상품입니다.', 'err');
     return;
   }
+  if(!isKoreanCheckout()){
+    paypalStatus(lang==='en' ? 'Credit packs are sold with KakaoPay on the Korean checkout. PayPal is not available yet.' : lang==='ja' ? 'Creditパックは韓国ページのKakaoPayでのみ購入できます。' : 'Credit 상품은 한국어 구매 페이지의 카카오페이로만 결제할 수 있습니다.', 'err');
+    return;
+  }
+  const livePacks = getCreditProducts();
   const authCheck = requirePurchaseAuth();
   if(!authCheck.ok){
     paypalStatus(authCheck.message, 'err');
@@ -11920,6 +12116,10 @@ async function requestKakaoPayPointPayment(){
   const pack = selectedPointPack();
   if(!pack?.productId){
     paypalStatus(lang==='en' ? 'Please select a product.' : lang==='ja' ? '商品を選択してください。' : '상품을 선택해 주세요.', 'err');
+    return;
+  }
+  if(!livePacks.some((p) => p.productId === pack.productId)){
+    paypalStatus(lang==='en' ? 'This product is not currently for sale.' : lang==='ja' ? 'この商品は現在販売していません。' : '현재 판매 중이 아닌 상품입니다.', 'err');
     return;
   }
   if(kakaoPayInFlight){
@@ -11935,7 +12135,7 @@ async function requestKakaoPayPointPayment(){
     return;
   }
   const productId = pack.productId;
-  const orderName = pack.orderNameKo || pack.orderNameEn;
+  const orderName = pack.orderNameKo || pack.orderNameEn || pack.nameKo || pack.name || productId;
   let totalAmount = Number(pack.effectivePrice != null ? pack.effectivePrice : pack.krw);
   let quoteId = '';
   try{
@@ -11943,12 +12143,21 @@ async function requestKakaoPayPointPayment(){
     if(quote?.ok && Number(quote.finalPrice) > 0){
       totalAmount = Number(quote.finalPrice);
       quoteId = String(quote.quoteId || '');
-    } else if(quote?.code === 'SALE_DISABLED'){
+    } else if(quote?.code === 'SALE_DISABLED' || quote?.code === 'SALE_DISABLED'){
       paypalStatus('현재 판매중지된 상품입니다.', 'err');
+      return;
+    } else {
+      paypalStatus(lang==='en' ? 'Could not start checkout. Please try again.' : lang==='ja' ? '決済を開始できませんでした。' : '결제를 시작할 수 없습니다. 다시 시도해 주세요.', 'err');
       return;
     }
   }catch(quoteErr){
     console.warn('purchase quote', quoteErr);
+    paypalStatus(lang==='en' ? 'Could not start checkout. Please try again.' : lang==='ja' ? '決済を開始できませんでした。' : '결제를 시작할 수 없습니다. 다시 시도해 주세요.', 'err');
+    return;
+  }
+  if(!quoteId || !(totalAmount > 0)){
+    paypalStatus(lang==='en' ? 'Could not start checkout. Please try again.' : lang==='ja' ? '決済を開始できませんでした。' : '결제를 시작할 수 없습니다. 다시 시도해 주세요.', 'err');
+    return;
   }
   const paymentIdValue = makeKakaoPaymentId(currentUser.uid);
   kakaoPayInFlight = true;
@@ -12327,7 +12536,8 @@ function initPayPal(){
   }
   const s=document.createElement('script');
   const currency = purchaseCurrency();
-  s.src=`https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(CONFIG.paypalClientId)}&currency=${encodeURIComponent(currency)}&intent=capture`;
+  const locale = lang==='ja' ? 'ja_JP' : 'en_US';
+  s.src=`https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(CONFIG.paypalClientId)}&currency=${encodeURIComponent(currency)}&intent=capture&locale=${encodeURIComponent(locale)}`;
   s.onload=()=>{
     if(!window.paypal)return;
     $('paypalButtons').innerHTML='';
@@ -12358,10 +12568,17 @@ function initPayPal(){
           throw new Error(msg);
         }
         paypalStatus(purchaseLocaleText().creating);
+        const pid = selectedPurchaseId || 'LIFETIME';
+        let quoteId = pendingPaypalQuoteId;
+        if(!quoteId){
+          const quote = await callFunctionJson('createPurchaseQuote', { productId: pid, currency: 'USD' });
+          quoteId = String(quote?.quoteId || '');
+          pendingPaypalQuoteId = quoteId;
+        }
+        if(!quoteId) throw new Error(pointCopy().fxError || 'Quote required');
         const result = await callFunctionJson('createPayPalOrder', {
-          plan: purchaseCheckout().plan || CONFIG.plan || 'lifetime',
-          amount: purchaseAmountValue(),
-          currency: currency
+          quoteId,
+          productId: pid
         });
         if(!result.id) throw new Error('PayPal 주문 ID를 받지 못했습니다.');
         paypalStatus(purchaseLocaleText().opening);

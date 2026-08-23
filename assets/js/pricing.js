@@ -3,7 +3,7 @@
  * Display only; Cloud Functions remain source of truth for charge amounts.
  */
 
-import { computeCharge, hydrateLegacyProduct, activeHomepagePromotions } from './catalog-engine.js?v=promo-multi-popup-1';
+import { computeCharge, hydrateLegacyProduct, activeHomepagePromotions, getCatalogFxRate } from './catalog-engine.js?v=paypal-auto-fx-2';
 
 const DEFAULT_PRODUCT_ID = 'lifetime';
 
@@ -201,25 +201,36 @@ export function checkoutContext(lang, preferKoreanPath = false) {
   const product = getDefaultProduct();
   const hydrated = hydrateLegacyProduct(product);
   const rp = getRegionPricing(product, region);
-  const list = Number(hydrated.listPriceKrw || rp.listPrice);
-  const rawSale = Number(rp.salePrice);
   const discountOn = isDiscountCampaignActive();
-  const catalogCharge = computeCharge(hydrated, cache.promotions || [], new Date(), region === 'KR' ? 'KRW' : 'USD');
+  const wantUsd = region !== 'KR';
+  const catalogCharge = computeCharge(
+    hydrated,
+    cache.promotions || [],
+    new Date(),
+    wantUsd ? 'USD' : 'KRW',
+    wantUsd ? { fxRate: getCatalogFxRate() } : {}
+  );
+  const list = catalogCharge.ok
+    ? catalogCharge.basePrice
+    : Number(hydrated.listPriceKrw || rp.listPrice);
+  const rawSale = Number(rp.salePrice);
   let sale = catalogCharge.ok ? catalogCharge.effectivePrice : (Number.isFinite(list) && list > 0 ? list : rawSale);
   let discount = catalogCharge.discountPercent || 0;
-  if (!catalogCharge.discount && discountOn && Number.isFinite(rawSale) && rawSale > 0 && rawSale < list) {
+  if (!catalogCharge.discount && !wantUsd && discountOn && Number.isFinite(rawSale) && rawSale > 0 && rawSale < list) {
     sale = rawSale;
     discount = Math.round((1 - sale / list) * 100);
   }
+  const currency = wantUsd ? 'USD' : (rp.currency || 'KRW');
   return {
     product,
     region,
     payment: rp.payment || (region === 'KR' ? 'portone' : 'paypal'),
-    currency: rp.currency || (region === 'KR' ? 'KRW' : 'USD'),
+    currency,
     listPrice: list,
     salePrice: sale,
-    displaySale: formatMoney(sale, rp.currency, lang),
-    displayList: formatMoney(list, rp.currency, lang),
+    displaySale: formatMoney(sale, currency, lang),
+    displayList: formatMoney(list, currency, lang),
+    fxUnavailable: wantUsd && !catalogCharge.ok,
     discount: discount,
     discountEndsAt: catalogCharge.discountEndsAt || '',
     discountCampaignActive: discount > 0,

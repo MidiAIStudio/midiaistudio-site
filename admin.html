@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=credit-restore-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=license-form-rows-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -160,7 +160,10 @@
               <div id="pricingProductsPane">
                 <div class="pricing-layout">
                   <aside class="pricing-list-pane">
-                    <h4>판매 상품 목록</h4>
+                    <div class="pricing-list-pane-head">
+                      <h4>판매 상품 목록</h4>
+                      <span id="pricingReorderStatus" class="pricing-reorder-status" hidden></span>
+                    </div>
                     <div id="pricingProductList" class="pricing-product-list"><p class="muted">불러오는 중…</p></div>
                   </aside>
                   <div class="pricing-editor-pane">
@@ -179,8 +182,7 @@
                                 <option value="archived">보관</option>
                               </select>
                             </label>
-                            <label>정렬 순서 <input id="draftSort" type="number"></label>
-                            <label id="draftCreditsWrap">Credit 지급량 <input id="draftCredits" type="number" min="1" step="1"></label>
+                            <label id="draftCreditsWrap">Credit 지급량 <input id="draftCredits" type="number" min="1" step="1" data-preview-field="desc"></label>
                             <label id="draftDurationWrap" hidden>이용 기간
                               <span class="pricing-input-suffix">
                                 <input id="draftDurationDays" type="number" min="1" step="1" data-preview-field="unit">
@@ -209,11 +211,14 @@
                                 <span class="pricing-suffix-label">원</span>
                               </span>
                             </label>
-                            <label>해외 가격 USD
-                              <input id="draftPriceUsd" type="number" min="0" step="0.01" placeholder="미설정">
-                            </label>
+                            <div class="pricing-usd-preview" id="draftUsdPreviewBox">
+                              <span class="pricing-usd-kicker">해외 가격 (현재 환율 기준)</span>
+                              <strong id="draftUsdPreviewAmount">—</strong>
+                              <p class="muted small" id="draftUsdPreviewPromo" hidden></p>
+                              <p class="muted small" id="draftUsdRateLine">환율을 불러오는 중…</p>
+                            </div>
                           </div>
-                          <p class="muted small pricing-field-hint" id="draftUsdHint">USD 미설정 · PayPal 판매 안 함</p>
+                          <p class="muted small pricing-field-hint" id="draftUsdHint">실제 PayPal 결제액은 결제 시점 Quote에서 확정됩니다.</p>
                         </section>
 
                         <section class="pricing-edit-section" id="draftPassSavingsWrap" hidden>
@@ -540,7 +545,7 @@
                     <button type="button" class="is-active" data-crm-detail-tab="overview">개요</button>
                     <button type="button" data-crm-detail-tab="access">접속 정보</button>
                     <button type="button" data-crm-detail-tab="device">기기/HWID</button>
-                    <button type="button" data-crm-detail-tab="license">라이선스</button>
+                    <button type="button" data-crm-detail-tab="license">라이선스/크레딧</button>
                     <button type="button" data-crm-detail-tab="payments">결제</button>
                     <button type="button" data-crm-detail-tab="tickets">문의</button>
                     <button type="button" data-crm-detail-tab="posts">작성글</button>
@@ -562,29 +567,25 @@
                     <div class="admin-crm-card-head"><h3>라이선스</h3><span id="adminCrmLicenseBadge"></span></div>
                     <form id="adminLicenseForm" class="admin-crm-license-form">
                       <input type="hidden" id="adminLicenseUid" required>
-                      <div class="form-split">
-                        <label>권한
-                          <select id="adminUserRole">
-                            <option value="user">사용자</option>
-                            <option value="admin">관리자</option>
-                          </select>
-                        </label>
-                        <label>라이선스
-                          <select id="adminLicensePlan">
-                            <option value="trial">체험판</option>
-                            <option value="lifetime">평생</option>
-                            <option value="period">기간제</option>
-                          </select>
-                        </label>
-                      </div>
-                      <div class="form-split">
-                        <label>시작일
-                          <input type="date" id="adminLicenseStartsAt">
-                        </label>
-                        <label>만료일
-                          <input type="date" id="adminLicenseExpiresAt">
-                        </label>
-                      </div>
+                      <label>권한
+                        <select id="adminUserRole">
+                          <option value="user">사용자</option>
+                          <option value="admin">관리자</option>
+                        </select>
+                      </label>
+                      <label>라이선스
+                        <select id="adminLicensePlan">
+                          <option value="trial">체험판</option>
+                          <option value="lifetime">평생</option>
+                          <option value="period">기간제</option>
+                        </select>
+                      </label>
+                      <label>시작일
+                        <input type="date" id="adminLicenseStartsAt">
+                      </label>
+                      <label>만료일
+                        <input type="date" id="adminLicenseExpiresAt">
+                      </label>
                       <p class="muted small" style="margin:.25rem 0 .5rem">평생은 만료일 없음(무기한). 시작일·만료일을 직접 지정한 뒤 저장하세요. 만료일이 지나면 자동 해제됩니다.</p>
                       <div class="admin-crm-license-meta" id="adminCrmLicenseMeta"></div>
                       <textarea id="adminLicenseMemo" rows="2" placeholder="라이선스 메모"></textarea>
@@ -601,7 +602,7 @@
                     <div id="adminCrmUsage" class="admin-crm-usage" hidden><p class="muted small">불러오는 중...</p></div>
                   </div>
 
-                  <div class="admin-crm-card admin-crm-card-dense" id="adminCrmPointsCard" data-tab-panel="overview">
+                  <div class="admin-crm-card admin-crm-card-dense" id="adminCrmPointsCard" data-tab-panel="license">
                     <div class="admin-crm-card-head"><h3>크레딧</h3></div>
                     <div id="adminCrmPoints" class="admin-crm-points"><p class="muted small">불러오는 중...</p></div>
                   </div>
@@ -826,8 +827,8 @@
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=order-drawer-nav-1"></script>
-  <script type="module" src="./assets/js/pricing-admin.js?v=p0-hotfix-1"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=order-drawer-nav-1"></script>
+  <script type="module" src="./assets/js/app.js?v=paypal-auto-fx-4"></script>
+  <script type="module" src="./assets/js/pricing-admin.js?v=admin-preview-draft-2"></script>
+  <script type="module" src="./assets/js/admin-console.js?v=uid-hwid-pair-1"></script>
 </body>
 </html>

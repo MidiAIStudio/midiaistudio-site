@@ -5,6 +5,7 @@ const { defineSecret } = require('firebase-functions/params');
 admin.initializeApp();
 const db = admin.firestore();
 const catalogEngine = require('./catalogEngine');
+const fxRate = require('./fxRate');
 const passEntitlement = require('./passEntitlement');
 const portoneRefundSync = require('./portoneRefundSync');
 const userNotify = require('./userNotify');
@@ -208,7 +209,16 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     } else if (regionCode === 'KR' && (productDocId === DEFAULT_PRODUCT_DOC || catalogEngine.normalizeProductId(productDocId) === 'LIFETIME')) {
       return envKrFallback();
     } else if (regionCode !== 'KR') {
-      return envPayPalFallback();
+      const lifeSeed = catalogEngine.seedById('LIFETIME') || catalogEngine.seedById(productDocId);
+      if (lifeSeed) {
+        hydrated = catalogEngine.hydrateProduct(lifeSeed.productId || 'LIFETIME', lifeSeed);
+        data = lifeSeed;
+      } else {
+        const err = new Error('상품을 찾을 수 없습니다.');
+        err.status = 404;
+        err.code = 'PRODUCT_NOT_FOUND';
+        throw err;
+      }
     } else {
       const err = new Error('상품을 찾을 수 없습니다.');
       err.status = 404;
@@ -219,7 +229,8 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     data = snap.data() || {};
     hydrated = catalogEngine.hydrateProduct(snap.id, data);
   }
-  if (hydrated.status === 'paused' || hydrated.status === 'archived') {
+  if (hydrated.status === 'paused' || hydrated.status === 'paused'
+      || hydrated.status === 'archived' || hydrated.status === 'archived') {
     const err = new Error('현재 일시 판매중지된 상품입니다.');
     err.status = 403;
     err.code = 'SALE_DISABLED';
@@ -227,7 +238,20 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
   }
   const promotions = await loadPromotions();
   const currencyWanted = regionCode === 'KR' ? 'KRW' : 'USD';
-  let charge = catalogEngine.computeCharge(hydrated, promotions, new Date(), currencyWanted);
+  let fxMeta = null;
+  let charge;
+  if (currencyWanted === 'USD') {
+    fxMeta = await fxRate.getUsdKrwRate(db);
+    if (!fxMeta.ok) {
+      const err = new Error(fxMeta.message || fxRate.FX_UNAVAILABLE_MESSAGE);
+      err.status = 503;
+      err.code = 'FX_UNAVAILABLE';
+      throw err;
+    }
+    charge = catalogEngine.computeCharge(hydrated, promotions, new Date(), 'USD', { fxRate: fxMeta.rate });
+  } else {
+    charge = catalogEngine.computeCharge(hydrated, promotions, new Date(), 'KRW');
+  }
   const regions = data.regions || {};
   const region = regions[regionCode] || (regionCode === 'KR' ? null : regions.Global) || regions.KR || {};
   if (charge.ok && !charge.discount && currencyWanted === 'KRW') {
@@ -256,10 +280,13 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
       charge.discountPercent = catalogEngine.displayDiscountPercent(charge.basePrice, charge.effectivePrice);
     }
   }
-  if (currencyWanted === 'USD' && (!charge.ok || charge.code === 'USD_UNSET')) {
-    return envPayPalFallback();
-  }
   if (!charge.ok || !Number.isFinite(Number(charge.effectivePrice)) || Number(charge.effectivePrice) <= 0) {
+    if (charge && charge.code === 'FX_UNAVAILABLE') {
+      const err = new Error(fxRate.FX_UNAVAILABLE_MESSAGE);
+      err.status = 503;
+      err.code = 'FX_UNAVAILABLE';
+      throw err;
+    }
     // Existing Firestore docs must not silently fall back to env Lifetime amount.
     if (snap.exists) {
       const err = new Error('상품 가격을 계산할 수 없습니다. Admin catalog의 listPriceKrw를 확인하세요.');
@@ -267,7 +294,11 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
       err.code = 'PRICE_INVALID';
       throw err;
     }
-    return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
+    if (regionCode === 'KR') return envKrFallback();
+    const err = new Error('상품 가격을 계산할 수 없습니다.');
+    err.status = 500;
+    err.code = 'PRICE_INVALID';
+    throw err;
   }
   const currency = String(region.currency || (regionCode === 'KR' ? 'KRW' : 'USD')).toUpperCase();
   const orderName = region.orderName || hydrated.orderNameKo || data.name || data.orderNameKo || 'MidiAI Studio Lifetime License';
@@ -292,7 +323,14 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     orderName,
     currency,
     discountPercent: charge.discountPercent || 0,
-    promotionId: (charge.discount && charge.discount.promotionId) || ''
+    promotionId: (charge.discount && charge.discount.promotionId) || charge.promotionId || '',
+    listPriceKrw: Number(charge.listPriceKrw || hydrated.listPriceKrw || 0),
+    effectivePriceKrw: Number(charge.effectivePriceKrw || (currencyWanted === 'KRW' ? salePrice : 0)),
+    creditAmount: Number(hydrated.creditAmount || charge.creditAmount || 0),
+    fxRate: fxMeta ? fxMeta.rate : null,
+    fxSource: fxMeta ? fxMeta.source : '',
+    fxFetchedAt: fxMeta ? fxMeta.fetchedAt : '',
+    fxCache: fxMeta ? fxMeta.cache : ''
   };
   if (regionCode === 'KR' || region.payment === 'portone') {
     return {
@@ -303,8 +341,13 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
         orderName,
         hydrated.orderNameKo,
         hydrated.orderNameEn,
+        hydrated.nameKo,
+        hydrated.nameEn,
+        hydrated.nameJa,
         data.orderNameKo,
         data.orderNameEn,
+        data.nameKo,
+        data.nameEn,
         'MidiAI Studio Lifetime License',
         'MidiAI Studio Lifetime 디지털 라이선스',
         cfg('PORTONE_ORDER_NAME', orderName)
@@ -630,7 +673,8 @@ exports.createPurchaseQuote = functions.https.onRequest(async (req, res) => {
       });
     }
     const docId = catalogEngine.firestoreDocId(pid);
-    const product = await loadRegionCharge('KR', docId);
+    const currencyWanted = String((req.body || {}).currency || 'KRW').toUpperCase() === 'USD' ? 'USD' : 'KRW';
+    const product = await loadRegionCharge(currencyWanted === 'USD' ? 'Global' : 'KR', docId);
     // Never trust client durationDays — catalog/seed only.
     const durationDays = catalogEngine.isPassProductId(pid)
       ? passEntitlement.passDurationDays(pid, product.durationDays)
@@ -638,16 +682,24 @@ exports.createPurchaseQuote = functions.https.onRequest(async (req, res) => {
     const now = new Date();
     const expires = catalogEngine.quoteExpiry(now);
     const quoteRef = db.collection('purchaseQuotes').doc();
+    const isUsd = String(product.currency || currencyWanted).toUpperCase() === 'USD';
     const quote = {
       quoteId: quoteRef.id,
       uid: user.uid,
       productId: pid,
       productVersion: Number(product.pricingVersion || 1),
+      pricingVersion: Number(product.pricingVersion || 1),
       basePrice: product.listPrice,
       discountType: product.discountPercent ? 'percent' : '',
       discountValue: product.discountPercent || 0,
-      finalPrice: Number(product.amount),
-      currency: 'KRW',
+      finalPrice: isUsd ? Number(product.amount) : Number(product.amount),
+      currency: isUsd ? 'USD' : 'KRW',
+      listPriceKrw: Number(product.listPriceKrw || (isUsd ? 0 : product.listPrice) || 0),
+      effectivePriceKrw: Number(product.effectivePriceKrw || (isUsd ? 0 : product.amount) || 0),
+      fxRate: isUsd ? Number(product.fxRate || 0) : null,
+      fxSource: isUsd ? (product.fxSource || '') : '',
+      fxFetchedAt: isUsd ? (product.fxFetchedAt || '') : '',
+      payAmountUsd: isUsd ? Number(product.amount) : null,
       creditAmount: 0,
       entitlement: product.entitlement || (catalogEngine.isPassProductId(pid) ? 'full_pass' : 'lifetime'),
       durationDays,
@@ -666,6 +718,27 @@ exports.createPurchaseQuote = functions.https.onRequest(async (req, res) => {
     });
   }
 });
+
+const creditPurchase = require('./creditPurchase');
+const creditHandlers = creditPurchase.createHandlers({
+  db,
+  admin,
+  cors,
+  requireUser,
+  loadRegionCharge,
+  fetchPortOnePayment,
+  parsePortOneCustomData,
+  normalizeCurrency,
+  catalogEngine,
+  userNotify
+});
+exports.createCreditPurchaseQuote = functions.https.onRequest(creditHandlers.createCreditPurchaseQuote);
+exports.creditPortOnePurchase = functions.https.onRequest(creditHandlers.creditPortOnePurchase);
+exports.creditPortOnePointPurchase = functions.https.onRequest(creditHandlers.creditPortOnePurchase);
+exports.getCreditBalance = functions.https.onRequest(creditHandlers.getCreditBalance);
+exports.getPointBalance = functions.https.onRequest(creditHandlers.getCreditBalance);
+exports.listCreditLedger = functions.https.onRequest(creditHandlers.listCreditLedger);
+exports.listPointLedger = functions.https.onRequest(creditHandlers.listCreditLedger);
 
 /**
  * Release purchase lock after cancel/close (optional client call).
@@ -700,16 +773,54 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
         message: '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.'
       });
     }
-    let product;
-    try {
-      product = await serverProduct();
-    } catch (prodErr) {
-      return res.status(prodErr.status || 400).json({
+    const body = req.body || {};
+    const quoteId = String(body.quoteId || '').trim();
+    const requestedPid = catalogEngine.normalizeProductId(body.productId || '');
+    if (!quoteId) {
+      return res.status(400).json({
         ok: false,
-        code: prodErr.code || 'PRODUCT_UNAVAILABLE',
-        message: prodErr.message || '상품을 구매할 수 없습니다.'
+        code: 'QUOTE_REQUIRED',
+        message: '결제 견적이 필요합니다. 구매 창을 닫은 뒤 다시 시도해 주세요.'
       });
     }
+    const quoteSnap = await db.collection('purchaseQuotes').doc(quoteId).get();
+    if (!quoteSnap.exists) {
+      return res.status(400).json({
+        ok: false,
+        code: 'QUOTE_MISSING',
+        message: '결제 견적을 찾을 수 없습니다. 다시 시도해 주세요.'
+      });
+    }
+    const quote = { quoteId: quoteSnap.id, ...quoteSnap.data() };
+    const quotePid = catalogEngine.normalizeProductId(quote.productId || requestedPid || 'LIFETIME');
+    const quoteCheck = catalogEngine.quoteIsValid(quote, { uid: user.uid, productId: quotePid });
+    if (catalogEngine.isCreditProductId(quotePid) || Number(quote.creditAmount) > 0
+        || quote.type === 'credit_pack' || quote.type === 'credit_pack') {
+      return res.status(400).json({
+        ok: false,
+        code: 'CREDIT_PAYPAL_DISABLED',
+        message: 'Credit packs are not available on PayPal yet.'
+      });
+    }
+    if (!quoteCheck.ok) {
+      return res.status(400).json({
+        ok: false,
+        code: quoteCheck.code || 'QUOTE_INVALID',
+        message: '결제 견적이 만료되었거나 유효하지 않습니다. 다시 시도해 주세요.'
+      });
+    }
+    if (String(quote.currency || '').toUpperCase() !== 'USD') {
+      return res.status(400).json({
+        ok: false,
+        code: 'QUOTE_CURRENCY',
+        message: 'PayPal 결제 통화가 올바르지 않습니다.'
+      });
+    }
+    const payUsd = Number(quote.payAmountUsd != null ? quote.payAmountUsd : quote.finalPrice);
+    if (!Number.isFinite(payUsd) || payUsd <= 0) {
+      return res.status(400).json({ ok: false, code: 'QUOTE_AMOUNT', message: '결제 금액이 올바르지 않습니다.' });
+    }
+    const amountValue = fxRate.formatUsd(payUsd).replace('$', '') || Number(payUsd).toFixed(2);
     const accessToken = await paypalAccessToken();
     const orderRef = db.collection('orders').doc();
     const payload = {
@@ -717,10 +828,10 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
       purchase_units: [{
         reference_id: orderRef.id,
         custom_id: user.uid,
-        description: `MidiAI Studio ${product.plan} license`,
+        description: `MidiAI Studio ${quotePid} license`,
         amount: {
-          currency_code: product.currency,
-          value: String(product.amount)
+          currency_code: 'USD',
+          value: amountValue
         }
       }],
       application_context: {
@@ -745,20 +856,30 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
       uid: user.uid,
       email: user.email || '',
       paypalOrderId: data.id,
-      amount: Number(product.amount),
-      currency: product.currency,
-      plan: product.plan,
-      productId: product.productDocId || DEFAULT_PRODUCT_DOC,
-      productName: product.productName || 'Lifetime License',
-      region: product.region || 'Global',
-      pricingVersion: product.pricingVersion || 0,
+      quoteId,
+      amount: Number(amountValue),
+      currency: 'USD',
+      plan: catalogEngine.isPassProductId(quotePid) ? 'period' : 'lifetime',
+      productId: quotePid,
+      productCanonicalId: quotePid,
+      productName: quotePid,
+      region: 'Global',
+      pricingVersion: Number(quote.pricingVersion || quote.productVersion || 0),
+      listPriceKrw: Number(quote.listPriceKrw || 0),
+      effectivePriceKrw: Number(quote.effectivePriceKrw || 0),
+      fxRate: Number(quote.fxRate || 0),
+      fxSource: quote.fxSource || '',
+      fxFetchedAt: quote.fxFetchedAt || '',
+      payAmountUsd: Number(amountValue),
+      chargedUsd: Number(amountValue),
+      promotionId: quote.promotionId || '',
       provider: 'paypal',
       status: 'created',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    return res.json({ ok: true, id: data.id, orderDocId: orderRef.id });
+    return res.json({ ok: true, id: data.id, orderDocId: orderRef.id, amount: amountValue, currency: 'USD' });
   } catch (err) {
     console.error('createPayPalOrder', err);
     return res.status(err.status || 500).json({ ok: false, message: err.message || 'createPayPalOrder failed' });
@@ -772,16 +893,6 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
     const user = await requireUser(req);
     const { orderId } = req.body || {};
     if (!orderId) return res.status(400).json({ ok: false, message: 'orderId가 없습니다.' });
-    let product;
-    try {
-      product = await serverProduct();
-    } catch (prodErr) {
-      return res.status(prodErr.status || 400).json({
-        ok: false,
-        code: prodErr.code || 'PRODUCT_UNAVAILABLE',
-        message: prodErr.message || '상품을 구매할 수 없습니다.'
-      });
-    }
     const accessToken = await paypalAccessToken();
 
     const orderQuery = await db.collection('orders')
@@ -811,8 +922,82 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
     const capture = data.purchase_units?.[0]?.payments?.captures?.[0] || {};
     const paidValue = capture.amount?.value || data.purchase_units?.[0]?.amount?.value;
     const paidCurrency = capture.amount?.currency_code || data.purchase_units?.[0]?.amount?.currency_code;
-    if (String(paidCurrency) !== String(product.currency) || Number(paidValue) < Number(product.amount)) {
-      return res.status(400).json({ ok: false, message: '결제 금액 또는 통화가 일치하지 않습니다.', detail: { paidValue, paidCurrency, expected: product } });
+    const expectedUsd = Number(existing.payAmountUsd != null ? existing.payAmountUsd : existing.amount);
+    const expectedCurrency = String(existing.currency || 'USD').toUpperCase();
+    const quoteId = String(existing.quoteId || '').trim();
+    if (quoteId) {
+      const quoteSnap = await db.collection('purchaseQuotes').doc(quoteId).get();
+      if (!quoteSnap.exists) {
+        return res.status(400).json({ ok: false, code: 'QUOTE_MISSING', message: '결제 견적을 찾을 수 없습니다.' });
+      }
+      const quote = { quoteId: quoteSnap.id, ...quoteSnap.data() };
+      const qPid = catalogEngine.normalizeProductId(quote.productId || existing.productId);
+      const qCheck = catalogEngine.quoteIsValid(quote, { uid: user.uid, productId: qPid });
+      if (!qCheck.ok && quote.status !== 'used') {
+        return res.status(400).json({
+          ok: false,
+          code: qCheck.code || 'QUOTE_INVALID',
+          message: '결제 견적이 만료되었거나 유효하지 않습니다.'
+        });
+      }
+      if (String(quote.uid || '') !== String(user.uid)) {
+        return res.status(403).json({ ok: false, code: 'QUOTE_UID_MISMATCH', message: '결제 견적 사용자가 일치하지 않습니다.' });
+      }
+      if (String(quote.currency || '').toUpperCase() !== 'USD') {
+        return res.status(400).json({ ok: false, code: 'QUOTE_CURRENCY', message: 'PayPal 결제 통화가 올바르지 않습니다.' });
+      }
+      const quoteUsd = Number(quote.payAmountUsd != null ? quote.payAmountUsd : quote.finalPrice);
+      if (!fxRate.usdAmountsEqual(quoteUsd, expectedUsd)) {
+        return res.status(400).json({ ok: false, code: 'QUOTE_AMOUNT_MISMATCH', message: '견적 금액이 주문과 일치하지 않습니다.' });
+      }
+    }
+    if (String(paidCurrency || '').toUpperCase() !== expectedCurrency || !fxRate.usdAmountsEqual(paidValue, expectedUsd)) {
+      return res.status(400).json({
+        ok: false,
+        message: '결제 금액 또는 통화가 일치하지 않습니다.',
+        detail: { paidValue, paidCurrency, expectedUsd, expectedCurrency }
+      });
+    }
+
+    const pid = catalogEngine.normalizeProductId(existing.productCanonicalId || existing.productId || 'LIFETIME');
+    const isPass = catalogEngine.isPassProductId(pid);
+    const licenseRef = db.collection('licenses').doc(user.uid);
+    const licenseSnap = await licenseRef.get();
+    const licenseData = licenseSnap.exists ? licenseSnap.data() : null;
+    let licensePayload;
+    if (isPass) {
+      const durationDays = passEntitlement.passDurationDays(pid, existing.durationDays);
+      licensePayload = passEntitlement.buildPassLicensePayload({
+        user: { uid: user.uid, email: user.email || existing.email || '', name: user.name || '' },
+        passProductId: pid,
+        durationDays,
+        existingLicense: licenseData,
+        method: 'paypal',
+        memo: `PayPal 자동 지급 · order ${orderId}`,
+        extra: {
+          paypalOrderId: orderId,
+          paypalCaptureId: capture.id || '',
+          lastPurchaseProductId: pid,
+          lastPurchaseEvent: 'PASS_PURCHASE'
+        },
+        FieldValue: admin.firestore.FieldValue,
+        Timestamp: admin.firestore.Timestamp
+      });
+    } else {
+      licensePayload = lifetimeLicensePayload({
+        user: { email: user.email || existing.email || '', name: user.name || '' },
+        plan: 'lifetime',
+        method: 'paypal',
+        memo: `PayPal 자동 지급 · order ${orderId}`,
+        extra: {
+          paypalOrderId: orderId,
+          paypalCaptureId: capture.id || '',
+          passProductId: admin.firestore.FieldValue.delete(),
+          expiresAt: admin.firestore.FieldValue.delete(),
+          startsAt: admin.firestore.FieldValue.delete(),
+          expireReason: admin.firestore.FieldValue.delete()
+        }
+      });
     }
 
     const batch = db.batch();
@@ -822,30 +1007,57 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
       paypalCaptureId: capture.id || '',
       payerEmail: data.payer?.email_address || '',
       payerName: [data.payer?.name?.surname, data.payer?.name?.given_name].filter(Boolean).join(' '),
+      chargedUsd: Number(paidValue),
+      chargedCurrency: String(paidCurrency || 'USD').toUpperCase(),
       completedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       rawStatus: data.status
     }, { merge: true });
-    batch.set(
-      db.collection('licenses').doc(user.uid),
-      lifetimeLicensePayload({
-        user: { email: user.email || existing.email || '', name: user.name || '' },
-        plan: product.plan,
-        method: 'paypal',
-        memo: `PayPal 자동 지급 · order ${orderId}`,
-        extra: {
-          paypalOrderId: orderId,
-          paypalCaptureId: capture.id || ''
-        }
-      }),
-      { merge: true }
-    );
+    batch.set(licenseRef, licensePayload, { merge: true });
+    if (quoteId) {
+      batch.set(db.collection('purchaseQuotes').doc(quoteId), {
+        status: 'used',
+        usedAt: admin.firestore.FieldValue.serverTimestamp(),
+        paypalOrderId: orderId,
+        paypalCaptureId: capture.id || ''
+      }, { merge: true });
+    }
     await batch.commit();
 
     return res.json({ ok: true, orderId, captureId: capture.id || '', licenseGranted: true });
   } catch (err) {
     console.error('capturePayPalOrder', err);
     return res.status(err.status || 500).json({ ok: false, message: err.message || 'capturePayPalOrder failed' });
+  }
+});
+
+/** Public cached FX for catalog/admin preview. Never accepts a client rate. */
+exports.getPublicFxRate = functions.https.onRequest(async (req, res) => {
+  if (cors(req, res, 'GET, OPTIONS')) return;
+  if (req.method !== 'GET') return res.status(405).json({ ok: false, message: 'GET only' });
+  try {
+    const fx = await fxRate.getUsdKrwRate(db);
+    if (!fx.ok) {
+      return res.status(503).json({
+        ok: false,
+        code: 'FX_UNAVAILABLE',
+        message: fx.message || fxRate.FX_UNAVAILABLE_MESSAGE
+      });
+    }
+    return res.json({
+      ok: true,
+      rate: fx.rate,
+      source: fx.source,
+      fetchedAt: fx.fetchedAt,
+      cache: fx.cache
+    });
+  } catch (err) {
+    console.error('getPublicFxRate', err);
+    return res.status(503).json({
+      ok: false,
+      code: 'FX_UNAVAILABLE',
+      message: fxRate.FX_UNAVAILABLE_MESSAGE
+    });
   }
 });
 

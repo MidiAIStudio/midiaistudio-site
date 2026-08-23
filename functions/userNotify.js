@@ -80,6 +80,30 @@ async function notifyPaymentComplete(db, FieldValue, {
   });
 }
 
+async function notifyCreditGranted(db, FieldValue, {
+  uid,
+  paymentId,
+  productId,
+  creditAmount,
+  amount,
+  currency
+}) {
+  if (!uid || !paymentId) return { created: false };
+  const n = Math.round(Number(creditAmount || 0));
+  const amt = moneyLabel(amount, currency);
+  return writeUserNotification(db, FieldValue, uid, `credit_granted_${paymentId}`, {
+    type: 'credit_granted',
+    sourceType: 'credit_purchase',
+    sourceId: paymentId,
+    paymentId,
+    category: 'payment',
+    plan: 'credits',
+    postTitle: '크레딧 지급 완료',
+    preview: [`${n} Credits가 지급되었습니다.`, amt ? `(${amt})` : ''].filter(Boolean).join(' ').slice(0, 160),
+    targetUrl: '/account.html#credits'
+  });
+}
+
 async function notifyPaymentRefund(db, FieldValue, {
   uid,
   paymentId,
@@ -167,6 +191,7 @@ async function maybeNotifyFromRefundSync(db, FieldValue, syncResult) {
 module.exports = {
   writeUserNotification,
   notifyPaymentComplete,
+  notifyCreditGranted,
   notifyPaymentRefund,
   maybeNotifyFromRefundSync,
   productLabel

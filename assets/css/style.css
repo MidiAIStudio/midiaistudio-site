@@ -750,6 +750,19 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-crm-title-row h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.03em;color:#f7f8ff}
 .admin-page .admin-crm-email{margin:0;font-size:12px;color:#9aa3c7}
 .admin-page .admin-crm-uid{margin:2px 0 0;font-size:10px;color:#6f7694;letter-spacing:.01em}
+.admin-page .admin-id-pair,
+.admin-console-page .admin-id-pair{
+  display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline
+}
+.admin-page .admin-id-item,
+.admin-console-page .admin-id-item{
+  font-size:11px;color:#8b93b3;line-height:1.45
+}
+.admin-page .admin-id-item code.mono,
+.admin-console-page .admin-id-item code.mono{
+  word-break:break-all;font-size:11px;color:#c9d0ea
+}
+.admin-page .admin-crm-hwid-inline .admin-id-pair{flex:none}
 .admin-page .admin-crm-header-meta{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:6px;font-size:11px;color:#8b93b3}
 .admin-page .admin-crm-header-meta em{font-style:normal;color:#6f7694;margin-right:4px;font-weight:600;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
 .admin-page .admin-crm-avatar{width:42px;height:42px;border-radius:11px;object-fit:cover;background:rgba(255,255,255,.08);border:1px solid var(--crm-line)}
@@ -1351,7 +1364,22 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .portal-page .portal-account-head p{margin:0 0 8px;color:var(--muted);font-size:13px}
 .portal-page .portal-account-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .portal-page .portal-account-grid .stat-card{padding:12px 14px;border-radius:16px}
-/* Account page dashboard — compact density */
+/* Account page dashboard — LICENSE card is the canonical visual reference */
+.account-page{
+  --account-section-label-size:12px;
+  --account-primary-size:16px;
+  --account-body-size:13px;
+  --account-label-size:11px;
+  --account-row-pad-y:5px;
+  --account-card-padding:12px;
+  --account-card-radius:14px;
+  --account-control-height:34px;
+  --account-heading-margin:8px;
+  --account-separator:rgba(255,255,255,.05);
+  --account-label-color:#8b93b3;
+  --account-value-color:#f3f4ff;
+  --account-section-color:rgba(184,189,216,.9)
+}
 .account-page .hub-post-shell{width:min(820px,calc(100% - 24px))}
 .account-page .hub-shell{padding-top:12px}
 .account-page .hub-topline{align-items:center;margin-bottom:10px;gap:10px}
@@ -1359,11 +1387,11 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .account-page .hub-topline h1{margin:4px 0 0;font-size:clamp(22px,2.6vw,28px)}
 .account-page .hub-desc{margin:4px 0 0;font-size:12px;line-height:1.4;max-width:420px}
 .account-page .hub-card,
-.account-page.portal-page.hub-page .hub-card{padding:12px!important;border-radius:14px!important}
+.account-page.portal-page.hub-page .hub-card{padding:var(--account-card-padding)!important;border-radius:var(--account-card-radius)!important}
 .account-page .account-profile-card .portal-account-head{margin-bottom:0;padding-bottom:0;border-bottom:0;flex-wrap:wrap;gap:10px}
 .account-page .account-profile-meta{flex:1;min-width:160px}
-.account-page .portal-account-head b{font-size:15px!important;margin-bottom:2px!important}
-.account-page .portal-account-head p{margin:0!important;font-size:12px!important;line-height:1.35}
+.account-page .portal-account-head b{font-size:var(--account-primary-size)!important;font-weight:900;margin-bottom:2px!important;letter-spacing:-.03em;line-height:1.2}
+.account-page .portal-account-head p{margin:0!important;font-size:var(--account-body-size)!important;line-height:1.35;color:var(--account-label-color)}
 .account-page .portal-avatar{width:40px!important;height:40px!important;border-radius:12px!important;font-size:15px!important}
 .account-page .account-profile-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .account-page .account-chip{
@@ -1388,40 +1416,69 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .account-page .portal-avatar img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
 .account-page .account-dashboard{margin-top:8px}
 .account-page .account-dashboard-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:stretch}
-.account-page .account-panel{display:flex;flex-direction:column;min-height:0;padding:12px!important}
+.account-page .account-panel{display:flex;flex-direction:column;min-height:0;padding:var(--account-card-padding)!important;border-radius:var(--account-card-radius)!important}
 .account-page .account-panel-full{grid-column:1/-1}
-.account-page .account-panel-head{display:flex;align-items:center;gap:6px;margin:0 0 8px}
-.account-page .account-panel-head h2{margin:0;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgba(184,189,216,.9)}
+.account-page .account-panel-head{display:flex;align-items:center;gap:6px;margin:0 0 var(--account-heading-margin)}
+.account-page .account-panel-head h2{margin:0;font-size:var(--account-section-label-size);font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--account-section-color);line-height:1.2}
 .account-page .account-panel-icon{font-size:13px;line-height:1;opacity:.85}
 .account-page .account-panel-body{display:grid;gap:6px;flex:1}
-.account-page .account-license-title{margin:0 0 2px;font-size:16px;font-weight:900;letter-spacing:-.03em;color:#fff;line-height:1.2}
-.account-page .account-field{display:grid;grid-template-columns:92px minmax(0,1fr);gap:6px 10px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);min-width:0}
+.account-page .account-license-title{margin:0 0 2px;font-size:var(--account-primary-size);font-weight:900;letter-spacing:-.03em;color:#fff;line-height:1.2}
+.account-page .account-field{display:grid;grid-template-columns:92px minmax(0,1fr);gap:6px 10px;align-items:baseline;padding:var(--account-row-pad-y) 0;border-bottom:1px solid var(--account-separator);min-width:0}
 .account-page .account-field:last-child{border-bottom:0;padding-bottom:0}
-.account-page .account-field-label{font-size:11px;font-weight:700;color:#8b93b3;letter-spacing:.02em;text-transform:none}
-.account-page .account-field-value{font-size:13px;font-weight:700;color:#f3f4ff;letter-spacing:-.01em;word-break:break-all;overflow-wrap:anywhere;text-align:right;min-width:0}
+.account-page .account-field-label{font-size:var(--account-label-size);font-weight:700;color:var(--account-label-color);letter-spacing:.02em;text-transform:none;line-height:1.35}
+.account-page .account-field-value{font-size:var(--account-body-size);font-weight:700;color:var(--account-value-color);letter-spacing:-.01em;word-break:break-all;overflow-wrap:anywhere;text-align:right;min-width:0;line-height:1.35}
 .account-page .account-panel-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
-.account-page .account-panel-actions .mini-btn{padding:7px 10px;font-size:12px;border-radius:10px}
+.account-page .account-btn,
+.account-page .hub-actions .mini-btn,
+.account-page .account-panel-actions .mini-btn,
+.account-page .account-support-link{
+  box-sizing:border-box;
+  height:var(--account-control-height)!important;
+  min-height:var(--account-control-height)!important;
+  padding:0 10px!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  letter-spacing:0;
+  border-radius:10px!important;
+  line-height:1!important;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transform:none!important
+}
+.account-page .account-btn-primary,
+.account-page .hub-actions .primary.mini-btn,
+.account-page .account-panel-actions .primary.mini-btn{
+  border:1px solid rgba(139,92,246,.45)
+}
+.account-page .account-btn-secondary,
+.account-page .hub-actions .secondary.mini-btn,
+.account-page .account-panel-actions .secondary.mini-btn,
+.account-page .account-panel-actions .ghost.mini-btn{
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05)
+}
 .account-page #accountHeroCta.is-status{background:rgba(167,139,250,.14)!important;border:1px solid rgba(167,139,250,.32);color:#ddd6fe;pointer-events:none;opacity:.95}
-.account-page .account-credit-kicker{margin:0;font-size:11px;font-weight:700;color:#8b93b3;letter-spacing:.02em}
+.account-page .account-credit-kicker{margin:0;font-size:var(--account-label-size);font-weight:700;color:var(--account-label-color);letter-spacing:.02em;line-height:1.35}
 .account-page .account-credit-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
-.account-page .account-credit-list li{display:grid;grid-template-columns:72px minmax(0,1fr) 40px 28px;gap:4px 8px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:12px}
+.account-page .account-credit-list li{display:grid;grid-template-columns:72px minmax(0,1fr) 40px 28px;gap:4px 8px;align-items:center;padding:var(--account-row-pad-y) 0;border-bottom:1px solid var(--account-separator);font-size:var(--account-body-size)}
 .account-page .account-credit-list li:last-child{border-bottom:0}
-.account-page .account-credit-when{color:#8b93b3;font-size:11px;white-space:nowrap}
-.account-page .account-credit-title{color:#eef0ff;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.account-page .account-credit-when{color:var(--account-label-color);font-size:var(--account-label-size);white-space:nowrap}
+.account-page .account-credit-title{color:var(--account-value-color);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .account-page .account-credit-delta{text-align:right;font-variant-numeric:tabular-nums}
-.account-page .account-credit-delta.is-plus,.account-credit-table td.is-plus{color:#6ee7b7}
-.account-page .account-credit-delta.is-minus,.account-credit-table td.is-minus{color:#fda4af}
-.account-page .account-credit-after{color:#8b93b3;font-size:10px;font-style:normal;text-align:right}
-.account-page .account-orders-count{margin-left:auto;font-size:11px;font-weight:800;color:#8b93b3;letter-spacing:0;text-transform:none}
-.account-page .account-orders-empty{margin:0}
+.account-page .account-credit-delta.is-plus,.account-credit-table td.is-plus,.credit-history-delta.is-plus{color:#6ee7b7}
+.account-page .account-credit-delta.is-minus,.account-credit-table td.is-minus,.credit-history-delta.is-minus{color:#fda4af}
+.account-page .account-credit-after{color:var(--account-label-color);font-size:10px;font-style:normal;text-align:right}
+.account-page .account-orders-count{margin-left:auto;font-size:var(--account-label-size);font-weight:800;color:var(--account-label-color);letter-spacing:0;text-transform:none}
+.account-page .account-orders-empty{margin:0;font-size:var(--account-body-size);color:var(--account-label-color)}
 .account-page .account-orders-list{list-style:none;margin:0;padding:0;display:grid;gap:0}
-.account-page .account-order-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.account-page .account-order-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:var(--account-row-pad-y) 0;border-bottom:1px solid var(--account-separator)}
 .account-page .account-order-row:last-child{border-bottom:0;padding-bottom:0}
 .account-page .account-order-main{min-width:0;display:grid;gap:2px}
-.account-page .account-order-main b{color:#fff;font-size:13px;font-weight:800;letter-spacing:-.02em}
-.account-page .account-order-main span{color:#8b93b3;font-size:11px}
+.account-page .account-order-main b{color:#fff;font-size:var(--account-body-size);font-weight:700;letter-spacing:-.02em;line-height:1.35}
+.account-page .account-order-main span{color:var(--account-label-color);font-size:var(--account-label-size);line-height:1.35}
 .account-page .account-order-side{flex:none;display:grid;gap:3px;justify-items:end;text-align:right}
-.account-page .account-order-side strong{color:#f3f4ff;font-size:13px;font-variant-numeric:tabular-nums}
+.account-page .account-order-side strong{color:var(--account-value-color);font-size:var(--account-body-size);font-variant-numeric:tabular-nums;font-weight:700}
 .account-page .account-order-status{font-size:10px;font-weight:800;font-style:normal;padding:2px 7px;border-radius:999px;line-height:1.4}
 .account-page .account-order-status.is-paid{background:rgba(52,211,153,.14);color:#6ee7b7}
 .account-page .account-order-status.is-refund{background:rgba(148,163,184,.12);color:#94a3b8}
@@ -1431,7 +1488,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .account-page .account-panel-orders .account-panel-head{width:100%}
 @media(max-width:720px){
   .account-page .account-order-row{gap:8px}
-  .account-page .account-order-main b,.account-page .account-order-side strong{font-size:12px}
+  .account-page .account-order-main b,.account-page .account-order-side strong{font-size:var(--account-body-size)}
 }
 .account-page .account-credit-refresh{margin-left:auto;width:26px;height:26px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#d7dbf2;cursor:pointer;font-size:13px;line-height:1}
 .account-page .account-credit-refresh:hover{background:rgba(255,255,255,.08)}
@@ -1439,12 +1496,60 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .account-credit-table th{text-align:left;color:#8b93b3;font-size:11px;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.1)}
 .account-credit-table td{padding:7px 4px;border-bottom:1px solid rgba(255,255,255,.06);color:#eef0ff;vertical-align:top}
 .account-credit-table td:nth-child(3),.account-credit-table td:nth-child(4),.account-credit-table th:nth-child(3),.account-credit-table th:nth-child(4){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.credit-history-backdrop{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;background:rgba(0,0,0,.62);backdrop-filter:blur(8px);padding:16px}
-.credit-history-modal{width:min(640px,100%);max-height:min(84vh,720px);overflow:auto;border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(28,32,52,.98),rgba(12,14,26,.98));border-radius:18px;padding:16px 16px 12px;box-shadow:0 24px 80px rgba(0,0,0,.5)}
-.credit-history-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.credit-history-head h3{margin:0;font-size:16px}
-.credit-history-x{width:32px;height:32px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font-size:20px;cursor:pointer}
-.credit-history-body{min-height:80px}
+html.credit-history-open,
+html.credit-history-open body{overflow:hidden!important}
+.credit-history-backdrop{
+  position:fixed!important;
+  inset:0!important;
+  left:0!important;
+  top:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  margin:0!important;
+  transform:none!important;
+  z-index:12000!important;
+  display:grid!important;
+  place-items:center!important;
+  align-items:center!important;
+  justify-items:center!important;
+  background:rgba(0,0,0,.62);
+  backdrop-filter:blur(8px);
+  padding:16px;
+  box-sizing:border-box
+}
+.credit-history-modal{
+  width:min(520px,100%);
+  max-height:min(84vh,720px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg,rgba(28,32,52,.98),rgba(12,14,26,.98));
+  border-radius:14px;
+  padding:12px;
+  box-shadow:0 24px 80px rgba(0,0,0,.5)
+}
+.credit-history-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.credit-history-head h3{margin:0;font-size:16px;font-weight:900;letter-spacing:-.03em;line-height:1.2;color:#fff}
+.credit-history-x{width:32px;height:32px;flex:none;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;font-size:20px;line-height:1;cursor:pointer}
+.credit-history-balance{display:grid;grid-template-columns:92px minmax(0,1fr);gap:6px 10px;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:4px}
+.credit-history-balance-label{font-size:11px;font-weight:700;color:#8b93b3}
+.credit-history-balance-value{font-size:13px;font-weight:700;color:#f3f4ff;text-align:right}
+.credit-history-body{min-height:80px;overflow:auto;flex:1}
+.credit-history-ul{list-style:none;margin:0;padding:0}
+.credit-history-ul li{
+  display:grid;
+  grid-template-columns:72px minmax(0,1fr) auto;
+  gap:8px;
+  align-items:center;
+  padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  font-size:13px
+}
+.credit-history-ul li:last-child{border-bottom:0}
+.credit-history-when{color:#8b93b3;font-size:11px;white-space:nowrap}
+.credit-history-title{color:#f3f4ff;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.credit-history-delta{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
 .credit-history-actions{display:flex;justify-content:flex-end;margin-top:10px}
 .topbar-profile-panel{width:min(228px,calc(100vw - 20px))}
 .topbar-profile-credit{display:grid;gap:6px;margin:0;padding:8px;border-bottom:1px solid rgba(255,255,255,.08)}
@@ -1455,7 +1560,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .topbar-profile-credit-buy{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:4px 8px;border-radius:8px;border:1px solid rgba(139,92,246,.4);background:rgba(139,92,246,.14);color:#ddd6fe;font-size:11px;font-weight:800;text-decoration:none}
 .topbar-profile-credit-buy:hover{background:rgba(139,92,246,.22);color:#fff}
 .account-page .account-support-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start}
-.account-page .account-support-link{display:flex;align-items:center;justify-content:center;min-height:34px;padding:7px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);color:#e7e9fb;font-size:12px;font-weight:700;text-decoration:none;transition:border-color .15s ease,background .15s ease}
+.account-page .account-support-link{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);color:#e7e9fb;text-decoration:none;transition:border-color .15s ease,background .15s ease}
 .account-page .account-support-link:hover{border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.12);transform:none}
 .account-page .account-dev-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
 .account-page .account-panel-developer{border-color:rgba(251,191,36,.28)!important;background:linear-gradient(180deg,rgba(251,191,36,.08),rgba(255,255,255,.03))!important}
@@ -1464,19 +1569,24 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   .account-page .hub-post-shell{width:calc(100% - 16px)}
   .account-page .account-dashboard-grid,.account-page .account-support-grid,.account-page .account-dev-grid{grid-template-columns:1fr}
   .account-page .account-profile-cta{width:100%;margin-left:0}
-  .account-page .account-profile-cta .mini-btn{width:100%;justify-content:center}
-  .account-page .account-panel{padding:12px!important;overflow:hidden}
+  .account-page .account-profile-cta .mini-btn,.account-page .hub-actions .mini-btn{width:auto;max-width:100%;justify-content:center}
+  .account-page .account-panel{padding:var(--account-card-padding)!important;overflow:hidden}
   .account-page .account-panel-body{min-width:0}
   .account-page .account-field{grid-template-columns:76px minmax(0,1fr);gap:4px 8px}
-  .account-page .account-field-value{font-size:12px;text-align:left}
+  .account-page .account-field-value{text-align:left}
   .account-page .account-dev-grid .account-field{grid-template-columns:1fr;gap:2px}
   .account-page .account-dev-grid .account-field-label{font-size:10px}
   .account-page .account-dev-grid .account-field-value{text-align:left}
   .account-page .account-credit-list li{grid-template-columns:64px minmax(0,1fr) 40px}
   .account-page .account-credit-after{display:none}
+  .credit-history-modal{width:100%;max-height:min(86dvh,720px)}
+  .credit-history-ul li{grid-template-columns:64px minmax(0,1fr) auto}
+  .credit-history-title{white-space:normal}
 }
 
 .portal-page .hub-card{border:1px solid var(--final-stroke)!important;background:var(--final-card)!important;box-shadow:var(--final-shadow)!important;border-radius:22px!important}
+.account-page.portal-page .hub-card,
+.account-page.portal-page.hub-page .hub-card{border-radius:14px!important;padding:12px!important}
 .portal-page.hub-page .hub-card{padding:16px}
 .portal-page .page-grid{display:block!important}
 .portal-page .side-card{display:none!important}
@@ -2131,16 +2241,23 @@ body.is-lifetime-owned .purchase-layout,
 .purchase-bank-mini .purchase-bank-grid{margin:12px 0 10px}
 .purchase-modal-backdrop{position:fixed;inset:0;z-index:10050;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.62);backdrop-filter:blur(10px)}
 .purchase-modal-backdrop.hidden{display:none!important}
-.purchase-modal{width:min(420px,100%);max-height:min(88vh,640px);overflow:auto;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(28,32,52,.98),rgba(12,14,26,.98));padding:18px 18px 16px;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.purchase-modal{width:min(560px,100%);max-height:min(92vh,900px);overflow:auto;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,rgba(28,32,52,.98),rgba(12,14,26,.98));padding:18px 18px 16px;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.purchase-modal.is-paypal{width:min(600px,100%)}
 .purchase-modal h3{margin:0 0 14px;font-size:20px;letter-spacing:-.04em}
 .purchase-modal-rows{margin:0;display:grid;gap:8px}
 .purchase-modal-rows > div{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:start}
 .purchase-modal-rows dt{margin:0;color:var(--muted);font-size:12px;font-weight:700}
 .purchase-modal-rows dd{margin:0;color:#eef2ff;font-size:13px;font-weight:800;word-break:break-all}
 .purchase-modal-lead{margin:12px 0 0;color:#c9d4ee;font-size:13px;line-height:1.5}
-.purchase-modal-actions{display:flex;gap:10px;justify-content:flex-end;align-items:stretch;margin-top:16px}
-.purchase-modal-actions .ghost,.purchase-modal-actions .primary,.purchase-modal-actions a{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 14px;border-radius:12px;text-decoration:none}
-.purchase-modal-actions .purchase-kakao-btn{flex:1;min-height:48px;border-radius:12px!important;font-size:15px!important}
+.purchase-modal-paypal-pane{margin:16px 0 0;width:100%;min-width:0;display:block}
+.purchase-modal-paypal-slot,.purchase-modal-paypal-pane #purchasePayMount,.purchase-modal-paypal-pane #paypalButtons{width:100%;min-width:0;max-width:100%}
+.purchase-modal-paypal-pane iframe{max-width:100%}
+.purchase-modal-paypal-amount{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.03em}
+.purchase-modal-fx-note{margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.45}
+.purchase-modal-actions{display:flex;gap:10px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:16px}
+.purchase-modal-actions .ghost,.purchase-modal-actions .primary,.purchase-modal-actions a{min-height:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0 14px;border-radius:12px;text-decoration:none;align-self:center}
+.purchase-modal-actions .purchase-kakao-btn{flex:1;min-height:48px;height:48px;border-radius:12px!important;font-size:15px!important}
+.purchase-modal-cancel{min-height:44px;height:44px}
 body.is-lifetime-owned .purchase-usage,
 body.is-lifetime-owned .purchase-bank-mini{display:none!important}
 @media(max-width:960px){.purchase-plan-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.purchase-trial-row{grid-template-columns:1fr}.purchase-trial-action{justify-content:flex-start}.purchase-trial-cta{width:100%}}
@@ -3314,6 +3431,12 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .pricing-product-editor .pricing-form-grid{margin:0 0 8px}
 .pricing-form-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .pricing-field-hint{margin:0 0 10px}
+.pricing-usd-preview,.pricing-usd-preview{display:grid;gap:4px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(0,0,0,.22);align-content:center}
+.pricing-usd-kicker,.pricing-usd-kicker{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.pricing-usd-preview strong{font-size:22px;font-weight:800;letter-spacing:-.03em;color:#eef2ff}
+.pricing-usd-preview .muted{margin:0}
+.purchase-plan-fx-note{margin:6px 0 0;color:var(--muted);font-size:11px;font-weight:600;line-height:1.4}
+.purchase-pay-mount,.purchase-paypal-box,#paypalButtons{width:100%;min-width:0;max-height:none;height:auto;overflow:visible}
 .pricing-input-suffix{display:flex;align-items:center;gap:8px}
 .pricing-input-suffix input{flex:1;min-width:0}
 .pricing-suffix-label{flex:none;font-size:12px;font-weight:700;color:var(--muted)}
@@ -3369,9 +3492,23 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .pricing-modal-card{width:min(520px,calc(100vw - 32px));padding:18px;border-radius:14px;border:1px solid var(--site-stroke);background:#121826}
 @media(max-width:1100px){.purchase-plan-grid{grid-template-columns:repeat(3,minmax(200px,1fr))}.pricing-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pricing-list-pane,.pricing-editor-pane{padding:14px;border:1px solid var(--site-stroke);border-radius:16px;background:rgba(0,0,0,.2)}
-.pricing-product-list{display:grid;gap:8px;margin:10px 0 18px}
-.pricing-product-item{display:grid;gap:2px;text-align:left;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:inherit;font:inherit;cursor:pointer}
+.pricing-product-list{display:grid;gap:8px;margin:10px 0 18px;position:relative}
+.pricing-product-item{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:stretch;gap:4px 6px;text-align:left;padding:8px 8px 8px 6px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:inherit;font:inherit;cursor:default}
 .pricing-product-item.is-active{border-color:rgba(34,211,238,.45);background:rgba(34,211,238,.1)}
+.pricing-product-item.is-dragging,.pricing-product-item.is-dragging{opacity:.4}
+.pricing-product-item-body,.pricing-product-item-body{display:grid;gap:2px;min-width:0;margin:0;padding:2px 0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.pricing-drag-handle,.pricing-drag-handle{display:flex;align-items:center;justify-content:center;margin:0;padding:0;width:20px;border:0;background:transparent;color:rgba(148,163,184,.72);cursor:grab;touch-action:none;font-size:13px;line-height:1;user-select:none}
+.pricing-drag-handle:hover,.pricing-drag-handle:hover{color:#e2e8f0}
+.pricing-product-item.is-dragging .pricing-drag-handle,.pricing-product-item.is-dragging .pricing-drag-handle{cursor:grabbing}
+.pricing-reorder-btns{display:grid;gap:2px;align-content:center}
+.pricing-reorder-btn{width:22px;height:18px;margin:0;padding:0;border:0;background:transparent;color:rgba(148,163,184,.75);cursor:pointer;font-size:10px;line-height:1}
+.pricing-reorder-btn:hover{color:#fff}
+.pricing-reorder-btn:disabled{opacity:.28;cursor:default}
+.pricing-drop-indicator,.pricing-drop-indicator{position:absolute;left:8px;right:8px;height:2px;background:#22d3ee;border-radius:2px;pointer-events:none;z-index:2;box-shadow:0 0 8px rgba(34,211,238,.55)}
+.pricing-reorder-status{font-size:11px;font-weight:700;color:rgba(154,242,255,.9);white-space:nowrap}
+.pricing-reorder-status.is-saving{color:#fbbf24}
+.pricing-reorder-status.is-saved{color:#67e8f9}
+.pricing-list-pane.is-reordering,.pricing-product-list.is-reordering,.pricing-product-list.is-reordering{user-select:none}
 .pricing-lang-map{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--site-stroke)}
 .pricing-lang-map label{display:grid;gap:4px;font-size:12px;font-weight:700;color:var(--muted)}
 .pricing-lang-map input,.pricing-form-grid input,.pricing-form-grid select{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.28);color:var(--text);font:inherit}
@@ -3713,6 +3850,7 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
   display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:6px;font-size:12px;color:var(--muted);align-items:center
 }
 .admin-logs-selected-meta .mini-btn{height:22px;min-height:22px;padding:0 7px!important;font-size:11px!important}
+.admin-logs-selected-meta .admin-id-pair{gap:8px 14px}
 .admin-logs-table-foot{display:flex;justify-content:center;padding:8px 0 0}
 .admin-logs-table-foot .mini-btn[hidden]{display:none!important}
 .admin-logs-detail-head{
@@ -4005,13 +4143,38 @@ body.admin-console-page:not([data-admin-view="logs"]):not([data-license-page="hi
 .admin-console-page .admin-license-row .admin-order-caret{flex:none;margin-top:2px}
 .admin-console-page .admin-license-row.is-open .admin-order-caret{transform:rotate(90deg)}
 .admin-console-page .admin-license-row .admin-member-user{display:flex;align-items:center;gap:8px}
+.admin-console-page .admin-license-table{width:100%}
 .admin-console-page .admin-license-table tr.admin-license-expand>td{
-  padding:8px 12px 12px 28px;background:transparent;white-space:normal;height:auto;vertical-align:top
+  padding:8px 12px 12px 12px;background:transparent;white-space:normal!important;height:auto;vertical-align:top;width:100%
 }
 .admin-console-page tr.admin-license-expand[hidden]{display:none!important}
 .admin-console-page .admin-license-expand-inner{
-  max-width:560px;width:100%;display:grid;gap:10px;
+  display:flex;align-items:stretch;gap:12px;
+  width:100%;min-width:100%;max-width:none;box-sizing:border-box;
+  padding:0;border:0;background:transparent
+}
+.admin-console-page .admin-license-expand-col{
+  flex:1 1 0;min-width:0;display:grid;gap:10px;align-content:start;
   padding:12px 14px;border:1px solid var(--admin-stroke);border-radius:10px;background:rgba(255,255,255,.03)
+}
+.admin-console-page .admin-license-credit-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px
+}
+.admin-console-page .admin-license-credit-head h3{
+  margin:0;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#c5cbe4
+}
+.admin-console-page .admin-license-credit-panel .admin-crm-points-quick,
+.admin-console-page .admin-license-credit-panel .admin-crm-points-form{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center
+}
+.admin-console-page .admin-license-credit-panel .admin-crm-points-form input[type="number"]{
+  width:88px;height:var(--admin-control-height);padding:0 10px;border-radius:8px;box-sizing:border-box
+}
+.admin-console-page .admin-license-credit-panel .admin-crm-points-form input[type="text"]{
+  flex:1 1 140px;min-width:120px;height:var(--admin-control-height);padding:0 10px;border-radius:8px;box-sizing:border-box
+}
+@media(max-width:980px){
+  .admin-console-page .admin-license-expand-inner{flex-direction:column;min-width:0}
 }
 .admin-console-page .admin-license-expand-meta{
   display:grid;gap:8px;margin:0;font-size:12px;color:#8b93b3
@@ -4019,7 +4182,8 @@ body.admin-console-page:not([data-admin-view="logs"]):not([data-license-page="hi
 .admin-console-page .admin-license-expand-flags{
   display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center
 }
-.admin-console-page .admin-license-expand-uid code.mono{
+.admin-console-page .admin-license-expand-uid code.mono,
+.admin-console-page .admin-license-expand-meta .admin-id-pair code.mono{
   word-break:break-all;font-size:11px
 }
 .admin-console-page .admin-license-expand .crm-badge{
@@ -4219,10 +4383,10 @@ body.admin-console-page .admin-crm-detail-pane{
 .admin-console-page .admin-crm-member-row .admin-member-user{display:flex;align-items:center;gap:8px;max-width:none}
 .admin-console-page .admin-crm-member-row .admin-order-caret{flex:none;margin-top:2px}
 .admin-console-page .admin-crm-member-row.is-open .admin-order-caret{transform:rotate(90deg)}
-.admin-console-page .admin-member-expand>td{padding:0 0 14px 12px;background:transparent;white-space:normal;vertical-align:top}
-.admin-console-page .admin-member-expand-inner{min-width:0}
+.admin-console-page .admin-member-expand>td{padding:0 0 14px 12px;background:transparent;white-space:normal;vertical-align:top;max-width:0}
+.admin-console-page .admin-member-expand-inner{min-width:0;max-width:100%}
 .admin-console-page .admin-member-expand .admin-crm-detail{
-  max-width:100%;width:100%;padding:8px 0 20px;max-height:none;opacity:1;transform:none
+  max-width:100%;width:100%;min-width:0;padding:8px 0 20px;max-height:none;opacity:1;transform:none
 }
 .admin-console-page .admin-crm-detail-head{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px}
 .admin-console-page .admin-crm-back{margin-right:4px}
@@ -4235,7 +4399,8 @@ body.admin-console-page .admin-crm-detail-pane{
 }
 .admin-console-page .admin-crm-detail-tabs button.is-active{color:#fff;background:rgba(139,92,246,.2);border-color:rgba(167,139,250,.4)}
 .admin-console-page .admin-crm-detail [data-tab-panel]{display:none}
-.admin-console-page .admin-crm-detail #adminCrmPointsCard{display:block}
+.admin-console-page .admin-crm-detail #adminCrmPointsCard{display:none}
+.admin-console-page .admin-crm-detail[data-tab="license"] #adminCrmPointsCard{display:block}
 .admin-console-page .admin-crm-detail[data-tab="overview"] [data-tab-panel~="overview"],
 .admin-console-page .admin-crm-detail[data-tab="access"] [data-tab-panel~="access"],
 .admin-console-page .admin-crm-detail[data-tab="device"] [data-tab-panel~="device"],
@@ -4314,7 +4479,7 @@ body.admin-console-page .admin-crm-detail-pane{
 .admin-console-page .admin-payments-table td{max-width:240px;overflow:hidden;text-overflow:ellipsis}
 .admin-console-page .admin-tickets-section:not([hidden]) .admin-table-wrap,
 .admin-console-page .admin-payments-section .admin-table-wrap{max-height:none!important}
-.admin-console-page .admin-crm-float-save{position:sticky;right:0;bottom:12px;float:right}
+.admin-console-page .admin-crm-float-save{position:sticky;right:0;bottom:12px;float:none;display:inline-flex;margin-left:auto}
 @media(max-width:1100px){
   .admin-console-page .admin-crm-stats,
   .admin-console-page .admin-crm-stats.is-cols-6,
@@ -4407,12 +4572,12 @@ body.admin-console-page button.ghost{
   background:rgba(255,255,255,.04)!important;
   box-shadow:none!important
 }
-.admin-console-page .admin-crm-license-form{display:grid;gap:8px;max-width:100%}
-.admin-console-page .admin-crm-license-form:not(.admin-license-inline-form) .form-split{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;max-width:100%}
-.admin-console-page .admin-crm-license-form label{display:grid;gap:4px;font-size:12px;font-weight:700;color:#9aa3c2}
+.admin-console-page .admin-crm-license-form{display:grid;gap:8px;max-width:100%;min-width:0}
+.admin-console-page .admin-crm-license-form:not(.admin-license-inline-form) .form-split{display:grid;grid-template-columns:1fr;gap:8px;max-width:100%}
+.admin-console-page .admin-crm-license-form label{display:grid;gap:4px;font-size:12px;font-weight:700;color:#9aa3c2;min-width:0}
 .admin-console-page .admin-crm-license-form select,
 .admin-console-page .admin-crm-license-form input[type="date"]{
-  width:100%;height:var(--admin-control-height);min-height:var(--admin-control-height);
+  width:100%;min-width:0;max-width:100%;height:var(--admin-control-height);min-height:var(--admin-control-height);
   padding:0 10px;border-radius:8px;box-sizing:border-box
 }
 .admin-console-page .admin-crm-license-form textarea{width:100%;max-width:100%;min-height:72px;resize:vertical;box-sizing:border-box}
@@ -4425,9 +4590,17 @@ body.admin-console-page button.ghost{
 .admin-console-page .admin-crm.is-detail-open .admin-crm-detail-head{
   display:flex;flex-wrap:wrap;align-items:flex-start;
   gap:10px 12px;margin:0 0 12px;padding:12px 14px;
-  border:1px solid var(--admin-stroke);border-radius:12px;background:rgba(255,255,255,.03)
+  border:1px solid var(--admin-stroke);border-radius:12px;background:rgba(255,255,255,.03);
+  width:100%;box-sizing:border-box
 }
-.admin-console-page .admin-crm.is-detail-open .admin-crm-profile{flex:0 1 280px;min-width:0}
+.admin-console-page .admin-crm.is-detail-open .admin-crm-profile{
+  flex:1 1 280px;min-width:240px;max-width:100%
+}
+.admin-console-page .admin-crm-profile-main{align-content:start;row-gap:4px}
+.admin-console-page .admin-crm-title-row{align-items:center}
+.admin-console-page .admin-crm-email{
+  margin:0;padding:0;line-height:1.35;min-height:1.35em
+}
 .admin-console-page .admin-crm.is-detail-open .admin-crm-head-memo,
 .admin-console-page .admin-crm.is-row-expand .admin-crm-head-memo,
 .admin-console-page .admin-crm.is-detail-open #adminCrmMemoCard.admin-crm-head-memo{

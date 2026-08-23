@@ -1,5 +1,7 @@
 'use strict';
 
+const fxRate = require('./fxRate');
+
 const LIFETIME_DOC_ID = 'lifetime';
 const QUOTE_TTL_MINUTES = 20;
 const PASS_DURATION_DAYS = {
@@ -43,6 +45,30 @@ function isCanonicalPassProductId(productId) {
 function isLicenseProductId(productId) {
   const pid = normalizeProductId(productId);
   return pid === 'LIFETIME' || isPassProductId(pid);
+}
+
+/** Admin-created credit SKUs: CREDIT_10, CREDIT_5, CREDIT_100, … — not hardcoded allow-list. */
+function isCreditProductId(productId) {
+  const pid = normalizeProductId(productId);
+  return /^CREDIT_[1-9][0-9]{0,5}$/.test(pid);
+}
+
+function firstFiniteNumber(values, fallback = 0) {
+  for (const value of values) {
+    if (value == null || value === '') continue;
+    const n = Number(value);
+    if (Number.isFinite(n)) return n;
+  }
+  return fallback;
+}
+
+function normalizeSaleStatus(status) {
+  const raw = String(status || 'active').trim();
+  const key = raw.toLowerCase();
+  if (key === 'paused' || key === 'paused') return 'paused';
+  if (key === 'archived' || key === 'archived') return 'archived';
+  if (key === 'active' || key === 'active') return 'active';
+  return raw || 'active';
 }
 
 function firestoreDocId(productId) {
@@ -96,9 +122,16 @@ function displayDiscountPercent(basePrice, salePrice) {
   return Math.round((1 - sale / base) * 100);
 }
 
+function promoProductIds(promo) {
+  const raw = promo?.productIds || promo?.productIds || promo?.targetProductIds || [];
+  if (Array.isArray(raw) && raw.length) return raw;
+  const single = promo?.productId || promo?.targetProductId;
+  return single ? [single] : [];
+}
+
 function productTargets(promo, productId) {
   const pid = normalizeProductId(productId);
-  return (promo?.productIds || []).some((item) => normalizeProductId(item) === pid);
+  return promoProductIds(promo).some((item) => normalizeProductId(item) === pid);
 }
 
 function pickEffectiveDiscount(product, promotions = [], now = new Date(), currency = 'KRW') {
@@ -127,28 +160,11 @@ function pickEffectiveDiscount(product, promotions = [], now = new Date(), curre
   return { chosen: candidates[0] };
 }
 
-function computeCharge(product, promotions = [], now = new Date(), currencyWanted = 'KRW') {
-  if (String(currencyWanted).toUpperCase() === 'USD') {
-    const base = Number(product?.listPriceUsd);
-    if (!Number.isFinite(base) || base <= 0) {
-      return { ok: false, code: 'USD_UNSET' };
-    }
-    const { chosen } = pickEffectiveDiscount(product, promotions, now, 'USD');
-    const sale = chosen ? applyDiscount(base, chosen.type, chosen.value) : base;
-    return {
-      ok: true,
-      basePrice: base,
-      effectivePrice: sale,
-      currency: 'USD',
-      discount: chosen,
-      discountPercent: chosen ? displayDiscountPercent(Math.round(base * 100), Math.round(sale * 100)) : 0,
-      productVersion: Number(product.productVersion || product.pricingVersion || 1)
-    };
-  }
-  const base = Math.round(Number(product?.listPriceKrw || 0));
+function computeCharge(product, promotions = [], now = new Date(), currencyWanted = 'KRW', options = {}) {
+  const base = Math.round(Number(product?.listPriceKrw || product?.listPriceKrw || 0));
   const { chosen } = pickEffectiveDiscount(product, promotions, now, 'KRW');
   const sale = chosen ? applyDiscount(base, chosen.type, chosen.value) : base;
-  return {
+  const krwCharge = {
     ok: true,
     basePrice: base,
     effectivePrice: sale,
@@ -157,7 +173,52 @@ function computeCharge(product, promotions = [], now = new Date(), currencyWante
     discountPercent: chosen ? displayDiscountPercent(base, sale) : 0,
     discountEndsAt: chosen?.endsAt || '',
     productVersion: Number(product?.productVersion || product?.pricingVersion || 1),
-    creditAmount: Number(product?.creditAmount || 0)
+    creditAmount: Number(product?.creditAmount || product?.creditAmount || 0),
+    listPriceKrw: base,
+    effectivePriceKrw: sale,
+    promotionId: chosen?.promotionId || ''
+  };
+  if (String(currencyWanted).toUpperCase() !== 'USD') return krwCharge;
+
+  const rate = Number(options.fxRate);
+  if (!Number.isFinite(rate) || rate <= 0) {
+    return {
+      ok: false,
+      code: 'FX_UNAVAILABLE',
+      currency: 'USD',
+      paypalEnabled: false,
+      listPriceKrw: base,
+      effectivePriceKrw: sale
+    };
+  }
+  const baseUsd = fxRate.krwToUsd(base, rate);
+  const saleUsd = fxRate.krwToUsd(sale, rate);
+  if (baseUsd == null || saleUsd == null || !(saleUsd > 0)) {
+    return {
+      ok: false,
+      code: 'FX_UNAVAILABLE',
+      currency: 'USD',
+      paypalEnabled: false,
+      listPriceKrw: base,
+      effectivePriceKrw: sale
+    };
+  }
+  return {
+    ok: true,
+    basePrice: baseUsd,
+    effectivePrice: saleUsd,
+    currency: 'USD',
+    discount: chosen,
+    discountPercent: krwCharge.discountPercent,
+    discountEndsAt: chosen?.endsAt || '',
+    productVersion: krwCharge.productVersion,
+    creditAmount: krwCharge.creditAmount,
+    paypalEnabled: true,
+    listPriceKrw: base,
+    effectivePriceKrw: sale,
+    fxRate: rate,
+    payAmountUsd: saleUsd,
+    promotionId: chosen?.promotionId || ''
   };
 }
 
@@ -243,12 +304,14 @@ function hydrateProduct(docId, data) {
   const regions = raw.regions || {};
   const kr = regions.KR || {};
   const glob = regions.Global || {};
-  const type = raw.type || seed.type || (pid === 'LIFETIME' ? 'lifetime' : (isPassProductId(pid) ? 'full_pass' : 'credit_pack'));
-  const listPriceKrwRaw = (raw.listPriceKrw != null && raw.listPriceKrw !== '')
-    ? Number(raw.listPriceKrw)
-    : (kr.listPrice != null && kr.listPrice !== ''
-      ? Number(kr.listPrice)
-      : Number(seed.listPriceKrw != null ? seed.listPriceKrw : 0));
+  const typeRaw = String(raw.type || seed.type || (pid === 'LIFETIME' ? 'lifetime' : (isPassProductId(pid) ? 'full_pass' : 'credit_pack')));
+  const type = (typeRaw === 'credit_pack' || typeRaw === 'credits') ? 'credit_pack' : typeRaw;
+  const listPriceKrwRaw = firstFiniteNumber([
+    raw.listPriceKrw,
+    raw.listPriceKrw,
+    kr.listPrice,
+    seed.listPriceKrw
+  ], NaN);
   // Firestore is SoT for prices — do not force-correct admin-edited amounts.
   const listPriceKrw = Number.isFinite(listPriceKrwRaw) ? listPriceKrwRaw : 0;
   const durationDays = Number(
@@ -260,12 +323,12 @@ function hydrateProduct(docId, data) {
     productId: pid,
     docId: pid === 'LIFETIME' ? LIFETIME_DOC_ID : docId,
     type,
-    creditAmount: Number(raw.creditAmount != null ? raw.creditAmount : (seed.creditAmount || 0)),
+    creditAmount: firstFiniteNumber([raw.creditAmount, raw.creditAmount, seed.creditAmount], 0),
     entitlement: raw.entitlement || seed.entitlement || (type === 'lifetime' ? 'lifetime' : (type === 'full_pass' ? 'full_pass' : 'credits')),
     durationDays: type === 'full_pass' ? durationDays : (raw.durationDays || seed.durationDays || null),
     listPriceKrw,
     listPriceUsd: raw.listPriceUsd != null ? raw.listPriceUsd : (glob.listPrice != null ? glob.listPrice : (seed.listPriceUsd != null ? seed.listPriceUsd : (pid === 'LIFETIME' ? 89 : null))),
-    status: raw.status || seed.status || 'active',
+    status: normalizeSaleStatus(raw.status || seed.status || 'active'),
     productVersion: Number(raw.productVersion || raw.pricingVersion || seed.productVersion || 1),
     orderNameKo: raw.orderNameKo || seed.orderNameKo || '',
     orderNameEn: raw.orderNameEn || seed.orderNameEn || '',
@@ -301,13 +364,17 @@ module.exports = {
   isPassProductId,
   isCanonicalPassProductId,
   isLicenseProductId,
+  isCreditProductId,
   firestoreDocId,
   applyDiscount,
   computeCharge,
+  computeCharge: computeCharge,
+  krwToUsd: fxRate.krwToUsd,
   hydrateProduct,
   seedById,
   isWindowActive,
   quoteExpiry,
   quoteIsValid,
+  quoteIsValid: quoteIsValid,
   displayDiscountPercent
 };

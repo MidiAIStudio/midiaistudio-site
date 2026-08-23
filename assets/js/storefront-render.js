@@ -4,11 +4,15 @@
  */
 import {
   formatKrw,
+  formatUsd,
+  krwToUsd,
+  getCatalogFxRate,
   localizePromo,
   formatPromoUntilLabel,
   resolvePromotionProducts,
-  promotionTargetIds
-} from './catalog-engine.js?v=promo-multi-popup-1';
+  promotionTargetIds,
+  isCreditProductId
+} from './catalog-engine.js?v=admin-preview-draft-2';
 
 export { resolvePromotionProducts, promotionTargetIds, formatPromoUntilLabel };
 
@@ -16,6 +20,34 @@ export function escHtml(s) {
   return String(s ?? '').replace(/[&<>'"]/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   }[c]));
+}
+
+function cardPriceCopy(view, lang) {
+  const list = Number(view?.listPriceKrw || view?.basePrice || view?.krw || 0);
+  const sale = Number(view?.effectivePrice != null ? view.effectivePrice : (view?.krw != null ? view.krw : list));
+  if (lang !== 'en' && lang !== 'ja') {
+    return { listText: formatKrw(list), saleText: formatKrw(sale), note: '' };
+  }
+  const note = lang === 'ja' ? '韓国価格を基準に自動換算' : 'Automatically converted from the KRW price';
+  const rate = Number(getCatalogFxRate());
+  let usdSale = view?.usd != null ? Number(view.usd) : null;
+  let usdList = view?.usdList != null ? Number(view.usdList) : null;
+  if ((!Number.isFinite(usdSale) || !Number.isFinite(usdList)) && Number.isFinite(rate) && rate > 0) {
+    if (!Number.isFinite(usdList)) usdList = krwToUsd(list, rate);
+    if (!Number.isFinite(usdSale)) usdSale = krwToUsd(sale, rate);
+  }
+  if (!Number.isFinite(usdSale) && !Number.isFinite(usdList)) {
+    return {
+      listText: '',
+      saleText: lang === 'ja' ? '為替を読み込めません' : 'Exchange rate unavailable',
+      note
+    };
+  }
+  return {
+    listText: Number.isFinite(usdList) ? formatUsd(usdList) : '',
+    saleText: formatUsd(Number.isFinite(usdSale) ? usdSale : usdList),
+    note
+  };
 }
 
 export function purchaseCardFeaturesHtml(rows) {
@@ -47,6 +79,12 @@ export function storefrontUiCopy(lang = 'ko') {
       ],
       unitPass: (days) => `${days}-day Full Pass · one-time`,
       unitLife: 'Lifetime Full · one-time',
+      unitCredit: '1 Credit = 1 Conversion',
+      creditFeatures: [
+        ['AI conversion', '1 Credit = 1 Conversion'],
+        ['Term', 'No expiry'],
+        ['Full pass', 'Not required']
+      ],
       hideToday: "Don't show again",
       close: 'Close',
       defaultCta: 'See pricing'
@@ -72,6 +110,12 @@ export function storefrontUiCopy(lang = 'ko') {
       ],
       unitPass: (days) => `${days}日 Full 利用権 · 1回払い`,
       unitLife: 'Lifetime Full · 1回払い',
+      unitCredit: '1クレジット = 1回変換',
+      creditFeatures: [
+        ['AI変換', '1クレジット = 1回変換'],
+        ['利用期間', '制限なし'],
+        ['Full利用権', '不要']
+      ],
       hideToday: '表示しない',
       close: '閉じる',
       defaultCta: '料金を見る'
@@ -96,10 +140,27 @@ export function storefrontUiCopy(lang = 'ko') {
     ],
     unitPass: (days) => `${days}일 Full 이용권 · 1회 결제`,
     unitLife: 'Lifetime Full · 1회 결제',
+    unitCredit: '1 크레딧 = 1회 변환',
+    creditFeatures: [
+      ['AI 변환', '1 크레딧 = 1회'],
+      ['사용 기간', '제한 없음'],
+      ['Full 이용권', '없이 사용 가능']
+    ],
     hideToday: '다시 보지 않기',
     close: '닫기',
     defaultCta: '가격 보기'
   };
+}
+
+function isCreditView(view) {
+  const type = String(view?.type || '');
+  if (type === 'credit_pack' || type === 'credits') return true;
+  return isCreditProductId(view?.productId || '');
+}
+
+function creditUsesLine(view) {
+  const n = Number(view?.creditAmount || view?.credits || 0);
+  return `${n} Credits`;
 }
 
 function productTitle(view, lang) {
@@ -110,6 +171,15 @@ function productTitle(view, lang) {
 }
 
 function productUses(view, lang) {
+  if (isCreditView(view)) {
+    const extra = lang === 'en'
+      ? String(view?.descriptionEn || '').trim()
+      : lang === 'ja'
+        ? String(view?.descriptionJa || '').trim()
+        : String(view?.descriptionKo || '').trim();
+    const amount = creditUsesLine(view);
+    return extra ? `${amount} · ${extra}` : amount;
+  }
   if (lang === 'en') {
     return view?.descriptionEn || 'Unlimited conversions · Full features · No auto-renewal';
   }
@@ -128,6 +198,7 @@ export function renderProductCard(view, options = {}) {
   const ui = options.ui || storefrontUiCopy(lang);
   const pid = String(view?.productId || '');
   const isLife = pid === 'LIFETIME' || view?.type === 'lifetime';
+  const isCredit = !isLife && isCreditView(view);
   const status = String(view?.status || 'active');
   const selected = !!options.selected;
   const locked = !!options.locked;
@@ -141,7 +212,7 @@ export function renderProductCard(view, options = {}) {
       <p class="purchase-plan-uses pricing-preview-archived-note" data-preview-hl="status">[${escHtml(ui.archived)}]</p>
       <div class="purchase-plan-price-block" data-preview-hl="price">
         <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
-        <div class="purchase-plan-price-row"><div class="purchase-plan-price">${escHtml(formatKrw(view?.listPriceKrw || 0))}</div></div>
+        <div class="purchase-plan-price-row"><div class="purchase-plan-price">${escHtml(cardPriceCopy(view, lang).saleText)}</div></div>
       </div>
       <button type="button" class="purchase-plan-buy" disabled aria-disabled="true">${escHtml(ui.btnPaused)}</button>
     </article>`;
@@ -186,19 +257,25 @@ export function renderProductCard(view, options = {}) {
     ? `<p class="purchase-plan-discount-until" data-preview-hl="discount-until">${escHtml(discountUntil)}</p>`
     : '';
 
+  const prices = cardPriceCopy(view, lang);
+  const fxNoteHtml = prices.note
+    ? `<p class="purchase-plan-fx-note">${escHtml(prices.note)}</p>`
+    : '';
   const priceHtml = discounted
     ? `<div class="purchase-plan-price-block" data-preview-hl="price">
-        <div class="purchase-plan-price-was">${escHtml(formatKrw(list))}</div>
+        <div class="purchase-plan-price-was">${escHtml(prices.listText)}</div>
         <div class="purchase-plan-price-row">
-          <div class="purchase-plan-price purchase-plan-price-now">${escHtml(formatKrw(sale))}</div>
+          <div class="purchase-plan-price purchase-plan-price-now">${escHtml(prices.saleText)}</div>
           ${eventOff}
         </div>
+        ${fxNoteHtml}
       </div>`
     : `<div class="purchase-plan-price-block" data-preview-hl="price">
         <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
         <div class="purchase-plan-price-row">
-          <div class="purchase-plan-price">${escHtml(formatKrw(saleOk ? sale : list))}</div>
+          <div class="purchase-plan-price">${escHtml(prices.saleText)}</div>
         </div>
+        ${fxNoteHtml}
       </div>`;
 
   const badgeHtml = isRecommended
@@ -209,9 +286,11 @@ export function renderProductCard(view, options = {}) {
         ? `<span class="purchase-plan-badge is-best" data-preview-hl="badge">Best Value</span>`
         : ''));
 
-  const unit = isLife ? ui.unitLife : ui.unitPass(days || 0);
+  const unit = isLife
+    ? ui.unitLife
+    : (isCredit ? (ui.unitCredit || '1 Credit = 1 Conversion') : ui.unitPass(days || 0));
   const features = options.features
-    || (isLife ? ui.lifeFeatures : ui.passFeatures);
+    || (isLife ? ui.lifeFeatures : (isCredit ? (ui.creditFeatures || []) : ui.passFeatures));
   const btnLabel = options.buyLabel
     || (status === 'paused' ? ui.btnPaused : ui.buy);
 

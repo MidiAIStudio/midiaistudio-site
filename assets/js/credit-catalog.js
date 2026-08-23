@@ -73,17 +73,18 @@ export function normalizeCreditProductId(id) {
   return PRODUCT_ALIASES[key] || key;
 }
 
-function isCreditPackId(id) {
+export function isCreditPackId(id) {
   const key = normalizeCreditProductId(id);
-  if (key === 'CREDIT_10' || key === 'POINT_10' || key === 'LIFETIME') return false;
-  return key.startsWith('CREDIT_');
+  if (key === 'LIFETIME' || key.startsWith('PASS_') || key.startsWith('TEST_')) return false;
+  return /^CREDIT_[1-9][0-9]{0,5}$/.test(key);
 }
 
 function isOnSalePack(product) {
   const status = String(product?.status || 'active');
-  if (status === 'paused' || status === 'archived' || status === 'disabled') return false;
+  if (status !== 'active') return false;
   if (product?.saleOk === false) return false;
-  return isCreditPackId(product?.productId);
+  const type = String(product?.type || '');
+  return isCreditPackId(product?.productId) || type === 'credit_pack';
 }
 
 export function packCredits(product) {
