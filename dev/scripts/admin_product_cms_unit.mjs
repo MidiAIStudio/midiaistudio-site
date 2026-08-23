@@ -31,6 +31,56 @@ function check(name, fn) {
 
 check('server_isPass_TEST', () => assert.equal(catalogEngine.isPassProductId('TEST_PASS_ADMIN_E2E'), true));
 check('server_isLicense_TEST', () => assert.equal(catalogEngine.isLicenseProductId('TEST_PASS_ADMIN_E2E'), true));
+check('assert_save_target_ok', () => {
+  const r = browser.assertSaveTargetInvariant({
+    selectedDocId: 'PASS_7D',
+    draftProductId: 'PASS_7D',
+    formProductId: 'PASS_7D',
+    saveDocId: 'PASS_7D'
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.docId, 'PASS_7D');
+});
+check('assert_save_target_lifetime_doc', () => {
+  const r = browser.assertSaveTargetInvariant({
+    selectedDocId: 'lifetime',
+    draftProductId: 'LIFETIME',
+    formProductId: 'LIFETIME',
+    saveDocId: 'lifetime'
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.docId, 'lifetime');
+});
+check('assert_save_target_rejects_cross_product', () => {
+  const r = browser.assertSaveTargetInvariant({
+    selectedDocId: 'PASS_7D',
+    draftProductId: 'PASS_7D',
+    formProductId: 'PASS_30D',
+    saveDocId: 'PASS_7D'
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'draft_form_product_mismatch');
+});
+check('assert_save_target_rejects_wrong_save_doc', () => {
+  const r = browser.assertSaveTargetInvariant({
+    selectedDocId: 'PASS_30D',
+    draftProductId: 'PASS_30D',
+    formProductId: 'PASS_30D',
+    saveDocId: 'PASS_7D'
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'save_doc_mismatch');
+});
+check('assert_save_target_rejects_selected_mismatch', () => {
+  const r = browser.assertSaveTargetInvariant({
+    selectedDocId: 'PASS_90D',
+    draftProductId: 'PASS_7D',
+    formProductId: 'PASS_7D',
+    saveDocId: 'PASS_7D'
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'selected_doc_mismatch');
+});
 check('findCatalogProduct_by_doc_id', () => {
   const rows = [
     { productId: 'LIFETIME', docId: 'lifetime', type: 'lifetime', nameKo: 'Lifetime Full' },

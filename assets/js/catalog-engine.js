@@ -259,6 +259,42 @@ export function editTargetMismatchMessage(draftProductId, formProductId) {
   return '';
 }
 
+/**
+ * Hard invariant: UI selection, form productId, draft productId, and Firestore
+ * document id must all resolve to the same canonical product.
+ * Never allow array index / sortOrder / display name as the save key.
+ */
+export function assertSaveTargetInvariant({
+  selectedDocId,
+  draftProductId,
+  formProductId,
+  saveDocId
+} = {}) {
+  const formPid = normalizeProductId(formProductId);
+  const draftPid = normalizeProductId(draftProductId);
+  const formDoc = firestoreDocId(formPid);
+  const draftDoc = firestoreDocId(draftPid);
+  const selected = String(selectedDocId || '').trim();
+  const saveDoc = String(saveDocId || '').trim();
+
+  if (!formPid || !draftPid) {
+    return { ok: false, reason: 'missing_product_id', formPid, draftPid, selected, saveDoc, formDoc, draftDoc };
+  }
+  if (formPid !== draftPid) {
+    return { ok: false, reason: 'draft_form_product_mismatch', formPid, draftPid, selected, saveDoc, formDoc, draftDoc };
+  }
+  if (selected && selected !== formDoc && selected !== draftDoc) {
+    return { ok: false, reason: 'selected_doc_mismatch', formPid, draftPid, selected, saveDoc, formDoc, draftDoc };
+  }
+  if (!saveDoc || (saveDoc !== formDoc && saveDoc !== draftDoc)) {
+    return { ok: false, reason: 'save_doc_mismatch', formPid, draftPid, selected, saveDoc, formDoc, draftDoc };
+  }
+  if (formDoc !== draftDoc) {
+    return { ok: false, reason: 'doc_id_mismatch', formPid, draftPid, selected, saveDoc, formDoc, draftDoc };
+  }
+  return { ok: true, productId: formPid, docId: formDoc };
+}
+
 export function isSeedProduct(productId) {
   return CANONICAL_IDS.includes(normalizeProductId(productId));
 }

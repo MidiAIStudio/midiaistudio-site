@@ -1,0 +1,126 @@
+{
+  "capturedAt": "2026-08-23T11:25:08.763Z",
+  "note": "Forensic snapshot before any recovery. Do not auto-restore.",
+  "products": {
+    "PASS_7D": {
+      "documentId": "PASS_7D",
+      "productId": "PASS_7D",
+      "nameKo": "30일 Full",
+      "nameEn": "30-Day Full Pass",
+      "nameJa": "30日 Full",
+      "durationDays": 30,
+      "listPriceKrw": 29900,
+      "listPriceUsd": null,
+      "type": "full_pass",
+      "entitlement": "full_pass",
+      "status": "active",
+      "sortOrder": 3,
+      "badge": "recommended",
+      "productVersion": 3,
+      "updatedAt": "2026-08-23T11:22:26.869Z",
+      "_updateTime": "2026-08-23T11:22:26.880650Z",
+      "regions": {
+        "KR": {
+          "portoneProductId": "PASS_7D",
+          "currency": "KRW",
+          "payment": "portone",
+          "orderName": "MidiAI Studio 7일 Full 이용권",
+          "salePrice": 29900,
+          "listPrice": 29900
+        }
+      }
+    },
+    "PASS_30D": {
+      "documentId": "PASS_30D",
+      "productId": "PASS_30D",
+      "nameKo": "30일 Full",
+      "nameEn": "30-Day Full Pass",
+      "nameJa": "30日 Full",
+      "durationDays": 30,
+      "listPriceKrw": 29900,
+      "listPriceUsd": null,
+      "type": "full_pass",
+      "entitlement": "full_pass",
+      "status": "active",
+      "sortOrder": 1,
+      "badge": "recommended",
+      "productVersion": 2,
+      "updatedAt": "2026-08-23T11:22:15.339Z",
+      "_updateTime": "2026-08-23T11:22:15.357959Z",
+      "regions": {
+        "KR": {
+          "salePrice": 29900,
+          "portoneProductId": "PASS_30D",
+          "currency": "KRW",
+          "payment": "portone",
+          "listPrice": 29900,
+          "orderName": "MidiAI Studio 30일 Full 이용권"
+        }
+      }
+    },
+    "PASS_90D": {
+      "documentId": "PASS_90D",
+      "productId": "PASS_90D",
+      "nameKo": "90일 Full",
+      "nameEn": "90-Day Full Pass",
+      "nameJa": "90日 Full",
+      "durationDays": 90,
+      "listPriceKrw": 69900,
+      "listPriceUsd": null,
+      "type": "full_pass",
+      "entitlement": "full_pass",
+      "status": "active",
+      "sortOrder": 2,
+      "badge": "",
+      "productVersion": 2,
+      "updatedAt": "2026-08-23T11:22:23.806Z",
+      "_updateTime": "2026-08-23T11:22:23.818474Z",
+      "regions": {
+        "KR": {
+          "portoneProductId": "PASS_90D",
+          "currency": "KRW",
+          "payment": "portone",
+          "orderName": "MidiAI Studio 90일 Full 이용권",
+          "salePrice": 69900,
+          "listPrice": 69900
+        }
+      }
+    },
+    "lifetime": {
+      "documentId": "lifetime",
+      "productId": "LIFETIME",
+      "nameKo": "Lifetime",
+      "nameEn": "60-Day Full Pass",
+      "nameJa": "60日 Full",
+      "durationDays": 0,
+      "listPriceKrw": 130000,
+      "listPriceUsd": 91,
+      "type": "lifetime",
+      "entitlement": "lifetime",
+      "status": "active",
+      "sortOrder": 7,
+      "badge": "",
+      "productVersion": 6,
+      "updatedAt": "2026-08-23T11:18:54.468Z",
+      "_updateTime": "2026-08-23T11:18:54.481374Z",
+      "regions": {
+        "Global": {
+          "payment": "paypal",
+          "currency": "USD",
+          "orderName": "MidiAI Studio Lifetime License",
+          "portoneProductId": "",
+          "listPrice": 91,
+          "salePrice": 91
+        },
+        "KR": {
+          "payment": "portone",
+          "currency": "KRW",
+          "orderName": "MidiAI Studio Lifetime License",
+          "portoneProductId": "midiai-lifetime",
+          "salePrice": 130000,
+          "listPrice": 130000
+        }
+      }
+    }
+  }
+}

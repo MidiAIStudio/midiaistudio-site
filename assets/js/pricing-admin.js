@@ -7,6 +7,7 @@ import {
   canonicalPassDurationDays,
   computeCharge,
   creditChangeWarning,
+  assertSaveTargetInvariant,
   editTargetMismatchMessage,
   emptyDiscount,
   findCatalogProduct,
@@ -26,7 +27,7 @@ import {
   validateProductFields,
   validatePromotionFields,
   windowStatus
-} from './catalog-engine.js?v=product-save-regression-1';
+} from './catalog-engine.js?v=product-mapping-forensic-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
@@ -240,7 +241,9 @@ function bindUi() {
   });
   bind('pricingAddProduct', () => openAddModal());
   bind('pricingSaveBtn', () => saveDraft().catch((e) => flash(e.message || e, false)));
-  bind('pricingCancelBtn', () => { if (selectedId) selectProduct(selectedId); });
+  bind('pricingCancelBtn', () => {
+    if (selectedDocId || selectedId) selectProduct(selectedDocId || selectedId);
+  });
   bind('pricingCloneBtn', () => cloneProduct().catch((e) => flash(e.message || e, false)));
   bind('pricingArchiveBtn', () => archiveProduct().catch((e) => flash(e.message || e, false)));
   bind('pricingDeleteBtn', () => deleteProduct().catch((e) => flash(e.message || e, false)));
@@ -707,12 +710,33 @@ async function saveDraft() {
     return;
   }
   syncDraftFromForm();
-  const mismatch = editTargetMismatchMessage(draft.productId, $('draftProductId')?.value || draft.productId);
+  // Immutable identity: never derive save target from sortOrder / list index / display name.
+  const formProductId = normalizeProductId($('draftProductId')?.value || '');
+  if (!formProductId) throw new Error('상품 저장 실패: 폼 상품 ID가 비어 있습니다.');
+  const priorDraftPid = normalizeProductId(draft.productId);
+  const mismatch = editTargetMismatchMessage(priorDraftPid, formProductId);
   if (mismatch) throw new Error(`상품 저장 실패: ${mismatch}`);
+  draft.productId = formProductId;
+  const docId = firestoreDocId(formProductId);
+  const invariant = assertSaveTargetInvariant({
+    selectedDocId: selectedDocId || docId,
+    draftProductId: draft.productId,
+    formProductId,
+    saveDocId: docId
+  });
+  if (!invariant.ok) {
+    console.error('SAVE_TARGET_INVARIANT', invariant);
+    throw new Error(`상품 저장 실패: target invariant (${invariant.reason})`);
+  }
+  selectedDocId = docId;
+  selectedId = formProductId;
   const errors = validateProductFields(draft, { isNew: false });
   if (errors.length) throw new Error(`상품 저장 실패: ${errors[0]}`);
-  const current = findCatalogProduct(products, selectedDocId || draft.productId) || {};
-  const nextProducts = products.map((p) => (p.productId === draft.productId ? draft : p));
+  const current = findCatalogProduct(products, docId) || {};
+  if (normalizeProductId(current.productId || '') && normalizeProductId(current.productId) !== formProductId) {
+    throw new Error(`상품 저장 실패: catalog row mismatch (${current.productId} ≠ ${formProductId})`);
+  }
+  const nextProducts = products.map((p) => (normalizeProductId(p.productId) === formProductId ? draft : p));
   const conflicts = findDiscountConflicts(nextProducts, promotions);
   if (conflicts.length) throw new Error(`CONFLICT: ${conflicts[0].productId}에 할인이 겹칩니다.`);
   const warnPrice = priceChangeWarning(current.listPriceKrw, draft.listPriceKrw);
@@ -730,8 +754,12 @@ async function saveDraft() {
     flash('저장이 취소되었습니다.', false);
     return;
   }
-  const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
-  const isLife = draft.type === 'lifetime';
+  // Type/entitlement locked from catalog row (or productId), not from editable name fields.
+  const lockedType = current.type
+    || (formProductId === 'LIFETIME' ? 'lifetime' : (isPassProductId(formProductId) ? 'full_pass' : 'credit_pack'));
+  draft.type = lockedType;
+  const isPass = lockedType === 'full_pass' || isPassProductId(formProductId);
+  const isLife = lockedType === 'lifetime' || formProductId === 'LIFETIME';
   const version = bumpVersion(current, {
     priceChanged: Number(current.listPriceKrw) !== Number(draft.listPriceKrw),
     creditsChanged: draft.type === 'credit_pack'
@@ -743,12 +771,8 @@ async function saveDraft() {
       || String(current.nameJa || '') !== String(draft.nameJa || '')
   });
   const { doc, setDoc, serverTimestamp } = fs;
-  const docId = selectedDocId || firestoreDocId(draft.productId);
-  if (docId !== firestoreDocId(draft.productId)) {
-    throw new Error(`상품 저장 실패: document id 불일치 (${docId} ≠ ${firestoreDocId(draft.productId)})`);
-  }
   const payload = {
-    productId: draft.productId,
+    productId: formProductId,
     type: isPass ? 'full_pass' : (isLife ? 'lifetime' : 'credit_pack'),
     nameKo: draft.nameKo,
     nameEn: draft.nameEn,
@@ -816,6 +840,10 @@ async function saveDraft() {
     throw new Error('저장 검증 실패: Firestore 문서를 읽을 수 없습니다.');
   }
   const saved = verifySnap.data() || {};
+  const savedPid = normalizeProductId(saved.productId || docId);
+  if (savedPid !== formProductId) {
+    throw new Error(`저장 검증 실패: Firestore productId=${savedPid} / expected=${formProductId}`);
+  }
   const savedPrice = Number(
     saved.listPriceKrw != null
       ? saved.listPriceKrw
