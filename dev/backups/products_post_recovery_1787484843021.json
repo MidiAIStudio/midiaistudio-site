@@ -1,0 +1,248 @@
+{
+  "capturedAt": "2026-08-23T11:34:03.021Z",
+  "before": {
+    "PASS_7D": {
+      "entitlement": "full_pass",
+      "listPriceUsd": null,
+      "order": 3,
+      "durationDays": 30,
+      "descriptionKo": "변환 횟수 제한 없음 · Full 기능 · 자동결제 없음",
+      "productVersion": 3,
+      "regions": {
+        "KR": {
+          "portoneProductId": "PASS_7D",
+          "currency": "KRW",
+          "payment": "portone",
+          "orderName": "MidiAI Studio 7일 Full 이용권",
+          "salePrice": 29900,
+          "listPrice": 29900
+        }
+      },
+      "orderNameKo": "MidiAI Studio 7일 Full 이용권",
+      "createdAt": "2026-08-23T06:16:04.086Z",
+      "pricingVersion": 3,
+      "name": "30일 Full",
+      "orderNameEn": "MidiAI Studio 7-Day Full Pass",
+      "listPriceKrw": 29900,
+      "nameKo": "30일 Full",
+      "type": "full_pass",
+      "plan": "period",
+      "descriptionEn": "Unlimited conversions · Full features · No auto-renewal",
+      "hasPurchases": false,
+      "descriptionJa": "変換回数制限なし · Full機能 · 自動更新なし",
+      "creditAmount": 0,
+      "nameJa": "30日 Full",
+      "updatedAt": "2026-08-23T11:23:58.487Z",
+      "badge": "recommended",
+      "productId": "PASS_7D",
+      "nameEn": "30-Day Full Pass",
+      "sortOrder": 3,
+      "status": "paused",
+      "productDiscount": {
+        "startsAt": "",
+        "type": "percent",
+        "endsAt": "",
+        "value": 0,
+        "enabled": false
+      },
+      "packSavePercent": null
+    },
+    "lifetime": {
+      "nameEn": "60-Day Full Pass",
+      "nameJa": "60日 Full"
+    }
+  },
+  "after": {
+    "PASS_7D": {
+      "name": "7일 Full",
+      "productDiscount": {
+        "startsAt": "",
+        "type": "percent",
+        "endsAt": "",
+        "value": 0,
+        "enabled": false
+      },
+      "order": 3,
+      "createdAt": "2026-08-23T06:16:04.086Z",
+      "updatedAt": "2026-08-23T11:34:02.657Z",
+      "orderNameEn": "MidiAI Studio 7-Day Full Pass",
+      "packSavePercent": null,
+      "descriptionJa": "変換回数制限なし · Full機能 · 自動更新なし",
+      "status": "active",
+      "pricingVersion": 4,
+      "listPriceUsd": null,
+      "badge": "",
+      "entitlement": "full_pass",
+      "plan": "period",
+      "orderNameKo": "MidiAI Studio 7일 Full 이용권",
+      "hasPurchases": false,
+      "nameKo": "7일 Full",
+      "nameJa": "7日 Full",
+      "productId": "PASS_7D",
+      "descriptionEn": "Unlimited conversions · Full features · No auto-renewal",
+      "nameEn": "7-Day Full Pass",
+      "durationDays": 7,
+      "descriptionKo": "변환 횟수 제한 없음 · Full 기능 · 자동결제 없음",
+      "creditAmount": 0,
+      "sortOrder": 3,
+      "type": "full_pass",
+      "listPriceKrw": 9900,
+      "regions": {
+        "KR": {
+          "portoneProductId": "PASS_7D",
+          "currency": "KRW",
+          "payment": "portone",
+          "orderName": "MidiAI Studio 7일 Full 이용권",
+          "salePrice": 9900,
+          "listPrice": 9900
+        }
+      },
+      "productVersion": 4
+    },
+    "PASS_30D": {
+      "orderNameKo": "MidiAI Studio 30일 Full 이용권",
+      "order": 1,
+      "nameEn": "30-Day Full Pass",
+      "descriptionJa": "変換回数制限なし · Full機能 · 自動更新なし",
+      "name": "30일 Full",
+      "entitlement": "full_pass",
+      "productVersion": 2,
+      "type": "full_pass",
+      "productId": "PASS_30D",
+      "listPriceUsd": null,
+      "status": "active",
+      "plan": "period",
+      "descriptionKo": "변환 횟수 제한 없음 · Full 기능 · 자동결제 없음",
+      "nameJa": "30日 Full",
+      "sortOrder": 1,
+      "nameKo": "30일 Full",
+      "creditAmount": 0,
+      "durationDays": 30,
+      "createdAt": "2026-08-23T06:16:04.122Z",
+      "orderNameEn": "MidiAI Studio 30-Day Full Pass",
+      "listPriceKrw": 29900,
+      "hasPurchases": false,
+      "descriptionEn": "Unlimited conversions · Full features · No auto-renewal",
+      "regions": {
+        "KR": {
+          "salePrice": 29900,
+          "portoneProductId": "PASS_30D",
+          "currency": "KRW",
+          "payment": "portone",
+          "listPrice": 29900,
+          "orderName": "MidiAI Studio 30일 Full 이용권"
+        }
+      },
+      "productDiscount": {
+        "startsAt": "",
+        "type": "percent",
+        "endsAt": "",
+        "value": 0,
+        "enabled": false
+      },
+      "pricingVersion": 2,
+      "badge": "recommended",
+      "packSavePercent": null,
+      "updatedAt": "2026-08-23T11:22:15.339Z"
+    },
+    "PASS_90D": {
+      "orderNameEn": "MidiAI Studio 90-Day Full Pass",
+      "createdAt": "2026-08-23T06:16:04.147Z",
+      "orderNameKo": "MidiAI Studio 90일 Full 이용권",
+      "nameJa": "90日 Full",
+      "productVersion": 2,
+      "badge": "",
+      "nameEn": "90-Day Full Pass",
+      "type": "full_pass",
+      "plan": "period",
+      "creditAmount": 0,
+      "pricingVersion": 2,
+      "entitlement": "full_pass",
+      "descriptionKo": "변환 횟수 제한 없음 · Full 기능 · 자동결제 없음",
+      "status": "active",
+      "hasPurchases": false,
+      "updatedAt": "2026-08-23T11:22:23.806Z",
+      "productId": "PASS_90D",
+      "sortOrder": 2,
+      "name": "90일 Full",
+      "listPriceKrw": 69900,
+      "packSavePercent": 16,
+      "productDiscount": {
+        "startsAt": "",
+        "type": "percent",
+        "endsAt": "",
+        "value": 0,
+        "enabled": false
+      },
+      "descriptionEn": "Unlimited conversions · Full features · No auto-renewal",
+      "listPriceUsd": null,
+      "nameKo": "90일 Full",
+      "descriptionJa": "変換回数制限なし · Full機能 · 自動更新なし",
+      "durationDays": 90,
+      "regions": {
+        "KR": {
+          "portoneProductId": "PASS_90D",
+          "currency": "KRW",
+          "payment": "portone",
+          "orderName": "MidiAI Studio 90일 Full 이용권",
+          "salePrice": 69900,
+          "listPrice": 69900
+        }
+      },
+      "order": 2
+    },
+    "lifetime": {
+      "name": "Lifetime",
+      "listPriceKrw": 130000,
+      "nameKo": "Lifetime",
+      "order": 7,
+      "buttonText": "Buy Now",
+      "status": "active",
+      "type": "lifetime",
+      "descriptionKo": "변환 횟수 제한 없음 · Full 기능 · 자동결제 없음",
+      "entitlement": "lifetime",
+      "pricingVersion": 7,
+      "listPriceUsd": 91,
+      "regions": {
+        "Global": {
+          "payment": "paypal",
+          "currency": "USD",
+          "orderName": "MidiAI Studio Lifetime License",
+          "portoneProductId": "",
+          "listPrice": 91,
+          "salePrice": 91
+        },
+        "KR": {
+          "payment": "portone",
+          "currency": "KRW",
+          "orderName": "MidiAI Studio Lifetime License",
+          "portoneProductId": "midiai-lifetime",
+          "salePrice": 130000,
+          "listPrice": 130000
+        }
+      },
+      "nameJa": "Lifetime Full",
+      "sortOrder": 7,
+      "creditAmount": 0,
+      "badge": "",
+      "plan": "lifetime",
+      "descriptionJa": "変換回数制限なし · Full機能 · 自動更新なし",
+      "descriptionEn": "Unlimited conversions · Full features · No auto-renewal",
+      "updatedAt": "2026-08-23T11:34:02.696Z",
+      "productDiscount": {
+        "startsAt": "",
+        "type": "percent",
+        "endsAt": "",
+        "value": 0,
+        "enabled": false
+      },
+      "productVersion": 7,
+      "packSavePercent": null,
+      "durationDays": 0,
+      "nameEn": "Lifetime Full",
+      "promoText": "Launch Discount",
+      "createdAt": "2026-07-31T13:34:37.422Z",
+      "productId": "LIFETIME"
+    }
+  }
+}
