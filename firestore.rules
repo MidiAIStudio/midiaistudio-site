@@ -104,6 +104,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /portoneRefundEvents/{eventId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /portoneWebhookDeliveries/{deliveryId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Pass / Lifetime grant ledger — Admin SDK (Cloud Functions) write only.
     match /entitlementGrants/{paymentId} {
       allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);

@@ -2860,10 +2860,16 @@ function accountOrderMethodLabel(o){
 function accountOrderStatusInfo(o){
   const s=String(o?.status||'').toLowerCase();
   if(s==='completed' || s==='paid' || s==='verified'){
-    return { key:'paid', label: lang==='en'?'Paid':lang==='ja'?'支払済み':'결제 완료' };
+    return { key:'paid', label: lang==='en'?'Paid':lang==='ja'?'支払済み':'결제완료' };
+  }
+  if(s==='refund_review_required'){
+    return { key:'review', label: lang==='en'?'Refund review':lang==='ja'?'返金確認':'환불검토필요' };
+  }
+  if(s==='partially_refunded'){
+    return { key:'refund', label: lang==='en'?'Partial refund':lang==='ja'?'一部返金':'부분환불' };
   }
   if(s==='refunded' || s==='duplicate_refunded' || s.includes('refund')){
-    return { key:'refund', label: lang==='en'?'Refunded':lang==='ja'?'返金':'환불' };
+    return { key:'refund', label: lang==='en'?'Refunded':lang==='ja'?'返金':'전액환불' };
   }
   if(s==='cancelled' || s==='canceled'){
     return { key:'refund', label: lang==='en'?'Canceled':lang==='ja'?'キャンセル':'취소' };
@@ -6756,15 +6762,17 @@ const ADMIN_ACTIVITY_LABELS = {
   offline: '오프라인'
 };
 const ADMIN_PAYMENT_STATUS_LABELS = {
-  completed: '결제 완료',
-  pending: '결제 대기',
-  failed: '결제 실패',
-  cancelled: '결제 취소',
-  canceled: '결제 취소',
-  refunded: '환불',
+  completed: '결제완료',
+  paid: '결제완료',
+  pending: '결제대기',
+  failed: '결제실패',
+  cancelled: '취소',
+  canceled: '취소',
+  refunded: '전액환불',
+  partially_refunded: '부분환불',
+  refund_review_required: '환불검토필요',
   duplicate_refunded: '중복 환불',
   duplicate_refund_failed: '중복 환불 실패',
-  paid: '결제 완료',
   open: '접수',
   answered: '답변 완료',
   closed: '종료'
@@ -6972,7 +6980,7 @@ function adminOrderStatusGroup(status){
   const s=String(status||'').toLowerCase();
   if(s==='completed' || s==='paid') return 'paid';
   if(s==='failed') return 'failed';
-  if(s==='cancelled' || s==='canceled' || s==='refunded' || s==='duplicate_refunded' || s==='duplicate_refund_failed') return 'refund';
+  if(s==='cancelled' || s==='canceled' || s==='refunded' || s==='partially_refunded' || s==='refund_review_required' || s==='duplicate_refunded' || s==='duplicate_refund_failed') return 'refund';
   if(s==='pending' || s==='open') return 'pending';
   return 'other';
 }
@@ -7016,7 +7024,9 @@ function adminOrderAmountTotals(rows, groups){
 function adminOrderRefundText(o){
   const group=adminOrderStatusGroup(o?.status);
   const bits=[];
-  if(o?.refundAt) bits.push(fmtListDate(o.refundAt));
+  const when=o?.refundedAt || o?.cancelledAt || o?.refundAt;
+  if(when) bits.push(fmtListDate(when));
+  if(o?.refundedAmount!=null && o.refundedAmount!=='') bits.push(`환불 ${Number(o.refundedAmount).toLocaleString('ko-KR')}`);
   if(o?.refundReason) bits.push(String(o.refundReason));
   if(bits.length) return bits.join(' · ');
   if(group==='refund') return adminPaymentStatusLabel(o.status);
@@ -7029,9 +7039,10 @@ function adminPaymentStatusBadgeHtml(status){
   let cls='is-none';
   if(group==='paid') cls='is-lifetime';
   else if(group==='failed') cls='is-banned';
+  else if(s==='refund_review_required' || s==='duplicate_refund_failed') cls='is-trial';
+  else if(s==='partially_refunded') cls='is-period';
   else if(group==='refund') cls='is-expired';
   else if(group==='pending') cls='is-period';
-  if(s==='duplicate_refund_failed') cls='is-banned';
   return `<span class="crm-badge ${cls}"><i></i>${esc(label)}</span>`;
 }
 function adminLicenseStatusBadgeHtml(view){
@@ -8751,7 +8762,7 @@ function renderAdminCrmOrders(uid, showAll){
     const amount=o.amount!=null ? `${Number(o.amount).toLocaleString('ko-KR')} ${o.currency||'KRW'}` : '-';
     const when=fmtCompactDateTime(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt);
     const key=o.id || o.paymentId || o.paypalOrderId || '';
-    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="crm-td-id">${crmSlideHtml(id)}</td><td class="crm-td-method">${crmSlideHtml(adminPaymentMethodLabel(method))}</td><td class="crm-td-amount">${crmSlideHtml(amount)}</td><td class="crm-td-date">${crmSlideHtml(when)}</td><td class="crm-td-status">${crmSlideHtml(adminPaymentStatusLabel(o.status||'-'))}</td></tr>`;
+    return `<tr class="admin-crm-order-row" data-order-id="${esc(key)}" tabindex="0" title="${esc(id)}"><td class="crm-td-id">${crmSlideHtml(id)}</td><td class="crm-td-method">${crmSlideHtml(adminPaymentMethodLabel(method))}</td><td class="crm-td-amount">${crmSlideHtml(amount)}</td><td class="crm-td-date">${crmSlideHtml(when)}</td><td class="crm-td-status">${adminPaymentStatusBadgeHtml(o.status||'-')}</td></tr>`;
   }).join('')}</tbody></table>${(!showAll && all.length>5) ? `<p class="muted small">외 ${all.length-5}건 · 더보기로 전체 표시</p>` : ''}`;
   bindCrmTextSlides(box);
   box.querySelectorAll('[data-order-id]').forEach(row=>{
@@ -8761,29 +8772,94 @@ function renderAdminCrmOrders(uid, showAll){
     row.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openAdminCrmOrderDrawer(uid, row.getAttribute('data-order-id')); }});
   });
 }
-function openAdminCrmOrderDrawer(uid, orderKey){
+function isAdminPortOneOrder(o){
+  const provider=String(o?.provider||o?.pg||'').toLowerCase();
+  const method=String(o?.paymentMethod||o?.method||'').toLowerCase();
+  if(o?.paypalOrderId || o?.paypalCaptureId) return false;
+  return provider==='portone' || method.includes('kakao') || method.includes('inicis') || !!o?.paymentId;
+}
+function adminOrderMoneyText(amount, currency){
+  if(amount==null || amount==='') return '-';
+  const n=Number(amount);
+  if(!Number.isFinite(n)) return String(amount);
+  return `${n.toLocaleString('ko-KR')} ${currency||'KRW'}`;
+}
+function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
   const drawer=$('adminCrmOrderDrawer');
   const body=$('adminCrmOrderDrawerBody');
   if(!drawer||!body) return;
-  const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
-  if(!o){ body.innerHTML=`<p class="muted">주문을 찾을 수 없습니다.</p>`; drawer.hidden=false; return; }
-  const licIssued = o.licenseIssued===true || o.status==='completed' || !!o.issuedAt;
+  const found = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+  if(!found){ body.innerHTML=`<p class="muted">주문을 찾을 수 없습니다.</p>`; drawer.hidden=false; return; }
+  const o = Object.assign({}, found, overlay||{});
+  const licIssued = o.licenseIssued===true || o.status==='completed' || o.status==='paid' || !!o.issuedAt;
   const receipt = o.receiptUrl || o.receipt || o.invoiceUrl || '';
+  const currency = o.currency || 'KRW';
+  const paidShow = o.paidAmount!=null ? o.paidAmount : o.amount;
+  const refundShow = o.refundedAmount!=null ? o.refundedAmount : o.cancelledAmount;
+  const refundWhen = o.refundedAt || o.cancelledAt || o.refundAt;
+  const portone = isAdminPortOneOrder(o);
+  const paymentId = o.paymentId || o.id || orderKey;
   body.innerHTML = `
     <dl class="admin-crm-order-dl">
       <div><dt>주문번호</dt><dd class="mono">${esc(o.paymentId||o.paypalOrderId||o.id||'-')}</dd></div>
       <div><dt>Payment ID</dt><dd class="mono">${esc(o.paymentId||o.portoneTransactionId||o.paypalCaptureId||'-')}</dd></div>
       <div><dt>PG</dt><dd>${esc(o.provider||o.pg||'-')}</dd></div>
       <div><dt>결제수단</dt><dd>${esc(adminPaymentMethodLabel(o.paymentMethod||o.method||'-'))}</dd></div>
-      <div><dt>결제금액</dt><dd>${o.amount!=null?`${Number(o.amount).toLocaleString('ko-KR')} ${esc(o.currency||'')}`:'-'}</dd></div>
-      <div><dt>상태</dt><dd>${esc(adminPaymentStatusLabel(o.status||'-'))}</dd></div>
+      <div><dt>결제금액</dt><dd>${esc(adminOrderMoneyText(o.amount, currency))}</dd></div>
+      <div><dt>실결제</dt><dd>${esc(adminOrderMoneyText(paidShow, currency))}</dd></div>
+      <div><dt>환불금액</dt><dd>${esc(adminOrderMoneyText(refundShow, currency))}</dd></div>
+      <div><dt>상태</dt><dd>${adminPaymentStatusBadgeHtml(o.status||'-')}</dd></div>
+      <div><dt>PG 상태</dt><dd>${esc(o.providerStatus||o.rawStatus||'-')}</dd></div>
       <div><dt>결제시간</dt><dd>${esc(fmtDate(o.completedAt||o.verifiedAt||o.createdAt||o.updatedAt))}</dd></div>
+      <div><dt>환불일시</dt><dd>${esc(refundWhen?fmtDate(refundWhen):'-')}</dd></div>
+      <div><dt>마지막 동기화</dt><dd>${esc(o.lastSyncedAt?fmtDate(o.lastSyncedAt):'-')}</dd></div>
       <div><dt>웹훅 결과</dt><dd>${esc(o.verificationStatus||o.rawStatus||o.webhookStatus||'-')}</dd></div>
       <div><dt>자동 라이선스 지급</dt><dd>${licIssued?'지급됨':'미지급/해당없음'}</dd></div>
+      ${o.licenseRefundReview?`<div><dt>라이선스</dt><dd>자동 회수하지 않음 · 관리자 검토</dd></div>`:''}
+      ${o.creditsReclaimStatus?`<div><dt>크레딧 회수</dt><dd>${esc(o.creditsReclaimStatus==='reclaim'?'회수됨':o.creditsReclaimStatus==='review'?'검토 필요':String(o.creditsReclaimStatus))}${o.creditsReclaimReason?` · ${esc(o.creditsReclaimReason)}`:''}</dd></div>`:''}
       <div><dt>관리 메모</dt><dd>${esc(o.memo||o.adminMemo||o.refundReason||'-')}</dd></div>
       <div><dt>영수증</dt><dd>${receipt?`<a href="${esc(receipt)}" target="_blank" rel="noopener">영수증 열기</a>`:'없음'}</dd></div>
-    </dl>`;
+    </dl>
+    ${portone?`<div class="admin-crm-order-sync"><button type="button" class="secondary mini-btn" data-portone-sync="${esc(paymentId)}">PortOne 상태 동기화</button><p class="muted small">콘솔 취소가 안 보이면 서버에서 PortOne 원장을 다시 조회합니다. 시크릿은 브라우저에 두지 않습니다.</p></div>`:''}`;
+  const syncBtn=body.querySelector('[data-portone-sync]');
+  if(syncBtn){
+    syncBtn.addEventListener('click',()=>syncAdminPortOneOrder(uid, orderKey, syncBtn));
+  }
   drawer.hidden=false;
+}
+async function syncAdminPortOneOrder(uid, orderKey, btn){
+  const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+  const paymentId = o?.paymentId || o?.id || orderKey;
+  if(btn){ btn.disabled=true; btn.textContent='동기화 중...'; }
+  try{
+    const result = await callFunctionJson('syncPortOnePaymentStatus', { paymentId });
+    const overlay = {
+      status: result.status,
+      providerStatus: result.providerStatus,
+      paidAmount: result.paidAmount,
+      refundedAmount: result.refundedAmount,
+      cancelledAmount: result.cancelledAmount,
+      refundedAt: result.cancelledAt,
+      lastSyncedAt: new Date().toISOString(),
+      creditsReclaimStatus: result.entitlement && result.entitlement.action,
+      creditsReclaimReason: result.entitlement && result.entitlement.reason,
+      licenseRefundReview: result.entitlement && result.entitlement.kind==='license'
+    };
+    if(o) Object.assign(o, overlay);
+    paintAdminCrmOrderDrawer(uid, orderKey, overlay);
+    adminFlash(result.status==='refund_review_required' ? 'PortOne 동기화 완료 · 환불 검토가 필요합니다.' : 'PortOne 상태를 동기화했습니다.');
+  }catch(err){
+    alert(err?.message || 'PortOne 동기화에 실패했습니다.');
+    if(btn){ btn.disabled=false; btn.textContent='PortOne 상태 동기화'; }
+  }
+}
+function openAdminCrmOrderDrawer(uid, orderKey){
+  paintAdminCrmOrderDrawer(uid, orderKey);
+  const o = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
+  if(o && isAdminPortOneOrder(o) && !openAdminCrmOrderDrawer._syncing){
+    openAdminCrmOrderDrawer._syncing=true;
+    syncAdminPortOneOrder(uid, orderKey).finally(()=>{ openAdminCrmOrderDrawer._syncing=false; });
+  }
 }
 function closeAdminCrmOrderDrawer(){
   const drawer=$('adminCrmOrderDrawer');

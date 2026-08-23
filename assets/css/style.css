@@ -976,6 +976,8 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .admin-page .admin-crm-drawer-panel{position:relative;width:min(400px,100%);height:100%;background:rgba(10,14,24,.98);border-left:1px solid var(--crm-line);padding:16px;overflow:auto;box-shadow:-18px 0 48px rgba(0,0,0,.4)}
 .admin-page .admin-crm-drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .admin-page .admin-crm-drawer-head h3{margin:0;font-size:14px}
+.admin-page .admin-crm-order-sync{margin-top:14px;display:grid;gap:8px}
+.admin-page .admin-crm-order-sync .muted{margin:0}
 .admin-page .admin-crm-order-dl{display:grid;gap:8px;margin:0}
 .admin-page .admin-crm-order-dl>div{padding:9px 11px;border-radius:10px;background:var(--crm-soft);border:1px solid var(--crm-line)}
 .admin-page .admin-crm-order-dl dt{font-size:10px;color:#6f7694;margin:0 0 3px;letter-spacing:.04em;text-transform:uppercase;font-weight:700}
@@ -1414,6 +1416,7 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .account-page .account-order-status.is-refund{background:rgba(148,163,184,.12);color:#94a3b8}
 .account-page .account-order-status.is-failed{background:rgba(251,113,133,.14);color:#fda4af}
 .account-page .account-order-status.is-pending,.account-page .account-order-status.is-other{background:rgba(251,191,36,.12);color:#fcd34d}
+.account-page .account-order-status.is-review{background:rgba(251,191,36,.16);color:#fbbf24}
 .account-page .account-panel-orders .account-panel-head{width:100%}
 @media(max-width:720px){
   .account-page .account-order-row{gap:8px}

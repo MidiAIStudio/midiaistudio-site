@@ -6,6 +6,7 @@ admin.initializeApp();
 const db = admin.firestore();
 const catalogEngine = require('./catalogEngine');
 const passEntitlement = require('./passEntitlement');
+const portoneRefundSync = require('./portoneRefundSync');
 
 /** Discord webhooks — set via Secret Manager / `firebase functions:secrets:set` */
 const discordInquiryWebhook = defineSecret('DISCORD_INQUIRY_WEBHOOK');
@@ -58,6 +59,28 @@ async function requireUser(req) {
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token) throw Object.assign(new Error('Google 로그인이 필요합니다.'), { status: 401 });
   return admin.auth().verifyIdToken(token);
+}
+
+async function requireAdmin(req) {
+  const user = await requireUser(req);
+  const snap = await db.collection('users').doc(user.uid).get();
+  const role = String((snap.data() || {}).role || '').toLowerCase();
+  if (role !== 'admin' && role !== 'developer' && role !== 'staff') {
+    throw Object.assign(new Error('관리자만 사용할 수 있습니다.'), { status: 403 });
+  }
+  return user;
+}
+
+async function applyPortOneRefundSync(paymentId, source, actorUid) {
+  const payment = await fetchPortOnePayment(paymentId);
+  return portoneRefundSync.syncPortOnePayment({
+    db,
+    FieldValue: admin.firestore.FieldValue,
+    paymentId,
+    payment,
+    source,
+    actorUid
+  });
 }
 
 async function paypalAccessToken() {
@@ -1643,6 +1666,77 @@ exports.recordAccessInfo = functions.https.onRequest(async (req, res) => {
     return res.status(status).json({
       ok: false,
       message: err.message || 'recordAccessInfo failed'
+    });
+  }
+});
+
+/**
+ * PortOne webhook. Signature is checked when PORTONE_WEBHOOK_SECRET is set.
+ * Payment status is always re-fetched from PortOne — the body is never trusted.
+ */
+exports.portoneWebhook = functions.https.onRequest(async (req, res) => {
+  if (req.method === 'OPTIONS') return res.status(204).send('');
+  if (req.method !== 'POST') return res.status(405).send('POST only');
+  try {
+    const raw = req.rawBody || Buffer.from(
+      typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {})
+    );
+    const secret = cfg('PORTONE_WEBHOOK_SECRET');
+    const verified = portoneRefundSync.verifyPortOneWebhookSignature(raw, req.headers, secret);
+    if (!verified.ok) {
+      console.warn('portoneWebhook signature rejected', verified.reason);
+      return res.status(401).send('invalid signature');
+    }
+    if (verified.skipped) {
+      console.warn('portoneWebhook: PORTONE_WEBHOOK_SECRET unset; relying on PortOne API re-fetch');
+    }
+    const payload = (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body))
+      ? req.body
+      : JSON.parse(String(raw || '{}') || '{}');
+    const paymentId = portoneRefundSync.extractPaymentIdFromWebhook(payload);
+    if (!paymentId) {
+      console.warn('portoneWebhook missing paymentId', portoneRefundSync.extractWebhookType(payload));
+      return res.status(200).json({ ok: true, ignored: true });
+    }
+    const webhookId = String(
+      req.headers['webhook-id'] || req.headers['Webhook-Id'] || verified.webhookId || ''
+    ).trim();
+    await portoneRefundSync.recordWebhookDelivery(
+      db,
+      admin.firestore.FieldValue,
+      webhookId || ('body_' + paymentId),
+      payload
+    );
+    const result = await applyPortOneRefundSync(paymentId, 'webhook', '');
+    return res.status(200).json({ ok: true, paymentId, result });
+  } catch (err) {
+    console.error('portoneWebhook', err && err.message ? err.message : err);
+    const status = err.status === 404 ? 200 : (err.status || 500);
+    if (status === 200) return res.status(200).json({ ok: true, skipped: true, message: err.message || 'not found' });
+    return res.status(status).send(err.message || 'webhook error');
+  }
+});
+
+/**
+ * Admin: re-fetch PortOne payment and sync order / credit / review flags.
+ * Client cannot send secret, amount, uid, or status overrides.
+ */
+exports.syncPortOnePaymentStatus = functions.https.onRequest(async (req, res) => {
+  if (cors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
+  try {
+    const adminUser = await requireAdmin(req);
+    const paymentId = String((req.body || {}).paymentId || (req.body || {}).orderId || '').trim();
+    if (!paymentId) {
+      return res.status(400).json({ ok: false, message: 'paymentId가 없습니다.' });
+    }
+    const result = await applyPortOneRefundSync(paymentId, 'admin', adminUser.uid);
+    return res.json(result);
+  } catch (err) {
+    console.error('syncPortOnePaymentStatus', err && err.message ? err.message : err);
+    return res.status(err.status || 500).json({
+      ok: false,
+      message: err.message || 'PortOne 상태 동기화에 실패했습니다.'
     });
   }
 });
