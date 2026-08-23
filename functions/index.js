@@ -4,6 +4,8 @@ const { defineSecret } = require('firebase-functions/params');
 
 admin.initializeApp();
 const db = admin.firestore();
+const catalogEngine = require('./catalogEngine');
+const passEntitlement = require('./passEntitlement');
 
 /** Discord webhooks — set via Secret Manager / `firebase functions:secrets:set` */
 const discordInquiryWebhook = defineSecret('DISCORD_INQUIRY_WEBHOOK');
@@ -94,9 +96,13 @@ function envPayPalFallback() {
 function envKrFallback() {
   return {
     plan: cfg('PORTONE_PLAN', cfg('PAYPAL_PLAN', 'lifetime')),
-    amount: Number(cfg('PORTONE_KR_AMOUNT', '130000')),
+    amount: Number(cfg('PORTONE_KR_AMOUNT', '129000')),
     currency: String(cfg('PORTONE_KR_CURRENCY', 'KRW')).toUpperCase().replace(/^CURRENCY_/, ''),
     productId: cfg('PORTONE_PRODUCT_ID', 'midiai-lifetime'),
+    productCanonicalId: 'LIFETIME',
+    productType: 'lifetime',
+    entitlement: 'lifetime',
+    durationDays: 0,
     orderName: cfg('PORTONE_ORDER_NAME', 'MidiAI Studio Lifetime License'),
     allowedOrderNames: [
       cfg('PORTONE_ORDER_NAME', 'MidiAI Studio Lifetime License'),
@@ -133,12 +139,22 @@ function inDateRange(start, end, now = new Date()) {
   return true;
 }
 
+async function loadPromotions() {
+  try {
+    const snap = await db.collection('promotions').get();
+    return snap.docs.map((d) => ({ id: d.id, promotionId: d.id, ...d.data() }));
+  } catch (e) {
+    console.warn('promotions load failed', e);
+    return [];
+  }
+}
+
 async function isDiscountCampaignActiveServer() {
   try {
     const snap = await db.collection('pricingConfig').doc('main').get();
     const promo = snap.exists ? (snap.data() || {}).promo : null;
     if (!promo || promo.enabled !== true) return false;
-    return inDateRange(promo.discountStartsAt || '', promo.discountEndsAt || '');
+    return catalogEngine.isWindowActive(true, promo.discountStartsAt || '', promo.discountEndsAt || '');
   } catch (e) {
     console.warn('promo check failed', e);
     return false;
@@ -147,44 +163,101 @@ async function isDiscountCampaignActiveServer() {
 
 async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) {
   const snap = await db.collection('products').doc(productDocId).get();
+  let data = {};
+  let hydrated;
   if (!snap.exists) {
-    return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
+    const seed = catalogEngine.seedById(productDocId) || catalogEngine.seedById(catalogEngine.normalizeProductId(productDocId));
+    if (seed && (seed.type === 'full_pass' || catalogEngine.isPassProductId(seed.productId))) {
+      hydrated = catalogEngine.hydrateProduct(seed.productId, seed);
+      data = seed;
+    } else if (regionCode === 'KR' && (productDocId === DEFAULT_PRODUCT_DOC || catalogEngine.normalizeProductId(productDocId) === 'LIFETIME')) {
+      return envKrFallback();
+    } else if (regionCode !== 'KR') {
+      return envPayPalFallback();
+    } else {
+      const err = new Error('상품을 찾을 수 없습니다.');
+      err.status = 404;
+      err.code = 'PRODUCT_NOT_FOUND';
+      throw err;
+    }
+  } else {
+    data = snap.data() || {};
+    hydrated = catalogEngine.hydrateProduct(snap.id, data);
   }
-  const data = snap.data() || {};
-  if (data.status === 'paused') {
+  if (hydrated.status === 'paused' || hydrated.status === 'archived') {
     const err = new Error('현재 일시 판매중지된 상품입니다.');
     err.status = 403;
-    err.code = 'PRODUCT_PAUSED';
+    err.code = 'SALE_DISABLED';
     throw err;
   }
+  const promotions = await loadPromotions();
+  const currencyWanted = regionCode === 'KR' ? 'KRW' : 'USD';
+  let charge = catalogEngine.computeCharge(hydrated, promotions, new Date(), currencyWanted);
   const regions = data.regions || {};
-  const region = regions[regionCode] || (regionCode === 'KR' ? null : regions.Global) || regions.KR;
-  if (!region) {
+  const region = regions[regionCode] || (regionCode === 'KR' ? null : regions.Global) || regions.KR || {};
+  if (charge.ok && !charge.discount && currencyWanted === 'KRW') {
+    const campaignOn = await isDiscountCampaignActiveServer();
+    // Authoritative list = Firestore listPriceKrw (hydrated). Do not let a stale
+    // regions.KR.listPrice win over an admin-updated catalog price.
+    const authList = Number(hydrated.listPriceKrw);
+    const regionList = Number(region.listPrice);
+    const rawSale = Number(region.salePrice);
+    const listAligned = !Number.isFinite(regionList) || regionList <= 0
+      || (Number.isFinite(authList) && authList > 0 && regionList === authList);
+    const listPrice = Number.isFinite(authList) && authList > 0
+      ? authList
+      : (Number.isFinite(regionList) && regionList > 0 ? regionList : NaN);
+    if (
+      campaignOn
+      && listAligned
+      && Number.isFinite(rawSale)
+      && rawSale > 0
+      && Number.isFinite(listPrice)
+      && rawSale < listPrice
+    ) {
+      charge.effectivePrice = Math.round(rawSale);
+      charge.basePrice = listPrice;
+      charge.discount = { source: 'legacy_promo' };
+      charge.discountPercent = catalogEngine.displayDiscountPercent(charge.basePrice, charge.effectivePrice);
+    }
+  }
+  if (currencyWanted === 'USD' && (!charge.ok || charge.code === 'USD_UNSET')) {
+    return envPayPalFallback();
+  }
+  if (!charge.ok || !Number.isFinite(Number(charge.effectivePrice)) || Number(charge.effectivePrice) <= 0) {
+    // Existing Firestore docs must not silently fall back to env Lifetime amount.
+    if (snap.exists) {
+      const err = new Error('상품 가격을 계산할 수 없습니다. Admin catalog의 listPriceKrw를 확인하세요.');
+      err.status = 500;
+      err.code = 'PRICE_INVALID';
+      throw err;
+    }
     return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
   }
   const currency = String(region.currency || (regionCode === 'KR' ? 'KRW' : 'USD')).toUpperCase();
-  const listPrice = Number(region.listPrice);
-  const rawSale = Number(region.salePrice);
-  const campaignOn = await isDiscountCampaignActiveServer();
-  const salePrice = campaignOn && Number.isFinite(rawSale) && rawSale > 0
-    ? rawSale
-    : (Number.isFinite(listPrice) && listPrice > 0 ? listPrice : rawSale);
-  if (!Number.isFinite(salePrice) || salePrice <= 0) {
-    return regionCode === 'KR' ? envKrFallback() : envPayPalFallback();
-  }
-  const orderName = region.orderName || data.name || 'MidiAI Studio Lifetime License';
+  const orderName = region.orderName || hydrated.orderNameKo || data.name || data.orderNameKo || 'MidiAI Studio Lifetime License';
   const productId = region.portoneProductId || cfg('PORTONE_PRODUCT_ID', productDocId);
+  const salePrice = charge.effectivePrice;
+  const listPrice = charge.basePrice;
   const base = {
-    plan: data.plan || 'lifetime',
+    plan: data.plan || (hydrated.type === 'full_pass' ? 'period' : 'lifetime'),
     productDocId,
-    productName: data.name || 'Lifetime License',
+    productCanonicalId: hydrated.productId || catalogEngine.normalizeProductId(productDocId),
+    productType: hydrated.type || 'lifetime',
+    entitlement: hydrated.entitlement || (hydrated.type === 'full_pass' ? 'full_pass' : 'lifetime'),
+    durationDays: hydrated.type === 'full_pass'
+      ? passEntitlement.passDurationDays(hydrated.productId, hydrated.durationDays)
+      : 0,
+    productName: data.name || hydrated.nameKo || hydrated.orderNameKo || 'Lifetime License',
     region: regionCode,
-    pricingVersion: Number(data.pricingVersion) || 1,
-    status: data.status || 'active',
-    listPrice: Number.isFinite(listPrice) && listPrice > 0 ? listPrice : salePrice,
+    pricingVersion: Number(charge.productVersion) || 1,
+    status: hydrated.status || 'active',
+    listPrice,
     payment: region.payment || (regionCode === 'KR' ? 'portone' : 'paypal'),
     orderName,
-    currency
+    currency,
+    discountPercent: charge.discountPercent || 0,
+    promotionId: (charge.discount && charge.discount.promotionId) || ''
   };
   if (regionCode === 'KR' || region.payment === 'portone') {
     return {
@@ -193,10 +266,14 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
       productId,
       allowedOrderNames: Array.from(new Set([
         orderName,
+        hydrated.orderNameKo,
+        hydrated.orderNameEn,
+        data.orderNameKo,
+        data.orderNameEn,
         'MidiAI Studio Lifetime License',
         'MidiAI Studio Lifetime 디지털 라이선스',
         cfg('PORTONE_ORDER_NAME', orderName)
-      ]))
+      ].filter(Boolean)))
     };
   }
   return {
@@ -425,6 +502,7 @@ exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) =>
         ok: true,
         eligible: false,
         hasLifetime: true,
+        code: 'LIFETIME_ALREADY_OWNED',
         plan: license.plan || 'lifetime',
         status: license.status || 'active',
         message: '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.'
@@ -474,6 +552,66 @@ exports.checkPurchaseEligibility = functions.https.onRequest(async (req, res) =>
   }
 });
 
+exports.createPurchaseQuote = functions.https.onRequest(async (req, res) => {
+  if (cors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
+  try {
+    const user = await requireUser(req);
+    const productKey = String((req.body || {}).productId || 'LIFETIME');
+    const pid = catalogEngine.normalizeProductId(productKey);
+    if (!catalogEngine.isLicenseProductId(pid)) {
+      return res.status(400).json({
+        ok: false,
+        code: 'USE_CREDIT_QUOTE',
+        message: 'Credit quotes are created by createCreditPurchaseQuote.'
+      });
+    }
+    const license = await readUserLicense(user.uid);
+    if (isActiveLifetimeLicense(license)) {
+      return res.status(403).json({
+        ok: false,
+        code: 'LIFETIME_ALREADY_OWNED',
+        message: '이미 Lifetime 라이선스를 보유하고 있습니다.'
+      });
+    }
+    const docId = catalogEngine.firestoreDocId(pid);
+    const product = await loadRegionCharge('KR', docId);
+    // Never trust client durationDays — catalog/seed only.
+    const durationDays = catalogEngine.isPassProductId(pid)
+      ? passEntitlement.passDurationDays(pid, product.durationDays)
+      : 0;
+    const now = new Date();
+    const expires = catalogEngine.quoteExpiry(now);
+    const quoteRef = db.collection('purchaseQuotes').doc();
+    const quote = {
+      quoteId: quoteRef.id,
+      uid: user.uid,
+      productId: pid,
+      productVersion: Number(product.pricingVersion || 1),
+      basePrice: product.listPrice,
+      discountType: product.discountPercent ? 'percent' : '',
+      discountValue: product.discountPercent || 0,
+      finalPrice: Number(product.amount),
+      currency: 'KRW',
+      creditAmount: 0,
+      entitlement: product.entitlement || (catalogEngine.isPassProductId(pid) ? 'full_pass' : 'lifetime'),
+      durationDays,
+      promotionId: product.promotionId || '',
+      status: 'open',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: expires
+    };
+    await quoteRef.set(quote);
+    return res.json({ ok: true, ...quote, quoteId: quoteRef.id, expiresAt: expires.toISOString() });
+  } catch (err) {
+    return res.status(err.status || 400).json({
+      ok: false,
+      code: err.code || 'QUOTE_FAILED',
+      message: err.message || 'Quote failed.'
+    });
+  }
+});
+
 /**
  * Release purchase lock after cancel/close (optional client call).
  * Body: { paymentId? }
@@ -497,6 +635,16 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
   try {
     const user = await requireUser(req);
+    const existingLicense = await readUserLicense(user.uid);
+    if (isActiveLifetimeLicense(existingLicense)) {
+      return res.status(403).json({
+        ok: false,
+        eligible: false,
+        hasLifetime: true,
+        code: 'LIFETIME_ALREADY_OWNED',
+        message: '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.'
+      });
+    }
     let product;
     try {
       product = await serverProduct();
@@ -664,7 +812,7 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
       return res.status(401).json({ ok: false, message: '로그인이 만료되었습니다. 다시 로그인해 주세요.' });
     }
 
-    const { paymentId, productId } = req.body || {};
+    const { paymentId, productId, quoteId } = req.body || {};
     if (!paymentId || typeof paymentId !== 'string') {
       return res.status(400).json({ ok: false, message: 'paymentId가 없습니다.' });
     }
@@ -672,9 +820,17 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
       return res.status(400).json({ ok: false, message: 'paymentId 형식이 올바르지 않습니다.' });
     }
 
+    const requestedPid = catalogEngine.normalizeProductId(productId || 'LIFETIME');
+    if (!catalogEngine.isLicenseProductId(requestedPid)) {
+      return res.status(400).json({
+        ok: false,
+        code: 'USE_CREDIT_PURCHASE',
+        message: 'Credit 상품은 creditPortOnePurchase를 사용하세요.'
+      });
+    }
     let product;
     try {
-      product = await serverKrProduct();
+      product = await loadRegionCharge('KR', catalogEngine.firestoreDocId(requestedPid));
     } catch (prodErr) {
       return res.status(prodErr.status || 400).json({
         ok: false,
@@ -682,8 +838,13 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
         message: prodErr.message || '상품을 구매할 수 없습니다.'
       });
     }
-    if (productId && productId !== product.productId) {
-      return res.status(400).json({ ok: false, message: '상품 정보가 일치하지 않습니다.' });
+    const canonicalPid = catalogEngine.normalizeProductId(product.productCanonicalId || requestedPid);
+    if (productId && catalogEngine.normalizeProductId(productId) !== canonicalPid
+        && String(productId) !== String(product.productId || '')) {
+      // Allow legacy PortOne channel productId (midiai-lifetime) for LIFETIME only.
+      if (!(canonicalPid === 'LIFETIME' && String(productId) === String(product.productId || ''))) {
+        return res.status(400).json({ ok: false, message: '상품 정보가 일치하지 않습니다.' });
+      }
     }
 
     const environment = cfg('PORTONE_ENVIRONMENT', 'test');
@@ -778,7 +939,22 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
 
     const paidAmount = Number(payment.amount?.total);
     const paidCurrency = normalizeCurrency(payment.currency);
-    if (!Number.isFinite(paidAmount) || paidAmount !== Number(product.amount)) {
+    let expectedAmount = Number(product.amount);
+    const customForQuote = parsePortOneCustomData(payment.customData);
+    const boundQuoteId = String(quoteId || customForQuote.quoteId || '');
+    if (boundQuoteId) {
+      const quoteSnap = await db.collection('purchaseQuotes').doc(boundQuoteId).get();
+      if (quoteSnap.exists) {
+        const quote = { id: quoteSnap.id, ...quoteSnap.data() };
+        const valid = catalogEngine.quoteIsValid(quote, { uid: user.uid, productId: canonicalPid });
+        if (valid.ok && Number(quote.finalPrice) > 0) {
+          expectedAmount = Number(quote.finalPrice);
+          product.amount = expectedAmount;
+          product.pricingVersion = Number(quote.productVersion || product.pricingVersion);
+        }
+      }
+    }
+    if (!Number.isFinite(paidAmount) || paidAmount !== expectedAmount) {
       console.warn('PortOne amount mismatch', {
         paymentId,
         paidAmount,
@@ -813,13 +989,19 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
     }
 
     const custom = parsePortOneCustomData(payment.customData);
-    if (custom.productId && custom.productId !== product.productId) {
-      return res.status(400).json({
-        ok: false,
-        message: '결제 확인 중 오류가 발생했습니다.',
-        paymentId,
-        code: 'PRODUCT_MISMATCH'
-      });
+    if (custom.productId) {
+      const customPid = catalogEngine.normalizeProductId(custom.productId);
+      const okCustom = customPid === canonicalPid
+        || String(custom.productId) === String(product.productId || '')
+        || (canonicalPid === 'LIFETIME' && String(custom.productId).toLowerCase().includes('lifetime'));
+      if (!okCustom && catalogEngine.isLicenseProductId(customPid) && customPid !== canonicalPid) {
+        return res.status(400).json({
+          ok: false,
+          message: '결제 확인 중 오류가 발생했습니다.',
+          paymentId,
+          code: 'PRODUCT_MISMATCH'
+        });
+      }
     }
     // Client may include uid in customData; never trust it for issuance.
     if (custom.uid && custom.uid !== user.uid) {
@@ -840,6 +1022,7 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
     }
 
     // Duplicate lifetime guard — never overwrite an existing active lifetime license.
+    // Lifetime holders also must not buy PASS (auto-refund).
     const existingLicense = await readUserLicense(user.uid);
     if (isActiveLifetimeLicense(existingLicense)) {
       const now = admin.firestore.FieldValue.serverTimestamp();
@@ -929,6 +1112,8 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
       const snap = await tx.get(orderRef);
       const licenseSnap = await tx.get(licenseRef);
       const licenseData = licenseSnap.exists ? (licenseSnap.data() || {}) : null;
+      const grantRef = db.collection('entitlementGrants').doc(paymentId);
+      const grantSnap = await tx.get(grantRef);
 
       // Re-check inside transaction to avoid race with concurrent verify calls.
       if (isActiveLifetimeLicense(licenseData)) {
@@ -936,6 +1121,16 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
           status: 409,
           code: 'DUPLICATE_LICENSE_RACE'
         });
+      }
+
+      if (grantSnap.exists) {
+        const grant = grantSnap.data() || {};
+        if (grant.uid && grant.uid !== user.uid) {
+          throw Object.assign(new Error('이미 다른 계정에서 처리된 결제입니다.'), { status: 403 });
+        }
+        // Same payment already granted — do not extend again (idempotent).
+        issued = false;
+        return;
       }
 
       if (snap.exists) {
@@ -953,6 +1148,46 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
         }
       }
 
+      const isPass = catalogEngine.isPassProductId(canonicalPid);
+      let licensePayload;
+      let durationDays = 0;
+      if (isPass) {
+        durationDays = passEntitlement.passDurationDays(canonicalPid, product.durationDays);
+        const extending = !!(licenseData && passEntitlement.licenseTsMs(licenseData.expiresAt) > Date.now()
+          && String(licenseData.plan || '').toLowerCase() !== 'lifetime');
+        licensePayload = passEntitlement.buildPassLicensePayload({
+          user,
+          passProductId: canonicalPid,
+          durationDays,
+          existingLicense: licenseData,
+          method: 'kakaopay',
+          memo: `${extending ? 'PASS_EXTENDED' : 'PASS_PURCHASE'} · KakaoPay · payment ${paymentId}`,
+          extra: {
+            portonePaymentId: paymentId,
+            portoneTransactionId: payment.transactionId || '',
+            lastPurchaseProductId: canonicalPid,
+            lastPurchaseEvent: extending ? 'PASS_EXTENDED' : 'PASS_PURCHASE'
+          },
+          FieldValue: admin.firestore.FieldValue,
+          Timestamp: admin.firestore.Timestamp
+        });
+      } else {
+        licensePayload = lifetimeLicensePayload({
+          user,
+          plan: product.plan || 'lifetime',
+          method: 'kakaopay',
+          memo: `KakaoPay 자동 지급 · payment ${paymentId}`,
+          extra: {
+            portonePaymentId: paymentId,
+            portoneTransactionId: payment.transactionId || '',
+            // Clear timed pass fields on Lifetime purchase
+            passProductId: admin.firestore.FieldValue.delete(),
+            expiresAt: admin.firestore.FieldValue.delete(),
+            startsAt: admin.firestore.FieldValue.delete(),
+            expireReason: admin.firestore.FieldValue.delete()
+          }
+        });
+      }
       tx.set(orderRef, {
         paymentId,
         uid: user.uid,
@@ -960,15 +1195,16 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
         provider: 'portone',
         paymentMethod: 'kakaopay',
         environment,
-        productId: product.productId,
-        productDocId: product.productDocId || DEFAULT_PRODUCT_DOC,
-        productName: product.productName || 'Lifetime License',
+        productId: canonicalPid,
+        productDocId: product.productDocId || catalogEngine.firestoreDocId(canonicalPid),
+        productName: product.productName || canonicalPid,
         region: product.region || 'KR',
         pricingVersion: product.pricingVersion || 0,
         orderName,
         amount: product.amount,
         currency: product.currency,
-        plan: product.plan,
+        plan: isPass ? 'period' : (product.plan || 'lifetime'),
+        durationDays: isPass ? durationDays : 0,
         status: 'completed',
         verificationStatus: 'verified',
         licenseIssued: true,
@@ -981,20 +1217,19 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
         updatedAt: now
       }, { merge: true });
 
-      tx.set(
-        licenseRef,
-        lifetimeLicensePayload({
-          user,
-          plan: product.plan,
-          method: 'kakaopay',
-          memo: `KakaoPay 자동 지급 · payment ${paymentId}`,
-          extra: {
-            portonePaymentId: paymentId,
-            portoneTransactionId: payment.transactionId || ''
-          }
-        }),
-        { merge: true }
-      );
+      tx.set(licenseRef, licensePayload, { merge: true });
+      tx.set(grantRef, {
+        paymentId,
+        uid: user.uid,
+        productId: canonicalPid,
+        kind: isPass ? 'pass' : 'lifetime',
+        durationDays: isPass ? durationDays : 0,
+        amount: product.amount,
+        currency: product.currency,
+        grantedAt: now,
+        revokedAt: null,
+        status: 'active'
+      }, { merge: true });
       issued = true;
     });
 
@@ -1017,7 +1252,8 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
       currency: product.currency,
       paymentMethod: 'kakaopay',
       environment,
-      plan: product.plan
+      plan: catalogEngine.isPassProductId(canonicalPid) ? 'period' : (product.plan || 'lifetime'),
+      productId: canonicalPid
     });
   } catch (err) {
     console.error('verifyPortOnePaymentAndIssueLicense', err);
@@ -1240,6 +1476,7 @@ exports.expireTimedLicenses = onSchedule({
         status: 'active',
         startsAt: admin.firestore.FieldValue.delete(),
         expiresAt: admin.firestore.FieldValue.delete(),
+        passProductId: admin.firestore.FieldValue.delete(),
         expiredAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         expireReason: 'auto_period_to_trial'

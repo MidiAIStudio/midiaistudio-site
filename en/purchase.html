@@ -41,7 +41,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/style.css?v=nav-ghost-fix-1">
+  <link rel="stylesheet" href="../assets/css/style.css?v=price-gradient-1">
   <script defer src="../assets/js/analytics.js"></script>
   <script type="application/ld+json">
   {
@@ -93,95 +93,20 @@
       <div class="purchase-hero">
         <p class="eyebrow">Lifetime License</p>
         <h1 id="purchaseHeroTitle">MidiAI Studio</h1>
-        <p id="purchaseHeroLead">A Lifetime license for faster and more reliable AI-powered MIDI conversion.</p>
+        <p id="purchaseHeroLead">Choose a period Full Pass or Lifetime Full.</p>
       </div>
-
-      <div class="purchase-layout purchase-final-layout">
-        <div class="purchase-main-col">
-          <div class="price-card purchase-final-card purchase-v23-card purchase-pro-card">
-            <div class="purchase-price-head">
-              <div class="purchase-final-topline">
-                <span class="purchase-badge sale" hidden>Final Sale</span>
-                <span id="purchaseSaleUntil" class="purchase-sale-pill" hidden>Until July 31</span>
-              </div>
-              <div class="purchase-price-row">
-                <div>
-                  <h2>Lifetime License</h2>
-                  <div class="price purchase-final-price"><strong id="purchasePrice">$89 USD</strong></div>
-                </div>
-              </div>
-              <ul id="purchaseBenefitList" class="purchase-final-benefits purchase-benefit-pills">
-                <li>Linked to your Google account</li>
-                <li>Available on your registered PC</li>
-                <li>Support via 1:1 Support</li>
-              </ul>
-            </div>
-
-            <div class="purchase-spec-grid" aria-label="Product and payment details">
-              <div class="purchase-spec-item">
-                <span data-i18n-checkout="productLabel">Product</span>
-                <strong>MidiAI Studio Lifetime digital license</strong>
-              </div>
-              <div class="purchase-spec-item">
-                <span data-i18n-checkout="priceLabel">Price</span>
-                <strong id="purchaseReviewPrice">$89 USD</strong>
-              </div>
-              <div class="purchase-spec-item">
-                <span data-i18n-checkout="paymentTypeLabel">Payment type</span>
-                <strong>One-time payment</strong>
-              </div>
-              <div class="purchase-spec-item">
-                <span data-i18n-checkout="serviceLabel">Service delivery</span>
-                <strong class="purchase-service-period">License issued immediately after payment</strong>
-              </div>
-            </div>
-
-            <div class="purchase-account-box" id="purchaseAccountBox">
-              <strong id="purchaseAccountTitle">Sign in with Google before purchasing.</strong>
-              <p id="purchaseAccountText">After sign-in and payment, the Lifetime license will be assigned automatically to your Google account.</p>
-            </div>
-
-            <div class="purchase-checkout">
-              <div class="purchase-checkout-meta checkout-order-panel">
-                <div class="checkout-order-head">
-                  <span class="checkout-order-kicker">Checkout</span>
-                  <h3>Payment details</h3>
-                </div>
-                <dl class="checkout-order-list">
-                  <div class="checkout-order-item">
-                    <dt>Buyer</dt>
-                    <dd id="purchaseBuyerInfo" class="checkout-order-value">Filled after Google sign-in</dd>
-                  </div>
-                  <div class="checkout-order-item">
-                    <dt>Payment method</dt>
-                    <dd id="purchasePaymentMethod" class="checkout-pay-tags" aria-label="Payment method"></dd>
-                  </div>
-                </dl>
-              </div>
-              <div id="paypalButtons" class="paypal purchase-paypal-box"><p>Preparing payment buttons.</p></div>
-              <p id="paypalStatus" class="muted small"></p>
-          <div id="purchaseResultBox" class="purchase-result-box hidden" aria-live="polite"></div>
-            </div>
-          </div>
-        </div>
-
-        <aside class="purchase-final-side purchase-side">
-          <div class="notice purchase-final-note purchase-side-card">
-            <h3>License Guide</h3>
-            <ul class="license-benefit-list">
-              <li><b>Full-song MIDI conversion</b><span>Convert entire YouTube links or audio files to MIDI with AI.</span></li>
-              <li><b>Orchestra conversion</b><span>Generate MIDI for piano, guitar, bass, and other instruments.</span></li>
-              <li><b>MIDI Editor PRO</b><span>Edit multi-track piano rolls with velocity and CC parameters.</span></li>
-              <li><b>AI Assistant</b><span>Refine MIDI quality with AI suggestions during conversion and editing.</span></li>
-              <li><b>Score conversion</b><span>Convert MIDI to PDF/MusicXML and PDF scores back to MIDI.</span></li>
-              <li><b>Score editor</b><span>Edit converted scores and apply AI review suggestions.</span></li>
-            </ul>
-          </div>
-          <div id="bankTransferNotice" class="notice bank-transfer-notice purchase-final-bank purchase-side-card hidden">
-            <h3>Bank transfer</h3>
-          </div>
-        </aside>
+      <p id="purchaseLifetimeNotice" class="purchase-lifetime-notice" hidden></p>
+      <div id="purchasePlanGrid" class="purchase-plan-grid" role="list"></div>
+      <section id="purchaseTrialRow" class="purchase-trial-row" aria-label="Free trial"></section>
+      <section id="purchaseUsageGuide" class="purchase-usage" aria-live="polite"></section>
+      <div id="purchaseResultBox" class="purchase-result-box hidden" aria-live="polite"></div>
+      <div id="purchasePayMount" class="purchase-pay-mount" hidden>
+        <div id="paypalButtons" class="paypal purchase-paypal-box"></div>
+        <p id="paypalStatus" class="muted small"></p>
       </div>
+      <details id="bankTransferNotice" class="purchase-bank-mini hidden">
+        <summary>Bank transfer</summary>
+      </details>
     </section>
   </main>
 
@@ -200,7 +125,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='../'; localStorage.setItem('midiai_lang','en');</script>
-  <script type="module" src="../assets/js/config.js?v=sale-fix-5"></script>
-  <script type="module" src="../assets/js/app.js?v=access-uid-1"></script>
+  <script type="module" src="../assets/js/config.js?v=lifetime-lock-3"></script>
+  <script type="module" src="../assets/js/app.js?v=price-save-1"></script>
 </body>
 </html>

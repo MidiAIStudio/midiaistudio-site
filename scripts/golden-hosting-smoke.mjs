@@ -37,6 +37,7 @@ for (const path of urls) {
     const t = await r.text();
     row.title = t.match(/<title>([^<]*)/)?.[1];
     if (path === "/" || path.includes("purchase") || path.includes("audio-to-midi.html")) {
+      row.has129000 = t.includes("129000") || t.includes("129,000");
       row.has130000 = t.includes("130000") || t.includes("130,000");
       row.has90000 = /"price":\s*"90000"/.test(t);
     }
@@ -51,8 +52,8 @@ for (const path of urls) {
 
 const home = await fetch(ORIGIN + "/").then((r) => r.text());
 const purchase = await fetch(ORIGIN + "/purchase.html").then((r) => r.text());
-if (!home.includes('"price": "130000"')) fail.push({ path: "/", issue: "schema not 130000" });
-if (!purchase.includes("130,000원")) fail.push({ path: "/purchase.html", issue: "visible price missing" });
+if (!home.includes('"price": "129000"')) fail.push({ path: "/", issue: "schema not 129000" });
+if (!purchase.includes("129,000원") && !purchase.includes("129000")) fail.push({ path: "/purchase.html", issue: "visible price missing" });
 
 console.log(JSON.stringify({ origin: ORIGIN, ok: ok.length, fail }, null, 2));
 if (fail.length) process.exit(1);

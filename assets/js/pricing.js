@@ -3,6 +3,8 @@
  * Display only; Cloud Functions remain source of truth for charge amounts.
  */
 
+import { computeCharge, hydrateLegacyProduct, activeHomepagePromotions } from './catalog-engine.js?v=price-sot-1';
+
 const DEFAULT_PRODUCT_ID = 'lifetime';
 
 const FALLBACK_PRODUCT = {
@@ -19,8 +21,8 @@ const FALLBACK_PRODUCT = {
     KR: {
       payment: 'portone',
       currency: 'KRW',
-      listPrice: 130000,
-      salePrice: 130000,
+      listPrice: 129000,
+      salePrice: 129000,
       orderName: 'MidiAI Studio Lifetime License',
       portoneProductId: 'midiai-lifetime'
     },
@@ -64,6 +66,7 @@ let cache = {
   langRegionMap: { ...FALLBACK_LANG_MAP },
   defaultProductId: DEFAULT_PRODUCT_ID,
   promo: { ...FALLBACK_PROMO },
+  promotions: [],
   loaded: false
 };
 
@@ -147,11 +150,16 @@ export function isDiscountCampaignActive(now = new Date()) {
 
 /** Home sale popup window (can differ from discount period) */
 export function isPromoPopupActive(now = new Date()) {
+  if (activeHomepagePromotions(cache.promotions || [], { now }).length) return true;
   const p = getPromoConfig();
   if (!p.popupEnabled) return false;
   const start = p.popupStartsAt || p.discountStartsAt;
   const end = p.popupEndsAt || p.discountEndsAt;
   return inDateRange(start, end, now);
+}
+
+export function getActiveHomepagePromotions(lifetimeOwned = false, now = new Date()) {
+  return activeHomepagePromotions(cache.promotions || [], { now, lifetimeOwned });
 }
 
 export function promoLocalized(fieldBase, lang = 'ko') {
@@ -191,12 +199,18 @@ export function promoPopupCopy(lang = 'ko', priceCtx = null) {
 export function checkoutContext(lang, preferKoreanPath = false) {
   const region = preferKoreanPath ? 'KR' : resolveRegionForLang(lang);
   const product = getDefaultProduct();
+  const hydrated = hydrateLegacyProduct(product);
   const rp = getRegionPricing(product, region);
-  const list = Number(rp.listPrice);
+  const list = Number(hydrated.listPriceKrw || rp.listPrice);
   const rawSale = Number(rp.salePrice);
   const discountOn = isDiscountCampaignActive();
-  // Campaign off: sell at listPrice so leftover promo salePrice does not linger
-  const sale = discountOn && Number.isFinite(rawSale) ? rawSale : (Number.isFinite(list) && list > 0 ? list : rawSale);
+  const catalogCharge = computeCharge(hydrated, cache.promotions || [], new Date(), region === 'KR' ? 'KRW' : 'USD');
+  let sale = catalogCharge.ok ? catalogCharge.effectivePrice : (Number.isFinite(list) && list > 0 ? list : rawSale);
+  let discount = catalogCharge.discountPercent || 0;
+  if (!catalogCharge.discount && discountOn && Number.isFinite(rawSale) && rawSale > 0 && rawSale < list) {
+    sale = rawSale;
+    discount = Math.round((1 - sale / list) * 100);
+  }
   return {
     product,
     region,
@@ -206,8 +220,8 @@ export function checkoutContext(lang, preferKoreanPath = false) {
     salePrice: sale,
     displaySale: formatMoney(sale, rp.currency, lang),
     displayList: formatMoney(list, rp.currency, lang),
-    discount: discountOn ? discountPercent(list, rawSale) : 0,
-    discountCampaignActive: discountOn,
+    discount: discount,
+    discountCampaignActive: discount > 0,
     saleUntil: promoBadgeText(lang),
     orderName: rp.orderName || product.name || 'MidiAI Studio Lifetime License',
     portoneProductId: rp.portoneProductId || product.id || 'midiai-lifetime',
@@ -225,18 +239,26 @@ export function isSelling(product = getDefaultProduct()) {
   return (product?.status || 'active') === 'active';
 }
 
-export async function ensurePricing(db, firestoreApi) {
-  if (!db || !firestoreApi?.collection) return cache;
+export async function ensurePricing(db, firestoreApi, { force = false } = {}) {
+  if (!db || !firestoreApi?.collection) {
+    console.warn('CATALOG_FALLBACK_USED', { reason: 'no_firestore' });
+    return cache;
+  }
   const { collection, getDocs, doc, getDoc } = firestoreApi;
   try {
-    const [prodSnap, cfgSnap] = await Promise.all([
+    const [prodSnap, cfgSnap, promoSnap] = await Promise.all([
       getDocs(collection(db, 'products')),
-      getDoc(doc(db, 'pricingConfig', 'main')).catch(() => null)
+      getDoc(doc(db, 'pricingConfig', 'main')).catch(() => null),
+      getDocs(collection(db, 'promotions')).catch(() => null)
     ]);
     const products = prodSnap.docs
-      .map((d) => ({ id: d.id, ...d.data() }))
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
+      .map((d) => hydrateLegacyProduct({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.sortOrder || a.order || 0) - (b.sortOrder || b.order || 0));
     if (products.length) cache.products = products;
+    else console.warn('CATALOG_FALLBACK_USED', { reason: 'empty_products_collection' });
+    if (promoSnap?.docs) {
+      cache.promotions = promoSnap.docs.map((d) => ({ id: d.id, promotionId: d.id, ...d.data() }));
+    }
     if (cfgSnap?.exists?.()) {
       const cfg = cfgSnap.data() || {};
       if (cfg.langRegionMap) cache.langRegionMap = { ...FALLBACK_LANG_MAP, ...cfg.langRegionMap };
@@ -244,10 +266,18 @@ export async function ensurePricing(db, firestoreApi) {
       if (cfg.promo) cache.promo = normalizePromo(cfg.promo);
     }
     cache.loaded = true;
+    cache.loadedAt = Date.now();
+    cache.forceToken = force ? Date.now() : cache.forceToken;
   } catch (e) {
+    console.warn('CATALOG_FALLBACK_USED', { reason: 'ensurePricing_error', error: String(e?.message || e) });
     console.warn('ensurePricing fallback', e);
   }
   return cache;
+}
+
+export function invalidatePricingCache() {
+  cache.loaded = false;
+  cache.loadedAt = 0;
 }
 
 export function seedProductPayload() {

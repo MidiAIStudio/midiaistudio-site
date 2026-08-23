@@ -18,10 +18,10 @@ window.MIDIAI_CONFIG = {
   paypalClientId: "AafmcwWdMmC_lPmBJ1U0cnMqVml00HjXv0PO6MrE_Ev2PyeqhMTpRxCpbmYIlijp1w3DTbJHIXW8x7rA",
   functionsBaseUrl: "https://us-central1-midiaistudio.cloudfunctions.net",
   currency: "KRW",
-  priceValue: "130000",
-  priceDisplay: "130,000원",
-  priceValueKr: "130000",
-  priceDisplayKr: "130,000원",
+  priceValue: "129000",
+  priceDisplay: "129,000원",
+  priceValueKr: "129000",
+  priceDisplayKr: "129,000원",
   currencyGlobal: "USD",
   priceValueGlobal: "89.00",
   priceDisplayGlobal: "$89 USD",
@@ -35,5 +35,9 @@ window.MIDIAI_CONFIG = {
   portoneMode: "live", // "test" | "live"
   portoneProductId: "midiai-lifetime",
   portoneOrderName: "MidiAI Studio Lifetime License",
+  // Credit packs (CREDIT_5/30/100) are discontinued for sale; ledger/engine kept.
+  // Lifetime / Pass KakaoPay / PayPal are not gated by this flag.
+  CREDIT_PURCHASE_ENABLED: false,
+  creditPurchaseEnabled: false,
   supportDiscordUrl: ""
 };

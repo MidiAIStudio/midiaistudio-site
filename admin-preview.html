@@ -39,7 +39,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=admin-crm-head-memo-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=pass-policy-1">
 
 </head>
 <body class="admin-page admin-console-page admin-preview-page portal-page" data-admin-view="home">
@@ -152,75 +152,244 @@
 
             <section class="admin-pricing-section" id="adminPricingSection" hidden>
               <div class="admin-section-head admin-pricing-head">
-                <p class="admin-page-lead muted">Region별 정가·판매가가 곧 구매 UI와 PortOne·PayPal 서버 측에 동일 반영됩니다.</p>
+                <div>
+                  <h3>가격·상품</h3>
+                  <p class="admin-page-lead muted">상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.</p>
+                </div>
                 <div class="admin-pricing-actions">
                   <div class="admin-pricing-actions-create">
-                    <button type="button" class="secondary mini-btn" id="pricingAddProduct">상품 추가</button>
-                    <button type="button" class="secondary mini-btn" id="pricingAddRegion">Region 추가</button>
-                  </div>
-                  <div class="admin-pricing-actions-save">
-                    <button type="button" class="secondary mini-btn" id="pricingSavePromoBtn">할인/팝업 저장</button>
-                    <button type="button" class="primary mini-btn" id="pricingSaveBtn">저장</button>
+                    <button type="button" class="secondary mini-btn" id="pricingAddProduct">판매 카드 추가</button>
+                    <button type="button" class="secondary mini-btn" id="pricingAddPromo">이벤트 추가</button>
                   </div>
                 </div>
               </div>
               <div id="pricingSaveMsg" class="admin-flash hidden"></div>
+              <div class="pricing-summary" aria-label="상품 요약">
+                <div><span class="muted">판매 상품</span><strong id="pricingStatTotal">0</strong></div>
+                <div><span class="muted">판매중</span><strong id="pricingStatLive">0</strong></div>
+                <div><span class="muted">할인중</span><strong id="pricingStatDiscount">0</strong></div>
+                <div><span class="muted">예약 할인</span><strong id="pricingStatScheduled">0</strong></div>
+              </div>
+              <div class="pricing-pane-tabs" role="tablist">
+                <button type="button" class="is-active" data-pricing-pane="products">상품</button>
+                <button type="button" data-pricing-pane="promos">프로모션</button>
+              </div>
 
-              <div class="pricing-promo-card" id="pricingPromoCard">
-                <div class="pricing-promo-head">
-                  <div>
-                    <h4>할인 · 이벤트</h4>
-                    <p class="muted small">할인 뱃지·기간과 홈 팝업 문구를 관리합니다. 기간이 지나면 자동으로 꺼집니다.</p>
+              <div id="pricingProductsPane">
+                <div class="pricing-layout">
+                  <aside class="pricing-list-pane">
+                    <h4>판매 상품 목록</h4>
+                    <div id="pricingProductList" class="pricing-product-list"><p class="muted">불러오는 중…</p></div>
+                  </aside>
+                  <div class="pricing-editor-pane">
+                    <p class="muted" id="pricingEditorEmpty">왼쪽에서 상품을 선택하세요.</p>
+                    <div id="pricingEditorForm" hidden>
+                      <div id="pricingEditor" class="pricing-product-editor">
+                        <section class="pricing-edit-section">
+                          <h4 class="pricing-section-title">기본 정보</h4>
+                          <div class="pricing-form-grid">
+                            <label>상품명 <input id="draftNameKo" type="text" autocomplete="off"></label>
+                            <label>상품 유형 <input id="draftType" type="text" readonly></label>
+                            <label>판매 상태
+                              <select id="draftStatus">
+                                <option value="active">판매중</option>
+                                <option value="paused">판매중지</option>
+                                <option value="archived">보관</option>
+                              </select>
+                            </label>
+                            <label>정렬 순서 <input id="draftSort" type="number"></label>
+                            <label id="draftCreditsWrap">Credit 지급량 <input id="draftCredits" type="number" min="1" step="1"></label>
+                            <label id="draftDurationWrap" hidden>이용 기간
+                              <span class="pricing-input-suffix">
+                                <input id="draftDurationDays" type="number" min="1" step="1">
+                                <span class="pricing-suffix-label">일</span>
+                              </span>
+                            </label>
+                            <label id="draftDurationEntitlementWrap" hidden>권한 <input id="draftDurationEntitlement" type="text" value="Full" readonly></label>
+                            <label id="draftEntitlementWrap" hidden>권한 <input id="draftEntitlement" type="text" value="Lifetime" readonly></label>
+                            <label>대표 Badge
+                              <select id="draftBadge">
+                                <option value="">없음</option>
+                                <option value="recommended">추천</option>
+                                <option value="popular">인기</option>
+                                <option value="best">Best Value</option>
+                              </select>
+                            </label>
+                          </div>
+                        </section>
+
+                        <section class="pricing-edit-section">
+                          <h4 class="pricing-section-title">가격</h4>
+                          <div class="pricing-form-grid">
+                            <label>KR 정가
+                              <span class="pricing-input-suffix">
+                                <input id="draftPriceKrw" type="number" min="1" step="1">
+                                <span class="pricing-suffix-label">원</span>
+                              </span>
+                            </label>
+                            <label>해외 가격 USD
+                              <input id="draftPriceUsd" type="number" min="0" step="0.01" placeholder="미설정">
+                            </label>
+                          </div>
+                          <p class="muted small pricing-field-hint" id="draftUsdHint">USD 미설정 · PayPal 판매 안 함</p>
+                        </section>
+
+                        <section class="pricing-edit-section">
+                          <h4 class="pricing-section-title">할인 설정</h4>
+                          <label class="pricing-check pricing-disc-toggle"><input type="checkbox" id="draftDiscEnabled"> 할인 사용</label>
+                          <p class="muted small" id="draftDiscOffNote">현재 할인 없음</p>
+                          <div id="draftDiscFields" class="pricing-disc-fields" hidden>
+                            <div class="pricing-form-grid">
+                              <label>할인 방식
+                                <select id="draftDiscType">
+                                  <option value="percent">정률</option>
+                                  <option value="amount">정액</option>
+                                </select>
+                              </label>
+                              <label id="draftDiscValueLabel"><span id="draftDiscValueTitle">할인율</span>
+                                <span class="pricing-input-suffix">
+                                  <input id="draftDiscValue" type="number" min="0" step="1">
+                                  <span class="pricing-suffix-label" id="draftDiscValueUnit">%</span>
+                                </span>
+                              </label>
+                              <label>시작 <input id="draftDiscStart" type="datetime-local"></label>
+                              <label>종료 <input id="draftDiscEnd" type="datetime-local"></label>
+                            </div>
+                            <div class="pricing-disc-preview" aria-live="polite">
+                              <div class="pricing-disc-preview-row"><span class="muted">정가</span><strong id="previewList">-</strong></div>
+                              <div class="pricing-disc-preview-row"><span class="muted">할인가</span><strong id="previewSale">-</strong></div>
+                              <p class="pricing-disc-preview-meta" id="previewPct">-</p>
+                              <p class="muted small" id="previewUnit"></p>
+                              <p class="muted small" id="previewSaleUnit" hidden></p>
+                            </div>
+                          </div>
+                        </section>
+
+                        <section class="pricing-edit-section">
+                          <h4 class="pricing-section-title">상품 표시 정보</h4>
+                          <p class="muted small pricing-field-hint">홈페이지·구매 페이지에 노출되는 다국어 표시입니다. 대표 Badge 종류는 기본 정보에서 선택합니다.</p>
+                          <div class="pricing-lang-block">
+                            <span class="pricing-lang-label">상품명</span>
+                            <div class="pricing-form-grid pricing-form-grid-3">
+                              <label>KO <input id="draftNameKoDisplay" type="text" readonly tabindex="-1"></label>
+                              <label>EN <input id="draftNameEn" type="text"></label>
+                              <label>JA <input id="draftNameJa" type="text"></label>
+                            </div>
+                          </div>
+                          <div class="pricing-lang-block">
+                            <span class="pricing-lang-label">상품 설명</span>
+                            <div class="pricing-form-grid pricing-form-grid-3">
+                              <label>KO <input id="draftDescKo" type="text" placeholder="실제 상품 설명 (Badge와 별개)"></label>
+                              <label>EN <input id="draftDescEn" type="text"></label>
+                              <label>JA <input id="draftDescJa" type="text"></label>
+                            </div>
+                          </div>
+                        </section>
+
+                        <details class="pricing-edit-section pricing-advanced" id="pricingAdvanced">
+                          <summary class="pricing-section-title pricing-advanced-summary">고급 정보</summary>
+                          <div class="pricing-form-grid">
+                            <label>상품 ID <input id="draftProductId" type="text" readonly></label>
+                            <label>상품 버전 <input id="draftProductVersion" type="text" readonly></label>
+                            <label>내부 상품 유형 <input id="draftInternalType" type="text" readonly></label>
+                            <label>이용 기간(일) <input id="draftAdvancedDuration" type="text" readonly></label>
+                            <label>Entitlement <input id="draftAdvancedEntitlement" type="text" readonly></label>
+                          </div>
+                        </details>
+
+                        <div class="pricing-editor-actions">
+                          <button type="button" class="primary mini-btn" id="pricingSaveBtn">상품 저장</button>
+                          <button type="button" class="ghost mini-btn" id="pricingCancelBtn">변경 취소</button>
+                          <button type="button" class="secondary mini-btn" id="pricingCloneBtn">상품 복제</button>
+                          <span class="pricing-actions-spacer" aria-hidden="true"></span>
+                          <button type="button" class="secondary mini-btn" id="pricingArchiveBtn">보관</button>
+                          <button type="button" class="secondary mini-btn danger-btn" id="pricingDeleteBtn" hidden>삭제</button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div class="pricing-promo-grid">
-                  <label class="pricing-check"><input type="checkbox" id="promoEnabled"> 할인 캠페인 사용</label>
-                  <label>할인 시작일 <input type="date" id="promoDiscountStartsAt"></label>
-                  <label>할인 종료일 <input type="date" id="promoDiscountEndsAt"></label>
-                  <label class="pricing-check"><input type="checkbox" id="promoBadgeEnabled"> 할인 뱃지 표시</label>
-                </div>
-                <div class="pricing-promo-grid">
-                  <label>뱃지 문구 (KO) <input type="text" id="promoBadgeKo" placeholder="7월 31일까지"></label>
-                  <label>뱃지 문구 (EN) <input type="text" id="promoBadgeEn" placeholder="Until July 31"></label>
-                  <label>뱃지 문구 (JA) <input type="text" id="promoBadgeJa" placeholder="7月31日まで"></label>
-                </div>
-                <hr class="pricing-promo-divider">
-                <div class="pricing-promo-grid">
-                  <label class="pricing-check"><input type="checkbox" id="promoPopupEnabled"> 홈 할인 팝업 사용</label>
-                  <label>팝업 시작일 <input type="date" id="promoPopupStartsAt"></label>
-                  <label>팝업 종료일 <input type="date" id="promoPopupEndsAt"></label>
-                </div>
-                <div class="pricing-promo-grid pricing-promo-copy">
-                  <label>팝업 제목 (KO) <input type="text" id="promoPopupTitleKo"></label>
-                  <label>팝업 제목 (EN) <input type="text" id="promoPopupTitleEn"></label>
-                  <label>팝업 제목 (JA) <input type="text" id="promoPopupTitleJa"></label>
-                  <label>팝업 내용 (KO) <textarea id="promoPopupBodyKo" rows="2"></textarea></label>
-                  <label>팝업 내용 (EN) <textarea id="promoPopupBodyEn" rows="2"></textarea></label>
-                  <label>팝업 내용 (JA) <textarea id="promoPopupBodyJa" rows="2"></textarea></label>
-                  <label>CTA 버튼 (KO) <input type="text" id="promoPopupCtaKo"></label>
-                  <label>CTA 버튼 (EN) <input type="text" id="promoPopupCtaEn"></label>
-                  <label>CTA 버튼 (JA) <input type="text" id="promoPopupCtaJa"></label>
                 </div>
               </div>
 
-              <div class="pricing-layout">
-                <aside class="pricing-list-pane">
-                  <h4>상품 목록</h4>
-                  <div id="pricingProductList" class="pricing-product-list"><p class="muted">불러오는 중…</p></div>
-                  <div class="pricing-lang-map">
-                    <h4>언어 → Region</h4>
-                    <label>한국어 (ko) <input id="pricingLangKo" type="text" value="KR"></label>
-                    <label>영어 (en) <input id="pricingLangEn" type="text" value="Global"></label>
-                    <label>일본어 (ja) <input id="pricingLangJa" type="text" value="Global"></label>
-                    <button type="button" class="secondary mini-btn" id="pricingSaveLangMap">맵핑 저장</button>
+              <div id="pricingPromosPane" hidden>
+                <div class="pricing-layout">
+                  <aside class="pricing-list-pane">
+                    <h4>할인 이벤트</h4>
+                    <div id="pricingPromoList" class="pricing-product-list"><p class="muted">이벤트가 없습니다.</p></div>
+                  </aside>
+                  <div class="pricing-editor-pane">
+                    <p class="muted" id="pricingPromoEmpty">이벤트를 선택하거나 추가하세요.</p>
+                    <div id="pricingPromoForm" hidden>
+                      <section class="pricing-edit-section">
+                        <h4>이벤트</h4>
+                        <div class="pricing-form-grid">
+                          <label>이벤트명 KO <input id="promoNameKo" type="text"></label>
+                          <label>이벤트명 EN <input id="promoNameEn" type="text"></label>
+                          <label>이벤트명 JA <input id="promoNameJa" type="text"></label>
+                          <label class="pricing-check"><input type="checkbox" id="promoEnabledFlag"> 사용</label>
+                          <label>할인 방식
+                            <select id="promoType">
+                              <option value="percent">정률</option>
+                              <option value="amount">정액</option>
+                            </select>
+                          </label>
+                          <label>할인율/금액 <input id="promoValue" type="number" min="0"></label>
+                          <label>시작 <input id="promoStart" type="datetime-local"></label>
+                          <label>종료 <input id="promoEnd" type="datetime-local"></label>
+                        </div>
+                        <h4 class="pricing-subhead">대상 상품</h4>
+                        <div id="promoProductTargets" class="pricing-target-list"></div>
+                      </section>
+                      <section class="pricing-edit-section">
+                        <h4>홈 팝업</h4>
+                        <div class="pricing-form-grid">
+                          <label class="pricing-check"><input type="checkbox" id="promoPopupEnabled"> 홈 팝업 표시</label>
+                          <label>CTA URL <input id="promoCtaUrl" type="text"></label>
+                          <label>팝업 제목 KO <input id="promoPopupTitleKo" type="text"></label>
+                          <label>팝업 제목 EN <input id="promoPopupTitleEn" type="text"></label>
+                          <label>팝업 제목 JA <input id="promoPopupTitleJa" type="text"></label>
+                          <label>팝업 본문 KO <textarea id="promoPopupBodyKo" rows="2"></textarea></label>
+                          <label>팝업 본문 EN <textarea id="promoPopupBodyEn" rows="2"></textarea></label>
+                          <label>팝업 본문 JA <textarea id="promoPopupBodyJa" rows="2"></textarea></label>
+                          <label>CTA KO <input id="promoPopupCtaKo" type="text"></label>
+                          <label>CTA EN <input id="promoPopupCtaEn" type="text"></label>
+                          <label>CTA JA <input id="promoPopupCtaJa" type="text"></label>
+                        </div>
+                      </section>
+                      <div class="pricing-editor-actions">
+                        <button type="button" class="secondary mini-btn" id="pricingClonePromoBtn">복제</button>
+                        <button type="button" class="secondary mini-btn" id="pricingArchivePromoBtn">보관</button>
+                        <button type="button" class="primary mini-btn" id="pricingSavePromoBtn">이벤트 저장</button>
+                      </div>
+                    </div>
                   </div>
-                </aside>
-                <div class="pricing-editor-pane" id="pricingEditor">
-                  <p class="muted">왼쪽에서 상품을 선택하세요.</p>
+                </div>
+              </div>
+
+              <div id="pricingCreateModal" class="pricing-modal" hidden>
+                <div class="pricing-modal-card">
+                  <h4>판매 카드 추가</h4>
+                  <div class="pricing-form-grid">
+                    <label>상품 유형
+                      <select id="newProductType">
+                        <option value="credit_pack">Credit</option>
+                        <option value="full_pass">기간 이용권</option>
+                        <option value="lifetime">Lifetime</option>
+                      </select>
+                    </label>
+                    <label>상품 ID <input id="newProductId" type="text" placeholder="CREDIT_50 / PASS_60D"></label>
+                    <label>상품명 KO <input id="newProductName" type="text" placeholder="30일 Full"></label>
+                    <label id="newProductCreditsWrap">Credit 지급 개수 <input id="newProductCredits" type="number" min="1" placeholder="50"></label>
+                    <label id="newProductDurationWrap" hidden>이용 기간(일) <input id="newProductDuration" type="number" min="1" placeholder="30"></label>
+                    <label>정가 KRW <input id="newProductPrice" type="number" min="1" placeholder="19900"></label>
+                  </div>
+                  <div class="pricing-editor-actions">
+                    <button type="button" class="ghost mini-btn" id="pricingCreateCancel">취소</button>
+                    <button type="button" class="primary mini-btn" id="pricingCreateConfirm">생성</button>
+                  </div>
                 </div>
               </div>
             </section>
-
             <div class="admin-crm" id="adminCrm" hidden>
               <aside class="admin-crm-list-pane">
                 <div class="admin-page-tabs admin-work-status-tabs" id="adminCrmWorkTabs" hidden role="tablist"></div>
@@ -611,6 +780,6 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
-  <script type="module" src="./assets/js/admin-preview.js?v=admin-license-expand-1"></script>
+  <script type="module" src="./assets/js/admin-preview.js?v=product-ui-1"></script>
 </body>
 </html>

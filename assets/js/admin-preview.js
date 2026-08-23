@@ -24,7 +24,7 @@ const VIEW_LEADS = {
   payments: '주문자별로 묶어 주문·결제를 확인하고 삭제합니다.',
   tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
   logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
-  pricing: 'Region별 정가·판매가와 할인·팝업을 관리합니다.',
+  pricing: '상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.',
   content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.'
 };
 const CRM_LEADS = {
@@ -56,11 +56,11 @@ const MEMBERS = [
 ];
 
 const ORDERS = [
-  { id: 'ord_88101', uid: 'u_preview_01', email: 'praesepe@example.com', product: 'Lifetime', method: 'PortOne', amount: '130,000 KRW', amountKrw: 130000, currency: 'KRW', status: '결제완료', date: '2026.08.19', when: '08.19 09:03', isToday: true },
+  { id: 'ord_88101', uid: 'u_preview_01', email: 'praesepe@example.com', product: 'Lifetime', method: 'PortOne', amount: '129,000 KRW', amountKrw: 129000, currency: 'KRW', status: '결제완료', date: '2026.08.19', when: '08.19 09:03', isToday: true },
   { id: 'ord_88021', uid: 'u_preview_01', email: 'praesepe@example.com', product: 'Lifetime', method: 'PortOne', amount: '89,000 KRW', amountKrw: 89000, currency: 'KRW', status: '결제완료', date: '2026.08.12', when: '08.12 09:18', isToday: false },
   { id: 'ord_88018', uid: 'u_preview_03', email: 'orion.belt@example.net', product: '기간제', method: 'PayPal', amount: '59.00 USD', amountKrw: 0, currency: 'USD', status: '결제완료', date: '2026.08.09', when: '08.09 16:40', isToday: false },
   { id: 'ord_87990', uid: 'u_preview_06', email: 'deneb.keys@example.com', product: '체험판 업그레이드', method: 'PortOne', amount: '29,000 KRW', amountKrw: 29000, currency: 'KRW', status: '대기', date: '2026.08.04', when: '08.04 11:22', isToday: false },
-  { id: 'ord_87950', uid: 'u_preview_02', email: 'nova.lyrae@example.com', product: 'Lifetime', method: 'PortOne', amount: '130,000 KRW', amountKrw: 130000, currency: 'KRW', status: '결제실패', date: '2026.08.03', when: '08.03 19:11', isToday: false },
+  { id: 'ord_87950', uid: 'u_preview_02', email: 'nova.lyrae@example.com', product: 'Lifetime', method: 'PortOne', amount: '129,000 KRW', amountKrw: 129000, currency: 'KRW', status: '결제실패', date: '2026.08.03', when: '08.03 19:11', isToday: false },
   { id: 'ord_87911', uid: 'u_preview_04', email: 'vega.prime@example.com', product: 'Lifetime', method: 'PayPal', amount: '59.00 USD', amountKrw: 0, currency: 'USD', status: '환불', date: '2026.07.22', when: '07.22 13:05', isToday: false, refund: '2026.07.24' }
 ];
 
@@ -1004,11 +1004,209 @@ function renderLogs() {
   }
 }
 
+function krw(n) {
+  return `${Number(n || 0).toLocaleString('ko-KR')}원`;
+}
+
+const PREVIEW_PRODUCTS = [
+  { productId: 'CREDIT_5', type: 'Credit Pack', name: '5 Credits', credits: '+5 Credits', list: 6500, sale: 6500, status: '중지', discount: '판매중지', badge: '', sort: 1, usd: '미설정' },
+  { productId: 'CREDIT_30', type: 'Credit Pack', name: '30 Credits', credits: '+30 Credits', list: 35000, sale: 35000, status: '중지', discount: '판매중지', badge: '', sort: 2, usd: '미설정' },
+  { productId: 'CREDIT_100', type: 'Credit Pack', name: '100 Credits', credits: '+100 Credits', list: 105000, sale: 105000, status: '중지', discount: '판매중지', badge: '', sort: 3, usd: '미설정' },
+  { productId: 'PASS_7D', type: 'Full Pass', name: '7일 Full', credits: '7일 Full', list: 7900, sale: 7900, status: '판매중', discount: '정가', badge: '', sort: 5, usd: '미설정' },
+  { productId: 'PASS_30D', type: 'Full Pass', name: '30일 Full', credits: '30일 Full', list: 19900, sale: 19900, status: '판매중', discount: '정가', badge: '추천', sort: 6, usd: '미설정' },
+  { productId: 'PASS_90D', type: 'Full Pass', name: '90일 Full', credits: '90일 Full', list: 49900, sale: 49900, status: '판매중', discount: '정가', badge: '', sort: 7, usd: '미설정' },
+  { productId: 'LIFETIME', type: 'Lifetime', name: 'Lifetime Full', credits: 'Lifetime Full', list: 129000, sale: 129000, status: '판매중', discount: '정가', badge: '', sort: 8, usd: '$89' }
+];
+const PREVIEW_PROMOS = [
+  { id: 'summer', name: '여름 Pass 할인', targets: 'PASS_30D / PASS_90D', disc: '10%', start: '08/25 00:00', end: '08/31 23:59', status: '진행중', popup: '팝업 ON' },
+  { id: 'life', name: 'Lifetime 주말 할인', targets: 'Lifetime', disc: '15%', start: '08/29 00:00', end: '08/30 23:59', status: '예정', popup: '팝업 OFF' }
+];
+let previewProductId = 'PASS_30D';
+let previewPromoId = 'summer';
+let previewPricingBound = false;
+
+function previewFlash(msg) {
+  const el = $('pricingSaveMsg');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  el.classList.add('is-ok');
+}
+
+function fillPreviewProduct(id) {
+  previewProductId = id;
+  const p = PREVIEW_PRODUCTS.find((x) => x.productId === id) || PREVIEW_PRODUCTS[1];
+  const set = (k, v) => { const el = $(k); if (el) el.value = v; };
+  const isLife = p.productId === 'LIFETIME';
+  set('draftNameKo', p.name);
+  set('draftNameKoDisplay', p.name);
+  set('draftNameEn', p.name);
+  set('draftNameJa', p.name);
+  set('draftProductId', p.productId);
+  set('draftType', p.type);
+  set('draftInternalType', isLife ? 'lifetime' : 'credit_pack');
+  set('draftProductVersion', '1');
+  set('draftStatus', 'active');
+  set('draftSort', String(p.sort));
+  set('draftBadge', p.badge === '추천' ? 'recommended' : p.badge === 'Best Value' ? 'best' : '');
+  set('draftCredits', isLife ? '' : String(p.credits.replace(/[^\d]/g, '')));
+  const creditsWrap = $('draftCreditsWrap');
+  const entitlementWrap = $('draftEntitlementWrap');
+  if (creditsWrap) creditsWrap.hidden = isLife;
+  if (entitlementWrap) entitlementWrap.hidden = !isLife;
+  set('draftPriceKrw', String(p.list));
+  set('draftPriceUsd', isLife ? '89' : '');
+  set('draftDescKo', p.productId === 'CREDIT_30' ? '' : p.productId === 'CREDIT_100' ? '대량' : p.productId === 'CREDIT_5' ? '소량 / 첫 구매' : '무제한 변환');
+  set('draftDescEn', '');
+  set('draftDescJa', '');
+  const discOn = p.sale < p.list;
+  const discEl = $('draftDiscEnabled');
+  if (discEl) discEl.checked = discOn;
+  const fields = $('draftDiscFields');
+  const offNote = $('draftDiscOffNote');
+  if (fields) fields.hidden = !discOn;
+  if (offNote) offNote.hidden = !!discOn;
+  set('draftDiscType', 'percent');
+  set('draftDiscValue', discOn ? '10' : '');
+  set('draftDiscStart', discOn ? '2026-08-25T00:00' : '');
+  set('draftDiscEnd', discOn ? '2026-08-31T23:59' : '');
+  $('draftUsdHint') && ($('draftUsdHint').textContent = p.usd === '미설정' ? 'USD 미설정 · PayPal 판매 안 함' : 'PayPal 판매 가능');
+  $('previewList') && ($('previewList').textContent = krw(p.list));
+  $('previewSale') && ($('previewSale').textContent = krw(p.sale));
+  $('previewPct') && ($('previewPct').textContent = discOn ? '10% 할인 · 8월 31일까지' : '할인 없음');
+  const credits = Number(String(p.credits).replace(/[^\d]/g, '')) || 0;
+  const isPass = String(p.productId || '').startsWith('PASS_');
+  if (isLife) {
+    $('previewUnit') && ($('previewUnit').textContent = 'Lifetime Full · 영구 이용 · 자동결제 없음');
+  } else if (isPass) {
+    $('previewUnit') && ($('previewUnit').textContent = `${p.credits} · 변환 횟수 제한 없음 · 자동결제 없음`);
+  } else {
+    $('previewUnit') && ($('previewUnit').textContent = credits
+      ? `1 Credit 약 ${Math.round(p.sale / credits).toLocaleString('ko-KR')}원`
+      : '');
+  }
+  $('pricingEditorEmpty') && ($('pricingEditorEmpty').hidden = true);
+  $('pricingEditorForm') && ($('pricingEditorForm').hidden = false);
+  renderPreviewProductList();
+}
+
+function renderPreviewProductList() {
+  const root = $('pricingProductList');
+  if (!root) return;
+  root.innerHTML = PREVIEW_PRODUCTS.map((p) => {
+    const active = p.productId === previewProductId ? ' is-active' : '';
+    const discounted = p.sale < p.list;
+    let line2 = '';
+    if (p.productId === 'LIFETIME') {
+      line2 = `Lifetime Full · ${krw(p.list)}`;
+    } else if (String(p.productId || '').startsWith('PASS_')) {
+      line2 = discounted
+        ? `${p.credits} · ${krw(p.list)} → ${krw(p.sale)}`
+        : `${p.credits} · ${krw(p.list)}`;
+    } else {
+      line2 = discounted
+        ? `${p.credits} · ${krw(p.list)} → ${krw(p.sale)}`
+        : `${p.credits} · ${krw(p.list)}`;
+    }
+    const bits = [];
+    if (p.status === '중지') bits.push('판매중지');
+    else if (discounted) bits.push(p.discount);
+    else if (p.productId === 'CREDIT_100') bits.push('약 19% 절약');
+    if (p.badge) bits.push(p.badge);
+    return `<button type="button" class="pricing-product-item${active}" data-preview-product="${p.productId}">
+      <span class="pricing-product-item-top"><strong>${p.name}</strong><span class="badge">${p.status}</span></span>
+      <span class="pricing-product-item-main">${line2}</span>
+      ${bits.length ? `<span class="muted small">${bits.join(' · ')}</span>` : ''}
+      <span class="muted small pricing-product-item-id">${p.productId}</span>
+    </button>`;
+  }).join('');
+}
+
+function fillPreviewPromo(id) {
+  previewPromoId = id;
+  const p = PREVIEW_PROMOS.find((x) => x.id === id) || PREVIEW_PROMOS[0];
+  const set = (k, v) => { const el = $(k); if (el) el.value = v; };
+  set('promoNameKo', p.name);
+  set('promoNameEn', p.id === 'summer' ? 'Summer Credit Sale' : 'Lifetime Weekend Sale');
+  set('promoNameJa', p.id === 'summer' ? '夏のCredit割引' : 'Lifetime週末割引');
+  const en = $('promoEnabledFlag');
+  if (en) en.checked = true;
+  set('promoType', 'percent');
+  set('promoValue', p.disc.replace('%', ''));
+  set('promoStart', p.id === 'summer' ? '2026-08-25T00:00' : '2026-08-29T00:00');
+  set('promoEnd', p.id === 'summer' ? '2026-08-31T23:59' : '2026-08-30T23:59');
+  const pop = $('promoPopupEnabled');
+  if (pop) pop.checked = p.popup.includes('ON');
+  set('promoPopupTitleKo', p.name);
+  set('promoPopupBodyKo', p.id === 'summer' ? '30 / 100 Credits 최대 10% 할인. 8월 31일까지.' : 'Lifetime License 130,000 → 110,500원');
+  set('promoPopupCtaKo', p.id === 'summer' ? '가격 보기' : 'Lifetime 구매');
+  set('promoCtaUrl', './purchase.html');
+  const box = $('promoProductTargets');
+  if (box) {
+    box.innerHTML = PREVIEW_PRODUCTS.map((prod) => {
+      const on = p.id === 'summer' ? prod.productId !== 'LIFETIME' && prod.productId !== 'CREDIT_5' : prod.productId === 'LIFETIME';
+      return `<label class="pricing-check"><input type="checkbox" ${on ? 'checked' : ''} disabled> ${prod.name}</label>`;
+    }).join('');
+  }
+  $('pricingPromoEmpty') && ($('pricingPromoEmpty').hidden = true);
+  $('pricingPromoForm') && ($('pricingPromoForm').hidden = false);
+  const list = $('pricingPromoList');
+  if (list) {
+    list.innerHTML = PREVIEW_PROMOS.map((row) => {
+      const active = row.id === previewPromoId ? ' is-active' : '';
+      return `<button type="button" class="pricing-product-item${active}" data-preview-promo="${row.id}">
+        <span class="pricing-product-item-top"><strong>${row.name}</strong><span class="badge">${row.status}</span></span>
+        <span class="muted small">${row.targets}</span>
+        <span class="muted small">${row.disc} · ${row.start} ~ ${row.end}</span>
+        <span class="muted small">${row.popup}</span>
+      </button>`;
+    }).join('');
+  }
+}
+
 function renderPricingMock() {
-  const list = $('pricingProductList');
-  if (list) list.innerHTML = '<button type="button" class="pricing-product-item is-active"><span class="pricing-product-item-top"><strong>MidiAI Studio License</strong><span class="pricing-product-item-badges"><span class="badge active">판매중</span><span class="badge pending">Lifetime</span></span></span><small>KR · Global</small></button>';
-  const editor = $('pricingEditor');
-  if (editor) editor.innerHTML = '<p class="muted">미리보기입니다. 실제 상품 저장은 관리자 로그인 후 <code>admin.html</code>에서 합니다.</p>';
+  $('pricingStatTotal') && ($('pricingStatTotal').textContent = '4');
+  $('pricingStatLive') && ($('pricingStatLive').textContent = '4');
+  $('pricingStatDiscount') && ($('pricingStatDiscount').textContent = '1');
+  $('pricingStatScheduled') && ($('pricingStatScheduled').textContent = '1');
+  renderPreviewProductList();
+  fillPreviewProduct(previewProductId);
+  fillPreviewPromo(previewPromoId);
+  if (previewPricingBound) return;
+  previewPricingBound = true;
+  document.querySelectorAll('[data-pricing-pane]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const pane = btn.getAttribute('data-pricing-pane');
+      document.querySelectorAll('[data-pricing-pane]').forEach((b) => b.classList.toggle('is-active', b === btn));
+      if ($('pricingProductsPane')) $('pricingProductsPane').hidden = pane !== 'products';
+      if ($('pricingPromosPane')) $('pricingPromosPane').hidden = pane !== 'promos';
+    });
+  });
+  $('pricingProductList')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-preview-product]');
+    if (btn) fillPreviewProduct(btn.getAttribute('data-preview-product'));
+  });
+  $('pricingPromoList')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-preview-promo]');
+    if (btn) fillPreviewPromo(btn.getAttribute('data-preview-promo'));
+  });
+  const mockSave = (label) => (e) => {
+    e.preventDefault();
+    previewFlash(`미리보기입니다. ${label}은 저장되지 않습니다. 실제 반영은 admin.html에서 하세요.`);
+  };
+  $('pricingSaveBtn')?.addEventListener('click', mockSave('상품 저장'));
+  $('pricingSavePromoBtn')?.addEventListener('click', mockSave('이벤트 저장'));
+  $('pricingAddProduct')?.addEventListener('click', () => { if ($('pricingCreateModal')) $('pricingCreateModal').hidden = false; });
+  $('pricingCreateCancel')?.addEventListener('click', () => { if ($('pricingCreateModal')) $('pricingCreateModal').hidden = true; });
+  $('pricingCreateConfirm')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    if ($('pricingCreateModal')) $('pricingCreateModal').hidden = true;
+    previewFlash('미리보기입니다. 새 상품은 저장되지 않습니다.');
+  });
+  $('pricingAddPromo')?.addEventListener('click', () => {
+    document.querySelector('[data-pricing-pane="promos"]')?.click();
+    previewFlash('미리보기입니다. 새 이벤트는 저장되지 않습니다.');
+  });
 }
 
 function cmsRows() { return CMS[cmsTab] || []; }

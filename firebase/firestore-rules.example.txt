@@ -77,6 +77,13 @@ service cloud.firestore {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /purchaseQuotes/{quoteId} {
+      allow read, write: if false;
+    }
 
     match /supportTickets/{ticketId} {
       allow create: if signedIn()

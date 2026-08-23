@@ -1,14 +1,31 @@
 /**
- * Admin: 가격 및 상품 설정
+ * Admin: Credit + Pass (기간 이용권) + Lifetime catalog, discounts, and promotions.
  */
 import {
-  DEFAULT_PRODUCT_ID,
-  FALLBACK_PRODUCT,
-  FALLBACK_LANG_MAP,
-  FALLBACK_PROMO,
-  discountPercent,
-  formatMoney
-} from './pricing.js?v=sale-fix-4';
+  SEED_PRODUCTS,
+  bumpVersion,
+  canonicalPassDurationDays,
+  computeCharge,
+  creditChangeWarning,
+  emptyDiscount,
+  findDiscountConflicts,
+  firestoreDocId,
+  formatKrw,
+  fromDatetimeLocalValue,
+  hydrateLegacyProduct,
+  isCanonicalPassProductId,
+  isPassProductId,
+  isSeedProduct,
+  normalizeProductId,
+  priceChangeWarning,
+  productTypeLabel,
+  toDatetimeLocalValue,
+  unitPrice,
+  validateProductFields,
+  validatePromotionFields,
+  windowStatus
+} from './catalog-engine.js?v=price-sot-1';
+import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
@@ -19,18 +36,24 @@ let db = null;
 let fs = null;
 let isAdmin = false;
 let products = [];
-let langMap = { ...FALLBACK_LANG_MAP };
-let promoDraft = { ...FALLBACK_PROMO };
+let promotions = [];
 let selectedId = null;
+let selectedPromoId = null;
 let draft = null;
+let promoDraft = null;
 let booted = false;
 let loading = false;
+let pane = 'products';
 
 function $(id) { return document.getElementById(id); }
 
-function setListStatus(html) {
-  const root = $('pricingProductList');
-  if (root) root.innerHTML = html;
+function flash(msg, ok = true) {
+  const el = $('pricingSaveMsg');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.toggle('hidden', !msg);
+  el.classList.toggle('is-ok', !!ok);
+  el.classList.toggle('is-err', !ok);
 }
 
 export function initPricingAdmin(api = {}) {
@@ -67,15 +90,14 @@ async function bootstrapSelf() {
     await loadAll();
   } catch (e) {
     console.error('pricing-admin bootstrap', e);
-    setListStatus(`<p class="muted">초기화 실패: ${esc(e.message || e)}<br><button type="button" class="secondary mini-btn" id="pricingRetryBtn">다시 시도</button></p>`);
-    $('pricingRetryBtn')?.addEventListener('click', () => bootstrapSelf());
+    setListStatus(`<p class="muted">초기화 실패: ${esc(e.message || e)}</p>`);
   }
 }
 
 function ensureBoot() {
   if (booted) return;
   bindTabs();
-  bindEditor();
+  bindUi();
   booted = true;
 }
 
@@ -96,512 +118,879 @@ function bindTabs() {
           source: btn
         });
         if (tab === 'pricing' && !products.length) loadAll().catch(console.error);
-        return;
-      }
-      document.querySelectorAll('[data-admin-tab]').forEach((b) => b.classList.toggle('active', b === btn));
-      const crm = $('adminCrm');
-      const pricing = $('adminPricingSection');
-      const tickets = $('adminTicketsSection');
-      const logs = $('adminLogsSection');
-      if (crm) crm.hidden = tab !== 'crm';
-      if (pricing) pricing.hidden = tab !== 'pricing';
-      if (tickets) tickets.hidden = tab !== 'tickets';
-      if (logs) logs.hidden = tab !== 'logs';
-      ['adminHomeSection','adminPaymentsSection','adminContentSection'].forEach((id) => {
-        const extra = $(id); if (extra) extra.hidden = true;
-      });
-      if (tab === 'pricing' && !products.length) loadAll().catch(console.error);
-      if (tab === 'tickets') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      if (tab === 'logs') {
-        import('./admin-user-logs.js?v=admin-logs-detail-1')
-          .then((m) => m.showAdminUserLogsPanel?.(true))
-          .catch(console.error);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
   });
 }
 
-function bindEditor() {
-  const bindOnce = (id, fn) => {
+function bindUi() {
+  const bind = (id, fn, evt = 'click') => {
     const el = $(id);
     if (!el || el.dataset.bound === '1') return;
     el.dataset.bound = '1';
-    el.addEventListener('click', fn);
+    el.addEventListener(evt, fn);
   };
-  bindOnce('pricingAddProduct', () => addProduct().catch((e) => alert(e.message || e)));
-  bindOnce('pricingSaveBtn', () => saveDraft().catch((e) => alert(e.message || e)));
-  bindOnce('pricingAddRegion', () => addRegionRow());
-  bindOnce('pricingSaveLangMap', () => saveLangMap().catch((e) => alert(e.message || e)));
-  bindOnce('pricingSavePromoBtn', () => savePromo().catch((e) => alert(e.message || e)));
+  document.querySelectorAll('[data-pricing-pane]').forEach((btn) => {
+    if (btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', () => setPane(btn.getAttribute('data-pricing-pane')));
+  });
+  bind('pricingAddProduct', () => openAddModal());
+  bind('pricingSaveBtn', () => saveDraft().catch((e) => flash(e.message || e, false)));
+  bind('pricingCancelBtn', () => { if (selectedId) selectProduct(selectedId); });
+  bind('pricingCloneBtn', () => cloneProduct().catch((e) => flash(e.message || e, false)));
+  bind('pricingArchiveBtn', () => archiveProduct().catch((e) => flash(e.message || e, false)));
+  bind('pricingDeleteBtn', () => deleteProduct().catch((e) => flash(e.message || e, false)));
+  bind('pricingAddPromo', () => startNewPromo());
+  bind('pricingSavePromoBtn', () => savePromo().catch((e) => flash(e.message || e, false)));
+  bind('pricingClonePromoBtn', () => clonePromo().catch((e) => flash(e.message || e, false)));
+  bind('pricingArchivePromoBtn', () => archivePromo().catch((e) => flash(e.message || e, false)));
+  bind('pricingCreateConfirm', () => createProductFromModal().catch((e) => flash(e.message || e, false)));
+  bind('pricingCreateCancel', () => closeAddModal());
+  bind('newProductType', () => syncCreateModalFields(), 'change');
+  ['draftNameKo', 'draftNameEn', 'draftNameJa', 'draftCredits', 'draftDurationDays', 'draftPriceKrw', 'draftPriceUsd',
+    'draftStatus', 'draftSort', 'draftBadge', 'draftDescKo', 'draftDescEn', 'draftDescJa',
+    'draftDiscEnabled', 'draftDiscType', 'draftDiscValue', 'draftDiscStart', 'draftDiscEnd'
+  ].forEach((id) => bind(id, () => syncDraftFromForm(), 'input'));
+  ['draftDiscEnabled', 'draftDiscType', 'draftStatus', 'draftBadge'].forEach((id) => bind(id, () => syncDraftFromForm(), 'change'));
+}
+
+function setPane(next) {
+  pane = next === 'promos' ? 'promos' : 'products';
+  document.querySelectorAll('[data-pricing-pane]').forEach((btn) => {
+    btn.classList.toggle('is-active', btn.getAttribute('data-pricing-pane') === pane);
+  });
+  const productsPane = $('pricingProductsPane');
+  const promosPane = $('pricingPromosPane');
+  if (productsPane) productsPane.hidden = pane !== 'products';
+  if (promosPane) promosPane.hidden = pane !== 'promos';
+}
+
+function setListStatus(html) {
+  const root = $('pricingProductList');
+  if (root) root.innerHTML = html;
+}
+
+async function audit(action, summary, before, after) {
+  try {
+    await writeAdminAuditLog({
+      targetUserId: 'catalog',
+      category: 'pricing',
+      action,
+      summary,
+      before: before || null,
+      after: after || null
+    });
+  } catch (e) {
+    console.warn('pricing audit', e);
+  }
 }
 
 async function ensureSeed() {
-  const { collection, getDocs, doc, setDoc, serverTimestamp } = fs;
+  const { collection, getDocs, doc, setDoc, serverTimestamp, getDoc } = fs;
   const snap = await getDocs(collection(db, 'products'));
-  if (!snap.empty) return false;
-  const payload = {
-    name: FALLBACK_PRODUCT.name,
-    status: 'active',
-    badge: FALLBACK_PRODUCT.badge,
-    promoText: FALLBACK_PRODUCT.promoText,
-    buttonText: FALLBACK_PRODUCT.buttonText,
-    order: 1,
-    plan: 'lifetime',
-    pricingVersion: 1,
-    regions: FALLBACK_PRODUCT.regions,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  };
-  await setDoc(doc(db, 'products', DEFAULT_PRODUCT_ID), payload);
-  await setDoc(doc(db, 'pricingConfig', 'main'), {
-    defaultProductId: DEFAULT_PRODUCT_ID,
-    langRegionMap: FALLBACK_LANG_MAP,
-    promo: { ...FALLBACK_PROMO },
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-  return true;
+  const existing = new Set(snap.docs.map((d) => normalizeProductId(d.id)));
+  for (const seed of SEED_PRODUCTS) {
+    const docId = firestoreDocId(seed.productId);
+    if (existing.has(seed.productId) || snap.docs.some((d) => d.id === docId)) continue;
+    const payload = {
+      ...seed,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      hasPurchases: false
+    };
+    if (seed.productId === 'LIFETIME') {
+      payload.plan = 'lifetime';
+      payload.name = 'Lifetime License';
+      payload.order = seed.sortOrder;
+      payload.listPriceKrw = 129000;
+      payload.regions = {
+        KR: {
+          payment: 'portone',
+          currency: 'KRW',
+          listPrice: 129000,
+          salePrice: 129000,
+          orderName: 'MidiAI Studio Lifetime License',
+          portoneProductId: 'midiai-lifetime'
+        },
+        Global: {
+          payment: 'paypal',
+          currency: 'USD',
+          listPrice: 89,
+          salePrice: 89,
+          orderName: 'MidiAI Studio Lifetime License'
+        }
+      };
+    }
+    await setDoc(doc(db, 'products', docId), payload, { merge: true });
+  }
+  // Existing product prices are never rewritten here (Firestore is SoT).
+  // CREDIT_* sales pause only (ledger/engine kept).
+  for (const creditId of ['CREDIT_5', 'CREDIT_30', 'CREDIT_100']) {
+    try {
+      const ref = doc(db, 'products', firestoreDocId(creditId));
+      const snapDoc = await getDoc(ref);
+      if (!snapDoc.exists()) continue;
+      const status = String(snapDoc.data()?.status || 'active');
+      if (status === 'active') {
+        await setDoc(ref, { status: 'paused', updatedAt: serverTimestamp() }, { merge: true });
+      }
+    } catch (e) {
+      console.warn('credit pause', creditId, e);
+    }
+  }
+  const cfg = await getDoc(doc(db, 'pricingConfig', 'main'));
+  if (!cfg.exists()) {
+    await setDoc(doc(db, 'pricingConfig', 'main'), {
+      defaultProductId: 'lifetime',
+      langRegionMap: { ko: 'KR', en: 'Global', ja: 'Global' },
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  }
 }
 
 async function loadAll() {
-  if (loading) return;
-  if (!db || !fs) {
-    setListStatus('<p class="muted">Firestore 연결 대기 중…</p>');
-    return;
-  }
-  if (!isAdmin) {
-    setListStatus('<p class="muted">관리자 권한이 필요합니다.</p>');
-    return;
-  }
-
+  if (loading || !db || !fs || !isAdmin) return;
   loading = true;
   setListStatus('<p class="muted">불러오는 중…</p>');
   try {
+    try { await ensureSeed(); } catch (e) { console.warn('catalog seed', e); }
+    const { collection, getDocs } = fs;
+    const prodSnap = await getDocs(collection(db, 'products'));
+    products = prodSnap.docs
+      .map((d) => hydrateLegacyProduct({ id: d.id, ...d.data() }))
+      .filter((p) => !['POINT_5', 'POINT_30', 'POINT_100'].includes(p.productId))
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0) || String(a.productId).localeCompare(b.productId));
     try {
-      await ensureSeed();
-    } catch (seedErr) {
-      console.warn('pricing seed', seedErr);
-      // continue — maybe docs already exist or rules block write only
+      const promoSnap = await getDocs(collection(db, 'promotions'));
+      promotions = promoSnap.docs.map((d) => ({ id: d.id, promotionId: d.id, ...d.data() }))
+        .sort((a, b) => String(b.startsAt || '').localeCompare(String(a.startsAt || '')));
+    } catch (e) {
+      promotions = [];
+      console.warn('promotions', e);
     }
-
-    const { collection, getDocs, doc, getDoc } = fs;
-    const snap = await getDocs(collection(db, 'products'));
-    products = snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    try {
-      const cfg = await getDoc(doc(db, 'pricingConfig', 'main'));
-      if (cfg.exists()) {
-        const data = cfg.data() || {};
-        langMap = { ...FALLBACK_LANG_MAP, ...(data.langRegionMap || {}) };
-        promoDraft = { ...FALLBACK_PROMO, ...(data.promo || {}) };
-      }
-    } catch (cfgErr) {
-      console.warn('pricingConfig', cfgErr);
-    }
-    fillPromoForm();
-
-    if (!products.length) {
-      // Seed failed (likely rules) — show local fallback so admin can still edit after deploy
-      products = [{ id: DEFAULT_PRODUCT_ID, ...FALLBACK_PRODUCT }];
-      setListStatus(`
-        <p class="muted" style="margin-bottom:8px">Firestore에 상품이 없습니다. 규칙 미배포 시 쓰기가 거부될 수 있습니다.</p>
-        <p class="muted mono small" style="margin-bottom:8px">firebase deploy --only firestore:rules</p>
-      `);
-      // still render fallback item below
-      const root = $('pricingProductList');
-      if (root) {
-        root.insertAdjacentHTML('beforeend', products.map((p) => pricingProductItemHtml(p, '로컬 시드(미저장)')).join(''));
-        root.querySelectorAll('[data-product-id]').forEach((btn) => {
-          btn.addEventListener('click', () => selectProduct(btn.getAttribute('data-product-id')));
-        });
-      }
-      selectedId = DEFAULT_PRODUCT_ID;
-      draft = JSON.parse(JSON.stringify(products[0]));
-      renderLangMap();
-      renderEditor();
-      return;
-    }
-
+    renderSummary();
     renderList();
-    renderLangMap();
-    if (!selectedId && products[0]) selectProduct(products[0].id);
+    renderPromoList();
+    if (!selectedId && products[0]) selectProduct(products[0].productId);
     else if (selectedId) selectProduct(selectedId);
+    if (!selectedPromoId && promotions[0]) selectPromo(promotions[0].id);
   } catch (e) {
-    console.error('pricing loadAll', e);
-    const code = e.code || '';
-    const hint = /permission|insufficient/i.test(String(code) + String(e.message || ''))
-      ? '<br>Firestore 규칙에 <code>products</code> 읽기/관리자 쓰기를 배포했는지 확인하세요.<br><code>firebase deploy --only firestore:rules</code>'
-      : '';
-    setListStatus(`
-      <p class="muted">불러오기 실패: ${esc(e.message || e)}${hint}</p>
-      <button type="button" class="secondary mini-btn" id="pricingRetryBtn">다시 시도</button>
-    `);
-    $('pricingRetryBtn')?.addEventListener('click', () => {
-      loading = false;
-      loadAll().catch(console.error);
-    });
+    setListStatus(`<p class="muted">불러오기 실패: ${esc(e.message || e)}</p>`);
   } finally {
     loading = false;
   }
 }
 
-function pricingProductItemHtml(p, note) {
-  const kr = p.regions?.KR;
-  const gl = p.regions?.Global;
-  const active = p.id === selectedId ? ' is-active' : '';
-  const on = p.status !== 'paused';
-  const status = `<span class="badge ${on ? 'active' : 'none'}">${on ? '판매중' : '판매중지'}</span>`;
-  const custom = p.badge ? `<span class="badge pending">${esc(p.badge)}</span>` : '';
-  const meta = note || `정렬 ${esc(p.order ?? 0)}`;
-  return `<button type="button" class="pricing-product-item${active}" data-product-id="${esc(p.id)}">
-    <span class="pricing-product-item-top"><strong>${esc(p.name || p.id)}</strong><span class="pricing-product-item-badges">${status}${custom}</span></span>
-    <span class="muted">${esc(meta)}</span>
-    <span class="mono small">${kr ? `KRW ${Number(kr.salePrice).toLocaleString('ko-KR')}` : '-'} · ${gl ? `USD ${gl.salePrice}` : '-'}</span>
-  </button>`;
+function renderSummary() {
+  const now = new Date();
+  const live = products.filter((p) => p.status === 'active');
+  const onSale = live.filter((p) => computeCharge(p, promotions, now).discount);
+  const scheduled = promotions.filter((p) => windowStatus(p.enabled === true, p.startsAt, p.endsAt, now) === 'scheduled');
+  const set = (id, n) => { const el = $(id); if (el) el.textContent = String(n); };
+  set('pricingStatTotal', products.length);
+  set('pricingStatLive', live.length);
+  set('pricingStatDiscount', onSale.length);
+  set('pricingStatScheduled', scheduled.length);
 }
+
+function discountLabel(product) {
+  const charge = computeCharge(product, promotions);
+  if (!charge.ok) return product.status === 'paused' ? '판매중지' : '보관';
+  if (!charge.discount || !charge.discountPercent) return '정가';
+  const kind = charge.discount.type === 'amount' ? `${Number(charge.discount.value).toLocaleString('ko-KR')}원` : `${charge.discountPercent}%`;
+  return `${kind} 할인`;
+}
+
+function badgeLabel(badge) {
+  if (badge === 'recommended') return '추천';
+  if (badge === 'popular') return '인기';
+  if (badge === 'best') return 'Best Value';
+  return '';
+}
+
+function discountEndsLabel(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${d.getMonth() + 1}월 ${d.getDate()}일까지`;
+}
+
 function renderList() {
   const root = $('pricingProductList');
   if (!root) return;
   if (!products.length) {
-    root.innerHTML = '<p class="muted">상품이 없습니다. [상품 추가]를 눌러주세요.</p>';
+    root.innerHTML = '<p class="muted">상품이 없습니다.</p>';
     return;
   }
-  root.innerHTML = products.map((p) => pricingProductItemHtml(p)).join('');
+  root.innerHTML = products.map((p) => {
+    const charge = computeCharge(p, promotions);
+    const active = selectedId === p.productId ? ' is-active' : '';
+    const status = p.status === 'active' ? '판매중' : p.status === 'paused' ? '중지' : '보관';
+    const list = formatKrw(p.listPriceKrw);
+    const sale = charge.ok ? formatKrw(charge.effectivePrice) : '-';
+    const discounted = !!(charge.ok && charge.discount && Number(charge.effectivePrice) < Number(charge.basePrice));
+    let line2 = '';
+    if (p.type === 'lifetime') {
+      line2 = discounted ? `Lifetime Full · ${esc(list)} → ${esc(sale)}` : `Lifetime Full · ${esc(list)}`;
+    } else if (p.type === 'full_pass' || isPassProductId(p.productId)) {
+      const days = Number(p.durationDays || canonicalPassDurationDays(p.productId) || 0);
+      const kind = days > 0 ? `${days}일 Full` : '기간 Full';
+      line2 = discounted ? `${esc(kind)} · ${esc(list)} → ${esc(sale)}` : `${esc(kind)} · ${esc(list)}`;
+    } else if (p.type === 'credit_pack') {
+      const credits = `+${p.creditAmount} Credits`;
+      line2 = discounted
+        ? `${esc(credits)} · ${esc(list)} → ${esc(sale)}`
+        : `${esc(credits)} · ${esc(list)}`;
+    } else {
+      line2 = discounted ? `${esc(list)} → ${esc(sale)}` : esc(list);
+    }
+    const bits = [];
+    if (discounted) bits.push(discountLabel(p));
+    else if (p.type === 'credit_pack' && p.packSavePercent) bits.push(`약 ${p.packSavePercent}% 절약`);
+    else if ((p.type === 'full_pass' || isPassProductId(p.productId)) && p.packSavePercent) {
+      bits.push(`약 ${p.packSavePercent}% 절약`);
+    }
+    const badge = badgeLabel(p.badge);
+    if (badge) bits.push(badge);
+    return `<button type="button" class="pricing-product-item${active}" data-product-id="${esc(p.productId)}">
+      <span class="pricing-product-item-top"><strong>${esc(p.nameKo || p.productId)}</strong><span class="badge">${esc(status)}</span></span>
+      <span class="pricing-product-item-main">${line2}</span>
+      ${bits.length ? `<span class="muted small">${esc(bits.join(' · '))}</span>` : ''}
+      <span class="muted small pricing-product-item-id">${esc(p.productId)}</span>
+    </button>`;
+  }).join('');
   root.querySelectorAll('[data-product-id]').forEach((btn) => {
     btn.addEventListener('click', () => selectProduct(btn.getAttribute('data-product-id')));
   });
 }
 
 function selectProduct(id) {
-  selectedId = id;
-  const p = products.find((x) => x.id === id);
-  if (!p) return;
-  draft = JSON.parse(JSON.stringify(p));
+  selectedId = normalizeProductId(id);
+  const product = products.find((p) => p.productId === selectedId);
+  if (!product) return;
+  draft = JSON.parse(JSON.stringify(product));
   renderList();
   renderEditor();
 }
 
-function renderLangMap() {
-  const ko = $('pricingLangKo');
-  const en = $('pricingLangEn');
-  const ja = $('pricingLangJa');
-  if (ko) ko.value = langMap.ko || 'KR';
-  if (en) en.value = langMap.en || 'Global';
-  if (ja) ja.value = langMap.ja || 'Global';
+function fill(id, value) {
+  const el = $(id);
+  if (el) el.value = value == null ? '' : String(value);
 }
 
-function fillPromoForm() {
-  const p = promoDraft || FALLBACK_PROMO;
-  const set = (id, val) => { const el = $(id); if (el) el.value = val ?? ''; };
-  const setCheck = (id, on) => { const el = $(id); if (el) el.checked = !!on; };
-  setCheck('promoEnabled', p.enabled === true);
-  set('promoDiscountStartsAt', p.discountStartsAt || '');
-  set('promoDiscountEndsAt', p.discountEndsAt || '');
-  setCheck('promoBadgeEnabled', p.badgeEnabled === true);
-  set('promoBadgeKo', p.badgeKo || '');
-  set('promoBadgeEn', p.badgeEn || '');
-  set('promoBadgeJa', p.badgeJa || '');
-  setCheck('promoPopupEnabled', !!p.popupEnabled);
-  set('promoPopupStartsAt', p.popupStartsAt || p.discountStartsAt || '');
-  set('promoPopupEndsAt', p.popupEndsAt || p.discountEndsAt || '');
-  set('promoPopupTitleKo', p.popupTitleKo || '');
-  set('promoPopupTitleEn', p.popupTitleEn || '');
-  set('promoPopupTitleJa', p.popupTitleJa || '');
-  set('promoPopupBodyKo', p.popupBodyKo || '');
-  set('promoPopupBodyEn', p.popupBodyEn || '');
-  set('promoPopupBodyJa', p.popupBodyJa || '');
-  set('promoPopupCtaKo', p.popupCtaKo || '');
-  set('promoPopupCtaEn', p.popupCtaEn || '');
-  set('promoPopupCtaJa', p.popupCtaJa || '');
-}
-
-function collectPromoFromForm() {
-  promoDraft = {
-    enabled: !!$('promoEnabled')?.checked,
-    discountStartsAt: $('promoDiscountStartsAt')?.value || '',
-    discountEndsAt: $('promoDiscountEndsAt')?.value || '',
-    badgeEnabled: !!$('promoBadgeEnabled')?.checked,
-    badgeKo: $('promoBadgeKo')?.value?.trim() || '',
-    badgeEn: $('promoBadgeEn')?.value?.trim() || '',
-    badgeJa: $('promoBadgeJa')?.value?.trim() || '',
-    popupEnabled: !!$('promoPopupEnabled')?.checked,
-    popupStartsAt: $('promoPopupStartsAt')?.value || '',
-    popupEndsAt: $('promoPopupEndsAt')?.value || '',
-    popupTitleKo: $('promoPopupTitleKo')?.value?.trim() || '',
-    popupTitleEn: $('promoPopupTitleEn')?.value?.trim() || '',
-    popupTitleJa: $('promoPopupTitleJa')?.value?.trim() || '',
-    popupBodyKo: $('promoPopupBodyKo')?.value?.trim() || '',
-    popupBodyEn: $('promoPopupBodyEn')?.value?.trim() || '',
-    popupBodyJa: $('promoPopupBodyJa')?.value?.trim() || '',
-    popupCtaKo: $('promoPopupCtaKo')?.value?.trim() || '',
-    popupCtaEn: $('promoPopupCtaEn')?.value?.trim() || '',
-    popupCtaJa: $('promoPopupCtaJa')?.value?.trim() || ''
-  };
-  return promoDraft;
-}
-
-async function savePromo() {
-  if (!isAdmin || !db || !fs) throw new Error('권한이 없거나 Firestore가 준비되지 않았습니다.');
-  const promo = collectPromoFromForm();
-  if (promo.discountStartsAt && promo.discountEndsAt && promo.discountStartsAt > promo.discountEndsAt) {
-    alert('할인 시작일이 종료일보다 늦을 수 없습니다.');
-    return;
-  }
-  if (promo.popupStartsAt && promo.popupEndsAt && promo.popupStartsAt > promo.popupEndsAt) {
-    alert('팝업 시작일이 종료일보다 늦을 수 없습니다.');
-    return;
-  }
-  const { doc, setDoc, serverTimestamp } = fs;
-  await setDoc(doc(db, 'pricingConfig', 'main'), {
-    promo,
-    defaultProductId: DEFAULT_PRODUCT_ID,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-  const msg = $('pricingSaveMsg');
-  if (msg) {
-    msg.textContent = '✓ 할인·팝업 설정 저장 완료 — 홈/구매에 즉시 반영됩니다.';
-    msg.classList.remove('hidden');
-    setTimeout(() => msg.classList.add('hidden'), 4000);
-  }
+function check(id, on) {
+  const el = $(id);
+  if (el) el.checked = !!on;
 }
 
 function renderEditor() {
   const root = $('pricingEditor');
-  if (!root || !draft) {
-    if (root) root.innerHTML = '<p class="muted">왼쪽에서 상품을 선택하세요.</p>';
-    return;
+  if (!root || !draft) return;
+  $('pricingEditorEmpty') && ($('pricingEditorEmpty').hidden = true);
+  $('pricingEditorForm') && ($('pricingEditorForm').hidden = false);
+  const isLife = draft.type === 'lifetime';
+  const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
+  const isCredit = !isLife && !isPass;
+  fill('draftProductId', draft.productId);
+  fill('draftType', productTypeLabel(draft));
+  fill('draftInternalType', draft.type || (isLife ? 'lifetime' : (isPass ? 'full_pass' : 'credit_pack')));
+  fill('draftProductVersion', draft.productVersion || draft.pricingVersion || 1);
+  fill('draftNameKo', draft.nameKo || '');
+  fill('draftNameKoDisplay', draft.nameKo || '');
+  fill('draftNameEn', draft.nameEn || '');
+  fill('draftNameJa', draft.nameJa || '');
+  fill('draftCredits', isCredit ? draft.creditAmount : '');
+  const days = Number(
+    draft.durationDays
+    || canonicalPassDurationDays(draft.productId)
+    || 0
+  );
+  fill('draftDurationDays', isPass ? days : '');
+  fill('draftDurationEntitlement', isPass ? 'Full' : '');
+  fill('draftEntitlement', isLife ? 'Lifetime' : (isPass ? 'Full' : ''));
+  fill('draftAdvancedDuration', isPass ? days : '');
+  fill('draftAdvancedEntitlement', draft.entitlement || (isLife ? 'lifetime' : (isPass ? 'full_pass' : 'credits')));
+
+  const creditsWrap = $('draftCreditsWrap');
+  const durationWrap = $('draftDurationWrap');
+  const durationEntWrap = $('draftDurationEntitlementWrap');
+  const entitlementWrap = $('draftEntitlementWrap');
+  if (creditsWrap) creditsWrap.hidden = !isCredit;
+  if (durationWrap) durationWrap.hidden = !isPass;
+  if (durationEntWrap) durationEntWrap.hidden = !isPass;
+  if (entitlementWrap) entitlementWrap.hidden = !isLife;
+  const creditsInput = $('draftCredits');
+  if (creditsInput) creditsInput.disabled = !isCredit;
+  const durationInput = $('draftDurationDays');
+  if (durationInput) {
+    durationInput.disabled = isCanonicalPassProductId(draft.productId);
+    durationInput.readOnly = isCanonicalPassProductId(draft.productId);
   }
-  const regions = draft.regions || {};
-  const regionKeys = Object.keys(regions);
-  root.innerHTML = `
-    <div class="pricing-editor-head">
-      <h3>${esc(draft.name || draft.id)}</h3>
-      <p class="muted mono">ID: ${esc(draft.id)} · pricingVersion: ${esc(draft.pricingVersion || 1)}</p>
-    </div>
-    <div class="pricing-form-grid">
-      <label>상품명 <input id="pfName" type="text" value="${esc(draft.name || '')}"></label>
-      <label>판매 상태
-        <select id="pfStatus">
-          <option value="active" ${draft.status === 'active' ? 'selected' : ''}>판매중</option>
-          <option value="paused" ${draft.status === 'paused' ? 'selected' : ''}>판매중지</option>
-        </select>
-      </label>
-      <label>대표 Badge <input id="pfBadge" type="text" value="${esc(draft.badge || '')}"></label>
-      <label>프로모션 문구 <input id="pfPromo" type="text" value="${esc(draft.promoText || '')}"></label>
-      <label>버튼 문구 <input id="pfButton" type="text" value="${esc(draft.buttonText || '')}"></label>
-      <label>정렬순서 <input id="pfOrder" type="number" value="${esc(draft.order ?? 1)}"></label>
-      <label>Plan <input id="pfPlan" type="text" value="${esc(draft.plan || 'lifetime')}"></label>
-    </div>
-    <h4 class="pricing-subhead">국가/판매영역별 가격</h4>
-    <div id="pricingRegionRows" class="pricing-region-rows"></div>
-  `;
-  const rows = $('pricingRegionRows');
-  regionKeys.forEach((code) => rows.appendChild(regionRowEl(code, regions[code])));
-  wireDraftInputs();
+  fill('draftPriceKrw', draft.listPriceKrw);
+  fill('draftPriceUsd', draft.listPriceUsd == null ? '' : draft.listPriceUsd);
+  fill('draftStatus', draft.status || 'active');
+  fill('draftSort', draft.sortOrder || 0);
+  fill('draftBadge', draft.badge || '');
+  fill('draftDescKo', draft.descriptionKo || '');
+  fill('draftDescEn', draft.descriptionEn || '');
+  fill('draftDescJa', draft.descriptionJa || '');
+  const disc = draft.productDiscount || emptyDiscount();
+  check('draftDiscEnabled', disc.enabled === true);
+  fill('draftDiscType', disc.type || 'percent');
+  fill('draftDiscValue', disc.value || '');
+  fill('draftDiscStart', toDatetimeLocalValue(disc.startsAt));
+  fill('draftDiscEnd', toDatetimeLocalValue(disc.endsAt));
+  updateDiscValueLabel(disc.type || 'percent');
+  updateDiscountVisibility(disc.enabled === true);
+  const usdHint = $('draftUsdHint');
+  if (usdHint) {
+    if (isPass) {
+      usdHint.textContent = draft.listPriceUsd != null && draft.listPriceUsd !== ''
+        ? 'USD 설정됨 · 해외(PayPal) PASS 판매는 아직 미사용'
+        : 'USD 미설정 · 해외 판매 미사용 (KR PortOne만)';
+    } else {
+      usdHint.textContent = draft.listPriceUsd != null && draft.listPriceUsd !== ''
+        ? 'PayPal 판매 가능'
+        : 'USD 미설정 · PayPal 판매 안 함';
+    }
+  }
+  const del = $('pricingDeleteBtn');
+  if (del) del.hidden = isSeedProduct(draft.productId) || draft.hasPurchases === true;
+  renderPreview();
 }
 
-function regionRowEl(code, data = {}) {
-  const wrap = document.createElement('div');
-  wrap.className = 'pricing-region-card';
-  wrap.dataset.region = code;
-  const list = Number(data.listPrice || 0);
-  const sale = Number(data.salePrice || 0);
-  const disc = discountPercent(list, sale);
-  wrap.innerHTML = `
-    <div class="pricing-region-head">
-      <strong>[${esc(code)}]</strong>
-      <span class="muted">자동 할인 ${disc}%</span>
-      <button type="button" class="ghost mini-btn" data-remove-region="${esc(code)}">영역 삭제</button>
-    </div>
-    <div class="pricing-form-grid">
-      <label>결제
-        <select data-rf="payment">
-          <option value="portone" ${data.payment === 'portone' ? 'selected' : ''}>PortOne</option>
-          <option value="paypal" ${data.payment === 'paypal' ? 'selected' : ''}>PayPal</option>
-          <option value="stripe" ${data.payment === 'stripe' ? 'selected' : ''}>Stripe</option>
-        </select>
-      </label>
-      <label>통화 <input data-rf="currency" type="text" value="${esc(data.currency || '')}" placeholder="KRW / USD / JPY"></label>
-      <label>정가 <input data-rf="listPrice" type="number" step="any" value="${esc(data.listPrice ?? '')}"></label>
-      <label>판매가 <input data-rf="salePrice" type="number" step="any" value="${esc(data.salePrice ?? '')}"></label>
-      <label>주문 표시명 <input data-rf="orderName" type="text" value="${esc(data.orderName || '')}"></label>
-      <label>PortOne productId <input data-rf="portoneProductId" type="text" value="${esc(data.portoneProductId || '')}"></label>
-    </div>
-    <p class="muted small">미리보기: 정가 ${esc(formatMoney(list, data.currency))} → 판매가 <strong>${esc(formatMoney(sale, data.currency))}</strong></p>
-  `;
-  wrap.querySelector('[data-remove-region]')?.addEventListener('click', () => {
-    if (!confirm(`[${code}] 영역을 삭제할까요?`)) return;
-    delete draft.regions[code];
-    renderEditor();
-  });
-  wrap.querySelectorAll('[data-rf]').forEach((input) => {
-    input.addEventListener('input', () => collectRegion(code, wrap));
-    input.addEventListener('change', () => {
-      collectRegion(code, wrap);
-      renderEditor();
-    });
-  });
-  return wrap;
+function updateDiscValueLabel(type) {
+  const title = $('draftDiscValueTitle');
+  const unit = $('draftDiscValueUnit');
+  const amount = type === 'amount';
+  if (title) title.textContent = amount ? '할인금액' : '할인율';
+  if (unit) unit.textContent = amount ? '원' : '%';
 }
 
-function collectRegion(code, wrap) {
-  if (!draft.regions) draft.regions = {};
-  const get = (k) => wrap.querySelector(`[data-rf="${k}"]`);
-  draft.regions[code] = {
-    payment: get('payment')?.value || 'paypal',
-    currency: (get('currency')?.value || 'USD').toUpperCase(),
-    listPrice: Number(get('listPrice')?.value || 0),
-    salePrice: Number(get('salePrice')?.value || 0),
-    orderName: get('orderName')?.value || '',
-    portoneProductId: get('portoneProductId')?.value || ''
-  };
+function updateDiscountVisibility(enabled) {
+  const fields = $('draftDiscFields');
+  const offNote = $('draftDiscOffNote');
+  if (fields) fields.hidden = !enabled;
+  if (offNote) offNote.hidden = !!enabled;
 }
 
-function wireDraftInputs() {
-  const bind = (id, key, cast = (v) => v) => {
-    $(id)?.addEventListener('input', (e) => { draft[key] = cast(e.target.value); });
-  };
-  bind('pfName', 'name');
-  bind('pfBadge', 'badge');
-  bind('pfPromo', 'promoText');
-  bind('pfButton', 'buttonText');
-  bind('pfPlan', 'plan');
-  bind('pfOrder', 'order', (v) => Number(v) || 0);
-  $('pfStatus')?.addEventListener('change', (e) => { draft.status = e.target.value; });
-}
-
-function addRegionRow() {
+function syncDraftFromForm() {
   if (!draft) return;
-  const code = prompt('Region 코드 (예: JP, EU, US)', 'JP');
-  if (!code) return;
-  const key = code.trim();
-  if (!/^[A-Za-z][A-Za-z0-9_]{0,15}$/.test(key)) {
-    alert('Region 코드 형식이 올바르지 않습니다.');
-    return;
+  draft.nameKo = $('draftNameKo')?.value || '';
+  fill('draftNameKoDisplay', draft.nameKo);
+  draft.nameEn = $('draftNameEn')?.value || '';
+  draft.nameJa = $('draftNameJa')?.value || '';
+  const isLife = draft.type === 'lifetime';
+  const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
+  if (isCreditType(draft)) draft.creditAmount = Number($('draftCredits')?.value || 0);
+  else draft.creditAmount = 0;
+  if (isPass) {
+    if (isCanonicalPassProductId(draft.productId)) {
+      draft.durationDays = canonicalPassDurationDays(draft.productId);
+    } else {
+      draft.durationDays = Number($('draftDurationDays')?.value || 0);
+    }
+    draft.entitlement = 'full_pass';
+  } else {
+    draft.durationDays = 0;
   }
-  if (!draft.regions) draft.regions = {};
-  if (draft.regions[key]) {
-    alert('이미 있는 Region입니다.');
-    return;
-  }
-  draft.regions[key] = {
-    payment: 'paypal',
-    currency: key === 'JP' ? 'JPY' : 'USD',
-    listPrice: 0,
-    salePrice: 0,
-    orderName: draft.name || '',
-    portoneProductId: ''
+  if (isLife) draft.entitlement = 'lifetime';
+  if (isCreditType(draft)) draft.entitlement = 'credits';
+  draft.listPriceKrw = Number($('draftPriceKrw')?.value || 0);
+  const usd = $('draftPriceUsd')?.value;
+  draft.listPriceUsd = usd === '' ? null : Number(usd);
+  draft.status = $('draftStatus')?.value || 'active';
+  draft.sortOrder = Number($('draftSort')?.value || 0);
+  draft.badge = $('draftBadge')?.value || '';
+  draft.descriptionKo = $('draftDescKo')?.value || '';
+  draft.descriptionEn = $('draftDescEn')?.value || '';
+  draft.descriptionJa = $('draftDescJa')?.value || '';
+  const discType = $('draftDiscType')?.value || 'percent';
+  draft.productDiscount = {
+    enabled: !!$('draftDiscEnabled')?.checked,
+    type: discType,
+    value: Number($('draftDiscValue')?.value || 0),
+    startsAt: fromDatetimeLocalValue($('draftDiscStart')?.value),
+    endsAt: fromDatetimeLocalValue($('draftDiscEnd')?.value)
   };
-  renderEditor();
+  updateDiscValueLabel(discType);
+  updateDiscountVisibility(draft.productDiscount.enabled === true);
+  const usdHint = $('draftUsdHint');
+  if (usdHint) {
+    if (isPass) {
+      usdHint.textContent = draft.listPriceUsd != null && !Number.isNaN(draft.listPriceUsd)
+        ? 'USD 설정됨 · 해외(PayPal) PASS 판매는 아직 미사용'
+        : 'USD 미설정 · 해외 판매 미사용 (KR PortOne만)';
+    } else {
+      usdHint.textContent = draft.listPriceUsd != null && !Number.isNaN(draft.listPriceUsd)
+        ? 'PayPal 판매 가능'
+        : 'USD 미설정 · PayPal 판매 안 함';
+    }
+  }
+  renderPreview();
 }
 
-async function addProduct() {
-  if (!isAdmin || !db || !fs) throw new Error('관리자 권한이 없거나 Firestore가 준비되지 않았습니다.');
-  const id = prompt('새 상품 ID (영문-케밥)', 'pro-plan');
-  if (!id || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) {
-    alert('상품 ID 형식이 올바르지 않습니다.');
-    return;
+function isCreditType(p) {
+  if (!p) return false;
+  if (p.type === 'lifetime' || p.type === 'full_pass' || isPassProductId(p.productId)) return false;
+  return true;
+}
+
+function renderPreview() {
+  if (!draft) return;
+  const charge = computeCharge(draft, promotions);
+  const setT = (id, t) => { const el = $(id); if (el) el.textContent = t; };
+  setT('previewList', formatKrw(charge.basePrice));
+  setT('previewSale', charge.ok ? formatKrw(charge.effectivePrice) : (charge.code || '-'));
+  if (charge.discount && charge.discountPercent) {
+    const until = discountEndsLabel(charge.discountEndsAt || draft.productDiscount?.endsAt);
+    const kind = charge.discount.type === 'amount'
+      ? `${Number(charge.discount.value).toLocaleString('ko-KR')}원 할인`
+      : `${charge.discountPercent}% 할인`;
+    setT('previewPct', until ? `${kind} · ${until}` : kind);
+  } else {
+    setT('previewPct', '할인 없음');
   }
-  const { doc, getDoc, setDoc, serverTimestamp } = fs;
-  const ref = doc(db, 'products', id);
-  if ((await getDoc(ref)).exists()) {
-    alert('이미 존재하는 상품 ID입니다.');
-    return;
+  if (draft.type === 'credit_pack') {
+    const saleUnit = unitPrice(charge.effectivePrice, draft.creditAmount);
+    setT('previewUnit', saleUnit ? `1 Credit 약 ${saleUnit.toLocaleString('ko-KR')}원` : '');
+  } else if (draft.type === 'full_pass' || isPassProductId(draft.productId)) {
+    const days = Number(draft.durationDays || canonicalPassDurationDays(draft.productId) || 0);
+    setT('previewUnit', days > 0
+      ? `${days}일 Full · 변환 횟수 제한 없음 · 자동결제 없음`
+      : '기간 Full · 변환 횟수 제한 없음');
+  } else {
+    setT('previewUnit', 'Lifetime Full · 영구 이용 · 자동결제 없음');
   }
-  await setDoc(ref, {
-    name: 'New Product',
-    status: 'paused',
-    badge: '',
-    promoText: '',
-    buttonText: 'Buy Now',
-    order: (products[products.length - 1]?.order || 0) + 10,
-    plan: id,
-    pricingVersion: 1,
-    regions: {
-      KR: { payment: 'portone', currency: 'KRW', listPrice: 0, salePrice: 0, orderName: 'New Product', portoneProductId: id },
-      Global: { payment: 'paypal', currency: 'USD', listPrice: 0, salePrice: 0, orderName: 'New Product' }
-    },
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-  await loadAll();
-  selectProduct(id);
+  setT('previewSaleUnit', '');
 }
 
 async function saveDraft() {
-  if (!draft || !isAdmin) throw new Error('저장할 상품이 없거나 권한이 없습니다.');
-  if (!db || !fs) throw new Error('Firestore가 준비되지 않았습니다.');
-  collectDraftFromForm();
-  if (!draft.regions || !Object.keys(draft.regions).length) {
-    alert('판매 영역이 하나 이상 필요합니다.');
+  if (!draft) {
+    flash('저장할 상품이 없습니다. 왼쪽에서 상품을 선택하세요.', false);
     return;
   }
-  for (const [code, r] of Object.entries(draft.regions)) {
-    if (!r.currency || !Number.isFinite(Number(r.salePrice))) {
-      alert(`[${code}] 통화와 판매가를 확인하세요.`);
-      return;
-    }
+  if (!isAdmin) {
+    flash('관리자 권한이 없어 저장할 수 없습니다. 관리자 계정으로 다시 로그인하세요.', false);
+    return;
   }
-  const { doc, setDoc, serverTimestamp, increment } = fs;
+  if (!db || !fs) {
+    flash('Firestore가 아직 연결되지 않았습니다. 잠시 후 다시 시도하세요.', false);
+    return;
+  }
+  syncDraftFromForm();
+  const errors = validateProductFields(draft, { isNew: false });
+  if (errors.length) throw new Error(errors[0]);
+  const current = products.find((p) => p.productId === draft.productId) || {};
+  const nextProducts = products.map((p) => (p.productId === draft.productId ? draft : p));
+  const conflicts = findDiscountConflicts(nextProducts, promotions);
+  if (conflicts.length) throw new Error(`CONFLICT: ${conflicts[0].productId}에 할인이 겹칩니다.`);
+  const warnPrice = priceChangeWarning(current.listPriceKrw, draft.listPriceKrw);
+  const warnCredits = draft.type === 'credit_pack'
+    ? creditChangeWarning(current.creditAmount, draft.creditAmount)
+    : '';
+  const warn = warnPrice || warnCredits;
+  if (warn && !window.confirm(warn)) {
+    flash('저장이 취소되었습니다.', false);
+    return;
+  }
+  const version = bumpVersion(current, {
+    priceChanged: Number(current.listPriceKrw) !== Number(draft.listPriceKrw),
+    creditsChanged: draft.type === 'credit_pack'
+      && Number(current.creditAmount) !== Number(draft.creditAmount)
+  });
+  const { doc, setDoc, serverTimestamp } = fs;
+  const docId = firestoreDocId(draft.productId);
+  const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
+  const isLife = draft.type === 'lifetime';
   const payload = {
-    name: draft.name,
-    status: draft.status === 'paused' ? 'paused' : 'active',
-    badge: draft.badge || '',
-    promoText: draft.promoText || '',
-    buttonText: draft.buttonText || 'Buy Now',
-    order: Number(draft.order) || 0,
-    plan: draft.plan || 'lifetime',
-    regions: draft.regions,
-    pricingVersion: typeof increment === 'function' ? increment(1) : (Number(draft.pricingVersion) || 0) + 1,
+    productId: draft.productId,
+    type: isPass ? 'full_pass' : (isLife ? 'lifetime' : 'credit_pack'),
+    nameKo: draft.nameKo,
+    nameEn: draft.nameEn,
+    nameJa: draft.nameJa,
+    name: draft.nameKo || draft.nameEn,
+    descriptionKo: draft.descriptionKo,
+    descriptionEn: draft.descriptionEn,
+    descriptionJa: draft.descriptionJa,
+    creditAmount: isPass || isLife ? 0 : Number(draft.creditAmount),
+    durationDays: isPass
+      ? (isCanonicalPassProductId(draft.productId)
+        ? canonicalPassDurationDays(draft.productId)
+        : Number(draft.durationDays || 0))
+      : 0,
+    entitlement: isLife ? 'lifetime' : (isPass ? 'full_pass' : 'credits'),
+    listPriceKrw: Number(draft.listPriceKrw),
+    listPriceUsd: draft.listPriceUsd,
+    status: draft.status,
+    sortOrder: Number(draft.sortOrder),
+    order: Number(draft.sortOrder),
+    badge: draft.badge,
+    packSavePercent: draft.packSavePercent ?? null,
+    productVersion: version,
+    pricingVersion: version,
+    productDiscount: draft.productDiscount,
+    plan: isLife ? 'lifetime' : (isPass ? 'period' : 'credits'),
     updatedAt: serverTimestamp()
   };
-  await setDoc(doc(db, 'products', draft.id), payload, { merge: true });
-  const msg = $('pricingSaveMsg');
-  if (msg) {
-    msg.textContent = '✓ 저장 완료 — 홈/구매/결제에 즉시 반영됩니다.';
-    msg.classList.remove('hidden');
-    setTimeout(() => msg.classList.add('hidden'), 4000);
+  if (isLife || isPass) {
+    const prevRegions = draft.regions || {};
+    const prevKr = prevRegions.KR || {};
+    const price = Number(draft.listPriceKrw);
+    payload.regions = {
+      ...prevRegions,
+      KR: {
+        ...prevKr,
+        payment: prevKr.payment || 'portone',
+        currency: 'KRW',
+        listPrice: price,
+        salePrice: price,
+        orderName: draft.orderNameKo
+          || prevKr.orderName
+          || (isLife ? 'MidiAI Studio Lifetime Full' : (draft.nameKo || draft.productId)),
+        portoneProductId: prevKr.portoneProductId || (isLife ? 'midiai-lifetime' : draft.productId)
+      }
+    };
+    if (isLife) {
+      const prevGlobal = prevRegions.Global || {};
+      payload.regions.Global = {
+        ...prevGlobal,
+        payment: 'paypal',
+        currency: 'USD',
+        listPrice: draft.listPriceUsd != null ? Number(draft.listPriceUsd) : (prevGlobal.listPrice != null ? Number(prevGlobal.listPrice) : 89),
+        salePrice: draft.listPriceUsd != null ? Number(draft.listPriceUsd) : (prevGlobal.salePrice != null ? Number(prevGlobal.salePrice) : 89),
+        orderName: draft.orderNameEn || prevGlobal.orderName || 'MidiAI Studio Lifetime Full'
+      };
+      payload.plan = 'lifetime';
+      payload.name = draft.nameKo || draft.nameEn || 'Lifetime Full';
+    }
   }
+  const expectedPrice = Number(draft.listPriceKrw);
+  await setDoc(doc(db, 'products', docId), payload, { merge: true });
+  const { getDoc } = fs;
+  const verifySnap = await getDoc(doc(db, 'products', docId));
+  if (!verifySnap.exists()) {
+    throw new Error('저장 검증 실패: Firestore 문서를 읽을 수 없습니다.');
+  }
+  const saved = verifySnap.data() || {};
+  const savedPrice = Number(
+    saved.listPriceKrw != null
+      ? saved.listPriceKrw
+      : ((saved.regions || {}).KR || {}).listPrice
+  );
+  if (!Number.isFinite(savedPrice) || savedPrice !== expectedPrice) {
+    throw new Error(`저장 검증 실패: 요청 ${expectedPrice}원 / Firestore ${savedPrice}원`);
+  }
+  const savedKr = saved.regions?.KR || {};
+  const regionList = Number(savedKr.listPrice);
+  if (
+    (draft.type === 'full_pass' || draft.type === 'lifetime' || isPassProductId(draft.productId))
+    && Number.isFinite(regionList)
+    && regionList > 0
+    && regionList !== expectedPrice
+  ) {
+    throw new Error(`저장 검증 실패: regions.KR.listPrice=${regionList} / listPriceKrw=${expectedPrice}`);
+  }
+  await audit('product_update', `${draft.productId} 저장`, {
+    price: current.listPriceKrw, credits: current.creditAmount, version: current.productVersion
+  }, { price: draft.listPriceKrw, credits: draft.creditAmount, version });
+  flash(`${draft.productId} · ${formatKrw(expectedPrice)} 저장 완료 (구매 페이지 새로고침 후 반영)`);
+  await loadAll();
+  const refreshed = products.find((p) => p.productId === draft.productId);
+  if (refreshed && Number(refreshed.listPriceKrw) !== expectedPrice) {
+    flash(`저장은 됐지만 목록 갱신이 ${formatKrw(refreshed.listPriceKrw)}입니다. 페이지를 새로고침하세요.`, false);
+  }
+}
+
+function openAddModal() {
+  const modal = $('pricingCreateModal');
+  if (modal) modal.hidden = false;
+  syncCreateModalFields();
+}
+
+function closeAddModal() {
+  const modal = $('pricingCreateModal');
+  if (modal) modal.hidden = true;
+}
+
+async function createProductFromModal() {
+  const type = $('newProductType')?.value || 'credit_pack';
+  const productId = normalizeProductId($('newProductId')?.value || '');
+  const nameKo = $('newProductName')?.value || '';
+  const credits = Number($('newProductCredits')?.value || 0);
+  const durationDays = type === 'full_pass'
+    ? (isCanonicalPassProductId(productId)
+      ? canonicalPassDurationDays(productId)
+      : Number($('newProductDuration')?.value || 0))
+    : 0;
+  const price = Number($('newProductPrice')?.value || 0);
+  const payload = {
+    productId,
+    type,
+    nameKo,
+    nameEn: nameKo,
+    nameJa: nameKo,
+    creditAmount: type === 'credit_pack' ? credits : 0,
+    durationDays: type === 'full_pass' ? durationDays : 0,
+    entitlement: type === 'lifetime' ? 'lifetime' : (type === 'full_pass' ? 'full_pass' : 'credits'),
+    listPriceKrw: price,
+    status: 'active',
+    sortOrder: products.length + 1,
+    badge: type === 'full_pass' && productId === 'PASS_30D' ? 'recommended' : '',
+    productVersion: 1,
+    productDiscount: emptyDiscount(),
+    plan: type === 'lifetime' ? 'lifetime' : (type === 'full_pass' ? 'period' : 'credits')
+  };
+  const errors = validateProductFields(payload, { isNew: true });
+  if (products.some((p) => p.productId === productId)) errors.push('이미 있는 상품 ID입니다.');
+  if (errors.length) throw new Error(errors[0]);
+  const { doc, setDoc, serverTimestamp } = fs;
+  await setDoc(doc(db, 'products', firestoreDocId(productId)), {
+    ...payload,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    hasPurchases: false
+  });
+  await audit('product_create', `${productId} 생성`, null, payload);
+  closeAddModal();
+  flash('상품을 추가했습니다.');
+  await loadAll();
+  selectProduct(productId);
+}
+
+function syncCreateModalFields() {
+  const type = $('newProductType')?.value || 'credit_pack';
+  const creditsWrap = $('newProductCreditsWrap');
+  const durationWrap = $('newProductDurationWrap');
+  if (creditsWrap) creditsWrap.hidden = type !== 'credit_pack';
+  if (durationWrap) durationWrap.hidden = type !== 'full_pass';
+  const idInput = $('newProductId');
+  if (idInput && type === 'full_pass' && !String(idInput.value || '').trim()) {
+    idInput.placeholder = 'PASS_60D';
+  }
+}
+
+async function cloneProduct() {
+  if (!draft) return;
+  const nextId = window.prompt('복제할 새 상품 ID', `${draft.productId}_COPY`);
+  if (!nextId) return;
+  $('newProductType').value = draft.type;
+  $('newProductId').value = nextId;
+  $('newProductName').value = draft.nameKo;
+  $('newProductCredits').value = draft.creditAmount;
+  $('newProductPrice').value = draft.listPriceKrw;
+  await createProductFromModal();
+}
+
+async function archiveProduct() {
+  if (!draft) return;
+  draft.status = 'archived';
+  fill('draftStatus', 'archived');
+  await saveDraft();
+}
+
+async function deleteProduct() {
+  if (!draft || isSeedProduct(draft.productId) || draft.hasPurchases) {
+    throw new Error('결제 기록이 있거나 기본 상품은 삭제할 수 없습니다. 판매중지/보관만 가능합니다.');
+  }
+  if (!window.confirm(`${draft.productId}를 삭제할까요?`)) return;
+  const { doc, deleteDoc } = fs;
+  await deleteDoc(doc(db, 'products', firestoreDocId(draft.productId)));
+  await audit('product_delete', `${draft.productId} 삭제`, draft, null);
+  selectedId = null;
+  flash('상품을 삭제했습니다.');
   await loadAll();
 }
 
-function collectDraftFromForm() {
-  if (!draft) return;
-  draft.name = $('pfName')?.value?.trim() || draft.name;
-  draft.status = $('pfStatus')?.value || draft.status;
-  draft.badge = $('pfBadge')?.value || '';
-  draft.promoText = $('pfPromo')?.value || '';
-  draft.buttonText = $('pfButton')?.value || '';
-  draft.plan = $('pfPlan')?.value || 'lifetime';
-  draft.order = Number($('pfOrder')?.value || 0);
-  document.querySelectorAll('#pricingRegionRows .pricing-region-card').forEach((wrap) => {
-    collectRegion(wrap.dataset.region, wrap);
+function promoStatus(p) {
+  return windowStatus(p.enabled === true && p.archived !== true, p.startsAt, p.endsAt);
+}
+
+function renderPromoList() {
+  const root = $('pricingPromoList');
+  if (!root) return;
+  if (!promotions.length) {
+    root.innerHTML = '<p class="muted">이벤트가 없습니다.</p>';
+    return;
+  }
+  root.innerHTML = promotions.map((p) => {
+    const st = promoStatus(p);
+    const targets = (p.productIds || []).join(' / ') || '-';
+    const disc = p.type === 'amount' ? `${Number(p.value || 0).toLocaleString('ko-KR')}원` : `${p.value}%`;
+    const active = selectedPromoId === p.id ? ' is-active' : '';
+    return `<button type="button" class="pricing-product-item${active}" data-promo-id="${esc(p.id)}">
+      <span class="pricing-product-item-top"><strong>${esc(p.nameKo || p.promotionId || p.id)}</strong><span class="badge">${esc(st)}</span></span>
+      <span class="muted small">${esc(targets)}</span>
+      <span class="muted small">${esc(disc)} · ${esc(String(p.startsAt || '').slice(0, 16))} ~ ${esc(String(p.endsAt || '').slice(0, 16))}</span>
+      <span class="muted small">팝업 ${p.homepagePopupEnabled ? 'ON' : 'OFF'}</span>
+    </button>`;
+  }).join('');
+  root.querySelectorAll('[data-promo-id]').forEach((btn) => {
+    btn.addEventListener('click', () => selectPromo(btn.getAttribute('data-promo-id')));
   });
 }
 
-async function saveLangMap() {
-  if (!isAdmin || !db || !fs) throw new Error('권한이 없거나 Firestore가 준비되지 않았습니다.');
-  langMap = {
-    ko: $('pricingLangKo')?.value?.trim() || 'KR',
-    en: $('pricingLangEn')?.value?.trim() || 'Global',
-    ja: $('pricingLangJa')?.value?.trim() || 'Global'
+function emptyPromo() {
+  const now = new Date();
+  const end = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  return {
+    id: '',
+    promotionId: '',
+    nameKo: '',
+    nameEn: '',
+    nameJa: '',
+    enabled: true,
+    archived: false,
+    type: 'percent',
+    value: 10,
+    productIds: [],
+    productOverrides: {},
+    startsAt: now.toISOString(),
+    endsAt: end.toISOString(),
+    homepagePopupEnabled: false,
+    popupTitleKo: '',
+    popupTitleEn: '',
+    popupTitleJa: '',
+    popupBodyKo: '',
+    popupBodyEn: '',
+    popupBodyJa: '',
+    popupCtaKo: '가격 보기',
+    popupCtaEn: 'See pricing',
+    popupCtaJa: '料金を見る',
+    ctaUrl: './purchase.html',
+    badgeKo: '',
+    badgeEn: '',
+    badgeJa: '',
+    version: 1
   };
-  const { doc, setDoc, serverTimestamp } = fs;
-  await setDoc(doc(db, 'pricingConfig', 'main'), {
-    langRegionMap: langMap,
-    defaultProductId: DEFAULT_PRODUCT_ID,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-  alert('언어 → Region 매핑이 저장되었습니다.');
 }
 
-// Auto-start on admin page (does not rely only on app.js dynamic import)
-if ((location.pathname.split('/').pop() || '') === 'admin.html') {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => bootstrapSelf());
-  } else {
-    bootstrapSelf();
+function startNewPromo() {
+  promoDraft = emptyPromo();
+  selectedPromoId = '';
+  renderPromoList();
+  renderPromoEditor();
+  setPane('promos');
+}
+
+function selectPromo(id) {
+  selectedPromoId = id;
+  const found = promotions.find((p) => p.id === id);
+  promoDraft = found ? JSON.parse(JSON.stringify(found)) : emptyPromo();
+  renderPromoList();
+  renderPromoEditor();
+}
+
+function renderPromoEditor() {
+  const empty = $('pricingPromoEmpty');
+  const form = $('pricingPromoForm');
+  if (!promoDraft) {
+    if (empty) empty.hidden = false;
+    if (form) form.hidden = true;
+    return;
   }
+  if (empty) empty.hidden = true;
+  if (form) form.hidden = false;
+  fill('promoNameKo', promoDraft.nameKo || '');
+  fill('promoNameEn', promoDraft.nameEn || '');
+  fill('promoNameJa', promoDraft.nameJa || '');
+  check('promoEnabledFlag', promoDraft.enabled === true);
+  fill('promoType', promoDraft.type || 'percent');
+  fill('promoValue', promoDraft.value || '');
+  fill('promoStart', toDatetimeLocalValue(promoDraft.startsAt));
+  fill('promoEnd', toDatetimeLocalValue(promoDraft.endsAt));
+  check('promoPopupEnabled', promoDraft.homepagePopupEnabled === true);
+  fill('promoPopupTitleKo', promoDraft.popupTitleKo || '');
+  fill('promoPopupTitleEn', promoDraft.popupTitleEn || '');
+  fill('promoPopupTitleJa', promoDraft.popupTitleJa || '');
+  fill('promoPopupBodyKo', promoDraft.popupBodyKo || '');
+  fill('promoPopupBodyEn', promoDraft.popupBodyEn || '');
+  fill('promoPopupBodyJa', promoDraft.popupBodyJa || '');
+  fill('promoPopupCtaKo', promoDraft.popupCtaKo || '');
+  fill('promoPopupCtaEn', promoDraft.popupCtaEn || '');
+  fill('promoPopupCtaJa', promoDraft.popupCtaJa || '');
+  fill('promoCtaUrl', promoDraft.ctaUrl || './purchase.html');
+  const box = $('promoProductTargets');
+  if (box) {
+    const selected = new Set((promoDraft.productIds || []).map(normalizeProductId));
+    box.innerHTML = products.map((p) => `<label class="pricing-check"><input type="checkbox" data-promo-target="${esc(p.productId)}" ${selected.has(p.productId) ? 'checked' : ''}> ${esc(p.nameKo || p.productId)}</label>`).join('');
+  }
+}
+
+function readPromoForm() {
+  if (!promoDraft) promoDraft = emptyPromo();
+  promoDraft.nameKo = $('promoNameKo')?.value || '';
+  promoDraft.nameEn = $('promoNameEn')?.value || promoDraft.nameKo;
+  promoDraft.nameJa = $('promoNameJa')?.value || promoDraft.nameKo;
+  promoDraft.enabled = !!$('promoEnabledFlag')?.checked;
+  promoDraft.type = $('promoType')?.value || 'percent';
+  promoDraft.value = Number($('promoValue')?.value || 0);
+  promoDraft.startsAt = fromDatetimeLocalValue($('promoStart')?.value);
+  promoDraft.endsAt = fromDatetimeLocalValue($('promoEnd')?.value);
+  promoDraft.homepagePopupEnabled = !!$('promoPopupEnabled')?.checked;
+  promoDraft.popupTitleKo = $('promoPopupTitleKo')?.value || '';
+  promoDraft.popupTitleEn = $('promoPopupTitleEn')?.value || '';
+  promoDraft.popupTitleJa = $('promoPopupTitleJa')?.value || '';
+  promoDraft.popupBodyKo = $('promoPopupBodyKo')?.value || '';
+  promoDraft.popupBodyEn = $('promoPopupBodyEn')?.value || '';
+  promoDraft.popupBodyJa = $('promoPopupBodyJa')?.value || '';
+  promoDraft.popupCtaKo = $('promoPopupCtaKo')?.value || '';
+  promoDraft.popupCtaEn = $('promoPopupCtaEn')?.value || '';
+  promoDraft.popupCtaJa = $('promoPopupCtaJa')?.value || '';
+  promoDraft.ctaUrl = $('promoCtaUrl')?.value || './purchase.html';
+  promoDraft.productIds = [...document.querySelectorAll('[data-promo-target]:checked')].map((el) => el.getAttribute('data-promo-target'));
+  return promoDraft;
+}
+
+async function savePromo() {
+  const payload = readPromoForm();
+  const errors = validatePromotionFields(payload, products);
+  if (errors.length) throw new Error(errors[0]);
+  const nextList = promotions.filter((p) => p.id !== payload.id).concat([payload]);
+  const conflicts = findDiscountConflicts(products, nextList, payload.id);
+  if (conflicts.length) throw new Error(`CONFLICT: ${conflicts[0].productId} 기간이 겹칩니다. 저장하지 않았습니다.`);
+  const { collection, doc, setDoc, addDoc, serverTimestamp } = fs;
+  const data = { ...payload, updatedAt: serverTimestamp(), archived: false };
+  delete data.id;
+  if (payload.id) {
+    data.version = Number(payload.version || 1) + 1;
+    await setDoc(doc(db, 'promotions', payload.id), data, { merge: true });
+  } else {
+    data.createdAt = serverTimestamp();
+    data.version = 1;
+    const ref = await addDoc(collection(db, 'promotions'), data);
+    selectedPromoId = ref.id;
+  }
+  await audit('promotion_save', `${payload.nameKo} ${payload.productIds.join(',')} ${payload.value}${payload.type === 'percent' ? '%' : '원'}`, null, {
+    startsAt: payload.startsAt, endsAt: payload.endsAt, productIds: payload.productIds
+  });
+  flash('이벤트를 저장했습니다.');
+  await loadAll();
+}
+
+async function clonePromo() {
+  if (!promoDraft) return;
+  const copy = { ...readPromoForm(), id: '', promotionId: '', nameKo: `${promoDraft.nameKo} 복제` };
+  promoDraft = copy;
+  selectedPromoId = '';
+  renderPromoEditor();
+  flash('복제본을 편집한 뒤 저장하세요.');
+}
+
+async function archivePromo() {
+  if (!promoDraft?.id) return;
+  const { doc, setDoc, serverTimestamp } = fs;
+  await setDoc(doc(db, 'promotions', promoDraft.id), {
+    archived: true,
+    enabled: false,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  await audit('promotion_archive', `${promoDraft.nameKo} 보관`, promoDraft, { archived: true });
+  flash('이벤트를 보관했습니다.');
+  await loadAll();
+}
+
+if ((location.pathname.split('/').pop() || '') === 'admin.html') {
+  initPricingAdmin();
 }

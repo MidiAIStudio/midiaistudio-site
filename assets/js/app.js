@@ -8,8 +8,38 @@ import {
   isDiscountCampaignActive,
   isPromoPopupActive,
   promoBadgeText,
-  promoPopupCopy
-} from './pricing.js?v=sale-fix-4';
+  promoPopupCopy,
+  getActiveHomepagePromotions,
+  getPricingCache
+} from './pricing.js?v=price-sot-1';
+import {
+  loadCreditProducts,
+  getCreditProduct,
+  getCreditProducts,
+  formatCreditPrice,
+  formatKrw,
+  creditOrderName,
+  creditTagline,
+  packCredits,
+  normalizeCreditProductId,
+  applyPublicCreditCatalog
+} from './credit-catalog.js?v=price-save-1';
+import {
+  publicProductView,
+  starterUnitFromProducts,
+  localizePromo,
+  isPassProductId,
+  isLicenseProductId,
+  normalizeProductId as normalizeCatalogProductId
+} from './catalog-engine.js?v=price-sot-1';
+import {
+  getPassProducts,
+  getPassProduct,
+  passDurationDays,
+  applyPublicPassCatalog,
+  hydratePassCatalogFromPublic,
+  getPassCatalogSource
+} from './pass-catalog.js?v=price-sot-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -31,6 +61,12 @@ import {
 } from './admin-user-logs.js?v=admin-logs-detail-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
+function isCreditPurchaseEnabled(){
+  return CONFIG.CREDIT_PURCHASE_ENABLED === true || CONFIG.creditPurchaseEnabled === true;
+}
+function purchaseActionsLocked(){
+  return !!currentLicenseLifetime;
+}
 const $ = (id) => document.getElementById(id);
 const qs = (s, root = document) => root.querySelector(s);
 const page = location.pathname.split('/').pop() || 'index.html';
@@ -38,6 +74,28 @@ const pathLower = location.pathname.toLowerCase();
 const pathLang = pathLower.includes('/en/') ? 'en' : pathLower.includes('/ja/') ? 'ja' : pathLower.includes('/ko/') ? 'ko' : '';
 const isPurchasePage = page === 'purchase.html' || pathLower.endsWith('/purchase') || pathLower.endsWith('/purchase/');
 const isRootKoreanPurchasePage = isPurchasePage && !pathLang;
+let selectedPurchaseId = 'PASS_30D';
+let purchaseMode = 'lifetime';
+let selectedPointProductId = 'CREDIT_30';
+if(isPurchasePage){
+  const purchaseQuery = new URLSearchParams(location.search);
+  const productParam = String(purchaseQuery.get('product') || purchaseQuery.get('mode') || '').toLowerCase();
+  const packRaw = String(purchaseQuery.get('pack') || '').trim().toUpperCase();
+  const packParam = normalizeCreditProductId(packRaw);
+  if(isPassProductId(packRaw) || isPassProductId(packParam)){
+    selectedPurchaseId = isPassProductId(packRaw) ? packRaw : packParam;
+  } else if(packParam.startsWith('CREDIT_') && packParam !== 'CREDIT_10' && isCreditPurchaseEnabled()){
+    selectedPurchaseId = packParam;
+  } else if(productParam === 'credits' || productParam === 'credit' || productParam === 'points' || productParam === 'point' || packParam.startsWith('POINT_') || packParam.startsWith('CREDIT_')){
+    selectedPurchaseId = 'PASS_30D';
+  } else if(productParam === 'lifetime' || productParam === 'unlimited'){
+    selectedPurchaseId = 'LIFETIME';
+  } else if(productParam === 'pass' || productParam === 'period'){
+    selectedPurchaseId = 'PASS_30D';
+  }
+  purchaseMode = selectedPurchaseId.startsWith('CREDIT_') ? 'credits' : (isPassProductId(selectedPurchaseId) ? 'pass' : 'lifetime');
+  if(purchaseMode === 'credits') selectedPointProductId = selectedPurchaseId;
+}
 
 let lang = pathLang || localStorage.getItem('midiai_lang') || document.documentElement.lang || 'ko';
 if (!['ko','en','ja'].includes(lang)) lang = 'ko';
@@ -282,6 +340,7 @@ function applyStaticI18n(){
   applyDownloadsI18n();
   applyFooterI18n();
   updatePurchaseI18n();
+  paintProfileCreditStrip();
 }
 function resolveTopbarPageTitle(){
   if(page === 'support.html') return supportLocaleText().title;
@@ -463,7 +522,18 @@ function tr(k){
     admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
     notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_clear_all:'모두 삭제', notify_clear_confirm:'알림을 모두 삭제할까요?', notify_delete_aria:'알림 삭제', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
     notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_admin_message:'관리자 쪽지', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
+    notify_credit_purchase:'크레딧 충전 완료', notify_credit_purchase_body:'{n} 크레딧이 지급되었습니다.', notify_credit_grant:'크레딧 지급', notify_credit_grant_body:'관리자가 {n} 크레딧을 지급했습니다.', notify_credit_deduct:'크레딧 조정', notify_credit_deduct_body:'{n} 크레딧이 회수되었습니다.', notify_reservation_complete:'예약 변환이 완료되었습니다.', notify_reservation_failed:'예약 변환이 실패했습니다.', notify_time_just_now:'방금', notify_time_minutes:'{n}분 전', notify_time_hours:'{n}시간 전', notify_time_yesterday:'어제',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
+    credit_label:'Credit', credit_balance:'보유 크레딧', credit_buy:'크레딧 충전', credit_history:'크레딧 사용내역',
+    credit_history_all:'전체 사용내역', credit_history_more:'더 보기', credit_refresh:'새로고침',
+    credit_unlimited:'AI 변환 무제한', credit_no_deduct:'Credit 차감 없음',
+    credit_lifetime_note:'이 계정은 Lifetime 라이선스를 사용 중입니다.',
+    credit_lifetime_unused:'Lifetime 이용 중에는 사용되지 않습니다.',
+    credit_recent:'최근 사용내역', credit_empty:'사용내역이 없습니다.', credit_failed:'잔액을 불러오지 못했습니다.',
+    credit_using:'Lifetime 이용 중', credit_ledger_refund:'변환 실패 반환',
+    credit_ledger_purchase:'크레딧 구매', credit_ledger_grant:'관리자 크레딧 지급',
+    credit_ledger_deduct:'관리자 크레딧 회수', credit_ledger_conversion:'AI 변환',
+    credit_col_date:'날짜', credit_col_item:'내용', credit_col_delta:'증감', credit_col_balance:'잔액',
     board_mine_title:'내 작성글', board_mine_desc:'내가 작성한 자유게시판 글만 표시합니다.', board_mine_all:'전체 글 보기', board_mine_only:'내 글만',
     notify_settings_title:'알림 설정', notify_pref_inapp:'앱 알림', notify_pref_email:'이메일 알림', notify_pref_saved:'저장됨'
   };
@@ -479,7 +549,18 @@ function tr(k){
     admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
     notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_clear_all:'Clear all', notify_clear_confirm:'Delete all notifications?', notify_delete_aria:'Delete notification', notify_login:'Sign in to see notifications.',
     notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_admin_message:'Admin message', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
+    notify_credit_purchase:'Credit purchase complete', notify_credit_purchase_body:'{n} credits were added.', notify_credit_grant:'Credits granted', notify_credit_grant_body:'An admin granted {n} credits.', notify_credit_deduct:'Credit adjustment', notify_credit_deduct_body:'{n} credits were deducted.', notify_reservation_complete:'Scheduled conversion finished.', notify_reservation_failed:'Scheduled conversion failed.', notify_time_just_now:'Just now', notify_time_minutes:'{n} min ago', notify_time_hours:'{n} hr ago', notify_time_yesterday:'Yesterday',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
+    credit_label:'Credit', credit_balance:'Credit Balance', credit_buy:'Buy Credits', credit_history:'Credit History',
+    credit_history_all:'View All', credit_history_more:'Load more', credit_refresh:'Refresh',
+    credit_unlimited:'Unlimited AI Conversions', credit_no_deduct:'No Credit Deduction',
+    credit_lifetime_note:'This account uses a Lifetime license.',
+    credit_lifetime_unused:'Credits are not deducted while Lifetime is active.',
+    credit_recent:'Recent activity', credit_empty:'No credit history yet.', credit_failed:'Could not load credit balance.',
+    credit_using:'Lifetime active', credit_ledger_refund:'Conversion refund',
+    credit_ledger_purchase:'Credit purchase', credit_ledger_grant:'Admin credit grant',
+    credit_ledger_deduct:'Admin credit recovery', credit_ledger_conversion:'AI conversion',
+    credit_col_date:'Date', credit_col_item:'Details', credit_col_delta:'Change', credit_col_balance:'Balance',
     board_mine_title:'My posts', board_mine_desc:'Showing only posts you wrote on the free board.', board_mine_all:'All posts', board_mine_only:'My posts',
     notify_settings_title:'Notifications', notify_pref_inapp:'App alerts', notify_pref_email:'Email alerts', notify_pref_saved:'Saved'
   };
@@ -495,7 +576,18 @@ function tr(k){
     admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
     notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_clear_all:'すべて削除', notify_clear_confirm:'通知をすべて削除しますか？', notify_delete_aria:'通知を削除', notify_login:'ログインすると通知を確認できます。',
     notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_admin_message:'管理者メッセージ', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
+    notify_credit_purchase:'クレジット購入完了', notify_credit_purchase_body:'{n} クレジットが付与されました。', notify_credit_grant:'クレジット付与', notify_credit_grant_body:'管理者が {n} クレジットを付与しました。', notify_credit_deduct:'クレジット調整', notify_credit_deduct_body:'{n} クレジットが回収されました。', notify_reservation_complete:'予約変換が完了しました。', notify_reservation_failed:'予約変換に失敗しました。', notify_time_just_now:'たった今', notify_time_minutes:'{n}分前', notify_time_hours:'{n}時間前', notify_time_yesterday:'昨日',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
+    credit_label:'Credit', credit_balance:'保有クレジット', credit_buy:'クレジット購入', credit_history:'クレジット利用履歴',
+    credit_history_all:'全履歴', credit_history_more:'さらに表示', credit_refresh:'更新',
+    credit_unlimited:'AI変換 無制限', credit_no_deduct:'Credit消費なし',
+    credit_lifetime_note:'このアカウントはLifetimeライセンスです。',
+    credit_lifetime_unused:'Lifetime利用中はクレジットは消費されません。',
+    credit_recent:'最近の利用', credit_empty:'利用履歴はありません。', credit_failed:'残高を取得できませんでした。',
+    credit_using:'Lifetime利用中', credit_ledger_refund:'変換失敗の返還',
+    credit_ledger_purchase:'クレジット購入', credit_ledger_grant:'管理者による付与',
+    credit_ledger_deduct:'管理者による回収', credit_ledger_conversion:'AI変換',
+    credit_col_date:'日時', credit_col_item:'内容', credit_col_delta:'増減', credit_col_balance:'残高',
     board_mine_title:'自分の投稿', board_mine_desc:'自由掲示板で自分が書いた投稿だけを表示します。', board_mine_all:'すべての投稿', board_mine_only:'自分の投稿',
     notify_settings_title:'通知設定', notify_pref_inapp:'アプリ通知', notify_pref_email:'メール通知', notify_pref_saved:'保存しました'
   };
@@ -504,6 +596,21 @@ function tr(k){
 }
 
 function fmtDate(v){ try{ const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null); return d ? d.toLocaleString(lang==='ja'?'ja-JP':lang==='en'?'en-US':'ko-KR') : ''; } catch { return ''; } }
+function fmtNotifyWhen(v){
+  try{
+    const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null);
+    if(!d || Number.isNaN(d.getTime())) return fmtDate(v);
+    const sec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+    const fill = (key, n) => String(tr(key) || '').replace('{n}', String(n));
+    if(sec < 60) return tr('notify_time_just_now');
+    if(sec < 3600) return fill('notify_time_minutes', Math.floor(sec / 60));
+    if(sec < 86400) return fill('notify_time_hours', Math.floor(sec / 3600));
+    if(sec < 172800) return tr('notify_time_yesterday');
+    return fmtDate(v);
+  }catch{
+    return fmtDate(v);
+  }
+}
 function licenseTsMs(v){
   if(v==null || v==='') return 0;
   if(typeof v==='number' && Number.isFinite(v)) return v>1e12 ? v : v*1000;
@@ -1004,12 +1111,851 @@ function purchaseCheckout(){
   const uiLang = isKoreanCheckout() ? 'ko' : (pathLang || lang || 'en');
   return checkoutContext(uiLang, isKoreanCheckout());
 }
+function isPointCheckout(){
+  if(purchaseActionsLocked()) return false;
+  const id = normalizeCreditProductId(selectedPurchaseId);
+  return isPurchasePage && String(id || '').startsWith('CREDIT_');
+}
+function selectedPointPack(){
+  return getCreditProduct(selectedPointProductId || selectedPurchaseId);
+}
+function pointCheckoutCurrency(){
+  return isKoreanCheckout() ? 'KRW' : 'USD';
+}
+function pointCopy(){
+  if(lang === 'en') return {
+    buy:'Buy',
+    recommended:'Recommended',
+    uses:(n)=>`Full access for the selected period`,
+    perUse:(price)=>price,
+    perUseApprox:(price)=>price,
+    save:(n)=>`About ${n}% off`,
+    unlimitedTitle:'Lifetime Full',
+    unlimitedUses:'Unlimited AI conversion · Full features',
+    unlimitedUnit:'Lifetime · one-time · no auto-renewal',
+    lifetimeOwnedHint:'You already have a Lifetime Full license. Extra Pass purchases are not required.',
+    notes:[
+      'Period Pass: unlimited conversions · Full features · no auto-renewal',
+      'Lifetime Full: permanent Full access after purchase',
+      'No recurring billing'
+    ],
+    accountTitle:'Sign in with Google before purchasing.',
+    signedOut:'After payment, the license is assigned to the signed-in Google account.',
+    signedIn:(id)=>`After payment, the license will be assigned to <b>${id}</b>.`,
+    serviceValue:'License activated immediately after payment',
+    noteTitle:'Pass guide',
+    licenseGuide:[
+      {title:'Period Full Pass',desc:'Unlimited AI conversions and Full features for the selected period. No auto-renewal.'},
+      {title:'Lifetime Full',desc:'Permanent Full access after purchase. Extra Pass purchases are not required.'},
+      {title:'MIDI Editor PRO',desc:'Edit multi-track piano rolls with velocity and CC.'},
+      {title:'AI Assistant',desc:'Refine MIDI quality during conversion and editing.'},
+      {title:'Score features',desc:'MIDI ↔ PDF/MusicXML conversion and score editing.'}
+    ],
+    grantLabel:'Grant',
+    grantValue:(n)=>`Access granted after payment is confirmed`,
+    successTitle:'Purchase complete.',
+    successLead:'Your license was assigned to the signed-in Google account.',
+    balanceLabel:'Current balance',
+    creditedLabel:'Added',
+    kakaoVerifying:'Verifying payment...',
+    kakaoComplete:'Payment complete. Your license is active.',
+    kakaoVerifyFail:'Payment completed, but confirmation is required. Please keep your payment ID.',
+    verifying:'Verifying payment...',
+    complete:'Payment complete. Your license is active.',
+    heroLead:'Choose a period Full Pass or Lifetime Full.',
+    heroLeadOwned:'You are using a Lifetime Full license.',
+    comingSoon:'This product is not available for purchase.',
+    ownedBannerTitle:'Lifetime Full active',
+    ownedBannerBody:'You can use all AI conversions and Full features without limits.',
+    ownedBanner:'Lifetime Full active. You can use all AI conversions and Full features without limits.',
+    btnNoNeed:'No extra purchase needed',
+    btnCurrentPlan:'Currently using',
+    ownedBadge:'Current plan',
+    usageTitle:'Pass guide',
+    lifetimeUsageTitle:'Lifetime Full guide',
+    usageCredit:[
+      {title:'Period Full Pass', value:'Included', desc:'Unlimited conversions and Full features for the selected period'},
+      {title:'Lifetime Full', value:'Included', desc:'Permanent Full access after purchase'},
+      {title:'Auto-renewal', value:'None', desc:'One-time payment'}
+    ],
+    usageLifetime:[
+      {title:'AI conversion', value:'Unlimited', desc:'YouTube, Audio, Piano, PDF, and other AI conversions'},
+      {title:'Orchestra / Multi-track', value:'Unlimited', desc:'Generate MIDI as multiple instrument parts'},
+      {title:'Full features', value:'Included', desc:'Editors, Assistant, and score tools'},
+      {title:'Term', value:'No time limit', desc:'Permanent use after purchase'},
+      {title:'Auto-renewal', value:'None', desc:'One-time purchase'}
+    ],
+    confirmCredits:(n)=>`Confirm purchase`,
+    confirmLifetime:'Buy Lifetime Full',
+    payAmountLabel:'Amount',
+    grantLabelShort:'Grant',
+    licenseLabel:'License',
+    aiUnlimited:'Unlimited',
+    termLabel:'Term',
+    termPermanent:'No time limit',
+    payMethod:'Payment method',
+    payAccount:'Account',
+    kakaoPay:'KakaoPay',
+    confirmLeadCredits:(n)=>`After payment, access will be assigned to this account.`,
+    confirmLeadLifetime:'After payment, a Lifetime Full license will be assigned to this account.',
+    cancel:'Cancel',
+    payNow:(price)=>`Pay ${price}`,
+    openingPay:'Opening checkout...',
+    needLogin:'Google sign-in is required to purchase.',
+    googleLogin:'Google sign-in',
+    viewAccount:'View in My Account',
+    close:'Close',
+    successPaid:'Payment complete.',
+    trialTitle:'Free trial',
+    trialPrice:'Free · Start without payment',
+    trialItems:[
+      'MIDI editing available',
+      'AI conversion trial',
+      'Convert & export up to 1 minute',
+      'Full conversion after buying a Full Pass'
+    ],
+    trialBtnStart:'Sign in to start',
+    trialBtnCurrent:'Current plan',
+    cardFeaturesCredit:[
+      ['Conversions','Unlimited'],
+      ['Full features','Included'],
+      ['Auto-renewal','None']
+    ],
+    cardFeaturesPass:[
+      ['Conversions','Unlimited'],
+      ['Full features','Included'],
+      ['Auto-renewal','None']
+    ],
+    cardFeaturesLife:[
+      ['Conversions','Unlimited'],
+      ['Full features','Included'],
+      ['Time limit','None'],
+      ['Auto-renewal','None']
+    ],
+    compactNote:'',
+    detailsToggle:'Pass details',
+    detailsItems:[
+      {title:'Period Full Pass', desc:'Unlimited conversions and Full features for 7 / 30 / 90 days. No auto-renewal.'},
+      {title:'Lifetime Full', desc:'Permanent Full access after purchase'},
+      {title:'MIDI editing / playback', desc:'Included with Full access'},
+      {title:'AI Assistant', desc:'Included with Full access'},
+      {title:'Score conversion & editing', desc:'Included with Full access'},
+      {title:'Lifetime owners', desc:'Extra Pass purchases are not required'}
+    ]
+  };
+  if(lang === 'ja') return {
+    buy:'購入する',
+    recommended:'おすすめ',
+    uses:(n)=>`選択期間のFull利用`,
+    perUse:(price)=>price,
+    perUseApprox:(price)=>price,
+    save:(n)=>`約${n}%お得`,
+    unlimitedTitle:'Lifetime Full',
+    unlimitedUses:'AI変換 無制限 · Full機能',
+    unlimitedUnit:'永久利用 · 1回払い · 自動更新なし',
+    lifetimeOwnedHint:'Lifetime Fullを保有中です。追加の期間利用権購入は不要です。',
+    notes:[
+      '期間Full利用権: 変換回数制限なし · Full機能 · 自動更新なし',
+      'Lifetime Full: 購入後ずっとFull利用',
+      '自動課金はありません'
+    ],
+    accountTitle:'Googleログイン後に購入できます。',
+    signedOut:'決済後、ログイン中のGoogleアカウントにライセンスが付与されます。',
+    signedIn:(id)=>`決済完了後、<b>${id}</b> にライセンスが付与されます。`,
+    serviceValue:'決済完了後すぐにライセンス付与',
+    noteTitle:'利用権のご案内',
+    licenseGuide:[
+      {title:'期間Full利用権',desc:'選択した期間中、AI変換回数制限なしでFull機能を利用できます。自動更新はありません。'},
+      {title:'Lifetime Full',desc:'購入後ずっとFull利用できます。追加の期間利用権購入は不要です。'},
+      {title:'MIDI編集 PRO',desc:'マルチトラックのピアノロールでベロシティやCCを編集します。'},
+      {title:'AIアシスタント',desc:'変換・編集中にMIDI品質を整えます。'},
+      {title:'楽譜機能',desc:'MIDI ↔ PDF/MusicXML変換と楽譜編集に対応します。'}
+    ],
+    grantLabel:'付与',
+    grantValue:(n)=>`決済確認後に利用権を付与`,
+    successTitle:'購入が完了しました。',
+    successLead:'ライセンスがログイン中のGoogleアカウントに付与されました。',
+    balanceLabel:'現在の残高',
+    creditedLabel:'付与',
+    kakaoVerifying:'決済を確認しています...',
+    kakaoComplete:'決済完了。ライセンスを付与しました。',
+    kakaoVerifyFail:'決済は完了しましたが、確認が必要です。paymentIdを控えてください。',
+    verifying:'決済を確認しています...',
+    complete:'決済が完了しました。ライセンスが付与されました。',
+    heroLead:'期間Full利用権またはLifetime Fullを選択してください。',
+    heroLeadOwned:'Lifetime Fullをご利用中です。',
+    comingSoon:'この商品は現在購入できません。',
+    ownedBannerTitle:'Lifetime Full保有中',
+    ownedBannerBody:'すべてのAI変換とFull機能を制限なく利用できます。',
+    ownedBanner:'Lifetime Full保有中。すべてのAI変換とFull機能を制限なく利用できます。',
+    btnNoNeed:'追加購入は不要',
+    btnCurrentPlan:'現在利用中',
+    ownedBadge:'現在のプラン',
+    usageTitle:'利用権のご案内',
+    lifetimeUsageTitle:'Lifetime Full利用案内',
+    usageCredit:[
+      {title:'期間Full利用権', value:'利用可能', desc:'選択期間中、変換回数制限なしでFull機能を利用'},
+      {title:'Lifetime Full', value:'利用可能', desc:'購入後ずっとFull利用'},
+      {title:'自動更新', value:'なし', desc:'1回払い'}
+    ],
+    usageLifetime:[
+      {title:'AI変換', value:'無制限', desc:'YouTube・Audio・Piano・PDFなどのAI変換'},
+      {title:'オーケストラ / Multi-track', value:'無制限', desc:'複数パートのMIDIを生成するオーケストラ変換'},
+      {title:'Full機能', value:'利用可能', desc:'編集・Assistant・楽譜機能を含む'},
+      {title:'利用期間', value:'期間制限なし', desc:'購入後ずっと利用できます'},
+      {title:'自動更新', value:'なし', desc:'1回払い'}
+    ],
+    confirmCredits:(n)=>`購入を確認`,
+    confirmLifetime:'Lifetime Full を購入',
+    payAmountLabel:'支払金額',
+    grantLabelShort:'付与',
+    licenseLabel:'ライセンス',
+    aiUnlimited:'無制限',
+    termLabel:'利用期間',
+    termPermanent:'期間制限なし',
+    payMethod:'決済手段',
+    payAccount:'アカウント',
+    kakaoPay:'KakaoPay',
+    confirmLeadCredits:(n)=>`決済完了後、このアカウントに利用権が付与されます。`,
+    confirmLeadLifetime:'決済完了後、このアカウントに Lifetime Fullが付与されます。',
+    cancel:'キャンセル',
+    payNow:(price)=>`${price} を支払う`,
+    openingPay:'決済画面を開いています...',
+    needLogin:'購入するにはGoogleログインが必要です。',
+    googleLogin:'Googleログイン',
+    viewAccount:'マイアカウントで確認',
+    close:'閉じる',
+    successPaid:'決済が完了しました。',
+    trialTitle:'無料体験',
+    trialPrice:'無料 · 決済なしで開始',
+    trialItems:[
+      'MIDI編集が利用可能',
+      'AI変換の無料体験',
+      '変換・書き出しは最大1分',
+      'Full利用権購入後に全区間変換'
+    ],
+    trialBtnStart:'ログインして開始',
+    trialBtnCurrent:'現在のプラン',
+    cardFeaturesCredit:[
+      ['変換回数','制限なし'],
+      ['Full機能','利用可能'],
+      ['自動更新','なし']
+    ],
+    cardFeaturesPass:[
+      ['変換回数','制限なし'],
+      ['Full機能','利用可能'],
+      ['自動更新','なし']
+    ],
+    cardFeaturesLife:[
+      ['変換回数','制限なし'],
+      ['Full機能','利用可能'],
+      ['期間制限','なし'],
+      ['自動更新','なし']
+    ],
+    compactNote:'',
+    detailsToggle:'利用権の詳細',
+    detailsItems:[
+      {title:'期間Full利用権', desc:'7 / 30 / 90日間、変換回数制限なしでFull機能を利用。自動更新なし'},
+      {title:'Lifetime Full', desc:'購入後ずっとFull利用'},
+      {title:'MIDI編集・再生', desc:'Full利用に含まれます'},
+      {title:'AIアシスタント', desc:'Full利用に含まれます'},
+      {title:'楽譜変換・編集', desc:'Full利用に含まれます'},
+      {title:'Lifetime保有者', desc:'追加の期間利用権購入は不要です'}
+    ]
+  };
+  return {
+    buy:'구매하기',
+    recommended:'추천',
+    uses:(n)=>`선택한 기간 동안 Full 이용`,
+    perUse:(price)=>price,
+    perUseApprox:(price)=>price,
+    save:(n)=>`약 ${n}% 절약`,
+    unlimitedTitle:'Lifetime Full',
+    unlimitedUses:'AI 변환 무제한 · Full 기능',
+    unlimitedUnit:'영구 이용 · 1회 결제 · 자동결제 없음',
+    lifetimeOwnedHint:'Lifetime Full을 이용 중입니다. 추가 기간 이용권 구매가 필요하지 않습니다.',
+    notes:[
+      '기간 Full 이용권: 변환 횟수 제한 없음 · Full 기능 이용 · 자동결제 없음',
+      'Lifetime Full: 구매 후 영구 Full 이용',
+      '자동결제는 없습니다'
+    ],
+    accountTitle:'Google 로그인 후 구매할 수 있습니다.',
+    signedOut:'결제 완료 후 로그인한 Google 계정에 이용권이 지급됩니다.',
+    signedIn:(id)=>`결제 완료 시 <b>${id}</b> 계정에 이용권이 지급됩니다.`,
+    serviceValue:'결제 완료 후 즉시 이용권 지급',
+    noteTitle:'이용권 안내',
+    licenseGuide:[
+      {title:'기간 Full 이용권',desc:'선택한 기간 동안 AI 변환 횟수 제한 없이 Full 기능을 이용합니다. 자동결제는 없습니다.'},
+      {title:'Lifetime Full',desc:'구매 후 영구 Full 이용. 추가 기간 이용권 구매가 필요하지 않습니다.'},
+      {title:'MIDI 편집 PRO',desc:'멀티트랙 피아노 롤에서 벨로시티·CC 등을 편집합니다.'},
+      {title:'AI 어시스턴트',desc:'변환·편집 과정에서 MIDI 품질을 다듬습니다.'},
+      {title:'악보 기능',desc:'MIDI ↔ PDF/MusicXML 변환과 악보 편집을 지원합니다.'}
+    ],
+    grantLabel:'지급',
+    grantValue:(n)=>`결제 확인 후 이용권 지급`,
+    successTitle:'구매가 완료되었습니다.',
+    successLead:'이용권이 로그인한 Google 계정에 지급되었습니다.',
+    balanceLabel:'현재 잔액',
+    creditedLabel:'지급',
+    kakaoVerifying:'결제를 검증하는 중입니다...',
+    kakaoComplete:'결제가 완료되었습니다. 이용권이 지급되었습니다.',
+    kakaoVerifyFail:'결제는 완료되었으나 확인이 필요합니다. 주문번호를 보관해 주세요.',
+    verifying:'결제를 검증하는 중입니다...',
+    complete:'결제가 완료되었습니다. 이용권이 지급되었습니다.',
+    heroLead:'기간 Full 이용권 또는 Lifetime Full을 선택하세요.',
+    heroLeadOwned:'Lifetime Full을 이용 중입니다.',
+    comingSoon:'현재 구매할 수 없는 상품입니다.',
+    ownedBannerTitle:'Lifetime Full 보유 중',
+    ownedBannerBody:'모든 AI 변환과 Full 기능을 제한 없이 이용할 수 있습니다.',
+    ownedBanner:'Lifetime Full 보유 중. 모든 AI 변환과 Full 기능을 제한 없이 이용할 수 있습니다.',
+    btnNoNeed:'추가 구매 불필요',
+    btnCurrentPlan:'현재 이용 중',
+    ownedBadge:'현재 플랜',
+    usageTitle:'이용권 안내',
+    lifetimeUsageTitle:'Lifetime Full 이용 안내',
+    cardFeaturesPass:[
+      ['변환 횟수','제한 없음'],
+      ['Full 기능','이용 가능'],
+      ['자동결제','없음']
+    ],
+    usageCredit:[
+      {title:'기간 Full 이용권', value:'이용 가능', desc:'선택한 기간 동안 변환 횟수 제한 없이 Full 기능 이용'},
+      {title:'Lifetime Full', value:'이용 가능', desc:'구매 후 영구 Full 이용'},
+      {title:'자동결제', value:'없음', desc:'1회 결제'}
+    ],
+    usageLifetime:[
+      {title:'AI 변환', value:'무제한', desc:'YouTube·Audio·Piano·PDF 등 AI 변환'},
+      {title:'오케스트라 / Multi-track', value:'무제한', desc:'여러 악기 파트로 생성하는 오케스트라 변환'},
+      {title:'Full 기능', value:'이용 가능', desc:'편집·Assistant·악보 기능 포함'},
+      {title:'이용기간', value:'기간 제한 없음', desc:'구매 후 계속 이용할 수 있습니다.'},
+      {title:'자동결제', value:'없음', desc:'1회 결제'}
+    ],
+    confirmCredits:(n)=>`구매 확인`,
+    confirmLifetime:'Lifetime Full 구매',
+    payAmountLabel:'결제금액',
+    grantLabelShort:'지급',
+    licenseLabel:'라이선스',
+    aiUnlimited:'무제한',
+    termLabel:'이용기간',
+    termPermanent:'기간 제한 없음',
+    payMethod:'결제수단',
+    payAccount:'결제 계정',
+    kakaoPay:'카카오페이',
+    confirmLeadCredits:(n)=>`결제 완료 후 해당 계정에 이용권이 지급됩니다.`,
+    confirmLeadLifetime:'결제 완료 후 해당 계정에 Lifetime Full이 지급됩니다.',
+    cancel:'취소',
+    payNow:(price)=>`${price} 결제`,
+    openingPay:'결제창 여는 중...',
+    needLogin:'구매하려면 Google 로그인이 필요합니다.',
+    googleLogin:'Google 로그인',
+    viewAccount:'내 계정에서 확인',
+    close:'닫기',
+    successPaid:'결제가 완료되었습니다.',
+    trialTitle:'무료 체험',
+    trialPrice:'0원 · 결제 없이 시작',
+    trialItems:[
+      'MIDI 편집 기능 이용 가능',
+      'AI 변환 무료 체험',
+      '변환·내보내기 최대 1분',
+      'Full 이용권 구매 후 전체 변환 가능'
+    ],
+    trialBtnStart:'로그인하여 시작',
+    trialBtnCurrent:'현재 플랜',
+    cardFeaturesCredit:[
+      ['변환 횟수','제한 없음'],
+      ['Full 기능','이용 가능'],
+      ['자동결제','없음']
+    ],
+    cardFeaturesLife:[
+      ['변환 횟수','제한 없음'],
+      ['Full 기능','이용 가능'],
+      ['기간 제한','없음'],
+      ['자동결제','없음']
+    ],
+    compactNote:'',
+    detailsToggle:'이용권 안내 자세히 보기',
+    detailsItems:[
+      {title:'기간 Full 이용권', desc:'7 / 30 / 90일 동안 변환 횟수 제한 없이 Full 기능 이용 · 자동결제 없음'},
+      {title:'Lifetime Full', desc:'구매 후 영구 Full 이용'},
+      {title:'MIDI 편집/재생', desc:'Full 이용권에 포함'},
+      {title:'AI Assistant', desc:'Full 이용권에 포함'},
+      {title:'악보 변환·편집', desc:'Full 이용권에 포함'},
+      {title:'Lifetime 보유자', desc:'추가 기간 이용권 구매가 필요하지 않습니다'}
+    ]
+  };
+}
+function syncPurchaseUrl(){
+  if(!isPurchasePage || !history.replaceState) return;
+  const url = new URL(location.href);
+  if(isPointCheckout()){
+    url.searchParams.set('product', 'credits');
+    url.searchParams.set('pack', selectedPurchaseId);
+  } else {
+    url.searchParams.delete('product');
+    url.searchParams.delete('pack');
+  }
+  history.replaceState({}, '', url);
+}
+function renderPurchasePlanGrid(){
+  const grid = $('purchasePlanGrid');
+  if(!grid) return;
+  const pt = pointCopy();
+  const locked = purchaseActionsLocked();
+  const passFeatures = pt.cardFeaturesPass || [
+    ['변환 횟수', '제한 없음'],
+    ['Full 기능', '이용 가능'],
+    ['자동결제', '없음']
+  ];
+  const packs = getPassProducts();
+  const cards = packs.map((pack)=>{
+    const selected = !locked && selectedPurchaseId === pack.productId;
+    const isRecommended = pack.badge === 'recommended' || !!pack.popular;
+    const days = passDurationDays(pack);
+    const list = Number(pack.listPriceKrw || pack.krw);
+    const sale = Number(pack.effectivePrice != null ? pack.effectivePrice : pack.krw);
+    const discounted = Number(pack.discountPercent || 0) > 0 && sale < list;
+    const title = lang === 'en'
+      ? `${days}-Day Full`
+      : (lang === 'ja' ? `${days}日 Full` : `${days}일 Full`);
+    const uses = lang === 'en'
+      ? 'Unlimited conversions · Full features · No auto-renewal'
+      : (lang === 'ja'
+        ? '変換回数制限なし · Full機能 · 自動更新なし'
+        : '변환 횟수 제한 없음 · Full 기능 이용 · 자동결제 없음');
+    const packSave = (!discounted && pack.savePercent)
+      ? `<span class="purchase-plan-save">${esc(lang==='en' ? `About ${pack.savePercent}% vs 3×30-day` : (lang==='ja' ? `30日×3回より約${pack.savePercent}%お得` : `30일권 3회 대비 약 ${pack.savePercent}% 절약`))}</span>`
+      : `<span class="purchase-plan-save" aria-hidden="true"></span>`;
+    const eventOff = discounted
+      ? `<span class="purchase-plan-off-pill">${esc(String(pack.discountPercent))}% OFF</span>`
+      : '';
+    const priceHtml = discounted
+      ? `<div class="purchase-plan-price-block">
+          <div class="purchase-plan-price-was">${esc(formatKrw(list))}</div>
+          <div class="purchase-plan-price-row">
+            <div class="purchase-plan-price purchase-plan-price-now">${esc(formatKrw(sale))}</div>
+            ${eventOff}
+          </div>
+        </div>`
+      : `<div class="purchase-plan-price-block">
+          <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
+          <div class="purchase-plan-price-row">
+            <div class="purchase-plan-price">${esc(formatKrw(sale))}</div>
+          </div>
+        </div>`;
+    const btnLabel = locked ? (pt.btnNoNeed || '추가 구매 불필요') : pt.buy;
+    const badgeHtml = isRecommended
+      ? `<span class="purchase-plan-badge is-rec">${esc(pt.recommended || '추천')}</span>`
+      : '';
+    const cardMods = [
+      selected ? ' is-selected' : '',
+      isRecommended ? ' is-recommended' : '',
+      locked ? ' is-locked' : ''
+    ].join('');
+    return `<article class="purchase-plan-card${cardMods}" data-purchase-id="${esc(pack.productId)}" role="listitem" ${locked?'aria-disabled="true"':''}>
+      <div class="purchase-plan-head">
+        <h3>${esc(title)}</h3>
+        ${badgeHtml}
+      </div>
+      <p class="purchase-plan-uses">${esc(uses)}</p>
+      ${priceHtml}
+      <p class="purchase-plan-unit">${esc(lang==='en' ? `${days}-day Full Pass · one-time` : (lang==='ja' ? `${days}日 Full 利用権 · 1回払い` : `${days}일 Full 이용권 · 1회 결제`))}</p>
+      ${packSave}
+      ${purchaseCardFeaturesHtml(passFeatures)}
+      <button type="button" class="purchase-plan-buy" data-purchase-buy="${esc(pack.productId)}" ${locked?'disabled aria-disabled="true"':''}>${esc(btnLabel)}</button>
+    </article>`;
+  });
+  const lifeSelected = locked || selectedPurchaseId === 'LIFETIME';
+  const lifeBtn = locked ? (pt.btnCurrentPlan || '현재 이용 중') : pt.buy;
+  const lifeCtx = purchaseCheckout();
+  const unlimitedPrice = lifeCtx.displaySale || purchaseDisplayPrice();
+  const lifeDiscounted = !locked && Number(lifeCtx.discount || 0) > 0 && Number(lifeCtx.salePrice) < Number(lifeCtx.listPrice);
+  const lifePriceHtml = lifeDiscounted
+    ? `<div class="purchase-plan-price-block">
+        <div class="purchase-plan-price-was">${esc(lifeCtx.displayList)}</div>
+        <div class="purchase-plan-price-row">
+          <div class="purchase-plan-price purchase-plan-price-now">${esc(lifeCtx.displaySale)}</div>
+          <span class="purchase-plan-off-pill">${esc(String(lifeCtx.discount))}% OFF</span>
+        </div>
+      </div>`
+    : `<div class="purchase-plan-price-block">
+        <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
+        <div class="purchase-plan-price-row">
+          <div class="purchase-plan-price">${esc(unlimitedPrice)}</div>
+        </div>
+      </div>`;
+  if(locked || isSelling(getDefaultProduct())){
+    cards.push(`<article class="purchase-plan-card${lifeSelected?' is-selected':''}${locked?' is-locked is-current-plan':''}" data-purchase-id="LIFETIME" role="listitem" ${locked?'aria-disabled="true"':''}>
+      <div class="purchase-plan-head">
+        <h3>${esc(pt.unlimitedTitle || 'Lifetime')}</h3>
+      </div>
+      <p class="purchase-plan-uses">${esc(pt.unlimitedUses)}</p>
+      ${lifePriceHtml}
+      <p class="purchase-plan-unit">${esc(pt.unlimitedUnit)}</p>
+      <span class="purchase-plan-save" aria-hidden="true"></span>
+      ${purchaseCardFeaturesHtml(pt.cardFeaturesLife)}
+      <button type="button" class="purchase-plan-buy" data-purchase-buy="LIFETIME" ${locked?'disabled aria-disabled="true"':''}>${esc(lifeBtn)}</button>
+    </article>`);
+  }
+  grid.innerHTML = cards.join('');
+}
+function purchaseCardFeaturesHtml(rows){
+  return `<ul class="purchase-plan-features">${(rows || []).map((row)=>{
+    const label = Array.isArray(row) ? row[0] : (row.label || '');
+    const value = Array.isArray(row) ? row[1] : (row.value || '');
+    return `<li><span>${esc(label)}</span><strong>${esc(value)}</strong></li>`;
+  }).join('')}</ul>`;
+}
+function renderPurchaseTrialRow(){
+  const el = $('purchaseTrialRow');
+  if(!el) return;
+  const pt = pointCopy();
+  const lifetime = purchaseActionsLocked();
+  const signedIn = !!currentUser;
+  let ctaHtml = '';
+  let stateClass = '';
+  if(lifetime){
+    stateClass = ' is-muted is-lifetime';
+  } else if(!signedIn){
+    ctaHtml = `<button type="button" class="purchase-trial-cta" data-purchase-trial="login">${esc(pt.trialBtnStart)}</button>`;
+  } else {
+    ctaHtml = `<button type="button" class="purchase-trial-cta is-current" disabled aria-disabled="true">${esc(pt.trialBtnCurrent)}</button>`;
+  }
+  el.className = `purchase-trial-row${stateClass}`;
+  el.innerHTML = `<div class="purchase-trial-copy">
+      <div class="purchase-trial-head">
+        <h2>${esc(pt.trialTitle)}</h2>
+        <p>${esc(pt.trialPrice)}</p>
+      </div>
+      <ul class="purchase-trial-items">
+        ${(pt.trialItems || []).map((item)=>`<li>${esc(item)}</li>`).join('')}
+      </ul>
+    </div>
+    ${ctaHtml ? `<div class="purchase-trial-action">${ctaHtml}</div>` : ''}`;
+}
+function applyPurchaseModeUi(){
+  if(!isPurchasePage) return;
+  const locked = purchaseActionsLocked();
+  const points = isPointCheckout();
+  const pt = pointCopy();
+  document.body.classList.toggle('is-points', points);
+  document.body.classList.toggle('is-lifetime-owned', locked);
+  renderPurchasePlanGrid();
+  renderPurchaseTrialRow();
+  const eyebrow = document.querySelector('.purchase-hero .eyebrow');
+  if(eyebrow){
+    eyebrow.hidden = true;
+    eyebrow.textContent = '';
+  }
+  if($('purchaseHeroLead')){
+    $('purchaseHeroLead').textContent = locked ? (pt.heroLeadOwned || pt.heroLead) : pt.heroLead;
+  }
+  const bank = $('bankTransferNotice');
+  if(bank) bank.classList.toggle('hidden', locked || points || lang !== 'ko');
+  const owned = $('purchaseLifetimeNotice');
+  if(owned){
+    owned.hidden = !locked;
+    if(locked){
+      owned.innerHTML = `<strong>${esc(pt.ownedBannerTitle || 'Lifetime 라이선스 보유 중')}</strong><span>${esc(pt.ownedBannerBody || '')}</span>`;
+    } else {
+      owned.textContent = '';
+    }
+  }
+  renderPurchaseUsageGuide();
+  if(locked) closePurchaseConfirmModal();
+  applyPurchaseLifetimeGate();
+}
+function selectPurchasePlan(id, opts={}){
+  if(purchaseActionsLocked()){
+    selectedPurchaseId = 'LIFETIME';
+    purchaseMode = 'lifetime';
+    syncPurchaseUrl();
+    applyPurchaseModeUi();
+    return;
+  }
+  const raw = String(id || 'PASS_30D').trim().toUpperCase();
+  const next = normalizeCreditProductId(raw);
+  if(isPassProductId(next) || next === 'PASS_30D' || isPassProductId(raw)){
+    const pid = isPassProductId(next) ? next : raw;
+    selectedPurchaseId = getPassProduct(pid)?.productId || 'PASS_30D';
+    purchaseMode = 'pass';
+  } else if(next === 'LIFETIME' || raw === 'LIFETIME' || raw === 'UNLIMITED'){
+    selectedPurchaseId = 'LIFETIME';
+    purchaseMode = 'lifetime';
+  } else if(String(next).startsWith('CREDIT_')){
+    if(isCreditPurchaseEnabled()){
+      selectedPurchaseId = next;
+      purchaseMode = 'credits';
+      selectedPointProductId = selectedPurchaseId;
+    } else {
+      selectedPurchaseId = 'PASS_30D';
+      purchaseMode = 'pass';
+    }
+  } else {
+    selectedPurchaseId = 'PASS_30D';
+    purchaseMode = 'pass';
+  }
+  syncPurchaseUrl();
+  applyPurchaseModeUi();
+  const resultBox = $('purchaseResultBox');
+  if(resultBox && !resultBox.querySelector('.purchase-success-card')){
+    resultBox.classList.add('hidden');
+    resultBox.innerHTML = '';
+  }
+  if(opts.scroll) $('purchaseCheckout')?.scrollIntoView({behavior:'smooth', block:'start'});
+  if(opts.confirm) openPurchaseConfirmModal();
+}
+function setPurchaseMode(mode, packId){
+  if((mode === 'points' || mode === 'credits') && !purchaseActionsLocked()) selectPurchasePlan(packId || 'CREDIT_30');
+  else selectPurchasePlan('LIFETIME');
+}
+function bindPurchaseModeUi(){
+  if(!isPurchasePage || document.body.dataset.purchaseModeBound === '1') return;
+  document.body.dataset.purchaseModeBound = '1';
+  $('purchasePlanGrid')?.addEventListener('click', (e)=>{
+    if(purchaseActionsLocked()){
+      e.preventDefault();
+      return;
+    }
+    const buy = e.target.closest('[data-purchase-buy]');
+    if(buy){
+      if(buy.disabled) return;
+      selectPurchasePlan(buy.getAttribute('data-purchase-buy'), {confirm:true});
+      return;
+    }
+    const card = e.target.closest('[data-purchase-id]');
+    if(card) selectPurchasePlan(card.getAttribute('data-purchase-id'));
+  });
+  $('purchaseTrialRow')?.addEventListener('click', (e)=>{
+    const login = e.target.closest('[data-purchase-trial="login"]');
+    if(!login) return;
+    if(typeof topbarGoogleLogin === 'function') topbarGoogleLogin();
+  });
+}
+async function initPurchasePoints(){
+  if(!isPurchasePage) return;
+  bindPurchaseModeUi();
+  try{
+    await loadCreditProducts(CONFIG.functionsBaseUrl);
+  }catch(_){}
+  // Apply CF public catalog passes immediately (same Firestore SoT as Admin).
+  // refreshPricingUi below prefers live client Firestore when available.
+  try{
+    if(Array.isArray(window.__midiaiPassCatalog) && window.__midiaiPassCatalog.length){
+      hydratePassCatalogFromPublic({ passes: window.__midiaiPassCatalog });
+      applyPurchaseModeUi();
+    }
+  }catch(_){}
+  // Wait briefly for Firebase init (initAuth is async and starts in parallel).
+  for(let i = 0; i < 40 && !(db && firestoreApi); i += 1){
+    await new Promise((r)=>setTimeout(r, 50));
+  }
+  // Prefer Firestore catalog before first paint of plan cards (avoid seed prices sticking).
+  if(db && firestoreApi){
+    try{ await refreshPricingUi(); }catch(_){}
+  }
+  if(getPassCatalogSource() !== 'firestore'){
+    console.warn('CATALOG_FALLBACK_USED', { reason: 'initPurchasePoints', source: getPassCatalogSource() });
+  }
+  if(purchaseActionsLocked()){
+    selectedPurchaseId = 'LIFETIME';
+    purchaseMode = 'lifetime';
+    applyPurchaseModeUi();
+    return;
+  }
+  if(isPointCheckout() && (!isCreditPurchaseEnabled() || !getCreditProducts().some((p)=>p.productId===selectedPurchaseId))){
+    selectPurchasePlan('PASS_30D');
+    return;
+  }
+  applyPurchaseModeUi();
+}
+const PENDING_PURCHASE_KEY = 'midiai_pending_purchase_id';
+function rememberPendingPurchase(id){
+  try{ sessionStorage.setItem(PENDING_PURCHASE_KEY, String(id || '')); }catch(_){}
+}
+function takePendingPurchase(){
+  try{
+    const id = sessionStorage.getItem(PENDING_PURCHASE_KEY) || '';
+    sessionStorage.removeItem(PENDING_PURCHASE_KEY);
+    return id;
+  }catch(_){
+    return '';
+  }
+}
+function resumePendingPurchase(){
+  if(!isPurchasePage || purchaseActionsLocked() || !currentUser) return;
+  const id = takePendingPurchase();
+  if(!id) return;
+  selectPurchasePlan(id, {confirm:true});
+}
+function renderPurchaseUsageGuide(){
+  const el = $('purchaseUsageGuide');
+  if(!el) return;
+  const locked = purchaseActionsLocked();
+  if(locked){
+    el.hidden = true;
+    el.innerHTML = '';
+    return;
+  }
+  const pt = pointCopy();
+  const details = pt.detailsItems || pt.usageLifetime || [];
+  el.hidden = false;
+  el.className = 'purchase-usage-note';
+  el.innerHTML = `<details class="purchase-usage-more">
+      <summary>${esc(pt.detailsToggle || '이용권 안내 자세히 보기')}</summary>
+      <ul class="purchase-usage-details">
+        ${details.map((item)=>`<li><b>${esc(item.title || '')}</b><span>${esc(item.desc || '')}</span></li>`).join('')}
+      </ul>
+    </details>`;
+}
+function purchaseUsesKakao(){
+  return isKoreanCheckout() || isPointCheckout();
+}
+function purchaseAccountHref(){
+  return `${window.MIDIAI_BASE_PATH || './'}account.html`;
+}
+function ensurePurchaseModal(){
+  let wrap = $('purchaseConfirmModal');
+  if(wrap) return wrap;
+  wrap = document.createElement('div');
+  wrap.id = 'purchaseConfirmModal';
+  wrap.className = 'purchase-modal-backdrop hidden';
+  wrap.innerHTML = `<div class="purchase-modal" role="dialog" aria-modal="true" aria-labelledby="purchaseModalTitle">
+    <div id="purchaseModalBody" class="purchase-modal-body"></div>
+  </div>`;
+  wrap.addEventListener('click', (e)=>{
+    if(e.target === wrap && !kakaoPayInFlight) closePurchaseConfirmModal();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && !wrap.classList.contains('hidden') && !kakaoPayInFlight) closePurchaseConfirmModal();
+  });
+  wrap.addEventListener('click', (e)=>{
+    const act = e.target.closest('[data-purchase-modal]');
+    if(!act) return;
+    const kind = act.getAttribute('data-purchase-modal');
+    if(kind === 'cancel' || kind === 'close'){
+      if(!kakaoPayInFlight) closePurchaseConfirmModal();
+    } else if(kind === 'login'){
+      rememberPendingPurchase(selectedPurchaseId || 'CREDIT_30');
+      if(typeof topbarGoogleLogin === 'function') topbarGoogleLogin();
+    } else if(kind === 'pay'){
+      if(kakaoPayInFlight) return;
+      window.midiaiKakaoPay && window.midiaiKakaoPay();
+    }
+  });
+  document.body.appendChild(wrap);
+  return wrap;
+}
+function closePurchaseConfirmModal(){
+  const wrap = $('purchaseConfirmModal');
+  if(!wrap) return;
+  wrap.classList.add('hidden');
+  wrap.setAttribute('aria-hidden', 'true');
+  const shell = document.querySelector('.purchase-shell');
+  const mount = $('purchasePayMount');
+  if(shell && mount && mount.parentElement !== shell) shell.appendChild(mount);
+  if(mount) mount.hidden = true;
+}
+function setPurchasePayBusy(busy){
+  const pt = pointCopy();
+  const btn = $('kakaoPayBtn');
+  if(!btn) return;
+  btn.disabled = !!busy;
+  btn.setAttribute('aria-disabled', busy ? 'true' : 'false');
+  btn.classList.toggle('is-disabled', !!busy);
+  const label = btn.querySelector('strong');
+  if(label){
+    label.textContent = busy ? (pt.openingPay || '결제창 여는 중...') : (btn.getAttribute('data-pay-label') || label.textContent);
+  }
+}
+function openPurchaseConfirmModal(){
+  if(!isPurchasePage || purchaseActionsLocked()) return;
+  const wrap = ensurePurchaseModal();
+  const body = $('purchaseModalBody');
+  if(!body) return;
+  const pt = pointCopy();
+  const points = isPointCheckout();
+  const pack = selectedPointPack();
+  const credits = packCredits(pack);
+  const packList = Number(pack?.listPriceKrw || pack?.basePrice || pack?.krw || 0);
+  const packSale = Number(pack?.effectivePrice != null ? pack.effectivePrice : pack?.krw || 0);
+  const packDiscounted = points && pack?.discountPercent > 0 && packSale < packList;
+  const priceText = points ? formatKrw(packSale || pack?.krw) : purchaseDisplayPrice();
+  const lifeCtx = points ? null : purchaseCheckout();
+  const lifeDiscounted = !points && Number(lifeCtx?.discount || 0) > 0 && Number(lifeCtx.salePrice) < Number(lifeCtx.listPrice);
+  const email = currentUser?.email || currentUser?.uid || '';
+  wrap.classList.remove('hidden');
+  wrap.setAttribute('aria-hidden', 'false');
+  if(!currentUser){
+    rememberPendingPurchase(selectedPurchaseId || (points ? pack?.productId : 'LIFETIME'));
+    body.innerHTML = `<h3 id="purchaseModalTitle">${esc(points ? pt.confirmCredits(credits) : pt.confirmLifetime)}</h3>
+      <p class="purchase-modal-lead">${esc(pt.needLogin)}</p>
+      <div class="purchase-modal-actions">
+        <button type="button" class="ghost" data-purchase-modal="cancel">${esc(pt.cancel)}</button>
+        <button type="button" class="primary" data-purchase-modal="login">${esc(pt.googleLogin)}</button>
+      </div>`;
+    return;
+  }
+  const rows = points
+    ? [
+        ...(packDiscounted ? [[ '정가', formatKrw(packList) ], [ '할인', `${pack.discountPercent}%` ]] : []),
+        [pt.payAmountLabel, priceText],
+        [pt.grantLabelShort || pt.grantLabel || '지급', pt.grantValue(credits)],
+        [pt.payMethod, pt.kakaoPay],
+        [pt.payAccount, email]
+      ]
+    : [
+        ...(lifeDiscounted ? [[ '정가', lifeCtx.displayList ], [ '할인', `${lifeCtx.discount}%` ]] : []),
+        [pt.payAmountLabel, priceText],
+        [pt.licenseLabel, pt.unlimitedTitle || 'Lifetime Full'],
+        [pt.usageLifetime?.[0]?.title || 'AI 변환', pt.aiUnlimited],
+        [pt.termLabel, pt.termPermanent],
+        [pt.payMethod, purchaseUsesKakao() ? pt.kakaoPay : 'PayPal'],
+        [pt.payAccount, email]
+      ];
+  const lead = points ? pt.confirmLeadCredits(credits) : pt.confirmLeadLifetime;
+  const payLabel = pt.payNow(priceText);
+  const kakaoPayHtml = purchaseUsesKakao()
+    ? `<button id="kakaoPayBtn" class="primary purchase-kakao-btn" type="button" data-purchase-modal="pay" data-pay-label="${esc(payLabel)}">
+        <span class="kakao-mark">pay</span><strong>${esc(payLabel)}</strong>
+      </button>`
+    : `<div id="purchaseModalPaypalSlot"></div>`;
+  body.innerHTML = `<h3 id="purchaseModalTitle">${esc(points ? pt.confirmCredits(credits) : pt.confirmLifetime)}</h3>
+    <dl class="purchase-modal-rows">
+      ${rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}
+    </dl>
+    <p class="purchase-modal-lead">${esc(lead)}</p>
+    <p id="purchaseModalStatus" class="muted small"></p>
+    <div class="purchase-modal-actions">
+      <button type="button" class="ghost" data-purchase-modal="cancel">${esc(pt.cancel)}</button>
+      ${kakaoPayHtml}
+    </div>`;
+  if(!purchaseUsesKakao()){
+    const slot = $('purchaseModalPaypalSlot');
+    const mount = $('purchasePayMount');
+    if(slot && mount){
+      slot.appendChild(mount);
+      mount.hidden = false;
+    }
+  }
+}
+function fillPurchaseSuccessModal(html){
+  const wrap = ensurePurchaseModal();
+  const body = $('purchaseModalBody');
+  const pt = pointCopy();
+  wrap.classList.remove('hidden');
+  if(!body) return;
+  body.innerHTML = `${html}
+    <div class="purchase-modal-actions">
+      <a class="ghost" href="${esc(purchaseAccountHref())}">${esc(pt.viewAccount)}</a>
+      <button type="button" class="primary" data-purchase-modal="close">${esc(pt.close)}</button>
+    </div>`;
+}
 function purchaseDisplayPrice(){
-  return purchaseCheckout().displaySale || (isKoreanCheckout() ? (CONFIG.priceDisplayKr || '130,000원') : (CONFIG.priceDisplayGlobal || '$89 USD'));
+  return purchaseCheckout().displaySale || (isKoreanCheckout() ? (CONFIG.priceDisplayKr || '129,000원') : (CONFIG.priceDisplayGlobal || '$89 USD'));
 }
 function purchaseAmountValue(){
   const ctx = purchaseCheckout();
-  if(isKoreanCheckout() || ctx.currency === 'KRW') return Number(ctx.salePrice || CONFIG.priceValueKr || 130000);
+  if(isKoreanCheckout() || ctx.currency === 'KRW') return Number(ctx.salePrice || CONFIG.priceValueKr || 129000);
   if(ctx.currency === 'JPY') return String(Math.round(Number(ctx.salePrice)));
   return Number(ctx.salePrice).toFixed(2);
 }
@@ -1028,6 +1974,26 @@ function updateBankTransferAmount(){
 }
 function applyPurchaseSellGate(){
   if(!isPurchasePage) return;
+  if(purchaseActionsLocked()){
+    const kakao = $('kakaoPayBtn');
+    const paypal = $('paypalButtons');
+    $('purchasePausedNote')?.remove();
+    if(kakao && !kakaoPayInFlight){
+      kakao.disabled = true;
+      kakao.setAttribute('aria-disabled', 'true');
+      kakao.classList.add('is-disabled');
+    }
+    paypal?.classList.add('is-paused');
+    return;
+  }
+  if(isPointCheckout()){
+    const kakao = $('kakaoPayBtn');
+    const paypal = $('paypalButtons');
+    $('purchasePausedNote')?.remove();
+    paypal?.classList.remove('is-paused');
+    if(kakao && !kakaoPayInFlight) kakao.disabled = false;
+    return;
+  }
   const selling = isSelling(getDefaultProduct());
   const ctx = purchaseCheckout();
   const pausedMsg = lang==='en' ? 'Temporarily unavailable' : lang==='ja' ? '一時販売停止' : '일시 판매중지';
@@ -1104,24 +2070,26 @@ function requirePurchaseAuth(){
 }
 
 function renderPurchaseSuccess(result){
+  const pt = pointCopy();
+  const isCredits = result?.kind === 'points' || result?.kind === 'credits';
+  const amount = result?.amount;
+  const amountText = result?.currency === 'USD'
+    ? `$${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : `${Number(amount || CONFIG.priceValueKr || 129000).toLocaleString('ko-KR')}원`;
+  const added = result?.creditedPoints ?? result?.credits ?? result?.points ?? '-';
+  const html = isCredits
+    ? `<h3 id="purchaseModalTitle">${esc(pt.successPaid || pt.successTitle)}</h3>
+      <p class="purchase-modal-lead"><strong>${esc(pt.successLead || '')}</strong></p>
+      <p class="purchase-modal-lead">${esc(pt.balanceLabel)}: ${esc(String(result?.balance ?? '-'))}</p>`
+    : `<h3 id="purchaseModalTitle">${esc(pt.successPaid || '결제가 완료되었습니다.')}</h3>
+      <p class="purchase-modal-lead">${esc(pt.confirmLeadLifetime)}</p>
+      <p class="purchase-modal-lead">${esc(amountText)}</p>`;
+  fillPurchaseSuccessModal(html);
   const box = $('purchaseResultBox');
-  if(!box) return;
-  const amount = Number(result?.amount || CONFIG.priceValueKr || 130000);
-  const amountText = amount.toLocaleString('ko-KR') + '원';
-  box.classList.remove('hidden');
-  box.innerHTML = `
-    <div class="purchase-success-card">
-      <h3>결제 및 라이선스 등록이 완료되었습니다.</h3>
-      <p>현재 로그인한 Google 계정에 MidiAI Studio 평생 라이선스가 등록되었습니다.</p>
-      <p class="muted">프로그램에서 같은 Google 계정으로 로그인하면 FULL LICENSE가 자동 적용됩니다.</p>
-      <ul class="purchase-success-meta">
-        <li><span>주문번호</span><strong>${esc(result?.paymentId || '-')}</strong></li>
-        <li><span>결제수단</span><strong>카카오페이</strong></li>
-        <li><span>결제금액</span><strong>${esc(amountText)}</strong></li>
-        <li><span>라이선스 상태</span><strong>활성화 완료</strong></li>
-        <li><span>계정</span><strong>${esc(maskEmail(result?.email || currentUser?.email || ''))}</strong></li>
-      </ul>
-    </div>`;
+  if(box){
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
 }
 
 function renderPurchaseOwnedNotice(){
@@ -1138,38 +2106,48 @@ function renderPurchaseOwnedNotice(){
 
 function applyPurchaseLifetimeGate(){
   if(!isPurchasePage) return;
+  const locked = purchaseActionsLocked();
   const kakaoBtn = $('kakaoPayBtn');
   const cardBtn = $('inicisCardPayBtn');
+  const checkout = $('purchaseCheckout');
+  const paypal = $('paypalButtons');
   const t = purchaseLocaleText();
-  if(currentLicenseLifetime){
+  document.body.classList.toggle('is-lifetime-owned', locked);
+  if(checkout){
+    checkout.classList.toggle('is-locked', locked);
+    if(locked) checkout.setAttribute('aria-disabled', 'true');
+    else checkout.removeAttribute('aria-disabled');
+  }
+  if(locked){
     if(kakaoBtn){
       kakaoBtn.disabled = true;
       kakaoBtn.setAttribute('aria-disabled', 'true');
       kakaoBtn.classList.add('is-disabled');
-      const label = kakaoBtn.querySelector('strong');
-      if(label) label.textContent = t.alreadyOwnedButton || t.kakaoButton || '카카오페이로 구매';
     }
     if(cardBtn){
       cardBtn.disabled = true;
       cardBtn.setAttribute('aria-disabled', 'true');
       cardBtn.classList.add('is-disabled');
     }
-    renderPurchaseOwnedNotice();
-    paypalStatus(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.', 'ok');
+    paypal?.classList.add('is-paused');
+    applyPurchaseSellGate();
     return;
   }
-  if(kakaoBtn){
+  paypal?.classList.remove('is-paused');
+  if(kakaoBtn && !kakaoPayInFlight){
     kakaoBtn.disabled = false;
     kakaoBtn.removeAttribute('aria-disabled');
     kakaoBtn.classList.remove('is-disabled');
     const label = kakaoBtn.querySelector('strong');
-    if(label) label.textContent = t.kakaoButton || '카카오페이로 구매';
+    const payLabel = kakaoBtn.getAttribute('data-pay-label');
+    if(label && payLabel) label.textContent = payLabel;
   }
   if(cardBtn){
     cardBtn.disabled = false;
     cardBtn.removeAttribute('aria-disabled');
     cardBtn.classList.remove('is-disabled');
   }
+  applyPurchaseSellGate();
 }
 
 function purchaseLocaleText(){
@@ -1362,7 +2340,13 @@ function updatePurchaseI18n(){
         ${guide.map(item=>`<li><b>${esc(item.title)}</b><span>${esc(item.desc)}</span></li>`).join('')}
       </ul>`;
   }
-  if($('purchaseHeroLead')) $('purchaseHeroLead').textContent = lang==='en' ? 'A Lifetime license for faster and more reliable AI-powered MIDI conversion.' : lang==='ja' ? 'AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。' : 'AI 기반 MIDI 변환을 더 빠르고 안정적으로 사용할 수 있는 Lifetime 라이선스입니다.';
+  if($('purchaseHeroLead') && !purchaseActionsLocked()){
+    const pt = pointCopy();
+    $('purchaseHeroLead').textContent = pt.heroLead;
+  } else if($('purchaseHeroLead') && purchaseActionsLocked()){
+    const pt = pointCopy();
+    $('purchaseHeroLead').textContent = pt.heroLeadOwned || pt.heroLead;
+  }
   const checkoutTitle = document.querySelector('.checkout-order-head h3');
   if(checkoutTitle) checkoutTitle.textContent = t.checkoutTitle || checkoutTitle.textContent;
   const orderItems = document.querySelectorAll('.checkout-order-item');
@@ -1407,6 +2391,7 @@ function updatePurchaseI18n(){
   }
   updatePurchaseAccountBox();
   applyPurchaseSellGate();
+  applyPurchaseModeUi();
 }
 
 function updatePurchaseAccountBox(){
@@ -1435,7 +2420,11 @@ function renderPurchasePaymentTags(){
   }
 }
 function updatePurchaseReviewPanel(){
-  if($('purchaseReviewPrice')) $('purchaseReviewPrice').textContent = purchaseDisplayPrice();
+  if($('purchaseReviewPrice')){
+    $('purchaseReviewPrice').textContent = isPointCheckout()
+      ? formatCreditPrice(selectedPointPack())
+      : purchaseDisplayPrice();
+  }
   renderPurchasePaymentTags();
   if($('purchaseBuyerInfo')){
     if(currentUser){
@@ -1447,10 +2436,12 @@ function updatePurchaseReviewPanel(){
 }
 
 function paypalStatus(msg, type=''){
-  const el = $('paypalStatus');
-  if(!el) return;
-  el.className = 'muted small paypal-status ' + type;
-  el.textContent = msg || '';
+  ['paypalStatus','purchaseModalStatus'].forEach((id)=>{
+    const el = $(id);
+    if(!el) return;
+    el.className = 'muted small paypal-status ' + type;
+    el.textContent = msg || '';
+  });
 }
 
 function setAdminGate(html){
@@ -1650,6 +2641,7 @@ function setAuthUiSignedOut(){
   currentLicenseActive = false;
   currentLicenseLifetime = false;
   accountLicenseDoc = null;
+  resetCreditAccountState();
   setAdminNavVisible(false);
   syncTopbarProfileAuthUi(false);
   syncSidebarAuthUi({
@@ -1679,7 +2671,7 @@ function setAuthUiSignedOut(){
       resultBox.classList.add('hidden');
       resultBox.innerHTML = '';
     }
-    applyPurchaseLifetimeGate();
+    applyPurchaseModeUi();
   }
   updatePurchaseAccountBox();
   updateSupportFormUi();
@@ -1731,16 +2723,30 @@ function accountLoginMethodLabel(){
 
 function accountLicensePlanLabel(d){
   const plan=normalizePlan(d);
-  if(plan==='lifetime') return lang==='en' ? 'Lifetime' : lang==='ja' ? 'Lifetime' : '평생';
-  if(plan==='period') return lang==='en' ? 'Period' : lang==='ja' ? '期間制' : '기간제';
-  return lang==='en' ? 'Trial' : lang==='ja' ? '体験版' : '체험판';
+  if(plan==='lifetime') return lang==='en' ? 'Lifetime Full' : lang==='ja' ? 'Lifetime Full' : 'Lifetime Full';
+  if(plan==='period'){
+    const pid = String(d?.passProductId || '').toUpperCase();
+    if(pid === 'PASS_7D') return lang==='en' ? '7-Day Full' : lang==='ja' ? '7日 Full' : '7일 Full';
+    if(pid === 'PASS_30D') return lang==='en' ? '30-Day Full' : lang==='ja' ? '30日 Full' : '30일 Full';
+    if(pid === 'PASS_90D') return lang==='en' ? '90-Day Full' : lang==='ja' ? '90日 Full' : '90일 Full';
+    return lang==='en' ? 'Full Pass' : lang==='ja' ? '期間 Full' : '기간 Full';
+  }
+  return lang==='en' ? 'Free trial' : lang==='ja' ? '無料体験' : '무료 체험';
 }
 
 function accountLicensePlanTitle(d){
   const plan=normalizePlan(d);
-  if(plan==='lifetime') return 'Lifetime License';
-  if(plan==='period') return lang==='en' ? 'Period License' : lang==='ja' ? '期間ライセンス' : 'Period License';
-  return 'Trial License';
+  if(plan==='lifetime') return 'Lifetime Full';
+  if(plan==='period'){
+    const label = accountLicensePlanLabel(d);
+    const end = d?.expiresAt ? fmtListDate(d.expiresAt) : '';
+    const leftMs = licenseTsMs(d?.expiresAt) - Date.now();
+    const leftDays = leftMs > 0 ? Math.ceil(leftMs / 86400000) : 0;
+    if(lang==='en') return end ? `${label} · ${leftDays}d left · until ${end}` : label;
+    if(lang==='ja') return end ? `${label} · 残り${leftDays}日 · ${end}まで` : label;
+    return end ? `${label} · 남은 ${leftDays}일 · ${end}까지` : label;
+  }
+  return lang==='en' ? 'Free trial' : lang==='ja' ? '無料体験' : '무료 체험';
 }
 
 function accountLicenseStatusLabel(d){
@@ -1763,7 +2769,7 @@ function accountDateValue(d){
 
 function accountExpiryValue(d){
   const plan=normalizePlan(d);
-  if(plan==='lifetime') return lang==='en' ? 'Lifetime' : lang==='ja' ? '無期限' : '평생 이용';
+  if(plan==='lifetime') return lang==='en' ? 'No time limit' : lang==='ja' ? '期限なし' : '기간 제한 없음';
   if(d?.expiresAt) return fmtListDate(d.expiresAt);
   return '-';
 }
@@ -1792,31 +2798,371 @@ function updateAccountProfileBadges(d){
   box.innerHTML = accountProfileBadgesHtml(d);
 }
 
+function creditPurchaseHref(){
+  // Credit packs are discontinued for sale; CTA routes to Pass / Lifetime purchase.
+  return lifetimePurchaseHref();
+}
+
+function lifetimePurchaseHref(){
+  if(pathLang){
+    if(lang==='en') return '../en/purchase.html';
+    if(lang==='ja') return '../ja/purchase.html';
+    return '../purchase.html';
+  }
+  if(lang==='en') return './en/purchase.html';
+  if(lang==='ja') return './ja/purchase.html';
+  return './purchase.html';
+}
+
+function accountPageHref(hash){
+  const base = window.MIDIAI_BASE_PATH || './';
+  return `${base}account.html${hash || ''}`;
+}
+
 function updateAccountCtas({plan, lifetime, downloadUrl}){
-  const el=$('accountHeroCta'); if(!el) return;
-  el.classList.remove('hidden');
+  const el=$('accountHeroCta');
+  const creditEl=$('accountHeroCreditCta');
+  const isLife = !!(lifetime || plan==='lifetime');
+  const isPeriod = plan === 'period';
+  // Public: never expose Credit purchase CTA (button reused as Full Pass CTA when needed).
+  if(creditEl){
+    if(currentUser && !isLife && !isPeriod && !isAdminUser){
+      creditEl.classList.remove('hidden');
+      creditEl.textContent = lang==='en' ? 'View plans' : lang==='ja' ? '利用券を見る' : '이용권 보기';
+      creditEl.setAttribute('href', lifetimePurchaseHref());
+    } else {
+      creditEl.classList.add('hidden');
+    }
+  }
+  if(!el) return;
+  el.classList.remove('hidden', 'is-status');
   el.removeAttribute('target');
   el.removeAttribute('rel');
+  el.removeAttribute('aria-disabled');
   if(isAdminUser){
     el.textContent = lang==='en' ? 'Admin page' : lang==='ja' ? '管理ページ' : '관리자 페이지';
     el.setAttribute('href', './admin.html');
     return;
   }
-  if(lifetime || plan==='lifetime'){
-    el.textContent = lang==='en' ? 'Download latest' : lang==='ja' ? '最新版をダウンロード' : '최신 버전 다운로드';
-    const href = downloadUrl || './downloads.html';
-    el.setAttribute('href', href);
-    if(downloadUrl){ el.setAttribute('target','_blank'); el.setAttribute('rel','noopener'); }
+  if(isLife){
+    el.textContent = lang==='en' ? 'Lifetime Full' : lang==='ja' ? 'Lifetime Full' : 'Lifetime Full';
+    el.classList.add('is-status');
+    el.setAttribute('href', accountPageHref('#plan'));
+    el.setAttribute('aria-disabled', 'true');
     return;
   }
-  // trial / period → purchase
-  el.textContent = lang==='en' ? 'Buy Lifetime license' : lang==='ja' ? 'Lifetime ライセンス購入' : 'Lifetime 라이선스 구매';
-  el.setAttribute('href', './purchase.html');
+  if(isPeriod){
+    el.textContent = lang==='en' ? 'Manage plan' : lang==='ja' ? '利用券を管理' : '이용권 관리';
+    el.setAttribute('href', lifetimePurchaseHref());
+    return;
+  }
+  el.textContent = lang==='en' ? 'View plans' : lang==='ja' ? '利用券を見る' : '이용권 보기';
+  el.setAttribute('href', lifetimePurchaseHref());
 }
 
 function accountSupportDiscordHref(){
   const url = String(CONFIG?.supportDiscordUrl || '').trim();
   return url || './support.html';
+}
+
+let creditAccountState = {
+  uid: '',
+  balance: null,
+  items: null,
+  nextPageToken: '',
+  fetchedAt: 0,
+  error: false,
+  loading: false
+};
+let creditFocusAt = 0;
+
+function emptyCreditState(){
+  return { uid:'', balance:null, items:null, nextPageToken:'', fetchedAt:0, error:false, loading:false };
+}
+
+function resetCreditAccountState(){
+  creditAccountState = emptyCreditState();
+  closeCreditHistoryModal();
+  paintProfileCreditStrip();
+}
+
+function currentAccountIsLifetime(){
+  return isLifetimeLicense(accountLicenseDoc) || currentLicenseLifetime === true;
+}
+
+function sanitizeCreditDisplayTitle(raw){
+  let text = String(raw || '').replace(/\\/g, '/').trim();
+  if(!text) return '';
+  if(/^[A-Za-z]:\//.test(text) || text.startsWith('/Users/') || text.startsWith('/home/') || text.includes('/Users/') || text.includes('/home/')){
+    text = text.split('/').filter(Boolean).pop() || text;
+  } else if(text.includes('/') && /\.(mp3|wav|mid|midi|pdf|mp4|m4a|flac|ogg)$/i.test(text)){
+    text = text.split('/').filter(Boolean).pop() || text;
+  }
+  text = text.replace(/\b(jobId|paymentId|uid)\s*[:=]\s*\S+/ig, '').trim();
+  return text.slice(0, 120);
+}
+
+function fmtCreditStamp(v){
+  try{
+    const ms = licenseTsMs(v);
+    if(!ms) return '—';
+    const d = new Date(ms);
+    const pad = n => String(n).padStart(2,'0');
+    return `${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }catch{
+    return '—';
+  }
+}
+
+function formatCreditDelta(amount){
+  const n = Number(amount);
+  if(!Number.isFinite(n) || n === 0) return '0';
+  return n > 0 ? `+${n}` : String(n);
+}
+
+function creditBalanceText(balance){
+  if(balance == null || balance === '') return '—';
+  const n = Number(balance);
+  if(!Number.isFinite(n)) return '—';
+  return `${n} Credits`;
+}
+
+function creditLedgerTitle(item){
+  const type = String(item?.type || '').toLowerCase();
+  const title = sanitizeCreditDisplayTitle(item?.displayTitle || '');
+  if(type === 'refund') return tr('credit_ledger_refund');
+  if(type === 'admin_grant') return title || tr('credit_ledger_grant');
+  if(type === 'admin_deduct') return title || tr('credit_ledger_deduct');
+  if(type === 'purchase') return title || tr('credit_ledger_purchase');
+  return title || tr('credit_ledger_conversion');
+}
+
+async function callOwnCreditJson(names, payload, freshToken){
+  if(!currentUser) throw new Error('need_login');
+  const base = String(CONFIG.functionsBaseUrl || '').replace(/\/$/, '');
+  if(!base || base.includes('PASTE_')) throw new Error('functions_url');
+  const token = await currentUser.getIdToken(!!freshToken);
+  let lastErr = null;
+  for(const name of names){
+    try{
+      const res = await fetch(`${base}/${name}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload || {})
+      });
+      const text = await res.text();
+      let data = {};
+      try{ data = text ? JSON.parse(text) : {}; }catch{ data = {}; }
+      if(res.status === 404){
+        lastErr = new Error('404');
+        continue;
+      }
+      if(!res.ok){
+        throw Object.assign(new Error(data.message || `HTTP ${res.status}`), { status: res.status, data });
+      }
+      const uid = String(data.uid || '');
+      if(uid && currentUser && uid !== currentUser.uid) throw new Error('uid_mismatch');
+      return data;
+    }catch(err){
+      lastErr = err;
+      if(Number(err?.status) === 404) continue;
+      throw err;
+    }
+  }
+  throw lastErr || new Error('credit_failed');
+}
+
+async function fetchOwnCreditBalance(freshToken){
+  const data = await callOwnCreditJson(['getCreditBalance', 'getPointBalance'], {}, freshToken);
+  const n = Number(data.creditBalance ?? data.balance);
+  return Number.isFinite(n) ? n : 0;
+}
+
+async function fetchOwnCreditLedger({limit=5, pageToken='', freshToken=false}={}){
+  const data = await callOwnCreditJson(
+    ['listCreditLedger', 'listPointLedger'],
+    { limit: Math.max(1, Math.min(Number(limit) || 5, 50)), pageToken: String(pageToken || '') },
+    freshToken
+  );
+  const items = Array.isArray(data.items) ? data.items : [];
+  return { items, nextPageToken: String(data.nextPageToken || '') };
+}
+
+function paintProfileCreditStrip(){
+  ensureTopbarProfileCreditSlot();
+  const box = $('topbarProfileCredit');
+  if(!box) return;
+  const signedIn = !!currentUser;
+  box.hidden = !signedIn;
+  if(!signedIn){
+    box.innerHTML = '';
+    return;
+  }
+  const d = accountLicenseDoc;
+  const plan = normalizePlan(d);
+  const active = isLicenseCurrentlyActive(d);
+  const buyHref = lifetimePurchaseHref();
+  const accountHref = accountPageHref('#plan');
+  const kicker = lang==='en' ? 'Current plan' : lang==='ja' ? '現在の利用券' : '현재 이용권';
+  if(plan === 'lifetime' && active){
+    box.innerHTML = `<a class="topbar-profile-credit-main" href="${esc(accountHref)}">
+      <span class="topbar-profile-credit-kicker">${esc(kicker)}</span>
+      <strong>Lifetime Full</strong>
+      <span>${esc(lang==='en' ? 'No time limit' : lang==='ja' ? '期限なし' : '기간 제한 없음')}</span>
+    </a>`;
+    return;
+  }
+  if(plan === 'period' && active){
+    const label = accountLicensePlanLabel(d);
+    const end = d?.expiresAt ? fmtListDate(d.expiresAt) : '';
+    const detail = end
+      ? (lang==='en' ? `Until ${end}` : lang==='ja' ? `${end}まで` : `${end}까지`)
+      : '';
+    box.innerHTML = `<a class="topbar-profile-credit-main" href="${esc(accountHref)}">
+      <span class="topbar-profile-credit-kicker">${esc(kicker)}</span>
+      <strong>${esc(label)}</strong>
+      ${detail ? `<span>${esc(detail)}</span>` : ''}
+    </a>`;
+    return;
+  }
+  box.innerHTML = `<a class="topbar-profile-credit-main" href="${esc(accountHref)}">
+      <span class="topbar-profile-credit-kicker">${esc(kicker)}</span>
+      <strong>${esc(lang==='en' ? 'Free trial' : lang==='ja' ? '無料体験' : '무료 체험')}</strong>
+    </a>
+    <a class="topbar-profile-credit-buy" href="${esc(buyHref)}">${esc(lang==='en' ? 'View plans' : lang==='ja' ? '利用券を購入' : '이용권 구매')}</a>`;
+}
+
+function accountCreditCardHtml(){
+  // Public account page: entitlement only (no Credit balance / charge / history).
+  const d = accountLicenseDoc;
+  const plan = normalizePlan(d);
+  const active = isLicenseCurrentlyActive(d);
+  const title = lang==='en' ? 'Current plan' : lang==='ja' ? '現在の利用券' : '현재 이용권';
+  const planLabel = accountLicensePlanLabel(d);
+  let detail = '';
+  if(plan === 'lifetime' && active){
+    detail = lang==='en' ? 'No time limit' : lang==='ja' ? '期限なし' : '기간 제한 없음';
+  } else if(plan === 'period' && active){
+    const end = d?.expiresAt ? fmtListDate(d.expiresAt) : '';
+    const leftMs = licenseTsMs(d?.expiresAt) - Date.now();
+    const leftDays = leftMs > 0 ? Math.ceil(leftMs / 86400000) : 0;
+    if(lang==='en') detail = end ? `Until ${end}${leftDays ? ` · ${leftDays}d left` : ''}` : '';
+    else if(lang==='ja') detail = end ? `${end}まで${leftDays ? ` · 残り${leftDays}日` : ''}` : '';
+    else detail = end ? `${end}까지${leftDays ? ` · ${leftDays}일 남음` : ''}` : '';
+  } else {
+    detail = lang==='en' ? 'Up to 1 minute per conversion' : lang==='ja' ? '変換あたり最大1分' : '변환당 최대 1분';
+  }
+  const buy = (plan !== 'lifetime' || !active)
+    ? `<div class="account-panel-actions"><a class="primary mini-btn" href="${esc(lifetimePurchaseHref())}">${esc(lang==='en' ? 'View plans' : lang==='ja' ? '利用券を見る' : '이용권 보기')}</a></div>`
+    : '';
+  return `<article class="hub-card account-panel account-panel-credit" id="accountCreditPanel">
+    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">◇</span><h2>${esc(title)}</h2></header>
+    <div class="account-panel-body" id="accountCreditBody">
+      <p class="account-license-title is-plan-${esc(plan || 'trial')}">${esc(planLabel)}</p>
+      ${detail ? `<p class="muted">${esc(detail)}</p>` : ''}
+      ${buy}
+    </div>
+  </article>`;
+}
+
+function bindAccountCreditCard(){
+  // Public Credit history / refresh removed — panel is entitlement-only.
+}
+
+function closeCreditHistoryModal(){
+  const backdrop = $('creditHistoryBackdrop');
+  if(backdrop) backdrop.remove();
+}
+
+function openCreditHistoryModal(){
+  // Public Credit ledger UI retired; keep no-op for any leftover callers.
+  closeCreditHistoryModal();
+}
+
+function creditHistoryRowsHtml(){
+  return '';
+}
+
+async function loadCreditHistoryModal(){
+  return;
+}
+
+async function refreshOwnCredits({ freshToken=false, ledger=false, reason='' }={}){
+  // Keep balance fetch for purchase/trial gates; never render Credit public UX.
+  if(!currentUser){
+    resetCreditAccountState();
+    return;
+  }
+  const uid = currentUser.uid;
+  if(creditAccountState.uid && creditAccountState.uid !== uid){
+    creditAccountState = emptyCreditState();
+    paintProfileCreditStrip();
+  }
+  creditAccountState.uid = uid;
+  creditAccountState.loading = true;
+  if(isPurchasePage) renderPurchaseTrialRow();
+  try{
+    const bal = await fetchOwnCreditBalance(freshToken);
+    if(!currentUser || currentUser.uid !== uid) return;
+    creditAccountState.balance = bal;
+    creditAccountState.error = false;
+    creditAccountState.fetchedAt = Date.now();
+    // Do not fetch/display ledger on public pages.
+    void ledger;
+  }catch(err){
+    console.warn('credit refresh', reason, err);
+    if(!currentUser || currentUser.uid !== uid) return;
+    creditAccountState.error = true;
+  }finally{
+    if(currentUser && currentUser.uid === uid) creditAccountState.loading = false;
+    paintProfileCreditStrip();
+    if(isPurchasePage) renderPurchaseTrialRow();
+    if($('accountCreditPanel')){
+      const panel = $('accountCreditPanel');
+      const wrap = document.createElement('div');
+      wrap.innerHTML = accountCreditCardHtml();
+      const next = wrap.firstElementChild;
+      if(panel && next){
+        panel.replaceWith(next);
+        bindAccountCreditCard();
+      }
+    }
+  }
+}
+
+function bindCreditAccountListeners(){
+  if(document.body.dataset.creditAccountBound === '1') return;
+  document.body.dataset.creditAccountBound = '1';
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState !== 'visible' || !currentUser) return;
+    const now = Date.now();
+    if(now - creditFocusAt < 2500) return;
+    creditFocusAt = now;
+    refreshOwnCredits({ freshToken:true, ledger: !!$('accountMeta'), reason:'focus' });
+  });
+  window.addEventListener('focus', ()=>{
+    if(!currentUser) return;
+    const now = Date.now();
+    if(now - creditFocusAt < 2500) return;
+    creditFocusAt = now;
+    refreshOwnCredits({ freshToken:true, ledger: !!$('accountMeta'), reason:'window-focus' });
+  });
+}
+
+function ensureTopbarProfileCreditSlot(){
+  const panel = $('topbarProfilePanel');
+  if(!panel) return;
+  if($('topbarProfileCredit')) return;
+  const slot = document.createElement('div');
+  slot.id = 'topbarProfileCredit';
+  slot.className = 'topbar-profile-credit';
+  slot.hidden = true;
+  const links = panel.querySelector('.topbar-profile-links');
+  if(links) panel.insertBefore(slot, links);
+  else panel.appendChild(slot);
 }
 
 function renderAccountDashboard(uid, d, downloadData){
@@ -1885,7 +3231,9 @@ function renderAccountDashboard(uid, d, downloadData){
   const contactLabel = lang==='en'?'Contact':lang==='ja'?'お問い合わせ':'문의하기';
   const discordAttrs = discordHref.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
 
-  const supportCard = `<article class="hub-card account-panel account-panel-support">
+  const creditCard = accountCreditCardHtml();
+
+  const supportCard = `<article class="hub-card account-panel account-panel-support account-panel-full">
     <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">💬</span><h2>Support</h2></header>
     <div class="account-panel-body account-support-grid">
       <a class="account-support-link" href="./support.html">${esc(supportLabel)}</a>
@@ -1915,7 +3263,12 @@ function renderAccountDashboard(uid, d, downloadData){
     </article>`;
   }
 
-  box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${downloadCard}${supportCard}${developerCard}</div>`;
+  box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${creditCard}${downloadCard}${supportCard}${developerCard}</div>`;
+  bindAccountCreditCard();
+  bindCreditAccountListeners();
+  if(location.hash === '#credit' || location.hash === '#plan'){
+    queueMicrotask(()=> $('accountCreditPanel')?.scrollIntoView({behavior:'smooth', block:'start'}));
+  }
 }
 
 async function fetchAccountDownloadData(){
@@ -1933,7 +3286,15 @@ async function fetchAccountDownloadData(){
 }
 
 async function setAuthUiSignedIn(user){
+  if(creditAccountState.uid && creditAccountState.uid !== user.uid){
+    resetCreditAccountState();
+  }
   currentUser=user;
+  creditAccountState.uid = user.uid;
+  creditAccountState.balance = null;
+  creditAccountState.items = null;
+  creditAccountState.error = false;
+  paintProfileCreditStrip();
   const name=user.displayName||'Google User';
   const email=user.email||'';
   const avatar=(user.displayName||user.email||'?').slice(0,1).toUpperCase();
@@ -1962,6 +3323,7 @@ async function setAuthUiSignedIn(user){
   await upsertUser(user);
   recordAccessInfoQuiet();
   await loadLicense(user.uid);
+  resumePendingPurchase();
   listenTicketNotifications();
   listenAdminTicketNotifications();
   listenUserNotifications();
@@ -1984,6 +3346,7 @@ async function setAuthUiSignedIn(user){
   updatePurchaseAccountBox();
   updateSupportFormUi();
   if(page==='board.html') applyBoardMineModeUi();
+  if(!$('accountMeta')) refreshOwnCredits({ freshToken:true, ledger:false, reason:'signin' });
 }
 
 async function upsertUser(user){
@@ -1996,15 +3359,11 @@ async function upsertUser(user){
     if(!snap.exists()){
       data.createdAt=serverTimestamp();
       data.role='user';
-    } else {
-      const rawRole=String(old.role||'').toLowerCase();
-      if(rawRole==='developer' || rawRole==='staff') data.role='admin';
-      else if(!rawRole) data.role='user';
     }
     await setDoc(ref,data,{merge:true});
     currentUserDoc={...old,...data};
     userNotifyPrefs = normalizeNotifyPrefs(old.notifyPrefs || data.notifyPrefs || currentUserDoc.notifyPrefs);
-    isAdminUser=normalizeRole(data.role || old.role)==='admin';
+    isAdminUser=normalizeRole(old.role || data.role)==='admin';
     setAdminNavVisible(isAdminUser);
     await ensureUserLicenseDoc(user.uid, { role: data.role || old.role || 'user' });
   } catch(e) {
@@ -2133,14 +3492,19 @@ async function loadLicense(uid){
       const downloadData = await fetchAccountDownloadData();
       renderAccountDashboard(uid, d, downloadData);
     }
-    applyPurchaseLifetimeGate();
+    applyPurchaseModeUi();
+    paintProfileCreditStrip();
+    refreshOwnCredits({ ledger: !!$('accountMeta'), reason:'license' });
   } catch(e) {
     console.error(e);
     currentLicenseLifetime = false;
+    applyPurchaseModeUi();
     if(badge){ badge.className='badge none'; badge.textContent=tr('check_failed'); }
     if(sideBadge){ sideBadge.className='badge sidebar-license-badge none'; sideBadge.textContent=tr('check_failed'); }
     updateTopbarLicensePeriod(null);
     if($('accountMeta') && currentUser) renderAccountDashboard(uid, null, latestDownloadData);
+    paintProfileCreditStrip();
+    refreshOwnCredits({ ledger: !!$('accountMeta'), reason:'license-fail' });
   }
 }
 
@@ -2244,10 +3608,32 @@ async function refreshPricingUi(){
   if(!db || !firestoreApi) return;
   try{
     await ensurePricing(db, firestoreApi);
+    const pricing = getPricingCache();
+    const all = pricing.products || [];
+    const creditProducts = all.filter((p) => String(p.productId || p.id || '').toUpperCase().startsWith('CREDIT_'));
+    const passProducts = all.filter((p) => {
+      const id = String(p.productId || p.id || '').toUpperCase();
+      return p.type === 'full_pass' || id.startsWith('PASS_');
+    });
+    const starter = starterUnitFromProducts(all);
+    if (creditProducts.length) {
+      applyPublicCreditCatalog(creditProducts.map((p) => publicProductView(p, pricing.promotions || [], new Date(), lang, starter)));
+    }
+    if (passProducts.length) {
+      applyPublicPassCatalog(passProducts.map((p) => publicProductView(p, pricing.promotions || [], new Date(), lang, starter)));
+    } else {
+      console.warn('CATALOG_FALLBACK_USED', { reason: 'no_pass_products_in_firestore' });
+      hydratePassCatalogFromPublic({ passes: [] });
+    }
     updatePurchaseI18n();
     applyPurchaseSellGate();
+    // Re-render purchase cards from Firestore-backed catalog (not seed fallback).
+    if(isPurchasePage) applyPurchaseModeUi();
     maybeShowSalePromo();
-  }catch(e){ console.warn('refreshPricingUi', e); }
+  }catch(e){
+    console.warn('CATALOG_FALLBACK_USED', { reason: 'ensurePricing_failed', error: String(e?.message || e) });
+    console.warn('refreshPricingUi', e);
+  }
 }
 function routeLoadPublic(){
   if(!db) return;
@@ -3861,7 +5247,7 @@ async function ticketReply(e){
   if(!content)return;
   try{
     const {collection,addDoc,doc,updateDoc,serverTimestamp}=firestoreApi;
-    await addDoc(collection(db,'supportTickets',ticketId,'replies'),{uid:currentUser.uid,role:isAdminUser?'admin':'user',displayName:isAdminUser?BRAND_AUTHOR:(currentUser.displayName||''),content,createdAt:serverTimestamp()});
+    const replyRef = await addDoc(collection(db,'supportTickets',ticketId,'replies'),{uid:currentUser.uid,role:isAdminUser?'admin':'user',displayName:isAdminUser?BRAND_AUTHOR:(currentUser.displayName||''),content,createdAt:serverTimestamp()});
     const ticketPatch = {status:isAdminUser?'answered':'open', updatedAt:serverTimestamp()};
     if(isAdminUser){
       ticketPatch.replyRead = false;
@@ -3875,7 +5261,7 @@ async function ticketReply(e){
     }
     await updateDoc(doc(db,'supportTickets',ticketId), ticketPatch);
     if(isAdminUser){
-      notifyTicketOwnerReply(ticketId, content).catch(err=>console.error(err));
+      notifyTicketOwnerReply(ticketId, content, replyRef.id).catch(err=>console.error(err));
     }
     input.value='';
   }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
@@ -5176,7 +6562,14 @@ function adminPlanBadgeHtml(lic){
   if(!lic) return `<span class="crm-badge is-none"><i></i>라이선스 확인 필요</span>`;
   const plan = normalizePlan(lic);
   if(plan==='lifetime') return `<span class="crm-badge is-lifetime"><i></i>${esc(adminLicenseTypeLabel('lifetime'))}</span>`;
-  if(plan==='period') return `<span class="crm-badge is-period"><i></i>${esc(adminLicenseTypeLabel('period'))}</span>`;
+  if(plan==='period'){
+    const pid = String(lic?.passProductId || '').trim().toUpperCase();
+    let label = adminLicenseTypeLabel('period');
+    if(pid === 'PASS_7D') label = '7일 Full';
+    else if(pid === 'PASS_30D') label = '30일 Full';
+    else if(pid === 'PASS_90D') label = '90일 Full';
+    return `<span class="crm-badge is-period"><i></i>${esc(label)}</span>`;
+  }
   return `<span class="crm-badge is-trial"><i></i>${esc(adminLicenseTypeLabel('trial'))}</span>`;
 }
 /** Badge from shared adminLicenseView — never maps missing → trial. */
@@ -5343,6 +6736,10 @@ function adminIsTodaySec(sec){
   return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth() && d.getDate()===n.getDate();
 }
 function adminOrderProductName(o){
+  const pid = String(o?.productId || '').trim().toUpperCase();
+  if(pid === 'PASS_7D') return o?.productName || o?.orderName || '7일 Full';
+  if(pid === 'PASS_30D') return o?.productName || o?.orderName || '30일 Full';
+  if(pid === 'PASS_90D') return o?.productName || o?.orderName || '90일 Full';
   const v=o?.productName || o?.orderName || o?.plan || o?.productId;
   return v ? String(v) : '-';
 }
@@ -6040,12 +7437,22 @@ function adminCrmLicenseRowHtml(u){
   const open = adminCrmLicenseOpen===uid;
   const start = lic?.startsAt ? fmtListDate(lic.startsAt) : '-';
   const end = view.plan==='lifetime' ? '없음' : (lic?.expiresAt ? fmtListDate(lic.expiresAt) : '-');
+  const passId = lic?.passProductId ? String(lic.passProductId) : '';
   const changed = lic?.updatedAt ? fmtRelative(lic.updatedAt) : '-';
   const actor = lic?.method ? adminLicenseMethodLabel(lic.method) : '-';
+  let passLabel = passId;
+  if(passId === 'PASS_7D') passLabel = '7일 Full';
+  else if(passId === 'PASS_30D') passLabel = '30일 Full';
+  else if(passId === 'PASS_90D') passLabel = '90일 Full';
+  const entitlementNote = view.plan === 'lifetime'
+    ? '현재 이용권 · Lifetime · 기간 제한 없음'
+    : (view.plan === 'period'
+      ? `현재 이용권 · ${passLabel || '기간제 Full'} · 만료 ${end}`
+      : `이용권 · ${view.plan || '-'} · Credits 별도`);
   return `<tr class="admin-license-row${open?' is-open':''}" data-license-row="${esc(uid)}">
     <td class="admin-member-user">
       <span class="admin-order-caret" aria-hidden="true">▸</span>
-      ${adminCrmAvatarHtml(u)}<span><b>${esc(u.displayName||'Google User')}</b></span>
+      ${adminCrmAvatarHtml(u)}<span><b>${esc(u.displayName||'Google User')}</b><br><small class="muted">${esc(entitlementNote)}</small></span>
     </td>
     <td class="admin-member-email" title="${esc(u.email||'')}">${esc(u.email||'-')}</td>
     <td>${adminPlanBadgeFromView(view)}</td>
@@ -6098,10 +7505,13 @@ function adminCrmLicenseExpandInnerHtml(u, view){
         <div class="admin-crm-license-grants">
           <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${esc(uid)}">체험판 지급</button>
           <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${esc(uid)}">평생 지급</button>
-          <button type="button" class="secondary mini-btn" data-license-grant="period" data-license-uid="${esc(uid)}">기간제 지급</button>
+          <button type="button" class="secondary mini-btn" data-license-grant="period:7" data-license-uid="${esc(uid)}">7일 Full</button>
+          <button type="button" class="secondary mini-btn" data-license-grant="period:30" data-license-uid="${esc(uid)}">30일 Full</button>
+          <button type="button" class="secondary mini-btn" data-license-grant="period:90" data-license-uid="${esc(uid)}">90일 Full</button>
           <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${esc(uid)}">활성화</button>
           <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${esc(uid)}">정지</button>
         </div>
+        <input type="hidden" data-lic-pass-product value="${esc(lic?.passProductId || '')}">
         <div class="admin-license-expand-actions">
           <button type="button" class="primary mini-btn" data-license-save="${esc(uid)}">저장</button>
           <button type="button" class="ghost mini-btn" data-license-member="${esc(uid)}">회원 상세</button>
@@ -6331,18 +7741,25 @@ function adminLicenseExpandGrant(btn){
   if(kind==='lifetime') return adminQuickLicense(`${uid}:lifetime:active`, false, { clearDates: true });
   if(kind==='activate') return adminQuickLicense(`${uid}:${lic?.plan||'lifetime'}:active`);
   if(kind==='ban') return adminQuickLicense(`${uid}:${normalizePlan(lic)}:banned`);
-  if(kind==='period' && wrap){
+  if(String(kind||'').startsWith('period') && wrap){
+    const days = Number(String(kind).split(':')[1] || 30) || 30;
+    const passMap = { 7: 'PASS_7D', 30: 'PASS_30D', 90: 'PASS_90D' };
+    const passId = passMap[days] || `PASS_${days}D`;
     const plan=wrap.querySelector('[data-lic-plan]');
     const start=wrap.querySelector('[data-lic-starts]');
     const end=wrap.querySelector('[data-lic-expires]');
+    const passField=wrap.querySelector('[data-lic-pass-product]');
     if(plan) plan.value='period';
-    if(start && !start.value) start.value = toDateInputValue(new Date());
-    if(end && !end.value){
-      const d=new Date(); d.setDate(d.getDate()+30);
+    if(passField) passField.value = passId;
+    const base = start?.value ? new Date(start.value + 'T00:00:00') : new Date();
+    if(start) start.value = toDateInputValue(base);
+    if(end){
+      const d = new Date(base.getTime());
+      d.setDate(d.getDate() + days);
       end.value = toDateInputValue(d);
     }
     end?.focus();
-    adminFlash('기간제 · 시작일·만료일 확인 후 저장하세요');
+    adminFlash(`${days}일 Full (${passId}) · 확인 후 저장하세요`);
   }
 }
 async function saveAdminLicenseInline(uid, wrap){
@@ -6372,6 +7789,12 @@ async function saveAdminLicenseInline(uid, wrap){
       memo:licenseMemo,
       updatedAt:serverTimestamp()
     };
+    const passProductId = String(wrap.querySelector('[data-lic-pass-product]')?.value || '').trim().toUpperCase();
+    if(savePlan === 'period' && passProductId){
+      payload.passProductId = passProductId;
+    } else if(savePlan !== 'period'){
+      payload.passProductId = deleteField();
+    }
     if(clearDates){
       payload.startsAt = deleteField();
       payload.expiresAt = deleteField();
@@ -6387,6 +7810,7 @@ async function saveAdminLicenseInline(uid, wrap){
       status: 'active',
       method: 'manual',
       memo: licenseMemo,
+      passProductId: savePlan === 'period' ? (passProductId || prev?.passProductId || '') : '',
       startsAt: startsAtTs,
       expiresAt: expiresAtTs,
       updatedAt: new Date()
@@ -6396,11 +7820,11 @@ async function saveAdminLicenseInline(uid, wrap){
       targetUserId: uid,
       targetEmail: findAdminUserRow(uid)?.email || '',
       category: 'license',
-      action: '라이선스 변경',
-      before: { plan: prev?.plan, startsAt: prev?.startsAt || null, expiresAt: prev?.expiresAt || null, memo: prev?.memo || '' },
-      after: { plan: savePlan, status: 'active', startsAt: clearDates ? null : startsAt, expiresAt: clearDates ? null : expiresAt, memo: licenseMemo, method: 'manual' },
+      action: savePlan === 'period' ? 'PASS_ADMIN_GRANTED' : '라이선스 변경',
+      before: { plan: prev?.plan, startsAt: prev?.startsAt || null, expiresAt: prev?.expiresAt || null, memo: prev?.memo || '', passProductId: prev?.passProductId || '' },
+      after: { plan: savePlan, status: 'active', startsAt: clearDates ? null : startsAt, expiresAt: clearDates ? null : expiresAt, memo: licenseMemo, method: 'manual', passProductId: savePlan === 'period' ? passProductId : '' },
       result: 'success',
-      summary: `${prev?.plan||'-'} → ${savePlan}`
+      summary: `${prev?.plan||'-'} → ${savePlan}${passProductId ? ' · '+passProductId : ''}`
     });
     adminFlash(`${tr('saved')} · ${esc(uid)}`);
     adminCrmLicenseOpen = uid;
@@ -6813,6 +8237,7 @@ function renderAdminCrmDetail(uid, opts={}){
   if(uidChanged || renderAdminCrmUsage._uid !== canonicalUid){
     renderAdminCrmUsage(canonicalUid);
   }
+  renderAdminCrmPoints(canonicalUid);
   captureAdminCrmBaseline();
 }
 function bindAdminCrmUsageCollapse(){
@@ -6917,6 +8342,82 @@ function renderAdminCrmUsage(uid){
       setAdminCrmDashUsageText('조회 실패', true);
     }
   })();
+}
+function renderAdminCrmPoints(uid){
+  const box=$('adminCrmPoints');
+  if(!box) return;
+  if(!uid){
+    box.innerHTML='<p class="muted small">회원을 선택하세요.</p>';
+    return;
+  }
+  box.innerHTML='<p class="muted small">불러오는 중...</p>';
+  (async ()=>{
+    try{
+      const data = await callFunctionJsonFallback(['adminCreditOverview', 'adminPointOverview'], { targetUid: uid });
+      if(String(selectedAdminUid || '') !== String(uid)) return;
+      const purchases = Array.isArray(data.purchases) ? data.purchases.slice(0, 8) : [];
+      const jobs = Array.isArray(data.jobs) ? data.jobs.slice(0, 8) : [];
+      box.innerHTML = `
+        <div class="admin-crm-points-meta">
+          <span class="crm-chip"><em>잔액</em>${esc(String(data.balance ?? 0))}</span>
+          <span class="crm-chip"><em>구매</em>${esc(String(data.purchasedTotal ?? 0))}</span>
+          <span class="crm-chip"><em>사용</em>${esc(String(data.consumedTotal ?? 0))}</span>
+          <span class="crm-chip"><em>지급</em>${esc(String(data.grantedTotal ?? 0))}</span>
+          <span class="crm-chip"><em>회수</em>${esc(String(data.deductedTotal ?? 0))}</span>
+        </div>
+        <form class="admin-crm-points-form" id="adminCrmPointsForm">
+          <input type="number" id="adminPointAmount" min="1" step="1" value="10" aria-label="크레딧 수량">
+          <input type="text" id="adminPointReason" placeholder="사유" aria-label="사유">
+          <button type="button" class="secondary mini-btn" data-crm-action="grant-points">지급</button>
+          <button type="button" class="secondary mini-btn danger-btn" data-crm-action="deduct-points">회수</button>
+        </form>
+        <p class="muted small">최근 구매 ${esc(String(purchases.length))} · 최근 작업 ${esc(String(jobs.length))}</p>
+        <ul class="admin-crm-ledger">
+          ${purchases.length ? purchases.map((p)=>`<li><span>${esc(p.productId || p.provider || p.id || 'purchase')}</span><strong>+${esc(String(p.credits ?? p.points ?? 0))}</strong></li>`).join('') : '<li>구매 기록 없음</li>'}
+          ${jobs.map((j)=>{
+            const cost = Number(j.creditCost ?? j.cost ?? 0);
+            const status = String(j.status || '');
+            const type = String(j.conversionType || '');
+            const labels = {
+              orchestra: '오케스트라 변환',
+              audio_to_midi: 'Audio → MIDI',
+              youtube_to_midi: 'YouTube → MIDI',
+              piano: '피아노 변환',
+              pdf_to_midi: 'PDF → MIDI'
+            };
+            const base = String(j.displayTitle || labels[type] || type || j.id || 'job');
+            const title = status === 'refunded'
+              ? (type === 'orchestra' ? '오케스트라 실패 반환' : '변환 실패 반환')
+              : base;
+            const delta = !Number.isFinite(cost) ? '-' : (status === 'refunded' ? `+${cost}` : `-${cost}`);
+            return `<li><span>${esc(title)}</span><strong>${esc(delta)}</strong></li>`;
+          }).join('')}
+        </ul>`;
+    }catch(err){
+      if(String(selectedAdminUid || '') !== String(uid)) return;
+      box.innerHTML = `<p class="muted small">크레딧 조회 실패: ${esc(err?.message || err)}</p>`;
+    }
+  })();
+}
+async function adminAdjustSelectedPoints(sign){
+  const uid = selectedAdminUid;
+  if(!uid) return;
+  const amount = Number($('adminPointAmount')?.value || 0);
+  const reason = String($('adminPointReason')?.value || '').trim();
+  if(!Number.isInteger(amount) || amount <= 0){
+    adminFlash('지급/회수 수량을 입력하세요');
+    return;
+  }
+  const fnNames = sign > 0 ? ['adminGrantCredits', 'adminGrantPoints'] : ['adminDeductCredits', 'adminDeductPoints'];
+  const label = sign > 0 ? '지급' : '회수';
+  if(!confirm(`${label} ${amount} 크레딧 할까요?`)) return;
+  try{
+    const result = await callFunctionJsonFallback(fnNames, { targetUid: uid, amount, reason });
+    adminFlash(`${label} 완료 · 잔액 ${result.balance ?? '-'}`);
+    renderAdminCrmPoints(uid);
+  }catch(err){
+    alert(`${label} 실패: ${err?.message || err}`);
+  }
 }
 function crmSlideHtml(text){
   return `<span class="crm-slide"><span class="crm-slide-text">${esc(text)}</span></span>`;
@@ -7442,6 +8943,8 @@ function bindAdminCrmDetailActions(){
       if(!hwid) return;
       try{ await navigator.clipboard.writeText(hwid); adminFlash('HWID 복사됨'); }catch{ alert(hwid); }
     }
+    else if(action==='grant-points') await adminAdjustSelectedPoints(1);
+    else if(action==='deduct-points') await adminAdjustSelectedPoints(-1);
     else if(action==='grant-trial') await adminQuickLicense(`${uid}:trial:active`, false, { days: 7 });
     else if(action==='grant-lifetime') await adminQuickLicense(`${uid}:lifetime:active`, false, { clearDates: true });
     else if(action==='grant-timed'){
@@ -8780,6 +10283,9 @@ function isNotifyTypeEnabled(type){
 }
 function visibleUserNotifications(rows){
   return (rows||[]).filter(n => {
+    const type = String(n?.type || '');
+    // Public UX: hide Credit ledger notifications (backend may still write them).
+    if(type.startsWith('credit_')) return false;
     if(isAdminMessageNotify(n)) return (userNotifyPrefs || defaultNotifyPrefs()).inApp !== false;
     return isNotifyTypeEnabled(n.type || 'board_comment');
   });
@@ -8914,7 +10420,7 @@ function listenUserNotifications(){
   }
   setNotifyBellVisible(true);
   const {collection, query, orderBy, limit, onSnapshot} = firestoreApi;
-  const q = query(collection(db,'users',currentUser.uid,'notifications'), orderBy('createdAt','desc'), limit(40));
+  const q = query(collection(db,'users',currentUser.uid,'notifications'), orderBy('createdAt','desc'), limit(30));
   userNotifyUnsub = onSnapshot(q, snap => {
     userNotifyRows = snap.docs.map(d=>({id:d.id, ...d.data()}));
     const visible = visibleUserNotifications(userNotifyRows);
@@ -8950,11 +10456,10 @@ function notifyItemHtml(n){
   const type = n.type || 'board_comment';
   const name = n.actorName || (type === 'board_comment' ? 'User' : BRAND_AUTHOR);
   const title = n.postTitle || '';
-  const preview = n.preview || '';
-  const when = fmtDate(n.createdAt);
+  const preview = notifyPreviewText(n);
+  const when = fmtNotifyWhen(n.createdAt);
   const unread = n.read !== true ? ' is-unread' : '';
   let line = '';
-  // Admin inbox notes must win over legacy/mis-typed labels.
   const adminNote = isAdminMessageNotify(n);
   if(adminNote){
     line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
@@ -8966,11 +10471,21 @@ function notifyItemHtml(n){
     line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_notice'))}`;
   } else if(type === 'patch_note'){
     line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_patch_note'))}`;
+  } else if(type === 'credit_purchase'){
+    line = `<b>${esc(tr('notify_credit_purchase'))}</b>`;
+  } else if(type === 'credit_admin_grant'){
+    line = `<b>${esc(tr('notify_credit_grant'))}</b>`;
+  } else if(type === 'credit_admin_deduct'){
+    line = `<b>${esc(tr('notify_credit_deduct'))}</b>`;
+  } else if(type === 'reservation_complete' || type === 'queue_done'){
+    line = `<b>${esc(tr('notify_reservation_complete'))}</b>`;
+  } else if(type === 'reservation_failed'){
+    line = `<b>${esc(tr('notify_reservation_failed'))}</b>`;
   } else {
     line = `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
   }
   const genericAdminTitle = title === '관리자 쪽지' || title === 'Admin message' || title === '管理者メッセージ';
-  const showTitle = title && !(adminNote && genericAdminTitle);
+  const showTitle = title && !(adminNote && genericAdminTitle) && !String(type||'').startsWith('credit_');
   return `<div class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}">
     <button type="button" class="topbar-notify-item-body" data-notify-open="${esc(n.id)}">
       <span class="topbar-notify-item-main">${line}</span>
@@ -8980,6 +10495,19 @@ function notifyItemHtml(n){
     </button>
     <button type="button" class="topbar-notify-item-del" data-notify-del="${esc(n.id)}" aria-label="${esc(tr('notify_delete_aria'))}">×</button>
   </div>`;
+}
+function notifyAmountValue(n){
+  const a = Number(n?.amount);
+  return Number.isFinite(a) ? Math.abs(a) : 0;
+}
+function notifyPreviewText(n){
+  const type = n?.type || '';
+  const amount = notifyAmountValue(n);
+  const fill = (key) => String(tr(key) || '').replace('{n}', String(amount));
+  if(type === 'credit_purchase' && amount) return fill('notify_credit_purchase_body');
+  if(type === 'credit_admin_grant' && amount) return fill('notify_credit_grant_body');
+  if(type === 'credit_admin_deduct' && amount) return fill('notify_credit_deduct_body');
+  return n?.preview || '';
 }
 function renderNotifyPanelList(){
   const list = $('notifyList');
@@ -9009,15 +10537,24 @@ function renderNotifyPanelList(){
   });
 }
 async function markNotificationRead(notifyId, n=null){
-  if(!currentUser || !notifyId || !firestoreApi?.updateDoc) return;
+  if(!currentUser || !notifyId || !firestoreApi?.updateDoc) return false;
   const row = n || userNotifyRows.find(x => x.id === notifyId) || null;
+  const {doc, updateDoc, serverTimestamp} = firestoreApi;
+  const run = () => updateDoc(doc(db,'users',currentUser.uid,'notifications',notifyId), {read:true, readAt:serverTimestamp()});
   try{
-    const {doc, updateDoc} = firestoreApi;
-    await updateDoc(doc(db,'users',currentUser.uid,'notifications',notifyId), {read:true});
-    if(row?.type === 'ticket_reply' && row.ticketId){
-      await markTicketReplyRead(row.ticketId);
+    await run();
+  }catch(e){
+    try{
+      await run();
+    }catch(e2){
+      console.error(e2);
+      return false;
     }
-  }catch(e){ console.error(e); }
+  }
+  if(row?.type === 'ticket_reply' && row.ticketId){
+    await markTicketReplyRead(row.ticketId);
+  }
+  return true;
 }
 async function openNotification(notifyId){
   if(!currentUser || !notifyId) return;
@@ -9033,6 +10570,13 @@ async function openNotification(notifyId){
   }
   if(type === 'license_change'){
     location.href = `${base}account.html`;
+    return;
+  }
+  if(type === 'credit_purchase' || type === 'credit_admin_grant' || type === 'credit_admin_deduct'){
+    location.href = `${base}account.html#plan`;
+    return;
+  }
+  if(type === 'reservation_complete' || type === 'reservation_failed' || type === 'queue_done'){
     return;
   }
   if(type === 'ticket_reply' && n.ticketId){
@@ -9112,18 +10656,21 @@ async function clearAllNotifications(){
   }
 }
 async function createUserNotification(ownerUid, data={}){
-  if(!ownerUid || !firestoreApi?.addDoc || !currentUser){
+  if(!ownerUid || !firestoreApi || !currentUser){
     throw new Error('notification create unavailable');
   }
-  const {collection, addDoc, serverTimestamp} = firestoreApi;
+  const {collection, addDoc, doc, getDoc, setDoc, serverTimestamp} = firestoreApi;
   const type = data.type || 'general';
   const previewMax = type === 'admin_message' ? 500 : 160;
   const payload = {
     type,
+    sourceType: data.sourceType || type,
+    sourceId: data.sourceId || data.replyId || data.commentId || data.ticketId || data.postId || '',
     postId: data.postId || '',
     commentId: data.commentId || '',
     parentId: data.parentId || '',
     ticketId: data.ticketId || '',
+    replyId: data.replyId || '',
     plan: data.plan || '',
     status: data.status || '',
     actorUid: data.actorUid != null ? data.actorUid : (currentUser.uid || ''),
@@ -9135,8 +10682,29 @@ async function createUserNotification(ownerUid, data={}){
   };
   if(data.adminMessage === true) payload.adminMessage = true;
   if(!payload.actorUid) throw new Error('notification actorUid missing');
+  const id = notificationDocId(data);
+  if(id && getDoc && setDoc){
+    const ref = doc(db,'users',ownerUid,'notifications',id);
+    const existing = await getDoc(ref);
+    if(existing.exists()) return id;
+    await setDoc(ref, payload);
+    return id;
+  }
+  if(!addDoc) throw new Error('notification create unavailable');
   const ref = await addDoc(collection(db,'users',ownerUid,'notifications'), payload);
   return ref.id;
+}
+function notificationDocId(data={}){
+  if(data.id) return String(data.id).slice(0,140);
+  const type = data.type || '';
+  if(type === 'ticket_reply' && data.replyId) return `ticket_reply_${data.replyId}`.slice(0,140);
+  if(type === 'board_comment' && data.commentId) return `board_comment_${data.commentId}`.slice(0,140);
+  if(type === 'license_change'){
+    const plan = String(data.plan || 'plan');
+    const status = String(data.status || 'status');
+    return `license_change_${plan}_${status}`.slice(0,140);
+  }
+  return '';
 }
 async function notifyBoardPostOwner({postId, commentId, content, parentId}={}){
   if(!currentUser || !postId || !firestoreApi) return;
@@ -9163,7 +10731,7 @@ async function notifyBoardPostOwner({postId, commentId, content, parentId}={}){
     console.error('notifyBoardPostOwner', e);
   }
 }
-async function notifyTicketOwnerReply(ticketId, content){
+async function notifyTicketOwnerReply(ticketId, content, replyId){
   if(!isAdminUser || !ticketId || !firestoreApi) return;
   try{
     const {doc, getDoc} = firestoreApi;
@@ -9175,6 +10743,8 @@ async function notifyTicketOwnerReply(ticketId, content){
     await createUserNotification(ownerUid, {
       type:'ticket_reply',
       ticketId,
+      replyId: replyId || '',
+      sourceId: replyId || ticketId,
       actorName: BRAND_AUTHOR,
       postTitle: t.title || '',
       preview: content || ''
@@ -9405,6 +10975,18 @@ async function callFunctionJson(name, payload){
   }
   return result.data;
 }
+async function callFunctionJsonFallback(names, payload){
+  let lastErr = null;
+  for(const name of names){
+    try{
+      return await callFunctionJson(name, payload);
+    }catch(err){
+      lastErr = err;
+      if(Number(err?.status) !== 404) throw err;
+    }
+  }
+  throw lastErr || new Error('Function failed');
+}
 async function loadPortOneSdk(){
   if(window.PortOneSdk) return window.PortOneSdk;
   const mod = await import('https://cdn.portone.io/v2/browser-sdk.esm.js');
@@ -9424,7 +11006,134 @@ async function releaseKakaoPurchaseLock(paymentId){
   }
 }
 
+async function requestKakaoPayPointPayment(){
+  if(purchaseActionsLocked()){
+    applyPurchaseLifetimeGate();
+    paypalStatus(purchaseLocaleText().alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.', 'ok');
+    return;
+  }
+  if(!isCreditPurchaseEnabled()){
+    paypalStatus(lang==='en' ? 'This product is not available for purchase.' : lang==='ja' ? 'この商品は現在購入できません。' : '현재 구매할 수 없는 상품입니다.', 'err');
+    return;
+  }
+  const authCheck = requirePurchaseAuth();
+  if(!authCheck.ok){
+    paypalStatus(authCheck.message, 'err');
+    alert(authCheck.message);
+    return;
+  }
+  const t = purchaseLocaleText();
+  const pt = pointCopy();
+  const pack = selectedPointPack();
+  if(!pack?.productId){
+    paypalStatus(lang==='en' ? 'Please select a product.' : lang==='ja' ? '商品を選択してください。' : '상품을 선택해 주세요.', 'err');
+    return;
+  }
+  if(kakaoPayInFlight){
+    paypalStatus(t.purchaseInProgress || '이미 진행 중인 결제가 있습니다.', 'err');
+    return;
+  }
+  if(!CONFIG.portoneStoreId || String(CONFIG.portoneStoreId).startsWith('PASTE_')){
+    paypalStatus('PortOne Store ID를 config.js에 입력해야 합니다.', 'err');
+    return;
+  }
+  if(!CONFIG.portoneKakaoPayChannelKey){
+    paypalStatus('PortOne 카카오페이 채널키가 없습니다.', 'err');
+    return;
+  }
+  const productId = pack.productId;
+  const orderName = pack.orderNameKo || pack.orderNameEn;
+  let totalAmount = Number(pack.effectivePrice != null ? pack.effectivePrice : pack.krw);
+  let quoteId = '';
+  try{
+    const quote = await callFunctionJsonFallback(['createCreditPurchaseQuote', 'createPurchaseQuote'], { productId });
+    if(quote?.ok && Number(quote.finalPrice) > 0){
+      totalAmount = Number(quote.finalPrice);
+      quoteId = String(quote.quoteId || '');
+    } else if(quote?.code === 'SALE_DISABLED'){
+      paypalStatus('현재 판매중지된 상품입니다.', 'err');
+      return;
+    }
+  }catch(quoteErr){
+    console.warn('purchase quote', quoteErr);
+  }
+  const paymentIdValue = makeKakaoPaymentId(currentUser.uid);
+  kakaoPayInFlight = true;
+  setPurchasePayBusy(true);
+  try{
+    paypalStatus(t.kakaoPreparing || 'Opening KakaoPay checkout...');
+    const PortOne = await loadPortOneSdk();
+    const result = await PortOne.requestPayment({
+      storeId: CONFIG.portoneStoreId,
+      channelKey: CONFIG.portoneKakaoPayChannelKey,
+      paymentId: paymentIdValue,
+      orderName,
+      totalAmount,
+      currency: 'CURRENCY_KRW',
+      payMethod: 'EASY_PAY',
+      customer: {
+        customerId: currentUser.uid,
+        fullName: currentUser.displayName || currentUser.email || 'MidiAI User',
+        email: currentUser.email || undefined,
+      },
+      customData: {
+        uid: currentUser.uid,
+        productType: 'credits',
+        productId,
+        quoteId,
+        mode: CONFIG.portoneMode || 'test'
+      }
+    });
+    if(result?.code){
+      const code = String(result.code || '');
+      const cancelled = /CANCEL|USER_CANCEL|FAILURE_TYPE_PG/i.test(code) || /취소|cancel/i.test(String(result.message || ''));
+      paypalStatus(cancelled ? (t.kakaoCancel || '결제가 취소되었습니다.') : `${result.message || result.code}`, 'err');
+      return;
+    }
+    paypalStatus(pt.kakaoVerifying);
+    const credited = await callFunctionJsonFallback(['creditPortOnePurchase', 'creditPortOnePointPurchase'], {
+      paymentId: paymentIdValue,
+      productId,
+      quoteId
+    });
+    if(!credited?.ok){
+      paypalStatus(`${pt.kakaoVerifyFail} (paymentId: ${paymentIdValue})`, 'err');
+      alert(`${pt.kakaoVerifyFail}\n\npaymentId: ${paymentIdValue}`);
+      return;
+    }
+    renderPurchaseSuccess({
+      kind: 'credits',
+      paymentId: paymentIdValue,
+      email: credited.email || currentUser.email,
+      amount: credited.amount || totalAmount,
+      currency: credited.currency || 'KRW',
+      creditedPoints: credited.credits ?? credited.creditedPoints ?? credited.points,
+      credits: credited.credits ?? credited.points,
+      points: credited.points,
+      balance: credited.balance
+    });
+    paypalStatus(pt.kakaoComplete, 'ok');
+  }catch(err){
+    console.error('PortOne KakaoPay point error', err);
+    const msg = String(err?.message || err || '');
+    if(/cancel|취소/i.test(msg)){
+      paypalStatus(t.kakaoCancel || '결제가 취소되었습니다.', 'err');
+      return;
+    }
+    paypalStatus('카카오페이 결제 오류: ' + msg, 'err');
+    alert('카카오페이 결제 오류: ' + msg);
+  }finally{
+    kakaoPayInFlight = false;
+    setPurchasePayBusy(false);
+    applyPurchaseLifetimeGate();
+  }
+}
+
 async function requestKakaoPayPayment(){
+  if(isPointCheckout()){
+    await requestKakaoPayPointPayment();
+    return;
+  }
   const authCheck = requirePurchaseAuth();
   if(!authCheck.ok){
     paypalStatus(authCheck.message, 'err');
@@ -9451,19 +11160,26 @@ async function requestKakaoPayPayment(){
     return;
   }
   const ctx = purchaseCheckout();
-  if(!isSelling(getDefaultProduct())){
+  if(selectedPurchaseId === 'LIFETIME' && !isSelling(getDefaultProduct())){
     const msg = lang==='en' ? 'Temporarily unavailable' : '일시 판매중지된 상품입니다.';
     paypalStatus(msg, 'err');
     alert(msg);
     return;
   }
-  let productId = ctx.portoneProductId || CONFIG.portoneProductId || 'midiai-lifetime';
-  let orderName = ctx.orderName || CONFIG.portoneOrderName || 'MidiAI Studio Lifetime License';
-  let totalAmount = Number(ctx.salePrice || CONFIG.priceValueKr || 130000);
+  const selectedPid = isPassProductId(selectedPurchaseId) ? selectedPurchaseId : 'LIFETIME';
+  const passPack = isPassProductId(selectedPid) ? getPassProduct(selectedPid) : null;
+  let productId = selectedPid === 'LIFETIME'
+    ? (ctx.portoneProductId || CONFIG.portoneProductId || 'midiai-lifetime')
+    : selectedPid;
+  let orderName = selectedPid === 'LIFETIME'
+    ? (ctx.orderName || CONFIG.portoneOrderName || 'MidiAI Studio Lifetime License')
+    : (passPack?.orderNameKo || passPack?.orderNameEn || `${selectedPid} Full Pass`);
+  let totalAmount = selectedPid === 'LIFETIME'
+    ? Number(ctx.salePrice || CONFIG.priceValueKr || 129000)
+    : Number(passPack?.effectivePrice != null ? passPack.effectivePrice : passPack?.krw || 0);
   const paymentIdValue = makeKakaoPaymentId(currentUser.uid);
   kakaoPayInFlight = true;
-  const kakaoBtn = $('kakaoPayBtn');
-  if(kakaoBtn) kakaoBtn.disabled = true;
+  setPurchasePayBusy(true);
   try{
     paypalStatus(t.kakaoPreparing || 'Opening KakaoPay checkout...');
     let eligibility;
@@ -9493,6 +11209,17 @@ async function requestKakaoPayPayment(){
       orderName = eligibility.pricing.orderName || orderName;
       productId = eligibility.pricing.productId || productId;
     }
+    let lifetimeQuoteId = '';
+    try{
+      const quote = await callFunctionJson('createPurchaseQuote', { productId: selectedPid });
+      if(quote?.ok && Number(quote.finalPrice) > 0){
+        totalAmount = Number(quote.finalPrice);
+        lifetimeQuoteId = String(quote.quoteId || '');
+        if(quote.productId) productId = String(quote.productId);
+      }
+    }catch(quoteErr){
+      console.warn('purchase quote', quoteErr);
+    }
 
     const PortOne = await loadPortOneSdk();
     const result = await PortOne.requestPayment({
@@ -9510,8 +11237,9 @@ async function requestKakaoPayPayment(){
       },
       customData: {
         uid: currentUser.uid,
-        plan: CONFIG.plan || 'lifetime',
-        productId,
+        plan: selectedPid === 'LIFETIME' ? 'lifetime' : 'period',
+        productId: selectedPid,
+        quoteId: lifetimeQuoteId,
         mode: CONFIG.portoneMode || 'test'
       }
     });
@@ -9528,7 +11256,8 @@ async function requestKakaoPayPayment(){
     try{
       verified = await callFunctionJson('verifyPortOnePaymentAndIssueLicense', {
         paymentId: paymentIdValue,
-        productId,
+        productId: selectedPid,
+        quoteId: lifetimeQuoteId,
         transactionType: result?.transactionType || result?.type || undefined
       });
     }catch(verifyErr){
@@ -9590,7 +11319,7 @@ async function requestKakaoPayPayment(){
     alert('카카오페이 결제 오류: ' + msg);
   }finally{
     kakaoPayInFlight = false;
-    if(!currentLicenseLifetime && kakaoBtn) kakaoBtn.disabled = false;
+    setPurchasePayBusy(false);
     applyPurchaseLifetimeGate();
   }
 }
@@ -9650,7 +11379,7 @@ async function requestInicisCardPayment(){
       channelKey: CONFIG.portoneInicisChannelKey,
       paymentId: paymentId('midiai-inicis-test'),
       orderName: 'MidiAI Studio Lifetime 디지털 라이선스',
-      totalAmount: Number(CONFIG.priceValueKr || 130000),
+      totalAmount: Number(CONFIG.priceValueKr || 129000),
       currency: 'CURRENCY_KRW',
       payMethod: 'CARD',
       customer,
@@ -9691,7 +11420,6 @@ function initPayPal(){
   try{
     updatePurchaseAccountBox();
     if(isKoreanCheckout() && CONFIG.portoneKakaoPayChannelKey){
-      renderKoreanPaymentButtons();
       return;
     }
   }catch(err){
@@ -9721,6 +11449,15 @@ function initPayPal(){
         return true;
       },
       createOrder: async()=>{
+        if(isPointCheckout()){
+          const msg = lang==='en'
+            ? 'PayPal checkout is not available for this product yet.'
+            : lang==='ja'
+              ? 'この商品のPayPal決済は現在利用できません。'
+              : '이 상품의 PayPal 결제는 아직 제공되지 않습니다.';
+          paypalStatus(msg, 'err');
+          throw new Error(msg);
+        }
         if(!isSelling(getDefaultProduct())){
           const msg = lang==='en' ? 'Temporarily unavailable' : '일시 판매중지된 상품입니다.';
           paypalStatus(msg, 'err');
@@ -9737,6 +11474,27 @@ function initPayPal(){
         return result.id;
       },
       onApprove: async(data)=>{
+        if(isPointCheckout()){
+          const pack = selectedPointPack();
+          const pt = pointCopy();
+          paypalStatus(pt.verifying);
+          const credited = await callFunctionJsonFallback(['capturePayPalCreditOrder', 'capturePayPalPointOrder'], {
+            orderId: data.orderID,
+            productId: pack.productId
+          });
+          renderPurchaseSuccess({
+            kind: 'credits',
+            paymentId: data.orderID,
+            email: credited.email || currentUser.email,
+            amount: credited.amount || pack.usd,
+            currency: credited.currency || 'USD',
+            creditedPoints: credited.creditedPoints ?? credited.points,
+            points: credited.points,
+            balance: credited.balance
+          });
+          paypalStatus(pt.complete, 'ok');
+          return;
+        }
         paypalStatus(purchaseLocaleText().verifying);
         await callFunctionJson('capturePayPalOrder', {
           orderId: data.orderID,
@@ -9759,14 +11517,15 @@ function onLangBtnClick(){
   if(isPurchasePage){
     const next = lang === 'ko' ? 'en' : lang === 'en' ? 'ja' : 'ko';
     localStorage.setItem('midiai_lang', next);
-    if(next === 'ko') location.href = pathLang ? '../purchase.html' : './purchase.html';
-    else location.href = pathLang ? `../${next}/purchase.html` : `./${next}/purchase.html`;
+    if(next === 'ko') location.href = (pathLang ? '../purchase.html' : './purchase.html') + location.search;
+    else location.href = (pathLang ? `../${next}/purchase.html` : `./${next}/purchase.html`) + location.search;
     return;
   }
   lang = lang==='ko' ? 'en' : lang==='en' ? 'ja' : 'ko';
   applyStaticI18n();
   applyGuidesI18n(lang);
   if($('accountMeta') && currentUser) renderAccountDashboard(currentUser.uid, accountLicenseDoc, latestDownloadData);
+  paintProfileCreditStrip();
 }
 $('langBtn') && ($('langBtn').onclick=onLangBtnClick);
 const SIDEBAR_ICONS={
@@ -9827,6 +11586,11 @@ function syncTopbarProfileAuthUi(signedIn){
   setTopbarProfileVisible(true);
   const loginBtn = $('loginBtn');
   const logoutBtn = $('logoutBtn');
+  const links = document.querySelector('#topbarProfilePanel .topbar-profile-links');
+  if(links){
+    links.hidden = !signedIn;
+    links.setAttribute('aria-hidden', signedIn ? 'false' : 'true');
+  }
   if(loginBtn){
     loginBtn.classList.toggle('hidden', !!signedIn);
     loginBtn.hidden = !!signedIn;
@@ -9854,6 +11618,7 @@ function syncTopbarProfileAuthUi(signedIn){
     const adminLink = $('topbarProfileAdmin');
     if(adminLink) adminLink.hidden = true;
   }
+  paintProfileCreditStrip();
   bindTopbarLoginButton();
   const logout = $('logoutBtn');
   if(logout) logout.onclick = ()=>{ doLogout(); };
@@ -9875,7 +11640,10 @@ function ensureTopbarProfile(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
   let wrap = $('topbarProfile');
-  if(wrap) return wrap;
+  if(wrap){
+    ensureTopbarProfileCreditSlot();
+    return wrap;
+  }
 
   // Remove legacy text logout button if present outside profile menu
   const legacyLogout = $('logoutBtn');
@@ -9898,7 +11666,8 @@ function ensureTopbarProfile(){
         <span id="topbarProfileLicense" class="badge topbar-profile-license pending">${esc(tr('license_wait'))}</span>
       </div>
     </div>
-    <nav class="topbar-profile-links" aria-label="${esc(tr('profile_menu_aria'))}">
+    <div class="topbar-profile-credit" id="topbarProfileCredit" hidden></div>
+    <nav class="topbar-profile-links" hidden aria-hidden="true" aria-label="${esc(tr('profile_menu_aria'))}">
       <a href="${base}account.html">${esc(tr('profile_my_account'))}</a>
       <a href="${base}my-tickets.html">${esc(tr('profile_my_tickets'))}</a>
       <a href="${base}board.html?mine=1">${esc(tr('profile_my_posts'))}</a>
@@ -9927,6 +11696,8 @@ function ensureTopbarProfile(){
   bindTopbarLoginButton();
   const logoutBtn = $('logoutBtn');
   if(logoutBtn) logoutBtn.onclick = ()=>{ doLogout(); };
+  ensureTopbarProfileCreditSlot();
+  paintProfileCreditStrip();
   return wrap;
 }
 function setTopbarProfileVisible(show){
@@ -9978,6 +11749,8 @@ function openTopbarProfilePanel(){
   $('topbarProfileBtn')?.setAttribute('aria-expanded','true');
   const adminLink = $('topbarProfileAdmin');
   if(adminLink) adminLink.hidden = !isAdminUser;
+  bindCreditAccountListeners();
+  if(currentUser) refreshOwnCredits({ ledger:false, reason:'profile-open' });
 }
 function closeTopbarProfilePanel(){
   topbarProfilePanelOpen = false;
@@ -10130,10 +11903,48 @@ function initSidebarNav(){
 
 const SALE_PROMO_HIDE_KEY = 'midiai_sale_promo_hide_day';
 
+function promoDismissKey(promo){
+  const id = String(promo?.promotionId || promo?.id || 'legacy');
+  const ver = String(promo?.version || 1);
+  return `midiai_promo_dismiss_${id}_v${ver}`;
+}
+
+function promoPopupPriceContext(promo, uiLang){
+  const pid = String((promo?.productIds || [])[0] || 'LIFETIME').toUpperCase();
+  if(pid.startsWith('CREDIT_')){
+    const pack = getCreditProducts().find((p) => p.productId === pid);
+    if(pack){
+      const list = Number(pack.listPriceKrw || pack.basePrice || pack.krw || 0);
+      const sale = Number(pack.effectivePrice != null ? pack.effectivePrice : pack.krw || 0);
+      return { was: formatKrw(list), now: formatKrw(sale) };
+    }
+  }
+  const ctx = checkoutContext(uiLang, uiLang === 'ko');
+  return { was: ctx.displayList, now: ctx.displaySale };
+}
+
 function salePromoCopy(){
   const uiLang = lang === 'en' || lang === 'ja' ? lang : 'ko';
+  const promos = getActiveHomepagePromotions(!!currentLicenseLifetime);
+  const promo = promos[0];
+  if(promo){
+    const price = promoPopupPriceContext(promo, uiLang);
+    return {
+      badge: localizePromo(promo, 'badge', uiLang) || 'Sale',
+      title: localizePromo(promo, 'popupTitle', uiLang) || localizePromo(promo, 'name', uiLang),
+      lead: localizePromo(promo, 'popupBody', uiLang),
+      until: localizePromo(promo, 'badge', uiLang),
+      was: price.was,
+      now: price.now,
+      cta: localizePromo(promo, 'popupCta', uiLang) || (uiLang==='en'?'See pricing':uiLang==='ja'?'料金を見る':'가격 보기'),
+      href: promo.ctaUrl || '',
+      hideToday: uiLang === 'en' ? "Don't show again" : uiLang === 'ja' ? '表示しない' : '다시 보지 않기',
+      close: uiLang === 'en' ? 'Close' : uiLang === 'ja' ? '閉じる' : '닫기',
+      promo
+    };
+  }
   const ctx = checkoutContext(uiLang, uiLang === 'ko');
-  return promoPopupCopy(uiLang, ctx);
+  return { ...promoPopupCopy(uiLang, ctx), promo: null };
 }
 
 function todayKey(){
@@ -10145,13 +11956,22 @@ function shouldShowSalePromo(){
   if(!isPromoPopupActive()) return false;
   const home = !page || page==='index.html' || page==='';
   if(!home) return false;
-  try{ if(localStorage.getItem(SALE_PROMO_HIDE_KEY)===todayKey()) return false; }catch(_){}
+  if(currentLicenseLifetime) return false;
+  const copy = salePromoCopy();
+  try{
+    if(copy.promo && localStorage.getItem(promoDismissKey(copy.promo)) === '1') return false;
+    if(!copy.promo && localStorage.getItem(SALE_PROMO_HIDE_KEY)===todayKey()) return false;
+  }catch(_){}
   return true;
 }
 
 function closeSalePromo(root, hideToday){
   if(hideToday){
-    try{ localStorage.setItem(SALE_PROMO_HIDE_KEY, todayKey()); }catch(_){}
+    try{
+      const copy = salePromoCopy();
+      if(copy.promo) localStorage.setItem(promoDismissKey(copy.promo), '1');
+      else localStorage.setItem(SALE_PROMO_HIDE_KEY, todayKey());
+    }catch(_){}
   }
   root.classList.remove('is-open');
   setTimeout(()=>root.remove(), 280);
@@ -10162,7 +11982,7 @@ function openSalePromoPopup(){
   if(document.querySelector('.sale-promo-backdrop')) return;
   const t=salePromoCopy();
   const base=window.MIDIAI_BASE_PATH||'./';
-  const purchaseHref = lang==='en' ? `${base}en/purchase.html` : lang==='ja' ? `${base}ja/purchase.html` : `${base}purchase.html`;
+  const purchaseHref = t.href || (lang==='en' ? `${base}en/purchase.html` : lang==='ja' ? `${base}ja/purchase.html` : `${base}purchase.html`);
   const overlay=document.createElement('div');
   overlay.className='sale-promo-backdrop';
   overlay.setAttribute('role','dialog');
@@ -10226,3 +12046,4 @@ initForms();
 initAuth();
 initPurchasePhone();
 initPayPal();
+initPurchasePoints();

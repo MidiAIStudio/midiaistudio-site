@@ -41,7 +41,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../assets/css/style.css?v=nav-ghost-fix-1">
+  <link rel="stylesheet" href="../assets/css/style.css?v=price-gradient-1">
   <script defer src="../assets/js/analytics.js"></script>
   <script type="application/ld+json">
   {
@@ -93,95 +93,20 @@
       <div class="purchase-hero">
         <p class="eyebrow">Lifetime License</p>
         <h1 id="purchaseHeroTitle">MidiAI Studio</h1>
-        <p id="purchaseHeroLead">AIベースのMIDI変換をより快適に使えるLifetimeライセンスです。</p>
+        <p id="purchaseHeroLead">期間Full利用権またはLifetime Fullを選択してください。</p>
       </div>
-
-      <div class="purchase-layout purchase-final-layout">
-        <div class="purchase-main-col">
-          <div class="price-card purchase-final-card purchase-v23-card purchase-pro-card">
-            <div class="purchase-price-head">
-              <div class="purchase-final-topline">
-                <span class="purchase-badge sale" hidden>Final Sale</span>
-                <span id="purchaseSaleUntil" class="purchase-sale-pill" hidden>7月31日まで</span>
-              </div>
-              <div class="purchase-price-row">
-                <div>
-                  <h2>Lifetime License</h2>
-                  <div class="price purchase-final-price"><strong id="purchasePrice">$89 USD</strong></div>
-                </div>
-              </div>
-              <ul id="purchaseBenefitList" class="purchase-final-benefits purchase-benefit-pills">
-                <li>Googleアカウントにライセンス連携</li>
-                <li>登録済みPCで利用可能</li>
-                <li>サイト内お問い合わせサポート</li>
-              </ul>
-            </div>
-
-            <div class="purchase-spec-grid" aria-label="商品および決済情報">
-              <div class="purchase-spec-item">
-                <span>商品名</span>
-                <strong>MidiAI Studio Lifetime デジタルライセンス</strong>
-              </div>
-              <div class="purchase-spec-item">
-                <span>販売価格</span>
-                <strong id="purchaseReviewPrice">$89 USD</strong>
-              </div>
-              <div class="purchase-spec-item">
-                <span>決済形態</span>
-                <strong>単発決済</strong>
-              </div>
-              <div class="purchase-spec-item">
-                <span>サービス提供</span>
-                <strong class="purchase-service-period">決済完了後すぐにライセンス発行</strong>
-              </div>
-            </div>
-
-            <div class="purchase-account-box" id="purchaseAccountBox">
-              <strong id="purchaseAccountTitle">Googleアカウントでログイン後、ご購入いただけます。</strong>
-              <p id="purchaseAccountText">ログイン後に決済すると、LifetimeライセンスがGoogleアカウントへ自動付与されます。</p>
-            </div>
-
-            <div class="purchase-checkout">
-              <div class="purchase-checkout-meta checkout-order-panel">
-                <div class="checkout-order-head">
-                  <span class="checkout-order-kicker">Checkout</span>
-                  <h3>決済情報</h3>
-                </div>
-                <dl class="checkout-order-list">
-                  <div class="checkout-order-item">
-                    <dt>購入者情報</dt>
-                    <dd id="purchaseBuyerInfo" class="checkout-order-value">Googleログイン後に表示</dd>
-                  </div>
-                  <div class="checkout-order-item">
-                    <dt>決済手段</dt>
-                    <dd id="purchasePaymentMethod" class="checkout-pay-tags" aria-label="決済手段"></dd>
-                  </div>
-                </dl>
-              </div>
-              <div id="paypalButtons" class="paypal purchase-paypal-box"><p>決済ボタンを準備しています。</p></div>
-              <p id="paypalStatus" class="muted small"></p>
-          <div id="purchaseResultBox" class="purchase-result-box hidden" aria-live="polite"></div>
-            </div>
-          </div>
-        </div>
-
-        <aside class="purchase-final-side purchase-side">
-          <div class="notice purchase-final-note purchase-side-card">
-            <h3>ライセンス案内</h3>
-            <ul class="license-benefit-list">
-              <li><b>全曲MIDI変換</b><span>YouTubeリンクやオーディオファイルをAIでMIDIに変換します。</span></li>
-              <li><b>オーケストラ変換</b><span>ピアノ・ギター・ベースなど希望の楽器でMIDIを生成します。</span></li>
-              <li><b>MIDI編集 PRO</b><span>マルチトラックピアノロールでベロシティやCCを編集できます。</span></li>
-              <li><b>AIアシスタント</b><span>変換・編集中にAI提案でMIDI品質を素早く整えられます。</span></li>
-              <li><b>楽譜変換</b><span>MIDI → PDF/MusicXML、PDF → MIDI変換に対応します。</span></li>
-              <li><b>楽譜エディター</b><span>変換した楽譜を編集し、AIレビュー提案を反映できます。</span></li>
-            </ul>
-          </div>
-          <div id="bankTransferNotice" class="notice bank-transfer-notice purchase-final-bank purchase-side-card hidden">
-            <h3>銀行振込案内</h3>
-          </div>
-        </aside>
+      <p id="purchaseLifetimeNotice" class="purchase-lifetime-notice" hidden></p>
+      <div id="purchasePlanGrid" class="purchase-plan-grid" role="list"></div>
+      <section id="purchaseTrialRow" class="purchase-trial-row" aria-label="無料体験"></section>
+      <section id="purchaseUsageGuide" class="purchase-usage" aria-live="polite"></section>
+      <div id="purchaseResultBox" class="purchase-result-box hidden" aria-live="polite"></div>
+      <div id="purchasePayMount" class="purchase-pay-mount" hidden>
+        <div id="paypalButtons" class="paypal purchase-paypal-box"></div>
+        <p id="paypalStatus" class="muted small"></p>
       </div>
+      <details id="bankTransferNotice" class="purchase-bank-mini hidden">
+        <summary>銀行振込案内</summary>
+      </details>
     </section>
   </main>
 
@@ -200,7 +125,7 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='../'; localStorage.setItem('midiai_lang','ja');</script>
-  <script type="module" src="../assets/js/config.js?v=sale-fix-5"></script>
-  <script type="module" src="../assets/js/app.js?v=access-uid-1"></script>
+  <script type="module" src="../assets/js/config.js?v=lifetime-lock-3"></script>
+  <script type="module" src="../assets/js/app.js?v=price-save-1"></script>
 </body>
 </html>

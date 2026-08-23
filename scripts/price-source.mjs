@@ -11,11 +11,11 @@ export function readSitePrices(root) {
     const m = raw.match(new RegExp(`${key}:\\s*"([^"]+)"`));
     return m ? m[1] : "";
   };
-  const krValue = grab("priceValueKr") || grab("priceValue") || "130000";
+  const krValue = grab("priceValueKr") || grab("priceValue") || "129000";
   const usdValue = grab("priceValueGlobal") || "89.00";
   return {
     krValue,
-    krDisplay: grab("priceDisplayKr") || grab("priceDisplay") || "130,000원",
+    krDisplay: grab("priceDisplayKr") || grab("priceDisplay") || "129,000원",
     usdValue,
     usdDisplay: grab("priceDisplayGlobal") || "$89 USD",
   };

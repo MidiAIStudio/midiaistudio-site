@@ -906,6 +906,11 @@ async function collectLogsForUser(uid) {
       else if (n.type === 'notice') { action = '공지 알림'; }
       else if (n.type === 'patch_note') { action = '패치노트 알림'; }
       else if (n.type === 'board_comment') { action = '댓글 알림'; }
+      else if (n.type === 'credit_purchase') { category = 'payment'; action = '크레딧 구매 알림'; }
+      else if (n.type === 'credit_admin_grant') { category = 'payment'; action = '크레딧 지급 알림'; }
+      else if (n.type === 'credit_admin_deduct') { category = 'payment'; action = '크레딧 회수 알림'; }
+      else if (n.type === 'reservation_complete' || n.type === 'queue_done') { category = 'app'; action = '예약 변환 완료 알림'; }
+      else if (n.type === 'reservation_failed') { category = 'app'; action = '예약 변환 실패 알림'; }
       return makeRow({
         id: `notif_${n.id}`,
         timestamp: tsMs(n.createdAt),

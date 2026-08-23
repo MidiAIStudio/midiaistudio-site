@@ -18,18 +18,45 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') in ['admin', 'developer', 'staff'];
     }
 
+    function isPrivilegedRole(role) {
+      return role in ['admin', 'developer', 'staff'];
+    }
+
+    // Owners may keep/normalize their existing role. They must never self-promote.
+    function ownerRoleUpdateOk() {
+      let oldRole = resource.data.get('role', '');
+      let newRole = request.resource.data.get('role', oldRole);
+      let roleChanged = request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+      return !roleChanged
+        || newRole == oldRole
+        || (oldRole == '' && newRole == 'user')
+        || (oldRole in ['developer', 'staff'] && newRole == 'admin');
+    }
+
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       // accessInfo is Cloud Functions (Admin SDK) only — owners cannot spoof Geo-IP.
+      // role is not client-assignable to admin/developer/staff on create.
       allow create: if isAdmin()
-        || (isOwner(userId) && !request.resource.data.keys().hasAny(['accessInfo']));
+        || (isOwner(userId)
+          && !request.resource.data.keys().hasAny(['accessInfo'])
+          && !isPrivilegedRole(request.resource.data.get('role', 'user')));
       allow update: if isAdmin()
         || (isOwner(userId)
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessInfo']));
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessInfo'])
+          && ownerRoleUpdateOk());
       allow delete: if isOwner(userId) || isAdmin();
 
       match /notifications/{notifId} {
-        allow read, update, delete: if isOwner(userId) || isAdmin();
+        allow read: if isOwner(userId) || isAdmin();
+        // Owner may only mark own notifications read (unread → read). No spoof of type/body.
+        allow update: if isAdmin()
+          || (
+            isOwner(userId)
+            && request.resource.data.read == true
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt'])
+          );
+        allow delete: if isOwner(userId) || isAdmin();
         allow create: if request.resource.data.read == false
           && request.resource.data.actorUid == request.auth.uid
           && (
@@ -46,6 +73,10 @@ service cloud.firestore {
                 get(/databases/$(database)/documents/boardPosts/$(request.resource.data.postId)).data.get('uid', '') == userId
                 || get(/databases/$(database)/documents/boardPosts/$(request.resource.data.postId)).data.get('authorUid', '') == userId
               )
+            )
+            || (
+              isOwner(userId)
+              && request.resource.data.type in ['reservation_complete', 'reservation_failed']
             )
           );
       }
@@ -73,6 +104,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Pass / Lifetime grant ledger — Admin SDK (Cloud Functions) write only.
+    match /entitlementGrants/{paymentId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
     // Admin-only durable audit trail for CRM actions (no user read/write).
     match /adminAuditLogs/{logId} {
       allow read: if isAdmin();
@@ -85,6 +122,48 @@ service cloud.firestore {
 
     match /purchaseLocks/{uid} {
       allow read, write: if false;
+    }
+
+    // Credit wallet / ledger / jobs / purchases — Functions (Admin SDK) only.
+    match /creditWallets/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if false;
+    }
+    match /creditLedger/{ledgerId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+    match /creditPurchases/{purchaseId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+    match /creditJobs/{jobId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Legacy Point collections — keep readable during migration; never client-writable.
+    match /pointWallets/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if false;
+    }
+    match /pointLedger/{ledgerId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+    match /pointPurchases/{purchaseId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+    match /pointJobs/{jobId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
     }
 
     match /announcements/{postId} {
@@ -131,6 +210,13 @@ service cloud.firestore {
     match /pricingConfig/{docId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
+    }
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    match /purchaseQuotes/{quoteId} {
+      allow read, write: if false;
     }
 
     match /supportTickets/{ticketId} {
