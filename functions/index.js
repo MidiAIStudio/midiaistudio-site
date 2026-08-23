@@ -7,6 +7,7 @@ const db = admin.firestore();
 const catalogEngine = require('./catalogEngine');
 const passEntitlement = require('./passEntitlement');
 const portoneRefundSync = require('./portoneRefundSync');
+const userNotify = require('./userNotify');
 
 /** Discord webhooks — set via Secret Manager / `firebase functions:secrets:set` */
 const discordInquiryWebhook = defineSecret('DISCORD_INQUIRY_WEBHOOK');
@@ -75,7 +76,7 @@ async function requireAdmin(req) {
 
 async function applyPortOneRefundSync(paymentId, source, actorUid) {
   const payment = await fetchPortOnePayment(paymentId);
-  return portoneRefundSync.syncPortOnePayment({
+  const result = await portoneRefundSync.syncPortOnePayment({
     db,
     FieldValue: admin.firestore.FieldValue,
     Timestamp: admin.firestore.Timestamp,
@@ -84,6 +85,14 @@ async function applyPortOneRefundSync(paymentId, source, actorUid) {
     source,
     actorUid
   });
+  if (result && result.ok !== false && !result.skipped) {
+    try {
+      await userNotify.maybeNotifyFromRefundSync(db, admin.firestore.FieldValue, result);
+    } catch (notifErr) {
+      console.warn('applyPortOneRefundSync notify', notifErr && notifErr.message);
+    }
+  }
+  return result;
 }
 
 async function paypalAccessToken() {
@@ -1153,6 +1162,7 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
 
     const now = admin.firestore.FieldValue.serverTimestamp();
     let issued = false;
+    let passExtended = false;
 
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(orderRef);
@@ -1201,6 +1211,7 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
         durationDays = passEntitlement.passDurationDays(canonicalPid, product.durationDays);
         const extending = !!(licenseData && passEntitlement.licenseTsMs(licenseData.expiresAt) > Date.now()
           && String(licenseData.plan || '').toLowerCase() !== 'lifetime');
+        passExtended = extending;
         licensePayload = passEntitlement.buildPassLicensePayload({
           user,
           passProductId: canonicalPid,
@@ -1293,6 +1304,25 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
     });
 
     await releasePurchaseLock(user.uid, paymentId, 'completed').catch(() => {});
+
+    if (issued) {
+      try {
+        const extending = catalogEngine.isPassProductId(canonicalPid)
+          && String(licensePayload?.lastPurchaseEvent || '').includes('EXTENDED');
+        await userNotify.notifyPaymentComplete(db, admin.firestore.FieldValue, {
+          uid: user.uid,
+          paymentId,
+          productId: canonicalPid,
+          productName: product.productName || orderName,
+          amount: product.amount,
+          currency: product.currency,
+          plan: catalogEngine.isPassProductId(canonicalPid) ? 'period' : (product.plan || 'lifetime'),
+          extended: passExtended
+        });
+      } catch (notifErr) {
+        console.warn('verifyPortOnePayment notify', notifErr && notifErr.message);
+      }
+    }
 
     return res.json({
       ok: true,
@@ -1943,39 +1973,20 @@ exports.adminCancelPortOnePayment = functions.https.onRequest(async (req, res) =
       console.warn('adminCancelPortOnePayment audit', auditErr && auditErr.message);
     }
 
-    // User notification (idempotent per payment)
-    if (orderUid && (licenseRevoked || sync.status === 'refunded' || sync.status === 'cancelled')) {
+    // User notification (idempotent per payment — shared with webhook/reconcile)
+    if (orderUid && (licenseRevoked || sync.status === 'refunded' || sync.status === 'cancelled' || sync.status === 'partially_refunded' || sync.status === 'refund_review_required')) {
       try {
-        const productLabel = productId === 'PASS_7D' ? '7일 Full'
-          : productId === 'PASS_30D' ? '30일 Full'
-            : productId === 'PASS_90D' ? '90일 Full'
-              : productId === 'LIFETIME' ? 'Lifetime Full'
-                : (order.productName || order.orderName || productId || '이용권');
-        const refundAmt = Number(sync.refundedAmount != null ? sync.refundedAmount : amount) || 0;
-        const notifId = `payment_cancel_${paymentId}`.slice(0, 140);
-        const notifRef = db.collection('users').doc(orderUid).collection('notifications').doc(notifId);
-        const exists = await notifRef.get();
-        if (!exists.exists) {
-          const bodyParts = [
-            `${productLabel} 결제가 취소되었습니다.`,
-            refundAmt > 0 ? `결제금액 ${refundAmt.toLocaleString('ko-KR')}원이 환불 처리되었습니다.` : '',
-            licenseRevoked ? '해당 라이선스가 종료되었습니다.' : ''
-          ].filter(Boolean);
-          await notifRef.set({
-            type: 'license_change',
-            sourceType: 'payment_cancel',
-            sourceId: paymentId,
-            paymentId,
-            plan: String(order.plan || ''),
-            status: 'revoked',
-            actorUid: adminUser.uid,
-            actorName: 'MidiAI Studio',
-            postTitle: '결제 취소 완료',
-            preview: bodyParts.join(' ').slice(0, 160),
-            read: false,
-            createdAt: admin.firestore.FieldValue.serverTimestamp()
-          });
-        }
+        await userNotify.notifyPaymentRefund(db, admin.firestore.FieldValue, {
+          uid: orderUid,
+          paymentId,
+          productId,
+          productName: order.productName || order.orderName || productId,
+          status: sync.status,
+          refundedAmount: sync.refundedAmount != null ? sync.refundedAmount : amount,
+          currency,
+          licenseRevoked,
+          partial: sync.status === 'partially_refunded'
+        });
       } catch (notifErr) {
         console.warn('adminCancelPortOnePayment notify', notifErr && notifErr.message);
       }

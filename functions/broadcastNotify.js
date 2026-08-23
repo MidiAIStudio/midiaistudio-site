@@ -123,6 +123,10 @@ async function broadcastPublishedContent(type, postId, data, ref) {
 
   const payload = {
     type,
+    category: 'announcement',
+    targetUrl: type === 'notice'
+      ? `/notice.html?id=${encodeURIComponent(postId)}`
+      : `/patch-note.html?id=${encodeURIComponent(postId)}`,
     postId,
     commentId: '',
     parentId: '',

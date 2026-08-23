@@ -740,7 +740,12 @@ async function syncPortOnePayment({
       entitlement,
       ordersUpdated: present.length,
       eventsApplied: newEvents.length,
-      duplicateEvent: newEvents.length === 0 && eventIds.length > 0
+      duplicateEvent: newEvents.length === 0 && eventIds.length > 0,
+      uid,
+      productId: String(primary.productId || ''),
+      productName: String(primary.productName || primary.orderName || ''),
+      currency: String(primary.currency || 'KRW'),
+      licenseRevoked: !!(patchBase.licenseRevoked)
     };
   });
 

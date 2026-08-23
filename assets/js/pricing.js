@@ -74,6 +74,11 @@ export function getPricingCache() {
   return cache;
 }
 
+/** True after Firestore products/pricingConfig have been loaded (not FALLBACK-only). */
+export function isPricingCatalogReady() {
+  return cache.loaded === true;
+}
+
 export function resolveRegionForLang(lang) {
   const map = cache.langRegionMap || FALLBACK_LANG_MAP;
   return map[lang] || map.en || 'Global';

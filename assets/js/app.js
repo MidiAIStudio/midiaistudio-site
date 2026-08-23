@@ -9,8 +9,9 @@ import {
   isPromoPopupActive,
   promoBadgeText,
   getActiveHomepagePromotions,
-  getPricingCache
-} from './pricing.js?v=promo-multi-popup-4';
+  getPricingCache,
+  isPricingCatalogReady
+} from './pricing.js?v=promo-multi-popup-5';
 import {
   loadCreditProducts,
   getCreditProduct,
@@ -188,6 +189,7 @@ let pendingAdminTicketOpenId = '';
 let userNotifyUnsub = null;
 let userNotifyRows = [];
 let userNotifyPanelOpen = false;
+let userNotifyFilter = 'all';
 let boardCommentFocusDone = false;
 let userNotifyPrefs = { inApp:true, email:false, boardComment:true, ticketReply:true, licenseChange:true };
 
@@ -530,7 +532,8 @@ function tr(k){
     admin_ticket_toast_title:'💬 새로운 문의가 등록되었습니다.', admin_ticket_toast_body:'새 1:1 문의가 접수되었습니다.', admin_ticket_toast_action:'문의 보기',
     admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
     notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_clear_all:'모두 삭제', notify_clear_confirm:'알림을 모두 삭제할까요?', notify_delete_aria:'알림 삭제', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
-    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_admin_message:'관리자 쪽지', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
+    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_payment_complete:'결제가 완료되었습니다.', notify_payment_cancel:'결제가 취소되었습니다.', notify_payment_partial:'부분 환불이 적용되었습니다.', notify_refund_review:'환불 검토가 필요합니다.', notify_admin_message:'관리자 쪽지', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
+    notify_filter_all:'전체', notify_filter_payment:'결제', notify_filter_license:'라이선스', notify_filter_inquiry:'문의', notify_filter_community:'커뮤니티', notify_filter_other:'기타',
     notify_credit_purchase:'크레딧 충전 완료', notify_credit_purchase_body:'{n} 크레딧이 지급되었습니다.', notify_credit_grant:'크레딧 지급', notify_credit_grant_body:'관리자가 {n} 크레딧을 지급했습니다.', notify_credit_deduct:'크레딧 조정', notify_credit_deduct_body:'{n} 크레딧이 회수되었습니다.', notify_reservation_complete:'예약 변환이 완료되었습니다.', notify_reservation_failed:'예약 변환이 실패했습니다.', notify_time_just_now:'방금', notify_time_minutes:'{n}분 전', notify_time_hours:'{n}시간 전', notify_time_yesterday:'어제',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
     credit_label:'Credit', credit_balance:'보유 크레딧', credit_buy:'크레딧 충전', credit_history:'크레딧 사용내역',
@@ -557,7 +560,8 @@ function tr(k){
     admin_ticket_toast_title:'💬 A new support ticket was submitted.', admin_ticket_toast_body:'A new 1:1 inquiry has been received.', admin_ticket_toast_action:'View ticket',
     admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
     notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_clear_all:'Clear all', notify_clear_confirm:'Delete all notifications?', notify_delete_aria:'Delete notification', notify_login:'Sign in to see notifications.',
-    notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_admin_message:'Admin message', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
+    notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_payment_complete:'Payment completed.', notify_payment_cancel:'Payment was cancelled.', notify_payment_partial:'Partial refund applied.', notify_refund_review:'Refund review required.', notify_admin_message:'Admin message', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
+    notify_filter_all:'All', notify_filter_payment:'Payment', notify_filter_license:'License', notify_filter_inquiry:'Support', notify_filter_community:'Community', notify_filter_other:'Other',
     notify_credit_purchase:'Credit purchase complete', notify_credit_purchase_body:'{n} credits were added.', notify_credit_grant:'Credits granted', notify_credit_grant_body:'An admin granted {n} credits.', notify_credit_deduct:'Credit adjustment', notify_credit_deduct_body:'{n} credits were deducted.', notify_reservation_complete:'Scheduled conversion finished.', notify_reservation_failed:'Scheduled conversion failed.', notify_time_just_now:'Just now', notify_time_minutes:'{n} min ago', notify_time_hours:'{n} hr ago', notify_time_yesterday:'Yesterday',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
     credit_label:'Credit', credit_balance:'Credit Balance', credit_buy:'Buy Credits', credit_history:'Credit History',
@@ -584,7 +588,8 @@ function tr(k){
     admin_ticket_toast_title:'💬 新しいお問い合わせが登録されました。', admin_ticket_toast_body:'新しい1:1問い合わせが届きました。', admin_ticket_toast_action:'問い合わせを見る',
     admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
     notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_clear_all:'すべて削除', notify_clear_confirm:'通知をすべて削除しますか？', notify_delete_aria:'通知を削除', notify_login:'ログインすると通知を確認できます。',
-    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_admin_message:'管理者メッセージ', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
+    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_payment_complete:'お支払いが完了しました。', notify_payment_cancel:'お支払いがキャンセルされました。', notify_payment_partial:'一部返金が適用されました。', notify_refund_review:'返金の確認が必要です。', notify_admin_message:'管理者メッセージ', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
+    notify_filter_all:'すべて', notify_filter_payment:'決済', notify_filter_license:'ライセンス', notify_filter_inquiry:'問い合わせ', notify_filter_community:'コミュニティ', notify_filter_other:'その他',
     notify_credit_purchase:'クレジット購入完了', notify_credit_purchase_body:'{n} クレジットが付与されました。', notify_credit_grant:'クレジット付与', notify_credit_grant_body:'管理者が {n} クレジットを付与しました。', notify_credit_deduct:'クレジット調整', notify_credit_deduct_body:'{n} クレジットが回収されました。', notify_reservation_complete:'予約変換が完了しました。', notify_reservation_failed:'予約変換に失敗しました。', notify_time_just_now:'たった今', notify_time_minutes:'{n}分前', notify_time_hours:'{n}時間前', notify_time_yesterday:'昨日',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
     credit_label:'Credit', credit_balance:'保有クレジット', credit_buy:'クレジット購入', credit_history:'クレジット利用履歴',
@@ -1639,57 +1644,40 @@ function renderPurchasePlanGrid(){
   });
   const lifeSelected = locked || selectedPurchaseId === 'LIFETIME';
   const lifeBtn = locked ? (pt.btnCurrentPlan || '현재 이용 중') : pt.buy;
-  const lifeCtx = purchaseCheckout();
-  const unlimitedPrice = lifeCtx.displaySale || purchaseDisplayPrice();
-  const lifeDiscounted = !locked && Number(lifeCtx.discount || 0) > 0 && Number(lifeCtx.salePrice) < Number(lifeCtx.listPrice);
-  if(locked || isSelling(getDefaultProduct())){
-    const lifeView = {
-      productId: 'LIFETIME',
-      type: 'lifetime',
-      status: 'active',
-      nameKo: pt.unlimitedTitle || 'Lifetime',
-      nameEn: pt.unlimitedTitle || 'Lifetime',
-      nameJa: pt.unlimitedTitle || 'Lifetime',
-      descriptionKo: pt.unlimitedUses,
-      descriptionEn: pt.unlimitedUses,
-      descriptionJa: pt.unlimitedUses,
-      listPriceKrw: Number(lifeCtx.listPrice || 0),
-      effectivePrice: lifeDiscounted ? Number(lifeCtx.salePrice) : Number(lifeCtx.salePrice || lifeCtx.listPrice || 0),
-      krw: Number(String(unlimitedPrice).replace(/[^\d]/g, '') || lifeCtx.salePrice || 0),
-      discountPercent: lifeDiscounted ? Number(lifeCtx.discount || 0) : 0,
-      discountEndsAt: lifeDiscounted ? (lifeCtx.discountEndsAt || '') : '',
-      saleOk: true
-    };
-    // Prefer display strings from checkout when available (KRW formatted already in ctx).
-    if (lifeDiscounted) {
-      lifeView.listPriceKrw = Number(lifeCtx.listPrice);
-      lifeView.effectivePrice = Number(lifeCtx.salePrice);
-    } else if (lifeCtx.listPrice != null) {
-      lifeView.listPriceKrw = Number(lifeCtx.listPrice);
-      lifeView.effectivePrice = Number(lifeCtx.salePrice != null ? lifeCtx.salePrice : lifeCtx.listPrice);
+  const lifeView = buildPurchaseLifetimeView();
+  const lifeRaw = findLifetimeCatalogProduct(getPricingCache().products || []);
+  let showLifetime = false;
+  if(locked) showLifetime = true;
+  else if(!isPricingCatalogReady()) showLifetime = true; // hold slot — never paint 129000 fallback
+  else if(lifeRaw) showLifetime = isSelling(lifeRaw);
+  else if(lifeView) showLifetime = lifeView.status !== 'archived' && lifeView.saleOk !== false;
+  if(showLifetime){
+    if(!lifeView){
+      cards.push(renderLifetimeLoadingCard(pt));
+    } else {
+      cards.push(renderProductCard(lifeView, {
+        lang,
+        selected: lifeSelected,
+        locked,
+        features: pt.cardFeaturesLife,
+        buyLabel: lifeBtn,
+        extraClass: locked ? 'is-current-plan' : '',
+        ui: {
+          recommended: pt.recommended || '추천',
+          buy: pt.buy,
+          paused: '',
+          archived: '',
+          btnPaused: '',
+          passFeatures,
+          lifeFeatures: pt.cardFeaturesLife,
+          unitPass: () => '',
+          unitLife: pt.unlimitedUnit || 'Lifetime Full · 1회 결제',
+          hideToday: '',
+          close: '',
+          defaultCta: ''
+        }
+      }));
     }
-    cards.push(renderProductCard(lifeView, {
-      lang,
-      selected: lifeSelected,
-      locked,
-      features: pt.cardFeaturesLife,
-      buyLabel: lifeBtn,
-      extraClass: locked ? 'is-current-plan' : '',
-      ui: {
-        recommended: pt.recommended || '추천',
-        buy: pt.buy,
-        paused: '',
-        archived: '',
-        btnPaused: '',
-        passFeatures,
-        lifeFeatures: pt.cardFeaturesLife,
-        unitPass: () => '',
-        unitLife: pt.unlimitedUnit || 'Lifetime Full · 1회 결제',
-        hideToday: '',
-        close: '',
-        defaultCta: ''
-      }
-    }));
   }
   grid.innerHTML = cards.join('');
 }
@@ -1819,14 +1807,51 @@ function bindPurchaseModeUi(){
     if(typeof topbarGoogleLogin === 'function') topbarGoogleLogin();
   });
 }
-const PASS_CATALOG_SESSION_KEY = 'midiai_pass_catalog_session_v1';
+const PASS_CATALOG_SESSION_KEY = 'midiai_pass_catalog_session_v2';
+let sessionLifetimeView = null;
+
+function findLifetimeCatalogProduct(products = []) {
+  return products.find((p) => normalizeCatalogProductId(p?.productId || p?.id || '') === 'LIFETIME')
+    || products.find((p) => String(p?.id || '').toLowerCase() === 'lifetime');
+}
+
+function buildPurchaseLifetimeView() {
+  const pricing = getPricingCache();
+  const all = pricing.products || [];
+  const promos = pricing.promotions || [];
+  if (isPricingCatalogReady()) {
+    const raw = findLifetimeCatalogProduct(all);
+    if (!raw) return sessionLifetimeView;
+    const view = publicProductView(raw, promos, new Date(), lang, starterUnitFromProducts(all), all);
+    sessionLifetimeView = view;
+    return view;
+  }
+  return sessionLifetimeView;
+}
+
+function renderLifetimeLoadingCard(pt) {
+  const title = pt.unlimitedTitle || 'Lifetime Full';
+  const loadingLabel = lang === 'en' ? 'Loading price…' : (lang === 'ja' ? '価格を読み込み中…' : '가격 불러오는 중…');
+  return `<article class="purchase-plan-card is-loading" aria-busy="true" data-purchase-id="LIFETIME" role="listitem">
+    <div class="purchase-plan-head"><h3>${esc(title)}</h3></div>
+    <p class="purchase-plan-uses">${esc(loadingLabel)}</p>
+    <div class="purchase-plan-price-block">
+      <div class="purchase-plan-price-was purchase-plan-price-was-spacer" aria-hidden="true">&nbsp;</div>
+      <div class="purchase-plan-price-row"><div class="purchase-plan-price purchase-plan-price-skeleton">······</div></div>
+    </div>
+    <p class="purchase-plan-unit">&nbsp;</p>
+    <button type="button" class="purchase-plan-buy" disabled aria-disabled="true">&nbsp;</button>
+  </article>`;
+}
 
 function rememberPassCatalogSession(){
   if(!isPassCatalogReady()) return;
   try{
+    const lifetime = buildPurchaseLifetimeView();
     sessionStorage.setItem(PASS_CATALOG_SESSION_KEY, JSON.stringify({
       at: Date.now(),
-      products: getPassProducts()
+      products: getPassProducts(),
+      lifetime: lifetime || null
     }));
   }catch(_){}
 }
@@ -1840,6 +1865,7 @@ function restorePassCatalogSession(){
     // Short TTL — avoid stale promo prices for long-lived tabs.
     if(Date.now() - Number(data.at || 0) > 30 * 60 * 1000) return false;
     applyPublicPassCatalog(data.products);
+    if(data.lifetime) sessionLifetimeView = data.lifetime;
     return isPassCatalogReady();
   }catch(_){
     return false;
@@ -10978,25 +11004,57 @@ function isAdminMessageNotify(n){
   if(title === '관리자 쪽지' || title === 'Admin message' || title === '管理者メッセージ') return true;
   return false;
 }
-function isNotifyTypeEnabled(type){
+function notifyCategory(n){
+  const type = String(n?.type || '');
+  const src = String(n?.sourceType || n?.category || '');
+  if (n?.category) return String(n.category);
+  if (type === 'payment_complete' || src.startsWith('payment_') || src === 'refund_review' || src === 'payment_cancel' || src === 'payment_partial_refund') return 'payment';
+  if (type === 'license_change') return src.startsWith('payment_') || src === 'refund_review' ? 'payment' : 'license';
+  if (type === 'ticket_reply') return 'inquiry';
+  if (type === 'admin_message') return 'message';
+  if (type === 'board_comment') return 'community';
+  if (type === 'notice' || type === 'patch_note') return 'announcement';
+  if (type.startsWith('credit_') || type.startsWith('reservation_') || type === 'queue_done') return 'system';
+  return 'other';
+}
+function isNotifyTypeEnabled(n){
+  const type = String(n?.type || n || '');
+  const src = String(n?.sourceType || '');
   const p = userNotifyPrefs || defaultNotifyPrefs();
   if(p.inApp === false) return false;
   if(type === 'board_comment') return p.boardComment !== false;
   if(type === 'ticket_reply') return p.ticketReply !== false;
-  if(type === 'license_change') return p.licenseChange !== false;
-  if(type === 'admin_message') return true; // always show admin notes
+  if(type === 'license_change'){
+    if (src.startsWith('payment_') || src === 'refund_review' || src === 'payment_cancel' || src === 'payment_partial_refund') return p.licenseChange !== false;
+    return p.licenseChange !== false;
+  }
+  if(type === 'payment_complete') return p.licenseChange !== false;
+  if(type === 'admin_message') return true;
   if(type === 'notice') return p.notice !== false;
   if(type === 'patch_note') return p.patchNote !== false;
+  if(type.startsWith('credit_') || type.startsWith('reservation_') || type === 'queue_done') return true;
   return true;
 }
 function visibleUserNotifications(rows){
   return (rows||[]).filter(n => {
-    const type = String(n?.type || '');
-    // Public UX: hide Credit ledger notifications (backend may still write them).
-    if(type.startsWith('credit_')) return false;
     if(isAdminMessageNotify(n)) return (userNotifyPrefs || defaultNotifyPrefs()).inApp !== false;
-    return isNotifyTypeEnabled(n.type || 'board_comment');
+    return isNotifyTypeEnabled(n);
   });
+}
+function filteredUserNotifications(rows){
+  const visible = visibleUserNotifications(rows);
+  if(userNotifyFilter === 'all') return visible;
+  if(userNotifyFilter === 'other'){
+    const main = new Set(['payment','license','inquiry','message','community','announcement']);
+    return visible.filter(n => !main.has(notifyCategory(n)));
+  }
+  if(userNotifyFilter === 'inquiry'){
+    return visible.filter(n => {
+      const c = notifyCategory(n);
+      return c === 'inquiry' || c === 'message';
+    });
+  }
+  return visible.filter(n => notifyCategory(n) === userNotifyFilter);
 }
 async function saveUserNotifyPrefs(next){
   if(!currentUser || !firestoreApi?.setDoc) return;
@@ -11019,7 +11077,7 @@ function ensureNotifyBell(){
   wrap.className = 'topbar-notify';
   wrap.id = 'topbarNotify';
   wrap.hidden = true;
-  wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><div class="topbar-notify-head-actions"><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button><button type="button" class="topbar-notify-clear" id="notifyClearAll">${esc(tr('notify_clear_all'))}</button></div></div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
+  wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><div class="topbar-notify-head-actions"><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button><button type="button" class="topbar-notify-clear" id="notifyClearAll">${esc(tr('notify_clear_all'))}</button></div></div><div class="topbar-notify-filters" id="notifyFilters" role="tablist" aria-label="${esc(tr('notify_title'))}"><button type="button" class="topbar-notify-filter is-active" data-notify-filter="all" role="tab">${esc(tr('notify_filter_all'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="payment" role="tab">${esc(tr('notify_filter_payment'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="license" role="tab">${esc(tr('notify_filter_license'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="inquiry" role="tab">${esc(tr('notify_filter_inquiry'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="community" role="tab">${esc(tr('notify_filter_community'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="other" role="tab">${esc(tr('notify_filter_other'))}</button></div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
   const langBtn = $('langBtn');
   const periodEl = $('topbarLicensePeriod');
   if(periodEl && periodEl.parentNode === actions){
@@ -11033,6 +11091,14 @@ function ensureNotifyBell(){
   bell?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleNotifyPanel(); });
   $('notifyMarkAllRead')?.addEventListener('click', (e)=>{ e.stopPropagation(); markAllNotificationsRead(); });
   $('notifyClearAll')?.addEventListener('click', (e)=>{ e.stopPropagation(); clearAllNotifications(); });
+  wrap.querySelectorAll('[data-notify-filter]').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      userNotifyFilter = btn.dataset.notifyFilter || 'all';
+      wrap.querySelectorAll('[data-notify-filter]').forEach(b=>b.classList.toggle('is-active', b === btn));
+      renderNotifyPanelList();
+    });
+  });
   if(!document.body.dataset.notifyOutsideBound){
     document.body.dataset.notifyOutsideBound = '1';
     document.addEventListener('click', (e)=>{
@@ -11160,41 +11226,39 @@ function closeNotifyPanel(){
   if(panel) panel.hidden = true;
   $('notifyBellBtn')?.setAttribute('aria-expanded','false');
 }
+function notifyItemLine(n){
+  const type = n.type || 'board_comment';
+  const src = String(n.sourceType || '');
+  const name = n.actorName || (type === 'board_comment' ? 'User' : BRAND_AUTHOR);
+  if(isAdminMessageNotify(n)) return `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
+  if(type === 'payment_complete') return `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_payment_complete'))}`;
+  if(type === 'ticket_reply') return `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
+  if(type === 'license_change'){
+    if(src === 'payment_cancel') return `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_payment_cancel'))}`;
+    if(src === 'payment_partial_refund') return `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_payment_partial'))}`;
+    if(src === 'refund_review') return `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_refund_review'))}`;
+    return `<b>${esc(name)}</b> · ${esc(tr('notify_license_change'))}`;
+  }
+  if(type === 'notice') return `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_notice'))}`;
+  if(type === 'patch_note') return `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_patch_note'))}`;
+  if(type === 'credit_purchase') return `<b>${esc(tr('notify_credit_purchase'))}</b>`;
+  if(type === 'credit_admin_grant') return `<b>${esc(tr('notify_credit_grant'))}</b>`;
+  if(type === 'credit_admin_deduct') return `<b>${esc(tr('notify_credit_deduct'))}</b>`;
+  if(type === 'reservation_complete' || type === 'queue_done') return `<b>${esc(tr('notify_reservation_complete'))}</b>`;
+  if(type === 'reservation_failed') return `<b>${esc(tr('notify_reservation_failed'))}</b>`;
+  return `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
+}
 function notifyItemHtml(n){
   const type = n.type || 'board_comment';
-  const name = n.actorName || (type === 'board_comment' ? 'User' : BRAND_AUTHOR);
   const title = n.postTitle || '';
   const preview = notifyPreviewText(n);
   const when = fmtNotifyWhen(n.createdAt);
   const unread = n.read !== true ? ' is-unread' : '';
-  let line = '';
+  const line = notifyItemLine(n);
   const adminNote = isAdminMessageNotify(n);
-  if(adminNote){
-    line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_admin_message'))}`;
-  } else if(type === 'ticket_reply'){
-    line = `<b>${esc(name)}</b> · ${esc(tr('notify_ticket_reply'))}`;
-  } else if(type === 'license_change'){
-    line = `<b>${esc(name)}</b> · ${esc(tr('notify_license_change'))}`;
-  } else if(type === 'notice'){
-    line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_notice'))}`;
-  } else if(type === 'patch_note'){
-    line = `<b>${esc(BRAND_AUTHOR)}</b> · ${esc(tr('notify_patch_note'))}`;
-  } else if(type === 'credit_purchase'){
-    line = `<b>${esc(tr('notify_credit_purchase'))}</b>`;
-  } else if(type === 'credit_admin_grant'){
-    line = `<b>${esc(tr('notify_credit_grant'))}</b>`;
-  } else if(type === 'credit_admin_deduct'){
-    line = `<b>${esc(tr('notify_credit_deduct'))}</b>`;
-  } else if(type === 'reservation_complete' || type === 'queue_done'){
-    line = `<b>${esc(tr('notify_reservation_complete'))}</b>`;
-  } else if(type === 'reservation_failed'){
-    line = `<b>${esc(tr('notify_reservation_failed'))}</b>`;
-  } else {
-    line = `<b>${esc(name)}</b>${esc(tr('notify_board_comment'))}`;
-  }
   const genericAdminTitle = title === '관리자 쪽지' || title === 'Admin message' || title === '管理者メッセージ';
-  const showTitle = title && !(adminNote && genericAdminTitle) && !String(type||'').startsWith('credit_');
-  return `<div class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}">
+  const showTitle = title && !(adminNote && genericAdminTitle);
+  return `<div class="topbar-notify-item${unread}" data-notify-id="${esc(n.id)}" data-notify-category="${esc(notifyCategory(n))}">
     <button type="button" class="topbar-notify-item-body" data-notify-open="${esc(n.id)}">
       <span class="topbar-notify-item-main">${line}</span>
       ${showTitle?`<span class="topbar-notify-item-title">${esc(title)}</span>`:''}
@@ -11224,7 +11288,7 @@ function renderNotifyPanelList(){
     list.innerHTML = `<div class="topbar-notify-empty">${esc(tr('notify_login'))}</div>`;
     return;
   }
-  const rows = visibleUserNotifications(userNotifyRows);
+  const rows = filteredUserNotifications(userNotifyRows);
   if(!rows.length){
     list.innerHTML = `<div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div>`;
     return;
@@ -11264,47 +11328,58 @@ async function markNotificationRead(notifyId, n=null){
   }
   return true;
 }
+async function markTicketReplyRead(ticketId){
+  if(!currentUser || !ticketId || !firestoreApi?.updateDoc) return;
+  if(ticketReadInFlight.has(ticketId)) return;
+  ticketReadInFlight.add(ticketId);
+  try{
+    const {doc, updateDoc} = firestoreApi;
+    await updateDoc(doc(db,'supportTickets',ticketId), { replyRead:true, replyNotified:true });
+    const bellMatches = userNotifyRows.filter(n => n.type === 'ticket_reply' && n.ticketId === ticketId && n.read !== true);
+    await Promise.all(bellMatches.map(n => markNotificationRead(n.id, n)));
+  }catch(e){ console.error('markTicketReplyRead', e); }
+  finally{ ticketReadInFlight.delete(ticketId); }
+}
+function notifyTargetHref(n){
+  const base = window.MIDIAI_BASE_PATH || './';
+  const raw = String(n?.targetUrl || '').trim();
+  if(raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  if(raw.startsWith('/')) return raw;
+  if(raw) return `${base}${raw.replace(/^\.\//, '')}`;
+  const type = n?.type || '';
+  const src = String(n?.sourceType || '');
+  const cat = notifyCategory(n);
+  if(cat === 'payment' || type === 'payment_complete' || src.startsWith('payment_') || src === 'refund_review') return `${base}account.html#orders`;
+  if(type === 'license_change') return `${base}account.html`;
+  if(type === 'credit_purchase' || type === 'credit_admin_grant' || type === 'credit_admin_deduct') return `${base}account.html#plan`;
+  if(type === 'reservation_complete' || type === 'reservation_failed' || type === 'queue_done') return `${base}account.html#plan`;
+  if(type === 'ticket_reply' && n.ticketId) return `${base}ticket.html?id=${encodeURIComponent(n.ticketId)}&focus=reply`;
+  if(type === 'notice' && n.postId) return `${base}notice.html?id=${encodeURIComponent(n.postId)}`;
+  if(type === 'patch_note' && n.postId) return `${base}patch-note.html?id=${encodeURIComponent(n.postId)}`;
+  const postId = n?.postId || '';
+  const commentId = n?.commentId || '';
+  if(postId){
+    let href = `${base}board-post.html?id=${encodeURIComponent(postId)}`;
+    if(commentId) href += `&focus=comment&cid=${encodeURIComponent(commentId)}`;
+    return href;
+  }
+  return '';
+}
 async function openNotification(notifyId){
   if(!currentUser || !notifyId) return;
   const n = userNotifyRows.find(x => x.id === notifyId);
   if(!n) return;
   await markNotificationRead(notifyId, n);
   closeNotifyPanel();
-  const base = window.MIDIAI_BASE_PATH || './';
-  const type = n.type || 'board_comment';
   if(isAdminMessageNotify(n)){
     openAdminMessageViewer(n);
     return;
   }
-  if(type === 'license_change'){
-    location.href = `${base}account.html`;
-    return;
-  }
-  if(type === 'credit_purchase' || type === 'credit_admin_grant' || type === 'credit_admin_deduct'){
-    location.href = `${base}account.html#plan`;
-    return;
-  }
-  if(type === 'reservation_complete' || type === 'reservation_failed' || type === 'queue_done'){
-    return;
-  }
-  if(type === 'ticket_reply' && n.ticketId){
-    location.href = `${base}ticket.html?id=${encodeURIComponent(n.ticketId)}&focus=reply`;
-    return;
-  }
+  const href = notifyTargetHref(n);
+  if(!href) return;
   const postId = n.postId || '';
-  if(type === 'notice' && postId){
-    location.href = `${base}notice.html?id=${encodeURIComponent(postId)}`;
-    return;
-  }
-  if(type === 'patch_note' && postId){
-    location.href = `${base}patch-note.html?id=${encodeURIComponent(postId)}`;
-    return;
-  }
   const commentId = n.commentId || '';
-  if(!postId) return;
-  let href = `${base}board-post.html?id=${encodeURIComponent(postId)}`;
-  if(commentId) href += `&focus=comment&cid=${encodeURIComponent(commentId)}`;
-  if(page === 'board-post.html' && getParam('id') === postId){
+  if(page === 'board-post.html' && getParam('id') === postId && href.includes('board-post.html')){
     focusBoardComment(commentId);
     return;
   }
@@ -11331,7 +11406,7 @@ function openAdminMessageViewer(n){
 }
 async function markAllNotificationsRead(){
   if(!currentUser || !firestoreApi?.updateDoc) return;
-  const unread = userNotifyRows.filter(n => n.read !== true);
+  const unread = filteredUserNotifications(userNotifyRows).filter(n => n.read !== true);
   if(!unread.length) return;
   try{
     await Promise.all(unread.map(n => markNotificationRead(n.id, n)));
@@ -11388,6 +11463,9 @@ async function createUserNotification(ownerUid, data={}){
     read: false,
     createdAt: serverTimestamp()
   };
+  if(data.category) payload.category = String(data.category);
+  if(data.targetUrl) payload.targetUrl = String(data.targetUrl);
+  if(data.paymentId) payload.paymentId = String(data.paymentId);
   if(data.adminMessage === true) payload.adminMessage = true;
   if(!payload.actorUid) throw new Error('notification actorUid missing');
   const id = notificationDocId(data);
@@ -11428,6 +11506,7 @@ async function notifyBoardPostOwner({postId, commentId, content, parentId}={}){
     if(!ownerUid || ownerUid === currentUser.uid) return;
     await createUserNotification(ownerUid, {
       type:'board_comment',
+      category: 'community',
       postId,
       commentId: commentId || '',
       parentId: parentId || '',
@@ -11450,6 +11529,8 @@ async function notifyTicketOwnerReply(ticketId, content, replyId){
     if(!ownerUid || ownerUid === currentUser?.uid) return;
     await createUserNotification(ownerUid, {
       type:'ticket_reply',
+      category: 'inquiry',
+      targetUrl: `/ticket.html?id=${encodeURIComponent(ticketId)}&focus=reply`,
       ticketId,
       replyId: replyId || '',
       sourceId: replyId || ticketId,
@@ -11476,6 +11557,9 @@ async function notifyLicenseChange(uid, {plan='', status=''}={}){
   try{
     const id = await createUserNotification(uid, {
       type:'license_change',
+      sourceType: 'admin_license',
+      category: 'license',
+      targetUrl: '/account.html',
       plan: plan || '',
       status: status || '',
       actorName: BRAND_AUTHOR,
@@ -11498,6 +11582,7 @@ async function notifyAdminAppMessage(uid, {title='', body=''}={}){
   if(!msgBody) throw new Error('쪽지 내용을 입력해 주세요.');
   const id = await createUserNotification(uid, {
     type: 'admin_message',
+    category: 'message',
     adminMessage: true,
     actorName: BRAND_AUTHOR,
     postTitle: msgTitle.slice(0, 120),

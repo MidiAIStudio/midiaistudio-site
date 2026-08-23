@@ -3522,6 +3522,12 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 .topbar-notify-mark:hover{background:rgba(34,211,238,.1)}
 .topbar-notify-clear{color:#ff9aac}
 .topbar-notify-clear:hover{background:rgba(251,113,133,.12)}
+.topbar-notify-filters{display:flex;flex-wrap:wrap;gap:4px;padding:0 10px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
+.topbar-notify-filter{
+  border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--muted);
+  border-radius:999px;padding:4px 8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer
+}
+.topbar-notify-filter.is-active{color:#9af2ff;border-color:rgba(34,211,238,.35);background:rgba(34,211,238,.1)}
 .topbar-notify-list{max-height:min(420px,60vh);overflow:auto;display:grid}
 .topbar-notify-empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}
 .topbar-notify-item{
