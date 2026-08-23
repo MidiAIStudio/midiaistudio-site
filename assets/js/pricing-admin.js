@@ -47,6 +47,18 @@ let pane = 'products';
 
 function $(id) { return document.getElementById(id); }
 
+function isCreditCatalogProduct(p) {
+  if (!p) return false;
+  const id = normalizeProductId(p.productId || p.id);
+  return p.type === 'credit_pack' || id.startsWith('CREDIT_') || id.startsWith('POINT_');
+}
+
+function canDeleteCatalogProduct(p) {
+  if (!p) return false;
+  if (isCreditCatalogProduct(p)) return true;
+  return !isSeedProduct(p.productId) && p.hasPurchases !== true;
+}
+
 function flash(msg, ok = true) {
   const el = $('pricingSaveMsg');
   if (!el) return;
@@ -191,6 +203,7 @@ async function ensureSeed() {
   const snap = await getDocs(collection(db, 'products'));
   const existing = new Set(snap.docs.map((d) => normalizeProductId(d.id)));
   for (const seed of SEED_PRODUCTS) {
+    if (seed.type === 'credit_pack') continue;
     const docId = firestoreDocId(seed.productId);
     if (existing.has(seed.productId) || snap.docs.some((d) => d.id === docId)) continue;
     const payload = {
@@ -456,7 +469,7 @@ function renderEditor() {
     }
   }
   const del = $('pricingDeleteBtn');
-  if (del) del.hidden = isSeedProduct(draft.productId) || draft.hasPurchases === true;
+  if (del) del.hidden = !canDeleteCatalogProduct(draft);
   renderPreview();
 }
 
@@ -803,10 +816,13 @@ async function archiveProduct() {
 }
 
 async function deleteProduct() {
-  if (!draft || isSeedProduct(draft.productId) || draft.hasPurchases) {
-    throw new Error('결제 기록이 있거나 기본 상품은 삭제할 수 없습니다. 판매중지/보관만 가능합니다.');
+  if (!draft || !canDeleteCatalogProduct(draft)) {
+    throw new Error('기본 이용권(기간제/Lifetime)은 삭제할 수 없습니다. 판매중지/보관만 가능합니다.');
   }
-  if (!window.confirm(`${draft.productId}를 삭제할까요?`)) return;
+  const extra = draft.hasPurchases
+    ? '\n결제 기록은 유지되고, 판매 목록에서만 제거됩니다.'
+    : '';
+  if (!window.confirm(`${draft.productId} 상품을 삭제할까요?${extra}`)) return;
   const { doc, deleteDoc } = fs;
   await deleteDoc(doc(db, 'products', firestoreDocId(draft.productId)));
   await audit('product_delete', `${draft.productId} 삭제`, draft, null);

@@ -820,6 +820,9 @@ function buildAdminLicenseDateFields(opts={}){
   };
 }
 /** Patch CRM license caches so detail/list update immediately after write. */
+function adminLicenseCacheNow(){
+  return { seconds: Math.floor(Date.now()/1000) };
+}
 function patchAdminLicenseCache(uid, patch){
   const s=String(uid||'');
   if(!s || !patch) return;
@@ -866,6 +869,9 @@ const authorLicenseCache = new Map();
 let currentLicenseActive = false;
 let currentLicenseLifetime = false;
 let accountLicenseDoc = null;
+let accountOrderRows = [];
+let accountOrdersStatus = '';
+let accountOrdersUid = '';
 let kakaoPayInFlight = false;
 
 function authorKind(x){
@@ -2726,6 +2732,7 @@ function setAuthUiSignedOut(){
   currentLicenseActive = false;
   currentLicenseLifetime = false;
   accountLicenseDoc = null;
+  resetAccountOrders();
   resetCreditAccountState();
   setAdminNavVisible(false);
   syncTopbarProfileAuthUi(false);
@@ -2797,6 +2804,152 @@ function metaCard(k,v){ return `<div class="stat-card"><b>${esc(k)}</b><span>${e
 
 function accountField(label, value){
   return `<div class="account-field"><span class="account-field-label">${esc(label)}</span><strong class="account-field-value">${esc(value || '-')}</strong></div>`;
+}
+
+function resetAccountOrders(){
+  accountOrderRows = [];
+  accountOrdersStatus = '';
+  accountOrdersUid = '';
+}
+
+function accountOrderWhenMs(o){
+  return licenseTsMs(o?.completedAt || o?.verifiedAt || o?.issuedAt || o?.createdAt || o?.updatedAt);
+}
+
+function accountOrderVisible(o){
+  const s=String(o?.status||'').toLowerCase();
+  if(s==='created' || s==='open') return false;
+  return true;
+}
+
+function accountOrderProductLabel(o){
+  const pid=String(o?.productId || o?.productDocId || '').trim().toUpperCase();
+  if(pid==='PASS_7D' || pid==='PASS_7D' || pid==='PASS_7DAY') return lang==='en'?'7-Day Full':lang==='ja'?'7日 Full':'7일 Full';
+  if(pid==='PASS_30D' || pid==='PASS_30D') return lang==='en'?'30-Day Full':lang==='ja'?'30日 Full':'30일 Full';
+  if(pid==='PASS_90D' || pid==='PASS_90D') return lang==='en'?'90-Day Full':lang==='ja'?'90日 Full':'90일 Full';
+  if(pid==='LIFETIME' || pid.includes('LIFETIME')) return 'Lifetime Full';
+  const named=o?.productName || o?.orderName || o?.plan;
+  if(named) return String(named);
+  const plan=String(o?.plan||'').toLowerCase();
+  if(plan==='lifetime') return 'Lifetime Full';
+  if(plan==='period') return lang==='en'?'Full Pass':lang==='ja'?'期間 Full':'기간 Full';
+  return lang==='en'?'License':lang==='ja'?'ライセンス':'라이선스';
+}
+
+function accountOrderAmountLabel(o){
+  if(o?.amount==null || o?.amount==='') return '-';
+  const n=Number(o.amount);
+  const cur=String(o.currency||'KRW').toUpperCase();
+  if(!Number.isFinite(n)) return String(o.amount);
+  if(cur==='KRW' || cur==='원') return `${Math.round(n).toLocaleString('ko-KR')}원`;
+  if(cur==='USD') return `$${n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
+  return `${n.toLocaleString()} ${cur}`;
+}
+
+function accountOrderMethodLabel(o){
+  const raw=String(o?.paymentMethod || o?.provider || o?.method || '').toLowerCase();
+  if(raw.includes('kakao')) return lang==='en'?'Kakao Pay':lang==='ja'?'Kakao Pay':'카카오페이';
+  if(raw.includes('paypal')) return 'PayPal';
+  if(raw.includes('inicis') || raw==='card') return lang==='en'?'Card':lang==='ja'?'カード':'카드';
+  if(raw==='admin' || raw==='manual') return lang==='en'?'Admin grant':lang==='ja'?'管理者付与':'관리자 지급';
+  if(raw==='portone') return lang==='en'?'Kakao Pay':lang==='ja'?'Kakao Pay':'카카오페이';
+  const fallback=o?.paymentMethod || o?.provider || o?.method;
+  return fallback ? String(fallback) : '-';
+}
+
+function accountOrderStatusInfo(o){
+  const s=String(o?.status||'').toLowerCase();
+  if(s==='completed' || s==='paid' || s==='verified'){
+    return { key:'paid', label: lang==='en'?'Paid':lang==='ja'?'支払済み':'결제 완료' };
+  }
+  if(s==='refunded' || s==='duplicate_refunded' || s.includes('refund')){
+    return { key:'refund', label: lang==='en'?'Refunded':lang==='ja'?'返金':'환불' };
+  }
+  if(s==='cancelled' || s==='canceled'){
+    return { key:'refund', label: lang==='en'?'Canceled':lang==='ja'?'キャンセル':'취소' };
+  }
+  if(s==='failed'){
+    return { key:'failed', label: lang==='en'?'Failed':lang==='ja'?'失敗':'실패' };
+  }
+  if(s==='pending' || s==='created' || s==='open'){
+    return { key:'pending', label: lang==='en'?'Pending':lang==='ja'?'処理中':'대기' };
+  }
+  return { key:'other', label: o?.status ? String(o.status) : '-' };
+}
+
+function accountOrdersCardHtml(){
+  const title = lang==='en'?'Payment history':lang==='ja'?'支払い履歴':'결제 내역';
+  const count = accountOrdersStatus==='ok' && accountOrderRows.length
+    ? `<span class="account-orders-count">${accountOrderRows.length}${lang==='en'?' receipts':lang==='ja'?'件':'건'}</span>`
+    : '';
+  let body = '';
+  if(accountOrdersStatus==='error'){
+    body = `<p class="muted account-orders-empty">${esc(lang==='en'?'Could not load payment history.':lang==='ja'?'支払い履歴を読み込めませんでした。':'결제 내역을 불러오지 못했습니다.')}</p>`;
+  } else if(accountOrdersStatus!=='ok'){
+    body = `<p class="muted account-orders-empty">${esc(lang==='en'?'Loading payment history…':lang==='ja'?'支払い履歴を読み込み中…':'결제 내역을 불러오는 중...')}</p>`;
+  } else if(!accountOrderRows.length){
+    const buy = lang==='en'?'View plans':lang==='ja'?'利用券を見る':'이용권 보기';
+    body = `<p class="muted account-orders-empty">${esc(lang==='en'?'No payments yet.':lang==='ja'?'支払い履歴はまだありません。':'결제 내역이 없습니다.')}</p>
+      <div class="account-panel-actions"><a class="secondary mini-btn" href="./purchase.html">${esc(buy)}</a></div>`;
+  } else {
+    body = `<ul class="account-orders-list">${accountOrderRows.map(o=>{
+      const st=accountOrderStatusInfo(o);
+      const when=fmtListDate(o.completedAt || o.verifiedAt || o.issuedAt || o.createdAt || o.updatedAt);
+      const method=accountOrderMethodLabel(o);
+      const meta=[when, method].filter(v=>v && v!=='-').join(' · ');
+      return `<li class="account-order-row">
+        <div class="account-order-main">
+          <b>${esc(accountOrderProductLabel(o))}</b>
+          <span>${esc(meta || '-')}</span>
+        </div>
+        <div class="account-order-side">
+          <strong>${esc(accountOrderAmountLabel(o))}</strong>
+          <em class="account-order-status is-${esc(st.key)}">${esc(st.label)}</em>
+        </div>
+      </li>`;
+    }).join('')}</ul>`;
+  }
+  return `<article class="hub-card account-panel account-panel-orders account-panel-full" id="accountOrdersPanel">
+    <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">💳</span><h2>${esc(title)}</h2>${count}</header>
+    <div class="account-panel-body" id="accountOrdersBody">${body}</div>
+  </article>`;
+}
+
+function paintAccountOrdersPanel(){
+  const panel=$('accountOrdersPanel');
+  if(!panel) return;
+  const wrap=document.createElement('div');
+  wrap.innerHTML=accountOrdersCardHtml();
+  const next=wrap.firstElementChild;
+  if(next) panel.replaceWith(next);
+}
+
+async function loadAccountOrders(uid){
+  if(!uid || !db || !firestoreApi) return;
+  if(accountOrdersUid===uid && (accountOrdersStatus==='ok' || accountOrdersStatus==='loading')) return;
+  accountOrdersUid = uid;
+  accountOrdersStatus = 'loading';
+  accountOrderRows = [];
+  paintAccountOrdersPanel();
+  try{
+    const {collection, query, where, getDocs, limit}=firestoreApi;
+    const base=[collection(db,'orders'), where('uid','==', uid)];
+    const q = typeof limit==='function' ? query(...base, limit(40)) : query(...base);
+    const snap=await getDocs(q);
+    if(currentUser?.uid !== uid) return;
+    accountOrderRows = snap.docs
+      .map(d=>({id:d.id, ...d.data()}))
+      .filter(accountOrderVisible)
+      .sort((a,b)=>accountOrderWhenMs(b)-accountOrderWhenMs(a))
+      .slice(0, 20);
+    accountOrdersStatus = 'ok';
+  }catch(err){
+    console.warn('account orders', err);
+    if(currentUser?.uid !== uid) return;
+    accountOrdersStatus = 'error';
+    accountOrderRows = [];
+  }
+  paintAccountOrdersPanel();
 }
 
 function accountLoginMethodLabel(){
@@ -3317,6 +3470,7 @@ function renderAccountDashboard(uid, d, downloadData){
   const discordAttrs = discordHref.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
 
   const creditCard = accountCreditCardHtml();
+  const ordersCard = accountOrdersCardHtml();
 
   const supportCard = `<article class="hub-card account-panel account-panel-support account-panel-full">
     <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">💬</span><h2>Support</h2></header>
@@ -3348,11 +3502,14 @@ function renderAccountDashboard(uid, d, downloadData){
     </article>`;
   }
 
-  box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${creditCard}${downloadCard}${supportCard}${developerCard}</div>`;
+  box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${creditCard}${downloadCard}${ordersCard}${supportCard}${developerCard}</div>`;
   bindAccountCreditCard();
   bindCreditAccountListeners();
+  loadAccountOrders(uid);
   if(location.hash === '#credit' || location.hash === '#plan'){
     queueMicrotask(()=> $('accountCreditPanel')?.scrollIntoView({behavior:'smooth', block:'start'}));
+  } else if(location.hash === '#orders' || location.hash === '#payments'){
+    queueMicrotask(()=> $('accountOrdersPanel')?.scrollIntoView({behavior:'smooth', block:'start'}));
   }
 }
 
@@ -6468,8 +6625,8 @@ function adminBoardPostsForUid(uid){
     .sort((a,b)=>adminTsSec(b.createdAt||b.updatedAt)-adminTsSec(a.createdAt||a.updatedAt));
 }
 function adminTsSec(v){
-  if(typeof v==='number' && Number.isFinite(v)) return v>1e12 ? Math.floor(v/1000) : v;
-  return Number(v?.seconds || v?._seconds || 0);
+  const ms=licenseTsMs(v);
+  return ms ? Math.floor(ms/1000) : 0;
 }
 
 /**
@@ -7122,9 +7279,41 @@ function getAdminLicenseRows(){
       if(!be) return -1;
       return ae-be;
     }
-    return adminTsSec(b.license?.updatedAt)-adminTsSec(a.license?.updatedAt);
+    return licenseTsMs(b.license?.updatedAt)-licenseTsMs(a.license?.updatedAt);
   });
   return rows;
+}
+function adminCrmRowKey(u){
+  return String(u?.uid || u?.id || '');
+}
+function adminCrmRowAliases(u){
+  return [...new Set([u?.uid, u?.id, u?.canonicalUid].map(v=>String(v||'').trim()).filter(Boolean))];
+}
+function mergeAdminCrmRowsKeepOrder(prev, next){
+  const map=new Map();
+  (next||[]).forEach(u=>{
+    adminCrmRowAliases(u).forEach(k=>map.set(k, u));
+  });
+  const seen=new Set();
+  const out=[];
+  const take=(u)=>{
+    const n=adminCrmRowAliases(u).map(k=>map.get(k)).find(Boolean);
+    if(!n) return;
+    const id=adminCrmRowKey(n);
+    if(!id || seen.has(id) || adminCrmRowAliases(n).some(k=>seen.has(k))) return;
+    out.push(n);
+    seen.add(id);
+    adminCrmRowAliases(n).forEach(k=>seen.add(k));
+  };
+  (prev||[]).forEach(take);
+  (next||[]).forEach(u=>{
+    const id=adminCrmRowKey(u);
+    if(!id || seen.has(id) || adminCrmRowAliases(u).some(k=>seen.has(k))) return;
+    out.push(u);
+    seen.add(id);
+    adminCrmRowAliases(u).forEach(k=>seen.add(k));
+  });
+  return out;
 }
 function getAdminOrderRows(){
   const q=($('adminUserSearch')?.value||'').trim().toLowerCase();
@@ -7163,7 +7352,7 @@ function applyAdminCrmStatFilter(key){
     // Keep whatever filters are already applied; only update selection highlight.
   }
   adminCrmPage=1;
-  renderAdminUserTable();
+  renderAdminUserTable({ resort: true });
 }
 function adminStatCardHtml(attr, key, value, label, selected){
   const on = selected===key ? ' is-selected' : '';
@@ -7309,7 +7498,7 @@ function bindAdminCrmStatClicksOn(box){
         adminLicenseExpiringDays = 30;
       }
       adminCrmPage=1;
-      renderAdminUserTable();
+      renderAdminUserTable({ resort: true });
       return;
     }
     const orderBtn=e.target.closest('[data-order-stat]');
@@ -7317,7 +7506,7 @@ function bindAdminCrmStatClicksOn(box){
       const key=orderBtn.getAttribute('data-order-stat') || 'all';
       adminOrderWorkTab = key==='today' ? 'paid' : key;
       adminCrmPage=1;
-      renderAdminUserTable();
+      renderAdminUserTable({ resort: true });
     }
   });
 }
@@ -7331,18 +7520,18 @@ function bindAdminWorkTabClicks(){
       adminLicenseWorkTab=licenseTab.getAttribute('data-license-tab') || 'all';
       if(adminLicenseWorkTab==='expiring') adminLicenseExpiringDays = 30;
       adminCrmPage=1;
-      renderAdminUserTable();
+      renderAdminUserTable({ resort: true });
       return;
     }
     const orderTab=e.target.closest('[data-order-tab]');
     if(orderTab){
       adminOrderWorkTab=orderTab.getAttribute('data-order-tab') || 'all';
       adminCrmPage=1;
-      renderAdminUserTable();
+      renderAdminUserTable({ resort: true });
     }
   });
 }
-function renderAdminUserTable(){
+function renderAdminUserTable(opts={}){
   try{ refreshAdminUserLogsUsers(); }catch{}
   const box=$('adminUserList'); if(!box || !isAdminUser) return;
   if(!$('adminCrm')){
@@ -7406,7 +7595,11 @@ function renderAdminUserTable(){
       renderAdminPaymentsTable();
       return;
     }
-    adminCrmFilteredRows = getAdminLicenseRows();
+    const nextLicenseRows = getAdminLicenseRows();
+    const keepOrder = opts.keepOrder === true || (opts.resort !== true && (adminCrmFilteredRows||[]).length > 0);
+    adminCrmFilteredRows = keepOrder
+      ? mergeAdminCrmRowsKeepOrder(adminCrmFilteredRows, nextLicenseRows)
+      : nextLicenseRows;
     renderAdminCrmStats(adminCrmFilteredRows);
     renderAdminCrmFilterHint(adminCrmFilteredRows.length, adminUserRows.length, '명');
     updateAdminCrmBulkbar();
@@ -7447,7 +7640,7 @@ window.__midiaiOnAdminCrmMode = function(mode, opts={}){
     parkAdminCrmDetail();
     $('adminCrm')?.classList.remove('is-row-expand', 'is-detail-open');
   }
-  if(isAdminUser) renderAdminUserTable();
+  if(isAdminUser) renderAdminUserTable({ resort: true });
   if(opts?.uid) selectAdminCrmUser(opts.uid, { forceOpen: true, tab: opts.detailTab || opts.tab });
 };
 window.__midiaiOnAdminCms = function(tab, opts={}){
@@ -7587,15 +7780,6 @@ function adminCrmLicenseExpandInnerHtml(u, view){
         <textarea data-lic-memo rows="2" placeholder="라이선스 메모">${esc(memo)}</textarea>
       </label>
       <div class="admin-license-expand-toolbar">
-        <div class="admin-crm-license-grants">
-          <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${esc(uid)}">체험판 지급</button>
-          <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${esc(uid)}">평생 지급</button>
-          <button type="button" class="secondary mini-btn" data-license-grant="period:7" data-license-uid="${esc(uid)}">7일 Full</button>
-          <button type="button" class="secondary mini-btn" data-license-grant="period:30" data-license-uid="${esc(uid)}">30일 Full</button>
-          <button type="button" class="secondary mini-btn" data-license-grant="period:90" data-license-uid="${esc(uid)}">90일 Full</button>
-          <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${esc(uid)}">활성화</button>
-          <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${esc(uid)}">정지</button>
-        </div>
         <input type="hidden" data-lic-pass-product value="${esc(lic?.passProductId || '')}">
         <div class="admin-license-expand-actions">
           <button type="button" class="primary mini-btn" data-license-save="${esc(uid)}">저장</button>
@@ -7898,7 +8082,7 @@ async function saveAdminLicenseInline(uid, wrap){
       passProductId: savePlan === 'period' ? (passProductId || prev?.passProductId || '') : '',
       startsAt: startsAtTs,
       expiresAt: expiresAtTs,
-      updatedAt: new Date()
+      updatedAt: adminLicenseCacheNow()
     });
     try{ await notifyLicenseChange(uid, {plan:savePlan, status:'active'}); }catch(err){ console.error(err); }
     writeAdminAuditLog({
@@ -7913,7 +8097,7 @@ async function saveAdminLicenseInline(uid, wrap){
     });
     adminFlash(`${tr('saved')} · ${esc(uid)}`);
     adminCrmLicenseOpen = uid;
-    renderAdminUserTable();
+    renderAdminUserTable({ keepOrder: true });
   }catch(e){
     alert(e.message||e);
   }
@@ -8322,7 +8506,6 @@ function renderAdminCrmDetail(uid, opts={}){
   if(uidChanged || renderAdminCrmUsage._uid !== canonicalUid){
     renderAdminCrmUsage(canonicalUid);
   }
-  renderAdminCrmPoints(canonicalUid);
   captureAdminCrmBaseline();
 }
 function bindAdminCrmUsageCollapse(){
@@ -8768,7 +8951,7 @@ function applyAdminCrmFilterPopover(){
   setAdminCrmFilterPopoverOpen._snap = snapshotAdminCrmFilterState();
   setAdminCrmFilterPopoverOpen(false);
   adminCrmPage=1;
-  renderAdminUserTable();
+  renderAdminUserTable({ resort: true });
 }
 function resetAdminCrmFilterPopover(){
   if($('adminUserLicenseStatus')) $('adminUserLicenseStatus').value='all';
@@ -8814,7 +8997,7 @@ function bindAdminUserFilters(){
       clearTimeout(adminCrmSearchTimer);
       adminCrmSearchTimer=setTimeout(()=>{
         adminCrmPage=1;
-        renderAdminUserTable();
+        renderAdminUserTable({ resort: true });
       }, 220);
     });
   }
@@ -8822,7 +9005,7 @@ function bindAdminUserFilters(){
     const el=$(id); if(!el||el.dataset.bound)return; el.dataset.bound='1';
     el.addEventListener('change',()=>{
       adminCrmPage=1;
-      renderAdminUserTable();
+      renderAdminUserTable({ resort: true });
     });
   });
   bindAdminCrmFilterPopover();
@@ -9207,7 +9390,7 @@ async function saveAdminCrmAllChanges(){
         memo: licenseMemo,
         startsAt: startsAtTs,
         expiresAt: expiresAtTs,
-        updatedAt: new Date()
+        updatedAt: adminLicenseCacheNow()
       });
       try{ await notifyLicenseChange(uid, {plan:savePlan, status:saveStatus}); }catch(err){ console.error(err); }
       pushAdminCrmFeed(`${savePlan} 저장`, (!clearDates && expiresAt) ? `~${expiresAt}` : 'active', uid);
@@ -9221,7 +9404,7 @@ async function saveAdminCrmAllChanges(){
         result: 'success',
         summary: `${baseline.plan||'-'} → ${savePlan}`
       });
-      renderAdminUserTable();
+      renderAdminUserTable({ keepOrder: true });
     }
     if(memoChanged) await saveAdminCrmUserMemo();
     if(roleChanged || licChanged || memoChanged){
@@ -9325,7 +9508,7 @@ async function adminQuickLicense(raw, silent=false, opts={}){
       plan: savePlan,
       status: saveStatus,
       method: 'admin',
-      updatedAt: { seconds: Math.floor(Date.now()/1000) }
+      updatedAt: adminLicenseCacheNow()
     };
     if(opts.clearDates){
       cachePatch.startsAt = null;
@@ -9354,7 +9537,7 @@ async function adminQuickLicense(raw, silent=false, opts={}){
       result: 'success',
       summary: `${savePlan}/${saveStatus}`
     });
-    renderAdminUserTable();
+    renderAdminUserTable({ keepOrder: true });
     if(selectedAdminUid===uid) refreshAdminCrmDetail({ force:true });
   }catch(e){ alert(e.message); }
 }

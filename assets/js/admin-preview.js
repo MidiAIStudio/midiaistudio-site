@@ -669,13 +669,6 @@ function renderCrmWork() {
                 <textarea data-lic-memo rows="2" placeholder="라이선스 메모">${u.licenseMemo || ''}</textarea>
               </label>
               <div class="admin-license-expand-toolbar">
-                <div class="admin-crm-license-grants">
-                  <button type="button" class="secondary mini-btn" data-license-grant="trial" data-license-uid="${u.uid}">체험판 지급</button>
-                  <button type="button" class="secondary mini-btn" data-license-grant="lifetime" data-license-uid="${u.uid}">평생 지급</button>
-                  <button type="button" class="secondary mini-btn" data-license-grant="period" data-license-uid="${u.uid}">기간제 지급</button>
-                  <button type="button" class="secondary mini-btn" data-license-grant="activate" data-license-uid="${u.uid}">활성화</button>
-                  <button type="button" class="secondary mini-btn danger-btn" data-license-grant="ban" data-license-uid="${u.uid}">정지</button>
-                </div>
                 <div class="admin-license-expand-actions">
                   <button type="button" class="primary mini-btn" data-license-save="${u.uid}">저장</button>
                   <button type="button" class="ghost mini-btn" data-license-member="${u.uid}">회원 상세</button>
