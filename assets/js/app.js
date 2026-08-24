@@ -39,7 +39,7 @@ import {
   getCatalogFxRate,
   formatUsd,
   krwToUsd
-} from './catalog-engine.js?v=credit-live-sale-1';
+} from './catalog-engine.js?v=credit-save-onsale-1';
 import { openBulkMessageComposer } from './admin-bulk-composer.js?v=bulk-composer-1';
 import {
   getPassProducts,

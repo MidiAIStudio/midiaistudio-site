@@ -486,21 +486,46 @@ export function unitPrice(price, credits) {
   return Math.round(Number(price) / c);
 }
 
-/** Credit-pack unit savings vs starter pack only. Pass products must use computePassBundleSavings. */
+/** Credit-pack unit savings vs an on-sale smaller/starter pack. Pass products must use computePassBundleSavings. */
 export function packSavingsPercent(product, starterUnit) {
   const pid = normalizeProductId(product?.productId || product?.id);
   if (product?.type === 'full_pass' || isPassProductId(pid) || pid === 'LIFETIME') {
     return null;
   }
-  if (product?.packSavePercent != null && product.packSavePercent !== '') {
-    return Number(product.packSavePercent);
-  }
+  // Always derive from live on-sale starter unit. Stored packSavePercent is often stale
+  // (e.g. vs paused CREDIT_5) and must not invent "약 N% 절약" on the only selling pack.
   const credits = Number(product?.creditAmount) || 0;
   const price = Number(product?.listPriceKrw) || 0;
   if (!starterUnit || credits <= 0 || price <= 0) return null;
   const unit = price / credits;
   if (unit >= starterUnit) return null;
   return Math.round((1 - unit / starterUnit) * 100);
+}
+
+/**
+ * Per-credit unit of the smallest *on-sale* credit pack.
+ * Never falls back to paused CREDIT_5 or a hardcoded 1300 — that falsely shows "절약" on Credit 10.
+ * Returns null when no selling credit pack exists (caller hides savings).
+ */
+export function starterUnitFromProducts(products) {
+  const packs = (products || [])
+    .map((p) => {
+      const pid = normalizeProductId(p?.productId || p?.id);
+      const type = p?.type || (isCreditProductId(pid) ? 'credit_pack' : '');
+      if (type !== 'credit_pack' && !isCreditProductId(pid)) return null;
+      const status = String(p?.status || 'active').trim().toLowerCase();
+      if (status === 'paused' || status === 'archived' || status === 'disabled') return null;
+      if (p?.saleOk === false) return null;
+      const credits = Number(p?.creditAmount || 0);
+      const list = Number(p?.listPriceKrw || 0);
+      const unit = unitPrice(list, credits);
+      if (!(credits > 0) || !(list > 0) || unit == null) return null;
+      return { pid, credits, unit };
+    })
+    .filter(Boolean);
+  if (!packs.length) return null;
+  packs.sort((a, b) => a.credits - b.credits || a.unit - b.unit || String(a.pid).localeCompare(String(b.pid)));
+  return packs[0].unit;
 }
 
 /**
@@ -932,12 +957,6 @@ export function creditChangeWarning(oldAmount, newAmount) {
 export function bumpVersion(product, { priceChanged, creditsChanged, durationChanged, nameChanged }) {
   const current = Number(product?.productVersion || product?.pricingVersion || 1);
   return (priceChanged || creditsChanged || durationChanged || nameChanged) ? current + 1 : current;
-}
-
-export function starterUnitFromProducts(products) {
-  const five = (products || []).find((p) => normalizeProductId(p.productId || p.id) === 'CREDIT_5');
-  if (!five) return 1300;
-  return unitPrice(Number(five.listPriceKrw || 0), Number(five.creditAmount || 0));
 }
 
 export function publicProductView(product, promotions = [], now = new Date(), lang = 'ko', starterUnit = null, catalogProducts = null) {

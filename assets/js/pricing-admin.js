@@ -1431,7 +1431,7 @@ function renderPassSavingsCompare() {
     setT('draftSaveCurrent', formatKrw(draft.listPriceKrw));
     setT('draftSaveAmount', '-');
     setT('draftSavePercent', '절약 없음 (표시 안 함)');
-    setT('draftSaveHint', '기준 상품 기간으로 정확히 나누어지고 실제 절약이 있을 때만 표시됩니다.');
+    setT('draftSaveHint', '판매 중인 더 작은 Credit 팩 단가 대비로만 표시됩니다. 기준 팩이 판매 중이 아니면 숨깁니다.');
     return;
   }
   setT('draftSaveRefName', savings.referenceNameKo || savings.referenceProductId);
