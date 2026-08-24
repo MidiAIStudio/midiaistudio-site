@@ -7,6 +7,7 @@
 
 const PAYMENT_ID_RE = /^[a-zA-Z0-9_-]{8,80}$/;
 const creditWallet = require('./creditWallet');
+const paypalCurrency = require('./paypalCurrency');
 
 function creditSalesKillSwitchOn() {
   const v = String(process.env.CREDIT_SALES_KILL_SWITCH || '').trim().toLowerCase();
@@ -157,16 +158,25 @@ function createHandlers({
       let amount;
       let payAmountUsd = null;
       if (isUsd) {
-        const usd = Number(product.payAmountUsd != null ? product.payAmountUsd : product.amount);
-        if (!(usd > 0) || String(product.currency || '').toUpperCase() !== 'USD') {
+        const usd = paypalCurrency.usdQuoteFromCharge(product);
+        if (!usd.ok) {
+          return res.status(400).json({
+            ok: false,
+            code: usd.code || 'QUOTE_CURRENCY',
+            message: paypalCurrency.paypalCurrencyErrorMessage(paypalCurrency.requestUiLang(req))
+          });
+        }
+        // Guard: never treat KRW catalog amount as USD (e.g. 7900 → $7900.00).
+        const krw = Number(product.effectivePriceKrw || product.listPriceKrw || 0);
+        if (Number.isFinite(krw) && krw >= 100 && Math.abs(usd.payAmountUsd - krw) < 0.011) {
           return res.status(400).json({
             ok: false,
             code: 'QUOTE_CURRENCY',
-            message: 'PayPal 결제 통화가 올바르지 않습니다.'
+            message: paypalCurrency.paypalCurrencyErrorMessage(paypalCurrency.requestUiLang(req))
           });
         }
-        amount = usd;
-        payAmountUsd = usd;
+        amount = usd.payAmountUsd;
+        payAmountUsd = usd.payAmountUsd;
       } else {
         amount = Math.round(Number(product.amount || product.effectivePriceKrw || 0));
         if (!(amount > 0) || String(product.currency || 'KRW').toUpperCase() !== 'KRW') {

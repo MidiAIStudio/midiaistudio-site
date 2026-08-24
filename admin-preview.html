@@ -456,15 +456,20 @@
                   </div>
                 </div>
                 <div class="admin-crm-bulkbar" id="adminCrmBulkbar" hidden>
-                  <span id="adminCrmBulkCount">0명 선택</span>
+                  <span id="adminCrmBulkCount">0명 선택됨</span>
                   <div class="admin-crm-bulk-actions">
-                    <button type="button" class="secondary mini-btn danger-btn" data-bulk="ban">일괄 차단</button>
-                    <button type="button" class="secondary mini-btn" data-bulk="app-message">일괄 앱 쪽지</button>
-                    <button type="button" class="secondary mini-btn danger-btn" data-bulk="delete">일괄 삭제</button>
+                    <button type="button" class="secondary mini-btn" data-bulk="gmail" data-bulk-modes="members">일괄 메일 발송</button>
+                    <button type="button" class="secondary mini-btn" data-bulk="app-message" data-bulk-modes="members">일괄 앱 쪽지</button>
+                    <button type="button" class="secondary mini-btn danger-btn" data-bulk="ban" data-bulk-modes="members">일괄 차단</button>
+                    <button type="button" class="secondary mini-btn danger-btn" data-bulk="delete" data-bulk-modes="members">일괄 삭제</button>
+                    <button type="button" class="primary mini-btn" data-bulk="credits" data-bulk-modes="license">크레딧 일괄 지급</button>
+                    <button type="button" class="ghost mini-btn" data-bulk="clear">선택 해제</button>
                   </div>
                 </div>
                 <div class="admin-crm-list-head">
-                  <label class="admin-crm-check" id="adminCrmSelectAllWrap"><input type="checkbox" id="adminCrmSelectAll" aria-label="전체 선택"></label>
+                  <label class="admin-crm-check" id="adminCrmSelectAllWrap"><input type="checkbox" id="adminCrmSelectAll" aria-label="현재 페이지 선택"> 현재 페이지 선택</label>
+                  <button type="button" class="ghost mini-btn" id="adminCrmSelectFiltered">검색 결과 전체 선택</button>
+                  <button type="button" class="ghost mini-btn" id="adminCrmSelectEveryone">전체 사용자 선택</button>
                   <span id="adminUserCount" class="muted"></span>
                   <span id="adminCrmFilterHint" class="muted small"></span>
                 </div>

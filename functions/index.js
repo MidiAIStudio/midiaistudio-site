@@ -359,6 +359,18 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     };
   }
   const payAmountUsd = Number(charge.payAmountUsd != null ? charge.payAmountUsd : salePrice);
+  const krwAnchor = Number(charge.effectivePriceKrw || hydrated.listPriceKrw || 0);
+  if (
+    Number.isFinite(krwAnchor)
+    && krwAnchor >= 100
+    && Number.isFinite(payAmountUsd)
+    && Math.abs(payAmountUsd - krwAnchor) < 0.011
+  ) {
+    const err = new Error(paypalCurrency.paypalCurrencyErrorMessage('ko'));
+    err.status = 400;
+    err.code = 'QUOTE_CURRENCY';
+    throw err;
+  }
   return {
     ...base,
     currency: 'USD',
@@ -697,6 +709,14 @@ exports.createPurchaseQuote = functions.https.onRequest(async (req, res) => {
         return res.status(400).json({
           ok: false,
           code: usd.code || 'QUOTE_CURRENCY',
+          message: paypalCurrency.paypalCurrencyErrorMessage(paypalCurrency.requestUiLang(req))
+        });
+      }
+      const krw = Number(product.effectivePriceKrw || product.listPriceKrw || 0);
+      if (Number.isFinite(krw) && krw >= 100 && Math.abs(usd.payAmountUsd - krw) < 0.011) {
+        return res.status(400).json({
+          ok: false,
+          code: 'QUOTE_CURRENCY',
           message: paypalCurrency.paypalCurrencyErrorMessage(paypalCurrency.requestUiLang(req))
         });
       }

@@ -22,8 +22,10 @@ import {
   creditTagline,
   packCredits,
   normalizeCreditProductId,
-  applyPublicCreditCatalog
-} from './credit-catalog.js?v=credit-live-sale-1';
+  applyPublicCreditCatalog,
+  applyCreditCatalogSession,
+  isCreditCatalogReady
+} from './credit-catalog.js?v=purchase-cards-2';
 import {
   publicProductView,
   starterUnitFromProducts,
@@ -88,6 +90,8 @@ function isCreditPurchaseEnabled(){
 function purchaseActionsLocked(){
   return !!currentLicenseLifetime;
 }
+/** True after first real onAuthStateChanged (not the boot setAuthUiSignedOut). */
+let authStateResolved = false;
 const $ = (id) => document.getElementById(id);
 const qs = (s, root = document) => root.querySelector(s);
 const page = location.pathname.split('/').pop() || 'index.html';
@@ -311,15 +315,16 @@ function translate(s){
 }
 
 function updatePurchaseLinks(){
-  const target = lang === 'en' ? './en/purchase.html' : lang === 'ja' ? './ja/purchase.html' : './purchase.html';
-  document.querySelectorAll('a[href$="purchase.html"], a[href="./purchase.html"], a[href="../purchase.html"]').forEach(a => {
+  const target = lifetimePurchaseHref();
+  document.querySelectorAll('a[href*="purchase.html"]').forEach(a => {
     const href = a.getAttribute('href') || '';
-    if(href.includes('/en/purchase.html') || href.includes('/ja/purchase.html')) return;
-    if(pathLang && !isPurchasePage){
-      a.setAttribute('href', lang === 'ko' ? '../purchase.html' : `../${lang}/purchase.html`);
-    } else if(!pathLang && !isPurchasePage){
-      a.setAttribute('href', target);
-    }
+    const pathOnly = href.split('#')[0].split('?')[0];
+    if(!/(?:^|\/)purchase\.html$/i.test(pathOnly)) return;
+    const qIdx = href.indexOf('?');
+    const hIdx = href.indexOf('#');
+    const qs = qIdx >= 0 ? href.slice(qIdx, hIdx >= 0 && hIdx > qIdx ? hIdx : undefined) : '';
+    const hash = hIdx >= 0 ? href.slice(hIdx) : '';
+    a.setAttribute('href', target + qs + hash);
   });
 }
 
@@ -1638,13 +1643,25 @@ function syncPurchaseUrl(){
   }
   history.replaceState({}, '', url);
 }
+/** Purchase grid paints only after Firestore SoT (or explicit fallback) — blocks API 6-card flash. */
+let purchaseStorefrontReady = false;
+function markPurchaseStorefrontReady(){
+  purchaseStorefrontReady = true;
+}
+function isPurchaseCatalogReady(){
+  // Wait for Firestore settle + pass/credit so we never paint stale API 6-packs or partial grids.
+  if(isPurchasePage && !purchaseStorefrontReady) return false;
+  if(!isPassCatalogReady()) return false;
+  if(isCreditPurchaseEnabled() && !isCreditCatalogReady()) return false;
+  return true;
+}
 function renderPurchasePlanGrid(){
   const grid = $('purchasePlanGrid');
   if(!grid) return;
   const pt = pointCopy();
   const locked = purchaseActionsLocked();
-  // Compact loader only — never paint fake 7/30/90 cards (causes a full-page flash).
-  if(!isPassCatalogReady()){
+  // Compact loader only — never paint incomplete catalog (3 cards → 4 cards flash).
+  if(!isPurchaseCatalogReady()){
     grid.setAttribute('aria-busy', 'true');
     grid.classList.add('is-catalog-loading');
     const loadingLabel = lang==='en' ? 'Loading prices…' : (lang==='ja' ? '価格を読み込み中…' : '가격 불러오는 중…');
@@ -1860,7 +1877,7 @@ function bindPurchaseModeUi(){
     if(typeof topbarGoogleLogin === 'function') topbarGoogleLogin();
   });
 }
-const PASS_CATALOG_SESSION_KEY = 'midiai_pass_catalog_session_v2';
+const PASS_CATALOG_SESSION_KEY = 'midiai_pass_catalog_session_v3';
 let sessionLifetimeView = null;
 
 function findLifetimeCatalogProduct(products = []) {
@@ -1898,12 +1915,13 @@ function renderLifetimeLoadingCard(pt) {
 }
 
 function rememberPassCatalogSession(){
-  if(!isPassCatalogReady()) return;
+  if(!isPurchaseCatalogReady()) return;
   try{
     const lifetime = buildPurchaseLifetimeView();
     sessionStorage.setItem(PASS_CATALOG_SESSION_KEY, JSON.stringify({
       at: Date.now(),
       products: getPassProducts(),
+      credits: isCreditPurchaseEnabled() ? getCreditProducts() : [],
       lifetime: lifetime || null
     }));
   }catch(_){}
@@ -1918,8 +1936,11 @@ function restorePassCatalogSession(){
     // Short TTL — avoid stale promo prices for long-lived tabs.
     if(Date.now() - Number(data.at || 0) > 30 * 60 * 1000) return false;
     applyPublicPassCatalog(data.products);
+    if(isCreditPurchaseEnabled() && Array.isArray(data.credits)){
+      applyCreditCatalogSession(data.credits);
+    }
     if(data.lifetime) sessionLifetimeView = data.lifetime;
-    return isPassCatalogReady();
+    return isPurchaseCatalogReady();
   }catch(_){
     return false;
   }
@@ -1928,18 +1949,13 @@ function restorePassCatalogSession(){
 async function initPurchasePoints(){
   if(!isPurchasePage) return;
   bindPurchaseModeUi();
-  // Prefer last-session catalog so revisit skips the loading flash (still refreshed below).
+  // Warm caches only — do not mark storefront ready (avoids session→stale-API→Firestore card-count flash).
   restorePassCatalogSession();
-  applyPurchaseModeUi(); // session catalog or compact loading — never fake 7/30/90 cards
+  applyPurchaseModeUi(); // loader until Firestore SoT
   try{
-    await loadCreditProducts(CONFIG.functionsBaseUrl);
-  }catch(_){}
-  try{
-    if(Array.isArray(window.__midiaiPassCatalog) && window.__midiaiPassCatalog.length){
-      hydratePassCatalogFromPublic({ passes: window.__midiaiPassCatalog });
-      rememberPassCatalogSession();
-      applyPurchaseModeUi();
-    }
+    // Purchase grid uses Firestore catalog. Stale getCreditProducts returns CREDIT_5/30/100
+    // without status and would paint 6 cards before CREDIT_10 settles.
+    await loadCreditProducts(CONFIG.functionsBaseUrl, { sideEffectsOnly: true });
   }catch(_){}
   for(let i = 0; i < 40 && !(db && firestoreApi); i += 1){
     await new Promise((r)=>setTimeout(r, 50));
@@ -1952,6 +1968,10 @@ async function initPurchasePoints(){
   } else if(getPassCatalogSource() !== 'firestore'){
     console.warn('CATALOG_FALLBACK_USED', { reason: 'initPurchasePoints', source: getPassCatalogSource() });
   }
+  if(!isCreditCatalogReady() && isCreditPurchaseEnabled()){
+    try{ await loadCreditProducts(CONFIG.functionsBaseUrl); }catch(_){}
+  }
+  markPurchaseStorefrontReady();
   rememberPassCatalogSession();
   if(purchaseActionsLocked()){
     selectedPurchaseId = 'LIFETIME';
@@ -2119,17 +2139,23 @@ function openPurchaseConfirmModal(){
   const discLabel = pt.discountLabel || (lang==='ja' ? '割引' : lang==='en' ? 'Discount' : '할인');
   const payLabelKey = paypalCheckout ? (pt.payUsdLabel || pt.payAmountLabel) : pt.payAmountLabel;
   const fxNote = pt.fxNote || '';
-  const creditPriceText = points ? creditCheckoutPriceText(creditPack) : '';
+  const confirmingLabel = lang==='en' ? 'Confirming…' : (lang==='ja' ? '確認中…' : '확인 중…');
+  // PayPal USD: never paint KRW numbers as $X before server quote (prevents $7900 flash).
+  const creditPriceText = points
+    ? (paypalCheckout
+      ? (getCatalogFxRate() ? creditCheckoutPriceText(creditPack) : confirmingLabel)
+      : creditCheckoutPriceText(creditPack))
+    : '';
   const passPriceText = pass
     ? (paypalCheckout
       ? (krwToUsd(packSale || passPack?.krw || 0, getCatalogFxRate()) != null
         ? formatUsd(krwToUsd(packSale || passPack?.krw || 0, getCatalogFxRate()))
-        : purchaseDisplayPrice())
+        : confirmingLabel)
       : formatKrw(packSale || passPack?.krw || 0))
     : '';
   const priceText = points
     ? creditPriceText
-    : (pass ? passPriceText : purchaseDisplayPrice());
+    : (pass ? passPriceText : (paypalCheckout && !getCatalogFxRate() ? confirmingLabel : purchaseDisplayPrice()));
   const rows = points
     ? [
         ...(packDiscounted && !paypalCheckout ? [[ listLabel, formatKrw(packList) ], [ discLabel, `${creditPack.discountPercent}%` ]] : []),
@@ -2202,10 +2228,42 @@ function openPurchaseConfirmModal(){
 }
 async function createUsdCheckoutQuote(pid){
   const id = String(pid || selectedPurchaseId || '');
+  let quote;
   if(isPointCheckout() || String(normalizeCreditProductId(id) || '').startsWith('CREDIT_')){
-    return callFunctionJsonFallback(['createCreditPurchaseQuote', 'createPurchaseQuote'], { productId: id, currency: 'USD' });
+    quote = await callFunctionJsonFallback(['createCreditPurchaseQuote', 'createPurchaseQuote'], { productId: id, currency: 'USD' });
+  } else {
+    quote = await callFunctionJson('createPurchaseQuote', { productId: id, currency: 'USD' });
   }
-  return callFunctionJson('createPurchaseQuote', { productId: id, currency: 'USD' });
+  assertUsdCheckoutQuote(quote);
+  return quote;
+}
+function assertUsdCheckoutQuote(quote){
+  const pt = pointCopy();
+  if(!quote || !(quote.ok || quote.quoteId)){
+    throw Object.assign(new Error(quote?.message || pt.fxError || 'quote failed'), { code: quote?.code || 'QUOTE_FAILED' });
+  }
+  if(String(quote.currency || '').toUpperCase() !== 'USD'){
+    throw Object.assign(
+      new Error(pt.currencyInvalid || 'The PayPal payment currency is invalid.'),
+      { code: 'QUOTE_CURRENCY' }
+    );
+  }
+  const usd = Number(quote.payAmountUsd != null ? quote.payAmountUsd : NaN);
+  if(!Number.isFinite(usd) || !(usd > 0)){
+    throw Object.assign(
+      new Error(pt.currencyInvalid || 'The PayPal payment currency is invalid.'),
+      { code: 'QUOTE_CURRENCY' }
+    );
+  }
+  // Detect KRW amount leaked as USD (7900 KRW shown as $7900.00).
+  const krw = Number(quote.effectivePriceKrw || quote.listPriceKrw || 0);
+  if(Number.isFinite(krw) && krw >= 100 && Math.abs(usd - krw) < 0.011){
+    throw Object.assign(
+      new Error(pt.currencyInvalid || 'The PayPal payment currency is invalid.'),
+      { code: 'QUOTE_CURRENCY' }
+    );
+  }
+  return quote;
 }
 async function preparePaypalQuoteForModal(){
   pendingPaypalQuoteId = '';
@@ -2220,27 +2278,31 @@ async function preparePaypalQuoteForModal(){
   if(statusEl) statusEl.textContent = lang==='ja' ? '金額を確定しています…' : lang==='en' ? 'Confirming amount…' : '결제 금액을 확인하고 있습니다…';
   try{
     const quote = await createUsdCheckoutQuote(pid);
-    if(!quote?.ok && !quote?.quoteId) throw new Error(quote?.message || 'quote failed');
     pendingPaypalQuoteId = String(quote.quoteId || '');
-    const usd = Number(quote.payAmountUsd != null ? quote.payAmountUsd : quote.finalPrice);
-    if(Number.isFinite(usd) && usd > 0){
-      const text = formatUsd(usd);
-      if(amountEl) amountEl.textContent = text;
-      const payDd = document.querySelector('.purchase-modal-rows dd');
-      document.querySelectorAll('.purchase-modal-rows div').forEach((row)=>{
-        const dt = row.querySelector('dt');
-        const dd = row.querySelector('dd');
-        if(dt && dd && /USD|支払額|Amount|결제금액/.test(dt.textContent || '')) dd.textContent = text;
-      });
-    }
+    const usd = Number(quote.payAmountUsd);
+    const text = formatUsd(usd);
+    if(amountEl) amountEl.textContent = text;
+    document.querySelectorAll('.purchase-modal-rows div').forEach((row)=>{
+      const dt = row.querySelector('dt');
+      const dd = row.querySelector('dd');
+      if(dt && dd && /USD|支払額|Amount|결제금액/.test(dt.textContent || '')) dd.textContent = text;
+    });
     if(statusEl) statusEl.textContent = '';
   }catch(err){
     console.warn('paypal quote', err);
     pendingPaypalQuoteId = '';
-    const msg = err?.code === 'FX_UNAVAILABLE' || /환율|exchange|FX/i.test(String(err?.message||''))
-      ? (pt.fxError || err.message)
-      : (err?.message || pt.fxError);
-    if(statusEl) statusEl.textContent = msg;
+    const mapped = err?.code === 'QUOTE_CURRENCY'
+      ? (pt.currencyInvalid || err.message)
+      : (err?.code === 'FX_UNAVAILABLE' || /환율|exchange|FX/i.test(String(err?.message||''))
+        ? (pt.fxError || err.message)
+        : (err?.message || pt.fxError));
+    if(amountEl) amountEl.textContent = '—';
+    document.querySelectorAll('.purchase-modal-rows div').forEach((row)=>{
+      const dt = row.querySelector('dt');
+      const dd = row.querySelector('dd');
+      if(dt && dd && /USD|支払額|Amount|결제금액/.test(dt.textContent || '')) dd.textContent = '—';
+    });
+    if(statusEl) statusEl.textContent = mapped;
   }
 }
 function fillPurchaseSuccessModal(html){
@@ -3266,6 +3328,8 @@ function creditPurchaseHref(){
 }
 
 function lifetimePurchaseHref(){
+  // Already on a locale purchase document: keep same folder (never hop ko↔en↔ja).
+  if(isPurchasePage) return './purchase.html';
   if(pathLang){
     if(lang==='en') return '../en/purchase.html';
     if(lang==='ja') return '../ja/purchase.html';
@@ -4033,7 +4097,7 @@ async function loadLicense(uid){
 
 async function initAuth(){
   const clearAuthPending=()=>document.documentElement.classList.remove('auth-pending');
-  if(!configuredFirebase()){ console.error('Firebase config missing or invalid',CONFIG.firebase); clearAuthPending(); return; }
+  if(!configuredFirebase()){ console.error('Firebase config missing or invalid',CONFIG.firebase); authStateResolved = true; clearAuthPending(); return; }
   try{
     const [{initializeApp},{getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged},fs,st]=await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
@@ -4096,10 +4160,16 @@ async function initAuth(){
     bindTopbarLoginButton();
     ensureTopbarProfile();
     $('logoutBtn') && ($('logoutBtn').onclick=()=>{ doLogout(); });
-    onAuthStateChanged(auth,u=>{clearAuthPending();u?setAuthUiSignedIn(u):setAuthUiSignedOut();});
+    onAuthStateChanged(auth,u=>{
+      authStateResolved = true;
+      clearAuthPending();
+      if(u) setAuthUiSignedIn(u);
+      else setAuthUiSignedOut();
+    });
     routeLoadPublic();
   }catch(e){
     console.error('initAuth failed', e);
+    authStateResolved = true;
     clearAuthPending();
   }
 }
@@ -4173,14 +4243,18 @@ async function refreshPricingUi(){
     }
     updatePurchaseI18n();
     applyPurchaseSellGate();
-    // Re-render purchase cards from Firestore-backed catalog (not seed fallback).
-    if(isPurchasePage) applyPurchaseModeUi();
+    // Re-render purchase cards from Firestore-backed catalog (not seed/API fallback).
+    if(isPurchasePage){
+      markPurchaseStorefrontReady();
+      applyPurchaseModeUi();
+    }
     maybeShowSalePromo();
   }catch(e){
     console.warn('CATALOG_FALLBACK_USED', { reason: 'ensurePricing_failed', error: String(e?.message || e) });
     console.warn('refreshPricingUi', e);
     if(isPurchasePage && !isPassCatalogReady()){
       useSeedPassFallback('ensurePricing_failed');
+      markPurchaseStorefrontReady();
       applyPurchaseModeUi();
     }
   }
@@ -13401,6 +13475,7 @@ function initSidebarLayout(){
   if(!topbar||!main) return;
   const footer=document.querySelector('footer');
   const base=window.MIDIAI_BASE_PATH||'./';
+  const purchaseHref=lifetimePurchaseHref();
   const brand=topbar.querySelector('.brand');
   const shell=document.createElement('div');
   shell.className='app-shell';
@@ -13419,7 +13494,7 @@ function initSidebarLayout(){
   nav.id='mainNav';
   nav.className='sidebar-nav';
   nav.setAttribute('aria-label','사이트 메뉴');
-  nav.innerHTML=`<div class="sidebar-primary"><a href="${base}index.html" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}guide/index.html" data-nav="guides">${navIcon('guide')}<span>가이드</span><span class="nav-soon-badge">준비중</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${base}purchase.html" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" hidden aria-hidden="true" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
+  nav.innerHTML=`<div class="sidebar-primary"><a href="${base}index.html" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}guide/index.html" data-nav="guides">${navIcon('guide')}<span>가이드</span><span class="nav-soon-badge">준비중</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${purchaseHref}" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" hidden aria-hidden="true" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
   sidebar.appendChild(nav);
   const backdrop=document.createElement('div');
   backdrop.className='sidebar-backdrop';
@@ -13593,7 +13668,9 @@ function maybeShowSalePromo(){
 showOAuthBrowserNotice();
 bindBoardLightbox();
 document.documentElement.classList.add('auth-pending');
-setTimeout(()=>document.documentElement.classList.remove('auth-pending'),8000);
+setTimeout(()=>{
+  document.documentElement.classList.remove('auth-pending');
+},8000);
 initSidebarLayout();
 if(!document.documentElement.classList.contains('sidebar-ready')){
   // initSidebarLayout already scheduled reveal when shell was built; this covers early-exit paths.

@@ -2,6 +2,9 @@
  * Display catalog for one-time credit packs.
  * Charge amounts are verified by Cloud Functions; this file is UI-only.
  * Official list prices are KRW. EN/JA display uses the shared FX converter.
+ *
+ * Purchase UI must not paint pass cards before credits resolve (avoids 3→4 card flash).
+ * cache starts empty (`pending`) until API / Firestore hydrates.
  */
 
 export const ACTIVE_CREDIT_IDS = ['CREDIT_5', 'CREDIT_30', 'CREDIT_100'];
@@ -66,7 +69,9 @@ export const FALLBACK_CREDIT_PRODUCTS = [
 
 export const FALLBACK_POINT_PRODUCTS = FALLBACK_CREDIT_PRODUCTS;
 
-let cache = FALLBACK_CREDIT_PRODUCTS.map((p) => ({ ...p }));
+/** Empty until public/API catalog loads — never imply "no credits" before fetch. */
+let cache = [];
+let cacheSource = 'pending';
 
 export function normalizeCreditProductId(id) {
   const key = String(id || '').trim().toUpperCase();
@@ -89,6 +94,15 @@ function isOnSalePack(product) {
 
 export function packCredits(product) {
   return Number(product?.credits || product?.points || 0);
+}
+
+export function getCreditCatalogSource() {
+  return cacheSource;
+}
+
+/** True after API/Firestore/session hydrate (may still be empty if nothing on sale). */
+export function isCreditCatalogReady() {
+  return cacheSource === 'api' || cacheSource === 'firestore' || cacheSource === 'session' || cacheSource === 'fallback';
 }
 
 export function getCreditProducts() {
@@ -145,6 +159,23 @@ export function pointTagline(product, lang) {
   return creditTagline(product, lang);
 }
 
+export function applyCreditCatalogSession(products = []) {
+  if (!Array.isArray(products) || !products.length) return getCreditProducts();
+  const mapped = products
+    .map((p) => ({ ...p, productId: normalizeCreditProductId(p.productId) }))
+    .filter((p) => isOnSalePack(p));
+  if (mapped.length) {
+    cache = mapped.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    cacheSource = 'session';
+  }
+  return getCreditProducts();
+}
+
+function markFallbackReady() {
+  cache = FALLBACK_CREDIT_PRODUCTS.map((p) => ({ ...p }));
+  cacheSource = 'fallback';
+}
+
 async function fetchCatalog(base, name) {
   const res = await fetch(`${base}/${name}`, {
     method: 'POST',
@@ -155,9 +186,13 @@ async function fetchCatalog(base, name) {
   return res.json();
 }
 
-export async function loadCreditProducts(functionsBaseUrl) {
+export async function loadCreditProducts(functionsBaseUrl, opts = {}) {
+  const sideEffectsOnly = opts.sideEffectsOnly === true;
   const base = String(functionsBaseUrl || '').replace(/\/$/, '');
-  if (!base || base.includes('PASTE_')) return getCreditProducts();
+  if (!base || base.includes('PASTE_')) {
+    if (!sideEffectsOnly && !isCreditCatalogReady()) markFallbackReady();
+    return getCreditProducts();
+  }
   try {
     let data = null;
     try {
@@ -165,13 +200,19 @@ export async function loadCreditProducts(functionsBaseUrl) {
     } catch (_) {
       data = await fetchCatalog(base, 'getPointProducts');
     }
-    if (data?.ok && Array.isArray(data.products) && data.products.length) {
+    if (!sideEffectsOnly && data?.ok && Array.isArray(data.products) && data.products.length) {
       const mapped = data.products
-        .map((p) => ({ ...p, productId: normalizeCreditProductId(p.productId) }))
+        .map((p) => ({
+          ...p,
+          productId: normalizeCreditProductId(p.productId),
+          // Legacy API fallback omitted status; missing must NOT mean "on sale".
+          status: p.status != null && String(p.status).trim() !== '' ? p.status : 'paused'
+        }))
         .filter((p) => isOnSalePack(p));
-      if (mapped.length) {
-        cache = mapped.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-      }
+      cache = mapped.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      cacheSource = 'api';
+    } else if (!sideEffectsOnly && !isCreditCatalogReady()) {
+      markFallbackReady();
     }
     if (data?.lifetime) {
       try { window.__midiaiLifetimeCatalog = data.lifetime; } catch (_) { /* ignore */ }
@@ -189,19 +230,22 @@ export async function loadCreditProducts(functionsBaseUrl) {
       try { window.__midiaiPromotions = data.promotions; } catch (_) { /* ignore */ }
     }
   } catch (_) {
-    cache = FALLBACK_CREDIT_PRODUCTS.map((p) => ({ ...p }));
+    if (!sideEffectsOnly && !isCreditCatalogReady()) markFallbackReady();
   }
   return getCreditProducts();
 }
 
 export function applyPublicCreditCatalog(products) {
-  if (!Array.isArray(products) || !products.length) return getCreditProducts();
+  if (!Array.isArray(products) || !products.length) {
+    // Empty Firestore list is not authoritative — stay pending so API can still hydrate CREDIT packs.
+    return getCreditProducts();
+  }
   const mapped = products
     .map((p) => ({ ...p, productId: normalizeCreditProductId(p.productId) }))
     .filter((p) => isOnSalePack(p));
-  if (mapped.length) {
-    cache = mapped.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-  }
+  // Firestore answered with products — ready even when none are currently on sale.
+  cache = mapped.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  cacheSource = 'firestore';
   return getCreditProducts();
 }
 
