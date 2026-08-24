@@ -9,10 +9,13 @@ const fxRate = require('./fxRate');
 const passEntitlement = require('./passEntitlement');
 const portoneRefundSync = require('./portoneRefundSync');
 const userNotify = require('./userNotify');
+const paypalCurrency = require('./paypalCurrency');
 
 /** Discord webhooks — set via Secret Manager / `firebase functions:secrets:set` */
 const discordInquiryWebhook = defineSecret('DISCORD_INQUIRY_WEBHOOK');
 const discordPaymentWebhook = defineSecret('DISCORD_PAYMENT_WEBHOOK');
+const gmailUser = defineSecret('GMAIL_USER');
+const gmailAppPassword = defineSecret('GMAIL_APP_PASSWORD');
 
 function cfg(name, fallback = '') {
   return process.env[name] || fallback;
@@ -237,7 +240,7 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     throw err;
   }
   const promotions = await loadPromotions();
-  const currencyWanted = regionCode === 'KR' ? 'KRW' : 'USD';
+  const currencyWanted = paypalCurrency.regionChargeCurrency(regionCode);
   let fxMeta = null;
   let charge;
   if (currencyWanted === 'USD') {
@@ -300,7 +303,7 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     err.code = 'PRICE_INVALID';
     throw err;
   }
-  const currency = String(region.currency || (regionCode === 'KR' ? 'KRW' : 'USD')).toUpperCase();
+  const currency = currencyWanted;
   const orderName = region.orderName || hydrated.orderNameKo || data.name || data.orderNameKo || 'MidiAI Studio Lifetime License';
   const productId = region.portoneProductId || cfg('PORTONE_PRODUCT_ID', productDocId);
   const salePrice = charge.effectivePrice;
@@ -319,7 +322,7 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     pricingVersion: Number(charge.productVersion) || 1,
     status: hydrated.status || 'active',
     listPrice,
-    payment: region.payment || (regionCode === 'KR' ? 'portone' : 'paypal'),
+    payment: paypalCurrency.isPortOneRegion(regionCode) ? 'portone' : 'paypal',
     orderName,
     currency,
     discountPercent: charge.discountPercent || 0,
@@ -332,10 +335,11 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
     fxFetchedAt: fxMeta ? fxMeta.fetchedAt : '',
     fxCache: fxMeta ? fxMeta.cache : ''
   };
-  if (regionCode === 'KR' || region.payment === 'portone') {
+  if (paypalCurrency.isPortOneRegion(regionCode)) {
     return {
       ...base,
       amount: Math.round(salePrice),
+      payAmountUsd: null,
       productId,
       allowedOrderNames: Array.from(new Set([
         orderName,
@@ -354,9 +358,13 @@ async function loadRegionCharge(regionCode, productDocId = DEFAULT_PRODUCT_DOC) 
       ].filter(Boolean)))
     };
   }
+  const payAmountUsd = Number(charge.payAmountUsd != null ? charge.payAmountUsd : salePrice);
   return {
     ...base,
-    amount: formatChargeAmount(salePrice, currency),
+    currency: 'USD',
+    payment: 'paypal',
+    amount: formatChargeAmount(payAmountUsd, 'USD'),
+    payAmountUsd,
     productId
   };
 }
@@ -682,7 +690,20 @@ exports.createPurchaseQuote = functions.https.onRequest(async (req, res) => {
     const now = new Date();
     const expires = catalogEngine.quoteExpiry(now);
     const quoteRef = db.collection('purchaseQuotes').doc();
-    const isUsd = String(product.currency || currencyWanted).toUpperCase() === 'USD';
+    const isUsd = currencyWanted === 'USD';
+    if (isUsd) {
+      const usd = paypalCurrency.usdQuoteFromCharge(product);
+      if (!usd.ok) {
+        return res.status(400).json({
+          ok: false,
+          code: usd.code || 'QUOTE_CURRENCY',
+          message: paypalCurrency.paypalCurrencyErrorMessage(paypalCurrency.requestUiLang(req))
+        });
+      }
+    }
+    const payAmountUsd = isUsd
+      ? Number(product.payAmountUsd != null ? product.payAmountUsd : product.amount)
+      : null;
     const quote = {
       quoteId: quoteRef.id,
       uid: user.uid,
@@ -692,14 +713,14 @@ exports.createPurchaseQuote = functions.https.onRequest(async (req, res) => {
       basePrice: product.listPrice,
       discountType: product.discountPercent ? 'percent' : '',
       discountValue: product.discountPercent || 0,
-      finalPrice: isUsd ? Number(product.amount) : Number(product.amount),
+      finalPrice: isUsd ? payAmountUsd : Number(product.amount),
       currency: isUsd ? 'USD' : 'KRW',
       listPriceKrw: Number(product.listPriceKrw || (isUsd ? 0 : product.listPrice) || 0),
       effectivePriceKrw: Number(product.effectivePriceKrw || (isUsd ? 0 : product.amount) || 0),
       fxRate: isUsd ? Number(product.fxRate || 0) : null,
       fxSource: isUsd ? (product.fxSource || '') : '',
       fxFetchedAt: isUsd ? (product.fxFetchedAt || '') : '',
-      payAmountUsd: isUsd ? Number(product.amount) : null,
+      payAmountUsd: isUsd ? payAmountUsd : null,
       creditAmount: 0,
       entitlement: product.entitlement || (catalogEngine.isPassProductId(pid) ? 'full_pass' : 'lifetime'),
       durationDays,
@@ -740,6 +761,79 @@ exports.getPointBalance = functions.https.onRequest(creditHandlers.getCreditBala
 exports.listCreditLedger = functions.https.onRequest(creditHandlers.listCreditLedger);
 exports.listPointLedger = functions.https.onRequest(creditHandlers.listCreditLedger);
 
+const functionsV1Https = require('firebase-functions/v1');
+const adminCredits = require('./adminCredits');
+const adminCreditHandlers = adminCredits.createHandlers({
+  db,
+  admin,
+  cors,
+  requireAdmin,
+  userNotify
+});
+exports.adminGrantCredits = functions.https.onRequest(adminCreditHandlers.adminGrantCredits);
+exports.adminGrantPoints = functions.https.onRequest(adminCreditHandlers.adminGrantPoints);
+exports.adminDeductCredits = functions.https.onRequest(adminCreditHandlers.adminDeductCredits);
+exports.adminDeductPoints = functions.https.onRequest(adminCreditHandlers.adminDeductPoints);
+exports.adminCreditOverview = functions.https.onRequest(adminCreditHandlers.adminCreditOverview);
+exports.adminPointOverview = functions.https.onRequest(adminCreditHandlers.adminPointOverview);
+exports.grantBulkCredits = functionsV1Https
+  .runWith({ timeoutSeconds: 540, memory: '256MB' })
+  .https.onRequest(adminCreditHandlers.grantBulkCredits);
+
+function createGmailSender() {
+  const user = String(process.env.GMAIL_USER || '').trim();
+  const passRaw = String(process.env.GMAIL_APP_PASSWORD || '');
+  const pass = passRaw.replace(/\s+/g, '');
+  console.info('gmail.sender.config', {
+    userConfigured: Boolean(user),
+    passConfigured: Boolean(pass),
+    passLength: pass.length,
+    passHadWhitespace: /\s/.test(passRaw)
+  });
+  if (!user || !pass) return null;
+  const nodemailer = require('nodemailer');
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+    auth: { user, pass }
+  });
+  async function sendMail({ to, subject, text, html }) {
+    await transporter.sendMail({
+      from: `"MidiAI Studio" <${user}>`,
+      to,
+      subject,
+      text,
+      html
+    });
+  }
+  sendMail.verify = async function verifyGmail() {
+    await transporter.verify();
+  };
+  return sendMail;
+}
+
+const adminBulkEmail = require('./adminBulkEmail');
+exports.sendAdminBulkEmail = functionsV1Https
+  .runWith({
+    secrets: [gmailUser, gmailAppPassword],
+    timeoutSeconds: 540,
+    memory: '256MB'
+  })
+  .https.onRequest((req, res) => {
+    const handlers = adminBulkEmail.createHandlers({
+      db,
+      admin,
+      cors,
+      requireAdmin,
+      sendMail: createGmailSender()
+    });
+    return handlers.sendAdminBulkEmail(req, res);
+  });
+
 /**
  * Release purchase lock after cancel/close (optional client call).
  * Body: { paymentId? }
@@ -763,16 +857,6 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
   try {
     const user = await requireUser(req);
-    const existingLicense = await readUserLicense(user.uid);
-    if (isActiveLifetimeLicense(existingLicense)) {
-      return res.status(403).json({
-        ok: false,
-        eligible: false,
-        hasLifetime: true,
-        code: 'LIFETIME_ALREADY_OWNED',
-        message: '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.'
-      });
-    }
     const body = req.body || {};
     const quoteId = String(body.quoteId || '').trim();
     const requestedPid = catalogEngine.normalizeProductId(body.productId || '');
@@ -793,15 +877,20 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
     }
     const quote = { quoteId: quoteSnap.id, ...quoteSnap.data() };
     const quotePid = catalogEngine.normalizeProductId(quote.productId || requestedPid || 'LIFETIME');
-    const quoteCheck = catalogEngine.quoteIsValid(quote, { uid: user.uid, productId: quotePid });
-    if (catalogEngine.isCreditProductId(quotePid) || Number(quote.creditAmount) > 0
-        || quote.type === 'credit_pack' || quote.type === 'credit_pack') {
-      return res.status(400).json({
+    const isCreditQuote = catalogEngine.isCreditProductId(quotePid)
+      || Number(quote.creditAmount) > 0
+      || quote.type === 'credit_pack';
+    const existingLicense = await readUserLicense(user.uid);
+    if (!isCreditQuote && isActiveLifetimeLicense(existingLicense)) {
+      return res.status(403).json({
         ok: false,
-        code: 'CREDIT_PAYPAL_DISABLED',
-        message: 'Credit packs are not available on PayPal yet.'
+        eligible: false,
+        hasLifetime: true,
+        code: 'LIFETIME_ALREADY_OWNED',
+        message: '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.'
       });
     }
+    const quoteCheck = catalogEngine.quoteIsValid(quote, { uid: user.uid, productId: quotePid });
     if (!quoteCheck.ok) {
       return res.status(400).json({
         ok: false,
@@ -813,7 +902,7 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
       return res.status(400).json({
         ok: false,
         code: 'QUOTE_CURRENCY',
-        message: 'PayPal 결제 통화가 올바르지 않습니다.'
+        message: paypalCurrency.paypalCurrencyErrorMessage(paypalCurrency.requestUiLang(req))
       });
     }
     const payUsd = Number(quote.payAmountUsd != null ? quote.payAmountUsd : quote.finalPrice);
@@ -828,7 +917,9 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
       purchase_units: [{
         reference_id: orderRef.id,
         custom_id: user.uid,
-        description: `MidiAI Studio ${quotePid} license`,
+        description: isCreditQuote
+          ? `MidiAI Studio ${quotePid} credits`
+          : `MidiAI Studio ${quotePid} license`,
         amount: {
           currency_code: 'USD',
           value: amountValue
@@ -859,10 +950,12 @@ exports.createPayPalOrder = functions.https.onRequest(async (req, res) => {
       quoteId,
       amount: Number(amountValue),
       currency: 'USD',
-      plan: catalogEngine.isPassProductId(quotePid) ? 'period' : 'lifetime',
+      plan: isCreditQuote ? 'credits' : (catalogEngine.isPassProductId(quotePid) ? 'period' : 'lifetime'),
       productId: quotePid,
       productCanonicalId: quotePid,
       productName: quotePid,
+      productType: isCreditQuote ? 'credit_pack' : 'license',
+      creditAmount: isCreditQuote ? Math.round(Number(quote.creditAmount || 0)) : 0,
       region: 'Global',
       pricingVersion: Number(quote.pricingVersion || quote.productVersion || 0),
       listPriceKrw: Number(quote.listPriceKrw || 0),
@@ -944,7 +1037,11 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
         return res.status(403).json({ ok: false, code: 'QUOTE_UID_MISMATCH', message: '결제 견적 사용자가 일치하지 않습니다.' });
       }
       if (String(quote.currency || '').toUpperCase() !== 'USD') {
-        return res.status(400).json({ ok: false, code: 'QUOTE_CURRENCY', message: 'PayPal 결제 통화가 올바르지 않습니다.' });
+        return res.status(400).json({
+          ok: false,
+          code: 'QUOTE_CURRENCY',
+          message: paypalCurrency.paypalCurrencyErrorMessage(paypalCurrency.requestUiLang(req))
+        });
       }
       const quoteUsd = Number(quote.payAmountUsd != null ? quote.payAmountUsd : quote.finalPrice);
       if (!fxRate.usdAmountsEqual(quoteUsd, expectedUsd)) {
@@ -960,6 +1057,77 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
     }
 
     const pid = catalogEngine.normalizeProductId(existing.productCanonicalId || existing.productId || 'LIFETIME');
+    const isCreditOrder = catalogEngine.isCreditProductId(pid)
+      || Number(existing.creditAmount) > 0
+      || existing.plan === 'credits'
+      || existing.productType === 'credit_pack';
+
+    if (isCreditOrder) {
+      const creditAmount = Math.round(Number(existing.creditAmount || 0));
+      if (!(creditAmount > 0)) {
+        return res.status(400).json({ ok: false, code: 'CREDIT_AMOUNT_INVALID', message: 'Credit 지급량이 올바르지 않습니다.' });
+      }
+      const granted = await creditHandlers.grantPayPalCredits({
+        uid: user.uid,
+        paymentId: orderId,
+        productId: pid,
+        creditAmount,
+        amount: Number(expectedUsd),
+        currency: 'USD',
+        quoteId,
+        email: user.email || existing.email || '',
+        orderName: existing.productName || pid
+      });
+      try {
+        await userNotify.notifyCreditGranted(db, admin.firestore.FieldValue, {
+          uid: user.uid,
+          paymentId: orderId,
+          productId: pid,
+          creditAmount,
+          amount: Number(expectedUsd),
+          currency: 'USD'
+        });
+      } catch (notifErr) {
+        console.warn('capturePayPalOrder credit notify', notifErr && notifErr.message);
+      }
+      await orderDoc.ref.set({
+        status: 'completed',
+        licenseIssued: false,
+        creditsGranted: true,
+        creditAmount,
+        balanceAfter: granted.balance,
+        paypalCaptureId: capture.id || '',
+        payerEmail: data.payer?.email_address || '',
+        chargedUsd: Number(paidValue),
+        chargedCurrency: String(paidCurrency || 'USD').toUpperCase(),
+        completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        rawStatus: data.status
+      }, { merge: true });
+      if (quoteId) {
+        await db.collection('purchaseQuotes').doc(quoteId).set({
+          status: 'used',
+          usedAt: admin.firestore.FieldValue.serverTimestamp(),
+          paypalOrderId: orderId,
+          paypalCaptureId: capture.id || ''
+        }, { merge: true });
+      }
+      return res.json({
+        ok: true,
+        orderId,
+        captureId: capture.id || '',
+        licenseGranted: false,
+        credits: creditAmount,
+        creditedPoints: creditAmount,
+        points: creditAmount,
+        creditAmount,
+        balance: granted.balance,
+        amount: Number(expectedUsd),
+        currency: 'USD',
+        email: user.email || existing.email || ''
+      });
+    }
+
     const isPass = catalogEngine.isPassProductId(pid);
     const licenseRef = db.collection('licenses').doc(user.uid);
     const licenseSnap = await licenseRef.get();
@@ -1030,6 +1198,9 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
     return res.status(err.status || 500).json({ ok: false, message: err.message || 'capturePayPalOrder failed' });
   }
 });
+
+exports.capturePayPalCreditOrder = exports.capturePayPalOrder;
+exports.capturePayPalPointOrder = exports.capturePayPalOrder;
 
 /** Public cached FX for catalog/admin preview. Never accepts a client rate. */
 exports.getPublicFxRate = functions.https.onRequest(async (req, res) => {

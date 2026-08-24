@@ -154,6 +154,11 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Bulk mail/credit idempotency — Cloud Functions (Admin SDK) only.
+    match /adminBulkOperations/{opId} {
+      allow read, write: if false;
+    }
+
     // Legacy Point collections — keep readable during migration; never client-writable.
     match /pointWallets/{userId} {
       allow read: if isOwner(userId) || isAdmin();

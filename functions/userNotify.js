@@ -98,8 +98,37 @@ async function notifyCreditGranted(db, FieldValue, {
     paymentId,
     category: 'payment',
     plan: 'credits',
+    amount: n,
+    creditAmount: n,
     postTitle: '크레딧 지급 완료',
     preview: [`${n} Credits가 지급되었습니다.`, amt ? `(${amt})` : ''].filter(Boolean).join(' ').slice(0, 160),
+    targetUrl: '/account.html#credits'
+  });
+}
+
+async function notifyAdminCreditGrant(db, FieldValue, {
+  uid,
+  amount,
+  operationId,
+  adminUid
+}) {
+  if (!uid) return { created: false };
+  const n = Math.round(Number(amount || 0));
+  if (!(n > 0)) return { created: false };
+  const notifId = String(
+    operationId
+      ? `credit_admin_grant_${operationId}_${uid}`
+      : `credit_admin_grant_${Date.now()}_${uid}`
+  ).slice(0, 140);
+  return writeUserNotification(db, FieldValue, uid, notifId, {
+    type: 'credit_admin_grant',
+    sourceType: 'admin_grant',
+    category: 'credit',
+    amount: n,
+    creditAmount: n,
+    postTitle: '크레딧 지급',
+    preview: `관리자로부터 ${n} Credits가 지급되었습니다.`.slice(0, 160),
+    actorUid: adminUid || 'admin',
     targetUrl: '/account.html#credits'
   });
 }
@@ -192,6 +221,7 @@ module.exports = {
   writeUserNotification,
   notifyPaymentComplete,
   notifyCreditGranted,
+  notifyAdminCreditGrant,
   notifyPaymentRefund,
   maybeNotifyFromRefundSync,
   productLabel

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 48" role="img" aria-hidden="true">
+  <rect width="72" height="48" fill="#fff"/>
+  <!-- Taegeuk -->
+  <g transform="translate(36,24) rotate(-56.31)">
+    <circle r="12" fill="#cd2e3a"/>
+    <path fill="#0047a0" d="M0-12A12 12 0 0 0 0 12 6 6 0 0 0 0 0 6 6 0 0 1 0-12z"/>
+    <circle cy="-6" r="6" fill="#cd2e3a"/>
+    <circle cy="6" r="6" fill="#0047a0"/>
+  </g>
+  <!-- Trigrams -->
+  <g stroke="#000" stroke-width="2" fill="none">
+    <!-- Geon (☰) top-left -->
+    <g transform="translate(36,24) rotate(-56.31) translate(0,-25)">
+      <path d="M-6 0h12M-6 3h12M-6 6h12"/>
+    </g>
+    <!-- Gon (☷) bottom-right -->
+    <g transform="translate(36,24) rotate(-56.31) translate(0,19)">
+      <path d="M-6 0h12M-6 3h5M1 3h5M-6 6h12"/>
+    </g>
+    <!-- Ri (☲) top-right -->
+    <g transform="translate(36,24) rotate(56.31) translate(0,-25)">
+      <path d="M-6 0h12M-6 3h5M1 3h5M-6 6h12"/>
+    </g>
+    <!-- Gam (☵) bottom-left -->
+    <g transform="translate(36,24) rotate(56.31) translate(0,19)">
+      <path d="M-6 0h5M1 0h5M-6 3h12M-6 6h5M1 6h5"/>
+    </g>
+  </g>
+</svg>

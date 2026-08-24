@@ -38,6 +38,7 @@ import {
   formatUsd,
   krwToUsd
 } from './catalog-engine.js?v=credit-live-sale-1';
+import { openBulkMessageComposer } from './admin-bulk-composer.js?v=bulk-composer-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -156,6 +157,7 @@ let adminCmsDrawerState = { mode:'view', kind:'notices', id:'' };
 let adminCmsFormApi = null;
 let selectedAdminUid = null;
 let adminCrmSelected = new Set();
+let adminCreditWalletByUid = {};
 let adminCrmPostSelected = new Set();
 let adminCrmFilteredRows = [];
 let adminCrmPage = 1;
@@ -175,6 +177,7 @@ let adminCrmRecentFeed = [];
 /** Extra list filter from stats cards: '' | 'active' | 'today' | 'idle7' | 'idle30' */
 let adminCrmQuickFilter = '';
 let adminCrmStatKey = 'all';
+let adminBulkBusy = false;
 let adminLicenseWorkTab = 'all';
 let adminLicenseExpiringDays = 30;
 let adminOrderWorkTab = 'all';
@@ -334,6 +337,7 @@ function applyStaticI18n(){
       const parent = node.parentElement;
       if (!parent) return NodeFilter.FILTER_REJECT;
       if (['SCRIPT','STYLE','TEXTAREA','INPUT','OPTION'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+      if (parent.closest?.('[data-i18n-skip]')) return NodeFilter.FILTER_REJECT;
       if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     }
@@ -1221,6 +1225,15 @@ function selectedPointPack(){
 function pointCheckoutCurrency(){
   return isKoreanCheckout() ? 'KRW' : 'USD';
 }
+function creditPackKrw(pack){
+  return Number(pack?.effectivePrice != null ? pack.effectivePrice : pack?.krw || 0);
+}
+function creditCheckoutPriceText(pack){
+  const krw = creditPackKrw(pack);
+  if(isKoreanCheckout()) return formatKrw(krw);
+  const usd = krwToUsd(krw, getCatalogFxRate());
+  return usd != null ? formatUsd(usd) : (pointCopy().fxError || '—');
+}
 function pointCopy(){
   if(lang === 'en') return {
     buy:'Buy',
@@ -2072,9 +2085,6 @@ function openPurchaseConfirmModal(){
   const packDiscounted = (points || pass)
     && Number((points ? creditPack : passPack)?.discountPercent || 0) > 0
     && packSale < packList;
-  const priceText = points || pass
-    ? formatKrw(packSale || (points ? creditPack?.krw : passPack?.krw) || 0)
-    : purchaseDisplayPrice();
   const lifeCtx = (points || pass) ? null : purchaseCheckout();
   const lifeDiscounted = !points && !pass && Number(lifeCtx?.discount || 0) > 0 && Number(lifeCtx.salePrice) < Number(lifeCtx.listPrice);
   const email = currentUser?.email || currentUser?.uid || '';
@@ -2104,18 +2114,28 @@ function openPurchaseConfirmModal(){
   const termValue = pass
     ? (typeof pt.termDays === 'function' ? pt.termDays(days) : `${days}일`)
     : pt.termPermanent;
-  const paypalCheckout = !purchaseUsesKakao() && !points;
-  const creditIntlBlocked = points && !isKoreanCheckout();
+  const paypalCheckout = !purchaseUsesKakao();
   const listLabel = pt.listPriceLabel || (lang==='ja' ? '定価' : lang==='en' ? 'List price' : '정가');
   const discLabel = pt.discountLabel || (lang==='ja' ? '割引' : lang==='en' ? 'Discount' : '할인');
   const payLabelKey = paypalCheckout ? (pt.payUsdLabel || pt.payAmountLabel) : pt.payAmountLabel;
   const fxNote = pt.fxNote || '';
+  const creditPriceText = points ? creditCheckoutPriceText(creditPack) : '';
+  const passPriceText = pass
+    ? (paypalCheckout
+      ? (krwToUsd(packSale || passPack?.krw || 0, getCatalogFxRate()) != null
+        ? formatUsd(krwToUsd(packSale || passPack?.krw || 0, getCatalogFxRate()))
+        : purchaseDisplayPrice())
+      : formatKrw(packSale || passPack?.krw || 0))
+    : '';
+  const priceText = points
+    ? creditPriceText
+    : (pass ? passPriceText : purchaseDisplayPrice());
   const rows = points
     ? [
-        ...(packDiscounted ? [[ listLabel, formatKrw(packList) ], [ discLabel, `${creditPack.discountPercent}%` ]] : []),
-        [pt.payAmountLabel, priceText],
-        [pt.grantLabelShort || pt.grantLabel || '지급', pt.grantValue(credits)],
-        [pt.payMethod, pt.kakaoPay],
+        ...(packDiscounted && !paypalCheckout ? [[ listLabel, formatKrw(packList) ], [ discLabel, `${creditPack.discountPercent}%` ]] : []),
+        [payLabelKey, priceText],
+        [pt.grantLabelShort || pt.grantLabel || '지급', `${credits} Credits`],
+        [pt.payMethod, paypalCheckout ? 'PayPal' : pt.kakaoPay],
         [pt.payAccount, email]
       ]
     : pass
@@ -2148,13 +2168,6 @@ function openPurchaseConfirmModal(){
         <span class="kakao-mark">pay</span><strong>${esc(payLabel)}</strong>
       </button>`
     : '';
-  const creditIntlNote = creditIntlBlocked
-    ? `<p class="purchase-modal-lead">${esc(lang==='en'
-      ? 'Credit packs are sold with KakaoPay on the Korean checkout. PayPal is not available for Credit packs yet.'
-      : (lang==='ja'
-        ? 'Creditパックは韓国ページのKakaoPayでのみ購入できます。PayPalは未対応です。'
-        : 'Credit 상품은 한국어 구매 페이지의 카카오페이로만 결제할 수 있습니다. PayPal은 아직 지원되지 않습니다.'))}</p>`
-    : '';
   const paypalPane = paypalCheckout
     ? `<div class="purchase-modal-paypal-pane">
         <p class="purchase-modal-paypal-amount">${esc(priceText)}</p>
@@ -2171,7 +2184,6 @@ function openPurchaseConfirmModal(){
       ${rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}
     </dl>
     <p class="purchase-modal-lead">${esc(lead)}</p>
-    ${creditIntlNote}
     <p id="purchaseModalStatus" class="muted small"></p>
     ${paypalPane}
     <div class="purchase-modal-actions">
@@ -2188,6 +2200,13 @@ function openPurchaseConfirmModal(){
     preparePaypalQuoteForModal();
   }
 }
+async function createUsdCheckoutQuote(pid){
+  const id = String(pid || selectedPurchaseId || '');
+  if(isPointCheckout() || String(normalizeCreditProductId(id) || '').startsWith('CREDIT_')){
+    return callFunctionJsonFallback(['createCreditPurchaseQuote', 'createPurchaseQuote'], { productId: id, currency: 'USD' });
+  }
+  return callFunctionJson('createPurchaseQuote', { productId: id, currency: 'USD' });
+}
 async function preparePaypalQuoteForModal(){
   pendingPaypalQuoteId = '';
   const pt = pointCopy();
@@ -2200,7 +2219,7 @@ async function preparePaypalQuoteForModal(){
   const pid = selectedPurchaseId || 'LIFETIME';
   if(statusEl) statusEl.textContent = lang==='ja' ? '金額を確定しています…' : lang==='en' ? 'Confirming amount…' : '결제 금액을 확인하고 있습니다…';
   try{
-    const quote = await callFunctionJson('createPurchaseQuote', { productId: pid, currency: 'USD' });
+    const quote = await createUsdCheckoutQuote(pid);
     if(!quote?.ok && !quote?.quoteId) throw new Error(quote?.message || 'quote failed');
     pendingPaypalQuoteId = String(quote.quoteId || '');
     const usd = Number(quote.payAmountUsd != null ? quote.payAmountUsd : quote.finalPrice);
@@ -2246,7 +2265,8 @@ function purchaseAmountValue(){
   return Number(ctx.salePrice).toFixed(2);
 }
 function purchaseCurrency(){
-  return purchaseCheckout().currency || (isKoreanCheckout() ? 'KRW' : (CONFIG.currencyGlobal || 'USD'));
+  if(isKoreanCheckout()) return 'KRW';
+  return 'USD';
 }
 function updateBankTransferAmount(){
   const labelEl = $('bankTransferAmountLabel');
@@ -2484,10 +2504,11 @@ function purchaseLocaleText(){
     paypalAccount:(id)=>`Payment account: ${id}`,
     creating:'Creating PayPal order...',
     opening:'Opening PayPal checkout...',
-    verifying:'Verifying payment and assigning your license...',
-    complete:'Payment complete. Your Lifetime license has been assigned automatically.',
+    verifying:'Verifying payment...',
+    complete:'Payment complete.',
     cancel:'Payment canceled.',
-    error:'PayPal payment error: '
+    error:'PayPal payment error: ',
+    currencyInvalid:'The PayPal payment currency is invalid.'
   };
   if(lang === 'ja') return {
     saleUntil:'7月31日まで',
@@ -2536,10 +2557,11 @@ function purchaseLocaleText(){
     paypalAccount:(id)=>`決済アカウント: ${id}`,
     creating:'PayPal注文を作成しています...',
     opening:'PayPal決済画面を開いています...',
-    verifying:'決済を確認し、ライセンスを付与しています...',
-    complete:'決済が完了しました。Lifetimeライセンスが自動付与されました。',
+    verifying:'決済を確認しています...',
+    complete:'決済が完了しました。',
     cancel:'決済がキャンセルされました。',
-    error:'PayPal決済エラー: '
+    error:'PayPal決済エラー: ',
+    currencyInvalid:'PayPal決済通貨が正しくありません。'
   };
   return {
     saleUntil:'7월 31일까지',
@@ -2588,10 +2610,11 @@ function purchaseLocaleText(){
     paypalAccount:(id)=>`결제 계정: ${id}`,
     creating:'PayPal 주문을 생성하는 중입니다...',
     opening:'PayPal 결제창을 여는 중입니다...',
-    verifying:'결제를 검증하고 라이선스를 지급하는 중입니다...',
-    complete:'결제가 완료되었습니다. Lifetime 라이선스가 자동 지급되었습니다.',
+    verifying:'결제를 검증하는 중입니다...',
+    complete:'결제가 완료되었습니다.',
     cancel:'결제가 취소되었습니다.',
-    error:'PayPal 결제 오류: '
+    error:'PayPal 결제 오류: ',
+    currencyInvalid:'PayPal 결제 통화가 올바르지 않습니다.'
   };
 }
 function updatePurchaseI18n(){
@@ -2708,7 +2731,7 @@ function renderPurchasePaymentTags(){
 function updatePurchaseReviewPanel(){
   if($('purchaseReviewPrice')){
     $('purchaseReviewPrice').textContent = isPointCheckout()
-      ? formatCreditPrice(selectedPointPack())
+      ? creditCheckoutPriceText(selectedPointPack())
       : purchaseDisplayPrice();
   }
   renderPurchasePaymentTags();
@@ -3370,7 +3393,7 @@ function creditLedgerTitle(item){
   const type = String(item?.type || '').toLowerCase();
   const title = sanitizeCreditDisplayTitle(item?.displayTitle || '');
   if(type === 'refund') return tr('credit_ledger_refund');
-  if(type === 'admin_grant') return title || tr('credit_ledger_grant');
+  if(type === 'admin_grant' || type === 'admin_bulk_credit') return title || tr('credit_ledger_grant');
   if(type === 'admin_deduct') return title || tr('credit_ledger_deduct');
   if(type === 'purchase') return title || tr('credit_ledger_purchase');
   return title || tr('credit_ledger_conversion');
@@ -5486,23 +5509,35 @@ function openEditModal(title, fields, opts={}){
     const overlay = document.createElement('div');
     overlay.className = 'edit-modal-backdrop';
     const form = document.createElement('form');
-    form.className = 'edit-modal' + (hasMarkdown ? ' md-edit-modal' : '');
+    form.className = 'edit-modal' + (hasMarkdown ? ' md-edit-modal' : '') + (opts.modalClass ? ` ${opts.modalClass}` : '');
     const actionHtml = hasMarkdown
       ? `<button type="button" class="secondary" data-cancel>취소</button><button type="button" class="secondary" data-preview>미리보기</button><button type="submit" class="primary">${esc(submitLabel)}</button>`
       : `<button type="button" class="secondary" data-cancel>취소</button><button type="submit" class="primary">${esc(submitLabel)}</button>`;
-    form.innerHTML = `<div class="edit-modal-head"><h3>${esc(title)}</h3><button type="button" class="edit-modal-x" aria-label="close">×</button></div><div class="edit-modal-body"></div><div class="edit-modal-actions">${actionHtml}</div>`;
+    const subtitle = opts.subtitle
+      ? `<p class="edit-modal-sub">${esc(opts.subtitle)}</p>`
+      : '';
+    form.innerHTML = `<div class="edit-modal-head"><div class="edit-modal-head-copy"><h3>${esc(title)}</h3>${subtitle}</div><button type="button" class="edit-modal-x" aria-label="close">×</button></div><div class="edit-modal-body"></div><div class="edit-modal-actions">${actionHtml}</div>`;
     const body = form.querySelector('.edit-modal-body');
     const mdHosts = {};
     const mdEditors = {};
 
     // Build DOM first (including markdown hosts) — mount editors only after visible
     for (const f of fields) {
-      const row = document.createElement(f.type === 'markdown' || f.type === 'segment' ? 'div' : 'label');
+      const row = document.createElement(f.type === 'markdown' || f.type === 'segment' || f.type === 'note' ? 'div' : 'label');
       row.className = 'edit-field' + (f.type === 'markdown' ? ' edit-field-markdown' : '') + (f.type === 'segment' ? ' edit-field-segment' : '');
       row.dataset.field = f.name;
       row.innerHTML = `<span>${esc(f.label || f.name)}</span>`;
       let input;
-      if (f.type === 'markdown') {
+      if (f.type === 'note') {
+        row.classList.add('edit-field-note');
+        const note = document.createElement('div');
+        note.className = 'edit-note muted small';
+        note.dataset.noteField = f.name;
+        note.innerHTML = f.html || '';
+        row.appendChild(note);
+        body.appendChild(row);
+        continue;
+      } else if (f.type === 'markdown') {
         const host = document.createElement('div');
         host.dataset.mdField = f.name;
         host.className = 'md-modal-editor-host';
@@ -5557,6 +5592,7 @@ function openEditModal(title, fields, opts={}){
         input.value = f.value ?? '';
       }
       input.name = f.name;
+      if (f.placeholder) input.placeholder = f.placeholder;
       if (f.required && !f.showWhen) input.required = true;
       row.appendChild(input);
       body.appendChild(row);
@@ -5564,6 +5600,9 @@ function openEditModal(title, fields, opts={}){
 
     overlay.appendChild(form);
     document.body.appendChild(overlay);
+    if (typeof opts.onReady === 'function') {
+      try { opts.onReady(form, overlay); } catch (err) { console.error(err); }
+    }
 
     const fieldControlValue = (name) => {
       const el = form.elements[name];
@@ -5628,6 +5667,7 @@ function openEditModal(title, fields, opts={}){
           data.contentMarkdown = data[f.name];
           return;
         }
+        if (f.type === 'note' || f.type === 'segment') return;
         const input = form.elements[f.name];
         if (!input) return;
         if (f.type === 'checkbox') data[f.name] = !!input.checked;
@@ -7233,6 +7273,27 @@ function adminUidHwidHtml(uid, hwid, { maskHwid=false }={}){
 function adminCrmMode(){
   return document.body.dataset.crmMode || 'members';
 }
+function adminCrmCreditBalance(u){
+  const uid = String(u?.uid || u?.id || '').trim();
+  const wallet = uid ? adminCreditWalletByUid[uid] : null;
+  const fromWallet = Number(
+    wallet && wallet.balance != null ? wallet.balance
+      : (wallet && wallet.creditBalance != null ? wallet.creditBalance : NaN)
+  );
+  if(Number.isFinite(fromWallet)) return fromWallet;
+  const fromUser = Number(u?.creditBalance ?? u?.pointBalance);
+  return Number.isFinite(fromUser) ? fromUser : 0;
+}
+function refreshAdminLicenseCreditCells(){
+  if(adminCrmMode()!=='license') return;
+  document.querySelectorAll('[data-license-row]').forEach(tr=>{
+    const uid=tr.getAttribute('data-license-row');
+    const cell=tr.querySelector('.admin-license-credit');
+    if(!uid || !cell) return;
+    const u=findAdminUserRow(uid) || { uid, creditBalance: undefined };
+    cell.textContent=String(adminCrmCreditBalance(u));
+  });
+}
 function mapAdminCrmUserRow(u){
   const view=adminLicenseView(u);
   const uid=view.uid || adminUserUid(u);
@@ -7481,9 +7542,10 @@ function syncAdminCrmWorkChrome(){
   const sortSel=$('adminUserSort');
   if(sortSel) sortSel.hidden = mode!=='members';
   const selectWrap=$('adminCrmSelectAllWrap');
-  if(selectWrap) selectWrap.hidden = mode!=='members';
+  if(selectWrap) selectWrap.hidden = mode!=='members' && mode!=='license';
   const bulk=$('adminCrmBulkbar');
-  if(bulk && mode!=='members') bulk.hidden=true;
+  if(bulk && mode!=='members' && mode!=='license') bulk.hidden=true;
+  else updateAdminCrmBulkbar();
   if(mode!=='members') closeAdminCrmFilterPopover({restore:true});
   else updateAdminCrmFilterButton();
   renderAdminWorkStatusTabs(mode);
@@ -7951,6 +8013,7 @@ function renderAdminUserTable(opts={}){
   if(!box.dataset.pageBound){
     box.dataset.pageBound='1';
     box.addEventListener('click', onAdminCrmListClick);
+    box.addEventListener('change', onAdminCrmListChange);
   }
   const pager=$('adminCrmPager');
   if(pager && !pager.dataset.bound){
@@ -7995,7 +8058,8 @@ function paintAdminCrmPagedList(){
   const mode=adminCrmMode();
   if(mode==='license'){
     box.innerHTML = `<div class="admin-table-wrap admin-console-table-wrap"><table class="admin-table admin-license-table"><thead><tr>
-      <th>사용자</th><th>이메일</th><th>라이선스</th><th>상태</th><th>시작일</th><th>만료일</th><th>최근 변경</th><th>지급/변경 주체</th><th>관리</th>
+      <th class="admin-col-check"></th>
+      <th>사용자</th><th>이메일</th><th>라이선스</th><th>상태</th><th>크레딧</th><th>시작일</th><th>만료일</th><th>최근 변경</th><th>지급/변경 주체</th><th>관리</th>
     </tr></thead><tbody>${slice.map(u=>adminCrmLicenseRowHtml(u)).join('')}</tbody></table></div>`;
     renderAdminCrmPager(pages, total, '명');
     if(adminCrmLicenseOpen) fillAdminLicenseExpandCredits(adminCrmLicenseOpen);
@@ -8050,11 +8114,13 @@ function adminCrmLicenseRowHtml(u){
   const view=u.licenseView || adminLicenseView(u);
   const lic=view.license;
   const open = adminCrmLicenseOpen===uid;
+  const checked = adminCrmSelected.has(uid) ? 'checked' : '';
   const start = lic?.startsAt ? fmtListDate(lic.startsAt) : '-';
   const end = view.plan==='lifetime' ? '없음' : (lic?.expiresAt ? fmtListDate(lic.expiresAt) : '-');
   const changed = lic?.updatedAt ? fmtRelative(lic.updatedAt) : '-';
   const actor = lic?.method ? adminLicenseMethodLabel(lic.method) : '-';
   return `<tr class="admin-license-row${open?' is-open':''}" data-license-row="${esc(uid)}">
+    <td><label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-check="${esc(uid)}" ${checked}></label></td>
     <td class="admin-member-user">
       <span class="admin-order-caret" aria-hidden="true">▸</span>
       ${adminCrmAvatarHtml(u)}<span><b>${esc(u.displayName||'Google User')}</b></span>
@@ -8062,6 +8128,7 @@ function adminCrmLicenseRowHtml(u){
     <td class="admin-member-email" title="${esc(u.email||'')}">${esc(u.email||'-')}</td>
     <td>${adminPlanBadgeFromView(view)}</td>
     <td>${adminLicenseStatusBadgeHtml(view)}</td>
+    <td class="admin-license-credit">${esc(String(adminCrmCreditBalance(u)))}</td>
     <td>${esc(start)}</td>
     <td>${esc(end)}</td>
     <td>${esc(changed)}</td>
@@ -8069,7 +8136,7 @@ function adminCrmLicenseRowHtml(u){
     <td><button type="button" class="ghost mini-btn" data-license-toggle="${esc(uid)}">${open?'접기':'관리'}</button></td>
   </tr>
   <tr class="admin-license-expand"${open?'':' hidden'}>
-    <td colspan="9">${adminCrmLicenseExpandInnerHtml(u, view)}</td>
+    <td colspan="11">${adminCrmLicenseExpandInnerHtml(u, view)}</td>
   </tr>`;
 }
 function adminCrmLicenseExpandInnerHtml(u, view){
@@ -8334,12 +8401,22 @@ function adminCrmMemberCardHtml(u){
     </div>
   </article>`;
 }
+function applyAdminCrmCheckEl(el){
+  const uid = String(el?.getAttribute('data-crm-check') || '').trim();
+  if(!uid) return;
+  if(el.checked) adminCrmSelected.add(uid);
+  else adminCrmSelected.delete(uid);
+  updateAdminCrmBulkbar();
+}
+function onAdminCrmListChange(e){
+  const check = e.target?.matches?.('[data-crm-check]') ? e.target : e.target?.closest?.('[data-crm-check]');
+  if(!check) return;
+  applyAdminCrmCheckEl(check);
+}
 function onAdminCrmListClick(e){
   const check = e.target.closest('[data-crm-check]');
   if(check){
-    const uid = check.getAttribute('data-crm-check');
-    if(check.checked) adminCrmSelected.add(uid); else adminCrmSelected.delete(uid);
-    updateAdminCrmBulkbar();
+    applyAdminCrmCheckEl(check);
     return;
   }
   const detail = e.target.closest('[data-order-detail]');
@@ -8537,21 +8614,228 @@ async function saveAdminLicenseInline(uid, wrap){
     alert(e.message||e);
   }
 }
+function adminCrmVisiblePageUids(){
+  const start = (adminCrmPage - 1) * ADMIN_CRM_PAGE_SIZE;
+  return (adminCrmFilteredRows || []).slice(start, start + ADMIN_CRM_PAGE_SIZE).map(u=>u && u.uid).filter(Boolean);
+}
+function adminCrmHasSearchOrFilter(){
+  const q=($('adminUserSearch')?.value||'').trim();
+  return !!(q || adminCrmActiveFilterCount() || (adminCrmMode()==='license' && adminLicenseWorkTab && adminLicenseWorkTab!=='all'));
+}
+function resolveAdminBulkUids(audience){
+  const all = (adminUserRows||[]).map(mapAdminCrmUserRow);
+  if(audience==='selected') return [...adminCrmSelected];
+  if(audience==='page') return adminCrmVisiblePageUids();
+  if(audience==='filtered') return (adminCrmFilteredRows||[]).map(u=>u.uid).filter(Boolean);
+  if(audience==='all') return all.map(u=>u.uid).filter(Boolean);
+  if(audience==='expired'){
+    return all.filter(u=>{
+      const view=u.licenseView || adminLicenseView(u);
+      return view.status==='expired';
+    }).map(u=>u.uid).filter(Boolean);
+  }
+  if(audience==='period' || audience==='lifetime' || audience==='trial'){
+    return all.filter(u=>adminLicenseWorkMatch(u, audience)).map(u=>u.uid).filter(Boolean);
+  }
+  return [...adminCrmSelected];
+}
+function newAdminBulkOperationId(){
+  if(typeof crypto!=='undefined' && typeof crypto.randomUUID==='function') return crypto.randomUUID();
+  return `op_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+}
+function adminBulkRecipientsFromUids(uids){
+  return (uids || []).map(uid => {
+    const row = findAdminUserRow(uid);
+    return {
+      uid,
+      displayName: row?.displayName || 'Google User',
+      email: String(row?.email || '').trim()
+    };
+  });
+}
+function formatBulkEmailResultAlert(result, fallbackRequested){
+  const requested = Number(result?.requested || fallbackRequested || 0);
+  const successN = Number(result?.success || 0);
+  const failN = Number(result?.failed || 0);
+  const title = (successN === requested && failN === 0)
+    ? '메일 발송 완료'
+    : (successN > 0 && failN > 0)
+      ? '일부 메일 발송 실패'
+      : '메일 발송 실패';
+  const failLines = Array.isArray(result?.failures) && result.failures.length
+    ? `\n실패: ${result.failures.slice(0,8).map(f=>f.email || f.uid).join(', ')}`
+    : '';
+  return {
+    title,
+    summary: `${title} · 대상 ${requested}명 · 성공 ${successN}명 · 실패 ${failN}명`,
+    alertText: `${title}\n\n대상 ${requested}명\n성공 ${successN}명\n실패 ${failN}명${failLines}`,
+    failN
+  };
+}
+async function runAdminBulkEmail(){
+  if(adminBulkBusy) return;
+  if(adminCrmMode()!=='members') return;
+  const uids = [...adminCrmSelected];
+  if(!uids.length){ adminFlash('발송 대상이 없습니다'); return; }
+  const recipients = adminBulkRecipientsFromUids(uids);
+  await openBulkMessageComposer({
+    channel: 'email',
+    recipients,
+    onSend: async (draft) => {
+      adminBulkBusy = true;
+      const operationId = newAdminBulkOperationId();
+      try{
+        const result = await callFunctionJson('sendAdminBulkEmail', {
+          recipientUids: draft.recipientUids,
+          subject: draft.subject,
+          body: draft.body,
+          preheader: draft.preheader || '',
+          bannerEnabled: !!draft.bannerEnabled,
+          bannerEyebrow: draft.bannerEyebrow || '',
+          bannerTitle: draft.bannerTitle || '',
+          bannerDescription: draft.bannerDescription || '',
+          bannerImageUrl: draft.bannerImageUrl || '',
+          ctaLabel: draft.ctaLabel || '',
+          ctaUrl: draft.ctaUrl || '',
+          operationId
+        });
+        const painted = formatBulkEmailResultAlert(result, draft.recipientUids.length);
+        adminFlash(painted.summary);
+        if(painted.failN) alert(painted.alertText);
+        pushAdminCrmFeed('일괄 메일', `${draft.subject} · 성공 ${result.success || 0}`, draft.recipientUids[0] || '');
+        if(Number(result.success || 0) === 0 && painted.failN > 0){
+          throw new Error(painted.title);
+        }
+        return result;
+      }catch(err){
+        const code = err?.code || err?.data?.code;
+        const msg = (code === 'MAIL_NOT_CONFIGURED' || code === 'SMTP_AUTH_FAILED')
+          ? '메일 발송 설정이 완료되지 않았습니다.'
+          : (code === 'SMTP_UNAVAILABLE')
+            ? '메일 서버에 연결하지 못했습니다.'
+            : (err?.message || '메일 발송에 실패했습니다.');
+        throw new Error(msg);
+      }finally{
+        adminBulkBusy = false;
+      }
+    }
+  });
+}
+async function runAdminBulkAppMessage(){
+  if(adminBulkBusy) return;
+  if(adminCrmMode()!=='members') return;
+  const uids = [...adminCrmSelected];
+  if(!uids.length){ adminFlash('발송 대상이 없습니다'); return; }
+  const recipients = adminBulkRecipientsFromUids(uids);
+  await openBulkMessageComposer({
+    channel: 'app_message',
+    recipients,
+    onSend: async (draft) => {
+      adminBulkBusy = true;
+      let ok = 0;
+      let fail = 0;
+      try{
+        for(const uid of draft.recipientUids){
+          try{
+            await notifyAdminAppMessage(uid, { title: draft.subject, body: draft.body });
+            writeAdminAuditLog({
+              targetUserId: uid,
+              targetEmail: findAdminUserRow(uid)?.email || '',
+              category: 'message',
+              action: '쪽지 발송',
+              before: null,
+              after: { title: draft.subject, body: draft.body.slice(0,500), bulk: true },
+              result: 'success',
+              summary: draft.subject
+            });
+            ok++;
+          }catch(err){
+            console.error('bulk app-message', uid, err);
+            fail++;
+          }
+        }
+        adminFlash(`일괄 앱 쪽지 · 성공 ${ok}명${fail?` · 실패 ${fail}명`:''}`);
+        pushAdminCrmFeed('일괄 앱 쪽지', `${ok}명 · ${draft.subject}`, draft.recipientUids[0]||'');
+        if(fail && !ok) throw new Error(`앱 쪽지 발송 실패 · ${fail}명`);
+        return { ok: true, success: ok, failed: fail };
+      }finally{
+        adminBulkBusy = false;
+      }
+    }
+  });
+}
+async function runAdminBulkCredits(){
+  if(adminBulkBusy) return;
+  if(adminCrmMode()!=='license') return;
+  const uids = [...adminCrmSelected];
+  if(!uids.length){ adminFlash('지급 대상이 없습니다'); return; }
+  const draft = await openEditModal(`크레딧 일괄 지급 · ${uids.length}명`, [
+    { name:'amount', label:'지급 크레딧', type:'number', required:true, value:1 },
+    { name:'reason', label:'지급 사유', type:'text', value:'', placeholder:'이벤트/보상 사유 입력' }
+  ], {
+    submitLabel:'지급',
+    modalClass:'admin-bulk-compact'
+  });
+  if(!draft) return;
+  const amount = Number(draft.amount);
+  if(!Number.isInteger(amount) || amount <= 0){ adminFlash('지급 크레딧은 1 이상의 정수여야 합니다'); return; }
+  const total = uids.length * amount;
+  const unit = amount===1 ? 'Credit' : 'Credits';
+  const totalUnit = total===1 ? 'Credit' : 'Credits';
+  const who = uids.length===1
+    ? `1명에게 ${amount} ${unit}을 지급합니다.`
+    : `${uids.length}명에게 각각 ${amount} ${unit}을 지급합니다.`;
+  if(!confirm(`크레딧 지급 확인\n\n${who}\n총 지급량: ${total} ${totalUnit}`)) return;
+  adminBulkBusy = true;
+  const operationId = newAdminBulkOperationId();
+  adminFlash('크레딧 지급 중...');
+  try{
+    const result = await callFunctionJson('grantBulkCredits', {
+      recipientUids: uids,
+      amount,
+      reason: String(draft.reason||'').trim(),
+      operationId
+    });
+    const failN = Number(result.failed || 0);
+    adminFlash(`크레딧 지급 완료 · ${result.requested}명 × ${amount} Credits · 총 ${result.totalCredits} · 성공 ${result.success} · 실패 ${failN}`);
+    if(failN){
+      const lines = (result.failures||[]).slice(0,8).map(f=>f.uid).join(', ');
+      alert(`크레딧 지급 완료\n\n${result.requested}명 × ${amount} Credits\n총 ${result.totalCredits} Credits\n성공 ${result.success}\n실패 ${failN}${lines ? '\n'+lines : ''}`);
+    }
+    if(selectedAdminUid) renderAdminCrmPoints(selectedAdminUid);
+    if(adminCrmLicenseOpen) fillAdminLicenseExpandCredits(adminCrmLicenseOpen);
+  }catch(err){
+    alert(err?.message || err);
+  }finally{
+    adminBulkBusy = false;
+  }
+}
+function syncAdminCrmBulkButtons(){
+  const bar=$('adminCrmBulkbar'); if(!bar) return;
+  const mode=adminCrmMode();
+  bar.querySelectorAll('[data-bulk]').forEach(btn=>{
+    const modes=String(btn.getAttribute('data-bulk-modes')||'').split(',').map(s=>s.trim()).filter(Boolean);
+    btn.hidden = modes.length ? !modes.includes(mode) : false;
+  });
+}
 function updateAdminCrmBulkbar(){
   const bar=$('adminCrmBulkbar'); if(!bar) return;
-  if(adminCrmMode()!=='members'){
+  if(adminCrmMode()!=='members' && adminCrmMode()!=='license'){
     bar.hidden = true;
     return;
   }
   const n=adminCrmSelected.size;
   bar.hidden = n===0;
-  $('adminCrmBulkCount') && ($('adminCrmBulkCount').textContent=`${n}명 선택`);
+  $('adminCrmBulkCount') && ($('adminCrmBulkCount').textContent=`${n}명 선택됨`);
+  syncAdminCrmBulkButtons();
   const all=$('adminCrmSelectAll');
   if(all){
-    const visibleIds = adminCrmFilteredRows.map(u=>u.uid).filter(Boolean);
+    const visibleIds = adminCrmVisiblePageUids();
     all.checked = visibleIds.length>0 && visibleIds.every(id=>adminCrmSelected.has(id));
     all.indeterminate = !all.checked && visibleIds.some(id=>adminCrmSelected.has(id));
   }
+  const filteredBtn=$('adminCrmSelectFiltered');
+  if(filteredBtn) filteredBtn.textContent = '검색 결과 전체 선택';
 }
 function selectAdminCrmUser(uid, opts={}){
   if(!uid || !isAdminUser) return;
@@ -9793,9 +10077,27 @@ function bindAdminUserFilters(){
   if(all && !all.dataset.bound){
     all.dataset.bound='1';
     all.addEventListener('change',()=>{
-      const ids=adminCrmFilteredRows.map(u=>u.uid);
+      const ids=adminCrmVisiblePageUids();
       if(all.checked) ids.forEach(id=>adminCrmSelected.add(id));
       else ids.forEach(id=>adminCrmSelected.delete(id));
+      updateAdminCrmBulkbar();
+      paintAdminCrmVirtualList();
+    });
+  }
+  const filteredBtn=$('adminCrmSelectFiltered');
+  if(filteredBtn && !filteredBtn.dataset.bound){
+    filteredBtn.dataset.bound='1';
+    filteredBtn.addEventListener('click',()=>{
+      resolveAdminBulkUids('filtered').forEach(id=>adminCrmSelected.add(id));
+      updateAdminCrmBulkbar();
+      paintAdminCrmVirtualList();
+    });
+  }
+  const everyoneBtn=$('adminCrmSelectEveryone');
+  if(everyoneBtn && !everyoneBtn.dataset.bound){
+    everyoneBtn.dataset.bound='1';
+    everyoneBtn.addEventListener('click',()=>{
+      resolveAdminBulkUids('all').forEach(id=>adminCrmSelected.add(id));
       updateAdminCrmBulkbar();
       paintAdminCrmVirtualList();
     });
@@ -9805,35 +10107,31 @@ function bindAdminUserFilters(){
     bulk.dataset.bound='1';
     bulk.addEventListener('click', async e=>{
       const btn=e.target.closest('[data-bulk]'); if(!btn) return;
+      if(adminBulkBusy) return;
       const action=btn.getAttribute('data-bulk');
+      if(action==='clear'){
+        adminCrmSelected.clear();
+        updateAdminCrmBulkbar();
+        paintAdminCrmVirtualList();
+        return;
+      }
       const uids=[...adminCrmSelected];
+      const mode=adminCrmMode();
+      if(!uids.length && action!=='gmail' && action!=='credits') return;
+      if(action==='gmail'){
+        if(mode!=='members') return;
+        await runAdminBulkEmail();
+        return;
+      }
+      if(action==='credits'){
+        if(mode!=='license') return;
+        await runAdminBulkCredits();
+        return;
+      }
+      if(mode!=='members') return;
       if(!uids.length) return;
       if(action==='app-message' || action==='mail'){
-        const draft = await openAdminMessageComposer({ count:uids.length });
-        if(!draft) return;
-        if(!confirm(`${uids.length}명에게 쪽지를 보낼까요?`)) return;
-        let ok=0, fail=0;
-        for(const uid of uids){
-          try{
-            await notifyAdminAppMessage(uid, draft);
-            writeAdminAuditLog({
-              targetUserId: uid,
-              targetEmail: findAdminUserRow(uid)?.email || '',
-              category: 'message',
-              action: '쪽지 발송',
-              before: null,
-              after: { title: draft.title, body: draft.body.slice(0,500), bulk: true },
-              result: 'success',
-              summary: draft.title
-            });
-            ok++;
-          }catch(err){
-            console.error('bulk app-message', uid, err);
-            fail++;
-          }
-        }
-        adminFlash(`일괄 앱 쪽지 · 성공 ${ok}명${fail?` · 실패 ${fail}명`:''}`);
-        pushAdminCrmFeed('일괄 앱 쪽지', `${ok}명 · ${draft.title}`, uids[0]||'');
+        await runAdminBulkAppMessage();
         return;
       }
       if(action==='delete'){
@@ -10482,6 +10780,20 @@ function listenAdminUsers(){
       refreshAdminCrmDetail();
     },
     onSnapErr('users', m=>{ adminUsersListenError=m; })
+  ));
+  addUnsub(onSnapshot(
+    collection(db,'creditWallets'),
+    snap=>{
+      const next={};
+      snap.docs.forEach(d=>{
+        const data=d.data()||{};
+        next[d.id]=data;
+        if(data.uid) next[String(data.uid)]=data;
+      });
+      adminCreditWalletByUid=next;
+      refreshAdminLicenseCreditCells();
+    },
+    err=>console.error('admin creditWallets snapshot error', err)
   ));
   addUnsub(onSnapshot(
     collection(db,'orders'),
@@ -11370,6 +11682,12 @@ async function saveUserNotifyPrefs(next){
   updateNotifyBellBadge(visible.filter(n => n.read !== true).length);
   renderNotifyPanelList();
 }
+function topbarLangInsertRef(){
+  // langBtn may live inside #topbarLangWrap — never insertBefore(langBtn) on .actions
+  const wrap = $('topbarLangWrap');
+  if(wrap) return wrap;
+  return $('langBtn');
+}
 function ensureNotifyBell(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
@@ -11381,12 +11699,12 @@ function ensureNotifyBell(){
   wrap.id = 'topbarNotify';
   wrap.hidden = true;
   wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><div class="topbar-notify-head-actions"><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button><button type="button" class="topbar-notify-clear" id="notifyClearAll">${esc(tr('notify_clear_all'))}</button></div></div><div class="topbar-notify-filters" id="notifyFilters" role="tablist" aria-label="${esc(tr('notify_title'))}"><button type="button" class="topbar-notify-filter is-active" data-notify-filter="all" role="tab">${esc(tr('notify_filter_all'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="payment" role="tab">${esc(tr('notify_filter_payment'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="license" role="tab">${esc(tr('notify_filter_license'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="inquiry" role="tab">${esc(tr('notify_filter_inquiry'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="community" role="tab">${esc(tr('notify_filter_community'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="other" role="tab">${esc(tr('notify_filter_other'))}</button></div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
-  const langBtn = $('langBtn');
+  const langRef = topbarLangInsertRef();
   const periodEl = $('topbarLicensePeriod');
   if(periodEl && periodEl.parentNode === actions){
     actions.insertBefore(wrap, periodEl.nextSibling);
-  } else if(langBtn){
-    actions.insertBefore(wrap, langBtn);
+  } else if(langRef && langRef.parentNode === actions){
+    actions.insertBefore(wrap, langRef);
   } else {
     actions.insertBefore(wrap, actions.firstChild);
   }
@@ -11422,9 +11740,9 @@ function ensureTopbarLicensePeriod(){
   el.className = 'topbar-license-period';
   el.hidden = true;
   const notify = $('topbarNotify');
-  const langBtn = $('langBtn');
-  if(notify) actions.insertBefore(el, notify);
-  else if(langBtn) actions.insertBefore(el, langBtn);
+  const langRef = topbarLangInsertRef();
+  if(notify && notify.parentNode === actions) actions.insertBefore(el, notify);
+  else if(langRef && langRef.parentNode === actions) actions.insertBefore(el, langRef);
   else actions.insertBefore(el, actions.firstChild);
   return el;
 }
@@ -11881,44 +12199,45 @@ async function notifyAdminAppMessage(uid, {title='', body=''}={}){
   });
   return !!id;
 }
-function openAdminMessageComposer({count=1}={}){
-  const heading = count > 1
-    ? `앱으로 쪽지 보내기 · ${count}명`
-    : '앱으로 쪽지 보내기';
-  return openEditModal(heading, [
-    { name:'title', label:'제목', type:'text', required:true, value:'' },
-    { name:'body', label:'내용', type:'textarea', rows:8, required:true, value:'' }
-  ], { submitLabel:'보내기' }).then(data=>{
-    if(!data) return null;
-    const title = String(data.title || '').trim();
-    const body = String(data.body || '').trim();
-    if(!title){ alert('제목을 입력해 주세요.'); return null; }
-    if(!body){ alert('내용을 입력해 주세요.'); return null; }
-    return { title, body };
+function openAdminMessageComposer({count=1, recipients=null}={}){
+  const list = Array.isArray(recipients) && recipients.length
+    ? recipients
+    : [{ uid: '', displayName: count > 1 ? `선택된 사용자 ${count}명` : '사용자', email: '' }];
+  return openBulkMessageComposer({
+    channel: 'app_message',
+    recipients: list
+  }).then((result) => {
+    if(!result || !result.subject) return null;
+    return { title: result.subject, body: result.body };
   });
 }
 async function adminSendAppMessage(uid){
   if(!isAdminUser || !uid) return;
-  const draft = await openAdminMessageComposer({ count:1 });
-  if(!draft) return;
-  try{
-    await notifyAdminAppMessage(uid, draft);
-    adminFlash(`쪽지 전송 완료 · ${esc(uid)}`);
-    pushAdminCrmFeed('앱 쪽지', `${draft.title} · ${draft.body.slice(0,30)}`, uid);
-    writeAdminAuditLog({
-      targetUserId: uid,
-      targetEmail: findAdminUserRow(uid)?.email || '',
-      category: 'message',
-      action: '쪽지 발송',
-      before: null,
-      after: { title: draft.title, body: draft.body.slice(0,500) },
-      result: 'success',
-      summary: draft.title
-    });
-  }catch(e){
-    console.error(e);
-    alert(e.message || e);
-  }
+  const row = findAdminUserRow(uid);
+  await openBulkMessageComposer({
+    channel: 'app_message',
+    recipients: [{
+      uid,
+      displayName: row?.displayName || 'Google User',
+      email: row?.email || ''
+    }],
+    onSend: async (draft) => {
+      await notifyAdminAppMessage(uid, { title: draft.subject, body: draft.body });
+      adminFlash('쪽지 전송 완료');
+      pushAdminCrmFeed('앱 쪽지', `${draft.subject} · ${draft.body.slice(0,30)}`, uid);
+      writeAdminAuditLog({
+        targetUserId: uid,
+        targetEmail: row?.email || '',
+        category: 'message',
+        action: '쪽지 발송',
+        before: null,
+        after: { title: draft.subject, body: draft.body.slice(0,500) },
+        result: 'success',
+        summary: draft.subject
+      });
+      return { ok: true };
+    }
+  });
 }
 function focusBoardComment(commentId){
   const root = $('commentList') || document;
@@ -12101,7 +12420,7 @@ async function requestKakaoPayPointPayment(){
     return;
   }
   if(!isKoreanCheckout()){
-    paypalStatus(lang==='en' ? 'Credit packs are sold with KakaoPay on the Korean checkout. PayPal is not available yet.' : lang==='ja' ? 'Creditパックは韓国ページのKakaoPayでのみ購入できます。' : 'Credit 상품은 한국어 구매 페이지의 카카오페이로만 결제할 수 있습니다.', 'err');
+    paypalStatus(purchaseLocaleText().currencyInvalid || 'Use PayPal for this checkout.', 'err');
     return;
   }
   const livePacks = getCreditProducts();
@@ -12544,7 +12863,7 @@ function initPayPal(){
     window.paypal.Buttons({
       onClick:()=>{
         if(!currentUser){ alert(purchaseLocaleText().loginAlert); return false; }
-        if(currentLicenseLifetime){
+        if(currentLicenseLifetime && !isPointCheckout()){
           applyPurchaseLifetimeGate();
           alert(purchaseLocaleText().alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다.');
           return false;
@@ -12553,16 +12872,7 @@ function initPayPal(){
         return true;
       },
       createOrder: async()=>{
-        if(isPointCheckout()){
-          const msg = lang==='en'
-            ? 'PayPal checkout is not available for this product yet.'
-            : lang==='ja'
-              ? 'この商品のPayPal決済は現在利用できません。'
-              : '이 상품의 PayPal 결제는 아직 제공되지 않습니다.';
-          paypalStatus(msg, 'err');
-          throw new Error(msg);
-        }
-        if(!isSelling(getDefaultProduct())){
+        if(!isPointCheckout() && !isSelling(getDefaultProduct())){
           const msg = lang==='en' ? 'Temporarily unavailable' : '일시 판매중지된 상품입니다.';
           paypalStatus(msg, 'err');
           throw new Error(msg);
@@ -12571,25 +12881,33 @@ function initPayPal(){
         const pid = selectedPurchaseId || 'LIFETIME';
         let quoteId = pendingPaypalQuoteId;
         if(!quoteId){
-          const quote = await callFunctionJson('createPurchaseQuote', { productId: pid, currency: 'USD' });
+          const quote = await createUsdCheckoutQuote(pid);
           quoteId = String(quote?.quoteId || '');
           pendingPaypalQuoteId = quoteId;
         }
         if(!quoteId) throw new Error(pointCopy().fxError || 'Quote required');
-        const result = await callFunctionJson('createPayPalOrder', {
-          quoteId,
-          productId: pid
-        });
-        if(!result.id) throw new Error('PayPal 주문 ID를 받지 못했습니다.');
-        paypalStatus(purchaseLocaleText().opening);
-        return result.id;
+        try{
+          const result = await callFunctionJson('createPayPalOrder', {
+            quoteId,
+            productId: pid
+          });
+          if(!result.id) throw new Error('PayPal 주문 ID를 받지 못했습니다.');
+          paypalStatus(purchaseLocaleText().opening);
+          return result.id;
+        }catch(err){
+          const mapped = err?.code === 'QUOTE_CURRENCY'
+            ? purchaseLocaleText().currencyInvalid
+            : (err?.message || err);
+          paypalStatus(purchaseLocaleText().error + mapped, 'err');
+          throw Object.assign(new Error(mapped), { code: err?.code });
+        }
       },
       onApprove: async(data)=>{
         if(isPointCheckout()){
           const pack = selectedPointPack();
           const pt = pointCopy();
           paypalStatus(pt.verifying);
-          const credited = await callFunctionJsonFallback(['capturePayPalCreditOrder', 'capturePayPalPointOrder'], {
+          const credited = await callFunctionJsonFallback(['capturePayPalOrder', 'capturePayPalCreditOrder', 'capturePayPalPointOrder'], {
             orderId: data.orderID,
             productId: pack.productId
           });
@@ -12624,20 +12942,193 @@ function initPayPal(){
 }
 
 $('year') && ($('year').textContent=new Date().getFullYear());
-function onLangBtnClick(){
+
+const LANG_LOCALES = ['ko', 'en', 'ja'];
+const LANG_META = {
+  ko: { code: 'KO', name: '한국어', flag: 'kr' },
+  en: { code: 'EN', name: 'English', flag: 'us' },
+  ja: { code: 'JA', name: '日本語', flag: 'jp' }
+};
+const TOPBAR_CHEVRON_SVG = '<svg class="topbar-lang-chevron" viewBox="0 0 12 12" width="10" height="10" aria-hidden="true" focusable="false"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+let topbarLangMenuOpen = false;
+
+function normalizeSiteLang(value){
+  const v = String(value || '').toLowerCase();
+  return LANG_LOCALES.includes(v) ? v : 'ko';
+}
+
+function langFlagSrc(flagKey){
+  const base = window.MIDIAI_BASE_PATH || './';
+  const key = String(flagKey || 'kr').toLowerCase();
+  return `${base}assets/images/flags/${key}.svg`;
+}
+
+function langFlagMarkup(flagKey){
+  return `<img class="topbar-flag-svg" src="${langFlagSrc(flagKey)}" width="20" height="14" alt="" decoding="async" draggable="false">`;
+}
+
+function langFlagSvg(locale){
+  const meta = LANG_META[normalizeSiteLang(locale)] || LANG_META.ko;
+  return langFlagMarkup(meta.flag);
+}
+
+function setTopbarLangMenuOpen(open){
+  topbarLangMenuOpen = !!open;
+  const menu = $('topbarLangMenu');
+  const btn = $('langBtn');
+  if(menu){
+    menu.classList.toggle('is-open', topbarLangMenuOpen);
+    menu.hidden = !topbarLangMenuOpen;
+  }
+  if(btn) btn.setAttribute('aria-expanded', topbarLangMenuOpen ? 'true' : 'false');
+}
+
+function closeTopbarLangMenu(){
+  setTopbarLangMenuOpen(false);
+}
+
+function openTopbarLangMenu(){
+  ensureTopbarLangSwitcher();
+  try{ closeNotifyPanel(); }catch{}
+  closeTopbarProfilePanel();
+  setTopbarLangMenuOpen(true);
+  paintTopbarLangMenu();
+}
+
+function toggleTopbarLangMenu(){
+  const nextOpen = !topbarLangMenuOpen;
+  if(nextOpen) openTopbarLangMenu();
+  else closeTopbarLangMenu();
+}
+
+function paintTopbarLangMenu(){
+  const menu = $('topbarLangMenu');
+  if(!menu) return;
+  const current = normalizeSiteLang(lang);
+  menu.querySelectorAll('[data-lang]').forEach((row)=>{
+    const code = normalizeSiteLang(row.getAttribute('data-lang'));
+    const selected = code === current;
+    row.classList.toggle('is-current', selected);
+    row.setAttribute('aria-selected', selected ? 'true' : 'false');
+    const check = row.querySelector('.topbar-lang-check');
+    if(check) check.hidden = !selected;
+  });
+}
+
+function setSiteLanguage(nextLang){
+  const next = normalizeSiteLang(nextLang);
+  closeTopbarLangMenu();
   if(isPurchasePage){
-    const next = lang === 'ko' ? 'en' : lang === 'en' ? 'ja' : 'ko';
+    if(next === normalizeSiteLang(lang)) return;
     localStorage.setItem('midiai_lang', next);
     if(next === 'ko') location.href = (pathLang ? '../purchase.html' : './purchase.html') + location.search;
     else location.href = (pathLang ? `../${next}/purchase.html` : `./${next}/purchase.html`) + location.search;
     return;
   }
-  lang = lang==='ko' ? 'en' : lang==='en' ? 'ja' : 'ko';
+  if(next === normalizeSiteLang(lang)) return;
+  lang = next;
   applyStaticI18n();
   applyGuidesI18n(lang);
   if($('accountMeta') && currentUser) renderAccountDashboard(currentUser.uid, accountLicenseDoc, latestDownloadData);
   paintProfileCreditStrip();
 }
+
+function onLangBtnClick(e){
+  e?.preventDefault?.();
+  e?.stopPropagation?.();
+  // Capture open-state BEFORE any other handler can race; true toggle contract.
+  const nextOpen = !topbarLangMenuOpen;
+  if(nextOpen) openTopbarLangMenu();
+  else closeTopbarLangMenu();
+}
+
+function ensureTopbarLangSwitcher(){
+  const actions = document.querySelector('.topbar .actions');
+  if(!actions) return null;
+  let wrap = $('topbarLangWrap');
+  let langBtn = $('langBtn');
+  if(wrap && langBtn && $('topbarLangMenu')){
+    wrap.setAttribute('data-i18n-skip', '1');
+    return wrap;
+  }
+
+  if(langBtn && !wrap){
+    wrap = document.createElement('div');
+    wrap.className = 'topbar-lang-wrap';
+    wrap.id = 'topbarLangWrap';
+    wrap.setAttribute('data-i18n-skip', '1');
+    langBtn.parentNode.insertBefore(wrap, langBtn);
+    wrap.appendChild(langBtn);
+  } else if(!langBtn){
+    wrap = document.createElement('div');
+    wrap.className = 'topbar-lang-wrap';
+    wrap.id = 'topbarLangWrap';
+    wrap.setAttribute('data-i18n-skip', '1');
+    wrap.innerHTML = `<button id="langBtn" class="ghost topbar-lang" type="button"></button>`;
+    actions.insertBefore(wrap, actions.firstChild);
+    langBtn = $('langBtn');
+  } else if(wrap){
+    wrap.setAttribute('data-i18n-skip', '1');
+  }
+
+  langBtn = $('langBtn');
+  if(!langBtn) return null;
+  langBtn.classList.add('topbar-lang');
+  langBtn.type = 'button';
+  langBtn.setAttribute('aria-label', '언어 선택');
+  langBtn.setAttribute('aria-haspopup', 'listbox');
+  langBtn.setAttribute('aria-expanded', topbarLangMenuOpen ? 'true' : 'false');
+  langBtn.setAttribute('aria-controls', 'topbarLangMenu');
+  langBtn.innerHTML = `<span class="topbar-lang-flag" aria-hidden="true">${langFlagSvg(lang)}</span><span class="topbar-lang-code">KO</span>${TOPBAR_CHEVRON_SVG}`;
+
+  let menu = $('topbarLangMenu');
+  if(!menu){
+    menu = document.createElement('div');
+    menu.id = 'topbarLangMenu';
+    menu.className = 'topbar-lang-menu';
+    menu.hidden = true;
+    menu.classList.remove('is-open');
+    menu.setAttribute('role', 'listbox');
+    menu.setAttribute('aria-label', '언어 선택');
+    menu.innerHTML = LANG_LOCALES.map((code)=>{
+      const meta = LANG_META[code];
+      return `<button type="button" class="topbar-lang-option" role="option" data-lang="${code}" aria-selected="false">
+        <span class="topbar-lang-flag" aria-hidden="true">${langFlagMarkup(meta.flag)}</span>
+        <span class="topbar-lang-name">${esc(meta.name)}</span>
+        <span class="topbar-lang-check" aria-hidden="true" hidden>✓</span>
+      </button>`;
+    }).join('');
+    wrap.appendChild(menu);
+    menu.addEventListener('click', (e)=>{
+      const row = e.target.closest?.('[data-lang]');
+      if(!row) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setSiteLanguage(row.getAttribute('data-lang'));
+    });
+  }
+
+  langBtn.onclick = onLangBtnClick;
+
+  if(!document.body.dataset.langOutsideBound){
+    document.body.dataset.langOutsideBound = '1';
+    // Bubble phase only. Button uses stopPropagation so same-button toggle is not undone.
+    document.addEventListener('click', (e)=>{
+      if(!topbarLangMenuOpen) return;
+      if(e.target.closest?.('#topbarLangWrap')) return;
+      closeTopbarLangMenu();
+    });
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape' && topbarLangMenuOpen){
+        closeTopbarLangMenu();
+        $('langBtn')?.focus();
+      }
+    });
+  }
+  return wrap;
+}
+
 $('langBtn') && ($('langBtn').onclick=onLangBtnClick);
 const SIDEBAR_ICONS={
   home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg>',
@@ -12661,14 +13152,18 @@ const SIDEBAR_ICONS={
 };
 function navIcon(name){ return `<span class="nav-icon is-${name}" aria-hidden="true">${SIDEBAR_ICONS[name]||''}</span>`; }
 const GOOGLE_MARK_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>';
-const TOPBAR_GLOBE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18"/><path d="M12 3a15 15 0 0 0 0 18"/></svg>';
 function refreshTopbarActionLabels(){
+  ensureTopbarLangSwitcher();
   const langBtn = $('langBtn');
   if(langBtn){
+    const current = normalizeSiteLang(lang);
+    const meta = LANG_META[current];
+    const flag = langBtn.querySelector('.topbar-lang-flag');
     const code = langBtn.querySelector('.topbar-lang-code');
-    const label = lang === 'ko' ? 'EN' : lang === 'en' ? '日本語' : '한국어';
-    if(code) code.textContent = label;
-    else langBtn.textContent = label;
+    if(flag) flag.innerHTML = langFlagSvg(current);
+    if(code) code.textContent = meta.code;
+    langBtn.setAttribute('aria-label', `언어 선택, ${meta.name}`);
+    paintTopbarLangMenu();
   }
   const loginLabel = $('loginBtn')?.querySelector('.login-label');
   if(loginLabel) loginLabel.textContent = tr('login');
@@ -12790,6 +13285,7 @@ function ensureTopbarProfile(){
 
   $('topbarProfileBtn')?.addEventListener('click', (e)=>{
     e.stopPropagation();
+    closeTopbarLangMenu();
     toggleTopbarProfilePanel();
   });
   if(!document.body.dataset.profileOutsideBound){
@@ -12878,22 +13374,16 @@ function initTopbarActions(){
 
   // Guide/SEO pages often only ship a Free-trial CTA — normalize to portal controls.
   if(!$('langBtn')){
-    actions.innerHTML = `<button id="langBtn" class="ghost topbar-lang" aria-label="언어 변경" type="button"><span class="topbar-lang-icon">${TOPBAR_GLOBE_SVG}</span><span class="topbar-lang-code">EN</span></button>`;
-  } else {
-    const langBtn = $('langBtn');
-    if(langBtn && !langBtn.querySelector('.topbar-lang-code')){
-      langBtn.classList.add('topbar-lang');
-      langBtn.innerHTML = `<span class="topbar-lang-icon">${TOPBAR_GLOBE_SVG}</span><span class="topbar-lang-code">EN</span>`;
-    }
+    actions.insertAdjacentHTML('afterbegin', `<button id="langBtn" class="ghost topbar-lang" aria-label="언어 선택" type="button"></button>`);
   }
   // Login/logout live inside the profile dropdown only
   document.querySelectorAll('.topbar .actions > #loginBtn, .topbar .actions > #logoutBtn, .topbar .actions > .topbar-login, .topbar .actions > .topbar-logout').forEach((el)=>{
     if(!el.closest?.('#topbarProfile')) el.remove();
   });
 
-  const langBtn = $('langBtn');
-  if(langBtn) langBtn.onclick = onLangBtnClick;
+  ensureTopbarLangSwitcher();
   refreshTopbarActionLabels();
+  // Notify/period insert relative to #topbarLangWrap (langBtn is nested inside wrap).
   ensureNotifyBell();
   setNotifyBellVisible(!!currentUser);
   ensureTopbarProfile();

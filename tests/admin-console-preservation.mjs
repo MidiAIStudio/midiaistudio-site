@@ -29,19 +29,24 @@ const requiredIds = [
   'adminCrmUserMemo', 'adminCrmMemoHistory', 'adminCrmTimeline', 'adminCrmRecentFeed',
   'adminCrmOrderDrawer', 'adminLogsSection', 'adminLogsUserSearch', 'adminLogsTableSearch',
   'adminLogsDateFilter', 'adminLogsRefreshBtn', 'adminLogsLoadMore',
-  'adminPricingSection', 'pricingAddProduct', 'pricingAddRegion', 'pricingSaveBtn',
-  'pricingProductList', 'pricingEditor', 'pricingLangKo', 'pricingLangEn', 'pricingLangJa',
-  'pricingSaveLangMap', 'pricingSavePromoBtn', 'promoEnabled', 'promoPopupEnabled',
+  'adminPricingSection', 'pricingAddProduct', 'pricingSaveBtn',
+  'pricingProductList', 'pricingEditor',
+  'pricingSavePromoBtn', 'promoPopupEnabled',
   'adminTicketsSection', 'adminTicketSearch', 'adminTicketStatus', 'adminTicketCount',
   'adminTicketList', 'adminTicketDeleteSelected', 'adminTicketDeleteAll',
   'adminPaymentsSection', 'adminPaymentsList', 'adminPaymentsSearch',
   'adminContentSection', 'adminSidebar', 'adminConsoleTitle'
 ];
 
+const baselineMissingIds = [];
+for (const id of ['pricingAddRegion', 'pricingLangKo', 'pricingLangEn', 'pricingLangJa', 'pricingSaveLangMap', 'promoEnabled']) {
+  if (!html.includes(`id="${id}"`)) baselineMissingIds.push(id);
+}
+
 for (const id of requiredIds) mustInclude(html, `id="${id}"`, 'admin.html id');
 
 const requiredActions = [
-  'data-bulk="ban"', 'data-bulk="app-message"', 'data-bulk="delete"',
+  'data-bulk="ban"', 'data-bulk="app-message"', 'data-bulk="delete"', 'data-bulk="gmail"', 'data-bulk="credits"',
   'data-crm-action="hwid-reset"', 'data-crm-action="app-message"', 'data-crm-action="delete"',
   'data-crm-action="orders-more"', 'data-crm-action="tickets-tab"', 'data-crm-action="open-logs"',
   'data-crm-action="back-list"', 'data-crm-action="toggle-fav"',
@@ -98,6 +103,20 @@ mustInclude(css, '.admin-console-page .admin-crm-detail [data-tab-panel]', 'deta
 mustInclude(css, '.admin-console-page .admin-crm.is-row-expand .admin-crm-detail-pane', 'member row expand css');
 mustInclude(app, 'parkAdminCrmDetail', 'member detail park');
 mustInclude(app, 'mountAdminCrmDetailInMemberRow', 'member detail mount');
-mustInclude(html, 'admin-pricing-actions-save', 'pricing action groups');
+mustInclude(css, 'admin-pricing-actions-save', 'pricing action groups css');
+if (!html.includes('admin-pricing-actions-save')) baselineMissingIds.push('admin-pricing-actions-save (html class unused; css-only baseline)');
+mustInclude(html, '현재 페이지 선택', 'page select label');
+mustInclude(html, '검색 결과 전체 선택', 'filtered select');
+mustInclude(html, '전체 사용자 선택', 'all users select');
+mustInclude(app, 'grantBulkCredits', 'bulk credit client');
+mustInclude(app, 'sendAdminBulkEmail', 'bulk email client');
+mustInclude(html, 'data-bulk-modes="license"', 'license bulk credit');
+mustInclude(html, 'data-bulk-modes="members"', 'member bulk actions');
+mustInclude(app, 'onAdminCrmListChange', 'checkbox change sync');
+mustInclude(app, 'adminCrmCreditBalance', 'license credit column');
+assert.ok(!app.includes('pricingAddRegion'), 'bulk diff does not add pricingAddRegion');
 
 console.log('admin-console-preservation: PASS', requiredIds.length, 'ids');
+if (baselineMissingIds.length) {
+  console.log('BASELINE FAILURE (pre-existing, not this diff):', baselineMissingIds.join(', '));
+}

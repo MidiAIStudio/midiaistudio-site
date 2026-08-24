@@ -1,7 +1,7 @@
 /**
  * Display catalog for one-time credit packs.
  * Charge amounts are verified by Cloud Functions; this file is UI-only.
- * Official list prices are KRW. Do not derive USD from KRW.
+ * Official list prices are KRW. EN/JA display uses the shared FX converter.
  */
 
 export const ACTIVE_CREDIT_IDS = ['CREDIT_5', 'CREDIT_30', 'CREDIT_100'];

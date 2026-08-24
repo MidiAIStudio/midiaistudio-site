@@ -254,6 +254,20 @@ describe('credit and legacy point collections', () => {
   });
 });
 
+describe('adminBulkOperations', () => {
+  it('clients cannot read or write bulk operation docs', async () => {
+    await seedUser('user1');
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc('adminBulkOperations/op1').set({ type: 'EMAIL', status: 'COMPLETED' });
+    });
+    const userDb = testEnv.authenticatedContext('user1').firestore();
+    await assertFails(userDb.doc('adminBulkOperations/op1').get());
+    await assertFails(userDb.doc('adminBulkOperations/op1').set({ status: 'COMPLETED' }));
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(anon.doc('adminBulkOperations/op2').set({ type: 'CREDIT_GRANT' }));
+  });
+});
+
 describe('users/{uid}/notifications rules', () => {
   const unreadPayload = {
     type: 'reservation_complete',

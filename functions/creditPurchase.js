@@ -6,6 +6,7 @@
  */
 
 const PAYMENT_ID_RE = /^[a-zA-Z0-9_-]{8,80}$/;
+const creditWallet = require('./creditWallet');
 
 function creditSalesKillSwitchOn() {
   const v = String(process.env.CREDIT_SALES_KILL_SWITCH || '').trim().toLowerCase();
@@ -82,32 +83,22 @@ function createHandlers({
       const userSnap = await tx.get(userRef);
       const wd = walletSnap.exists ? (walletSnap.data() || {}) : {};
       const ud = userSnap.exists ? (userSnap.data() || {}) : {};
-      const prev = Number(
-        wd.balance != null ? wd.balance
-          : (wd.creditBalance != null ? wd.creditBalance
-            : (ud.creditBalance != null ? ud.creditBalance : 0))
-      );
-      const next = prev + creditAmount;
-      tx.set(walletRef, {
+      const prev = creditWallet.readBalance(wd, ud);
+      const next = creditWallet.writeWalletLedger(tx, {
+        walletRef,
+        userRef,
+        ledgerRef,
         uid,
-        balance: next,
-        creditBalance: next,
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
-      tx.set(userRef, {
-        creditBalance: next,
-        updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
-      tx.set(ledgerRef, {
-        uid,
-        type: 'purchase',
-        amount: creditAmount,
-        creditAmount,
-        productId,
-        paymentId,
-        quoteId: quoteId || '',
-        displayTitle: `Credit 구매 +${creditAmount}`,
-        createdAt: FieldValue.serverTimestamp()
+        prev,
+        delta: creditAmount,
+        FieldValue,
+        ledger: {
+          type: 'purchase',
+          productId,
+          paymentId,
+          quoteId: quoteId || '',
+          displayTitle: `Credit 구매 +${creditAmount}`
+        }
       });
       tx.set(purchaseRef, {
         uid,
@@ -152,9 +143,9 @@ function createHandlers({
         });
       }
       const docId = catalogEngine.firestoreDocId(pid);
-      const product = await loadRegionCharge('KR', docId);
+      const currencyWanted = String((req.body || {}).currency || 'KRW').toUpperCase() === 'USD' ? 'USD' : 'KRW';
+      const product = await loadRegionCharge(currencyWanted === 'USD' ? 'Global' : 'KR', docId);
       const creditAmount = Math.round(Number(product.creditAmount || 0));
-      const amount = Math.round(Number(product.amount || product.effectivePriceKrw || 0));
       if (!(creditAmount > 0)) {
         return res.status(400).json({
           ok: false,
@@ -162,12 +153,29 @@ function createHandlers({
           message: 'Credit 지급량이 올바르지 않습니다.'
         });
       }
-      if (!(amount > 0) || String(product.currency || 'KRW').toUpperCase() !== 'KRW') {
-        return res.status(400).json({
-          ok: false,
-          code: 'PRICE_INVALID',
-          message: 'Credit 상품 가격을 계산할 수 없습니다.'
-        });
+      const isUsd = currencyWanted === 'USD';
+      let amount;
+      let payAmountUsd = null;
+      if (isUsd) {
+        const usd = Number(product.payAmountUsd != null ? product.payAmountUsd : product.amount);
+        if (!(usd > 0) || String(product.currency || '').toUpperCase() !== 'USD') {
+          return res.status(400).json({
+            ok: false,
+            code: 'QUOTE_CURRENCY',
+            message: 'PayPal 결제 통화가 올바르지 않습니다.'
+          });
+        }
+        amount = usd;
+        payAmountUsd = usd;
+      } else {
+        amount = Math.round(Number(product.amount || product.effectivePriceKrw || 0));
+        if (!(amount > 0) || String(product.currency || 'KRW').toUpperCase() !== 'KRW') {
+          return res.status(400).json({
+            ok: false,
+            code: 'PRICE_INVALID',
+            message: 'Credit 상품 가격을 계산할 수 없습니다.'
+          });
+        }
       }
       const now = new Date();
       const expires = catalogEngine.quoteExpiry(now);
@@ -181,14 +189,18 @@ function createHandlers({
         plan: 'credits',
         productVersion: Number(product.pricingVersion || 1),
         pricingVersion: Number(product.pricingVersion || 1),
-        basePrice: Number(product.listPrice || product.listPriceKrw || amount),
+        basePrice: Number(isUsd ? product.listPrice : (product.listPrice || product.listPriceKrw || amount)),
         discountType: product.discountPercent ? 'percent' : '',
         discountValue: product.discountPercent || 0,
         finalPrice: amount,
         amount,
-        currency: 'KRW',
+        currency: isUsd ? 'USD' : 'KRW',
         listPriceKrw: Number(product.listPriceKrw || product.listPrice || 0),
-        effectivePriceKrw: Number(product.effectivePriceKrw || amount),
+        effectivePriceKrw: Number(product.effectivePriceKrw || (isUsd ? 0 : amount)),
+        fxRate: isUsd ? Number(product.fxRate || 0) : null,
+        fxSource: isUsd ? (product.fxSource || '') : '',
+        fxFetchedAt: isUsd ? (product.fxFetchedAt || '') : '',
+        payAmountUsd,
         creditAmount,
         promotionId: product.promotionId || '',
         orderName: product.orderName || product.productName || pid,
@@ -254,6 +266,13 @@ function createHandlers({
       }
       if (requestedPid && requestedPid !== pid) {
         return res.status(400).json({ ok: false, code: 'PRODUCT_MISMATCH', message: '상품 정보가 일치하지 않습니다.' });
+      }
+      if (String(quote.currency || 'KRW').toUpperCase() !== 'KRW') {
+        return res.status(400).json({
+          ok: false,
+          code: 'QUOTE_CURRENCY',
+          message: '카카오페이는 KRW 견적만 사용할 수 있습니다.'
+        });
       }
       const creditAmount = Math.round(Number(quote.creditAmount || 0));
       const expectedAmount = Math.round(Number(quote.finalPrice != null ? quote.finalPrice : quote.amount));
@@ -434,7 +453,8 @@ function createHandlers({
     createCreditPurchaseQuote,
     creditPortOnePurchase,
     getCreditBalance,
-    listCreditLedger
+    listCreditLedger,
+    grantPayPalCredits: grantCredits
   };
 }
 

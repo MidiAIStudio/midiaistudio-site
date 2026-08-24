@@ -39,10 +39,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=account-ui-polish-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=lang-flag-3">
   <script defer src="./assets/js/analytics.js"></script>
+
 </head>
-<body class="portal-page hub-page account-page">
+<body class="portal-page hub-page">
   <div class="orb orb-a"></div><div class="orb orb-b"></div>
   <header class="topbar">
     <a class="brand" href="./index.html"><img class="brand-symbol" src="./assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40"><b>MidiAI Studio</b></a>
@@ -58,34 +59,27 @@
   <main class="hub-main">
     <section class="wrap hub-shell hub-post-shell">
       <div class="hub-topline">
-        <div>
-          <p class="eyebrow">Account</p>
-          <h1>내 계정</h1>
-          <p class="hub-desc">계정·라이선스·Credit 상태를 확인합니다.</p>
-        </div>
-        <div class="hub-actions">
-          <a id="accountHeroCreditCta" class="secondary mini-btn account-btn account-btn-secondary hidden" href="./purchase.html">Full 이용권 구매</a>
-          <a id="accountHeroCta" class="primary mini-btn account-btn account-btn-primary" href="./purchase.html">Lifetime 라이선스 구매</a>
-        </div>
+        <div><p class="eyebrow">Account</p><h1>내 계정</h1><p class="hub-desc">Google 로그인 정보와 라이선스 상태를 확인합니다.</p></div>
+        <div class="hub-actions"><a class="secondary" href="./purchase.html">라이선스 구매</a></div>
       </div>
-
-      <div class="hub-card portal-account-card account-profile-card">
+      <nav class="hub-subnav" aria-label="게시판 메뉴">
+        <a href="./notices.html" data-hub="notices">공지사항</a><a href="./patch-notes.html" data-hub="patches">패치노트</a><a href="./faq.html" data-hub="faq">FAQ</a>
+        <a href="./board.html" data-hub="board">자유게시판</a><a href="./support.html" data-hub="support">문의 작성</a><a href="./my-tickets.html" data-hub="tickets">나의 문의</a>
+      </nav>
+      <div class="hub-card portal-account-card">
         <div class="portal-account-head">
           <div id="avatar" class="avatar portal-avatar">?</div>
-          <div class="account-profile-meta">
+          <div>
             <b id="userName">로그인 전</b>
             <p id="userEmail">Google 로그인으로 라이선스 확인 준비</p>
-            <div id="accountProfileBadges" class="account-profile-badges" aria-live="polite">
-              <span class="account-chip is-pending">라이선스 확인 전</span>
-            </div>
+            <span id="licenseBadge" class="badge pending">라이선스 확인 전</span>
           </div>
         </div>
+        <div id="accountMeta" class="portal-account-grid"></div>
       </div>
-
-      <div id="accountMeta" class="account-dashboard" aria-live="polite"></div>
     </section>
   </main>
-  <footer class="site-footer legal-footer">
+          <footer class="site-footer legal-footer">
     <div class="footer-main">
       <div class="footer-brand"><img src="./assets/images/symbol.png" alt="MidiAI Studio" width="32" height="32" title="MidiAI Studio"><div><strong>MidiAI Studio</strong><p>AI 기반 MIDI 변환 소프트웨어</p></div></div>
       <div class="footer-links">
@@ -101,6 +95,6 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=v46-i18n-20260713"></script>
-  <script type="module" src="./assets/js/app.js?v=account-ui-polish-1"></script>
+  <script type="module" src="./assets/js/app.js?v=lang-flag-3"></script>
 </body>
 </html>
