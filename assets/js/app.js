@@ -13454,9 +13454,11 @@ function scheduleShellReveal(){
     if(typeof requestAnimationFrame==='function') requestAnimationFrame(()=>requestAnimationFrame(fn));
     else setTimeout(fn,0);
   };
-  const needsProduct=document.body.classList.contains('product-page');
+  // Only wait for CMS paint when product-cms.js is actually on the page.
+  const needsProductCms = document.body.classList.contains('product-page')
+    && !!document.querySelector('script[src*="product-cms.js"]');
   afterLayout(()=>{
-    if(!needsProduct || document.body.classList.contains('product-cms-painted')){
+    if(!needsProductCms || document.body.classList.contains('product-cms-painted')){
       ready();
       return;
     }
