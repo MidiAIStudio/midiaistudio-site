@@ -2,14 +2,300 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script src="../assets/js/locale-boot.js?v=auto-locale-2"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MidiAI Studio</title>
-  <meta name="description" content="Redirecting to MidiAI Studio homepage.">
-  <meta name="robots" content="noindex, follow">
-  <link rel="canonical" href="https://midiaistudio.com/">
-  <link rel="icon" href="../assets/images/symbol.png" type="image/png">
-  
-  <script>localStorage.setItem('midiai_lang','en'); location.replace('../index.html');</script>
+  <title>MidiAI Studio | AI Audio·YouTube·PDF to MIDI</title>
+  <meta name="description" content="Windows AI MIDI converter. Turn audio, MP3, YouTube, and sheet-music PDF into MIDI and edit in a piano roll.">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="author" content="MidiAI Studio">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="application-name" content="MidiAI Studio">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="https://midiaistudio.com/en/">
+  <link rel="alternate" hreflang="ko" href="https://midiaistudio.com/en/">
+  <link rel="alternate" hreflang="en" href="https://midiaistudio.com/en/">
+  <link rel="alternate" hreflang="ja" href="https://midiaistudio.com/ja/">
+  <link rel="alternate" hreflang="x-default" href="https://midiaistudio.com/en/">
+  <link rel="icon" href="../assets/images/symbol.png" type="image/png" sizes="any">
+  <link rel="apple-touch-icon" href="../assets/images/symbol.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="MidiAI Studio">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="MidiAI Studio | AI Audio·YouTube·PDF to MIDI">
+  <meta property="og:description" content="Windows AI MIDI converter. Turn audio, MP3, YouTube, and sheet-music PDF into MIDI and edit in a piano roll.">
+  <meta property="og:url" content="https://midiaistudio.com/en/">
+  <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-midi-converter-home.jpg">
+  <meta property="og:image:alt" content="MidiAI Studio — AI 피아노 커버를 MIDI로 변환">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="720">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="MidiAI Studio | AI Audio·YouTube·PDF to MIDI">
+  <meta name="twitter:description" content="Windows AI MIDI converter. Turn audio, MP3, YouTube, and sheet-music PDF into MIDI and edit in a piano roll.">
+  <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/ai-midi-converter-home.jpg">
+  <meta name="twitter:image:alt" content="MidiAI Studio">
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
+  <link rel="dns-prefetch" href="https://fonts.gstatic.com">
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+  <link rel="dns-prefetch" href="https://www.google-analytics.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css?v=auto-locale-2">
+  <script defer src="../assets/js/analytics.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "MidiAI Studio",
+    "applicationCategory": "MultimediaApplication",
+    "operatingSystem": "Windows",
+    "description": "음원·YouTube·악보 PDF를 AI로 MIDI로 변환하고 MIDI 편집까지 지원하는 Windows 소프트웨어.",
+    "url": "https://midiaistudio.com",
+    "downloadUrl": "https://midiaistudio.com/downloads.html",
+    "image": "https://midiaistudio.com/assets/images/symbol.png",
+    "offers": {
+      "@type": "Offer",
+      "price": "129000",
+      "priceCurrency": "KRW",
+      "availability": "https://schema.org/InStock",
+      "url": "https://midiaistudio.com/purchase.html"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "MidiAI Studio",
+    "url": "https://midiaistudio.com"
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "미디에이아이스튜디오",
+    "legalName": "미디에이아이스튜디오",
+    "url": "https://midiaistudio.com",
+    "logo": "https://midiaistudio.com/assets/images/symbol.png",
+    "email": "midiaistudio@gmail.com",
+    "telephone": "+82-10-2166-5563",
+    "sameAs": []
+  }
+  </script>
 </head>
-<body><a href="../index.html">MidiAI Studio</a></body>
+<body class="portal-page home-page">
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+  <header class="topbar">
+    <a class="brand" href="./"><img class="brand-symbol" src="../assets/images/symbol.png" alt="MidiAI Studio" width="40" height="40"><b>MidiAI Studio</b></a>
+    <button id="menuBtn" class="menu-btn" aria-label="메뉴 열기" type="button">☰</button>
+    <nav id="mainNav">
+      <a href="./" data-nav="home">홈</a>
+      <a href="../downloads.html" data-nav="downloads">다운로드</a>
+      <a href="./purchase.html" data-nav="purchase">구매</a>
+      <a href="../notices.html" data-nav="community">공지사항</a>
+      <a href="../patch-notes.html" data-nav="community">패치노트</a>
+      <a href="../faq.html" data-nav="community">FAQ</a>
+      <a href="../board.html" data-nav="community">자유게시판</a>
+      <a href="../support.html" data-nav="support">1:1 문의</a>
+      <a href="../my-tickets.html" data-nav="support">나의 문의</a>
+      <a href="../account.html" data-nav="account">내 계정</a>
+      <a id="adminNav" class="hidden" href="../admin.html">관리자</a>
+    </nav>
+    <div class="actions">
+      <button id="langBtn" class="ghost" aria-label="언어 변경" type="button">EN</button>
+      <button id="loginBtn" class="login" aria-label="Google 로그인" type="button"><span>G</span><em>Google 로그인</em></button>
+      <button id="logoutBtn" class="ghost hidden" aria-label="로그아웃" type="button">로그아웃</button>
+    </div>
+  </header>
+  <main class="portal-main">
+    <section class="portal-hero wrap">
+      <div class="portal-hero-grid">
+        <div class="portal-hero-copy">
+          <p class="pill portal-pill">AI MIDI Converter · YouTube / Audio / PDF</p>
+          <h1>음원과 YouTube 음악을 AI로 MIDI로 변환</h1>
+          <p class="portal-lead">MidiAI Studio는 Windows용 AI MIDI 변환·자동 채보 소프트웨어입니다. MP3·오디오, YouTube, 악보 PDF를 MIDI로 바꾸고 피아노롤에서 편집합니다.</p>
+          <div class="portal-cta">
+            <a class="primary" href="./purchase.html">라이선스 구매</a>
+            <a class="secondary" href="../downloads.html">무료 체험 다운로드</a>
+          </div>
+        </div>
+        <div class="portal-hero-panel">
+          <div class="studio-anim" aria-hidden="true">
+            <div class="studio-window">
+              <div class="studio-titlebar">
+                <div class="studio-dots"><i></i><i></i><i></i></div>
+                <b>Studio</b>
+                <span class="studio-license">FULL LICENSE</span>
+              </div>
+              <div class="studio-main">
+                <div class="studio-col">
+                  <div class="studio-block">
+                    <label>입력</label>
+                    <div class="studio-input-row">
+                      <span class="studio-input">youtube.com/watch?v=...</span>
+                      <span class="studio-chip is-accent">분석</span>
+                    </div>
+                  </div>
+                  <div class="studio-block">
+                    <label>검색</label>
+                    <div class="studio-input-row">
+                      <span class="studio-input">풍선</span>
+                      <span class="studio-chip is-accent">검색</span>
+                    </div>
+                    <div class="studio-result is-active">god Best 피아노 모음 · 04:36:46</div>
+                  </div>
+                </div>
+                <div class="studio-col">
+                  <div class="studio-block">
+                    <label>선택 정보</label>
+                    <strong>god Best Piano Collection</strong>
+                    <small>길이 04:36:45</small>
+                  </div>
+                  <div class="studio-block studio-convert">
+                    <label>MIDI 변환</label>
+                    <div class="studio-select">Piano (Original)</div>
+                    <div class="studio-convert-btn">MIDI로 변환</div>
+                    <div class="studio-progress"><i></i></div>
+                    <div class="studio-log">
+                      <p class="studio-log-line is-1">YouTube 검색 중...</p>
+                      <p class="studio-log-line is-2">길이와 제목 정보 분석 중...</p>
+                      <p class="studio-log-line is-3">미리듣기 오디오/웨이브폼 준비 중...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="studio-track">
+                <div class="studio-track-head">
+                  <span>트랙 범위</span>
+                  <div class="studio-track-tools"><i>미리듣기</i><i>정지</i><i>초기화</i></div>
+                </div>
+                <div class="studio-wave" aria-hidden="true">
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+                <div class="studio-range"><i></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap home-support" aria-label="지원하는 워크플로">
+      <div class="home-panel home-support-panel">
+        <div class="home-panel-head">
+          <h2>지원하는 워크플로</h2>
+        </div>
+        <div class="home-panel-body home-support-body">
+          <p class="muted home-support-lead">입력부터 편집·악보까지 한 앱에서 이어집니다. <a href="../guides/youtube-to-midi.html">유튜브 MIDI 변환</a> · <a href="../guides/audio-to-midi.html">음원 MIDI 변환</a> · <a href="../guides/pdf-to-midi.html">악보 PDF MIDI</a> · <a href="../guides/midi-editor.html">MIDI 편집</a> · <a href="../guides/ai-transcription.html">AI 채보</a> · <a href="../product.html">제품 소개</a></p>
+          <div class="home-support-org">
+            <div class="home-support-row home-support-inputs" role="group" aria-label="입력">
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">입력</span>
+                <strong>YouTube → MIDI</strong>
+                <span>피아노 커버·영상 링크를 분석해 MIDI로 변환</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>YouTube → MIDI</b>
+                  <p>YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.</p>
+                </div>
+              </div>
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">입력</span>
+                <strong>MP3 / Audio → MIDI</strong>
+                <span>MP3·WAV 등 오디오 파일을 AI로 변환</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>MP3 / Audio → MIDI</b>
+                  <p>MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.</p>
+                </div>
+              </div>
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">입력</span>
+                <strong>PDF → MIDI</strong>
+                <span>악보 PDF를 인식해 편집 가능한 MIDI로</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>PDF → MIDI</b>
+                  <p>스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="home-support-connector" aria-hidden="true"></div>
+            <div class="home-support-row home-support-hub" role="group" aria-label="변환">
+              <div class="home-support-card home-support-card-hub" tabindex="0">
+                <span class="home-support-kicker">코어</span>
+                <strong>AI MIDI 변환</strong>
+                <span>MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>AI MIDI 변환</b>
+                  <p>YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.</p>
+                </div>
+              </div>
+            </div>
+            <div class="home-support-connector" aria-hidden="true"></div>
+            <div class="home-support-row home-support-outputs" role="group" aria-label="결과">
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">결과</span>
+                <strong>MIDI 편집 PRO</strong>
+                <span>멀티트랙 피아노 롤에서 노트·벨로시티 편집</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>MIDI 편집 PRO</b>
+                  <p>변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.</p>
+                </div>
+              </div>
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">결과</span>
+                <strong>MIDI → PDF / MusicXML</strong>
+                <span>변환된 MIDI를 인쇄용 PDF·MusicXML 악보로</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>MIDI → PDF / MusicXML</b>
+                  <p>변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.</p>
+                </div>
+              </div>
+              <div class="home-support-card" tabindex="0">
+                <span class="home-support-kicker">결과</span>
+                <strong>라이브러리 저장</strong>
+                <span>변환·편집한 MIDI를 모아 다시 열어 작업</span>
+                <div class="home-support-tip" role="tooltip">
+                  <b>라이브러리 저장</b>
+                  <p>변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="wrap home-bottom" aria-label="업데이트">
+      <div class="home-bottom-grid">
+        <div class="home-panel">
+          <div class="home-panel-head"><h2>공지사항</h2><a class="home-panel-link" href="../notices.html">전체 보기</a></div>
+          <div id="homeUpdates" class="portal-updates-card home-panel-body" data-i18n-skip><p class="muted">불러오는 중...</p></div>
+        </div>
+        <div class="home-panel">
+          <div class="home-panel-head"><h2>패치노트</h2><a class="home-panel-link" href="../patch-notes.html">전체 보기</a></div>
+          <div id="homePatches" class="portal-updates-card home-panel-body" data-i18n-skip><p class="muted">불러오는 중...</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+          <footer class="site-footer legal-footer">
+    <div class="footer-main">
+      <div class="footer-brand"><img src="../assets/images/symbol.png" alt="MidiAI Studio" width="32" height="32" title="MidiAI Studio"><div><strong>MidiAI Studio</strong><p>AI 기반 MIDI 변환 소프트웨어</p></div></div>
+      <div class="footer-links">
+        <a href="../support.html">고객센터</a><a href="../terms.html">이용약관</a><a href="../privacy.html">개인정보처리방침</a><a href="../refund.html">환불정책</a><a href="../business-info.html">사업자정보</a>
+      </div>
+    </div>
+    <div class="business-box">
+      <span>상호: 미디에이아이스튜디오</span><span>대표자: 최정환</span><span>사업자등록번호: 332-22-02381</span>
+      <span>사업장 주소: 경상남도 창원시 성산구 창원대로780번길 47, 1101호</span><span>대표전화: 010-2166-5563</span>
+      <span>통신판매업: 제2026-창원성산-0312호</span><span>이메일: midiaistudio@gmail.com</span>
+    </div>
+    <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
+  </footer>
+  <script>window.MIDIAI_BASE_PATH='../'; localStorage.setItem('midiai_lang','en');</script>
+  <script type="module" src="../assets/js/config.js?v=auto-locale-2"></script>
+  <script type="module" src="../assets/js/app.js?v=auto-locale-2"></script>
+</body>
 </html>

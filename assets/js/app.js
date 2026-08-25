@@ -96,7 +96,10 @@ const $ = (id) => document.getElementById(id);
 const qs = (s, root = document) => root.querySelector(s);
 const page = location.pathname.split('/').pop() || 'index.html';
 const pathLower = location.pathname.toLowerCase();
-const pathLang = pathLower.includes('/en/') ? 'en' : pathLower.includes('/ja/') ? 'ja' : pathLower.includes('/ko/') ? 'ko' : '';
+const pathLang = (/\/en(\/|$)/.test(pathLower) ? 'en'
+  : /\/ja(\/|$)/.test(pathLower) ? 'ja'
+  : /\/ko(\/|$)/.test(pathLower) ? 'ko'
+  : '');
 const isPurchasePage = page === 'purchase.html' || pathLower.endsWith('/purchase') || pathLower.endsWith('/purchase/');
 const isRootKoreanPurchasePage = isPurchasePage && !pathLang;
 let selectedPurchaseId = 'PASS_30D';
@@ -123,8 +126,42 @@ if(isPurchasePage){
   if(purchaseMode === 'credits') selectedPointProductId = selectedPurchaseId;
 }
 
-let lang = pathLang || localStorage.getItem('midiai_lang') || document.documentElement.lang || 'ko';
+function readSavedSiteLang(){
+  try{
+    const v = String(localStorage.getItem('midiai_lang') || '').toLowerCase();
+    return ['ko','en','ja'].includes(v) ? v : '';
+  }catch(_){ return ''; }
+}
+function readCachedCountryLang(){
+  try{
+    const code = String(localStorage.getItem('midiai_country') || '').trim().toUpperCase();
+    if(!/^[A-Z]{2}$/.test(code) || code === 'ZZ' || code === 'XX') return '';
+    if(code === 'JP') return 'ja';
+    if(code === 'KR' || code === 'KP') return 'ko';
+    if(['US','GB','AU','CA','NZ','IE','SG','PH','IN','ZA','MY'].includes(code)) return 'en';
+  }catch(_){}
+  return '';
+}
+function detectBrowserSiteLang(){
+  const list = [];
+  try{ if(navigator.languages?.length) list.push(...navigator.languages); }catch(_){}
+  try{ if(navigator.language) list.push(navigator.language); }catch(_){}
+  for(const raw of list){
+    const primary = String(raw || '').toLowerCase().replace(/_/g,'-').split('-')[0];
+    if(['ko','en','ja'].includes(primary)) return primary;
+  }
+  return '';
+}
+function resolvePreferredSiteLang(){
+  if(typeof window !== 'undefined' && window.__MIDIAI_PREFERRED_LANG__){
+    const boot = String(window.__MIDIAI_PREFERRED_LANG__).toLowerCase();
+    if(['ko','en','ja'].includes(boot)) return boot;
+  }
+  return readSavedSiteLang() || detectBrowserSiteLang() || readCachedCountryLang() || 'ko';
+}
+let lang = pathLang || resolvePreferredSiteLang();
 if (!['ko','en','ja'].includes(lang)) lang = 'ko';
+// Korean checkout page forces KO UI for payments only — do not persist over user locale.
 if (isRootKoreanPurchasePage) lang = 'ko';
 let auth = null;
 let firebaseSignOut = null;
@@ -217,7 +254,7 @@ const attrOriginals = new WeakMap();
 
 const I18N = {
   en: {
-    '번호':'No.','글쓴이':'Author','작성일':'Date','포털':'Portal','커뮤니티':'Community','고객지원':'Support','지원':'Support','계정':'Account','홈':'Home','제품':'Product','다운로드':'Downloads','구매':'Purchase','변환가이드':'Conversion Guides','전체 가이드':'All Guides','변환 가이드':'Conversion Guides','MIDI 변환 가이드':'MIDI Conversion Guides','변환 FAQ':'Conversion FAQ','가이드':'Guides','준비중':'Coming soon','소개':'About','회사·제작자':'Company / Creator','지원하는 워크플로':'Supported workflows','제품 보기':'View product','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'From input to editing and scores — all in one MidiAI Studio app.','입력':'Input','코어':'Core','결과':'Output','피아노 커버·영상 링크를 분석해 MIDI로 변환':'Analyze piano covers and video links into MIDI','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'Convert MP3, WAV, and other audio with AI','악보 PDF를 인식해 편집 가능한 MIDI로':'Recognize score PDFs into editable MIDI','AI MIDI 변환':'AI MIDI conversion','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'The core engine that turns inputs into MIDI','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'Edit notes and velocity in a multi-track piano roll','MusicXML / PDF 악보':'MusicXML / PDF scores','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ score conversion and score workflows','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'Turn converted MIDI into printable PDF and MusicXML scores','라이브러리 저장':'Library save','변환·편집한 MIDI를 모아 다시 열어 작업':'Collect converted MIDI and reopen to keep working','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'Paste a YouTube URL or search for piano covers and performances. Pick a range on the waveform, then convert to MIDI with AI.','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'Upload local audio such as MP3 or WAV. Preview the range, then export MIDI for your chosen instrument.','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'Recognize scanned or print-ready score PDFs into editable MIDI. Extracted notes flow straight into MIDI editing and score workflows.','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'The core engine that turns YouTube, audio, and PDF inputs into MIDI. Choose instruments, set ranges, and track conversion in one place.','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'Edit converted MIDI right away in a multi-track piano roll — notes, velocity, CC, and quantize included.','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'Export converted MIDI as printable PDF scores and MusicXML, with score preview and save-to-results support.','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'Keep converted MIDI in the library and reopen later to continue editing or score conversion.','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'Practical conversion guides and in-depth articles for PDF, YouTube, MP3, Audio, MusicXML, and MIDI→PDF.','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'Practical conversion guides and in-depth articles for PDF, YouTube, MP3, Audio, and MusicXML.','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — practical guides and 50 in-depth articles matched to search intent.','공지사항':'Notices','패치노트 목록':'Patch notes list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','FAQ':'FAQ','자유게시판':'Free board','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout','문의 작성':'Create ticket','전체 보기':'View all',
+    '번호':'No.','글쓴이':'Author','작성일':'Date','포털':'Portal','커뮤니티':'Community','고객지원':'Support','지원':'Support','계정':'Account','홈':'Home','제품':'Product','다운로드':'Downloads','구매':'Purchase','변환가이드':'Conversion Guides','전체 가이드':'All Guides','변환 가이드':'Conversion Guides','MIDI 변환 가이드':'MIDI Conversion Guides','변환 FAQ':'Conversion FAQ','가이드':'Guides','준비중':'Coming soon','소개':'About','회사·제작자':'Company / Creator','지원하는 워크플로':'Supported workflows','제품 보기':'View product','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'From input to editing and scores — all in one MidiAI Studio app.','입력':'Input','코어':'Core','결과':'Output','피아노 커버·영상 링크를 분석해 MIDI로 변환':'Analyze piano covers and video links into MIDI','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'Convert MP3, WAV, and other audio with AI','악보 PDF를 인식해 편집 가능한 MIDI로':'Recognize score PDFs into editable MIDI','AI MIDI 변환':'AI MIDI conversion','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'The core engine that turns inputs into MIDI','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'Edit notes and velocity in a multi-track piano roll','MusicXML / PDF 악보':'MusicXML / PDF scores','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ score conversion and score workflows','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'Turn converted MIDI into printable PDF and MusicXML scores','라이브러리 저장':'Library save','변환·편집한 MIDI를 모아 다시 열어 작업':'Collect converted MIDI and reopen to keep working','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'Paste a YouTube URL or search for piano covers and performances. Pick a range on the waveform, then convert to MIDI with AI.','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'Upload local audio such as MP3 or WAV. Preview the range, then export MIDI for your chosen instrument.','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'Recognize scanned or print-ready score PDFs into editable MIDI. Extracted notes flow straight into MIDI editing and score workflows.','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'The core engine that turns YouTube, audio, and PDF inputs into MIDI. Choose instruments, set ranges, and track conversion in one place.','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'Edit converted MIDI right away in a multi-track piano roll — notes, velocity, CC, and quantize included.','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'Export converted MIDI as printable PDF scores and MusicXML, with score preview and save-to-results support.','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'Keep converted MIDI in the library and reopen later to continue editing or score conversion.','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'Practical conversion guides and in-depth articles for PDF, YouTube, MP3, Audio, MusicXML, and MIDI→PDF.','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'Practical conversion guides and in-depth articles for PDF, YouTube, MP3, Audio, and MusicXML.','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — practical guides and 50 in-depth articles matched to search intent.','공지사항':'Notices','패치노트 목록':'Patch notes list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','업데이트':'Updates','FAQ':'FAQ','자유게시판':'Free board','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout','문의 작성':'Create ticket','전체 보기':'View all',
     '7월 31일까지 할인 진행중':'Discount available until July 31','피아노 커버를':'Piano covers','프로 MIDI':'pro MIDI','로':'into MIDI','MIDI로 바꾸는':'into MIDI','가장 쉬운 방법':'made easy','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'The easiest way to turn piano covers into MIDI','MidiAI Studio 공식 포털입니다.':'MidiAI Studio official portal.','구매, 다운로드, 공지사항, 패치노트, 1:1 문의를 이용할 수 있습니다.':'Use purchase, downloads, notices, patch notes, and 1:1 support.','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio official portal. The home page focuses on product, purchase, and downloads; notices, patch notes, and private support are separated into board-style pages.',
     '라이선스 구매하기':'Buy license','무료 체험 다운로드':'Download free trial','1:1 문의하기':'Contact support','Windows 지원':'Windows support','Google 계정 연동':'Google account linked','비공개 문의':'Private support','업데이트, 이벤트, 운영 안내를 확인합니다.':'Check updates, events, and service notices.','버전별 변경 사항을 확인합니다.':'Check changes by version.','비공개 문의를 작성하고 답변을 확인합니다.':'Create private tickets and check replies.','라이선스 상태와 로그인 정보를 확인합니다.':'Check license status and login details.','바로가기':'Open','문의하기':'Contact','확인하기':'View','최신 설치 파일':'Latest installer','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Shows the latest version from Firestore downloads/latest.','불러오는 중...':'Loading...','최신 설치 파일과 버전 정보를 확인합니다.':'Check the latest installer and version info.',
     'Google 로그인':'Sign in with Google','로그인 전':'Not signed in','Google 로그인으로 라이선스 확인 준비':'Sign in with Google to check your license','라이선스 확인 전':'License not checked',
@@ -226,17 +263,17 @@ const I18N = {
     '답변 완료':'Answered','종료':'Closed','접수':'Open','권한이 없습니다.':'You do not have permission.','관리자 로그인이 필요합니다.':'Admin sign-in required.','표시할 내용이 없습니다.':'Nothing to show.','확인 실패':'Check failed','저장 완료':'Saved','수정':'Edit','삭제':'Delete','종료 처리':'Close','관리':'Manage','상세 보기':'Open detail','공지 관리':'Manage notices','패치노트 관리':'Manage patch notes','FAQ 관리':'Manage FAQ','정말 삭제할까요?':'Delete this item?','수정 완료':'Updated','삭제 완료':'Deleted','문의가 등록되었습니다.':'Ticket created.',
     '이용약관':'Terms of use','개인정보처리방침':'Privacy policy','환불정책':'Refund policy','사업자정보':'Business info','고객센터':'Support','AI 기반 MIDI 변환 소프트웨어':'AI-powered MIDI conversion software','AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품':'AI-powered MIDI conversion software · digital license',
     '피아노 커버 작업실':'Piano cover studio','YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.':'Load a YouTube link or audio file and convert it to MIDI with AI.','변환·편집·악보 변환·악보 편집까지 한 앱에서 이어집니다.':'Conversion, editing, score conversion, and score editing — all in one app.','영상·오디오를 MIDI로':'Video & audio to MIDI','YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.':'Start with a YouTube link, local upload, or song search. Preview the waveform, pick a range, and export MIDI for your instrument.','YouTube 링크 분석':'YouTube link analysis','웨이브폼 미리듣기':'Waveform preview','출력 악기·구간 선택':'Choose instrument & range','MIDI 편집 PRO':'MIDI Editor PRO','멀티트랙 피아노 롤':'Multi-track piano roll','변환된 MIDI를 바로 편집합니다. 128종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.':'Edit converted MIDI right away — 128 instruments, velocity/pitch bend/modulation, undo/copy/quantize.','128종 악기 지원':'128 instruments','벨로시티·CC 파라미터 편집':'Velocity & CC editing','악보 변환 · BETA':'Score conversion · BETA','MIDI ↔ 악보':'MIDI ↔ Score','MIDI를 PDF·MusicXML 악보로 저장하고, PDF 악보를 인식해 MIDI로 다시 변환합니다. 곡 제목·작사·작곡 메타데이터까지 함께 다룰 수 있습니다.':'Save MIDI as PDF/MusicXML scores, and recognize PDF scores back into MIDI — with title, lyricist, and composer metadata.','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','PDF → MIDI 변환':'PDF → MIDI conversion','악보 미리보기 · 결과 폴더 저장':'Score preview · save to results folder','악보 편집기 · BETA':'Score editor · BETA','악보를 바로 수정':'Edit scores directly','변환된 악보를 페이지·연속·타임라인으로 보며 음표와 벨로시티를 편집합니다. AI 검토 제안으로 피치 점프·겹침 음표 등을 확인하고 바로 반영할 수 있습니다.':'View converted scores in page, continuous, or timeline mode and edit notes and velocity. Use AI review suggestions for pitch jumps and overlapping notes.','페이지 / 연속 / 타임라인 보기':'Page / continuous / timeline views','음표 선택·속성 편집':'Note selection & property editing','AI 검토 제안':'AI review suggestions','홈 · 포털 연동':'Home · portal sync','공지사항, 패치노트, 라이선스 상태를 앱 안에서 확인하고 Studio로 바로 이동합니다.':'Check notices, patch notes, and license status in-app, then jump into Studio.','Google 로그인 후 홈페이지 자유게시판 글을 앱에서 바로 확인하고 작성할 수 있습니다.':'After Google sign-in, browse and post on the free board from the app.','라이브러리':'Library','변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.':'Manage converted and edited MIDI files in the library and reopen them anytime.','정식 라이선스 혜택':'Full license benefits','전체 구간 MIDI 변환':'Full-song MIDI conversion','악기 변환':'Instrument conversion','제한 없는 저장 · full song export':'Unlimited save · full song export','MIDI 편집 기능':'MIDI editing features','악보 변환 · MIDI ↔ PDF':'Score conversion · MIDI ↔ PDF','악보 편집기':'Score editor',
-    '공식 설치 · 업데이트 프로그램':'Official installer & updater','MidiAI Installer는 MidiAI Studio의 설치·업데이트·복구와 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다. Install / Update 한 번으로 자동 설치 또는 업데이트가 진행됩니다.':'MidiAI Installer is a Windows tool for install, update, repair, and runtime checks in one screen. One Install / Update action automatically installs or updates.','MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.':'MidiAI Installer is a Windows tool for install, update, repair, and runtime checks.','설치 방법':'How to install','실행 · 업데이트 방법':'How to run & update','결제 정보':'Payment details','주문자 정보':'Buyer','휴대폰 번호':'Phone number','결제수단':'Payment method','상품명':'Product','판매가격':'Price','결제형태':'Payment type','단건 결제':'One-time payment','서비스 제공기간':'Service delivery','결제 완료 후 즉시 라이선스 발급':'License issued immediately after payment','Google 로그인 계정 기준':'Based on your Google account','Google 로그인 후 자동 입력':'Filled after Google sign-in','KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.':'Buyer contact required for Korean card checkout.','결제 버튼을 준비하고 있습니다.':'Preparing payment buttons.','라이선스 안내':'License guide','계좌 입금 안내':'Bank transfer guide','사이트 메뉴':'Site menu','게시판 메뉴':'Board menu',
+    '공식 설치 · 업데이트 프로그램':'Official installer & updater','MidiAI Installer는 MidiAI Studio의 설치·업데이트·복구와 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다. Install / Update 한 번으로 자동 설치 또는 업데이트가 진행됩니다.':'MidiAI Installer is a Windows tool for install, update, repair, and runtime checks in one screen. One Install / Update action automatically installs or updates.','MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.':'MidiAI Installer is a Windows tool for install, update, repair, and runtime checks.','설치 방법':'How to install','실행 · 업데이트 방법':'How to run & update','결제 정보':'Payment details','주문자 정보':'Buyer','휴대폰 번호':'Phone number','결제수단':'Payment method','상품명':'Product','판매가격':'Price','결제형태':'Payment type','단건 결제':'One-time payment','서비스 제공기간':'Service delivery','결제 완료 후 즉시 라이선스 발급':'License issued immediately after payment','Google 로그인 계정 기준':'Based on your Google account','Google 로그인 후 자동 입력':'Filled after Google sign-in','KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.':'Buyer contact required for Korean card checkout.','결제 버튼을 준비하고 있습니다.':'Preparing payment buttons.','라이선스 안내':'License guide','계좌 입금 안내':'Bank transfer guide','사이트 메뉴':'Site menu','언어 선택':'Language','게시판 메뉴':'Board menu',
     '질문, 후기, 정보를 자유롭게 나누는 공간입니다.':'A place to share questions, reviews, and tips freely.','게시글 목록':'Posts','공지 목록':'Notices','공지':'Notice','← 목록':'← Back','목록':'Back','유형':'Type','(제목 없음)':'(No title)','로그인 후 게시글을 작성할 수 있습니다.':'Sign in to write a post.','자주 묻는 질문과 답변을 빠르게 확인하세요.':'Quick answers to common questions.','Google 로그인 정보와 라이선스 상태를 확인합니다.':'Check your Google sign-in and license status.',
     '신규':'New','개선':'Improved','수정':'Fixed','변경':'Changed','변경 사항':'Changes','내용이 없습니다.':'No content.','목차':'Contents','최신':'Newer','이전':'Older','버전 이동':'Version navigation','공유':'Share','전체 패치노트':'All patch notes','문의':'Support',
-    '소식':'News','패치':'Patch','피아노 커버·오디오·악보를':'Piano covers, audio & scores','MidiAI Studio는 Windows용 AI MIDI 변환 소프트웨어입니다. YouTube·MP3·오디오를 MIDI로 바꾸고, PDF/MusicXML 악보 워크플로까지 이어갑니다.':'MidiAI Studio is Windows AI MIDI conversion software. Turn YouTube, MP3, and audio into MIDI, then continue into PDF/MusicXML score workflows.','분석':'Analyze','풍선':'Balloon','god Best 피아노 모음 · 04:36:46':'god Best Piano Collection · 04:36:46','선택 정보':'Selection','길이 04:36:45':'Length 04:36:45','MIDI 변환':'MIDI convert','MIDI로 변환':'Convert to MIDI','YouTube 검색 중...':'Searching YouTube...','길이와 제목 정보 분석 중...':'Analyzing length and title...','미리듣기 오디오/웨이브폼 준비 중...':'Preparing preview audio / waveform...','트랙 범위':'Track range','미리듣기':'Preview','정지':'Stop','초기화':'Reset',
+    '소식':'News','패치':'Patch','피아노 커버·오디오·악보를':'Piano covers, audio & scores','MidiAI Studio는 Windows용 AI MIDI 변환 소프트웨어입니다. YouTube·MP3·오디오를 MIDI로 바꾸고, PDF/MusicXML 악보 워크플로까지 이어갑니다.':'MidiAI Studio is Windows AI MIDI conversion software. Turn YouTube, MP3, and audio into MIDI, then continue into PDF/MusicXML score workflows.','음원과 YouTube 음악을 AI로 MIDI로 변환':'Convert audio and YouTube music to MIDI with AI','MidiAI Studio는 Windows용 AI MIDI 변환·자동 채보 소프트웨어입니다. MP3·오디오, YouTube, 악보 PDF를 MIDI로 바꾸고 피아노롤에서 편집합니다.':'MidiAI Studio is Windows AI MIDI conversion and transcription software. Turn MP3, audio, YouTube, and score PDFs into MIDI and edit them in a piano roll.','입력부터 편집·악보까지 한 앱에서 이어집니다.':'From input to editing and scores — all in one app.','유튜브 MIDI 변환':'YouTube to MIDI','음원 MIDI 변환':'Audio to MIDI','악보 PDF MIDI':'Score PDF to MIDI','MIDI 편집':'MIDI editing','AI 채보':'AI transcription','제품 소개':'Product','분석':'Analyze','풍선':'Balloon','god Best 피아노 모음 · 04:36:46':'god Best Piano Collection · 04:36:46','선택 정보':'Selection','길이 04:36:45':'Length 04:36:45','MIDI 변환':'MIDI convert','MIDI로 변환':'Convert to MIDI','YouTube 검색 중...':'Searching YouTube...','길이와 제목 정보 분석 중...':'Analyzing length and title...','미리듣기 오디오/웨이브폼 준비 중...':'Preparing preview audio / waveform...','트랙 범위':'Track range','미리듣기':'Preview','정지':'Stop','초기화':'Reset',
     'YouTube 링크나 MP3/오디오를 불러와 AI가 MIDI로 변환합니다.':'Load a YouTube link or MP3/audio and convert it to MIDI with AI.','PDF·MusicXML 악보 변환과 MIDI 편집까지 한 앱에서 이어집니다.':'Continue into PDF/MusicXML score conversion and MIDI editing in one app.','PDF / YouTube / MP3 가이드':'PDF / YouTube / MP3 guides','관련 변환 가이드':'Related conversion guides','가이드 허브':'Guide hub',
     'MidiAI Studio를 만드는 사람들':'The people behind MidiAI Studio','MidiAI Studio는 피아노 커버·오디오·악보를 MIDI로 변환하고 편집하는 Windows 소프트웨어입니다. 이 페이지는 Google과 사용자가 제품을 신뢰할 수 있도록 ':'MidiAI Studio is Windows software for converting and editing piano covers, audio, and scores to MIDI. This page clearly discloses ','제작자, 회사, 연락처, 업데이트, 지원':'author, company, contact, updates, and support',' 정보를 명확히 공개합니다.':' information so Google and users can trust the product.','제작자 · Author':'Author',' — 대표 · Product Lead. AI MIDI 변환, MIDI 편집, 악보(MusicXML/PDF) 워크플로를 실제 연주자·제작자 관점에서 설계합니다.':' — Founder & Product Lead. Designs AI MIDI conversion, MIDI editing, and score (MusicXML/PDF) workflows from a performer/creator perspective.','문의:':'Contact:','회사 정보 · Organization':'Organization','상세:':'Details:','제품 신뢰 · Software credibility':'Software credibility','MidiAI Studio는 브라우저 일회성 도구가 아니라 ':'MidiAI Studio is not a one-off browser tool — it is an ','설치형 Windows 앱':'installed Windows app','입니다. Google 로그인 라이선스, 공식 다운로드, Lifetime 구매, 버전별 패치노트를 제공합니다.':'. It provides Google sign-in licensing, official downloads, Lifetime purchase, and versioned patch notes.','제품 기능':'Product features',' — AI 오디오→MIDI, MIDI 편집, 악보 변환':' — AI audio→MIDI, MIDI editing, score conversion',' — 최신 설치 파일':' — Latest installer',' — Lifetime 라이선스':' — Lifetime license',' — 업데이트·버전 이력':' — Updates & version history','SEO 가이드':'SEO guides','고객 지원 · Support':'Support','MIDI 변환 FAQ (20+)':'MIDI converter FAQ (20+)','를 운영합니다.':' are available.','법적 고지':'Legal','지금 시작하기':'Get started','무료 체험으로 YouTube·오디오→MIDI 변환을 확인하세요.':'Try the free trial to convert YouTube/audio to MIDI.','개인정보':'Privacy',
     '← 나의 문의':'← My tickets','새 문의':'New ticket','게시글':'Post','댓글을 입력하세요':'Write a comment','댓글 불러오는 중...':'Loading comments...','사진/영상/MIDI 첨부':'Attach photo / video / MIDI','JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 파일당 50MB · 최대 5개':'JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 50MB each · max 5','첨부한 파일이 없습니다.':'No files attached.','이모티콘':'Emoji','이모티콘 선택':'Choose emoji',    '이모티콘을 눌러 내용에 삽입합니다.':'Tap an emoji to insert it into the post.',
     '접속 정보':'Access information','국가':'Country','지역':'Region','최근 접속':'Last seen','IP':'IP','언어':'Language','접속 환경':'Client','국가 정보 없음':'Location unavailable','MidiAI Studio App':'MidiAI Studio App'
   },
   ja: {
-    '번호':'番号','글쓴이':'投稿者','작성일':'作成日','포털':'ポータル','커뮤니티':'コミュニティ','고객지원':'サポート','지원':'サポート','계정':'アカウント','홈':'ホーム','제품':'製品','다운로드':'ダウンロード','구매':'購入','변환가이드':'変換ガイド','전체 가이드':'ガイド一覧','변환 가이드':'変換ガイド','MIDI 변환 가이드':'MIDI変換ガイド','변환 FAQ':'変換FAQ','가이드':'ガイド','준비중':'準備中','소개':'紹介','회사·제작자':'会社・制作','지원하는 워크플로':'対応ワークフロー','제품 보기':'製品を見る','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'入力から編集・楽譜まで、MidiAI Studioひとつでつながります。','입력':'入力','코어':'コア','결과':'結果','피아노 커버·영상 링크를 분석해 MIDI로 변환':'ピアノカバーや動画リンクを解析してMIDIに変換','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'MP3・WAVなどのオーディオをAIで変換','악보 PDF를 인식해 편집 가능한 MIDI로':'楽譜PDFを認識して編集可能なMIDIに','AI MIDI 변환':'AI MIDI変換','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'入力をMIDIに変換するMidiAI Studioの中核エンジン','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'マルチトラックピアノロールでノート・ベロシティを編集','MusicXML / PDF 악보':'MusicXML / PDF楽譜','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ 楽譜変換と楽譜ワークフロー','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'変換したMIDIを印刷用PDF・MusicXML楽譜に','라이브러리 저장':'ライブラリ保存','변환·편집한 MIDI를 모아 다시 열어 작업':'変換・編集したMIDIをまとめて再度開いて作業','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'YouTubeのURLを貼るか検索してピアノカバー・演奏動画を読み込みます。波形で区間を選び、AIがMIDIに変換します。','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'MP3やWAVなどのローカル音声をアップロードして変換。プレビューで区間を確認し、希望の楽器でMIDIを取得できます。','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'スキャンや印刷用の楽譜PDFを認識して編集可能なMIDIに変換。抽出した音符はMIDI編集・楽譜ワークフローへそのまま続きます。','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'YouTube・音声・PDF入力をMIDIに変える中核エンジン。楽器選択、区間指定、変換進行を一か所で処理します。','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'変換したMIDIをマルチトラックピアノロールですぐ編集。ノート、ベロシティ、CC、クオンタイズまでプロ編集が可能です。','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'変換・編集したMIDIを印刷用PDF楽譜とMusicXMLで書き出します。楽譜プレビューと結果フォルダ保存に対応します。','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'変換・編集したMIDIをライブラリにまとめ、あとで再度開いて編集・楽譜変換を続けられます。','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXML・MIDI→PDFの変換ガイドと詳細記事をまとめています。','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXMLの変換ガイドと詳細記事をまとめています。','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI、YouTube to MIDI、MP3 to MIDI、Audio to MIDI、MusicXML — 検索意図に合わせた実践ガイドと50本の詳細記事。','공지사항':'お知らせ','패치노트 목록':'パッチノート一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト','문의 작성':'問い合わせ作成','전체 보기':'すべて見る',
+    '번호':'番号','글쓴이':'投稿者','작성일':'作成日','포털':'ポータル','커뮤니티':'コミュニティ','고객지원':'サポート','지원':'サポート','계정':'アカウント','홈':'ホーム','제품':'製品','다운로드':'ダウンロード','구매':'購入','변환가이드':'変換ガイド','전체 가이드':'ガイド一覧','변환 가이드':'変換ガイド','MIDI 변환 가이드':'MIDI変換ガイド','변환 FAQ':'変換FAQ','가이드':'ガイド','준비중':'準備中','소개':'紹介','회사·제작자':'会社・制作','지원하는 워크플로':'対応ワークフロー','제품 보기':'製品を見る','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'入力から編集・楽譜まで、MidiAI Studioひとつでつながります。','입력':'入力','코어':'コア','결과':'結果','피아노 커버·영상 링크를 분석해 MIDI로 변환':'ピアノカバーや動画リンクを解析してMIDIに変換','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'MP3・WAVなどのオーディオをAIで変換','악보 PDF를 인식해 편집 가능한 MIDI로':'楽譜PDFを認識して編集可能なMIDIに','AI MIDI 변환':'AI MIDI変換','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'入力をMIDIに変換するMidiAI Studioの中核エンジン','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'マルチトラックピアノロールでノート・ベロシティを編集','MusicXML / PDF 악보':'MusicXML / PDF楽譜','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ 楽譜変換と楽譜ワークフロー','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'変換したMIDIを印刷用PDF・MusicXML楽譜に','라이브러리 저장':'ライブラリ保存','변환·편집한 MIDI를 모아 다시 열어 작업':'変換・編集したMIDIをまとめて再度開いて作業','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'YouTubeのURLを貼るか検索してピアノカバー・演奏動画を読み込みます。波形で区間を選び、AIがMIDIに変換します。','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'MP3やWAVなどのローカル音声をアップロードして変換。プレビューで区間を確認し、希望の楽器でMIDIを取得できます。','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'スキャンや印刷用の楽譜PDFを認識して編集可能なMIDIに変換。抽出した音符はMIDI編集・楽譜ワークフローへそのまま続きます。','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'YouTube・音声・PDF入力をMIDIに変える中核エンジン。楽器選択、区間指定、変換進行を一か所で処理します。','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'変換したMIDIをマルチトラックピアノロールですぐ編集。ノート、ベロシティ、CC、クオンタイズまでプロ編集が可能です。','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'変換・編集したMIDIを印刷用PDF楽譜とMusicXMLで書き出します。楽譜プレビューと結果フォルダ保存に対応します。','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'変換・編集したMIDIをライブラリにまとめ、あとで再度開いて編集・楽譜変換を続けられます。','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXML・MIDI→PDFの変換ガイドと詳細記事をまとめています。','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXMLの変換ガイドと詳細記事をまとめています。','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI、YouTube to MIDI、MP3 to MIDI、Audio to MIDI、MusicXML — 検索意図に合わせた実践ガイドと50本の詳細記事。','공지사항':'お知らせ','패치노트 목록':'パッチノート一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','업데이트':'アップデート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト','문의 작성':'問い合わせ作成','전체 보기':'すべて見る',
     '7월 31일까지 할인 진행중':'7月31日まで割引中','피아노 커버를':'ピアノカバーを','프로 MIDI':'プロMIDI','로':'に','MIDI로 바꾸는':'MIDIに変える','가장 쉬운 방법':'一番簡単な方法','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'ピアノカバーをMIDIに変える一番簡単な方法','MidiAI Studio 공식 포털입니다.':'MidiAI Studio公式ポータルです。','구매, 다운로드, 공지사항, 패치노트, 1:1 문의를 이용할 수 있습니다.':'購入・ダウンロード・お知らせ・パッチノート・お問い合わせをご利用いただけます。','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio公式ポータルです。ホームは紹介・購入・ダウンロードを中心にし、お知らせ・パッチノート・非公開問い合わせは別ページに分けました。',
     '라이선스 구매하기':'ライセンス購入','무료 체험 다운로드':'無料体験ダウンロード','1:1 문의하기':'問い合わせる','Windows 지원':'Windows対応','Google 계정 연동':'Googleアカウント連携','비공개 문의':'非公開問い合わせ','업데이트, 이벤트, 운영 안내를 확인합니다.':'アップデート、イベント、運営案内を確認できます。','버전별 변경 사항을 확인합니다.':'バージョン別の変更内容を確認できます。','비공개 문의를 작성하고 답변을 확인합니다.':'非公開問い合わせを作成し、返信を確認できます。','라이선스 상태와 로그인 정보를 확인합니다.':'ライセンス状態とログイン情報を確認できます。','바로가기':'開く','문의하기':'問い合わせ','확인하기':'確認','최신 설치 파일':'最新インストーラー','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Firestore downloads/latest を基準に最新バージョンを表示します。','불러오는 중...':'読み込み中...','최신 설치 파일과 버전 정보를 확인합니다.':'最新インストーラーとバージョン情報を確認できます。',
     'Google 로그인':'Googleログイン','로그인 전':'未ログイン','Google 로그인으로 라이선스 확인 준비':'Googleログインでライセンス確認','라이선스 확인 전':'ライセンス未確認',
@@ -245,10 +282,10 @@ const I18N = {
     '답변 완료':'回答済み','종료':'終了','접수':'受付','권한이 없습니다.':'権限がありません。','관리자 로그인이 필요합니다.':'管理者ログインが必要です。','표시할 내용이 없습니다.':'表示する内容がありません。','확인 실패':'確認失敗','저장 완료':'保存完了','수정':'編集','삭제':'削除','종료 처리':'終了にする','관리':'管理','상세 보기':'詳細を見る','공지 관리':'お知らせ管理','패치노트 관리':'パッチノート管理','FAQ 관리':'FAQ管理','정말 삭제할까요?':'本当に削除しますか？','수정 완료':'更新しました','삭제 완료':'削除しました','문의가 등록되었습니다.':'問い合わせを登録しました。',
     '이용약관':'利用規約','개인정보처리방침':'プライバシーポリシー','환불정책':'返金ポリシー','사업자정보':'事業者情報','고객센터':'サポート','AI 기반 MIDI 변환 소프트웨어':'AIベースMIDI変換ソフト','AI 기반 MIDI 변환 소프트웨어 · 디지털 라이선스 상품':'AIベースMIDI変換ソフト · デジタルライセンス商品',
     '피아노 커버 작업실':'ピアノカバー作業室','YouTube 링크나 오디오 파일을 불러와 AI가 MIDI로 변환합니다.':'YouTubeリンクやオーディオファイルを読み込み、AIがMIDIに変換します。','변환·편집·악보 변환·악보 편집까지 한 앱에서 이어집니다.':'変換・編集・楽譜変換・楽譜編集まで1つのアプリで続けられます。','영상·오디오를 MIDI로':'映像・オーディオをMIDIに','YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.':'YouTubeリンクの貼り付け、ローカルアップロード、曲検索で作業を開始。波形プレビューと区間選択後、希望の楽器でMIDIを取得できます。','YouTube 링크 분석':'YouTubeリンク解析','웨이브폼 미리듣기':'波形プレビュー','출력 악기·구간 선택':'出力楽器・区間選択','MIDI 편집 PRO':'MIDI編集 PRO','멀티트랙 피아노 롤':'マルチトラックピアノロール','변환된 MIDI를 바로 편집합니다. 128종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.':'変換したMIDIをすぐ編集。128種楽器、ベロシティ・ピッチベンド・モジュレーション、元に戻す/コピー/クオンタイズまで対応。','128종 악기 지원':'128種楽器対応','벨로시티·CC 파라미터 편집':'ベロシティ・CC編集','악보 변환 · BETA':'楽譜変換 · BETA','MIDI ↔ 악보':'MIDI ↔ 楽譜','MIDI를 PDF·MusicXML 악보로 저장하고, PDF 악보를 인식해 MIDI로 다시 변환합니다. 곡 제목·작사·작곡 메타데이터까지 함께 다룰 수 있습니다.':'MIDIをPDF・MusicXML楽譜として保存し、PDF楽譜を認識してMIDIに再変換。曲名・作詞・作曲メタデータにも対応。','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','PDF → MIDI 변환':'PDF → MIDI変換','악보 미리보기 · 결과 폴더 저장':'楽譜プレビュー・結果フォルダ保存','악보 편집기 · BETA':'楽譜エディター · BETA','악보를 바로 수정':'楽譜をその場で編集','변환된 악보를 페이지·연속·타임라인으로 보며 음표와 벨로시티를 편집합니다. AI 검토 제안으로 피치 점프·겹침 음표 등을 확인하고 바로 반영할 수 있습니다.':'変換した楽譜をページ・連続・タイムライン表示で確認し、音符とベロシティを編集。AIレビュー提案でピッチジャンプや重なり音符をすぐ反映できます。','페이지 / 연속 / 타임라인 보기':'ページ / 連続 / タイムライン表示','음표 선택·속성 편집':'音符選択・属性編集','AI 검토 제안':'AIレビュー提案','홈 · 포털 연동':'ホーム・ポータル連携','공지사항, 패치노트, 라이선스 상태를 앱 안에서 확인하고 Studio로 바로 이동합니다.':'お知らせ、パッチノート、ライセンス状態をアプリ内で確認しStudioへ移動できます。','Google 로그인 후 홈페이지 자유게시판 글을 앱에서 바로 확인하고 작성할 수 있습니다.':'Googleログイン後、自由掲示板の投稿をアプリで確認・作成できます。','라이브러리':'ライブラリ','변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.':'変換・編集したMIDIをライブラリで管理し、再度開いて作業を続けられます。','정식 라이선스 혜택':'正式ライセンス特典','전체 구간 MIDI 변환':'全曲MIDI変換','악기 변환':'楽器変換','제한 없는 저장 · full song export':'無制限保存 · full song export','MIDI 편집 기능':'MIDI編集機能','악보 변환 · MIDI ↔ PDF':'楽譜変換 · MIDI ↔ PDF','악보 편집기':'楽譜エディター',
-    '공식 설치 · 업데이트 프로그램':'公式インストール・更新プログラム','MidiAI Installer는 MidiAI Studio의 설치·업데이트·복구와 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다. Install / Update 한 번으로 자동 설치 또는 업데이트가 진행됩니다.':'MidiAI Installerは、インストール・更新・修復とランタイム確認を1画面で行うWindows専用ツールです。Install / Updateを一度押すだけで自動インストールまたは更新が進みます。','MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.':'MidiAI Installerは、インストール・更新・修復とランタイム確認を1画面で行うWindows専用ツールです。','설치 방법':'インストール方法','실행 · 업데이트 방법':'実行・更新方法','결제 정보':'決済情報','주문자 정보':'購入者情報','휴대폰 번호':'携帯電話番号','결제수단':'決済手段','상품명':'商品名','판매가격':'販売価格','결제형태':'決済形態','단건 결제':'単発決済','서비스 제공기간':'サービス提供','결제 완료 후 즉시 라이선스 발급':'決済完了後すぐにライセンス発行','Google 로그인 계정 기준':'Googleログインアカウント基準','Google 로그인 후 자동 입력':'Googleログイン後に表示','KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.':'韓国カード決済時に必要な連絡先です。','결제 버튼을 준비하고 있습니다.':'決済ボタンを準備しています。','라이선스 안내':'ライセンス案内','계좌 입금 안내':'銀行振込案内','사이트 메뉴':'サイトメニュー','게시판 메뉴':'掲示板メニュー',
+    '공식 설치 · 업데이트 프로그램':'公式インストール・更新プログラム','MidiAI Installer는 MidiAI Studio의 설치·업데이트·복구와 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다. Install / Update 한 번으로 자동 설치 또는 업데이트가 진행됩니다.':'MidiAI Installerは、インストール・更新・修復とランタイム確認を1画面で行うWindows専用ツールです。Install / Updateを一度押すだけで自動インストールまたは更新が進みます。','MidiAI Installer는 MidiAI Studio의 설치, 빠른 업데이트, 전체 설치/복구, 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다.':'MidiAI Installerは、インストール・更新・修復とランタイム確認を1画面で行うWindows専用ツールです。','설치 방법':'インストール方法','실행 · 업데이트 방법':'実行・更新方法','결제 정보':'決済情報','주문자 정보':'購入者情報','휴대폰 번호':'携帯電話番号','결제수단':'決済手段','상품명':'商品名','판매가격':'販売価格','결제형태':'決済形態','단건 결제':'単発決済','서비스 제공기간':'サービス提供','결제 완료 후 즉시 라이선스 발급':'決済完了後すぐにライセンス発行','Google 로그인 계정 기준':'Googleログインアカウント基準','Google 로그인 후 자동 입력':'Googleログイン後に表示','KG이니시스 카드 결제 시 필요한 주문자 연락처입니다.':'韓国カード決済時に必要な連絡先です。','결제 버튼을 준비하고 있습니다.':'決済ボタンを準備しています。','라이선스 안내':'ライセンス案内','계좌 입금 안내':'銀行振込案内','사이트 메뉴':'サイトメニュー','언어 선택':'言語','게시판 메뉴':'掲示板メニュー',
     '질문, 후기, 정보를 자유롭게 나누는 공간입니다.':'質問・レビュー・情報を自由に共有する場所です。','게시글 목록':'投稿一覧','공지 목록':'お知らせ一覧','공지':'お知らせ','← 목록':'← 一覧','목록':'一覧','유형':'種類','(제목 없음)':'（タイトルなし）','로그인 후 게시글을 작성할 수 있습니다.':'ログイン後に投稿できます。','자주 묻는 질문과 답변을 빠르게 확인하세요.':'よくある質問と回答を素早く確認できます。','Google 로그인 정보와 라이선스 상태를 확인합니다.':'Googleログイン情報とライセンス状態を確認できます。',
     '신규':'新規','개선':'改善','수정':'修正','변경':'変更','변경 사항':'変更内容','내용이 없습니다.':'内容がありません。','목차':'目次','최신':'新しい版','이전':'前の版','버전 이동':'バージョン移動','공유':'共有','전체 패치노트':'パッチノート一覧','문의':'問い合わせ',
-    '소식':'ニュース','패치':'パッチ','피아노 커버·오디오·악보를':'ピアノカバー・オーディオ・楽譜を','MidiAI Studio는 Windows용 AI MIDI 변환 소프트웨어입니다. YouTube·MP3·오디오를 MIDI로 바꾸고, PDF/MusicXML 악보 워크플로까지 이어갑니다.':'MidiAI StudioはWindows向けAI MIDI変換ソフトです。YouTube・MP3・オーディオをMIDIに変え、PDF/MusicXML楽譜ワークフローまでつなげます。','분석':'解析','풍선':'風船','god Best 피아노 모음 · 04:36:46':'god Best ピアノコレクション · 04:36:46','선택 정보':'選択情報','길이 04:36:45':'長さ 04:36:45','MIDI 변환':'MIDI変換','MIDI로 변환':'MIDIに変換','YouTube 검색 중...':'YouTube検索中...','길이와 제목 정보 분석 중...':'長さとタイトル情報を解析中...','미리듣기 오디오/웨이브폼 준비 중...':'プレビュー音声/波形を準備中...','트랙 범위':'トラック範囲','미리듣기':'プレビュー','정지':'停止','초기화':'初期化',
+    '소식':'ニュース','패치':'パッチ','피아노 커버·오디오·악보를':'ピアノカバー・オーディオ・楽譜を','MidiAI Studio는 Windows용 AI MIDI 변환 소프트웨어입니다. YouTube·MP3·오디오를 MIDI로 바꾸고, PDF/MusicXML 악보 워크플로까지 이어갑니다.':'MidiAI StudioはWindows向けAI MIDI変換ソフトです。YouTube・MP3・オーディオをMIDIに変え、PDF/MusicXML楽譜ワークフローまでつなげます。','음원과 YouTube 음악을 AI로 MIDI로 변환':'音源とYouTube音楽をAIでMIDIに変換','MidiAI Studio는 Windows용 AI MIDI 변환·자동 채보 소프트웨어입니다. MP3·오디오, YouTube, 악보 PDF를 MIDI로 바꾸고 피아노롤에서 편집합니다.':'MidiAI StudioはWindows向けAI MIDI変換・自動採譜ソフトです。MP3・オーディオ、YouTube、楽譜PDFをMIDIに変え、ピアノロールで編集します。','입력부터 편집·악보까지 한 앱에서 이어집니다.':'入力から編集・楽譜まで、ひとつのアプリでつながります。','유튜브 MIDI 변환':'YouTube → MIDI','음원 MIDI 변환':'音源 → MIDI','악보 PDF MIDI':'楽譜PDF → MIDI','MIDI 편집':'MIDI編集','AI 채보':'AI採譜','제품 소개':'製品紹介','분석':'解析','풍선':'風船','god Best 피아노 모음 · 04:36:46':'god Best ピアノコレクション · 04:36:46','선택 정보':'選択情報','길이 04:36:45':'長さ 04:36:45','MIDI 변환':'MIDI変換','MIDI로 변환':'MIDIに変換','YouTube 검색 중...':'YouTube検索中...','길이와 제목 정보 분석 중...':'長さとタイトル情報を解析中...','미리듣기 오디오/웨이브폼 준비 중...':'プレビュー音声/波形を準備中...','트랙 범위':'トラック範囲','미리듣기':'プレビュー','정지':'停止','초기화':'初期化',
     'YouTube 링크나 MP3/오디오를 불러와 AI가 MIDI로 변환합니다.':'YouTubeリンクやMP3/オーディオを読み込み、AIがMIDIに変換します。','PDF·MusicXML 악보 변환과 MIDI 편집까지 한 앱에서 이어집니다.':'PDF・MusicXML楽譜変換とMIDI編集まで1つのアプリで続けられます。','PDF / YouTube / MP3 가이드':'PDF / YouTube / MP3ガイド','관련 변환 가이드':'関連変換ガイド','가이드 허브':'ガイドハブ',
     'MidiAI Studio를 만드는 사람들':'MidiAI Studioをつくる人たち','MidiAI Studio는 피아노 커버·오디오·악보를 MIDI로 변환하고 편집하는 Windows 소프트웨어입니다. 이 페이지는 Google과 사용자가 제품을 신뢰할 수 있도록 ':'MidiAI Studioはピアノカバー・オーディオ・楽譜をMIDIに変換・編集するWindowsソフトです。このページはGoogleとユーザーが製品を信頼できるよう ','제작자, 회사, 연락처, 업데이트, 지원':'制作者・会社・連絡先・更新・サポート',' 정보를 명확히 공개합니다.':'情報を明確に公開します。','제작자 · Author':'制作者 · Author',' — 대표 · Product Lead. AI MIDI 변환, MIDI 편집, 악보(MusicXML/PDF) 워크플로를 실제 연주자·제작자 관점에서 설계합니다.':' — 代表 · Product Lead。AI MIDI変換、MIDI編集、楽譜(MusicXML/PDF)ワークフローを演奏者・制作者の視点で設計します。','문의:':'お問い合わせ:','회사 정보 · Organization':'会社情報 · Organization','상세:':'詳細:','제품 신뢰 · Software credibility':'製品信頼 · Software credibility','MidiAI Studio는 브라우저 일회성 도구가 아니라 ':'MidiAI Studioはブラウザの使い捨てツールではなく ','설치형 Windows 앱':'インストール型Windowsアプリ','입니다. Google 로그인 라이선스, 공식 다운로드, Lifetime 구매, 버전별 패치노트를 제공합니다.':'です。Googleログインライセンス、公式ダウンロード、Lifetime購入、バージョン別パッチノートを提供します。','제품 기능':'製品機能',' — AI 오디오→MIDI, MIDI 편집, 악보 변환':' — AIオーディオ→MIDI、MIDI編集、楽譜変換',' — 최신 설치 파일':' — 最新インストーラー',' — Lifetime 라이선스':' — Lifetimeライセンス',' — 업데이트·버전 이력':' — 更新・バージョン履歴','SEO 가이드':'SEOガイド','고객 지원 · Support':'カスタマーサポート · Support','MIDI 변환 FAQ (20+)':'MIDI変換FAQ (20+)','를 운영합니다.':'を運営しています。','법적 고지':'法的告知','지금 시작하기':'今すぐ始める','무료 체험으로 YouTube·오디오→MIDI 변환을 확인하세요.':'無料トライアルでYouTube・オーディオ→MIDI変換を確認してください。','개인정보':'プライバシー',
     '← 나의 문의':'← マイ問い合わせ','새 문의':'新しい問い合わせ','게시글':'投稿','댓글을 입력하세요':'コメントを入力','댓글 불러오는 중...':'コメント読み込み中...','사진/영상/MIDI 첨부':'写真/動画/MIDI添付','JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 파일당 50MB · 최대 5개':'JPG/PNG/WEBP/GIF/MP4/WEBM/MIDI · 各50MB · 最大5件','첨부한 파일이 없습니다.':'添付ファイルはありません。','이모티콘':'絵文字','이모티콘 선택':'絵文字を選択',    '이모티콘을 눌러 내용에 삽입します.':'絵文字を押して本文に挿入します。',
@@ -328,9 +365,24 @@ function updatePurchaseLinks(){
   });
 }
 
+function persistSiteLang(next){
+  const v = ['ko','en','ja'].includes(next) ? next : 'ko';
+  try{ localStorage.setItem('midiai_lang', v); }catch(_){}
+}
+function cacheAccessCountryCode(code){
+  const c = String(code || '').trim().toUpperCase();
+  if(!/^[A-Z]{2}$/.test(c) || c === 'ZZ' || c === 'XX') return;
+  try{ localStorage.setItem('midiai_country', c); }catch(_){}
+}
 function applyStaticI18n(){
   document.documentElement.lang = lang;
-  localStorage.setItem('midiai_lang', lang);
+  // Persist path locale / preferred UI language, but never overwrite saved choice
+  // just because the KR checkout page forced lang='ko' for payment UI.
+  if(!(isRootKoreanPurchasePage && !pathLang)){
+    persistSiteLang(pathLang || lang);
+  }
+  document.documentElement.classList.remove('locale-pending');
+  document.documentElement.classList.add('i18n-ready');
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const val = lang === 'ko' ? key : (dict()[key] || key);
@@ -355,8 +407,8 @@ function applyStaticI18n(){
     node.nodeValue = lang === 'ko' ? original : translate(original);
   });
 
-  document.querySelectorAll('input[placeholder], textarea[placeholder], button[title], a[title]').forEach(el => {
-    for (const attr of ['placeholder','title']) {
+  document.querySelectorAll('input[placeholder], textarea[placeholder], button[title], a[title], [aria-label]').forEach(el => {
+    for (const attr of ['placeholder','title','aria-label']) {
       if (!el.hasAttribute(attr)) continue;
       let map = attrOriginals.get(el);
       if (!map) { map = {}; attrOriginals.set(el, map); }
@@ -3330,14 +3382,31 @@ function creditPurchaseHref(){
 function lifetimePurchaseHref(){
   // Already on a locale purchase document: keep same folder (never hop ko↔en↔ja).
   if(isPurchasePage) return './purchase.html';
+  const preferred = readSavedSiteLang() || lang;
+  const use = ['ko','en','ja'].includes(preferred) ? preferred : 'ko';
   if(pathLang){
-    if(lang==='en') return '../en/purchase.html';
-    if(lang==='ja') return '../ja/purchase.html';
+    if(use==='en') return '../en/purchase.html';
+    if(use==='ja') return '../ja/purchase.html';
     return '../purchase.html';
   }
-  if(lang==='en') return './en/purchase.html';
-  if(lang==='ja') return './ja/purchase.html';
+  if(use==='en') return './en/purchase.html';
+  if(use==='ja') return './ja/purchase.html';
   return './purchase.html';
+}
+
+function localeHomeHref(nextLang){
+  const use = (typeof normalizeSiteLang === 'function')
+    ? normalizeSiteLang(nextLang || readSavedSiteLang() || lang)
+    : (['ko','en','ja'].includes(nextLang) ? nextLang : (readSavedSiteLang() || lang || 'ko'));
+  const base = window.MIDIAI_BASE_PATH || './';
+  if(use === 'en') return `${base}en/`;
+  if(use === 'ja') return `${base}ja/`;
+  return `${base}index.html`;
+}
+
+function isSiteHomePage(){
+  const p = pathLower.replace(/\/+$/, '') || '/';
+  return page === 'index.html' || p === '' || p === '/' || p === '/en' || p === '/ja' || p === '/ko' || /\/(en|ja|ko)$/i.test(p);
 }
 
 function accountPageHref(hash){
@@ -3952,6 +4021,11 @@ async function upsertUser(user){
     userNotifyPrefs = normalizeNotifyPrefs(old.notifyPrefs || data.notifyPrefs || currentUserDoc.notifyPrefs);
     isAdminUser=normalizeRole(old.role || data.role)==='admin';
     setAdminNavVisible(isAdminUser);
+    // Reuse accessInfo country for anonymous locale fallback later — never overwrite midiai_lang.
+    try{
+      const code = currentUserDoc?.accessInfo?.countryCode || old?.accessInfo?.countryCode;
+      if(code) cacheAccessCountryCode(code);
+    }catch(_){}
     await ensureUserLicenseDoc(user.uid, { role: data.role || old.role || 'user' });
   } catch(e) {
     console.error('user upsert',e);
@@ -4015,6 +4089,17 @@ function recordAccessInfoQuiet(){
         })
       });
       markAccessInfoClientAttempt(uid, !!res.ok);
+      if(res.ok && firestoreApi?.getDoc && db){
+        try{
+          const {doc,getDoc} = firestoreApi;
+          const snap = await getDoc(doc(db,'users',uid));
+          const code = snap.exists() ? snap.data()?.accessInfo?.countryCode : '';
+          if(code){
+            cacheAccessCountryCode(code);
+            if(currentUserDoc) currentUserDoc = { ...currentUserDoc, accessInfo: snap.data().accessInfo };
+          }
+        }catch(_){}
+      }
     }catch(e){
       console.warn('recordAccessInfo');
       markAccessInfoClientAttempt(uid, false);
@@ -13093,11 +13178,16 @@ function paintTopbarLangMenu(){
 function setSiteLanguage(nextLang){
   const next = normalizeSiteLang(nextLang);
   closeTopbarLangMenu();
+  persistSiteLang(next);
   if(isPurchasePage){
-    if(next === normalizeSiteLang(lang)) return;
-    localStorage.setItem('midiai_lang', next);
+    if(next === normalizeSiteLang(pathLang || lang)) return;
     if(next === 'ko') location.href = (pathLang ? '../purchase.html' : './purchase.html') + location.search;
     else location.href = (pathLang ? `../${next}/purchase.html` : `./${next}/purchase.html`) + location.search;
+    return;
+  }
+  if(isSiteHomePage()){
+    if(next === normalizeSiteLang(pathLang || lang)) return;
+    location.href = localeHomeHref(next);
     return;
   }
   if(next === normalizeSiteLang(lang)) return;
@@ -13106,6 +13196,14 @@ function setSiteLanguage(nextLang){
   applyGuidesI18n(lang);
   if($('accountMeta') && currentUser) renderAccountDashboard(currentUser.uid, accountLicenseDoc, latestDownloadData);
   paintProfileCreditStrip();
+  try{
+    document.querySelectorAll('#mainNav a[data-nav="home"]').forEach((a)=>{
+      a.setAttribute('href', localeHomeHref(next));
+    });
+    document.querySelectorAll('#mainNav a[data-nav="purchase"]').forEach((a)=>{
+      a.setAttribute('href', lifetimePurchaseHref());
+    });
+  }catch(_){}
 }
 
 function onLangBtnClick(e){
@@ -13150,7 +13248,7 @@ function ensureTopbarLangSwitcher(){
   if(!langBtn) return null;
   langBtn.classList.add('topbar-lang');
   langBtn.type = 'button';
-  langBtn.setAttribute('aria-label', '언어 선택');
+  langBtn.setAttribute('aria-label', tt('언어 선택'));
   langBtn.setAttribute('aria-haspopup', 'listbox');
   langBtn.setAttribute('aria-expanded', topbarLangMenuOpen ? 'true' : 'false');
   langBtn.setAttribute('aria-controls', 'topbarLangMenu');
@@ -13164,7 +13262,7 @@ function ensureTopbarLangSwitcher(){
     menu.hidden = true;
     menu.classList.remove('is-open');
     menu.setAttribute('role', 'listbox');
-    menu.setAttribute('aria-label', '언어 선택');
+    menu.setAttribute('aria-label', tt('언어 선택'));
     menu.innerHTML = LANG_LOCALES.map((code)=>{
       const meta = LANG_META[code];
       return `<button type="button" class="topbar-lang-option" role="option" data-lang="${code}" aria-selected="false">
@@ -13236,7 +13334,7 @@ function refreshTopbarActionLabels(){
     const code = langBtn.querySelector('.topbar-lang-code');
     if(flag) flag.innerHTML = langFlagSvg(current);
     if(code) code.textContent = meta.code;
-    langBtn.setAttribute('aria-label', `언어 선택, ${meta.name}`);
+    langBtn.setAttribute('aria-label', `${tt('언어 선택')}, ${meta.name}`);
     paintTopbarLangMenu();
   }
   const loginLabel = $('loginBtn')?.querySelector('.login-label');
@@ -13493,8 +13591,8 @@ function initSidebarLayout(){
   const nav=document.createElement('nav');
   nav.id='mainNav';
   nav.className='sidebar-nav';
-  nav.setAttribute('aria-label','사이트 메뉴');
-  nav.innerHTML=`<div class="sidebar-primary"><a href="${base}index.html" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}guide/index.html" data-nav="guides">${navIcon('guide')}<span>가이드</span><span class="nav-soon-badge">준비중</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${purchaseHref}" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" hidden aria-hidden="true" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
+  nav.setAttribute('aria-label', tt('사이트 메뉴'));
+  nav.innerHTML=`<div class="sidebar-primary"><a href="${localeHomeHref()}" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}guide/index.html" data-nav="guides">${navIcon('guide')}<span>가이드</span><span class="nav-soon-badge">준비중</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${purchaseHref}" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" hidden aria-hidden="true" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
   sidebar.appendChild(nav);
   const backdrop=document.createElement('div');
   backdrop.className='sidebar-backdrop';

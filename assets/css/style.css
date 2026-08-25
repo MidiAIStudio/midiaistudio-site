@@ -1803,6 +1803,8 @@ body.sidebar-layout.admin-page .legal-footer{
    Reserve the final sidebar width (--sidebar-w) so wrap/cards don't jump on first paint. */
 @keyframes midiaiBootReveal{to{opacity:1}}
 html:not(.sidebar-ready) body{background:#070914!important}
+html.locale-pending:not(.i18n-ready) body{visibility:hidden!important}
+html.i18n-ready body{visibility:visible}
 body:not(.sidebar-layout)::before{content:none!important;display:none!important}
 body:not(.sidebar-layout) > .topbar,
 body:not(.sidebar-layout) > main,
