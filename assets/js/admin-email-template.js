@@ -42,6 +42,32 @@ function formatInline(escaped) {
     );
 }
 
+export const AUTO_EMAIL_HEADER_LINES = ['안녕하세요,', 'MidiAI Studio입니다.'];
+export const AUTO_EMAIL_FOOTER_LINES = ['감사합니다.', BRAND_NAME];
+
+export function detectAutoGreetingOverlap(body) {
+  const raw = String(body || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  const lines = raw.split('\n').map((ln) => ln.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const header = { duplicate: false };
+  const footer = { duplicate: false };
+  if (!lines.length) return { header, footer };
+
+  const start = lines.slice(0, 2);
+  const end = lines.slice(-2);
+  const isHeaderLine = (s) => (
+    /^안녕하세요([,.]|$)/.test(s)
+    || /^MidiAI Studio입니다\.?$/.test(s)
+  );
+  const isFooterLine = (s) => (
+    /^감사합니다\.?$/.test(s)
+    || /^MidiAI Studio입니다\.?$/.test(s)
+    || /^MidiAI Studio\.?$/.test(s)
+  );
+  header.duplicate = start.some(isHeaderLine);
+  footer.duplicate = end.some(isFooterLine);
+  return { header, footer };
+}
+
 export function formatBodyHtml(body) {
   const raw = String(body || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
   if (!raw) return '';
@@ -251,7 +277,7 @@ export const BULK_MESSAGE_PRESETS = [
     label: '업데이트 안내',
     channel: 'both',
     subject: 'MidiAI Studio 업데이트 안내',
-    body: '안녕하세요.\n\nMidiAI Studio에 새로운 업데이트가 적용되었습니다.\n\n자세한 내용은 공지와 앱 내 안내를 확인해 주세요.',
+    body: 'MidiAI Studio에 새로운 업데이트가 적용되었습니다.\n\n자세한 내용은 공지와 앱 내 안내를 확인해 주세요.',
     bannerEnabled: false
   },
   {
@@ -259,7 +285,7 @@ export const BULK_MESSAGE_PRESETS = [
     label: '서비스 점검',
     channel: 'both',
     subject: '서비스 점검 안내',
-    body: '안녕하세요.\n\n안정적인 서비스 제공을 위해 일시 점검을 진행합니다.\n\n점검 시간: (시간 입력)\n영향 범위: (범위 입력)\n\n이용에 불편을 드려 죄송합니다.',
+    body: '안정적인 서비스 제공을 위해 일시 점검을 진행합니다.\n\n점검 시간: (시간 입력)\n영향 범위: (범위 입력)\n\n이용에 불편을 드려 죄송합니다.',
     bannerEnabled: false
   },
   {
@@ -267,7 +293,7 @@ export const BULK_MESSAGE_PRESETS = [
     label: '결제 안내',
     channel: 'both',
     subject: '결제/이용 안내',
-    body: '안녕하세요.\n\n요청하신 결제 및 이용 관련 안내입니다.\n\n문의가 있으시면 고객지원으로 연락해 주세요.',
+    body: '요청하신 결제 및 이용 관련 안내입니다.\n\n문의가 있으시면 고객지원으로 연락해 주세요.',
     bannerEnabled: false
   },
   {
@@ -275,7 +301,7 @@ export const BULK_MESSAGE_PRESETS = [
     label: '이벤트 안내',
     channel: 'email',
     subject: 'MidiAI Studio 이벤트 안내',
-    body: '안녕하세요.\n\nMidiAI Studio에서 특별 이벤트를 진행합니다.\n아래 내용을 확인해 주세요.',
+    body: 'MidiAI Studio에서 특별 이벤트를 진행합니다.\n아래 내용을 확인해 주세요.',
     bannerEnabled: true,
     bannerEyebrow: 'EVENT',
     bannerTitle: '기간제 상품 출시 이벤트',

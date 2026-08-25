@@ -50,4 +50,15 @@ const noCta = buildAdminBrandedEmail({
 });
 assert.ok(!noCta.html.includes('가격 확인하기'));
 
+const normal = buildAdminBrandedEmail({
+  subject: '보너스 안내',
+  body: 'MidiAI Studio를 이용해 주시는 분들께 감사의 마음을 담아\n보너스 10 크레딧을 지급해 드렸습니다. 🎁'
+});
+assert.strictEqual((normal.html.match(/안녕하세요/g) || []).length, 1);
+assert.strictEqual((normal.html.match(/감사합니다/g) || []).length, 1);
+assert.ok(normal.html.includes('보너스 10 크레딧을 지급해 드렸습니다'));
+assert.ok(normal.text.includes('안녕하세요,'));
+assert.ok(normal.text.includes('MidiAI Studio입니다.'));
+assert.ok(normal.text.includes('감사합니다.'));
+
 console.log('ok adminEmailTemplate');

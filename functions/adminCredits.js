@@ -126,6 +126,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
         reason,
         adminUid: adminUser.uid
       });
+      res.json({ ok: true, uid: targetUid, balance: result.balance, amount: delta });
       if (sign > 0 && userNotify && userNotify.notifyAdminCreditGrant) {
         try {
           await userNotify.notifyAdminCreditGrant(db, FieldValue, {
@@ -153,7 +154,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       } catch (err) {
         console.warn('adminGrant audit', err && err.message);
       }
-      return res.json({ ok: true, uid: targetUid, balance: result.balance, amount: delta });
+      return;
     } catch (err) {
       return res.status(err.status || 500).json({
         ok: false,

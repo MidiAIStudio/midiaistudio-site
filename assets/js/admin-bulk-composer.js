@@ -2,8 +2,11 @@ import {
   buildAdminBrandedEmail,
   validateHttpUrl,
   escapeHtml,
-  BULK_MESSAGE_PRESETS
-} from './admin-email-template.js?v=bulk-composer-1';
+  BULK_MESSAGE_PRESETS,
+  AUTO_EMAIL_HEADER_LINES,
+  AUTO_EMAIL_FOOTER_LINES,
+  detectAutoGreetingOverlap
+} from './admin-email-template.js?v=email-auto-ux-1';
 
 function shortUid(uid) {
   const s = String(uid || '');
@@ -56,6 +59,7 @@ export function openBulkMessageComposer({
   recipients = [],
   onSend
 } = {}) {
+  try { window.__midiaiHideAdminFlash?.(); } catch (_) {}
   const isEmail = channel === 'email';
   const list = Array.isArray(recipients) ? recipients.slice() : [];
   const sendable = isEmail
@@ -108,11 +112,32 @@ export function openBulkMessageComposer({
                   <span>제목</span>
                   <input type="text" data-field="subject" maxlength="200" required placeholder="${isEmail ? '메일 제목' : '쪽지 제목'}">
                 </label>
+                ${isEmail ? `
+                <div class="edit-field bulk-email-body-field">
+                  <div class="bulk-composer-label-row">
+                    <span>본문</span>
+                    <span class="bulk-email-auto-hint">ⓘ 상단 인사말과 하단 서명은 자동으로 추가됩니다.</span>
+                  </div>
+                  <div class="bulk-email-body-shell">
+                    <div class="bulk-email-auto-block" aria-hidden="true">
+                      <span class="bulk-email-auto-badge">자동</span>
+                      <p>${AUTO_EMAIL_HEADER_LINES.map(escapeHtml).join('<br>')}</p>
+                    </div>
+                    <textarea data-field="body" rows="8" maxlength="20000" required placeholder="여기에 메일 본문만 입력하세요"></textarea>
+                    <div class="bulk-email-auto-block" aria-hidden="true">
+                      <span class="bulk-email-auto-badge">자동</span>
+                      <p>${AUTO_EMAIL_FOOTER_LINES.map(escapeHtml).join('<br>')}</p>
+                    </div>
+                  </div>
+                  <p class="bulk-email-dup-warn hidden" data-body-dup-warn></p>
+                </div>
+                <p class="bulk-composer-hint muted small">줄바꿈은 문단으로 표시됩니다. **굵게**, [링크](https://…) , - 목록 을 사용할 수 있습니다.</p>
+                ` : `
                 <label class="edit-field">
                   <span>본문</span>
-                  <textarea data-field="body" rows="8" maxlength="20000" required placeholder="${isEmail ? '메일 본문' : '쪽지 내용'}"></textarea>
+                  <textarea data-field="body" rows="8" maxlength="20000" required placeholder="쪽지 내용"></textarea>
                 </label>
-                ${isEmail ? '<p class="bulk-composer-hint muted small">줄바꿈은 문단으로 표시됩니다. **굵게**, [링크](https://…) , - 목록 을 사용할 수 있습니다.</p>' : ''}
+                `}
               </section>
 
               ${isEmail ? `
@@ -225,6 +250,17 @@ export function openBulkMessageComposer({
       }
     };
 
+    const updateDupWarn = () => {
+      const warnEl = form.querySelector('[data-body-dup-warn]');
+      if (!isEmail || !warnEl) return;
+      const hit = detectAutoGreetingOverlap(field('body')?.value || '');
+      const lines = [];
+      if (hit.header.duplicate) lines.push('⚠ 자동 인사말과 중복될 수 있습니다.');
+      if (hit.footer.duplicate) lines.push('⚠ 하단 자동 서명과 중복될 수 있습니다.');
+      warnEl.textContent = lines.join('\n');
+      warnEl.classList.toggle('hidden', !lines.length);
+    };
+
     const updatePreview = () => {
       const draft = readDraft();
       if (isEmail) {
@@ -262,6 +298,7 @@ export function openBulkMessageComposer({
         syncBannerFields();
       }
       updatePreview();
+      updateDupWarn();
     };
 
     const syncBannerFields = () => {
@@ -350,6 +387,7 @@ export function openBulkMessageComposer({
         field(name)?.addEventListener('input', () => {
           showError('');
           updatePreview();
+          if (name === 'body') updateDupWarn();
         });
       });
 
@@ -398,6 +436,7 @@ export function openBulkMessageComposer({
     paintRecipients();
     syncBannerFields();
     applyPreset('blank');
+    updateDupWarn();
     field('subject')?.focus();
   });
 }

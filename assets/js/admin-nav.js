@@ -95,6 +95,7 @@
 
   function show(view, opts) {
     opts = opts || {};
+    try { if (typeof window.__midiaiHideAdminFlash === 'function') window.__midiaiHideAdminFlash(); } catch (_) {}
     if (view === 'payments') {
       view = 'crm';
       opts.crmMode = opts.crmMode || 'orders';

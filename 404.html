@@ -7,10 +7,38 @@
   <script>
   (function () {
     var path = (location.pathname || '').replace(/\/+$/, '');
+    var extra = (location.search || '') + (location.hash || '');
+    var known = {
+      purchase: '/purchase.html',
+      downloads: '/downloads.html',
+      notices: '/notices.html',
+      notice: '/notice.html',
+      'patch-notes': '/patch-notes.html',
+      'patch-note': '/patch-note.html',
+      faq: '/faq.html',
+      board: '/board.html',
+      'board-post': '/board-post.html',
+      'board-write': '/board-write.html',
+      support: '/support.html',
+      account: '/account.html',
+      product: '/product.html'
+    };
+    var file = path.match(/\/guide\/([a-z0-9-]+)\.html$/i);
+    if (file) {
+      var fileDest = known[file[1].toLowerCase()];
+      if (fileDest) {
+        location.replace(fileDest + extra);
+        return;
+      }
+    }
     var m = path.match(/\/guide\/([a-z0-9-]+)$/i);
     if (!m) return;
     var slug = m[1].toLowerCase();
     if (slug === 'index') return;
+    if (known[slug]) {
+      location.replace(known[slug] + extra);
+      return;
+    }
     location.replace('/guide.html?slug=' + encodeURIComponent(slug));
   })();
   </script>

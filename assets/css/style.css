@@ -130,6 +130,55 @@
 .bulk-recipient-row code{color:#9aa3c7;font-size:11px;align-self:center}
 .bulk-recipient-row.is-invalid{background:rgba(251,113,133,.08)}
 .bulk-composer-hint{margin:0}
+.bulk-email-auto-hint{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:0}
+.bulk-email-body-shell{
+  display:grid;
+  border:1px solid var(--line);
+  border-radius:16px;
+  overflow:hidden;
+  background:rgba(0,0,0,.16)
+}
+.bulk-email-auto-block{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  padding:8px 12px;
+  background:rgba(255,255,255,.03);
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.5;
+  pointer-events:none
+}
+.bulk-email-auto-block p{margin:0;font-weight:600}
+.bulk-email-auto-badge{
+  flex:none;
+  margin-top:1px;
+  padding:2px 6px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.03em;
+  color:#9aa3c7;
+  text-transform:none
+}
+.bulk-email-body-field textarea{
+  border-radius:0;
+  border-left:0;
+  border-right:0;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  background:rgba(0,0,0,.32);
+  min-height:132px
+}
+.bulk-email-dup-warn{
+  margin:6px 0 0;
+  color:#ffd778;
+  font-size:12px;
+  font-weight:700;
+  line-height:1.5;
+  white-space:pre-line
+}
 .bulk-decorate-panel{display:grid;gap:12px;padding:12px;border:1px dashed var(--line);border-radius:16px;background:rgba(255,255,255,.03)}
 .bulk-banner-fields{display:grid;gap:10px}
 .bulk-banner-fields.is-dim{opacity:.45;pointer-events:none}

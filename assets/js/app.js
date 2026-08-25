@@ -40,7 +40,7 @@ import {
   formatUsd,
   krwToUsd
 } from './catalog-engine.js?v=credit-save-onsale-1';
-import { openBulkMessageComposer } from './admin-bulk-composer.js?v=bulk-composer-1';
+import { openBulkMessageComposer } from './admin-bulk-composer.js?v=email-auto-ux-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -175,6 +175,8 @@ let firestoreApi = {};
 let storage = null;
 let storageApi = {};
 const unsubscribers = [];
+const publicUnsubscribers = [];
+let publicRouteBound = false;
 let adminNoticeRows = [];
 let adminPatchRows = [];
 let adminFaqRows = [];
@@ -1351,6 +1353,7 @@ function bindPatchDetailActions(root=document){
 function getParam(k){ return new URLSearchParams(location.search).get(k); }
 function configuredFirebase(){ const f = CONFIG.firebase || {}; return f.apiKey && f.authDomain && f.projectId && !String(f.apiKey).startsWith('PASTE_') && !String(f.projectId).startsWith('PASTE_'); }
 function addUnsub(fn){ if (typeof fn === 'function') unsubscribers.push(fn); return fn; }
+function addPublicUnsub(fn){ if (typeof fn === 'function') publicUnsubscribers.push(fn); return fn; }
 function clearUnsubs(){ while(unsubscribers.length){ try{unsubscribers.pop()();}catch{} } }
 
 
@@ -3148,6 +3151,8 @@ async function createHubAdminPost(kind){
 function setAuthUiSignedOut(){
   stopTicketNotifyListener();
   stopAdminTicketNotifyListener();
+  // Auth-scoped listeners only. Public catalog listeners must survive guest
+  // onAuthStateChanged(null), which otherwise tears down downloads/notices/FAQ/board.
   clearUnsubs();
   clearTicketReplyObserver();
   dismissAllAppToasts();
@@ -3198,6 +3203,7 @@ function setAuthUiSignedOut(){
   }
   updatePurchaseAccountBox();
   updateSupportFormUi();
+  if(db && firestoreApi) routeLoadPublic();
 }
 
 function syncSidebarAuthUi({signedIn, name, email, avatar, licenseClass, licenseText}){
@@ -3483,14 +3489,10 @@ function lifetimePurchaseHref(){
   if(isPurchasePage) return './purchase.html';
   const preferred = readSavedSiteLang() || lang;
   const use = ['ko','en','ja'].includes(preferred) ? preferred : 'ko';
-  if(pathLang){
-    if(use==='en') return '../en/purchase.html';
-    if(use==='ja') return '../ja/purchase.html';
-    return '../purchase.html';
-  }
-  if(use==='en') return './en/purchase.html';
-  if(use==='ja') return './ja/purchase.html';
-  return './purchase.html';
+  const base = window.MIDIAI_BASE_PATH || './';
+  if(use==='en') return `${base}en/purchase.html`;
+  if(use==='ja') return `${base}ja/purchase.html`;
+  return `${base}purchase.html`;
 }
 
 function localeHomeHref(nextLang){
@@ -4360,12 +4362,12 @@ async function initAuth(){
 
 function listenDoc(collectionName, documentId, render){
   const {doc,onSnapshot}=firestoreApi;
-  return addUnsub(onSnapshot(doc(db,collectionName,documentId), snap => render(snap.exists()?{id:snap.id,...snap.data()}:null), err => { console.error(collectionName, err); render(null, err); }));
+  return addPublicUnsub(onSnapshot(doc(db,collectionName,documentId), snap => render(snap.exists()?{id:snap.id,...snap.data()}:null), err => { console.error(collectionName, err); render(null, err); }));
 }
 function listenVisibleDocs(collectionName, render, orderField='createdAt', direction='desc'){
   const {collection,query,where,orderBy,onSnapshot,getDocs}=firestoreApi;
   const q=query(collection(db,collectionName),where('visible','==',true),orderBy(orderField,direction));
-  return addUnsub(onSnapshot(q,
+  return addPublicUnsub(onSnapshot(q,
     snap => render(snap.docs.map(d=>({id:d.id,...d.data()}))),
     async err => {
       console.warn(collectionName+' realtime failed', err);
@@ -4445,6 +4447,8 @@ async function refreshPricingUi(){
 }
 function routeLoadPublic(){
   if(!db) return;
+  if(publicRouteBound) return;
+  publicRouteBound = true;
   refreshPricingUi();
   if(['downloads.html','purchase.html'].includes(page) || (page==='index.html' && $('downloadBox')) || (page==='' && $('downloadBox'))) listenDownload();
   if((page==='' || page==='index.html') && !isGuideCmsListPath()) initHomePage();
@@ -4502,7 +4506,7 @@ function renderDownload(d, opts={}){
   const t = downloadLocaleText();
   const adminHtml = downloadAdminPanelHtml(d);
   if(!d){
-    box.innerHTML=`<div class="portal-download-inner download-card-pro portal-download-empty"><div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div class="portal-download-meta"><h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p></div><div class="portal-download-actions"><a class="secondary" href="./purchase.html">${esc(t.buyLicense)}</a></div></div>${adminHtml}`;
+    box.innerHTML=`<div class="portal-download-inner download-card-pro portal-download-empty"><div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div class="portal-download-meta"><h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p></div><div class="portal-download-actions"><a class="secondary" href="${esc(lifetimePurchaseHref())}">${esc(t.buyLicense)}</a></div></div>${adminHtml}`;
     bindDownloadAdminUi(box);
     return;
   }
@@ -5760,6 +5764,7 @@ function modalEscapeClose(root, handler){
   root._cleanup = () => document.removeEventListener('keydown', onKey);
 }
 function openEditModal(title, fields, opts={}){
+  try{ hideAdminFlash(); }catch(_){}
   const hasMarkdown = fields.some(f => f.type === 'markdown');
   const submitLabel = opts.submitLabel || (hasMarkdown ? '완료' : '저장');
   return new Promise(async resolve => {
@@ -8464,6 +8469,7 @@ function adminCrmLicenseExpandInnerHtml(u, view){
 }
 function toggleAdminLicenseExpand(uid){
   if(!uid) return;
+  try{ hideAdminFlash(); }catch(_){}
   adminCrmLicenseOpen = adminCrmLicenseOpen===uid ? '' : uid;
   paintAdminCrmPagedList();
 }
@@ -9046,7 +9052,7 @@ async function runAdminBulkCredits(){
   if(!confirm(`크레딧 지급 확인\n\n${who}\n총 지급량: ${total} ${totalUnit}`)) return;
   adminBulkBusy = true;
   const operationId = newAdminBulkOperationId();
-  adminFlash('크레딧 지급 중...');
+  adminFlash('크레딧 지급 중...', { persist: true });
   try{
     const result = await callFunctionJson('grantBulkCredits', {
       recipientUids: uids,
@@ -9061,7 +9067,12 @@ async function runAdminBulkCredits(){
       alert(`크레딧 지급 완료\n\n${result.requested}명 × ${amount} Credits\n총 ${result.totalCredits} Credits\n성공 ${result.success}\n실패 ${failN}${lines ? '\n'+lines : ''}`);
     }
     if(selectedAdminUid) renderAdminCrmPoints(selectedAdminUid);
-    if(adminCrmLicenseOpen) fillAdminLicenseExpandCredits(adminCrmLicenseOpen);
+    if(adminCrmLicenseOpen && result?.balances){
+      const n = result.balances[adminCrmLicenseOpen];
+      if(n != null) applyAdminCreditBalanceLocal(adminCrmLicenseOpen, n);
+    } else if(adminCrmLicenseOpen){
+      fillAdminLicenseExpandCredits(adminCrmLicenseOpen);
+    }
   }catch(err){
     alert(err?.message || err);
   }finally{
@@ -9684,7 +9695,40 @@ function renderAdminCrmPoints(uid){
     }
   })();
 }
-async function adminAdjustPointsForUid(uid, sign, { amount, reason }={}){
+function applyAdminCreditBalanceLocal(uid, balance){
+  const n = Number(balance);
+  if(!uid || !Number.isFinite(n)) return;
+  const prev = adminCreditWalletByUid[uid] || {};
+  adminCreditWalletByUid[uid] = { ...prev, uid, balance: n, creditBalance: n };
+  const cell = document.querySelector(`[data-license-row="${CSS.escape(String(uid))}"] .admin-license-credit`);
+  if(cell) cell.textContent = String(n);
+  const wrap = document.querySelector(`.admin-license-expand-inner[data-license-uid="${CSS.escape(String(uid))}"]`);
+  const bal = wrap?.querySelector('[data-lic-credit-balance]');
+  if(bal){
+    delete bal.dataset.prevBalance;
+    bal.textContent = `잔액 ${n} Credits`;
+  }
+}
+function setAdminLicenseCreditBusy(uid, busy){
+  const wrap = document.querySelector(`.admin-license-expand-inner[data-license-uid="${CSS.escape(String(uid||''))}"]`);
+  if(!wrap) return;
+  wrap.classList.toggle('is-credit-busy', !!busy);
+  wrap.querySelectorAll('[data-license-credit-grant],[data-license-credit-deduct]').forEach(btn=>{
+    btn.disabled = !!busy;
+  });
+  const bal = wrap.querySelector('[data-lic-credit-balance]');
+  if(!bal) return;
+  if(busy){
+    if(bal.dataset.prevBalance == null) bal.dataset.prevBalance = bal.textContent || '';
+    bal.textContent = '처리 중...';
+    return;
+  }
+  if(bal.dataset.prevBalance != null){
+    bal.textContent = bal.dataset.prevBalance;
+    delete bal.dataset.prevBalance;
+  }
+}
+async function adminAdjustPointsForUid(uid, sign, { amount, reason, skipConfirm }={}){
   const target = String(uid || '').trim();
   const qty = Number(amount || 0);
   if(!target) return;
@@ -9694,24 +9738,32 @@ async function adminAdjustPointsForUid(uid, sign, { amount, reason }={}){
   }
   const fnNames = sign > 0 ? ['adminGrantCredits', 'adminGrantPoints'] : ['adminDeductCredits', 'adminDeductPoints'];
   const label = sign > 0 ? '지급' : '회수';
-  if(!confirm(`${label} ${qty} 크레딧 할까요?`)) return;
+  if(!skipConfirm && !confirm(`${label} ${qty} 크레딧 할까요?`)) return;
   try{
+    setAdminLicenseCreditBusy(target, true);
     const result = await callFunctionJsonFallback(fnNames, { targetUid: target, amount: qty, reason: String(reason || '').trim() });
+    applyAdminCreditBalanceLocal(target, result.balance);
     adminFlash(`${label} 완료 · 잔액 ${result.balance ?? '-'}`);
     if(selectedAdminUid === target) renderAdminCrmPoints(target);
     return result;
   }catch(err){
     alert(`${label} 실패: ${err?.message || err}`);
+  }finally{
+    setAdminLicenseCreditBusy(target, false);
   }
 }
 async function fillAdminLicenseExpandCredits(uid){
   const wrap=document.querySelector(`.admin-license-expand-inner[data-license-uid="${CSS.escape(String(uid||''))}"]`);
   const bal=wrap?.querySelector('[data-lic-credit-balance]');
   if(!wrap || !bal) return;
+  if(adminCreditWalletByUid[uid]){
+    bal.textContent = `잔액 ${adminCrmCreditBalance({ uid })} Credits`;
+    return;
+  }
   try{
     const data = await callFunctionJsonFallback(['adminCreditOverview', 'adminPointOverview'], { targetUid: uid });
     if(adminCrmLicenseOpen !== uid) return;
-    bal.textContent = `잔액 ${Number(data.balance ?? 0)} Credits`;
+    applyAdminCreditBalanceLocal(uid, data.balance);
   }catch(err){
     if(adminCrmLicenseOpen !== uid) return;
     bal.textContent = '잔액 조회 실패';
@@ -9720,13 +9772,17 @@ async function fillAdminLicenseExpandCredits(uid){
 async function adminAdjustLicenseExpandCredits(btn, sign){
   const wrap=btn.closest('.admin-license-expand-inner');
   const uid=btn.getAttribute(sign>0?'data-license-credit-grant':'data-license-credit-deduct') || wrap?.getAttribute('data-license-uid');
+  if(wrap?.classList.contains('is-credit-busy')) return;
   const amountEl=wrap?.querySelector('[data-lic-credit-amount]');
   const quick=Number(btn.getAttribute('data-amount') || 0);
   if(Number.isInteger(quick) && quick > 0 && amountEl) amountEl.value = String(quick);
   const amount=Number(amountEl?.value || 0);
   const reason=String(wrap?.querySelector('[data-lic-credit-reason]')?.value || '').trim();
-  const result = await adminAdjustPointsForUid(uid, sign, { amount, reason });
-  if(result) fillAdminLicenseExpandCredits(uid);
+  await adminAdjustPointsForUid(uid, sign, {
+    amount,
+    reason,
+    skipConfirm: Number.isInteger(quick) && quick > 0 && sign > 0
+  });
 }
 async function adminAdjustSelectedPoints(sign){
   const uid = selectedAdminUid;
@@ -11815,7 +11871,7 @@ async function deleteBoardPost(postId){
 function listenBoardComments(postId){
   const {collection,onSnapshot,query,where}=firestoreApi;
   const q=query(collection(db,'boardPosts',postId,'comments'),where('visible','==',true));
-  addUnsub(onSnapshot(q, snap=>{
+  addPublicUnsub(onSnapshot(q, snap=>{
     activeBoardComments=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderBoardComments(postId);
     if(!boardCommentFocusDone && getParam('focus')==='comment'){
@@ -12585,7 +12641,16 @@ async function adminAdd(collectionName,data){
   const ref=await addDoc(collection(db,collectionName),{...data,visible:true,authorUid:currentUser.uid,authorRole:'admin',displayName:BRAND_AUTHOR,uid:currentUser.uid,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
   return ref.id;
 }
-function adminFlash(html){
+let adminFlashTimer = 0;
+function hideAdminFlash(){
+  clearTimeout(adminFlashTimer);
+  adminFlashTimer = 0;
+  const box=$('adminSaveMsg');
+  if(!box) return;
+  box.classList.add('hidden');
+  box.innerHTML='';
+}
+function adminFlash(html, opts={}){
   let box=$('adminSaveMsg');
   if(!box){
     box=document.createElement('div');
@@ -12596,7 +12661,14 @@ function adminFlash(html){
   }
   box.innerHTML=html;
   box.classList.remove('hidden');
+  clearTimeout(adminFlashTimer);
+  adminFlashTimer = 0;
+  if(opts.persist) return;
+  const ms = Number(opts.ms);
+  const delay = Number.isFinite(ms) && ms > 0 ? ms : 3200;
+  adminFlashTimer = setTimeout(()=>hideAdminFlash(), delay);
 }
+window.__midiaiHideAdminFlash = hideAdminFlash;
 function initForms(){
   $('ticketForm')?.addEventListener('submit',createTicket);
   // Enter in license fields → same path as float Save (avoids duplicate feed + save logic)
@@ -12612,7 +12684,7 @@ async function callFunctionJsonRaw(name, payload){
   const base = String(CONFIG.functionsBaseUrl || '').replace(/\/$/, '');
   if(!base || base.includes('PASTE_')) throw new Error('Functions URL이 설정되지 않았습니다. assets/js/config.js의 functionsBaseUrl을 확인하세요.');
   if(!currentUser) throw new Error('Google 로그인 후 결제할 수 있습니다.');
-  const token = await currentUser.getIdToken(true);
+  const token = await currentUser.getIdToken();
   const res = await fetch(`${base}/${name}`, {
     method: 'POST',
     headers: {

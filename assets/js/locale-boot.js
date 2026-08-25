@@ -88,7 +88,9 @@
   }
 
   function isPurchasePath(pathname) {
-    return /purchase\.html$/i.test(String(pathname || '')) || /\/purchase\/?$/i.test(String(pathname || ''));
+    var p = String(pathname || '').toLowerCase();
+    if (/\/guide\//.test(p)) return false;
+    return /purchase\.html$/i.test(p) || /\/purchase\/?$/i.test(p);
   }
 
   function homeHref(lang) {
