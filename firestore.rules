@@ -159,6 +159,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Scheduled bulk email jobs — Cloud Functions (Admin SDK) only.
+    match /adminScheduledEmails/{jobId} {
+      allow read, write: if false;
+    }
+
     // Legacy Point collections — keep readable during migration; never client-writable.
     match /pointWallets/{userId} {
       allow read: if isOwner(userId) || isAdmin();

@@ -95,6 +95,30 @@
         { "fieldPath": "uid", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "adminScheduledEmails",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "scheduledAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "adminScheduledEmails",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "leaseUntil", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "adminScheduledEmails",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

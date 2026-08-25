@@ -51,6 +51,21 @@ function memoryDb() {
     ledger: { type: 'admin_bulk_credit', displayTitle: 'bulk +10' }
   });
   assert.strictEqual(b.balance, 25);
+  const again = await creditWallet.applyWalletCreditDelta(db, FieldValue, {
+    uid: 'u1',
+    delta: 10,
+    ledgerId: 'led_once',
+    ledger: { type: 'admin_grant' }
+  });
+  assert.strictEqual(again.alreadyApplied, false);
+  const dup = await creditWallet.applyWalletCreditDelta(db, FieldValue, {
+    uid: 'u1',
+    delta: 10,
+    ledgerId: 'led_once',
+    ledger: { type: 'admin_grant' }
+  });
+  assert.strictEqual(dup.alreadyApplied, true);
+  assert.strictEqual(dup.balance, 35);
   try {
     await creditWallet.applyWalletCreditDelta(db, FieldValue, { uid: 'missing', delta: 1, ledger: {} });
     assert.fail('expected missing user');

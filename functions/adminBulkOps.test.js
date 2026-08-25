@@ -90,7 +90,16 @@ function memoryDb() {
 const FieldValue = { serverTimestamp: () => new Date('2026-08-24T00:00:00.000Z') };
 
 function makeAdmin() {
-  return { firestore: { FieldValue } };
+  return {
+    firestore: {
+      FieldValue,
+      Timestamp: {
+        fromMillis(ms) {
+          return { _millis: ms, toMillis() { return ms; } };
+        }
+      }
+    }
+  };
 }
 
 async function testUniqueAndValidate() {
@@ -154,23 +163,26 @@ async function testBulkCreditIdempotency() {
   const first = httpErrorRes();
   await handlers.grantBulkCredits(req, first.res);
   assert.strictEqual(first.out.statusCode, 200);
-  assert.strictEqual(first.out.body.success, 2);
+  assert.strictEqual(first.out.body.accepted, true);
+  assert.notStrictEqual(first.out.body.status, 'COMPLETED');
+  await handlers.processBulkCreditOperation('op_credit_01');
   const wallet = await db.collection('creditWallets').doc('u1').get();
   assert.strictEqual(wallet.data().balance, 15);
-  assert.strictEqual(notifs.length, 2);
+  assert.strictEqual(notifs.length, 0);
 
   const second = httpErrorRes();
   await handlers.grantBulkCredits(req, second.res);
   assert.strictEqual(second.out.body.code, 'ALREADY_COMPLETED');
   const wallet2 = await db.collection('creditWallets').doc('u1').get();
   assert.strictEqual(wallet2.data().balance, 15);
-  assert.strictEqual(notifs.length, 2);
+  assert.strictEqual(notifs.length, 0);
 
   const third = httpErrorRes();
   await handlers.grantBulkCredits({
     method: 'POST',
     body: { recipientUids: ['u1'], amount: 10, reason: '추가', operationId: 'op_credit_02' }
   }, third.res);
+  await handlers.processBulkCreditOperation('op_credit_02');
   const wallet3 = await db.collection('creditWallets').doc('u1').get();
   assert.strictEqual(wallet3.data().balance, 25);
   console.log('ok bulk credit 5+10=15 idempotent then +10=25');
@@ -191,6 +203,8 @@ async function testConcurrentDifferentOps() {
     handlers.grantBulkCredits({ method: 'POST', body: { recipientUids: ['u1'], amount: 10, operationId: 'op_conc_aaa' } }, a.res),
     handlers.grantBulkCredits({ method: 'POST', body: { recipientUids: ['u1'], amount: 10, operationId: 'op_conc_bbb' } }, b.res)
   ]);
+  await handlers.processBulkCreditOperation('op_conc_aaa');
+  await handlers.processBulkCreditOperation('op_conc_bbb');
   const wallet = await db.collection('creditWallets').doc('u1').get();
   assert.strictEqual(wallet.data().balance, 20);
   console.log('ok concurrent different ops');
@@ -235,8 +249,14 @@ async function testPartialCreditFailure() {
     method: 'POST',
     body: { recipientUids: ['u1', 'missing'], amount: 3, operationId: 'op_partial1' }
   }, r.res);
-  assert.strictEqual(r.out.body.success, 1);
-  assert.strictEqual(r.out.body.failed, 1);
+  await handlers.processBulkCreditOperation('op_partial1');
+  const done = httpErrorRes();
+  await handlers.grantBulkCredits({
+    method: 'POST',
+    body: { operationId: 'op_partial1', poll: true }
+  }, done.res);
+  assert.strictEqual(done.out.body.success, 1);
+  assert.strictEqual(done.out.body.failed, 1);
   console.log('ok partial credit');
 }
 
@@ -281,6 +301,36 @@ async function testBulkEmail() {
   assert.strictEqual(second.out.body.code, 'ALREADY_COMPLETED');
   assert.deepStrictEqual(sent, ['one@test.com']);
   console.log('ok bulk email + idempotency');
+}
+
+async function testSendingUidSkipDoesNotResend() {
+  const db = memoryDb();
+  await db.collection('users').doc('u1').set({ email: 'one@test.com' });
+  await db.collection('adminBulkOperations').doc('op_mail_inflight').set({
+    type: 'EMAIL',
+    status: 'IN_PROGRESS',
+    doneUids: [],
+    sendingUids: ['u1'],
+    failed: []
+  });
+  const sent = [];
+  const handlers = adminBulkEmail.createHandlers({
+    db,
+    admin: makeAdmin(),
+    cors: () => false,
+    requireAdmin: async () => ({ uid: 'admin1', email: 'admin@test.com' }),
+    sendMail: async (msg) => { sent.push(msg.to); },
+    delayMs: 0
+  });
+  const r = httpErrorRes();
+  await handlers.sendAdminBulkEmail({
+    method: 'POST',
+    body: { recipientUids: ['u1'], subject: 's', body: 'hello', operationId: 'op_mail_inflight' }
+  }, r.res);
+  assert.deepStrictEqual(sent, []);
+  assert.strictEqual(r.out.body.success, 1);
+  assert.strictEqual(r.out.body.failed, 0);
+  console.log('ok sendingUids skip does not resend');
 }
 
 async function testEmailAuth() {
@@ -365,6 +415,7 @@ async function testSmtpErrorSanitizeAndVerify() {
   await testBulkCreditRejects();
   await testPartialCreditFailure();
   await testBulkEmail();
+  await testSendingUidSkipDoesNotResend();
   await testEmailAuth();
   await testEmailMissingSecret();
   await testSmtpErrorSanitizeAndVerify();

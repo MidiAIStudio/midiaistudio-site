@@ -40,7 +40,7 @@ import {
   formatUsd,
   krwToUsd
 } from './catalog-engine.js?v=credit-save-onsale-1';
-import { openBulkMessageComposer } from './admin-bulk-composer.js?v=email-auto-ux-1';
+import { openBulkMessageComposer } from './admin-bulk-composer.js?v=email-hist-1';
 import {
   getPassProducts,
   getPassProduct,
@@ -8936,53 +8936,90 @@ function formatBulkEmailResultAlert(result, fallbackRequested){
     failN
   };
 }
-async function runAdminBulkEmail(){
-  if(adminBulkBusy) return;
-  if(adminCrmMode()!=='members') return;
-  const uids = [...adminCrmSelected];
-  if(!uids.length){ adminFlash('발송 대상이 없습니다'); return; }
-  const recipients = adminBulkRecipientsFromUids(uids);
+async function sendAdminEmailDraft(draft){
+  if(draft.sendMode === 'scheduled'){
+    const result = await callFunctionJson('adminScheduledEmail', {
+      action: 'create',
+      recipientUids: draft.recipientUids,
+      subject: draft.subject,
+      body: draft.body,
+      preheader: draft.preheader || '',
+      bannerEnabled: !!draft.bannerEnabled,
+      bannerEyebrow: draft.bannerEyebrow || '',
+      bannerTitle: draft.bannerTitle || '',
+      bannerDescription: draft.bannerDescription || '',
+      bannerImageUrl: draft.bannerImageUrl || '',
+      ctaLabel: draft.ctaLabel || '',
+      ctaUrl: draft.ctaUrl || '',
+      scheduledDate: draft.scheduledDate,
+      scheduledTime: draft.scheduledTime,
+      timezone: 'Asia/Seoul'
+    });
+    adminFlash(`예약됨 · ${result.scheduledAtKst || ''} · ${draft.recipientUids.length}명`);
+    pushAdminCrmFeed('메일 예약', `${draft.subject} · ${result.scheduledAtKst || ''}`, draft.recipientUids[0] || '');
+    return result;
+  }
+  const operationId = newAdminBulkOperationId();
+  const result = await callFunctionJson('sendAdminBulkEmail', {
+    recipientUids: draft.recipientUids,
+    subject: draft.subject,
+    body: draft.body,
+    preheader: draft.preheader || '',
+    bannerEnabled: !!draft.bannerEnabled,
+    bannerEyebrow: draft.bannerEyebrow || '',
+    bannerTitle: draft.bannerTitle || '',
+    bannerDescription: draft.bannerDescription || '',
+    bannerImageUrl: draft.bannerImageUrl || '',
+    ctaLabel: draft.ctaLabel || '',
+    ctaUrl: draft.ctaUrl || '',
+    operationId
+  });
+  const painted = formatBulkEmailResultAlert(result, draft.recipientUids.length);
+  adminFlash(painted.summary);
+  if(painted.failN) alert(painted.alertText);
+  pushAdminCrmFeed('일괄 메일', `${draft.subject} · 성공 ${result.success || 0}`, draft.recipientUids[0] || '');
+  if(Number(result.success || 0) === 0 && painted.failN > 0){
+    throw new Error(painted.title);
+  }
+  return result;
+}
+function adminEmailHistoryRequest(payload){
+  return callFunctionJson('adminScheduledEmail', payload);
+}
+async function openAdminEmailCenter({ recipients = [], initialTab = 'compose' } = {}){
   await openBulkMessageComposer({
     channel: 'email',
     recipients,
+    initialTab,
+    historyRequest: adminEmailHistoryRequest,
     onSend: async (draft) => {
       adminBulkBusy = true;
-      const operationId = newAdminBulkOperationId();
       try{
-        const result = await callFunctionJson('sendAdminBulkEmail', {
-          recipientUids: draft.recipientUids,
-          subject: draft.subject,
-          body: draft.body,
-          preheader: draft.preheader || '',
-          bannerEnabled: !!draft.bannerEnabled,
-          bannerEyebrow: draft.bannerEyebrow || '',
-          bannerTitle: draft.bannerTitle || '',
-          bannerDescription: draft.bannerDescription || '',
-          bannerImageUrl: draft.bannerImageUrl || '',
-          ctaLabel: draft.ctaLabel || '',
-          ctaUrl: draft.ctaUrl || '',
-          operationId
-        });
-        const painted = formatBulkEmailResultAlert(result, draft.recipientUids.length);
-        adminFlash(painted.summary);
-        if(painted.failN) alert(painted.alertText);
-        pushAdminCrmFeed('일괄 메일', `${draft.subject} · 성공 ${result.success || 0}`, draft.recipientUids[0] || '');
-        if(Number(result.success || 0) === 0 && painted.failN > 0){
-          throw new Error(painted.title);
-        }
-        return result;
+        return await sendAdminEmailDraft(draft);
       }catch(err){
         const code = err?.code || err?.data?.code;
         const msg = (code === 'MAIL_NOT_CONFIGURED' || code === 'SMTP_AUTH_FAILED')
           ? '메일 발송 설정이 완료되지 않았습니다.'
           : (code === 'SMTP_UNAVAILABLE')
             ? '메일 서버에 연결하지 못했습니다.'
-            : (err?.message || '메일 발송에 실패했습니다.');
+            : (code === 'SCHEDULE_TIME_PAST')
+              ? '예약 시간은 현재 시간 이후로 설정해 주세요.'
+              : (err?.message || '메일 발송에 실패했습니다.');
         throw new Error(msg);
       }finally{
         adminBulkBusy = false;
       }
     }
+  });
+}
+async function runAdminBulkEmail(){
+  if(adminBulkBusy) return;
+  if(adminCrmMode()!=='members') return;
+  const uids = [...adminCrmSelected];
+  if(!uids.length){ adminFlash('발송 대상이 없습니다'); return; }
+  await openAdminEmailCenter({
+    recipients: adminBulkRecipientsFromUids(uids),
+    initialTab: 'compose'
   });
 }
 async function runAdminBulkAppMessage(){
@@ -9052,21 +9089,40 @@ async function runAdminBulkCredits(){
   if(!confirm(`크레딧 지급 확인\n\n${who}\n총 지급량: ${total} ${totalUnit}`)) return;
   adminBulkBusy = true;
   const operationId = newAdminBulkOperationId();
-  adminFlash('크레딧 지급 중...', { persist: true });
+  adminFlash(`${uids.length}명 크레딧 지급 작업이 시작되었습니다.`, { persist: true });
   try{
-    const result = await callFunctionJson('grantBulkCredits', {
+    const started = await callFunctionJson('grantBulkCredits', {
       recipientUids: uids,
       amount,
       reason: String(draft.reason||'').trim(),
       operationId
     });
+    let result = started;
+    if(started && started.accepted && String(started.status || '') !== 'COMPLETED' && started.code !== 'ALREADY_COMPLETED'){
+      const deadline = Date.now() + 90000;
+      while(Date.now() < deadline){
+        await new Promise((resolve)=>setTimeout(resolve, 1500));
+        try{
+          result = await callFunctionJson('grantBulkCredits', { operationId, poll: true });
+        }catch(_){
+          break;
+        }
+        const st = String(result.status || '');
+        adminFlash(`${uids.length}명 크레딧 지급 중 · 성공 ${result.success || 0} · 실패 ${result.failed || 0}`, { persist: true });
+        if(st === 'COMPLETED') break;
+      }
+    }
+    if(String(result.status || '') !== 'COMPLETED' && result.code !== 'ALREADY_COMPLETED'){
+      adminFlash(`${uids.length}명 크레딧 지급 작업이 서버에서 계속됩니다.`);
+      return;
+    }
     const failN = Number(result.failed || 0);
     adminFlash(`크레딧 지급 완료 · ${result.requested}명 × ${amount} Credits · 총 ${result.totalCredits} · 성공 ${result.success} · 실패 ${failN}`);
     if(failN){
       const lines = (result.failures||[]).slice(0,8).map(f=>f.uid).join(', ');
       alert(`크레딧 지급 완료\n\n${result.requested}명 × ${amount} Credits\n총 ${result.totalCredits} Credits\n성공 ${result.success}\n실패 ${failN}${lines ? '\n'+lines : ''}`);
     }
-    if(selectedAdminUid) renderAdminCrmPoints(selectedAdminUid);
+    if(selectedAdminUid) renderAdminCrmPoints(selectedAdminUid, { silent: true });
     if(adminCrmLicenseOpen && result?.balances){
       const n = result.balances[adminCrmLicenseOpen];
       if(n != null) applyAdminCreditBalanceLocal(adminCrmLicenseOpen, n);
@@ -9086,6 +9142,8 @@ function syncAdminCrmBulkButtons(){
     const modes=String(btn.getAttribute('data-bulk-modes')||'').split(',').map(s=>s.trim()).filter(Boolean);
     btn.hidden = modes.length ? !modes.includes(mode) : false;
   });
+  const schedListBtn=$('adminScheduledEmailListBtn');
+  if(schedListBtn) schedListBtn.hidden = mode !== 'members';
 }
 function updateAdminCrmBulkbar(){
   const bar=$('adminCrmBulkbar'); if(!bar) return;
@@ -9105,6 +9163,8 @@ function updateAdminCrmBulkbar(){
   }
   const filteredBtn=$('adminCrmSelectFiltered');
   if(filteredBtn) filteredBtn.textContent = '검색 결과 전체 선택';
+  const schedListBtn=$('adminScheduledEmailListBtn');
+  if(schedListBtn) schedListBtn.hidden = adminCrmMode() !== 'members';
 }
 function selectAdminCrmUser(uid, opts={}){
   if(!uid || !isAdminUser) return;
@@ -9626,7 +9686,7 @@ function renderAdminCrmUsage(uid){
     }
   })();
 }
-function renderAdminCrmPoints(uid){
+function renderAdminCrmPoints(uid, opts){
   const box=$('adminCrmPoints');
   if(!box) return;
   renderAdminCrmPoints._uid = uid || '';
@@ -9634,7 +9694,14 @@ function renderAdminCrmPoints(uid){
     box.innerHTML='<p class="muted small">회원을 선택하세요.</p>';
     return;
   }
-  box.innerHTML='<p class="muted small">불러오는 중...</p>';
+  const silent = !!(opts && opts.silent);
+  const hinted = Number(opts && opts.balance);
+  if(!silent){
+    box.innerHTML='<p class="muted small">불러오는 중...</p>';
+  } else if(Number.isFinite(hinted)){
+    const el = box.querySelector('[data-crm-credit-balance]');
+    if(el) el.textContent = String(hinted);
+  }
   (async ()=>{
     try{
       const data = await callFunctionJsonFallback(['adminCreditOverview', 'adminPointOverview'], { targetUid: uid });
@@ -9642,9 +9709,10 @@ function renderAdminCrmPoints(uid){
       const purchases = Array.isArray(data.purchases) ? data.purchases.slice(0, 8) : [];
       const jobs = Array.isArray(data.jobs) ? data.jobs.slice(0, 8) : [];
       const ledger = Array.isArray(data.ledger) ? data.ledger.slice(0, 12) : [];
+      const shownBalance = Number.isFinite(hinted) ? hinted : (data.balance ?? 0);
       box.innerHTML = `
         <div class="admin-crm-points-meta">
-          <span class="crm-chip"><em>잔액</em>${esc(String(data.balance ?? 0))} Credits</span>
+          <span class="crm-chip"><em>잔액</em><span data-crm-credit-balance>${esc(String(shownBalance))}</span> Credits</span>
           <span class="crm-chip"><em>구매</em>${esc(String(data.purchasedTotal ?? 0))}</span>
           <span class="crm-chip"><em>사용</em>${esc(String(data.consumedTotal ?? 0))}</span>
           <span class="crm-chip"><em>지급</em>${esc(String(data.grantedTotal ?? 0))}</span>
@@ -9708,6 +9776,10 @@ function applyAdminCreditBalanceLocal(uid, balance){
     delete bal.dataset.prevBalance;
     bal.textContent = `잔액 ${n} Credits`;
   }
+  if(String(selectedAdminUid || '') === String(uid)){
+    const chip = document.querySelector('#adminCrmPoints [data-crm-credit-balance]');
+    if(chip) chip.textContent = String(n);
+  }
 }
 function setAdminLicenseCreditBusy(uid, busy){
   const wrap = document.querySelector(`.admin-license-expand-inner[data-license-uid="${CSS.escape(String(uid||''))}"]`);
@@ -9744,7 +9816,7 @@ async function adminAdjustPointsForUid(uid, sign, { amount, reason, skipConfirm 
     const result = await callFunctionJsonFallback(fnNames, { targetUid: target, amount: qty, reason: String(reason || '').trim() });
     applyAdminCreditBalanceLocal(target, result.balance);
     adminFlash(`${label} 완료 · 잔액 ${result.balance ?? '-'}`);
-    if(selectedAdminUid === target) renderAdminCrmPoints(target);
+    if(selectedAdminUid === target) renderAdminCrmPoints(target, { silent: true, balance: result.balance });
     return result;
   }catch(err){
     alert(`${label} 실패: ${err?.message || err}`);
@@ -10414,6 +10486,18 @@ function bindAdminUserFilters(){
       resolveAdminBulkUids('all').forEach(id=>adminCrmSelected.add(id));
       updateAdminCrmBulkbar();
       paintAdminCrmVirtualList();
+    });
+  }
+  const schedListBtn=$('adminScheduledEmailListBtn');
+  if(schedListBtn && !schedListBtn.dataset.bound){
+    schedListBtn.dataset.bound='1';
+    schedListBtn.addEventListener('click',()=>{
+      const uids = [...adminCrmSelected];
+      const recipients = uids.length ? adminBulkRecipientsFromUids(uids) : [];
+      openAdminEmailCenter({
+        recipients,
+        initialTab: recipients.length ? 'compose' : 'history'
+      }).catch((err)=>alert(err?.message || '이메일을 열 수 없습니다.'));
     });
   }
   const bulk=$('adminCrmBulkbar');

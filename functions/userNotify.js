@@ -110,15 +110,18 @@ async function notifyAdminCreditGrant(db, FieldValue, {
   uid,
   amount,
   operationId,
-  adminUid
+  adminUid,
+  ledgerId,
+  notifId: explicitId
 }) {
   if (!uid) return { created: false };
   const n = Math.round(Number(amount || 0));
   if (!(n > 0)) return { created: false };
   const notifId = String(
-    operationId
-      ? `credit_admin_grant_${operationId}_${uid}`
-      : `credit_admin_grant_${Date.now()}_${uid}`
+    explicitId
+      || (ledgerId ? `credit_admin_grant_${ledgerId}` : '')
+      || (operationId ? `credit_admin_grant_${operationId}_${uid}` : '')
+      || `credit_admin_grant_${Date.now()}_${uid}`
   ).slice(0, 140);
   return writeUserNotification(db, FieldValue, uid, notifId, {
     type: 'credit_admin_grant',

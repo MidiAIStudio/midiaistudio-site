@@ -55,7 +55,9 @@ function writeWalletLedger(tx, {
     createdAt: FieldValue.serverTimestamp(),
     amount: delta,
     creditAmount: delta,
-    ...(ledger || {})
+    ...(ledger || {}),
+    balanceBefore: prev,
+    balanceAfter: next
   });
   return next;
 }
@@ -81,6 +83,17 @@ async function applyWalletCreditDelta(db, FieldValue, {
     const wd = walletSnap.exists ? (walletSnap.data() || {}) : {};
     const ud = userSnap.exists ? (userSnap.data() || {}) : {};
     const prev = readBalance(wd, ud);
+    if (ledgerId) {
+      const ledSnap = await tx.get(ledgerRef);
+      if (ledSnap.exists) {
+        return {
+          prev,
+          balance: prev,
+          alreadyApplied: true,
+          ledgerId: ledgerRef.id
+        };
+      }
+    }
     const next = writeWalletLedger(tx, {
       walletRef,
       userRef,
@@ -91,7 +104,7 @@ async function applyWalletCreditDelta(db, FieldValue, {
       FieldValue,
       ledger
     });
-    return { prev, balance: next };
+    return { prev, balance: next, alreadyApplied: false, ledgerId: ledgerRef.id };
   });
 }
 

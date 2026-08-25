@@ -268,6 +268,20 @@ describe('adminBulkOperations', () => {
   });
 });
 
+describe('adminScheduledEmails', () => {
+  it('clients cannot read or write scheduled email jobs', async () => {
+    await seedUser('user1');
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc('adminScheduledEmails/se1').set({ status: 'scheduled', subject: 'x' });
+    });
+    const userDb = testEnv.authenticatedContext('user1').firestore();
+    await assertFails(userDb.doc('adminScheduledEmails/se1').get());
+    await assertFails(userDb.doc('adminScheduledEmails/se1').set({ status: 'cancelled' }));
+    const anon = testEnv.unauthenticatedContext().firestore();
+    await assertFails(anon.doc('adminScheduledEmails/se2').set({ status: 'scheduled' }));
+  });
+});
+
 describe('users/{uid}/notifications rules', () => {
   const unreadPayload = {
     type: 'reservation_complete',

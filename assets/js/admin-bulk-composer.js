@@ -7,11 +7,61 @@ import {
   AUTO_EMAIL_FOOTER_LINES,
   detectAutoGreetingOverlap
 } from './admin-email-template.js?v=email-auto-ux-1';
+import { mountAdminEmailHistory } from './admin-scheduled-emails.js?v=email-hist-1';
 
 function shortUid(uid) {
   const s = String(uid || '');
   if (s.length <= 10) return s;
   return `${s.slice(0, 6)}…${s.slice(-4)}`;
+}
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function kstParts(ms = Date.now()) {
+  const shifted = new Date(Number(ms) + 9 * 60 * 60 * 1000);
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth() + 1,
+    day: shifted.getUTCDate(),
+    hour: shifted.getUTCHours(),
+    minute: shifted.getUTCMinutes()
+  };
+}
+
+function kstDateTimeToMs(dateStr, timeStr) {
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr || '').trim());
+  const tm = /^(\d{1,2}):(\d{2})$/.exec(String(timeStr || '').trim());
+  if (!dm || !tm) return null;
+  const year = Number(dm[1]);
+  const month = Number(dm[2]);
+  const day = Number(dm[3]);
+  const hour = Number(tm[1]);
+  const minute = Number(tm[2]);
+  const utcMs = Date.UTC(year, month - 1, day, hour, minute, 0) - 9 * 60 * 60 * 1000;
+  const check = new Date(utcMs + 9 * 60 * 60 * 1000);
+  if (
+    check.getUTCFullYear() !== year
+    || check.getUTCMonth() + 1 !== month
+    || check.getUTCDate() !== day
+    || check.getUTCHours() !== hour
+    || check.getUTCMinutes() !== minute
+  ) return null;
+  return utcMs;
+}
+
+function defaultKstSchedule() {
+  const parts = kstParts(Date.now() + 24 * 60 * 60 * 1000);
+  return {
+    date: `${parts.year}-${pad2(parts.month)}-${pad2(parts.day)}`,
+    time: '10:00'
+  };
+}
+
+function formatKstLabel(ms) {
+  const p = kstParts(ms);
+  return `${p.year}-${pad2(p.month)}-${pad2(p.day)} ${pad2(p.hour)}:${pad2(p.minute)} KST`;
 }
 
 function openAdminConfirmModal({ title, messageHtml, confirmLabel, cancelLabel = '돌아가기' }) {
@@ -57,7 +107,9 @@ function openAdminConfirmModal({ title, messageHtml, confirmLabel, cancelLabel =
 export function openBulkMessageComposer({
   channel = 'email',
   recipients = [],
-  onSend
+  onSend,
+  historyRequest,
+  initialTab = 'compose'
 } = {}) {
   try { window.__midiaiHideAdminFlash?.(); } catch (_) {}
   const isEmail = channel === 'email';
@@ -81,12 +133,19 @@ export function openBulkMessageComposer({
       <form class="edit-modal bulk-composer-modal" novalidate>
         <div class="edit-modal-head">
           <div class="edit-modal-head-copy">
-            <h3>${escapeHtml(channelLabel)} 발송</h3>
-            <p class="edit-modal-sub">선택한 사용자 ${nAll}명${isEmail && invalid.length ? ` · 발송 가능 ${nSend}명 · 이메일 없음 ${invalid.length}명` : ''}</p>
+            <h3>${escapeHtml(isEmail ? '이메일' : `${channelLabel} 발송`)}</h3>
+            <p class="edit-modal-sub">${nAll
+              ? `선택한 사용자 ${nAll}명${isEmail && invalid.length ? ` · 발송 가능 ${nSend}명 · 이메일 없음 ${invalid.length}명` : ''}`
+              : (isEmail ? '이메일 작성과 발송 내역' : `${channelLabel} 발송`)}</p>
           </div>
           <button type="button" class="edit-modal-x" data-close aria-label="close">×</button>
         </div>
-        <div class="bulk-composer-layout">
+        ${isEmail ? `
+        <div class="bulk-email-center-tabs" role="tablist" aria-label="이메일">
+          <button type="button" class="bulk-email-center-tab is-active" role="tab" data-center-tab="compose" aria-selected="true">이메일 작성</button>
+          <button type="button" class="bulk-email-center-tab" role="tab" data-center-tab="history" aria-selected="false">발송 내역</button>
+        </div>` : ''}
+        <div class="bulk-composer-layout" data-center-pane="compose">
           <div class="bulk-composer-main">
             <div class="bulk-composer-scroll">
               <section class="bulk-composer-section">
@@ -98,20 +157,20 @@ export function openBulkMessageComposer({
                 <div class="bulk-recipient-list hidden" data-recipient-list></div>
               </section>
 
-              <section class="bulk-composer-section">
+              <section class="bulk-composer-section bulk-composer-meta-row">
                 <label class="edit-field">
                   <span>템플릿</span>
                   <select data-field="preset">
                     ${presets.map((p) => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.label)}</option>`).join('')}
                   </select>
                 </label>
-              </section>
-
-              <section class="bulk-composer-section">
                 <label class="edit-field">
                   <span>제목</span>
                   <input type="text" data-field="subject" maxlength="200" required placeholder="${isEmail ? '메일 제목' : '쪽지 제목'}">
                 </label>
+              </section>
+
+              <section class="bulk-composer-section">
                 ${isEmail ? `
                 <div class="edit-field bulk-email-body-field">
                   <div class="bulk-composer-label-row">
@@ -182,8 +241,24 @@ export function openBulkMessageComposer({
             </div>
           </aside>
         </div>
-        <div class="bulk-composer-footer">
-          <div class="bulk-composer-footer-meta" data-footer-meta>${nSend}명에게 발송됩니다</div>
+        ${isEmail ? '<div class="bulk-email-history hidden" data-center-pane="history" data-history></div>' : ''}
+        <div class="bulk-composer-footer" data-center-pane="compose">
+          <div class="bulk-composer-footer-left">
+            ${isEmail ? `
+            <div class="bulk-send-mode" data-send-mode-wrap>
+              <span class="bulk-send-mode-label">발송 방식</span>
+              <div class="bulk-send-mode-seg" role="radiogroup" aria-label="발송 방식">
+                <label class="bulk-send-mode-opt"><input type="radio" name="bulkSendMode" value="immediate" checked> 즉시 발송</label>
+                <label class="bulk-send-mode-opt"><input type="radio" name="bulkSendMode" value="scheduled"> 예약 발송</label>
+              </div>
+              <div class="bulk-schedule-fields hidden" data-schedule-fields>
+                <label class="bulk-schedule-field">예약 날짜 <input type="date" data-field="scheduledDate" lang="en-CA"></label>
+                <label class="bulk-schedule-field">예약 시간 <input type="time" data-field="scheduledTime" lang="en-GB"></label>
+                <p class="bulk-schedule-tz">대한민국 표준시 (KST, UTC+9) · 분 단위로 처리됩니다.</p>
+              </div>
+            </div>` : ''}
+            <div class="bulk-composer-footer-meta" data-footer-meta>${nSend}명에게 발송됩니다</div>
+          </div>
           <div class="bulk-composer-footer-actions">
             <button type="button" class="secondary" data-close>취소</button>
             <button type="submit" class="primary" data-send ${nSend ? '' : 'disabled'}>${nSend}명에게 ${channelLabel} 발송</button>
@@ -198,6 +273,8 @@ export function openBulkMessageComposer({
     const sendBtn = form.querySelector('[data-send]');
     let sending = false;
     let previewWidth = 'desktop';
+    let historyCtl = null;
+    let activeTab = 'compose';
 
     const readDraft = () => {
       const draft = {
@@ -213,6 +290,10 @@ export function openBulkMessageComposer({
         draft.bannerImageUrl = String(field('bannerImageUrl')?.value || '').trim();
         draft.ctaLabel = String(field('ctaLabel')?.value || '').trim();
         draft.ctaUrl = String(field('ctaUrl')?.value || '').trim();
+        draft.sendMode = String(form.querySelector('input[name="bulkSendMode"]:checked')?.value || 'immediate');
+        draft.scheduledDate = String(field('scheduledDate')?.value || '').trim();
+        draft.scheduledTime = String(field('scheduledTime')?.value || '').trim();
+        draft.timezone = 'Asia/Seoul';
       }
       return draft;
     };
@@ -227,6 +308,13 @@ export function openBulkMessageComposer({
       const summary = form.querySelector('[data-recipient-summary]');
       const listEl = form.querySelector('[data-recipient-list]');
       if (!summary) return;
+      if (nAll === 0) {
+        summary.innerHTML = `<div class="bulk-recipient-card multi">
+          <b>수신자가 선택되지 않았습니다</b>
+          <span>회원 목록에서 대상을 선택한 뒤 이메일을 작성하거나, 발송 내역에서 이전 메일을 확인하세요.</span>
+        </div>`;
+        return;
+      }
       if (nAll === 1) {
         const r = list[0] || {};
         summary.innerHTML = `<div class="bulk-recipient-card">
@@ -307,6 +395,21 @@ export function openBulkMessageComposer({
       if (wrap) wrap.classList.toggle('is-dim', !on);
     };
 
+    const isScheduled = () => isEmail && String(form.querySelector('input[name="bulkSendMode"]:checked')?.value || '') === 'scheduled';
+
+    const syncSendModeUi = () => {
+      const scheduled = isScheduled();
+      const fields = form.querySelector('[data-schedule-fields]');
+      const meta = form.querySelector('[data-footer-meta]');
+      if (fields) fields.classList.toggle('hidden', !scheduled);
+      if (meta) meta.textContent = scheduled ? `${nSend}명에게 예약됩니다` : `${nSend}명에게 발송됩니다`;
+      if (sendBtn && !sending) {
+        sendBtn.textContent = scheduled
+          ? `${nSend}명에게 예약 발송`
+          : `${nSend}명에게 ${channelLabel} 발송`;
+      }
+    };
+
     const validate = () => {
       const draft = readDraft();
       if (!draft.subject) return '제목을 입력하세요.';
@@ -322,6 +425,11 @@ export function openBulkMessageComposer({
         if (draft.bannerImageUrl && !validateHttpUrl(draft.bannerImageUrl)) {
           return '배너 이미지 URL은 http(s) 주소여야 합니다.';
         }
+        if (draft.sendMode === 'scheduled') {
+          const ms = kstDateTimeToMs(draft.scheduledDate, draft.scheduledTime);
+          if (ms == null) return '예약 날짜와 시간을 확인해 주세요.';
+          if (ms <= Date.now()) return '예약 시간은 현재 시간 이후로 설정해 주세요.';
+        }
       }
       return '';
     };
@@ -330,15 +438,17 @@ export function openBulkMessageComposer({
       sending = on;
       if (sendBtn) {
         sendBtn.disabled = on || !nSend;
+        const scheduled = isScheduled();
         sendBtn.textContent = on
-          ? `${nSend}명에게 발송 중...`
-          : `${nSend}명에게 ${channelLabel} 발송`;
+          ? (scheduled ? `${nSend}명 예약 중...` : `${nSend}명에게 발송 중...`)
+          : (scheduled ? `${nSend}명에게 예약 발송` : `${nSend}명에게 ${channelLabel} 발송`);
       }
     };
 
     const close = (value) => {
       if (sending) return;
       document.removeEventListener('keydown', onKey);
+      try { historyCtl?.destroy?.(); } catch (_) {}
       overlay.remove();
       resolve(value);
     };
@@ -400,10 +510,20 @@ export function openBulkMessageComposer({
         return;
       }
       const draft = readDraft();
+      const scheduled = draft.sendMode === 'scheduled';
+      const scheduleMs = scheduled ? kstDateTimeToMs(draft.scheduledDate, draft.scheduledTime) : null;
       const ok = await openAdminConfirmModal({
-        title: `${channelLabel} 발송 확인`,
-        confirmLabel: `${nSend}명에게 발송`,
-        messageHtml: `<p><b>${nSend}명</b>에게 ${escapeHtml(channelLabel)}을(를) 발송합니다.</p>
+        title: scheduled ? '이메일 예약 확인' : `${channelLabel} 발송 확인`,
+        confirmLabel: scheduled ? '예약 확정' : `${nSend}명에게 발송`,
+        cancelLabel: scheduled ? '취소' : '돌아가기',
+        messageHtml: scheduled
+          ? `<p>이메일을 예약하시겠습니까?</p>
+            <p>발송 대상: <b>${nSend}명</b></p>
+            <p>예약 시각: <b>${escapeHtml(formatKstLabel(scheduleMs))}</b></p>
+            <p class="bulk-confirm-subject"><span>제목</span><b>${escapeHtml(draft.subject)}</b></p>
+            ${invalid.length ? `<p class="bulk-confirm-warn">이메일 없음 ${invalid.length}명은 건너뜁니다.</p>` : ''}
+            <p class="muted small">예약 후 관리자 페이지를 닫아도 서버에서 발송됩니다. 실제 발송은 예약 시각 이후 최대 약 1분 안에 시작됩니다.</p>`
+          : `<p><b>${nSend}명</b>에게 ${escapeHtml(channelLabel)}을(를) 발송합니다.</p>
           <p class="bulk-confirm-subject"><span>제목</span><b>${escapeHtml(draft.subject)}</b></p>
           ${invalid.length ? `<p class="bulk-confirm-warn">이메일 없음 ${invalid.length}명은 건너뜁니다.</p>` : ''}
           <p class="muted small">발송 후 취소할 수 없습니다.</p>`
@@ -431,12 +551,52 @@ export function openBulkMessageComposer({
       }
     });
 
+    const setCenterTab = (tab) => {
+      if (!isEmail) return;
+      activeTab = tab === 'history' ? 'history' : 'compose';
+      form.querySelectorAll('[data-center-tab]').forEach((btn) => {
+        const on = btn.getAttribute('data-center-tab') === activeTab;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      form.querySelectorAll('[data-center-pane]').forEach((pane) => {
+        pane.classList.toggle('hidden', pane.getAttribute('data-center-pane') !== activeTab);
+      });
+      if (activeTab === 'compose') showError('');
+      if (activeTab === 'history') {
+        const box = form.querySelector('[data-history]');
+        if (box && !historyCtl) {
+          historyCtl = mountAdminEmailHistory(box, {
+            request: typeof historyRequest === 'function' ? historyRequest : null,
+            confirmModal: openAdminConfirmModal
+          });
+        } else {
+          historyCtl?.refresh?.();
+        }
+      }
+    };
+
+    form.querySelectorAll('[data-center-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => setCenterTab(btn.getAttribute('data-center-tab')));
+    });
+    form.querySelectorAll('input[name="bulkSendMode"]').forEach((el) => {
+      el.addEventListener('change', () => {
+        showError('');
+        syncSendModeUi();
+      });
+    });
+    const presetSched = defaultKstSchedule();
+    if (field('scheduledDate') && !field('scheduledDate').value) field('scheduledDate').value = presetSched.date;
+    if (field('scheduledTime') && !field('scheduledTime').value) field('scheduledTime').value = presetSched.time;
+
     document.addEventListener('keydown', onKey);
     document.body.appendChild(overlay);
     paintRecipients();
     syncBannerFields();
     applyPreset('blank');
     updateDupWarn();
+    syncSendModeUi();
+    if (isEmail && initialTab === 'history') setCenterTab('history');
     field('subject')?.focus();
   });
 }

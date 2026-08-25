@@ -797,8 +797,10 @@ exports.adminDeductPoints = functions.https.onRequest(adminCreditHandlers.adminD
 exports.adminCreditOverview = functions.https.onRequest(adminCreditHandlers.adminCreditOverview);
 exports.adminPointOverview = functions.https.onRequest(adminCreditHandlers.adminPointOverview);
 exports.grantBulkCredits = functionsV1Https
-  .runWith({ timeoutSeconds: 540, memory: '256MB' })
+  .runWith({ timeoutSeconds: 60, memory: '256MB' })
   .https.onRequest(adminCreditHandlers.grantBulkCredits);
+
+const creditLedgerSideEffects = require('./creditLedgerSideEffects');
 
 function createGmailSender() {
   const user = String(process.env.GMAIL_USER || '').trim();
@@ -837,6 +839,7 @@ function createGmailSender() {
 }
 
 const adminBulkEmail = require('./adminBulkEmail');
+const adminScheduledEmail = require('./adminScheduledEmail');
 exports.sendAdminBulkEmail = functionsV1Https
   .runWith({
     secrets: [gmailUser, gmailAppPassword],
@@ -852,6 +855,18 @@ exports.sendAdminBulkEmail = functionsV1Https
       sendMail: createGmailSender()
     });
     return handlers.sendAdminBulkEmail(req, res);
+  });
+exports.adminScheduledEmail = functionsV1Https
+  .runWith({ timeoutSeconds: 60, memory: '256MB' })
+  .https.onRequest((req, res) => {
+    const handlers = adminScheduledEmail.createHandlers({
+      db,
+      admin,
+      cors,
+      requireAdmin,
+      Timestamp: admin.firestore.Timestamp
+    });
+    return handlers.adminScheduledEmail(req, res);
   });
 
 /**
@@ -1978,6 +1993,56 @@ exports.expireTimedLicenses = onSchedule({
   return null;
 });
 
+/**
+ * Dispatch due admin scheduled bulk emails.
+ * Claim is transactional; recipient sends reuse sendAdminBulkEmail doneUids.
+ * Interval is 1 minute — UI does not promise second-level accuracy.
+ */
+exports.processAdminScheduledEmails = onSchedule({
+  schedule: 'every 1 minutes',
+  timeZone: 'Asia/Seoul',
+  region: 'us-central1',
+  timeoutSeconds: 540,
+  memory: '256MiB',
+  secrets: [gmailUser, gmailAppPassword]
+}, async () => {
+  const bulk = adminBulkEmail.createHandlers({
+    db,
+    admin,
+    cors,
+    requireAdmin,
+    sendMail: createGmailSender()
+  });
+  const scheduled = adminScheduledEmail.createHandlers({
+    db,
+    admin,
+    cors,
+    requireAdmin,
+    executeBulkEmail: bulk.executeAdminBulkEmail,
+    ensureMailReady: bulk.ensureMailReady,
+    Timestamp: admin.firestore.Timestamp
+  });
+  const out = await scheduled.processDueScheduledEmails();
+  console.log('processAdminScheduledEmails', out);
+  return null;
+});
+
+/**
+ * Resume queued/expired-lease admin bulk credit grants.
+ * onCreate starts work immediately; this tick recovers timeouts.
+ */
+exports.processAdminBulkCredits = onSchedule({
+  schedule: 'every 1 minutes',
+  timeZone: 'Asia/Seoul',
+  region: 'us-central1',
+  timeoutSeconds: 540,
+  memory: '256MiB'
+}, async () => {
+  const out = await adminCreditHandlers.processDueBulkCreditGrants();
+  console.log('processAdminBulkCredits', out);
+  return null;
+});
+
 const {
   notifyInquiryCreated,
   notifyPaymentCompleted,
@@ -2010,6 +2075,58 @@ exports.ensureTrialLicenseOnUserWrite = functionsV1
         uid,
         message: err && err.message ? err.message : String(err)
       });
+    }
+    return null;
+  });
+
+/**
+ * Admin credit notify/audit — durable, off the grant HTTP path.
+ * Ignores conversion/purchase ledgers and non-site origins.
+ */
+exports.onCreditLedgerCreated = functionsV1
+  .runWith({ timeoutSeconds: 60, memory: '256MB' })
+  .firestore.document('creditLedger/{ledgerId}')
+  .onCreate(async (snap, context) => {
+    const ledgerId = context.params.ledgerId;
+    try {
+      const out = await creditLedgerSideEffects.processCreditLedgerCreated({
+        db,
+        admin,
+        userNotify,
+        ledgerId,
+        data: snap.data() || {}
+      });
+      if (out && !out.skipped) {
+        console.info('onCreditLedgerCreated', { ledgerId, notified: out.notified, audited: out.audited });
+      }
+    } catch (err) {
+      console.error('onCreditLedgerCreated', {
+        ledgerId,
+        message: err && err.message ? err.message : String(err)
+      });
+      throw err;
+    }
+    return null;
+  });
+
+/**
+ * Start queued bulk credit grants as soon as the operation doc is created.
+ */
+exports.onAdminBulkCreditQueued = functionsV1
+  .runWith({ timeoutSeconds: 540, memory: '256MB' })
+  .firestore.document('adminBulkOperations/{opId}')
+  .onCreate(async (snap, context) => {
+    const d = snap.data() || {};
+    if (d.type !== 'CREDIT_GRANT') return null;
+    try {
+      const out = await adminCreditHandlers.processBulkCreditOperation(context.params.opId);
+      console.info('onAdminBulkCreditQueued', { opId: context.params.opId, status: out && out.status });
+    } catch (err) {
+      console.error('onAdminBulkCreditQueued', {
+        opId: context.params.opId,
+        message: err && err.message ? err.message : String(err)
+      });
+      throw err;
     }
     return null;
   });
