@@ -293,7 +293,110 @@ const I18N = {
   }
 };
 
-
+Object.assign(I18N.en, {
+  '프로그램 사용 가이드':'App usage guide',
+  'Windows MIDI 작업 도구':'Windows MIDI workstation',
+  '변환에서 악보까지':'From conversion to score',
+  '단순 변환기가 아닙니다':'Not just a converter',
+  'MidiAI Studio는 YouTube·MP3/WAV를 피아노 MIDI로 변환하고, MIDI Editor에서 다듬고, AI Assistant로 정리·편곡하고, Score Editor에서 악보를 수정한 뒤 MIDI·MusicXML·PDF로 내보내는 Windows 프로그램입니다.':'MidiAI Studio converts YouTube and MP3/WAV into piano MIDI, then you edit in MIDI Editor, tidy and arrange with AI Assistant, revise notation in Score Editor, and export MIDI, MusicXML, or PDF.',
+  '작업 흐름':'Workflow',
+  '입력 → MIDI → 편집 → 악보 → 출력':'Input → MIDI → edit → score → export',
+  '오디오·YouTube 변환과 PDF 악보 가져오기는 경로가 다릅니다. PDF는 Score Editor의 Beta 인식입니다.':'Audio/YouTube conversion and PDF score import use different paths. PDF recognition is Beta in Score Editor.',
+  '가져오기':'Import',
+  'YouTube / MP3·WAV. PDF 악보는 Score Editor · Beta':'YouTube / MP3·WAV. PDF scores go through Score Editor · Beta',
+  '주력은 피아노 MIDI 채보':'Main path: piano MIDI transcription',
+  '피아노 롤에서 프로젝트처럼 다듬기':'Shape it like a MIDI project in the piano roll',
+  'AI 보정·편곡':'AI tidy / arrange',
+  '정리, 쉬운 조, 악기 파트 재작성':'Cleanup, easier keys, instrument-part rewrite',
+  '악보 편집':'Score editing',
+  'Score Editor에서 기보 수정':'Edit notation in Score Editor',
+  '내보내기':'Export',
+  'MIDI · MusicXML · PDF · Score project':'MIDI · MusicXML · PDF · Score project',
+  '가져오기 · 변환':'Import · convert',
+  'YouTube / 오디오 → 피아노 MIDI':'YouTube / audio → piano MIDI',
+  '주력은 YouTube 링크와 MP3·WAV를 피아노 MIDI로 채보하는 것입니다. 웨이브폼에서 구간을 고른 뒤 Studio에서 변환합니다. Band / Orchestra는 Preview이며, 스템을 나눈 뒤 각 스템을 MIDI로 채보합니다. 곡에 따라 결과 품질이 달라질 수 있습니다.':'The main path transcribes YouTube links and MP3/WAV to piano MIDI. Pick a range on the waveform, then convert in Studio. Band / Orchestra is Preview: stems are split, then each stem is transcribed to MIDI. Quality varies by source.',
+  'YouTube · MP3 / WAV → 피아노 MIDI':'YouTube · MP3 / WAV → piano MIDI',
+  '구간 선택 · 웨이브폼 미리듣기':'Range select · waveform preview',
+  'Band / Orchestra Preview · 스템 → MIDI':'Band / Orchestra Preview · stems → MIDI',
+  'MIDI 작업실':'MIDI workshop',
+  '변환 결과를 MIDI 프로젝트처럼 다듬기':'Shape conversion results like a MIDI project',
+  'MIDI Editor는 노트 한두 개를 고치는 화면이 아닙니다. 피아노 롤에서 멀티트랙을 다루고, 앱 안에서 바로 재생하며 양자화·이조·템포·벨로시티를 조정합니다.':'MIDI Editor is not a tiny note-fix screen. Work multi-track in the piano roll, play in-app, and adjust quantize, transpose, tempo, and velocity.',
+  'Piano Roll · 멀티트랙 · Velocity':'Piano Roll · multi-track · Velocity',
+  'Quantize · Transpose · Tempo map':'Quantize · Transpose · Tempo map',
+  '재생 · GM 악기 · Mixer / CC':'Playback · GM instruments · Mixer / CC',
+  'MIDI를 정리하고, 연주하기 쉽게 다듬기':'Tidy MIDI and make it easier to play',
+  '채보 신경망과는 다른 보정·편곡 도구입니다. MIDI를 정리하고, 연주하기 쉬운 조를 찾고, 특정 악기에서 치기 쉬운 파트로 다시 씁니다. 모든 곡을 원하는 악기로 자동 변환하는 기능은 아닙니다.':'These are correction and arrangement tools, not the transcription network. Clean up MIDI, find an easier key, and rewrite a part so it is easier to play on a chosen instrument — for example violin. It does not auto-convert every song to every instrument.',
+  'Cleanup · Humanize · Optimize · Verify':'Cleanup · Humanize · Optimize · Verify',
+  'Easy Key · White Keys — 쉬운 조, 흰건반 단순화':'Easy Key · White Keys — easier keys, white-key simplification',
+  'Instrument Arrange — 예: 바이올린처럼 연주하기 쉬운 파트로 재작성':'Instrument Arrange — e.g. rewrite a part that is easier to play on violin',
+  'Score Editor · 계속 개선 중':'Score Editor · still improving',
+  '악보로 보고, 기보를 수정':'View as notation and edit it',
+  'MIDI를 악보로 보기만 하는 화면이 아닙니다. 음표·쉼표, 이음줄, 강약, 가사 등을 앱 안에서 고친 뒤 MusicXML·PDF로 내보냅니다. 전문 출판 악보 편집기는 아니며, 첫 실행에 실험 안내가 있습니다.':'This is not view-only. Edit notes, rests, ties, dynamics, and lyrics in-app, then export MusicXML or PDF. It is not a professional publishing suite; a first-run experimental notice is shown.',
+  '음표·쉼표 편집 · Grand Staff · Voice':'Note/rest editing · Grand Staff · Voice',
+  'Tie / Slur · Dynamics · Articulation · Lyrics':'Tie / Slur · Dynamics · Articulation · Lyrics',
+  'MusicXML · Native PDF 내보내기':'MusicXML · native PDF export',
+  'PDF 악보 · Beta':'PDF score · Beta',
+  'Score Editor에서 악보 PDF 가져오기':'Import a score PDF in Score Editor',
+  'YouTube·오디오 변환과 같은 완성형 채보가 아닙니다. Score Editor에서 PDF 악보를 가져오면 인식해 MIDI / MusicXML로 만듭니다. 인식 품질은 악보 상태에 따라 달라지며 Beta로 제공됩니다.':'This is not the same mature path as YouTube/audio transcription. Import a score PDF in Score Editor to recognize MIDI/MusicXML. Quality depends on the score, and it is offered as Beta.',
+  'Score Editor → PDF 가져오기':'Score Editor → import PDF',
+  '인식 후 MIDI / MusicXML':'Then MIDI / MusicXML',
+  '이후 MIDI Editor · Score Editor에서 보정':'Then correct in MIDI Editor or Score Editor',
+  '단순 저장 폴더가 아닙니다. 변환·편집 결과를 다시 찾고, 미리듣고, MIDI Editor 또는 Score Editor로 다시 여는 작업 허브입니다.':'Not just a dump folder. Relocate conversion/edit results, preview them, and reopen in MIDI Editor or Score Editor.',
+  '재생 · 사운드팩':'Playback · sound packs',
+  '앱 안에서 MIDI를 바로 재생하고, 선택 구간·반복 재생을 사용합니다. 고품질 사운드팩은 선택 설치입니다.':'Play MIDI in-app, including a selected range and loop. High-quality sound packs are optional installs.'
+});
+Object.assign(I18N.ja, {
+  '프로그램 사용 가이드':'プログラム使い方ガイド',
+  'Windows MIDI 작업 도구':'Windows MIDI作業ツール',
+  '변환에서 악보까지':'変換から楽譜まで',
+  '단순 변환기가 아닙니다':'単なる変換ツールではありません',
+  'MidiAI Studio는 YouTube·MP3/WAV를 피아노 MIDI로 변환하고, MIDI Editor에서 다듬고, AI Assistant로 정리·편곡하고, Score Editor에서 악보를 수정한 뒤 MIDI·MusicXML·PDF로 내보내는 Windows 프로그램입니다.':'MidiAI StudioはYouTube・MP3/WAVをピアノMIDIに変換し、MIDI Editorで整え、AI Assistantで整理・編曲し、Score Editorで楽譜を直してからMIDI・MusicXML・PDFに書き出すWindowsプログラムです。',
+  '작업 흐름':'作業の流れ',
+  '입력 → MIDI → 편집 → 악보 → 출력':'入力 → MIDI → 編集 → 楽譜 → 書き出し',
+  '오디오·YouTube 변환과 PDF 악보 가져오기는 경로가 다릅니다. PDF는 Score Editor의 Beta 인식입니다.':'オーディオ／YouTube変換とPDF楽譜の取り込みは経路が違います。PDF認識はScore EditorのBetaです。',
+  '가져오기':'取り込み',
+  'YouTube / MP3·WAV. PDF 악보는 Score Editor · Beta':'YouTube / MP3・WAV。PDF楽譜はScore Editor · Beta',
+  '주력은 피아노 MIDI 채보':'主経路はピアノMIDI採譜',
+  '피아노 롤에서 프로젝트처럼 다듬기':'ピアノロールでプロジェクトのように整える',
+  'AI 보정·편곡':'AI補正・編曲',
+  '정리, 쉬운 조, 악기 파트 재작성':'整理、弾きやすい調、楽器パートの書き直し',
+  '악보 편집':'楽譜編集',
+  'Score Editor에서 기보 수정':'Score Editorで記譜を修正',
+  '내보내기':'書き出し',
+  'MIDI · MusicXML · PDF · Score project':'MIDI · MusicXML · PDF · Score project',
+  '가져오기 · 변환':'取り込み · 変換',
+  'YouTube / 오디오 → 피아노 MIDI':'YouTube / オーディオ → ピアノMIDI',
+  '주력은 YouTube 링크와 MP3·WAV를 피아노 MIDI로 채보하는 것입니다. 웨이브폼에서 구간을 고른 뒤 Studio에서 변환합니다. Band / Orchestra는 Preview이며, 스템을 나눈 뒤 각 스템을 MIDI로 채보합니다. 곡에 따라 결과 품질이 달라질 수 있습니다.':'主経路はYouTubeリンクとMP3/WAVをピアノMIDIに採譜することです。波形で区間を選んでStudioで変換します。Band / OrchestraはPreviewで、ステムに分けてから各ステムをMIDIに採譜します。曲によって品質は変わります。',
+  'YouTube · MP3 / WAV → 피아노 MIDI':'YouTube · MP3 / WAV → ピアノMIDI',
+  '구간 선택 · 웨이브폼 미리듣기':'区間選択 · 波形プレビュー',
+  'Band / Orchestra Preview · 스템 → MIDI':'Band / Orchestra Preview · ステム → MIDI',
+  'MIDI 작업실':'MIDI作業室',
+  '변환 결과를 MIDI 프로젝트처럼 다듬기':'変換結果をMIDIプロジェクトのように整える',
+  'MIDI Editor는 노트 한두 개를 고치는 화면이 아닙니다. 피아노 롤에서 멀티트랙을 다루고, 앱 안에서 바로 재생하며 양자화·이조·템포·벨로시티를 조정합니다.':'MIDI Editorは音符を少し直す画面ではありません。ピアノロールでマルチトラックを扱い、アプリ内再生しながらクオンタイズ・移調・テンポ・ベロシティを調整します。',
+  'Piano Roll · 멀티트랙 · Velocity':'Piano Roll · マルチトラック · Velocity',
+  'Quantize · Transpose · Tempo map':'Quantize · Transpose · Tempo map',
+  '재생 · GM 악기 · Mixer / CC':'再生 · GM楽器 · Mixer / CC',
+  'MIDI를 정리하고, 연주하기 쉽게 다듬기':'MIDIを整理し、演奏しやすく整える',
+  '채보 신경망과는 다른 보정·편곡 도구입니다. MIDI를 정리하고, 연주하기 쉬운 조를 찾고, 특정 악기에서 치기 쉬운 파트로 다시 씁니다. 모든 곡을 원하는 악기로 자동 변환하는 기능은 아닙니다.':'採譜ネットワークとは別の補正・編曲ツールです。MIDIを整理し、弾きやすい調を探し、特定の楽器で演奏しやすいパートに書き直します。すべての曲を希望の楽器へ自動変換する機能ではありません。',
+  'Cleanup · Humanize · Optimize · Verify':'Cleanup · Humanize · Optimize · Verify',
+  'Easy Key · White Keys — 쉬운 조, 흰건반 단순화':'Easy Key · White Keys — 弾きやすい調、白鍵への単純化',
+  'Instrument Arrange — 예: 바이올린처럼 연주하기 쉬운 파트로 재작성':'Instrument Arrange — 例: バイオリンで演奏しやすいパートへ書き直し',
+  'Score Editor · 계속 개선 중':'Score Editor · 改善継続中',
+  '악보로 보고, 기보를 수정':'楽譜として見て、記譜を直す',
+  'MIDI를 악보로 보기만 하는 화면이 아닙니다. 음표·쉼표, 이음줄, 강약, 가사 등을 앱 안에서 고친 뒤 MusicXML·PDF로 내보냅니다. 전문 출판 악보 편집기는 아니며, 첫 실행에 실험 안내가 있습니다.':'表示だけではありません。音符・休符、タイ、強弱、歌詞などをアプリ内で直してからMusicXML・PDFに書き出します。専門の出版楽譜エディターではなく、初回起動時に実験案内があります。',
+  '음표·쉼표 편집 · Grand Staff · Voice':'音符・休符編集 · Grand Staff · Voice',
+  'Tie / Slur · Dynamics · Articulation · Lyrics':'Tie / Slur · Dynamics · Articulation · Lyrics',
+  'MusicXML · Native PDF 내보내기':'MusicXML · Native PDF書き出し',
+  'PDF 악보 · Beta':'PDF楽譜 · Beta',
+  'Score Editor에서 악보 PDF 가져오기':'Score Editorで楽譜PDFを取り込む',
+  'YouTube·오디오 변환과 같은 완성형 채보가 아닙니다. Score Editor에서 PDF 악보를 가져오면 인식해 MIDI / MusicXML로 만듭니다. 인식 품질은 악보 상태에 따라 달라지며 Beta로 제공됩니다.':'YouTube・オーディオ変換と同じ完成度の採譜ではありません。Score EditorでPDF楽譜を取り込むとMIDI / MusicXMLに認識します。品質は楽譜の状態により、Beta提供です。',
+  'Score Editor → PDF 가져오기':'Score Editor → PDF取り込み',
+  '인식 후 MIDI / MusicXML':'認識後 MIDI / MusicXML',
+  '이후 MIDI Editor · Score Editor에서 보정':'その後 MIDI Editor · Score Editorで補正',
+  '단순 저장 폴더가 아닙니다. 변환·편집 결과를 다시 찾고, 미리듣고, MIDI Editor 또는 Score Editor로 다시 여는 작업 허브입니다.':'単なる保存フォルダではありません。変換・編集結果を探し、プレビューし、MIDI EditorまたはScore Editorで再び開く作業ハブです。',
+  '재생 · 사운드팩':'再生 · サウンドパック',
+  '앱 안에서 MIDI를 바로 재생하고, 선택 구간·반복 재생을 사용합니다. 고품질 사운드팩은 선택 설치입니다.':'アプリ内でMIDIを再生し、選択区間・リピート再生が使えます。高品質サウンドパックは選択インストールです。'
+});
 
 function isInAppBrowser(){
   const ua = navigator.userAgent || '';
@@ -1313,8 +1416,8 @@ function pointCopy(){
       {title:'Period Full Pass',desc:'Unlimited AI conversions and Full features for the selected period. No auto-renewal.'},
       {title:'Lifetime Full',desc:'Permanent Full access after purchase. Extra Pass purchases are not required.'},
       {title:'MIDI Editor PRO',desc:'Edit multi-track piano rolls with velocity and CC.'},
-      {title:'AI Assistant',desc:'Refine MIDI quality during conversion and editing.'},
-      {title:'Score features',desc:'MIDI ↔ PDF/MusicXML conversion and score editing.'}
+      {title:'AI Assistant',desc:'Tidy and arrange MIDI with correction tools, not generative transcription.'},
+      {title:'Score features',desc:'Edit scores and export MusicXML/PDF. PDF score import is Beta.'}
     ],
     grantLabel:'Grant',
     grantValue:(n)=>`Access granted after payment is confirmed`,
@@ -1345,7 +1448,7 @@ function pointCopy(){
     ],
     usageLifetime:[
       {title:'AI conversion', value:'Unlimited', desc:'YouTube, Audio, Piano, PDF, and other AI conversions'},
-      {title:'Orchestra / Multi-track', value:'Unlimited', desc:'Generate MIDI as multiple instrument parts'},
+      {title:'Band / Orchestra Preview', value:'Included', desc:'Stem separation, then MIDI transcription per stem. Quality varies by source.'},
       {title:'Full features', value:'Included', desc:'Editors, Assistant, and score tools'},
       {title:'Term', value:'No time limit', desc:'Permanent use after purchase'},
       {title:'Auto-renewal', value:'None', desc:'One-time purchase'}
@@ -1442,8 +1545,8 @@ function pointCopy(){
       {title:'期間Full利用権',desc:'選択した期間中、AI変換回数制限なしでFull機能を利用できます。自動更新はありません。'},
       {title:'Lifetime Full',desc:'購入後ずっとFull利用できます。追加の期間利用権購入は不要です。'},
       {title:'MIDI編集 PRO',desc:'マルチトラックのピアノロールでベロシティやCCを編集します。'},
-      {title:'AIアシスタント',desc:'変換・編集中にMIDI品質を整えます。'},
-      {title:'楽譜機能',desc:'MIDI ↔ PDF/MusicXML変換と楽譜編集に対応します。'}
+      {title:'AIアシスタント',desc:'生成採譜ではなく、MIDIを整える補正・編曲ツールです。'},
+      {title:'楽譜機能',desc:'楽譜を編集しMusicXML/PDFに書き出します。PDF楽譜の取り込みはBetaです。'}
     ],
     grantLabel:'付与',
     grantValue:(n)=>`決済確認後に利用権を付与`,
@@ -1474,7 +1577,7 @@ function pointCopy(){
     ],
     usageLifetime:[
       {title:'AI変換', value:'無制限', desc:'YouTube・Audio・Piano・PDFなどのAI変換'},
-      {title:'オーケストラ / Multi-track', value:'無制限', desc:'複数パートのMIDIを生成するオーケストラ変換'},
+      {title:'Band / Orchestra Preview', value:'含む', desc:'ステム分離のあと、各ステムをMIDIに採譜します。曲によって品質は変わります。'},
       {title:'Full機能', value:'利用可能', desc:'編集・Assistant・楽譜機能を含む'},
       {title:'利用期間', value:'期間制限なし', desc:'購入後ずっと利用できます'},
       {title:'自動更新', value:'なし', desc:'1回払い'}
@@ -1571,8 +1674,8 @@ function pointCopy(){
       {title:'기간 Full 이용권',desc:'선택한 기간 동안 AI 변환 횟수 제한 없이 Full 기능을 이용합니다. 자동결제는 없습니다.'},
       {title:'Lifetime Full',desc:'구매 후 영구 Full 이용. 추가 기간 이용권 구매가 필요하지 않습니다.'},
       {title:'MIDI 편집 PRO',desc:'멀티트랙 피아노 롤에서 벨로시티·CC 등을 편집합니다.'},
-      {title:'AI 어시스턴트',desc:'변환·편집 과정에서 MIDI 품질을 다듬습니다.'},
-      {title:'악보 기능',desc:'MIDI ↔ PDF/MusicXML 변환과 악보 편집을 지원합니다.'}
+      {title:'AI 어시스턴트',desc:'생성형 채보가 아니라 MIDI를 다듬는 보정·편곡 도구입니다.'},
+      {title:'악보 기능',desc:'악보를 편집하고 MusicXML/PDF로 내보냅니다. PDF 악보 가져오기는 Beta입니다.'}
     ],
     grantLabel:'지급',
     grantValue:(n)=>`결제 확인 후 이용권 지급`,
@@ -1608,7 +1711,7 @@ function pointCopy(){
     ],
     usageLifetime:[
       {title:'AI 변환', value:'무제한', desc:'YouTube·Audio·Piano·PDF 등 AI 변환'},
-      {title:'오케스트라 / Multi-track', value:'무제한', desc:'여러 악기 파트로 생성하는 오케스트라 변환'},
+      {title:'Band / Orchestra Preview', value:'포함', desc:'스템을 나눈 뒤 각 스템을 MIDI로 채보합니다. 곡에 따라 품질이 달라질 수 있습니다.'},
       {title:'Full 기능', value:'이용 가능', desc:'편집·Assistant·악보 기능 포함'},
       {title:'이용기간', value:'기간 제한 없음', desc:'구매 후 계속 이용할 수 있습니다.'},
       {title:'자동결제', value:'없음', desc:'1회 결제'}
@@ -2586,11 +2689,11 @@ function purchaseLocaleText(){
     preparingPayment:'Preparing payment buttons.',
     licenseGuide:[
       {title:'Full-song MIDI conversion',desc:'Convert entire YouTube links or audio files to MIDI with AI.'},
-      {title:'Orchestra conversion',desc:'Generate MIDI for piano, guitar, bass, and other instruments.'},
+      {title:'Band / Orchestra Preview',desc:'Preview: split stems and transcribe each stem to MIDI. Not a full orchestration model.'},
       {title:'MIDI Editor PRO',desc:'Edit multi-track piano rolls with velocity and CC parameters.'},
-      {title:'AI Assistant',desc:'Refine MIDI quality with AI suggestions during conversion and editing.'},
-      {title:'Score conversion',desc:'Convert MIDI to PDF/MusicXML and PDF scores back to MIDI.'},
-      {title:'Score editor',desc:'Edit converted scores and apply AI review suggestions.'}
+      {title:'AI Assistant',desc:'Tidy MIDI with cleanup, easier keys, and instrument-part rewrite tools — not generative transcription.'},
+      {title:'Score export',desc:'Export MIDI as PDF/MusicXML. PDF score import is a Score Editor Beta.'},
+      {title:'Score Editor',desc:'Edit notation in-app and export MusicXML or PDF. Still improving; not a publishing suite.'}
     ],
     benefits:['Linked to your Google account','Available on your registered PC','Support via 1:1 Support'],
     accountTitle:'Sign in with Google before purchasing.',
@@ -2639,11 +2742,11 @@ function purchaseLocaleText(){
     preparingPayment:'決済ボタンを準備しています。',
     licenseGuide:[
       {title:'全曲MIDI変換',desc:'YouTubeリンクやオーディオファイルをAIでMIDIに変換します。'},
-      {title:'オーケストラ変換',desc:'ピアノ・ギター・ベースなど希望の楽器でMIDIを生成します。'},
+      {title:'Band / Orchestra Preview',desc:'Previewです。ステムに分けてから各ステムをMIDIに採譜します。専用のオーケストラモデルではありません。'},
       {title:'MIDI編集 PRO',desc:'マルチトラックピアノロールでベロシティやCCを編集できます。'},
-      {title:'AIアシスタント',desc:'変換・編集中にAI提案でMIDI品質を素早く整えられます。'},
-      {title:'楽譜変換',desc:'MIDI → PDF/MusicXML、PDF → MIDI変換に対応します。'},
-      {title:'楽譜エディター',desc:'変換した楽譜を編集し、AIレビュー提案を反映できます。'}
+      {title:'AIアシスタント',desc:'整理・弾きやすい調・楽器パートの書き直しなど、MIDIを整える補正/編曲ツールです。'},
+      {title:'楽譜書き出し',desc:'MIDIをPDF/MusicXMLに書き出します。PDF楽譜の認識はScore EditorのBetaです。'},
+      {title:'Score Editor',desc:'アプリ内で記譜を直し、MusicXML・PDFに書き出せます。改善継続中です。'}
     ],
     benefits:['Googleアカウントにライセンス連携','登録済みPCで利用可能','サイト内お問い合わせサポート'],
     accountTitle:'Googleアカウントでログイン後、ご購入いただけます。',
@@ -2692,11 +2795,11 @@ function purchaseLocaleText(){
     preparingPayment:'결제 버튼을 준비하고 있습니다.',
     licenseGuide:[
       {title:'전체 구간 MIDI 변환',desc:'YouTube 링크·오디오 파일 전체를 AI로 MIDI로 변환합니다.'},
-      {title:'오케스트라 변환',desc:'피아노·기타·베이스 등 원하는 악기로 MIDI를 생성합니다.'},
+      {title:'Band / Orchestra Preview',desc:'Preview 기능입니다. 스템 분리 후 각 스템을 MIDI로 채보하며, 전용 오케스트라 모델은 아닙니다.'},
       {title:'MIDI 편집 PRO',desc:'멀티트랙 피아노 롤에서 벨로시티·CC 파라미터를 편집합니다.'},
-      {title:'AI 어시스턴트',desc:'변환·편집 중 AI 제안으로 MIDI 품질을 빠르게 다듬습니다.'},
-      {title:'악보 변환',desc:'MIDI → PDF/MusicXML, PDF → MIDI 변환을 지원합니다.'},
-      {title:'악보 편집기',desc:'변환된 악보를 바로 수정하고 AI 검토 제안을 반영합니다.'}
+      {title:'AI 어시스턴트',desc:'정리·쉬운 조·악기 파트 재작성 등 MIDI를 다듬는 보정/편곡 도구입니다.'},
+      {title:'악보 내보내기',desc:'MIDI를 PDF/MusicXML로 내보냅니다. PDF 악보 인식은 Score Editor의 Beta입니다.'},
+      {title:'Score Editor',desc:'앱 안에서 기보를 수정하고 MusicXML·PDF로 내보냅니다. 계속 개선 중입니다.'}
     ],
     benefits:['Google 계정 라이선스 연결','등록된 PC에서 사용 가능','홈페이지 1:1 문의 지원'],
     accountTitle:'Google 로그인 후 결제할 수 있습니다.',
@@ -13773,6 +13876,7 @@ if(!document.documentElement.classList.contains('sidebar-ready')){
 initTopbarActions();
 bindSidebar();
 applyStaticI18n();
+document.addEventListener('midiai:static-i18n', () => applyStaticI18n());
 applyGuidesI18n(lang);
 initSidebarNav();
 setAuthUiSignedOut();

@@ -20,6 +20,8 @@ import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';
 const PAGE = (location.pathname.split('/').pop() || '') === 'product.html';
+/** Client overlay: older Firestore copy yields to this SEED until admin Save. */
+const SEED_REV = 20260825;
 
 /** Firestore rejects `undefined` field values. */
 function omitUndefined(obj) {
@@ -35,61 +37,115 @@ const SEED = [
     id: 'feature-studio',
     kind: 'feature',
     layout: 'normal',
-    category: 'Studio',
-    title: '영상·오디오를 MIDI로',
-    body: 'YouTube 링크 붙여넣기, 로컬 파일 업로드, 곡 검색으로 작업을 시작합니다. 웨이브폼 미리보기와 구간 선택 후 원하는 악기로 MIDI를 받습니다.',
-    features: ['YouTube 링크 분석', '웨이브폼 미리듣기', '출력 악기·구간 선택'],
+    category: '가져오기 · 변환',
+    title: 'YouTube / 오디오 → 피아노 MIDI',
+    body: '주력은 YouTube 링크와 MP3·WAV를 피아노 MIDI로 채보하는 것입니다. 웨이브폼에서 구간을 고른 뒤 Studio에서 변환합니다. Band / Orchestra는 Preview이며, 스템을 나눈 뒤 각 스템을 MIDI로 채보합니다. 곡에 따라 결과 품질이 달라질 수 있습니다.',
+    features: ['YouTube · MP3 / WAV → 피아노 MIDI', '구간 선택 · 웨이브폼 미리듣기', 'Band / Orchestra Preview · 스템 → MIDI'],
     mediaType: 'video',
     mediaUrl: './assets/videos/clip-studio.mp4?v=20260720-frames',
     posterUrl: './assets/images/product/ai-midi-converter-home.jpg?v=20260720-frames',
     mediaFit: 'cover',
     order: 10,
-    published: true
+    published: true,
+    seedRevision: SEED_REV
   },
   {
     id: 'feature-midi',
     kind: 'feature',
     layout: 'reverse',
-    category: 'MIDI 편집 PRO',
-    title: '멀티트랙 피아노 롤',
-    body: '변환된 MIDI를 바로 편집합니다. 128종 악기, 벨로시티·피치벤드·모듈레이션, 실행취소/복사/양자화까지 프로 편집 환경을 제공합니다.',
-    features: ['멀티트랙 피아노 롤', '128종 악기 지원', '벨로시티·CC 파라미터 편집'],
+    category: 'MIDI 작업실',
+    title: '변환 결과를 MIDI 프로젝트처럼 다듬기',
+    body: 'MIDI Editor는 노트 한두 개를 고치는 화면이 아닙니다. 피아노 롤에서 멀티트랙을 다루고, 앱 안에서 바로 재생하며 양자화·이조·템포·벨로시티를 조정합니다.',
+    features: ['Piano Roll · 멀티트랙 · Velocity', 'Quantize · Transpose · Tempo map', '재생 · GM 악기 · Mixer / CC'],
     mediaType: 'video',
     mediaUrl: './assets/videos/clip-midi.mp4?v=20260720-frames',
     posterUrl: './assets/images/product/midi-editor-piano-roll.jpg?v=20260720-frames',
     mediaFit: 'cover',
     order: 20,
-    published: true
+    published: true,
+    seedRevision: SEED_REV
   },
   {
-    id: 'feature-score-convert',
+    id: 'feature-assistant',
     kind: 'feature',
     layout: 'normal',
-    category: '악보 변환 · BETA',
-    title: 'MIDI ↔ 악보',
-    body: 'MIDI를 PDF·MusicXML 악보로 저장하고, PDF 악보를 인식해 MIDI로 다시 변환합니다. 곡 제목·작사·작곡 메타데이터까지 함께 다룰 수 있습니다.',
-    features: ['MIDI → PDF / MusicXML', 'PDF → MIDI 변환', '악보 미리보기 · 결과 폴더 저장'],
-    mediaType: 'video',
-    mediaUrl: './assets/videos/clip-score-convert.mp4?v=20260720-frames',
-    posterUrl: './assets/images/product/sheet-music-pdf-musicxml-convert.jpg?v=20260720-frames',
+    category: 'AI Assistant',
+    title: 'MIDI를 정리하고, 연주하기 쉽게 다듬기',
+    body: '채보 신경망과는 다른 보정·편곡 도구입니다. MIDI를 정리하고, 연주하기 쉬운 조를 찾고, 특정 악기에서 치기 쉬운 파트로 다시 씁니다. 모든 곡을 원하는 악기로 자동 변환하는 기능은 아닙니다.',
+    features: ['Cleanup · Humanize · Optimize · Verify', 'Easy Key · White Keys — 쉬운 조, 흰건반 단순화', 'Instrument Arrange — 예: 바이올린처럼 연주하기 쉬운 파트로 재작성'],
+    mediaType: '',
+    mediaUrl: '',
+    posterUrl: '',
     mediaFit: 'cover',
     order: 30,
-    published: true
+    published: true,
+    seedRevision: SEED_REV
   },
   {
     id: 'feature-score-editor',
     kind: 'feature',
     layout: 'reverse',
-    category: '악보 편집기 · BETA',
-    title: '악보를 바로 수정',
-    body: '변환된 악보를 페이지·연속·타임라인으로 보며 음표와 벨로시티를 편집합니다. AI 검토 제안으로 피치 점프·겹침 음표 등을 확인하고 바로 반영할 수 있습니다.',
-    features: ['페이지 / 연속 / 타임라인 보기', '음표 선택·속성 편집', 'AI 검토 제안'],
+    category: 'Score Editor · 계속 개선 중',
+    title: '악보로 보고, 기보를 수정',
+    body: 'MIDI를 악보로 보기만 하는 화면이 아닙니다. 음표·쉼표, 이음줄, 강약, 가사 등을 앱 안에서 고친 뒤 MusicXML·PDF로 내보냅니다. 전문 출판 악보 편집기는 아니며, 첫 실행에 실험 안내가 있습니다.',
+    features: ['음표·쉼표 편집 · Grand Staff · Voice', 'Tie / Slur · Dynamics · Articulation · Lyrics', 'MusicXML · Native PDF 내보내기'],
     mediaType: 'video',
     mediaUrl: './assets/videos/clip-score.mp4?v=20260720-score-gif',
     posterUrl: './assets/images/product/sheet-music-score-editor.jpg?v=20260720-score-gif',
     mediaFit: 'cover',
     order: 40,
-    published: true
+    published: true,
+    seedRevision: SEED_REV
+  },
+  {
+    id: 'feature-score-convert',
+    kind: 'feature',
+    layout: 'normal',
+    category: 'PDF 악보 · Beta',
+    title: 'Score Editor에서 악보 PDF 가져오기',
+    body: 'YouTube·오디오 변환과 같은 완성형 채보가 아닙니다. Score Editor에서 PDF 악보를 가져오면 인식해 MIDI / MusicXML로 만듭니다. 인식 품질은 악보 상태에 따라 달라지며 Beta로 제공됩니다.',
+    features: ['Score Editor → PDF 가져오기', '인식 후 MIDI / MusicXML', '이후 MIDI Editor · Score Editor에서 보정'],
+    mediaType: 'video',
+    mediaUrl: './assets/videos/clip-score-convert.mp4?v=20260720-frames',
+    posterUrl: './assets/images/product/sheet-music-pdf-musicxml-convert.jpg?v=20260720-frames',
+    mediaFit: 'cover',
+    order: 50,
+    published: true,
+    seedRevision: SEED_REV
+  },
+  {
+    id: 'card-library',
+    kind: 'card',
+    layout: 'normal',
+    category: '',
+    title: 'Library',
+    body: '단순 저장 폴더가 아닙니다. 변환·편집 결과를 다시 찾고, 미리듣고, MIDI Editor 또는 Score Editor로 다시 여는 작업 허브입니다.',
+    features: [],
+    mediaType: '',
+    mediaUrl: '',
+    posterUrl: '',
+    mediaFit: 'cover',
+    order: 60,
+    published: true,
+    iconOnly: true,
+    seedRevision: SEED_REV
+  },
+  {
+    id: 'card-playback',
+    kind: 'card',
+    layout: 'normal',
+    category: '',
+    title: '재생 · 사운드팩',
+    body: '앱 안에서 MIDI를 바로 재생하고, 선택 구간·반복 재생을 사용합니다. 고품질 사운드팩은 선택 설치입니다.',
+    features: [],
+    mediaType: '',
+    mediaUrl: '',
+    posterUrl: '',
+    mediaFit: 'cover',
+    order: 65,
+    published: true,
+    iconOnly: true,
+    seedRevision: SEED_REV
   },
   {
     id: 'card-home',
@@ -103,8 +159,9 @@ const SEED = [
     mediaUrl: './assets/images/product/ai-midi-converter-home.jpg?v=20260720-frames',
     posterUrl: '',
     mediaFit: 'cover',
-    order: 50,
-    published: true
+    order: 70,
+    published: true,
+    seedRevision: SEED_REV
   },
   {
     id: 'card-community',
@@ -118,26 +175,49 @@ const SEED = [
     mediaUrl: './assets/videos/clip-community.mp4?v=20260720-frames',
     posterUrl: './assets/images/product/midiai-studio-community.jpg?v=20260720-frames',
     mediaFit: 'cover',
-    order: 60,
-    published: true
-  },
-  {
-    id: 'card-library',
-    kind: 'card',
-    layout: 'normal',
-    category: '',
-    title: '라이브러리',
-    body: '변환·편집한 MIDI 파일을 라이브러리에서 관리하고 다시 열어 작업을 이어갑니다.',
-    features: [],
-    mediaType: '',
-    mediaUrl: '',
-    posterUrl: '',
-    mediaFit: 'cover',
-    order: 70,
+    order: 80,
     published: true,
-    iconOnly: true
+    seedRevision: SEED_REV
   }
 ];
+
+function applySeedRevision(loaded) {
+  const byId = new Map((loaded || []).map((s) => [s.id, {
+    ...s,
+    features: [...(s.features || [])],
+    mediaOverlays: Array.isArray(s.mediaOverlays) ? s.mediaOverlays.map((o) => ({ ...o })) : []
+  }]));
+  for (const seed of SEED) {
+    const cur = byId.get(seed.id);
+    if (!cur) {
+      byId.set(seed.id, { ...seed, features: [...(seed.features || [])], mediaOverlays: [] });
+      continue;
+    }
+    const rev = Number(cur.seedRevision) || 0;
+    if (rev >= SEED_REV) continue;
+    const keepMedia = !!(cur.mediaUrl && seed.mediaUrl);
+    byId.set(seed.id, {
+      ...cur,
+      kind: seed.kind,
+      layout: seed.layout,
+      category: seed.category,
+      title: seed.title,
+      body: seed.body,
+      features: [...(seed.features || [])],
+      order: seed.order,
+      published: seed.published !== false,
+      iconOnly: !!seed.iconOnly,
+      seedRevision: SEED_REV,
+      mediaType: keepMedia ? (cur.mediaType || seed.mediaType) : seed.mediaType,
+      mediaUrl: keepMedia ? cur.mediaUrl : (seed.mediaUrl || ''),
+      posterUrl: keepMedia ? (cur.posterUrl || seed.posterUrl || '') : (seed.posterUrl || ''),
+      mediaFit: cur.mediaFit || seed.mediaFit || 'cover'
+    });
+  }
+  const out = [...byId.values()];
+  out.sort((a, b) => (a.order || 0) - (b.order || 0));
+  return out;
+}
 
 let isAdmin = false;
 let authUid = "anon";
@@ -210,7 +290,8 @@ function refreshChrome() {
 
 function featureSectionEl(sec, idx) {
   const section = document.createElement('section');
-  section.className = `wrap product-feature${sec.layout === 'reverse' ? ' product-feature-reverse' : ''}`;
+  const hasMedia = !!(sec.mediaUrl && sec.mediaType);
+  section.className = `wrap product-feature${sec.layout === 'reverse' ? ' product-feature-reverse' : ''}${(!hasMedia && !editMode) ? ' product-feature-text' : ''}`;
   section.dataset.sectionId = sec.id;
   section.dataset.kind = 'feature';
 
@@ -245,7 +326,9 @@ function featureSectionEl(sec, idx) {
   media.className = 'product-feature-media';
 
   section.appendChild(copy);
-  section.appendChild(media);
+  if (hasMedia || (editMode && isAdmin)) {
+    section.appendChild(media);
+  }
 
   mountEditableText(catSlot, {
     tag: 'p',
@@ -279,27 +362,29 @@ function featureSectionEl(sec, idx) {
     editMode, isAdmin,
     onChange: (v) => { draft[idx].features = v; markDirty(); }
   });
-  mountEditableMedia(media, {
-    mediaType: sec.mediaType || '',
-    mediaUrl: sec.mediaUrl || '',
-    posterUrl: sec.posterUrl || '',
-    mediaFit: sec.mediaFit || 'cover',
-    mediaWidth: sec.mediaWidth || 'full',
-    mediaWidthPct: sec.mediaWidthPct,
-    mediaAspect: sec.mediaAspect,
-    mediaOverlays: sec.mediaOverlays || [],
-    editMode, isAdmin,
-    onChange: (m) => {
-      Object.assign(draft[idx], m);
-      markDirty();
-    },
-    onFile: (f) => {
-      if (f.kind === 'clear') delete pendingFiles[sec.id];
-      else if (f.file) pendingFiles[sec.id] = f;
-      else delete pendingFiles[sec.id];
-      markDirty();
-    }
-  });
+  if (hasMedia || (editMode && isAdmin)) {
+    mountEditableMedia(media, {
+      mediaType: sec.mediaType || '',
+      mediaUrl: sec.mediaUrl || '',
+      posterUrl: sec.posterUrl || '',
+      mediaFit: sec.mediaFit || 'cover',
+      mediaWidth: sec.mediaWidth || 'full',
+      mediaWidthPct: sec.mediaWidthPct,
+      mediaAspect: sec.mediaAspect,
+      mediaOverlays: sec.mediaOverlays || [],
+      editMode, isAdmin,
+      onChange: (m) => {
+        Object.assign(draft[idx], m);
+        markDirty();
+      },
+      onFile: (f) => {
+        if (f.kind === 'clear') delete pendingFiles[sec.id];
+        else if (f.file) pendingFiles[sec.id] = f;
+        else delete pendingFiles[sec.id];
+        markDirty();
+      }
+    });
+  }
 
   return section;
 }
@@ -415,6 +500,9 @@ function render() {
     if (sec.kind === 'feature') featuresRoot.appendChild(featureSectionEl(sec, idx));
     else if (sec.kind === 'card') cardsRoot.appendChild(cardEl(sec, idx));
   });
+  if (!(editMode && isAdmin)) {
+    document.dispatchEvent(new CustomEvent('midiai:static-i18n'));
+  }
 }
 
 async function saveAll() {
@@ -454,6 +542,7 @@ async function saveAll() {
         order: sec.order || 0,
         published: sec.published !== false,
         iconOnly: !!sec.iconOnly,
+        seedRevision: Number(sec.seedRevision) || SEED_REV,
         updatedAt: serverTimestamp()
       });
       await setDoc(doc(db, COLLECTION, sec.id), payload, { merge: true });
@@ -580,7 +669,8 @@ function sectionsFingerprint(list) {
     mediaOverlays: s.mediaOverlays,
     order: s.order,
     published: s.published,
-    iconOnly: s.iconOnly
+    iconOnly: s.iconOnly,
+    seedRevision: s.seedRevision
   })));
 }
 
@@ -606,6 +696,7 @@ async function initProductCms() {
     if (isAdmin) await ensureSeed();
     let loaded = await loadSections();
     if (!loaded.length) loaded = cloneSections(SEED);
+    loaded = applySeedRevision(loaded);
     const prevFp = sectionsFingerprint(draft);
     sections = cloneSections(loaded);
     draft = cloneSections(sections);
@@ -620,6 +711,7 @@ async function initProductCms() {
         await ensureSeed();
         sections = await loadSections();
         if (!sections.length) sections = cloneSections(SEED);
+        sections = applySeedRevision(sections);
         draft = cloneSections(sections);
       }
       refreshChrome();
