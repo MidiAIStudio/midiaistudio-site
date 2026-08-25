@@ -39,12 +39,13 @@ const CONFIG = window.MIDIAI_CONFIG || {};
 const FB = 'https://www.gstatic.com/firebasejs/10.12.5';
 const COLLECTION = 'guides';
 
-/** slug → technical workflow SEO path (null = hide CTA) */
-export const GUIDE_WORKFLOW_MAP = {
-  'youtube-to-midi': '/workflow/youtube-to-midi',
-  'audio-to-midi': '/workflow/audio-to-midi',
-  'pdf-to-midi': '/workflow/pdf-to-midi',
-  'midi-editor': '/workflow/midi-editor'
+/** slug → public conversion guide (null = hide CTA) */
+export const GUIDE_PILLAR_MAP = {
+  'youtube-to-midi': '/guides/youtube-to-midi.html',
+  'audio-to-midi': '/guides/audio-to-midi.html',
+  'pdf-to-midi': '/guides/pdf-to-midi.html',
+  'midi-editor': '/guides/midi-editor.html',
+  'ai-assistant': '/guides/ai-transcription.html'
 };
 
 const SEED_GUIDES = [
@@ -930,7 +931,7 @@ function renderDetailPublic(root, g) {
   const features = g.features || [];
   const toc = sectionTocItems(sections);
   const { prev, next, related } = neighborGuides(g);
-  const workflow = GUIDE_WORKFLOW_MAP[g.slug];
+  const workflow = GUIDE_PILLAR_MAP[g.slug];
   const hasHeroMedia = !!(g.heroImage || g.heroVideo);
   const hasVideo = g.heroVideoType === 'upload' || g.heroVideoType === 'youtube';
   const metaBits = [];
@@ -1026,7 +1027,7 @@ function renderDetailPublic(root, g) {
           <div class="guide-learn-help-actions">
             <a class="guide-learn-btn" href="${guideHref('troubleshooting')}">문제 해결</a>
             <a class="guide-learn-btn" href="${pathBase()}faq.html">FAQ</a>
-            ${workflow ? `<a class="guide-learn-btn" href="${pathBase()}${workflow.replace(/^\//, '')}">Workflow 설명</a>` : ''}
+            ${workflow ? `<a class="guide-learn-btn" href="${pathBase()}${workflow.replace(/^\//, '')}">변환 가이드</a>` : ''}
           </div>
         </section>
 
@@ -1107,7 +1108,7 @@ function bindChapterSeek(root) {
 
 function renderDetailEdit(root, g) {
   const ce = ' contenteditable="true"';
-  const workflow = GUIDE_WORKFLOW_MAP[g.slug];
+  const workflow = GUIDE_PILLAR_MAP[g.slug];
   const updated = g.updatedAt?.toDate ? g.updatedAt.toDate() : (g.updatedAt?.seconds ? new Date(g.updatedAt.seconds * 1000) : null);
   const features = g.features || [];
   const sections = getSections(g);
@@ -1211,7 +1212,7 @@ function renderDetailEdit(root, g) {
     </div>
     <section class="wrap guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>
     <section class="wrap guide-faq"><h2>FAQ (관리자 편집용 · 공개 화면에서는 문제해결/FAQ 링크로 연결)</h2>${faqBlocks}<button type="button" class="secondary mini-btn" data-add-faq>FAQ 추가</button></section>
-    ${workflow ? `<div class="wrap workflow-seo-cta"><a class="secondary" href="${pathBase()}${workflow.replace(/^\//, '')}">기술적인 Workflow 설명 보기</a></div>` : ''}
+    ${workflow ? `<div class="wrap workflow-seo-cta"><a class="secondary" href="${pathBase()}${workflow.replace(/^\//, '')}">변환 가이드 보기</a></div>` : ''}
     ${updated ? `<p class="wrap muted guide-updated">업데이트: ${updated.toLocaleDateString('ko-KR')}</p>` : ''}
   `;
 

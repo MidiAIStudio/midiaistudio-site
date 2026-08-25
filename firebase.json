@@ -39,13 +39,21 @@
       "tests/**"
     ],
     "redirects": [
-      { "source": "/guides/mp3-to-midi.html", "destination": "/guides/audio-to-midi.html", "type": 301 }
+      { "source": "/guides/mp3-to-midi.html", "destination": "/guides/audio-to-midi.html", "type": 301 },
+      { "source": "/workflow/audio-to-midi", "destination": "/guides/audio-to-midi.html", "type": 301 },
+      { "source": "/workflow/audio-to-midi.html", "destination": "/guides/audio-to-midi.html", "type": 301 },
+      { "source": "/workflow/audio-to-midi/", "destination": "/guides/audio-to-midi.html", "type": 301 },
+      { "source": "/workflow/youtube-to-midi", "destination": "/guides/youtube-to-midi.html", "type": 301 },
+      { "source": "/workflow/youtube-to-midi.html", "destination": "/guides/youtube-to-midi.html", "type": 301 },
+      { "source": "/workflow/youtube-to-midi/", "destination": "/guides/youtube-to-midi.html", "type": 301 },
+      { "source": "/workflow/pdf-to-midi", "destination": "/guides/pdf-to-midi.html", "type": 301 },
+      { "source": "/workflow/pdf-to-midi.html", "destination": "/guides/pdf-to-midi.html", "type": 301 },
+      { "source": "/workflow/pdf-to-midi/", "destination": "/guides/pdf-to-midi.html", "type": 301 },
+      { "source": "/workflow/midi-editor", "destination": "/guides/midi-editor.html", "type": 301 },
+      { "source": "/workflow/midi-editor.html", "destination": "/guides/midi-editor.html", "type": 301 },
+      { "source": "/workflow/midi-editor/", "destination": "/guides/midi-editor.html", "type": 301 }
     ],
     "rewrites": [
-      { "source": "/workflow/audio-to-midi", "destination": "/workflow/audio-to-midi.html" },
-      { "source": "/workflow/youtube-to-midi", "destination": "/workflow/youtube-to-midi.html" },
-      { "source": "/workflow/pdf-to-midi", "destination": "/workflow/pdf-to-midi.html" },
-      { "source": "/workflow/midi-editor", "destination": "/workflow/midi-editor.html" },
       { "source": "/guide/getting-started", "destination": "/guide/getting-started/index.html" },
       { "source": "/guide/getting-started/", "destination": "/guide/getting-started/index.html" },
       { "source": "/guide/youtube-to-midi", "destination": "/guide/youtube-to-midi/index.html" },
