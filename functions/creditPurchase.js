@@ -72,7 +72,7 @@ function createHandlers({
           if (q.status === 'used' && String(q.paymentId || '') === String(paymentId)) {
             const walletSnap = await tx.get(walletRef);
             const wd = walletSnap.data() || {};
-            const bal = Number(wd.balance != null ? wd.balance : wd.creditBalance || 0);
+            const bal = Number(wd.balance != null ? wd.balance : (wd.creditBalance != null ? wd.creditBalance : 0));
             return { alreadyCompleted: true, balance: bal, creditAmount };
           }
           if (q.status === 'used' && q.paymentId && String(q.paymentId) !== String(paymentId)) {
@@ -411,8 +411,26 @@ function createHandlers({
       const user = await requireUser(req);
       const snap = await db.collection('creditWallets').doc(user.uid).get();
       const data = snap.exists ? (snap.data() || {}) : {};
-      const n = Number(data.creditBalance != null ? data.creditBalance : data.balance);
+      // Prefer ``balance`` (matches admin CRM + Python authorize). ``creditBalance``
+      // is a mirror that can go stale when Python debit only merge-wrote ``balance``.
+      const primary = data.balance != null ? data.balance : data.creditBalance;
+      const n = Number(primary);
       const balance = Number.isFinite(n) ? n : 0;
+      try {
+        const mirror = data.creditBalance;
+        if (mirror != null && Number(mirror) !== balance) {
+          await db.collection('creditWallets').doc(user.uid).set(
+            { balance, creditBalance: balance },
+            { merge: true }
+          );
+          await db.collection('users').doc(user.uid).set(
+            { creditBalance: balance },
+            { merge: true }
+          );
+        }
+      } catch (healErr) {
+        console.warn('creditBalance heal skipped', healErr?.message || healErr);
+      }
       return res.json({ ok: true, uid: user.uid, balance, creditBalance: balance });
     } catch (err) {
       return res.status(err.status || 500).json({

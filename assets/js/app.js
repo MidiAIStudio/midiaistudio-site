@@ -3568,12 +3568,55 @@ let creditAccountState = {
   nextPageToken: '',
   fetchedAt: 0,
   error: false,
-  loading: false
+  loading: false,
+  fetchSeq: 0
 };
 let creditFocusAt = 0;
 
 function emptyCreditState(){
-  return { uid:'', balance:null, items:null, nextPageToken:'', fetchedAt:0, error:false, loading:false };
+  return { uid:'', balance:null, items:null, nextPageToken:'', fetchedAt:0, error:false, loading:false, fetchSeq:0 };
+}
+
+function logWebCreditState(source, oldVal, newVal, extra={}){
+  try{
+    const enabled = String(localStorage.getItem('midiai_web_credit_log') || '1') !== '0';
+    if(!enabled) return;
+    const line = {
+      t: Date.now(),
+      source: String(source || ''),
+      old: oldVal,
+      new: newVal,
+      uid: String(currentUser?.uid || '').slice(0, 12),
+      ...extra
+    };
+    console.info('[WEB_CREDIT_STATE]', line);
+  }catch(_){}
+}
+
+function extractOwnCreditBalance(payload){
+  if(!payload || typeof payload !== 'object') return null;
+  if(Object.prototype.hasOwnProperty.call(payload, 'balance') && payload.balance != null && payload.balance !== ''){
+    const n = Number(payload.balance);
+    return Number.isFinite(n) ? n : null;
+  }
+  if(Object.prototype.hasOwnProperty.call(payload, 'creditBalance') && payload.creditBalance != null && payload.creditBalance !== ''){
+    const n = Number(payload.creditBalance);
+    return Number.isFinite(n) ? n : null;
+  }
+  return null;
+}
+
+function applyOwnCreditBalance(nextBalance, { source='', seq=null }={}){
+  if(seq != null && Number(seq) !== Number(creditAccountState.fetchSeq)){
+    logWebCreditState(source || 'stale_discard', creditAccountState.balance, nextBalance, { seq, applied:false });
+    return false;
+  }
+  const oldVal = creditAccountState.balance;
+  creditAccountState.balance = nextBalance;
+  creditAccountState.fetchedAt = Date.now();
+  creditAccountState.error = false;
+  logWebCreditState(source || 'apply', oldVal, nextBalance, { seq, applied:true });
+  return true;
 }
 
 function resetCreditAccountState(){
@@ -3673,8 +3716,8 @@ async function callOwnCreditJson(names, payload, freshToken){
 
 async function fetchOwnCreditBalance(freshToken){
   const data = await callOwnCreditJson(['getCreditBalance', 'getPointBalance'], {}, freshToken);
-  const n = Number(data.creditBalance ?? data.balance);
-  return Number.isFinite(n) ? n : 0;
+  const n = extractOwnCreditBalance(data);
+  return n == null ? 0 : n;
 }
 
 async function fetchOwnCreditLedger({limit=5, pageToken='', freshToken=false}={}){
@@ -3878,26 +3921,30 @@ async function refreshOwnCredits({ freshToken=false, ledger=false, reason='' }={
     paintProfileCreditStrip();
   }
   creditAccountState.uid = uid;
+  creditAccountState.fetchSeq = Number(creditAccountState.fetchSeq || 0) + 1;
+  const mySeq = creditAccountState.fetchSeq;
   creditAccountState.loading = true;
   if(isPurchasePage) renderPurchaseTrialRow();
   try{
     const bal = await fetchOwnCreditBalance(freshToken);
     if(!currentUser || currentUser.uid !== uid) return;
-    creditAccountState.balance = bal;
-    creditAccountState.error = false;
-    creditAccountState.fetchedAt = Date.now();
+    if(!applyOwnCreditBalance(bal, { source: reason || 'refresh', seq: mySeq })) return;
     if(ledger){
       try{
         const data = await fetchOwnCreditLedger({ limit: 10, freshToken: false });
-        if(currentUser && currentUser.uid === uid) creditAccountState.items = data.items;
+        if(currentUser && currentUser.uid === uid && mySeq === creditAccountState.fetchSeq){
+          creditAccountState.items = data.items;
+        }
       }catch(_){ /* history optional */ }
     }
   }catch(err){
     console.warn('credit refresh', reason, err);
     if(!currentUser || currentUser.uid !== uid) return;
-    creditAccountState.error = true;
+    if(mySeq === creditAccountState.fetchSeq) creditAccountState.error = true;
   }finally{
-    if(currentUser && currentUser.uid === uid) creditAccountState.loading = false;
+    if(currentUser && currentUser.uid === uid && mySeq === creditAccountState.fetchSeq){
+      creditAccountState.loading = false;
+    }
     paintProfileCreditStrip();
     if(isPurchasePage) renderPurchaseTrialRow();
     if($('accountMeta')) paintAccountCreditPanel();
@@ -4051,6 +4098,7 @@ async function setAuthUiSignedIn(user){
   creditAccountState.balance = null;
   creditAccountState.items = null;
   creditAccountState.error = false;
+  creditAccountState.fetchSeq = Number(creditAccountState.fetchSeq || 0) + 1;
   paintProfileCreditStrip();
   const name=user.displayName||'Google User';
   const email=user.email||'';
@@ -4103,7 +4151,7 @@ async function setAuthUiSignedIn(user){
   updatePurchaseAccountBox();
   updateSupportFormUi();
   if(page==='board.html') applyBoardMineModeUi();
-  if(!$('accountMeta')) refreshOwnCredits({ freshToken:true, ledger:false, reason:'signin' });
+  refreshOwnCredits({ freshToken:true, ledger: !!$('accountMeta'), reason:'signin' });
 }
 
 async function upsertUser(user){
