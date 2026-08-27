@@ -3663,7 +3663,7 @@ function creditLedgerTitle(item){
   const title = sanitizeCreditDisplayTitle(item?.displayTitle || '');
   if(type === 'refund') return tr('credit_ledger_refund');
   if(type === 'admin_grant' || type === 'admin_bulk_credit') return title || tr('credit_ledger_grant');
-  if(type === 'admin_deduct') return title || tr('credit_ledger_deduct');
+  if(type === 'admin_deduct' || type === 'admin_bulk_deduct') return title || tr('credit_ledger_deduct');
   if(type === 'purchase') return title || tr('credit_ledger_purchase');
   return title || tr('credit_ledger_conversion');
 }
@@ -5971,7 +5971,7 @@ function openEditModal(title, fields, opts={}){
           data.contentMarkdown = data[f.name];
           return;
         }
-        if (f.type === 'note' || f.type === 'segment') return;
+        if (f.type === 'note') return;
         const input = form.elements[f.name];
         if (!input) return;
         if (f.type === 'checkbox') data[f.name] = !!input.checked;
@@ -8488,9 +8488,9 @@ function adminCrmLicenseExpandInnerHtml(u, view){
         </div>
       </div>
     </div>
-    <aside class="admin-license-expand-col admin-license-credit-panel" aria-label="크레딧 추가">
+    <aside class="admin-license-expand-col admin-license-credit-panel" aria-label="크레딧 추가/회수">
       <div class="admin-license-credit-head">
-        <h3>크레딧 추가</h3>
+        <h3>크레딧 추가/회수</h3>
         <span class="admin-license-credit-balance muted small" data-lic-credit-balance>잔액 조회 중...</span>
       </div>
       <div class="admin-crm-points-quick" role="group" aria-label="빠른 지급">
@@ -8498,6 +8498,12 @@ function adminCrmLicenseExpandInnerHtml(u, view){
         <button type="button" class="secondary mini-btn" data-license-credit-grant="${esc(uid)}" data-amount="3">+3</button>
         <button type="button" class="secondary mini-btn" data-license-credit-grant="${esc(uid)}" data-amount="5">+5</button>
         <button type="button" class="secondary mini-btn" data-license-credit-grant="${esc(uid)}" data-amount="10">+10</button>
+      </div>
+      <div class="admin-crm-points-quick" role="group" aria-label="빠른 회수">
+        <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${esc(uid)}" data-amount="1">-1</button>
+        <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${esc(uid)}" data-amount="3">-3</button>
+        <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${esc(uid)}" data-amount="5">-5</button>
+        <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${esc(uid)}" data-amount="10">-10</button>
       </div>
       <div class="admin-crm-points-form">
         <input type="number" data-lic-credit-amount min="1" step="1" value="5" aria-label="크레딧 수량">
@@ -9110,31 +9116,38 @@ async function runAdminBulkCredits(){
   if(adminBulkBusy) return;
   if(adminCrmMode()!=='license') return;
   const uids = [...adminCrmSelected];
-  if(!uids.length){ adminFlash('지급 대상이 없습니다'); return; }
-  const draft = await openEditModal(`크레딧 일괄 지급 · ${uids.length}명`, [
+  if(!uids.length){ adminFlash('지급/회수 대상이 없습니다'); return; }
+  const draft = await openEditModal(`크레딧 일괄 지급/회수 · ${uids.length}명`, [
+    { name:'mode', label:'모드', type:'segment', value:'grant', options:[{ value:'grant', label:'지급' }, { value:'deduct', label:'회수' }] },
     { name:'amount', label:'지급 크레딧', type:'number', required:true, value:1 },
     { name:'reason', label:'지급 사유', type:'text', value:'', placeholder:'이벤트/보상 사유 입력' }
   ], {
     submitLabel:'지급',
-    modalClass:'admin-bulk-compact'
+    modalClass:'admin-bulk-compact admin-bulk-credit-modal',
+    onReady(form){
+      bindAdminBulkCreditModal(form);
+    }
   });
   if(!draft) return;
+  const mode = String(draft.mode || 'grant') === 'deduct' ? 'deduct' : 'grant';
+  const verb = mode === 'deduct' ? '회수' : '지급';
   const amount = Number(draft.amount);
-  if(!Number.isInteger(amount) || amount <= 0){ adminFlash('지급 크레딧은 1 이상의 정수여야 합니다'); return; }
+  if(!Number.isInteger(amount) || amount <= 0){ adminFlash(`${verb} 크레딧은 1 이상의 정수여야 합니다`); return; }
   const total = uids.length * amount;
   const unit = amount===1 ? 'Credit' : 'Credits';
   const totalUnit = total===1 ? 'Credit' : 'Credits';
   const who = uids.length===1
-    ? `1명에게 ${amount} ${unit}을 지급합니다.`
-    : `${uids.length}명에게 각각 ${amount} ${unit}을 지급합니다.`;
-  if(!confirm(`크레딧 지급 확인\n\n${who}\n총 지급량: ${total} ${totalUnit}`)) return;
+    ? `1명에게 ${amount} ${unit}을 ${verb}합니다.`
+    : `${uids.length}명에게 각각 ${amount} ${unit}을 ${verb}합니다.`;
+  if(!confirm(`크레딧 ${verb} 확인\n\n${who}\n총 ${verb}량: ${total} ${totalUnit}`)) return;
   adminBulkBusy = true;
   const operationId = newAdminBulkOperationId();
-  adminFlash(`${uids.length}명 크레딧 지급 작업이 시작되었습니다.`, { persist: true });
+  adminFlash(`${uids.length}명 크레딧 ${verb} 작업이 시작되었습니다.`, { persist: true });
   try{
     const started = await callFunctionJson('grantBulkCredits', {
       recipientUids: uids,
       amount,
+      mode,
       reason: String(draft.reason||'').trim(),
       operationId
     });
@@ -9149,19 +9162,19 @@ async function runAdminBulkCredits(){
           break;
         }
         const st = String(result.status || '');
-        adminFlash(`${uids.length}명 크레딧 지급 중 · 성공 ${result.success || 0} · 실패 ${result.failed || 0}`, { persist: true });
+        adminFlash(`${uids.length}명 크레딧 ${verb} 중 · 성공 ${result.success || 0} · 실패 ${result.failed || 0}`, { persist: true });
         if(st === 'COMPLETED') break;
       }
     }
     if(String(result.status || '') !== 'COMPLETED' && result.code !== 'ALREADY_COMPLETED'){
-      adminFlash(`${uids.length}명 크레딧 지급 작업이 서버에서 계속됩니다.`);
+      adminFlash(`${uids.length}명 크레딧 ${verb} 작업이 서버에서 계속됩니다.`);
       return;
     }
     const failN = Number(result.failed || 0);
-    adminFlash(`크레딧 지급 완료 · ${result.requested}명 × ${amount} Credits · 총 ${result.totalCredits} · 성공 ${result.success} · 실패 ${failN}`);
+    adminFlash(`크레딧 ${verb} 완료 · ${result.requested}명 × ${amount} Credits · 총 ${result.totalCredits} · 성공 ${result.success} · 실패 ${failN}`);
     if(failN){
       const lines = (result.failures||[]).slice(0,8).map(f=>f.uid).join(', ');
-      alert(`크레딧 지급 완료\n\n${result.requested}명 × ${amount} Credits\n총 ${result.totalCredits} Credits\n성공 ${result.success}\n실패 ${failN}${lines ? '\n'+lines : ''}`);
+      alert(`크레딧 ${verb} 완료\n\n${result.requested}명 × ${amount} Credits\n총 ${result.totalCredits} Credits\n성공 ${result.success}\n실패 ${failN}${lines ? '\n'+lines : ''}`);
     }
     if(selectedAdminUid) renderAdminCrmPoints(selectedAdminUid, { silent: true });
     if(adminCrmLicenseOpen && result?.balances){
@@ -9175,6 +9188,60 @@ async function runAdminBulkCredits(){
   }finally{
     adminBulkBusy = false;
   }
+}
+function bindAdminBulkCreditModal(form){
+  if(!form) return;
+  const amountRow = form.querySelector('[data-field="amount"]');
+  const amountInput = form.querySelector('[name="amount"]');
+  const reasonRow = form.querySelector('[data-field="reason"]');
+  const reasonInput = form.querySelector('[name="reason"]');
+  const submit = form.querySelector('[type="submit"]');
+  const modeRow = form.querySelector('[data-field="mode"]');
+  const modeLabel = modeRow?.querySelector(':scope > span');
+  if(modeLabel) modeLabel.hidden = true;
+  if(!amountRow || form.querySelector('.admin-bulk-credit-quick')) return;
+  const quick = document.createElement('div');
+  quick.className = 'admin-bulk-credit-quick';
+  quick.innerHTML = `
+    <div class="admin-crm-points-quick" data-bulk-credit-quick="grant" role="group" aria-label="빠른 지급">
+      <button type="button" class="secondary mini-btn" data-bulk-credit-amount="1">+1</button>
+      <button type="button" class="secondary mini-btn" data-bulk-credit-amount="3">+3</button>
+      <button type="button" class="secondary mini-btn" data-bulk-credit-amount="5">+5</button>
+      <button type="button" class="secondary mini-btn" data-bulk-credit-amount="10">+10</button>
+    </div>
+    <div class="admin-crm-points-quick" data-bulk-credit-quick="deduct" hidden role="group" aria-label="빠른 회수">
+      <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="1">-1</button>
+      <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="3">-3</button>
+      <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="5">-5</button>
+      <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="10">-10</button>
+    </div>`;
+  amountRow.after(quick);
+  const amountLabel = amountRow.querySelector(':scope > span');
+  const reasonLabel = reasonRow?.querySelector(':scope > span');
+  const currentMode = () => String(form.querySelector('[name="mode"]:checked')?.value || 'grant');
+  const syncMode = () => {
+    const deduct = currentMode() === 'deduct';
+    const verb = deduct ? '회수' : '지급';
+    if(amountLabel) amountLabel.textContent = `${verb} 크레딧`;
+    if(reasonLabel) reasonLabel.textContent = `${verb} 사유`;
+    if(reasonInput) reasonInput.placeholder = deduct ? '회수 사유 입력' : '이벤트/보상 사유 입력';
+    if(submit){
+      submit.textContent = verb;
+      submit.classList.toggle('danger-btn', deduct);
+    }
+    quick.querySelector('[data-bulk-credit-quick="grant"]')?.toggleAttribute('hidden', deduct);
+    quick.querySelector('[data-bulk-credit-quick="deduct"]')?.toggleAttribute('hidden', !deduct);
+  };
+  quick.addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-bulk-credit-amount]');
+    if(!btn) return;
+    e.preventDefault();
+    if(amountInput) amountInput.value = String(btn.getAttribute('data-bulk-credit-amount') || '1');
+  });
+  form.addEventListener('change', (e)=>{
+    if(e.target?.name === 'mode') syncMode();
+  });
+  syncMode();
 }
 function syncAdminCrmBulkButtons(){
   const bar=$('adminCrmBulkbar'); if(!bar) return;
@@ -9894,7 +9961,7 @@ async function adminAdjustLicenseExpandCredits(btn, sign){
   await adminAdjustPointsForUid(uid, sign, {
     amount,
     reason,
-    skipConfirm: Number.isInteger(quick) && quick > 0 && sign > 0
+    skipConfirm: Number.isInteger(quick) && quick > 0
   });
 }
 async function adminAdjustSelectedPoints(sign){

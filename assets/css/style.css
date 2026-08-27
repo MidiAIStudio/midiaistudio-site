@@ -43,6 +43,22 @@
   height:34px;min-height:34px;min-width:72px;padding:0 14px;border-radius:10px;font-size:13px;line-height:1;
   display:inline-flex;align-items:center;justify-content:center;text-align:center
 }
+.edit-modal.admin-bulk-credit-modal [data-field="mode"]>span{display:none}
+.edit-modal.admin-bulk-credit-modal .edit-field-segment .edit-segment{
+  display:grid;grid-template-columns:1fr 1fr;gap:6px
+}
+.edit-modal.admin-bulk-credit-modal .edit-segment-opt{flex:1;min-width:0}
+.edit-modal.admin-bulk-credit-modal .edit-segment-opt span{
+  width:100%;min-width:0;height:34px;padding:0 10px;border-radius:10px;font-size:13px
+}
+.edit-modal.admin-bulk-credit-modal .admin-bulk-credit-quick{display:grid;gap:6px}
+.edit-modal.admin-bulk-credit-modal .admin-crm-points-quick{
+  display:flex;flex-wrap:wrap;gap:6px;align-items:center
+}
+.edit-modal.admin-bulk-credit-modal .admin-crm-points-quick[hidden]{display:none!important}
+.edit-modal.admin-bulk-compact .edit-modal-actions .primary.danger-btn{
+  background:rgba(251,113,133,.18);border:1px solid rgba(251,113,133,.45);color:#ff9aac;box-shadow:none
+}
 .edit-field-segment .edit-segment{display:flex;gap:8px;flex-wrap:wrap}
 .edit-segment-opt{display:flex;align-items:center;margin:0;cursor:pointer}
 .edit-segment-opt input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}

@@ -15,6 +15,21 @@ const MAX_BULK_RECIPIENTS = 400;
 const OP_ID_RE = /^[a-zA-Z0-9_-]{8,80}$/;
 const BULK_LEASE_MS = 12 * 60 * 1000;
 const MAX_BULK_OPS_PER_TICK = 1;
+const BULK_CREDIT_TYPES = new Set(['CREDIT_GRANT', 'CREDIT_DEDUCT']);
+
+function isBulkCreditType(type) {
+  return BULK_CREDIT_TYPES.has(String(type || ''));
+}
+
+function parseBulkCreditMode(raw) {
+  const m = String(raw || '').trim().toLowerCase();
+  if (m === 'deduct' || m === 'withdraw' || m === '회수') return 'deduct';
+  return 'grant';
+}
+
+function bulkCreditOpType(mode) {
+  return mode === 'deduct' ? 'CREDIT_DEDUCT' : 'CREDIT_GRANT';
+}
 
 function httpError(status, code, message) {
   const err = new Error(message);
@@ -78,6 +93,7 @@ function publicBulkCreditOp(operationId, d, extra) {
   const success = d.successCount != null ? Number(d.successCount) : done.length;
   const failureCount = d.failureCount != null ? Number(d.failureCount) : failed.length;
   const amount = Number(d.amount || 0);
+  const mode = String(d.type || '') === 'CREDIT_DEDUCT' ? 'deduct' : 'grant';
   return {
     ok: true,
     operationId,
@@ -88,6 +104,7 @@ function publicBulkCreditOp(operationId, d, extra) {
     failures: failed.slice(0, 50),
     amountPerUser: amount,
     totalCredits: success * amount,
+    mode,
     balances: d.balances && typeof d.balances === 'object' ? d.balances : {},
     ...(extra || {})
   };
@@ -251,7 +268,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
         const n = Number(row.amount || 0);
         if (t === 'purchase') purchasedTotal += n;
         else if (t === 'admin_grant' || t === 'admin_bulk_credit') grantedTotal += n;
-        else if (t === 'admin_deduct' || t === 'refund') deductedTotal += Math.abs(n);
+        else if (t === 'admin_deduct' || t === 'admin_bulk_deduct' || t === 'refund') deductedTotal += Math.abs(n);
         else if (n < 0) consumedTotal += Math.abs(n);
       });
       let purchases = [];
@@ -322,7 +339,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       const snap = await tx.get(opRef);
       if (!snap.exists) return { status: 'MISSING' };
       const d = snap.data() || {};
-      if (d.type !== 'CREDIT_GRANT') return { status: 'SKIP' };
+      if (!isBulkCreditType(d.type)) return { status: 'SKIP' };
       if (d.status === 'COMPLETED') return { status: 'ALREADY_COMPLETED', data: d };
       if (d.status === 'IN_PROGRESS' && toMillis(d.leaseUntil) > nowMs) {
         return { status: 'LEASED', data: d };
@@ -358,14 +375,19 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
     const amount = claim.amount;
     const reason = claim.reason;
     const adminUid = claim.adminUid;
+    const opType = isBulkCreditType(claim.data && claim.data.type) ? claim.data.type : 'CREDIT_GRANT';
+    const isDeduct = opType === 'CREDIT_DEDUCT';
+    const delta = isDeduct ? -amount : amount;
+    const ledgerType = isDeduct ? 'admin_bulk_deduct' : 'admin_bulk_credit';
+    const failVerb = isDeduct ? '회수' : '지급';
 
     for (const uid of uids) {
       if (done.has(uid)) continue;
       try {
         const result = await applyCreditDelta(db, FieldValue, {
           uid,
-          amount,
-          type: 'admin_bulk_credit',
+          amount: delta,
+          type: ledgerType,
           reason,
           adminUid,
           operationId,
@@ -377,8 +399,8 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       } catch (err) {
         failed.push({
           uid,
-          code: err.code || 'GRANT_FAILED',
-          message: err.message || '지급 실패'
+          code: err.code || (isDeduct ? 'DEDUCT_FAILED' : 'GRANT_FAILED'),
+          message: err.message || `${failVerb} 실패`
         });
       }
       await opRef.set({
@@ -393,7 +415,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
     const failureCount = failed.length;
     await opRef.set({
       status: 'COMPLETED',
-      type: 'CREDIT_GRANT',
+      type: opType,
       successCount,
       failureCount,
       requested: uids.length,
@@ -415,12 +437,12 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
           timestamp: FieldValue.serverTimestamp(),
           targetUserId: uids[0] || 'bulk',
           category: 'credit',
-          action: 'ADMIN_BULK_CREDIT_GRANT',
+          action: isDeduct ? 'ADMIN_BULK_CREDIT_DEDUCT' : 'ADMIN_BULK_CREDIT_GRANT',
           actorId: adminUid,
           actorEmail: '',
           actorType: 'admin',
           result: failureCount ? 'partial' : 'success',
-          summary: `${uids.length}명 × ${amount} Credits · 총 ${successCount * amount} Credits 지급`,
+          summary: `${uids.length}명 × ${amount} Credits · 총 ${successCount * amount} Credits ${failVerb}`,
           metadata: {
             operationId,
             recipientCount: uids.length,
@@ -428,7 +450,8 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
             totalCredits: successCount * amount,
             successCount,
             failureCount,
-            reason
+            reason,
+            mode: isDeduct ? 'deduct' : 'grant'
           }
         });
       }
@@ -472,7 +495,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       if (seen.has(id)) continue;
       seen.add(id);
       const d = docSnap.data() || {};
-      if (d.type !== 'CREDIT_GRANT') continue;
+      if (!isBulkCreditType(d.type)) continue;
       if (d.status === 'IN_PROGRESS' && toMillis(d.leaseUntil) > nowMs) continue;
       const out = await processBulkCreditOperation(id, nowMs);
       processed.push({ operationId: id, status: out.status });
@@ -492,22 +515,25 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
 
       if (isPoll) {
         const snap = await opRef.get();
-        if (!snap.exists) throw httpError(404, 'OPERATION_NOT_FOUND', '일괄 지급 작업을 찾을 수 없습니다.');
+        if (!snap.exists) throw httpError(404, 'OPERATION_NOT_FOUND', '일괄 크레딧 작업을 찾을 수 없습니다.');
         return res.json(publicBulkCreditOp(operationId, snap.data() || {}, { accepted: true }));
       }
 
+      const mode = parseBulkCreditMode(body.mode);
+      const opType = bulkCreditOpType(mode);
+      const verb = mode === 'deduct' ? '회수' : '지급';
       const amount = parsePositiveInt(body.amount);
       const reason = String(body.reason || '').trim().slice(0, 200);
       const uids = uniqueUids(body.recipientUids);
-      if (amount == null) throw httpError(400, 'AMOUNT_INVALID', '지급량은 1 이상의 정수여야 합니다.');
+      if (amount == null) throw httpError(400, 'AMOUNT_INVALID', `${verb}량은 1 이상의 정수여야 합니다.`);
       if (amount > MAX_GRANT) throw httpError(400, 'AMOUNT_TOO_LARGE', `1인당 최대 ${MAX_GRANT} Credits까지 가능합니다.`);
-      if (!uids.length) throw httpError(400, 'RECIPIENTS_REQUIRED', '지급 대상이 없습니다.');
+      if (!uids.length) throw httpError(400, 'RECIPIENTS_REQUIRED', `${verb} 대상이 없습니다.`);
       if (uids.length > MAX_BULK_RECIPIENTS) {
-        throw httpError(400, 'TOO_MANY_RECIPIENTS', `한 번에 최대 ${MAX_BULK_RECIPIENTS}명까지 지급할 수 있습니다.`);
+        throw httpError(400, 'TOO_MANY_RECIPIENTS', `한 번에 최대 ${MAX_BULK_RECIPIENTS}명까지 ${verb}할 수 있습니다.`);
       }
 
       const claim = await enqueueBulkCredit(opRef, {
-        type: 'CREDIT_GRANT',
+        type: opType,
         adminUid: adminUser.uid,
         amount,
         reason,
@@ -522,6 +548,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       const d = claim.data || {};
       return res.json(publicBulkCreditOp(operationId, {
         status: d.status || (claim.status === 'NEW' ? 'QUEUED' : d.status),
+        type: d.type || opType,
         requested: uids.length,
         doneUids: claim.doneUids || d.doneUids || [],
         failed: claim.failed || d.failed || [],
@@ -535,7 +562,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       return res.status(err.status || 500).json({
         ok: false,
         code: err.code || 'BULK_CREDIT_FAILED',
-        message: err.message || '일괄 크레딧 지급에 실패했습니다.'
+        message: err.message || '일괄 크레딧 처리에 실패했습니다.'
       });
     }
   }

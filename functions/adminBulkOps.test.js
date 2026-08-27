@@ -260,6 +260,41 @@ async function testPartialCreditFailure() {
   console.log('ok partial credit');
 }
 
+async function testBulkDeduct() {
+  const db = memoryDb();
+  await db.collection('users').doc('u1').set({ email: 'a@test.com', creditBalance: 12 });
+  await db.collection('users').doc('u2').set({ email: 'b@test.com', creditBalance: 2 });
+  const handlers = adminCredits.createHandlers({
+    db,
+    admin: makeAdmin(),
+    cors: () => false,
+    requireAdmin: async () => ({ uid: 'admin1', email: 'admin@test.com' })
+  });
+  const r = httpErrorRes();
+  await handlers.grantBulkCredits({
+    method: 'POST',
+    body: { recipientUids: ['u1', 'u2'], amount: 5, mode: 'deduct', reason: '회수', operationId: 'op_deduct_01' }
+  }, r.res);
+  assert.strictEqual(r.out.statusCode, 200);
+  assert.strictEqual(r.out.body.mode, 'deduct');
+  await handlers.processBulkCreditOperation('op_deduct_01');
+  const done = httpErrorRes();
+  await handlers.grantBulkCredits({
+    method: 'POST',
+    body: { operationId: 'op_deduct_01', poll: true }
+  }, done.res);
+  assert.strictEqual(done.out.body.mode, 'deduct');
+  assert.strictEqual(done.out.body.success, 1);
+  assert.strictEqual(done.out.body.failed, 1);
+  assert.strictEqual((await db.collection('creditWallets').doc('u1').get()).data().balance, 7);
+  const led = await db.collection('creditLedger').doc('bulk_op_deduct_01_u1').get();
+  assert.strictEqual(led.data().type, 'admin_bulk_deduct');
+  assert.strictEqual(led.data().amount, -5);
+  const audit = await db.collection('adminAuditLogs').doc('bulk_credit_op_deduct_01').get();
+  assert.strictEqual(audit.data().action, 'ADMIN_BULK_CREDIT_DEDUCT');
+  console.log('ok bulk deduct 12-5=7 and insufficient fails');
+}
+
 async function testBulkEmail() {
   const db = memoryDb();
   await db.collection('users').doc('u1').set({ email: 'one@test.com' });
@@ -414,6 +449,7 @@ async function testSmtpErrorSanitizeAndVerify() {
   await testConcurrentDifferentOps();
   await testBulkCreditRejects();
   await testPartialCreditFailure();
+  await testBulkDeduct();
   await testBulkEmail();
   await testSendingUidSkipDoesNotResend();
   await testEmailAuth();

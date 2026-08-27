@@ -2117,7 +2117,7 @@ exports.onAdminBulkCreditQueued = functionsV1
   .firestore.document('adminBulkOperations/{opId}')
   .onCreate(async (snap, context) => {
     const d = snap.data() || {};
-    if (d.type !== 'CREDIT_GRANT') return null;
+    if (d.type !== 'CREDIT_GRANT' && d.type !== 'CREDIT_DEDUCT') return null;
     try {
       const out = await adminCreditHandlers.processBulkCreditOperation(context.params.opId);
       console.info('onAdminBulkCreditQueued', { opId: context.params.opId, status: out && out.status });

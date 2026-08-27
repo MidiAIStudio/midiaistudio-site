@@ -229,6 +229,105 @@ function previewAdjustLicenseCredits(btn, sign) {
   renderCrmWork();
   previewNotice(`미리보기 — 크레딧 ${sign > 0 ? '지급' : '회수'} ${amount} (잔액 ${next}, 실제 데이터 변경 없음)`);
 }
+function openPreviewBulkCredits() {
+  if (crmMode !== 'license') return;
+  const uids = [...selected];
+  if (!uids.length) {
+    previewNotice('지급/회수 대상이 없습니다');
+    return;
+  }
+  const overlay = document.createElement('div');
+  overlay.className = 'edit-modal-backdrop';
+  overlay.innerHTML = `<form class="edit-modal admin-bulk-compact admin-bulk-credit-modal" novalidate>
+    <div class="edit-modal-head">
+      <div class="edit-modal-head-copy"><h3>크레딧 일괄 지급/회수 · ${uids.length}명</h3></div>
+      <button type="button" class="edit-modal-x" data-cancel aria-label="close">×</button>
+    </div>
+    <div class="edit-modal-body">
+      <div class="edit-field edit-field-segment" data-field="mode">
+        <span hidden>모드</span>
+        <div class="edit-segment" role="radiogroup" aria-label="지급/회수">
+          <label class="edit-segment-opt"><input type="radio" name="mode" value="grant" checked><span>지급</span></label>
+          <label class="edit-segment-opt"><input type="radio" name="mode" value="deduct"><span>회수</span></label>
+        </div>
+      </div>
+      <label class="edit-field" data-field="amount"><span>지급 크레딧</span><input type="number" name="amount" min="1" step="1" value="1" required></label>
+      <div class="admin-bulk-credit-quick">
+        <div class="admin-crm-points-quick" data-bulk-credit-quick="grant" role="group" aria-label="빠른 지급">
+          <button type="button" class="secondary mini-btn" data-bulk-credit-amount="1">+1</button>
+          <button type="button" class="secondary mini-btn" data-bulk-credit-amount="3">+3</button>
+          <button type="button" class="secondary mini-btn" data-bulk-credit-amount="5">+5</button>
+          <button type="button" class="secondary mini-btn" data-bulk-credit-amount="10">+10</button>
+        </div>
+        <div class="admin-crm-points-quick" data-bulk-credit-quick="deduct" hidden role="group" aria-label="빠른 회수">
+          <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="1">-1</button>
+          <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="3">-3</button>
+          <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="5">-5</button>
+          <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="10">-10</button>
+        </div>
+      </div>
+      <label class="edit-field" data-field="reason"><span>지급 사유</span><input type="text" name="reason" placeholder="이벤트/보상 사유 입력"></label>
+    </div>
+    <div class="edit-modal-actions">
+      <button type="button" class="secondary" data-cancel>취소</button>
+      <button type="submit" class="primary">지급</button>
+    </div>
+  </form>`;
+  const form = overlay.querySelector('form');
+  const amountInput = form.querySelector('[name="amount"]');
+  const reasonInput = form.querySelector('[name="reason"]');
+  const submit = form.querySelector('[type="submit"]');
+  const amountLabel = form.querySelector('[data-field="amount"] > span');
+  const reasonLabel = form.querySelector('[data-field="reason"] > span');
+  const currentMode = () => String(form.querySelector('[name="mode"]:checked')?.value || 'grant');
+  const syncMode = () => {
+    const deduct = currentMode() === 'deduct';
+    const verb = deduct ? '회수' : '지급';
+    if (amountLabel) amountLabel.textContent = `${verb} 크레딧`;
+    if (reasonLabel) reasonLabel.textContent = `${verb} 사유`;
+    if (reasonInput) reasonInput.placeholder = deduct ? '회수 사유 입력' : '이벤트/보상 사유 입력';
+    if (submit) {
+      submit.textContent = verb;
+      submit.classList.toggle('danger-btn', deduct);
+    }
+    form.querySelector('[data-bulk-credit-quick="grant"]')?.toggleAttribute('hidden', deduct);
+    form.querySelector('[data-bulk-credit-quick="deduct"]')?.toggleAttribute('hidden', !deduct);
+  };
+  const close = () => overlay.remove();
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.querySelectorAll('[data-cancel]').forEach((btn) => btn.addEventListener('click', close));
+  form.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-bulk-credit-amount]');
+    if (!btn) return;
+    e.preventDefault();
+    amountInput.value = String(btn.getAttribute('data-bulk-credit-amount') || '1');
+  });
+  form.addEventListener('change', (e) => { if (e.target?.name === 'mode') syncMode(); });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const deduct = currentMode() === 'deduct';
+    const verb = deduct ? '회수' : '지급';
+    const amount = Number(amountInput.value || 0);
+    if (!Number.isInteger(amount) || amount <= 0) {
+      previewNotice(`${verb} 크레딧은 1 이상의 정수여야 합니다`);
+      return;
+    }
+    let ok = 0;
+    uids.forEach((uid) => {
+      const u = memberByUid(uid);
+      if (!u) return;
+      const next = Math.max(0, Number(u.credits || 0) + (deduct ? -amount : amount));
+      u.credits = next;
+      ok++;
+    });
+    close();
+    renderCrmWork();
+    previewNotice(`미리보기 — 크레딧 ${verb} ${amount} × ${ok}명 (실제 데이터 변경 없음)`);
+  });
+  document.body.appendChild(overlay);
+  syncMode();
+  setTimeout(() => amountInput?.focus(), 40);
+}
 function roleBadge(role) {
   return `<span class="crm-role is-${role}">${role === 'admin' ? '관리자' : '사용자'}</span>`;
 }
@@ -445,7 +544,10 @@ function syncPreviewWorkChrome() {
   const selectWrap = $('adminCrmSelectAllWrap');
   if (selectWrap) selectWrap.hidden = crmMode !== 'members';
   const bulk = $('adminCrmBulkbar');
-  if (bulk && crmMode !== 'members') bulk.hidden = true;
+  if (bulk) {
+    if (crmMode !== 'members' && crmMode !== 'license') bulk.hidden = true;
+    else bulk.hidden = selected.size === 0;
+  }
   const stats = $('adminCrmStats');
   const tabs = $('adminCrmWorkTabs');
   if (crmMode === 'license') {
@@ -701,9 +803,9 @@ function renderCrmWork() {
               </div>
             </div>
             </div>
-            <aside class="admin-license-expand-col admin-license-credit-panel" aria-label="크레딧 추가">
+            <aside class="admin-license-expand-col admin-license-credit-panel" aria-label="크레딧 추가/회수">
               <div class="admin-license-credit-head">
-                <h3>크레딧 추가</h3>
+                <h3>크레딧 추가/회수</h3>
                 <span class="admin-license-credit-balance muted small">잔액 ${u.credits ?? 0} Credits</span>
               </div>
               <div class="admin-crm-points-quick">
@@ -711,6 +813,12 @@ function renderCrmWork() {
                 <button type="button" class="secondary mini-btn" data-license-credit-grant="${u.uid}" data-amount="3">+3</button>
                 <button type="button" class="secondary mini-btn" data-license-credit-grant="${u.uid}" data-amount="5">+5</button>
                 <button type="button" class="secondary mini-btn" data-license-credit-grant="${u.uid}" data-amount="10">+10</button>
+              </div>
+              <div class="admin-crm-points-quick">
+                <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${u.uid}" data-amount="1">-1</button>
+                <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${u.uid}" data-amount="3">-3</button>
+                <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${u.uid}" data-amount="5">-5</button>
+                <button type="button" class="secondary mini-btn danger-btn" data-license-credit-deduct="${u.uid}" data-amount="10">-10</button>
               </div>
               <div class="admin-crm-points-form">
                 <input type="number" data-lic-credit-amount min="1" step="1" value="5" aria-label="크레딧 수량">
@@ -1914,6 +2022,10 @@ function bind() {
         applyPreviewLicense({ licenseStatus: 'active' }, { notice: '미리보기 — 라이선스 활성화 (실제 데이터 변경 없음)' });
       }
       else if (act === 'hwid-copy') previewNotice('미리보기 — 클립보드에 복사하지 않고 안내만 표시');
+      else if (act === 'credits') {
+        openPreviewBulkCredits();
+        return;
+      }
       else if (['hwid-reset', 'delete', 'ban', 'app-message', 'posts-delete-selected', 'posts-delete-all'].includes(act)) {
         if (act === 'ban') applyPreviewLicense({ licenseStatus: 'banned' }, { notice: '미리보기 — 라이선스 정지 (실제 데이터 변경 없음)' });
         else previewNotice('미리보기 — 실제 데이터는 변경되지 않습니다');
