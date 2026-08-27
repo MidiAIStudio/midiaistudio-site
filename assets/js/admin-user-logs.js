@@ -11,6 +11,7 @@ const TABS = [
   { id: 'admin', label: '관리자 작업' },
   { id: 'message', label: '쪽지/알림' },
   { id: 'payment', label: '결제' },
+  { id: 'credit', label: '크레딧 사용내역' },
   { id: 'app', label: '앱 사용' },
   { id: 'hwid', label: 'HWID/기기' },
   { id: 'ticket', label: '문의' }
@@ -240,11 +241,103 @@ function categoryLabel(cat) {
     admin: '관리자',
     message: '쪽지',
     payment: '결제',
+    credit: '크레딧',
     app: '앱',
     hwid: 'HWID',
     ticket: '문의',
     user: '계정'
   })[cat] || cat;
+}
+
+function sanitizeCreditTitle(raw) {
+  let text = String(raw || '').replace(/\\/g, '/').trim();
+  if (!text) return '';
+  if (/^[A-Za-z]:\//.test(text) || text.startsWith('/Users/') || text.startsWith('/home/') || text.includes('/Users/') || text.includes('/home/')) {
+    text = text.split('/').filter(Boolean).pop() || text;
+  } else if (text.includes('/') && /\.(mp3|wav|mid|midi|pdf|mp4|m4a|flac|ogg)$/i.test(text)) {
+    text = text.split('/').filter(Boolean).pop() || text;
+  }
+  text = text.replace(/\b(jobId|paymentId|uid)\s*[:=]\s*\S+/ig, '').trim();
+  return text.slice(0, 120);
+}
+
+function creditKindLabel(type) {
+  const t = String(type || '').toLowerCase();
+  if (t === 'purchase') return '구매';
+  if (t === 'admin_grant' || t === 'admin_bulk_credit') return '지급';
+  if (t === 'admin_deduct' || t === 'admin_bulk_deduct') return '회수';
+  if (t === 'refund') return '반환';
+  if (t === 'conversion') return '사용';
+  return '기타';
+}
+
+function creditLedgerTitle(row) {
+  const type = String(row?.type || '').toLowerCase();
+  const title = sanitizeCreditTitle(row?.displayTitle || '');
+  if (type === 'refund') return '변환 실패 반환';
+  if (type === 'admin_grant' || type === 'admin_bulk_credit') return title || '관리자 크레딧 지급';
+  if (type === 'admin_deduct' || type === 'admin_bulk_deduct') return title || '관리자 크레딧 회수';
+  if (type === 'purchase') return title || '크레딧 구매';
+  return title || 'AI 변환';
+}
+
+function formatCreditDelta(amount) {
+  const n = Number(amount);
+  if (!Number.isFinite(n) || n === 0) return '0';
+  return n > 0 ? `+${n}` : String(n);
+}
+
+function creditActor(row) {
+  const type = String(row?.type || '').toLowerCase();
+  const adminUid = String(row?.adminUid || '').trim();
+  if (adminUid) {
+    const users = api.getUsers() || [];
+    const admin = users.find((u) => u.uid === adminUid);
+    return admin?.email || admin?.displayName || adminUid;
+  }
+  if (type === 'admin_grant' || type === 'admin_bulk_credit' || type === 'admin_deduct' || type === 'admin_bulk_deduct') {
+    return '관리자';
+  }
+  if (type === 'refund') return '시스템';
+  return '사용자';
+}
+
+function mapCreditLedgerDoc(id, data) {
+  const row = data || {};
+  const amount = Number(row.amount || row.creditAmount || 0);
+  const type = String(row.type || 'conversion');
+  const title = creditLedgerTitle(row);
+  const kind = creditKindLabel(type);
+  const before = row.balanceBefore != null && Number.isFinite(Number(row.balanceBefore))
+    ? String(Number(row.balanceBefore))
+    : '';
+  const after = row.balanceAfter != null && Number.isFinite(Number(row.balanceAfter))
+    ? String(Number(row.balanceAfter))
+    : '';
+  return makeRow({
+    id: `credit_${id}`,
+    timestamp: tsMs(row.createdAt),
+    category: 'credit',
+    action: title,
+    summary: [kind, formatCreditDelta(amount), after ? `잔액 ${after}` : ''].filter(Boolean).join(' · '),
+    actor: creditActor(row),
+    result: amount < 0 ? (type === 'refund' ? '반환' : '차감') : '적립',
+    before,
+    after,
+    source: 'creditLedger',
+    raw: { id, ...row },
+    columns: {
+      kind,
+      type,
+      title,
+      delta: formatCreditDelta(amount),
+      amount,
+      balance: after || '-',
+      reason: row.reason || '',
+      productId: row.productId || '',
+      paymentId: row.paymentId || ''
+    }
+  });
 }
 
 function planLabel(p) {
@@ -1027,6 +1120,30 @@ async function collectLogsForUser(uid) {
   });
   rows.push(...auditRows);
 
+  // App-visible credit history (creditLedger — same source as the user modal)
+  const ledgerRows = await safeQuery('creditLedger', async () => {
+    let docs = [];
+    try {
+      const snap = await getDocs(query(
+        collection(api.db, 'creditLedger'),
+        where('uid', '==', uid),
+        orderBy('createdAt', 'desc'),
+        limit(200)
+      ));
+      docs = snap.docs;
+    } catch (e) {
+      console.warn('creditLedger indexed query failed, fallback', e);
+      const snap = await getDocs(query(
+        collection(api.db, 'creditLedger'),
+        where('uid', '==', uid),
+        limit(200)
+      ));
+      docs = snap.docs.slice().sort((a, b) => tsMs(b.data()?.createdAt) - tsMs(a.data()?.createdAt));
+    }
+    return docs.map((d) => mapCreditLedgerDoc(d.id, d.data()));
+  });
+  rows.push(...ledgerRows);
+
   // Deduplicate near-identical license snapshot vs license_change notif is fine (different sources)
   return dedupeRows(rows);
 }
@@ -1118,14 +1235,15 @@ function filterByDateAndSearch(rows) {
       r.action, r.summary, r.actor, r.result, r.category,
       formatAdminLogAction(r), formatAdminLogSummary(r),
       stringifyVal(r.before), stringifyVal(r.after),
-      formatDisplayVal(r.before), formatDisplayVal(r.after)
+      formatDisplayVal(r.before), formatDisplayVal(r.after),
+      r.columns?.kind, r.columns?.title, r.columns?.delta, r.columns?.reason, r.columns?.type
     ].join(' ').toLowerCase();
     return hay.includes(q);
   });
 }
 
 function countByCategory(rows) {
-  const counts = { all: rows.length, license: 0, admin: 0, message: 0, payment: 0, app: 0, hwid: 0, ticket: 0 };
+  const counts = { all: rows.length, license: 0, admin: 0, message: 0, payment: 0, credit: 0, app: 0, hwid: 0, ticket: 0 };
   rows.forEach((r) => {
     if (counts[r.category] != null) counts[r.category] += 1;
   });
@@ -1231,6 +1349,7 @@ function headColsForTab(tab) {
   if (tab === 'admin') return ['일시', '처리자', '작업', '이전→변경', '결과', '대상'];
   if (tab === 'message') return ['일시', '종류', '제목', '발송자', '읽음', '내용'];
   if (tab === 'payment') return ['일시', '상품', '결제수단', '금액', '상태', '결제 ID'];
+  if (tab === 'credit') return ['일시', '구분', '내역', '변동', '잔액', '처리자'];
   if (tab === 'app') return ['일시', '작업', '버전', '내용', '처리자', '결과'];
   if (tab === 'hwid') return ['일시', '작업', '이전 HWID', '변경 HWID', '처리자', '결과'];
   if (tab === 'ticket') return ['일시', '작업', '문의 제목', '처리자', '상태', '내용'];
@@ -1302,6 +1421,19 @@ function cellsForTab(tab, r) {
       { html: esc(c.amount || '-'), text: c.amount },
       { html: badge(c.status || r.result), text: c.status || r.result },
       { html: esc(truncate(c.paymentId || '-', 22)), text: c.paymentId, cls: 'mono' }
+    ];
+  }
+  if (tab === 'credit') {
+    const c = r.columns || {};
+    const amt = Number(c.amount);
+    const deltaCls = amt > 0 ? 'admin-logs-delta is-plus' : amt < 0 ? 'admin-logs-delta is-minus' : 'admin-logs-delta';
+    return [
+      time,
+      { html: badge(c.kind || '기타'), text: c.kind || '기타' },
+      { html: esc(truncate(c.title || r.action, 48)), text: c.title || r.action },
+      { html: esc(c.delta || '-'), text: c.delta, cls: deltaCls },
+      { html: esc(c.balance || r.after || '-'), text: c.balance || r.after, cls: 'mono' },
+      { html: esc(r.actor), text: r.actor }
     ];
   }
   if (tab === 'app') {
@@ -1411,6 +1543,19 @@ function detailSections(r) {
     pushDetail(facts, '상품', c.product);
     pushDetail(facts, '결제수단', c.method);
     pushDetail(facts, '금액', c.amount);
+    pushDetail(blocks, '결제 ID', c.paymentId);
+    return { facts, blocks };
+  }
+  if (cat === 'credit') {
+    const c = r.columns || {};
+    pushDetail(facts, '구분', c.kind);
+    pushDetail(facts, '변동', c.delta);
+    pushDetail(facts, '이전 잔액', r.before);
+    pushDetail(facts, '변경 잔액', r.after || c.balance);
+    pushDetail(facts, '처리자', r.actor);
+    pushDetail(blocks, '내역', c.title || r.action);
+    pushDetail(blocks, '사유', c.reason);
+    pushDetail(blocks, '상품', c.productId);
     pushDetail(blocks, '결제 ID', c.paymentId);
     return { facts, blocks };
   }

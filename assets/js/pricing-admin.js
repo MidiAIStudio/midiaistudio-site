@@ -58,7 +58,7 @@ import {
   storefrontUiCopy,
   PROMO_POPUP_MAX_VISIBLE
 } from './storefront-render.js?v=admin-preview-draft-2';
-import { writeAdminAuditLog } from './admin-user-logs.js?v=admin-logs-detail-1';
+import { writeAdminAuditLog } from './admin-user-logs.js?v=credit-ledger-tab-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({

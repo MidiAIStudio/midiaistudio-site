@@ -4262,6 +4262,10 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 .admin-logs-badge.is-ticket{color:#93c5fd;background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.25)}
 .admin-logs-badge.is-app,.admin-logs-badge.is-hwid{color:#c7d0ff;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12)}
 .admin-logs-badge.is-admin,.admin-logs-badge.is-message{color:#fdba74;background:rgba(251,146,60,.1);border-color:rgba(251,146,60,.25)}
+.admin-logs-badge.is-credit{color:#67e8f9;background:rgba(34,211,238,.1);border-color:rgba(34,211,238,.25)}
+.admin-logs-delta{font-variant-numeric:tabular-nums;font-weight:700}
+.admin-logs-delta.is-plus{color:#6ee7b7}
+.admin-logs-delta.is-minus{color:#fda4af}
 .admin-logs-user-search{
   width:100%;min-width:0!important;max-width:none;padding:8px 10px!important;
   font-size:12px!important;border-radius:10px!important

@@ -39,6 +39,7 @@ const LOG_TABS = [
   ['admin', '관리자 작업'],
   ['message', '쪽지/알림'],
   ['payment', '결제'],
+  ['credit', '크레딧 사용내역'],
   ['app', '앱 사용'],
   ['hwid', 'HWID/기기'],
   ['ticket', '문의']
@@ -92,6 +93,10 @@ const CMS = {
 
 const LOGS = [
   { uid: 'u_preview_01', cat: 'app', action: '앱 로그인', summary: 'Windows App', actor: 'user', when: '08.19 08:44', day: 'today' },
+  { uid: 'u_preview_01', cat: 'credit', action: 'AI 변환', summary: 'YouTube → MIDI · -1', actor: 'user', when: '08.19 09:12', day: 'today' },
+  { uid: 'u_preview_01', cat: 'credit', action: '관리자 크레딧 지급', summary: '보너스 · +5', actor: 'admin', when: '08.18 21:20', day: '7d' },
+  { uid: 'u_preview_01', cat: 'credit', action: '크레딧 구매', summary: 'Credit 구매 +10', actor: 'user', when: '08.12 09:20', day: '30d' },
+  { uid: 'u_preview_03', cat: 'credit', action: '관리자 크레딧 회수', summary: '회수 · -3', actor: 'admin', when: '08.09 16:50', day: '30d' },
   { uid: 'u_preview_01', cat: 'license', action: 'Lifetime 지급', summary: 'trial → lifetime', actor: 'admin', when: '08.18 21:12', day: '7d' },
   { uid: 'u_preview_02', cat: 'hwid', action: 'HWID 초기화', summary: '기기 바인딩 해제', actor: 'admin', when: '08.17 14:03', day: '7d' },
   { uid: 'u_preview_01', cat: 'message', action: '쪽지 발송', summary: '원격지원 안내', actor: 'admin', when: '08.16 11:40', day: '7d' },
@@ -1143,9 +1148,13 @@ function renderLogs() {
     return !q || hay.includes(q);
   });
   $('adminLogsTableMeta') && ($('adminLogsTableMeta').textContent = logUid ? `${rows.length}건 · 미리보기` : '');
-  $('adminLogsTableHead') && ($('adminLogsTableHead').innerHTML = '<tr><th>시각</th><th>종류</th><th>작업</th><th>내용</th><th>수행자</th></tr>');
+  const creditHead = logTab === 'credit';
+  $('adminLogsTableHead') && ($('adminLogsTableHead').innerHTML = creditHead
+    ? '<tr><th>시각</th><th>내역</th><th>내용</th><th>수행자</th></tr>'
+    : '<tr><th>시각</th><th>종류</th><th>작업</th><th>내용</th><th>수행자</th></tr>');
   $('adminLogsTableBody') && ($('adminLogsTableBody').innerHTML = rows.map((r) => {
     const catLabel = (LOG_TABS.find(([id]) => id === r.cat) || [r.cat, r.cat])[1];
+    if (creditHead) return `<tr><td>${r.when}</td><td>${r.action}</td><td>${r.summary}</td><td>${r.actor}</td></tr>`;
     return `<tr><td>${r.when}</td><td>${catLabel}</td><td>${r.action}</td><td>${r.summary}</td><td>${r.actor}</td></tr>`;
   }).join(''));
   const empty = $('adminLogsEmpty');
