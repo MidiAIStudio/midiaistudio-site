@@ -26,6 +26,7 @@ import {
   applyCreditCatalogSession,
   isCreditCatalogReady
 } from './credit-catalog.js?v=purchase-cards-2';
+import { extractCreditBalance } from './credit-balance.js?v=credit-sot-1';
 import {
   publicProductView,
   starterUnitFromProducts,
@@ -3594,16 +3595,7 @@ function logWebCreditState(source, oldVal, newVal, extra={}){
 }
 
 function extractOwnCreditBalance(payload){
-  if(!payload || typeof payload !== 'object') return null;
-  if(Object.prototype.hasOwnProperty.call(payload, 'balance') && payload.balance != null && payload.balance !== ''){
-    const n = Number(payload.balance);
-    return Number.isFinite(n) ? n : null;
-  }
-  if(Object.prototype.hasOwnProperty.call(payload, 'creditBalance') && payload.creditBalance != null && payload.creditBalance !== ''){
-    const n = Number(payload.creditBalance);
-    return Number.isFinite(n) ? n : null;
-  }
-  return null;
+  return extractCreditBalance(payload, null);
 }
 
 function applyOwnCreditBalance(nextBalance, { source='', seq=null }={}){
@@ -3747,8 +3739,9 @@ function paintProfileCreditStrip(){
   const accountHref = accountPageHref('#plan');
   const kicker = lang==='en' ? 'Current plan' : lang==='ja' ? '現在の利用券' : '현재 이용권';
   const bal = creditAccountState.balance;
-  const showBal = Number.isFinite(Number(bal)) && Number(bal) > 0;
-  const balHtml = showBal
+  const resolvedBal = bal != null && bal !== '' && Number.isFinite(Number(bal));
+  const showBal = resolvedBal && Number(bal) > 0;
+  const balHtml = resolvedBal
     ? `<span class="topbar-profile-credit-balance">${esc(creditBalanceText(bal))}</span>`
     : '';
   if(plan === 'lifetime' && active){
@@ -3792,7 +3785,7 @@ function paintProfileCreditStrip(){
 
 function accountCreditCardHtml(){
   const bal = creditAccountState.balance;
-  const showBal = Number.isFinite(Number(bal)) && Number(bal) > 0;
+  const showBal = bal != null && bal !== '' && Number.isFinite(Number(bal));
   if(!showBal) return '';
   const kicker = lang==='en' ? 'Credits' : lang==='ja' ? 'クレジット' : '보유 크레딧';
   const historyLabel = lang==='en' ? 'Credit history' : lang==='ja' ? 'クレジット履歴' : '사용 내역';

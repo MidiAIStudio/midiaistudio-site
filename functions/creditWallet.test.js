@@ -66,6 +66,8 @@ function memoryDb() {
   });
   assert.strictEqual(dup.alreadyApplied, true);
   assert.strictEqual(dup.balance, 35);
+  assert.strictEqual(creditWallet.readBalance({ balance: 0, creditBalance: 1 }, { creditBalance: 1 }), 0);
+  assert.strictEqual(creditWallet.readBalance({ balance: 7, creditBalance: 10 }, { creditBalance: 10 }), 7);
   try {
     await creditWallet.applyWalletCreditDelta(db, FieldValue, { uid: 'missing', delta: 1, ledger: {} });
     assert.fail('expected missing user');
