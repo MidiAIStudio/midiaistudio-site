@@ -404,6 +404,8 @@ function createHandlers({
     }
   }
 
+  // Internal helper / tests only. Production HTTPS name is owned by
+  // Python codebase ``python``. Do not export this from index.js.
   async function getCreditBalance(req, res) {
     if (cors(req, res)) return;
     if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
@@ -431,7 +433,7 @@ function createHandlers({
       } catch (healErr) {
         console.warn('creditBalance heal skipped', healErr?.message || healErr);
       }
-      return res.json({ ok: true, uid: user.uid, balance, creditBalance: balance });
+      return res.json({ ok: true, uid: user.uid, balance, creditBalance: balance, impl: 'node-wallet' });
     } catch (err) {
       return res.status(err.status || 500).json({
         ok: false,

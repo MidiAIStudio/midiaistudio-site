@@ -9,7 +9,7 @@
   "functions": [
     {
       "source": "functions",
-      "codebase": "default",
+      "codebase": "web",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
         "node_modules",

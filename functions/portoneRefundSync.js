@@ -543,9 +543,19 @@ async function syncPortOnePayment({
     if (entitlement.action === 'reclaim' && walletInfo.ref && uid && entitlement.reclaim > 0) {
       const nextBal = Math.max(0, num(walletInfo.balance, 0) - entitlement.reclaim);
       const walletPatch = { updatedAt: FieldValue.serverTimestamp() };
-      if (walletInfo.kind === 'user') walletPatch.creditBalance = nextBal;
-      else walletPatch.balance = nextBal;
+      if (walletInfo.kind === 'user') {
+        walletPatch.creditBalance = nextBal;
+      } else {
+        walletPatch.balance = nextBal;
+        if (walletInfo.kind === 'credit') walletPatch.creditBalance = nextBal;
+      }
       tx.set(walletInfo.ref, walletPatch, { merge: true });
+      if (walletInfo.kind === 'credit' && uid) {
+        tx.set(db.collection('users').doc(uid), {
+          creditBalance: nextBal,
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
       const ledgerCol = walletInfo.kind === 'point' ? 'pointLedger' : 'creditLedger';
       tx.set(db.collection(ledgerCol).doc('refund_' + (eventIds[0] || pid)), {
         uid,

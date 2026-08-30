@@ -142,6 +142,14 @@ describe('licenses rules', () => {
 });
 
 describe('users accessInfo rules', () => {
+  it('owner cannot write creditBalance / balance mirrors on users doc', async () => {
+    await seedUser('user1');
+    const db = testEnv.authenticatedContext('user1').firestore();
+    await assertFails(db.doc('users/user1').update({ creditBalance: 999999 }));
+    await assertFails(db.doc('users/user1').set({ balance: 999999 }, { merge: true }));
+    await assertSucceeds(db.doc('users/user1').set({ lastLogin: new Date() }, { merge: true }));
+  });
+
   it('owner can still update lastLogin without touching accessInfo', async () => {
     await seedUser('user1');
     const db = testEnv.authenticatedContext('user1').firestore();

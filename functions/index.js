@@ -776,10 +776,8 @@ const creditHandlers = creditPurchase.createHandlers({
 exports.createCreditPurchaseQuote = functions.https.onRequest(creditHandlers.createCreditPurchaseQuote);
 exports.creditPortOnePurchase = functions.https.onRequest(creditHandlers.creditPortOnePurchase);
 exports.creditPortOnePointPurchase = functions.https.onRequest(creditHandlers.creditPortOnePurchase);
-exports.getCreditBalance = functions.https.onRequest(creditHandlers.getCreditBalance);
-exports.getPointBalance = functions.https.onRequest(creditHandlers.getCreditBalance);
-exports.listCreditLedger = functions.https.onRequest(creditHandlers.listCreditLedger);
-exports.listPointLedger = functions.https.onRequest(creditHandlers.listCreditLedger);
+// Wallet read / ledger: Python codebase owns getCreditBalance, getPointBalance,
+// listCreditLedger, listPointLedger. Do not re-export those names here.
 
 const functionsV1Https = require('firebase-functions/v1');
 const adminCredits = require('./adminCredits');
@@ -1234,8 +1232,8 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
   }
 });
 
-exports.capturePayPalCreditOrder = exports.capturePayPalOrder;
-exports.capturePayPalPointOrder = exports.capturePayPalOrder;
+// capturePayPalCreditOrder / capturePayPalPointOrder are Python-owned
+// (credit PayPal). Do not alias them to license capturePayPalOrder.
 
 /** Public cached FX for catalog/admin preview. Never accepts a client rate. */
 exports.getPublicFxRate = functions.https.onRequest(async (req, res) => {

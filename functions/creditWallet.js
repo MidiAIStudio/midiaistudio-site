@@ -2,7 +2,8 @@
 
 /**
  * Canonical Credit wallet mutation.
- * SoT: creditWallets/{uid}.balance | creditBalance
+ * SoT: creditWallets/{uid}.balance
+ * Mirror: creditWallets.creditBalance + users/{uid}.creditBalance
  * Mirror: users/{uid}.creditBalance
  * History: creditLedger
  *

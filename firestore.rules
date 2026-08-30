@@ -43,7 +43,9 @@ service cloud.firestore {
           && !isPrivilegedRole(request.resource.data.get('role', 'user')));
       allow update: if isAdmin()
         || (isOwner(userId)
-          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['accessInfo'])
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'accessInfo', 'creditBalance', 'balance', 'pointBalance', 'points'
+          ])
           && ownerRoleUpdateOk());
       allow delete: if isOwner(userId) || isAdmin();
 
