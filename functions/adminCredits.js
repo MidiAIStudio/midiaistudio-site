@@ -167,6 +167,39 @@ async function claimBulkOperation(db, FieldValue, opRef, payload) {
   });
 }
 
+function queueAdminCreditNotify(userNotify, db, FieldValue, {
+  sign,
+  targetUid,
+  amount,
+  adminUid,
+  ledgerId
+}) {
+  if (!userNotify || !targetUid) return;
+  queueMicrotask(() => {
+    void (async () => {
+      try {
+        if (sign > 0 && userNotify.notifyAdminCreditGrant) {
+          await userNotify.notifyAdminCreditGrant(db, FieldValue, {
+            uid: targetUid,
+            amount,
+            adminUid,
+            ledgerId
+          });
+        } else if (sign < 0 && userNotify.notifyAdminCreditDeduct) {
+          await userNotify.notifyAdminCreditDeduct(db, FieldValue, {
+            uid: targetUid,
+            amount,
+            adminUid,
+            ledgerId
+          });
+        }
+      } catch (err) {
+        console.warn('adminGrantOrDeduct.notify', err && err.message ? err.message : err);
+      }
+    })();
+  });
+}
+
 function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
   const FieldValue = admin.firestore.FieldValue;
   const Timestamp = admin.firestore.Timestamp;
@@ -202,13 +235,21 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
         txnMs: tTxn - tAuth,
         totalMs: tTxn - t0
       });
-      return res.json({
+      res.json({
         ok: true,
         uid: targetUid,
         balance: result.balance,
         amount: delta,
         ledgerId: result.ledgerId || ''
       });
+      queueAdminCreditNotify(userNotify, db, FieldValue, {
+        sign,
+        targetUid,
+        amount,
+        adminUid: adminUser.uid,
+        ledgerId: result.ledgerId || ''
+      });
+      return;
     } catch (err) {
       return res.status(err.status || 500).json({
         ok: false,
@@ -237,6 +278,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       const wd = walletSnap.exists ? (walletSnap.data() || {}) : {};
       const balance = creditWalletV2.readBalanceV2(wd);
       const light = !!(body.light || body.balanceOnly);
+      const ledgerLimit = Math.max(1, Math.min(Number(body.ledgerLimit || body.ledger_limit || 12) || 12, 200));
       const walletTotals = {
         purchasedTotal: Number(wd.purchasedTotal || 0),
         consumedTotal: Number(wd.consumedTotal || 0),
@@ -260,16 +302,16 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
         ledgerSnap = await db.collection('creditLedgerV2')
           .where('uid', '==', targetUid)
           .orderBy('createdAt', 'desc')
-          .limit(40)
+          .limit(ledgerLimit)
           .get();
       } catch (_) {
-        const raw = await db.collection('creditLedgerV2').where('uid', '==', targetUid).limit(120).get();
+        const raw = await db.collection('creditLedgerV2').where('uid', '==', targetUid).limit(Math.max(ledgerLimit * 3, 60)).get();
         const sorted = raw.docs.slice().sort((a, b) => {
           const ta = a.data()?.createdAt?.toMillis?.() ?? 0;
           const tb = b.data()?.createdAt?.toMillis?.() ?? 0;
           return tb - ta;
         });
-        ledgerSnap = { docs: sorted.slice(0, 40) };
+        ledgerSnap = { docs: sorted.slice(0, ledgerLimit) };
       }
       const ledger = ledgerSnap.docs.map((d) => {
         const row = d.data() || {};
@@ -277,8 +319,15 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
           id: d.id,
           type: row.type || '',
           amount: Number(row.amount || row.creditAmount || 0),
+          creditAmount: Number(row.creditAmount ?? row.amount ?? 0),
           displayTitle: row.displayTitle || '',
           reason: row.reason || '',
+          adminUid: row.adminUid || '',
+          balanceBefore: row.balanceBefore ?? null,
+          balanceAfter: row.balanceAfter ?? null,
+          productId: row.productId || '',
+          paymentId: row.paymentId || '',
+          jobId: row.jobId || '',
           createdAt: row.createdAt || null
         };
       });
@@ -331,7 +380,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
         uid: targetUid,
         balance,
         ...walletTotals,
-        ledger: ledger.slice(0, 12),
+        ledger: ledger.slice(0, ledgerLimit),
         purchases,
         jobs
       });

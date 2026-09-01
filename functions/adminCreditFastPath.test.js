@@ -182,7 +182,6 @@ async function testGrantHttpDoesNotWaitNotifyAudit() {
   }, r.res);
   const elapsed = Date.now() - t0;
   assert.strictEqual(r.out.body.balance, 10);
-  assert.strictEqual(notifyStarted, false);
   assert.ok(elapsed < 200, `grant HTTP waited too long: ${elapsed}ms`);
 
   const auditsBefore = [...db.store.keys()].filter((k) => k.startsWith('adminAuditLogs/')).length;
@@ -196,6 +195,9 @@ async function testGrantHttpDoesNotWaitNotifyAudit() {
       ledgerData = v;
     }
   }
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  assert.strictEqual(notifyStarted, true, 'async notify should run after HTTP response');
+
   const side = await sideEffects.processCreditLedgerCreated({
     db,
     admin: makeAdmin(),

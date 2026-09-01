@@ -144,7 +144,8 @@ let api = {
   getUsers: () => [],
   getLicense: () => null,
   getOrders: () => [],
-  getTickets: () => []
+  getTickets: () => [],
+  callAdminFunction: null
 };
 
 let booted = false;
@@ -302,6 +303,97 @@ function creditActor(row) {
   return '사용자';
 }
 
+function mapCreditLedgerApiRow(row) {
+  const id = String(row?.id || row?.ledgerId || '').trim()
+    || `api_${Math.random().toString(36).slice(2, 10)}`;
+  return mapCreditLedgerDoc(id, {
+    type: row?.type,
+    amount: row?.amount,
+    creditAmount: row?.creditAmount ?? row?.amount,
+    displayTitle: row?.displayTitle,
+    reason: row?.reason,
+    createdAt: row?.createdAt,
+    balanceBefore: row?.balanceBefore,
+    balanceAfter: row?.balanceAfter,
+    adminUid: row?.adminUid,
+    productId: row?.productId,
+    paymentId: row?.paymentId,
+    jobId: row?.jobId
+  }, 'creditLedgerV2');
+}
+
+async function fetchCreditLedgerRowsFromFirestore(uid) {
+  const { collection, getDocs, query, where, orderBy, limit } = api.fs;
+  const merged = [];
+  const seen = new Set();
+
+  async function loadLedgerCollection(collectionName, rowLimit = 200) {
+    let docs = [];
+    try {
+      const snap = await getDocs(query(
+        collection(api.db, collectionName),
+        where('uid', '==', uid),
+        orderBy('createdAt', 'desc'),
+        limit(rowLimit)
+      ));
+      docs = snap.docs;
+    } catch (e) {
+      console.warn(`${collectionName} indexed query failed, fallback`, e);
+      const snap = await getDocs(query(
+        collection(api.db, collectionName),
+        where('uid', '==', uid),
+        limit(rowLimit)
+      ));
+      docs = snap.docs.slice().sort((a, b) => tsMs(b.data()?.createdAt) - tsMs(a.data()?.createdAt));
+    }
+    for (const d of docs) {
+      const key = `${collectionName}/${d.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push({ doc: d, collectionName });
+    }
+  }
+
+  await loadLedgerCollection('creditLedgerV2', 200);
+  await loadLedgerCollection('creditLedger', 50);
+  merged.sort((a, b) => tsMs(b.doc.data()?.createdAt) - tsMs(a.doc.data()?.createdAt));
+  return merged.slice(0, 200).map(({ doc, collectionName }) =>
+    mapCreditLedgerDoc(doc.id, doc.data(), collectionName)
+  );
+}
+
+async function fetchCreditLedgerRows(uid) {
+  if (typeof api.callAdminFunction === 'function') {
+    try {
+      const data = await api.callAdminFunction(
+        ['adminCreditOverview', 'adminPointOverview'],
+        { targetUid: uid, ledgerLimit: 200 }
+      );
+      const ledger = Array.isArray(data?.ledger) ? data.ledger : [];
+      if (ledger.length) {
+        const apiRows = ledger.map((row) => mapCreditLedgerApiRow(row));
+        let legacyRows = [];
+        try {
+          legacyRows = await fetchCreditLedgerRowsFromFirestore(uid);
+          legacyRows = legacyRows.filter((r) => String(r.source || '') === 'creditLedger');
+        } catch (e) {
+          console.warn('admin credit legacy ledger', e);
+        }
+        const seen = new Set(apiRows.map((r) => r.id));
+        for (const row of legacyRows) {
+          if (!seen.has(row.id)) apiRows.push(row);
+        }
+        apiRows.sort((a, b) => b.timestamp - a.timestamp);
+        return apiRows.slice(0, 200);
+      }
+    } catch (e) {
+      console.warn('admin credit ledger API', e);
+      lastError = lastError || `creditLedger API: ${e.message || e}`;
+    }
+  }
+  return fetchCreditLedgerRowsFromFirestore(uid);
+}
+
 function mapCreditLedgerDoc(id, data, sourceCollection = 'creditLedgerV2') {
   const row = data || {};
   const amount = Number(row.amount || row.creditAmount || 0);
@@ -448,6 +540,8 @@ export function configureAdminUserLogs(next = {}) {
   if (typeof next.getLicense === 'function') api.getLicense = next.getLicense;
   if (typeof next.getOrders === 'function') api.getOrders = next.getOrders;
   if (typeof next.getTickets === 'function') api.getTickets = next.getTickets;
+  if (typeof next.callAdminFunction === 'function') api.callAdminFunction = next.callAdminFunction;
+  else if (next.callAdminFunction === null) api.callAdminFunction = null;
 }
 
 export function initAdminUserLogs(next = {}) {
@@ -1120,45 +1214,8 @@ async function collectLogsForUser(uid) {
   });
   rows.push(...auditRows);
 
-  // Credit V2 ledger (authoritative) + legacy V1 archive for older accounts.
-  const ledgerRows = await safeQuery('creditLedgerV2', async () => {
-    const merged = [];
-    const seen = new Set();
-
-    async function loadLedgerCollection(collectionName, limit = 200) {
-      let docs = [];
-      try {
-        const snap = await getDocs(query(
-          collection(api.db, collectionName),
-          where('uid', '==', uid),
-          orderBy('createdAt', 'desc'),
-          limit
-        ));
-        docs = snap.docs;
-      } catch (e) {
-        console.warn(`${collectionName} indexed query failed, fallback`, e);
-        const snap = await getDocs(query(
-          collection(api.db, collectionName),
-          where('uid', '==', uid),
-          limit
-        ));
-        docs = snap.docs.slice().sort((a, b) => tsMs(b.data()?.createdAt) - tsMs(a.data()?.createdAt));
-      }
-      for (const d of docs) {
-        const key = `${collectionName}/${d.id}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        merged.push({ doc: d, collectionName });
-      }
-    }
-
-    await loadLedgerCollection('creditLedgerV2', 200);
-    await loadLedgerCollection('creditLedger', 50);
-    merged.sort((a, b) => tsMs(b.doc.data()?.createdAt) - tsMs(a.doc.data()?.createdAt));
-    return merged.slice(0, 200).map(({ doc, collectionName }) =>
-      mapCreditLedgerDoc(doc.id, doc.data(), collectionName)
-    );
-  });
+  // Credit V2 ledger (authoritative) via Admin Functions API + legacy V1 Firestore fallback.
+  const ledgerRows = await safeQuery('creditLedgerV2', () => fetchCreditLedgerRows(uid));
   rows.push(...ledgerRows);
 
   // Deduplicate near-identical license snapshot vs license_change notif is fine (different sources)
@@ -1171,6 +1228,23 @@ function mapAuditDoc(id, data) {
   const afterStr = formatDisplayVal(data.after) || stringifyVal(data.after);
   const summary = data.summary
     || [beforeStr && afterStr ? `${beforeStr} → ${afterStr}` : '', data.action].filter(Boolean).join(' · ');
+  const afterObj = parseMaybeJson(data.after);
+  const creditAmount = (afterObj && typeof afterObj === 'object' && afterObj.amount != null)
+    ? Number(afterObj.amount)
+    : null;
+  const creditColumns = (cat === 'credit' && creditAmount != null && Number.isFinite(creditAmount))
+    ? {
+      kind: creditKindLabel(creditAmount > 0 ? 'admin_grant' : 'admin_deduct'),
+      type: String(data.action || '').toLowerCase(),
+      title: summary,
+      delta: formatCreditDelta(creditAmount),
+      amount: creditAmount,
+      balance: (afterObj.balance != null && Number.isFinite(Number(afterObj.balance)))
+        ? String(Number(afterObj.balance))
+        : '-',
+      reason: String(afterObj.reason || '')
+    }
+    : null;
   return makeRow({
     id: `audit_${id}`,
     timestamp: tsMs(data.timestamp),
@@ -1182,7 +1256,8 @@ function mapAuditDoc(id, data) {
     before: data.before,
     after: data.after,
     source: 'adminAuditLogs',
-    raw: { id, ...data }
+    raw: { id, ...data },
+    columns: creditColumns
   });
 }
 

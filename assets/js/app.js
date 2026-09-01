@@ -79,7 +79,7 @@ import {
   writeAdminAuditLog,
   refreshAdminUserLogsUsers,
   formatAdminLogLabel
-} from './admin-user-logs.js?v=credit-ledger-v2-2';
+} from './admin-user-logs.js?v=credit-ledger-v2-3';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 function isCreditSalesKilled(){
@@ -2991,7 +2991,8 @@ function unlockAdminPanel(){
       getUsers: () => adminUserRows || [],
       getLicense: (uid) => licenseForUid(uid),
       getOrders: (uid) => adminOrdersForUid(uid),
-      getTickets: (uid) => adminTicketsForUid(uid)
+      getTickets: (uid) => adminTicketsForUid(uid),
+      callAdminFunction: (names, payload) => callFunctionJsonFallback(names, payload)
     });
     initAdminUserLogs();
   }catch(e){ console.warn('admin-user-logs', e); }
