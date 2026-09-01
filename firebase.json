@@ -11,6 +11,9 @@
       "source": "functions",
       "codebase": "web",
       "disallowLegacyRuntimeConfig": true,
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" ci"
+      ],
       "ignore": [
         "node_modules",
         ".git",

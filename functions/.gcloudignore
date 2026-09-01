@@ -1,0 +1,6 @@
+# Cloud Build runs npm ci — never upload local node_modules.
+node_modules/
+.git/
+*.local
+firebase-debug.log
+firebase-debug.*.log
