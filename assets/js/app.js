@@ -9937,7 +9937,7 @@ async function fillAdminLicenseExpandCredits(uid){
     return;
   }
   try{
-    const data = await callFunctionJsonFallback(['adminCreditOverview', 'adminPointOverview'], { targetUid: uid });
+    const data = await callFunctionJsonFallback(['adminCreditOverview', 'adminPointOverview'], { targetUid: uid, light: true });
     if(adminCrmLicenseOpen !== uid) return;
     applyAdminCreditBalanceLocal(uid, data.balance);
   }catch(err){

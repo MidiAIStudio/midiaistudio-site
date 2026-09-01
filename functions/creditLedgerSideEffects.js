@@ -34,10 +34,11 @@ async function processCreditLedgerCreated({
 }) {
   const row = data && typeof data === 'object' ? data : {};
   const origin = String(row.origin || '');
-  if (!ORIGINS.has(origin)) {
+  const type = String(row.type || '');
+  const isAdminLedger = NOTIFY_TYPES.has(type) || AUDIT_TYPES.has(type);
+  if (!ORIGINS.has(origin) && !isAdminLedger) {
     return { skipped: true, reason: 'origin' };
   }
-  const type = String(row.type || '');
   const uid = String(row.uid || '').trim();
   const amount = Number(row.amount || row.creditAmount || 0);
   const FieldValue = admin.firestore.FieldValue;

@@ -2108,6 +2108,33 @@ exports.onCreditLedgerCreated = functionsV1
     return null;
   });
 
+/** Credit V2 admin grant/deduct notify+audit — off Python/Node HTTP critical path. */
+exports.onCreditLedgerV2Created = functionsV1
+  .runWith({ timeoutSeconds: 60, memory: '256MB' })
+  .firestore.document('creditLedgerV2/{ledgerId}')
+  .onCreate(async (snap, context) => {
+    const ledgerId = context.params.ledgerId;
+    try {
+      const out = await creditLedgerSideEffects.processCreditLedgerCreated({
+        db,
+        admin,
+        userNotify,
+        ledgerId,
+        data: snap.data() || {}
+      });
+      if (out && !out.skipped) {
+        console.info('onCreditLedgerV2Created', { ledgerId, notified: out.notified, audited: out.audited });
+      }
+    } catch (err) {
+      console.error('onCreditLedgerV2Created', {
+        ledgerId,
+        message: err && err.message ? err.message : String(err)
+      });
+      throw err;
+    }
+    return null;
+  });
+
 /**
  * Start queued bulk credit grants as soon as the operation doc is created.
  */

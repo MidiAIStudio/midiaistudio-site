@@ -230,11 +230,28 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
     if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
     try {
       await requireAdmin(req);
-      const targetUid = String((req.body || {}).targetUid || (req.body || {}).uid || '').trim();
+      const body = req.body || {};
+      const targetUid = String(body.targetUid || body.uid || '').trim();
       if (!targetUid) throw httpError(400, 'UID_REQUIRED', '대상 사용자가 없습니다.');
       const walletSnap = await db.collection('creditWalletsV2').doc(targetUid).get();
       const wd = walletSnap.exists ? (walletSnap.data() || {}) : {};
       const balance = creditWalletV2.readBalanceV2(wd);
+      const light = !!(body.light || body.balanceOnly);
+      if (light) {
+        return res.json({
+          ok: true,
+          light: true,
+          uid: targetUid,
+          balance,
+          purchasedTotal: Number(wd.purchasedTotal || 0),
+          consumedTotal: Number(wd.consumedTotal || 0),
+          grantedTotal: Number(wd.grantedTotal || 0),
+          deductedTotal: Number(wd.deductedTotal || 0),
+          ledger: [],
+          purchases: [],
+          jobs: []
+        });
+      }
       let ledgerSnap;
       try {
         ledgerSnap = await db.collection('creditLedgerV2')
