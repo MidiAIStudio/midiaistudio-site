@@ -237,16 +237,19 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       const wd = walletSnap.exists ? (walletSnap.data() || {}) : {};
       const balance = creditWalletV2.readBalanceV2(wd);
       const light = !!(body.light || body.balanceOnly);
+      const walletTotals = {
+        purchasedTotal: Number(wd.purchasedTotal || 0),
+        consumedTotal: Number(wd.consumedTotal || 0),
+        grantedTotal: Number(wd.grantedTotal || 0),
+        deductedTotal: Number(wd.deductedTotal || 0)
+      };
       if (light) {
         return res.json({
           ok: true,
           light: true,
           uid: targetUid,
           balance,
-          purchasedTotal: Number(wd.purchasedTotal || 0),
-          consumedTotal: Number(wd.consumedTotal || 0),
-          grantedTotal: Number(wd.grantedTotal || 0),
-          deductedTotal: Number(wd.deductedTotal || 0),
+          ...walletTotals,
           ledger: [],
           purchases: [],
           jobs: []
@@ -260,7 +263,13 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
           .limit(40)
           .get();
       } catch (_) {
-        ledgerSnap = await db.collection('creditLedgerV2').where('uid', '==', targetUid).limit(40).get();
+        const raw = await db.collection('creditLedgerV2').where('uid', '==', targetUid).limit(120).get();
+        const sorted = raw.docs.slice().sort((a, b) => {
+          const ta = a.data()?.createdAt?.toMillis?.() ?? 0;
+          const tb = b.data()?.createdAt?.toMillis?.() ?? 0;
+          return tb - ta;
+        });
+        ledgerSnap = { docs: sorted.slice(0, 40) };
       }
       const ledger = ledgerSnap.docs.map((d) => {
         const row = d.data() || {};
@@ -272,18 +281,6 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
           reason: row.reason || '',
           createdAt: row.createdAt || null
         };
-      });
-      let purchasedTotal = 0;
-      let consumedTotal = 0;
-      let grantedTotal = 0;
-      let deductedTotal = 0;
-      ledger.forEach((row) => {
-        const t = String(row.type || '');
-        const n = Number(row.amount || 0);
-        if (t === 'purchase') purchasedTotal += n;
-        else if (t === 'admin_grant' || t === 'admin_bulk_credit') grantedTotal += n;
-        else if (t === 'admin_deduct' || t === 'admin_bulk_deduct' || t === 'refund') deductedTotal += Math.abs(n);
-        else if (n < 0) consumedTotal += Math.abs(n);
       });
       let purchases = [];
       try {
@@ -299,17 +296,44 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
           };
         });
       } catch (_) { /* optional */ }
+      let jobs = [];
+      try {
+        let jobSnap;
+        try {
+          jobSnap = await db.collection('creditJobsV2')
+            .where('uid', '==', targetUid)
+            .orderBy('createdAt', 'desc')
+            .limit(8)
+            .get();
+        } catch (_) {
+          const raw = await db.collection('creditJobsV2').where('uid', '==', targetUid).limit(24).get();
+          const sorted = raw.docs.slice().sort((a, b) => {
+            const ta = a.data()?.createdAt?.toMillis?.() ?? 0;
+            const tb = b.data()?.createdAt?.toMillis?.() ?? 0;
+            return tb - ta;
+          });
+          jobSnap = { docs: sorted.slice(0, 8) };
+        }
+        jobs = jobSnap.docs.map((d) => {
+          const row = d.data() || {};
+          return {
+            id: d.id,
+            status: row.status || '',
+            conversionType: row.conversionType || '',
+            displayTitle: row.displayTitle || '',
+            creditCost: row.creditCost ?? row.cost ?? 0,
+            cost: row.creditCost ?? row.cost ?? 0
+          };
+        });
+      } catch (_) { /* optional */ }
       return res.json({
         ok: true,
         uid: targetUid,
         balance,
-        purchasedTotal,
-        consumedTotal,
-        grantedTotal,
-        deductedTotal,
+        ...walletTotals,
         ledger: ledger.slice(0, 12),
         purchases,
-        jobs: []
+        jobs
       });
     } catch (err) {
       return res.status(err.status || 500).json({

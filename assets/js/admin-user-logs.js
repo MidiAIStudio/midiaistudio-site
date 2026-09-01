@@ -302,7 +302,7 @@ function creditActor(row) {
   return '사용자';
 }
 
-function mapCreditLedgerDoc(id, data) {
+function mapCreditLedgerDoc(id, data, sourceCollection = 'creditLedgerV2') {
   const row = data || {};
   const amount = Number(row.amount || row.creditAmount || 0);
   const type = String(row.type || 'conversion');
@@ -315,7 +315,7 @@ function mapCreditLedgerDoc(id, data) {
     ? String(Number(row.balanceAfter))
     : '';
   return makeRow({
-    id: `credit_${id}`,
+    id: `credit_${sourceCollection}_${id}`,
     timestamp: tsMs(row.createdAt),
     category: 'credit',
     action: title,
@@ -324,8 +324,8 @@ function mapCreditLedgerDoc(id, data) {
     result: amount < 0 ? (type === 'refund' ? '반환' : '차감') : '적립',
     before,
     after,
-    source: 'creditLedger',
-    raw: { id, ...row },
+    source: sourceCollection,
+    raw: { id, creditSystemVersion: sourceCollection === 'creditLedgerV2' ? 2 : 1, ...row },
     columns: {
       kind,
       type,
@@ -1120,27 +1120,44 @@ async function collectLogsForUser(uid) {
   });
   rows.push(...auditRows);
 
-  // App-visible credit history (creditLedger — same source as the user modal)
-  const ledgerRows = await safeQuery('creditLedger', async () => {
-    let docs = [];
-    try {
-      const snap = await getDocs(query(
-        collection(api.db, 'creditLedger'),
-        where('uid', '==', uid),
-        orderBy('createdAt', 'desc'),
-        limit(200)
-      ));
-      docs = snap.docs;
-    } catch (e) {
-      console.warn('creditLedger indexed query failed, fallback', e);
-      const snap = await getDocs(query(
-        collection(api.db, 'creditLedger'),
-        where('uid', '==', uid),
-        limit(200)
-      ));
-      docs = snap.docs.slice().sort((a, b) => tsMs(b.data()?.createdAt) - tsMs(a.data()?.createdAt));
+  // Credit V2 ledger (authoritative) + legacy V1 archive for older accounts.
+  const ledgerRows = await safeQuery('creditLedgerV2', async () => {
+    const merged = [];
+    const seen = new Set();
+
+    async function loadLedgerCollection(collectionName, limit = 200) {
+      let docs = [];
+      try {
+        const snap = await getDocs(query(
+          collection(api.db, collectionName),
+          where('uid', '==', uid),
+          orderBy('createdAt', 'desc'),
+          limit
+        ));
+        docs = snap.docs;
+      } catch (e) {
+        console.warn(`${collectionName} indexed query failed, fallback`, e);
+        const snap = await getDocs(query(
+          collection(api.db, collectionName),
+          where('uid', '==', uid),
+          limit
+        ));
+        docs = snap.docs.slice().sort((a, b) => tsMs(b.data()?.createdAt) - tsMs(a.data()?.createdAt));
+      }
+      for (const d of docs) {
+        const key = `${collectionName}/${d.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push({ doc: d, collectionName });
+      }
     }
-    return docs.map((d) => mapCreditLedgerDoc(d.id, d.data()));
+
+    await loadLedgerCollection('creditLedgerV2', 200);
+    await loadLedgerCollection('creditLedger', 50);
+    merged.sort((a, b) => tsMs(b.doc.data()?.createdAt) - tsMs(a.doc.data()?.createdAt));
+    return merged.slice(0, 200).map(({ doc, collectionName }) =>
+      mapCreditLedgerDoc(doc.id, doc.data(), collectionName)
+    );
   });
   rows.push(...ledgerRows);
 

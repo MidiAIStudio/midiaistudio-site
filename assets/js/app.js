@@ -79,7 +79,7 @@ import {
   writeAdminAuditLog,
   refreshAdminUserLogsUsers,
   formatAdminLogLabel
-} from './admin-user-logs.js?v=credit-ledger-tab-1';
+} from './admin-user-logs.js?v=credit-ledger-v2-2';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 function isCreditSalesKilled(){

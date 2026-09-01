@@ -143,7 +143,7 @@ function applyAdminView(next, opts = {}) {
   }
 
   if (next === 'logs' || licenseHistory) {
-    import('./admin-user-logs.js?v=credit-ledger-tab-1').then((m) => {
+    import('./admin-user-logs.js?v=credit-ledger-v2-2').then((m) => {
       m.showAdminUserLogsPanel?.(true);
       m.setAdminLogsTab?.(opts.logsTab || (licenseHistory ? 'license' : 'all'));
       if (opts.uid) m.selectAdminLogsUser?.(opts.uid);
