@@ -55,6 +55,16 @@ async function processCreditLedgerCreated({
     out.notified = !!(n && n.created);
   }
 
+  if (type === 'admin_deduct' && amount < 0 && uid && userNotify && userNotify.notifyAdminCreditDeduct) {
+    const n = await userNotify.notifyAdminCreditDeduct(db, FieldValue, {
+      uid,
+      amount: Math.abs(amount),
+      adminUid: row.adminUid || '',
+      ledgerId
+    });
+    out.notified = out.notified || !!(n && n.created);
+  }
+
   if (AUDIT_TYPES.has(type) && uid) {
     const auditId = `credit_ledger_${String(ledgerId || '').slice(0, 120)}`;
     const auditRef = db.collection('adminAuditLogs').doc(auditId);

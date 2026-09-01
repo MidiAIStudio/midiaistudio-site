@@ -136,6 +136,34 @@ async function notifyAdminCreditGrant(db, FieldValue, {
   });
 }
 
+async function notifyAdminCreditDeduct(db, FieldValue, {
+  uid,
+  amount,
+  adminUid,
+  ledgerId,
+  notifId: explicitId
+}) {
+  if (!uid) return { created: false };
+  const n = Math.round(Number(amount || 0));
+  if (!(n > 0)) return { created: false };
+  const notifId = String(
+    explicitId
+      || (ledgerId ? `credit_admin_deduct_${ledgerId}` : '')
+      || `credit_admin_deduct_${Date.now()}_${uid}`
+  ).slice(0, 140);
+  return writeUserNotification(db, FieldValue, uid, notifId, {
+    type: 'credit_admin_deduct',
+    sourceType: 'admin_deduct',
+    category: 'credit',
+    amount: n,
+    creditAmount: n,
+    postTitle: '크레딧 회수',
+    preview: `관리자에 의해 ${n} Credits가 회수되었습니다.`.slice(0, 160),
+    actorUid: adminUid || 'admin',
+    targetUrl: '/account.html#credits'
+  });
+}
+
 async function notifyPaymentRefund(db, FieldValue, {
   uid,
   paymentId,
@@ -225,6 +253,7 @@ module.exports = {
   notifyPaymentComplete,
   notifyCreditGranted,
   notifyAdminCreditGrant,
+  notifyAdminCreditDeduct,
   notifyPaymentRefund,
   maybeNotifyFromRefundSync,
   productLabel
