@@ -127,16 +127,16 @@ async function testGrantIncrement() {
     operationId: 'op_test_01',
     ledgerId: 'led1'
   });
-  assert.strictEqual(result.prev, 5);
-  assert.strictEqual(result.balance, 15);
-  const wallet = await db.collection('creditWallets').doc('u1').get();
-  assert.strictEqual(wallet.data().balance, 15);
+  assert.strictEqual(result.prev, 0);
+  assert.strictEqual(result.balance, 10);
+  const wallet = await db.collection('creditWalletsV2').doc('u1').get();
+  assert.strictEqual(wallet.data().balance, 10);
   const user = await db.collection('users').doc('u1').get();
-  assert.strictEqual(user.data().creditBalance, 15);
-  const led = await db.collection('creditLedger').doc('led1').get();
+  assert.strictEqual(user.data().creditBalance, 5); // V1 mirror untouched
+  const led = await db.collection('creditLedgerV2').doc('led1').get();
   assert.strictEqual(led.data().type, 'admin_bulk_credit');
   assert.strictEqual(led.data().amount, 10);
-  console.log('ok grant 5+10=15');
+  console.log('ok grant V2 0+10=10 (V1 users.creditBalance unchanged)');
 }
 
 async function testBulkCreditIdempotency() {
@@ -166,15 +166,15 @@ async function testBulkCreditIdempotency() {
   assert.strictEqual(first.out.body.accepted, true);
   assert.notStrictEqual(first.out.body.status, 'COMPLETED');
   await handlers.processBulkCreditOperation('op_credit_01');
-  const wallet = await db.collection('creditWallets').doc('u1').get();
-  assert.strictEqual(wallet.data().balance, 15);
+  const wallet = await db.collection('creditWalletsV2').doc('u1').get();
+  assert.strictEqual(wallet.data().balance, 10);
   assert.strictEqual(notifs.length, 0);
 
   const second = httpErrorRes();
   await handlers.grantBulkCredits(req, second.res);
   assert.strictEqual(second.out.body.code, 'ALREADY_COMPLETED');
-  const wallet2 = await db.collection('creditWallets').doc('u1').get();
-  assert.strictEqual(wallet2.data().balance, 15);
+  const wallet2 = await db.collection('creditWalletsV2').doc('u1').get();
+  assert.strictEqual(wallet2.data().balance, 10);
   assert.strictEqual(notifs.length, 0);
 
   const third = httpErrorRes();
@@ -183,9 +183,9 @@ async function testBulkCreditIdempotency() {
     body: { recipientUids: ['u1'], amount: 10, reason: '추가', operationId: 'op_credit_02' }
   }, third.res);
   await handlers.processBulkCreditOperation('op_credit_02');
-  const wallet3 = await db.collection('creditWallets').doc('u1').get();
-  assert.strictEqual(wallet3.data().balance, 25);
-  console.log('ok bulk credit 5+10=15 idempotent then +10=25');
+  const wallet3 = await db.collection('creditWalletsV2').doc('u1').get();
+  assert.strictEqual(wallet3.data().balance, 20);
+  console.log('ok bulk credit V2 0+10=10 idempotent then +10=20');
 }
 
 async function testConcurrentDifferentOps() {
@@ -205,7 +205,7 @@ async function testConcurrentDifferentOps() {
   ]);
   await handlers.processBulkCreditOperation('op_conc_aaa');
   await handlers.processBulkCreditOperation('op_conc_bbb');
-  const wallet = await db.collection('creditWallets').doc('u1').get();
+  const wallet = await db.collection('creditWalletsV2').doc('u1').get();
   assert.strictEqual(wallet.data().balance, 20);
   console.log('ok concurrent different ops');
 }
@@ -262,8 +262,14 @@ async function testPartialCreditFailure() {
 
 async function testBulkDeduct() {
   const db = memoryDb();
-  await db.collection('users').doc('u1').set({ email: 'a@test.com', creditBalance: 12 });
-  await db.collection('users').doc('u2').set({ email: 'b@test.com', creditBalance: 2 });
+  await db.collection('users').doc('u1').set({ email: 'a@test.com' });
+  await db.collection('users').doc('u2').set({ email: 'b@test.com' });
+  await adminCredits.applyCreditDelta(db, FieldValue, {
+    uid: 'u1', amount: 12, type: 'admin_grant', adminUid: 'admin1', ledgerId: 'seed_u1'
+  });
+  await adminCredits.applyCreditDelta(db, FieldValue, {
+    uid: 'u2', amount: 2, type: 'admin_grant', adminUid: 'admin1', ledgerId: 'seed_u2'
+  });
   const handlers = adminCredits.createHandlers({
     db,
     admin: makeAdmin(),
@@ -286,8 +292,8 @@ async function testBulkDeduct() {
   assert.strictEqual(done.out.body.mode, 'deduct');
   assert.strictEqual(done.out.body.success, 1);
   assert.strictEqual(done.out.body.failed, 1);
-  assert.strictEqual((await db.collection('creditWallets').doc('u1').get()).data().balance, 7);
-  const led = await db.collection('creditLedger').doc('bulk_op_deduct_01_u1').get();
+  assert.strictEqual((await db.collection('creditWalletsV2').doc('u1').get()).data().balance, 7);
+  const led = await db.collection('creditLedgerV2').doc('bulk_op_deduct_01_u1').get();
   assert.strictEqual(led.data().type, 'admin_bulk_deduct');
   assert.strictEqual(led.data().amount, -5);
   const audit = await db.collection('adminAuditLogs').doc('bulk_credit_op_deduct_01').get();

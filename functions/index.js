@@ -777,7 +777,8 @@ exports.createCreditPurchaseQuote = functions.https.onRequest(creditHandlers.cre
 exports.creditPortOnePurchase = functions.https.onRequest(creditHandlers.creditPortOnePurchase);
 exports.creditPortOnePointPurchase = functions.https.onRequest(creditHandlers.creditPortOnePurchase);
 // Wallet read / ledger: Python codebase owns getCreditBalance, getPointBalance,
-// listCreditLedger, listPointLedger. Do not re-export those names here.
+// listCreditLedger, listPointLedger and the Credit V2 twins (*V2).
+// Do not re-export those names here. Admin grant/purchase write creditWalletsV2.
 
 const functionsV1Https = require('firebase-functions/v1');
 const adminCredits = require('./adminCredits');

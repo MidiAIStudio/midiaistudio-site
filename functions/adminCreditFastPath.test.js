@@ -2,7 +2,7 @@
 
 const assert = require('assert');
 const adminCredits = require('./adminCredits');
-const creditWallet = require('./creditWallet');
+const creditWallet = require('./creditWalletV2');
 const sideEffects = require('./creditLedgerSideEffects');
 const userNotify = require('./userNotify');
 
@@ -135,15 +135,15 @@ async function testGrantDeductMirrorLedger() {
   }, g.res);
   const grantMs = Date.now() - t0;
   assert.strictEqual(g.out.statusCode, 200);
-  assert.strictEqual(g.out.body.balance, 20);
-  const wallet = await db.collection('creditWallets').doc('u1').get();
+  assert.strictEqual(g.out.body.balance, 10);
+  const wallet = await db.collection('creditWalletsV2').doc('u1').get();
   const user = await db.collection('users').doc('u1').get();
-  assert.strictEqual(wallet.data().balance, 20);
-  assert.strictEqual(wallet.data().creditBalance, 20);
-  assert.strictEqual(user.data().creditBalance, 20);
+  assert.strictEqual(wallet.data().balance, 10);
+  assert.strictEqual(wallet.data().creditSystemVersion, 2);
+  assert.strictEqual(user.data().creditBalance, 10);
   let ledgers = 0;
   for (const k of db.store.keys()) {
-    if (k.startsWith('creditLedger/')) ledgers += 1;
+    if (k.startsWith('creditLedgerV2/')) ledgers += 1;
   }
   assert.strictEqual(ledgers, 1);
 
@@ -152,12 +152,12 @@ async function testGrantDeductMirrorLedger() {
     method: 'POST',
     body: { targetUid: 'u1', amount: 5 }
   }, d.res);
-  assert.strictEqual(d.out.body.balance, 15);
-  const wallet2 = await db.collection('creditWallets').doc('u1').get();
+  assert.strictEqual(d.out.body.balance, 5);
+  const wallet2 = await db.collection('creditWalletsV2').doc('u1').get();
   const user2 = await db.collection('users').doc('u1').get();
-  assert.strictEqual(wallet2.data().balance, 15);
-  assert.strictEqual(user2.data().creditBalance, 15);
-  console.log('ok grant 10+10=20 deduct -5=15 mirror', { grantMs });
+  assert.strictEqual(wallet2.data().balance, 5);
+  assert.strictEqual(user2.data().creditBalance, 10);
+  console.log('ok grant V2 0+10=10 deduct -5=5 no V1 mirror', { grantMs });
 }
 
 async function testGrantHttpDoesNotWaitNotifyAudit() {
@@ -181,7 +181,7 @@ async function testGrantHttpDoesNotWaitNotifyAudit() {
     body: { targetUid: 'u1', amount: 10 }
   }, r.res);
   const elapsed = Date.now() - t0;
-  assert.strictEqual(r.out.body.balance, 20);
+  assert.strictEqual(r.out.body.balance, 10);
   assert.strictEqual(notifyStarted, false);
   assert.ok(elapsed < 200, `grant HTTP waited too long: ${elapsed}ms`);
 
@@ -191,8 +191,8 @@ async function testGrantHttpDoesNotWaitNotifyAudit() {
   let ledgerId = '';
   let ledgerData = null;
   for (const [k, v] of db.store.entries()) {
-    if (k.startsWith('creditLedger/')) {
-      ledgerId = k.slice('creditLedger/'.length);
+    if (k.startsWith('creditLedgerV2/')) {
+      ledgerId = k.slice('creditLedgerV2/'.length);
       ledgerData = v;
     }
   }
@@ -245,16 +245,21 @@ async function testConversionAndPurchaseLedgersSkipped() {
 
 async function testInsufficientAndIdempotentLedger() {
   const db = memoryDb();
-  await db.collection('users').doc('u1').set({ creditBalance: 10 });
-  await creditWallet.applyWalletCreditDelta(db, FieldValue, {
+  await db.collection('users').doc('u1').set({ email: 'u1@test.com' });
+  await creditWallet.applyWalletCreditDeltaV2(db, FieldValue, {
+    uid: 'u1',
+    delta: 10,
+    ledger: { type: 'admin_grant' }
+  });
+  await creditWallet.applyWalletCreditDeltaV2(db, FieldValue, {
     uid: 'u1',
     delta: -2,
     ledgerId: 'job_a',
     ledger: { type: 'conversion', origin: '' }
   });
-  const wallet = await db.collection('creditWallets').doc('u1').get();
+  const wallet = await db.collection('creditWalletsV2').doc('u1').get();
   assert.strictEqual(wallet.data().balance, 8);
-  const again = await creditWallet.applyWalletCreditDelta(db, FieldValue, {
+  const again = await creditWallet.applyWalletCreditDeltaV2(db, FieldValue, {
     uid: 'u1',
     delta: -2,
     ledgerId: 'job_a',
@@ -263,7 +268,7 @@ async function testInsufficientAndIdempotentLedger() {
   assert.strictEqual(again.alreadyApplied, true);
   assert.strictEqual(again.balance, 8);
   try {
-    await creditWallet.applyWalletCreditDelta(db, FieldValue, {
+    await creditWallet.applyWalletCreditDeltaV2(db, FieldValue, {
       uid: 'u1',
       delta: -20,
       ledger: { type: 'conversion' }
@@ -272,22 +277,27 @@ async function testInsufficientAndIdempotentLedger() {
   } catch (e) {
     assert.strictEqual(e.code, 'INSUFFICIENT_CREDITS');
   }
-  const wallet2 = await db.collection('creditWallets').doc('u1').get();
+  const wallet2 = await db.collection('creditWalletsV2').doc('u1').get();
   assert.strictEqual(wallet2.data().balance, 8);
   console.log('ok conversion-style debit + idempotent ledger + insufficient');
 }
 
 async function testSequentialOverspend() {
   const db = memoryDb();
-  await db.collection('users').doc('u1').set({ creditBalance: 1 });
-  await creditWallet.applyWalletCreditDelta(db, FieldValue, {
+  await db.collection('users').doc('u1').set({ email: 'u1@test.com' });
+  await creditWallet.applyWalletCreditDeltaV2(db, FieldValue, {
+    uid: 'u1',
+    delta: 1,
+    ledger: { type: 'admin_grant' }
+  });
+  await creditWallet.applyWalletCreditDeltaV2(db, FieldValue, {
     uid: 'u1',
     delta: -1,
     ledgerId: 'job_1',
     ledger: { type: 'conversion' }
   });
   try {
-    await creditWallet.applyWalletCreditDelta(db, FieldValue, {
+    await creditWallet.applyWalletCreditDeltaV2(db, FieldValue, {
       uid: 'u1',
       delta: -1,
       ledgerId: 'job_2',
@@ -297,7 +307,7 @@ async function testSequentialOverspend() {
   } catch (e) {
     assert.strictEqual(e.code, 'INSUFFICIENT_CREDITS');
   }
-  const wallet = await db.collection('creditWallets').doc('u1').get();
+  const wallet = await db.collection('creditWalletsV2').doc('u1').get();
   assert.strictEqual(wallet.data().balance, 0);
   console.log('ok no overspend on sequential conversion-style debit');
 }
@@ -316,7 +326,7 @@ async function testBulkAcceptThenWorkerAndDuplicateClaim() {
   const acceptMs = Date.now() - t0;
   assert.strictEqual(r.out.body.accepted, true);
   assert.ok(r.out.body.status === 'QUEUED' || r.out.body.code === 'QUEUED');
-  assert.strictEqual((await db.collection('creditWallets').doc('u1').get()).exists, false);
+  assert.strictEqual((await db.collection('creditWalletsV2').doc('u1').get()).exists, false);
 
   const first = await handlers.claimBulkCreditLease(
     db.collection('adminBulkOperations').doc('op_fast_bulk1'),
@@ -334,11 +344,11 @@ async function testBulkAcceptThenWorkerAndDuplicateClaim() {
     leaseUntil: { _millis: 0, toMillis() { return 0; } }
   }, { merge: true });
   await handlers.processBulkCreditOperation('op_fast_bulk1');
-  assert.strictEqual((await db.collection('creditWallets').doc('u1').get()).data().balance, 10);
-  assert.strictEqual((await db.collection('creditWallets').doc('u2').get()).data().balance, 10);
+  assert.strictEqual((await db.collection('creditWalletsV2').doc('u1').get()).data().balance, 10);
+  assert.strictEqual((await db.collection('creditWalletsV2').doc('u2').get()).data().balance, 10);
 
   await handlers.processBulkCreditOperation('op_fast_bulk1');
-  assert.strictEqual((await db.collection('creditWallets').doc('u1').get()).data().balance, 10);
+  assert.strictEqual((await db.collection('creditWalletsV2').doc('u1').get()).data().balance, 10);
   console.log('ok bulk accept + duplicate claim + no double grant', { acceptMs });
 }
 
@@ -368,8 +378,8 @@ async function testPartialResumeSkipsDoneUid() {
   });
   const handlers = handlersFor(db);
   await handlers.processBulkCreditOperation('op_resume1');
-  assert.strictEqual((await db.collection('creditWallets').doc('u1').get()).data().balance, 10);
-  assert.strictEqual((await db.collection('creditWallets').doc('u2').get()).data().balance, 10);
+  assert.strictEqual((await db.collection('creditWalletsV2').doc('u1').get()).data().balance, 10);
+  assert.strictEqual((await db.collection('creditWalletsV2').doc('u2').get()).data().balance, 10);
   console.log('ok partial resume does not re-grant done uid');
 }
 

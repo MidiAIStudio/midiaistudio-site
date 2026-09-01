@@ -140,7 +140,17 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow write: if false;
     }
+    // Credit V2 — isolated from Legacy App 1.6.2 (V1) wallets.
+    match /creditWalletsV2/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if false;
+    }
     match /creditLedger/{ledgerId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+    match /creditLedgerV2/{ledgerId} {
       allow read: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
       allow write: if false;
@@ -151,6 +161,11 @@ service cloud.firestore {
       allow write: if false;
     }
     match /creditJobs/{jobId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+    match /creditJobsV2/{jobId} {
       allow read: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
       allow write: if false;

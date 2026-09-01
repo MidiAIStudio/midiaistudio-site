@@ -1,14 +1,13 @@
 'use strict';
 
 /**
- * Admin credit grant/deduct against the existing Credit SoT:
- *   creditWallets/{uid}.balance | creditBalance
- *   users/{uid}.creditBalance
- *   creditLedger
- * Client never writes these collections (Firestore rules: write false).
+ * Admin credit grant/deduct against Credit V2 SoT:
+ *   creditWalletsV2/{uid}.balance
+ *   creditLedgerV2
+ * Does NOT touch V1 creditWallets / users.creditBalance (Legacy 1.6.2 isolation).
  */
 
-const creditWallet = require('./creditWallet');
+const creditWalletV2 = require('./creditWalletV2');
 
 const MAX_GRANT = 10000;
 const MAX_BULK_RECIPIENTS = 400;
@@ -124,7 +123,7 @@ async function applyCreditDelta(db, FieldValue, {
   const title = reason
     ? `${reason} (${sign}${amount})`
     : (amount > 0 ? `관리자 크레딧 지급 ${sign}${amount}` : `관리자 크레딧 회수 ${amount}`);
-  return creditWallet.applyWalletCreditDelta(db, FieldValue, {
+  return creditWalletV2.applyWalletCreditDeltaV2(db, FieldValue, {
     uid,
     delta: amount,
     ledgerId,
@@ -233,20 +232,18 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       await requireAdmin(req);
       const targetUid = String((req.body || {}).targetUid || (req.body || {}).uid || '').trim();
       if (!targetUid) throw httpError(400, 'UID_REQUIRED', '대상 사용자가 없습니다.');
-      const walletSnap = await db.collection('creditWallets').doc(targetUid).get();
-      const userSnap = await db.collection('users').doc(targetUid).get();
+      const walletSnap = await db.collection('creditWalletsV2').doc(targetUid).get();
       const wd = walletSnap.exists ? (walletSnap.data() || {}) : {};
-      const ud = userSnap.exists ? (userSnap.data() || {}) : {};
-      const balance = creditWallet.readBalance(wd, ud);
+      const balance = creditWalletV2.readBalanceV2(wd);
       let ledgerSnap;
       try {
-        ledgerSnap = await db.collection('creditLedger')
+        ledgerSnap = await db.collection('creditLedgerV2')
           .where('uid', '==', targetUid)
           .orderBy('createdAt', 'desc')
           .limit(40)
           .get();
       } catch (_) {
-        ledgerSnap = await db.collection('creditLedger').where('uid', '==', targetUid).limit(40).get();
+        ledgerSnap = await db.collection('creditLedgerV2').where('uid', '==', targetUid).limit(40).get();
       }
       const ledger = ledgerSnap.docs.map((d) => {
         const row = d.data() || {};
@@ -588,7 +585,7 @@ module.exports = {
   validateOperationId,
   applyCreditDelta,
   claimBulkOperation,
-  readBalance: creditWallet.readBalance,
+  readBalance: creditWalletV2.readBalanceV2,
   MAX_GRANT,
   MAX_BULK_RECIPIENTS
 };

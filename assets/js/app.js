@@ -3707,14 +3707,14 @@ async function callOwnCreditJson(names, payload, freshToken){
 }
 
 async function fetchOwnCreditBalance(freshToken){
-  const data = await callOwnCreditJson(['getCreditBalance', 'getPointBalance'], {}, freshToken);
+  const data = await callOwnCreditJson(['getCreditBalanceV2'], {}, freshToken);
   const n = extractOwnCreditBalance(data);
   return n == null ? 0 : n;
 }
 
 async function fetchOwnCreditLedger({limit=5, pageToken='', freshToken=false}={}){
   const data = await callOwnCreditJson(
-    ['listCreditLedger', 'listPointLedger'],
+    ['listCreditLedgerV2'],
     { limit: Math.max(1, Math.min(Number(limit) || 5, 50)), pageToken: String(pageToken || '') },
     freshToken
   );
@@ -7580,13 +7580,9 @@ function adminCrmMode(){
 function adminCrmCreditBalance(u){
   const uid = String(u?.uid || u?.id || '').trim();
   const wallet = uid ? adminCreditWalletByUid[uid] : null;
-  const fromWallet = Number(
-    wallet && wallet.balance != null ? wallet.balance
-      : (wallet && wallet.creditBalance != null ? wallet.creditBalance : NaN)
-  );
-  if(Number.isFinite(fromWallet)) return fromWallet;
-  const fromUser = Number(u?.creditBalance ?? u?.pointBalance);
-  return Number.isFinite(fromUser) ? fromUser : 0;
+  // Credit V2 only — never fall back to users.creditBalance (V1 mirror).
+  const fromWallet = Number(wallet && wallet.balance != null ? wallet.balance : NaN);
+  return Number.isFinite(fromWallet) ? fromWallet : 0;
 }
 function refreshAdminLicenseCreditCells(){
   if(adminCrmMode()!=='license') return;
@@ -11288,7 +11284,7 @@ function listenAdminUsers(){
     onSnapErr('users', m=>{ adminUsersListenError=m; })
   ));
   addUnsub(onSnapshot(
-    collection(db,'creditWallets'),
+    collection(db,'creditWalletsV2'),
     snap=>{
       const next={};
       snap.docs.forEach(d=>{
@@ -11299,7 +11295,7 @@ function listenAdminUsers(){
       adminCreditWalletByUid=next;
       refreshAdminLicenseCreditCells();
     },
-    err=>console.error('admin creditWallets snapshot error', err)
+    err=>console.error('admin creditWalletsV2 snapshot error', err)
   ));
   addUnsub(onSnapshot(
     collection(db,'orders'),

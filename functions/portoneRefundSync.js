@@ -397,25 +397,42 @@ async function findOrderRefs(db, paymentId) {
   return uniqueRefs(refs);
 }
 
-async function readWallet(tx, db, uid) {
+async function readWallet(tx, db, uid, { preferV2 = false } = {}) {
+  // Credit V2 purchases reclaim V2 only. Legacy purchases stay on V1.
+  const creditV2Ref = db.collection('creditWalletsV2').doc(uid);
   const creditRef = db.collection('creditWallets').doc(uid);
   const pointRef = db.collection('pointWallets').doc(uid);
-  const userRef = db.collection('users').doc(uid);
+  if (preferV2) {
+    const creditV2Snap = await tx.get(creditV2Ref);
+    const d = creditV2Snap.exists ? (creditV2Snap.data() || {}) : {};
+    return {
+      ref: creditV2Ref,
+      balance: num(d.balance, 0),
+      kind: 'credit_v2',
+      ledgerCol: 'creditLedgerV2'
+    };
+  }
   const creditSnap = await tx.get(creditRef);
   if (creditSnap.exists) {
     const d = creditSnap.data() || {};
-    return { ref: creditRef, balance: num(d.balance != null ? d.balance : d.creditBalance, 0), kind: 'credit' };
+    return {
+      ref: creditRef,
+      balance: num(d.balance != null ? d.balance : d.creditBalance, 0),
+      kind: 'credit',
+      ledgerCol: 'creditLedger'
+    };
   }
   const pointSnap = await tx.get(pointRef);
   if (pointSnap.exists) {
     const d = pointSnap.data() || {};
-    return { ref: pointRef, balance: num(d.balance != null ? d.balance : d.pointBalance, 0), kind: 'point' };
+    return {
+      ref: pointRef,
+      balance: num(d.balance != null ? d.balance : d.pointBalance, 0),
+      kind: 'point',
+      ledgerCol: 'pointLedger'
+    };
   }
-  const userSnap = await tx.get(userRef);
-  if (userSnap.exists && userSnap.data() && userSnap.data().creditBalance != null) {
-    return { ref: userRef, balance: num(userSnap.data().creditBalance, 0), kind: 'user' };
-  }
-  return { ref: creditRef, balance: null, kind: 'missing' };
+  return { ref: creditRef, balance: null, kind: 'missing', ledgerCol: 'creditLedger' };
 }
 
 function buildSnapshotPatch(paymentId, payment, amounts, status, providerStatus, source, FieldValue) {
@@ -499,7 +516,8 @@ async function syncPortOnePayment({
       && !KEEP_STATUS.has(prevStatus.toLowerCase());
 
     if (shouldTouchEntitlement && isCreditOrder(primary) && uid) {
-      walletInfo = await readWallet(tx, db, uid);
+      const preferV2 = Number(primary.creditSystemVersion || 0) === 2;
+      walletInfo = await readWallet(tx, db, uid, { preferV2 });
       const decision = decideCreditReclaim({
         grantAmount: creditGrantFromOrder(primary),
         unusedBalance: walletInfo.balance,
@@ -548,21 +566,29 @@ async function syncPortOnePayment({
       } else {
         walletPatch.balance = nextBal;
         if (walletInfo.kind === 'credit') walletPatch.creditBalance = nextBal;
+        if (walletInfo.kind === 'credit_v2') {
+          walletPatch.schemaVersion = 2;
+          walletPatch.creditSystemVersion = 2;
+        }
       }
       tx.set(walletInfo.ref, walletPatch, { merge: true });
+      // V1 credit only: keep users.creditBalance mirror. Never mirror V2 → users.
       if (walletInfo.kind === 'credit' && uid) {
         tx.set(db.collection('users').doc(uid), {
           creditBalance: nextBal,
           updatedAt: FieldValue.serverTimestamp()
         }, { merge: true });
       }
-      const ledgerCol = walletInfo.kind === 'point' ? 'pointLedger' : 'creditLedger';
+      const ledgerCol = walletInfo.ledgerCol
+        || (walletInfo.kind === 'point' ? 'pointLedger'
+          : (walletInfo.kind === 'credit_v2' ? 'creditLedgerV2' : 'creditLedger'));
       tx.set(db.collection(ledgerCol).doc('refund_' + (eventIds[0] || pid)), {
         uid,
         amount: -Math.abs(entitlement.reclaim),
         type: 'purchase_cancel_reclaim',
         title: '결제 취소 회수',
         paymentId: pid,
+        creditSystemVersion: walletInfo.kind === 'credit_v2' ? 2 : 1,
         createdAt: FieldValue.serverTimestamp()
       }, { merge: true });
     }

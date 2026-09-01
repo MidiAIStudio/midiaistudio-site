@@ -6,7 +6,7 @@
  */
 
 const PAYMENT_ID_RE = /^[a-zA-Z0-9_-]{8,80}$/;
-const creditWallet = require('./creditWallet');
+const creditWalletV2 = require('./creditWalletV2');
 const paypalCurrency = require('./paypalCurrency');
 
 function creditSalesKillSwitchOn() {
@@ -45,10 +45,9 @@ function createHandlers({
 
   async function grantCredits({ uid, paymentId, productId, creditAmount, amount, currency, quoteId, email, orderName }) {
     const purchaseRef = db.collection('creditPurchases').doc(paymentId);
-    const walletRef = db.collection('creditWallets').doc(uid);
-    const userRef = db.collection('users').doc(uid);
+    const walletRef = db.collection('creditWalletsV2').doc(uid);
     const quoteRef = quoteId ? db.collection('purchaseQuotes').doc(quoteId) : null;
-    const ledgerRef = db.collection('creditLedger').doc();
+    const ledgerRef = db.collection('creditLedgerV2').doc();
 
     return db.runTransaction(async (tx) => {
       const purchaseSnap = await tx.get(purchaseRef);
@@ -61,7 +60,8 @@ function createHandlers({
           return {
             alreadyCompleted: true,
             balance: Number(row.balanceAfter != null ? row.balanceAfter : 0),
-            creditAmount: Number(row.creditAmount || creditAmount)
+            creditAmount: Number(row.creditAmount || creditAmount),
+            creditSystemVersion: 2
           };
         }
       }
@@ -72,8 +72,8 @@ function createHandlers({
           if (q.status === 'used' && String(q.paymentId || '') === String(paymentId)) {
             const walletSnap = await tx.get(walletRef);
             const wd = walletSnap.data() || {};
-            const bal = Number(wd.balance != null ? wd.balance : (wd.creditBalance != null ? wd.creditBalance : 0));
-            return { alreadyCompleted: true, balance: bal, creditAmount };
+            const bal = creditWalletV2.readBalanceV2(wd);
+            return { alreadyCompleted: true, balance: bal, creditAmount, creditSystemVersion: 2 };
           }
           if (q.status === 'used' && q.paymentId && String(q.paymentId) !== String(paymentId)) {
             throw httpError(409, 'QUOTE_USED', '이미 사용된 결제 견적입니다.');
@@ -81,13 +81,10 @@ function createHandlers({
         }
       }
       const walletSnap = await tx.get(walletRef);
-      const userSnap = await tx.get(userRef);
       const wd = walletSnap.exists ? (walletSnap.data() || {}) : {};
-      const ud = userSnap.exists ? (userSnap.data() || {}) : {};
-      const prev = creditWallet.readBalance(wd, ud);
-      const next = creditWallet.writeWalletLedger(tx, {
+      const prev = creditWalletV2.readBalanceV2(wd);
+      const next = creditWalletV2.writeWalletLedgerV2(tx, {
         walletRef,
-        userRef,
         ledgerRef,
         uid,
         prev,
@@ -113,6 +110,7 @@ function createHandlers({
         orderName: orderName || '',
         status: 'credited',
         granted: true,
+        creditSystemVersion: 2,
         balanceAfter: next,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
@@ -404,36 +402,24 @@ function createHandlers({
     }
   }
 
-  // Internal helper / tests only. Production HTTPS name is owned by
-  // Python codebase ``python``. Do not export this from index.js.
+  // Internal helper / tests only. Production HTTPS name getCreditBalanceV2
+  // is owned by Python codebase ``python``. Do not export this from index.js.
   async function getCreditBalance(req, res) {
     if (cors(req, res)) return;
     if (req.method !== 'POST') return res.status(405).json({ ok: false, message: 'POST only' });
     try {
       const user = await requireUser(req);
-      const snap = await db.collection('creditWallets').doc(user.uid).get();
+      const snap = await db.collection('creditWalletsV2').doc(user.uid).get();
       const data = snap.exists ? (snap.data() || {}) : {};
-      // Prefer ``balance`` (matches admin CRM + Python authorize). ``creditBalance``
-      // is a mirror that can go stale when Python debit only merge-wrote ``balance``.
-      const primary = data.balance != null ? data.balance : data.creditBalance;
-      const n = Number(primary);
-      const balance = Number.isFinite(n) ? n : 0;
-      try {
-        const mirror = data.creditBalance;
-        if (mirror != null && Number(mirror) !== balance) {
-          await db.collection('creditWallets').doc(user.uid).set(
-            { balance, creditBalance: balance },
-            { merge: true }
-          );
-          await db.collection('users').doc(user.uid).set(
-            { creditBalance: balance },
-            { merge: true }
-          );
-        }
-      } catch (healErr) {
-        console.warn('creditBalance heal skipped', healErr?.message || healErr);
-      }
-      return res.json({ ok: true, uid: user.uid, balance, creditBalance: balance, impl: 'node-wallet' });
+      const balance = creditWalletV2.readBalanceV2(data);
+      return res.json({
+        ok: true,
+        uid: user.uid,
+        balance,
+        creditBalance: balance,
+        impl: 'node-wallet-v2',
+        creditSystemVersion: 2
+      });
     } catch (err) {
       return res.status(err.status || 500).json({
         ok: false,
@@ -450,13 +436,13 @@ function createHandlers({
       const limit = Math.max(1, Math.min(Number((req.body || {}).limit) || 5, 50));
       let snap;
       try {
-        snap = await db.collection('creditLedger')
+        snap = await db.collection('creditLedgerV2')
           .where('uid', '==', user.uid)
           .orderBy('createdAt', 'desc')
           .limit(limit)
           .get();
       } catch (_) {
-        snap = await db.collection('creditLedger').where('uid', '==', user.uid).limit(limit).get();
+        snap = await db.collection('creditLedgerV2').where('uid', '==', user.uid).limit(limit).get();
       }
       const items = snap.docs.map((d) => {
         const row = d.data() || {};
