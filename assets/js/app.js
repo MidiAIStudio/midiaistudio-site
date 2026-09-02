@@ -4503,6 +4503,40 @@ function routeLoadPublic(){
   if(page==='board-post.html') listenBoardPostDetail();
   if(page==='board-write.html') initBoardPostEditor();
 }
+/**
+ * Normalize installer download URLs for cross-browser attachment responses.
+ * Dropbox www.dropbox.com shared links UA-sniff Safari/iOS into an HTML preview
+ * page (200 text/html) even with ?dl=1. dl.dropbox.com forces the attachment
+ * redirect chain for all tested browsers without Blob/fetch.
+ */
+function normalizeDownloadUrl(url){
+  const raw = String(url || '').trim();
+  if(!raw) return '';
+  try{
+    const u = new URL(raw);
+    const host = String(u.hostname || '').toLowerCase();
+    const isDropbox = host === 'dropbox.com'
+      || host.endsWith('.dropbox.com')
+      || host === 'dropboxusercontent.com'
+      || host.endsWith('.dropboxusercontent.com');
+    if(!isDropbox) return raw;
+    if(host === 'www.dropbox.com' || host === 'dropbox.com'){
+      u.hostname = 'dl.dropbox.com';
+    }
+    u.searchParams.delete('raw');
+    u.searchParams.set('dl', '1');
+    return u.toString();
+  }catch(_){
+    return raw;
+  }
+}
+/** Hide obsolete Chrome-only workaround notes from the public download card. */
+function sanitizeDownloadNotes(notes){
+  const s = String(notes || '').trim();
+  if(!s) return '';
+  if(/Google Chrome/i.test(s) && /(권장|recommend|推奨)/i.test(s)) return '';
+  return s;
+}
 function downloadAdminPanelHtml(d){
   if(!isAdminUser) return '';
   const toggleLabel = downloadAdminExpanded ? '닫기' : tr('edit');
@@ -4511,11 +4545,11 @@ function downloadAdminPanelHtml(d){
   const v = d||{};
   return `<div class="download-admin-bar">${toggle}</div>
   <div class="download-admin-panel" role="region" aria-label="다운로드 설정 수정">
-    <p class="download-admin-hint">관리자만 보입니다. 저장하면 모든 사용자에게 바로 반영됩니다.</p>
+    <p class="download-admin-hint">관리자만 보입니다. 저장하면 모든 사용자에게 바로 반영됩니다. Dropbox 공유 링크는 저장 시 dl.dropbox.com?dl=1 로 정규화됩니다.</p>
     <div class="download-admin-grid">
       <label class="download-admin-field"><span>버전</span><input id="dlAdminVersion" type="text" value="${esc(v.version||'')}" placeholder="예: 1.5.7" autocomplete="off"></label>
       <label class="download-admin-field"><span>파일명</span><input id="dlAdminFilename" type="text" value="${esc(v.filename||'')}" placeholder="MidiAI Installer.exe" autocomplete="off"></label>
-      <label class="download-admin-field download-admin-field-full"><span>다운로드 URL</span><input id="dlAdminUrl" type="url" value="${esc(v.url||'')}" placeholder="https://..." autocomplete="off"></label>
+      <label class="download-admin-field download-admin-field-full"><span>다운로드 URL</span><input id="dlAdminUrl" type="url" value="${esc(v.url||'')}" placeholder="https://dl.dropbox.com/scl/fi/...?dl=1" autocomplete="off"></label>
       <label class="download-admin-field download-admin-field-full"><span>업데이트 설명</span><textarea id="dlAdminNotes" rows="6" placeholder="업데이트 설명 (줄바꿈 가능)">${esc(v.notes||v.description||'')}</textarea></label>
       <label class="check download-admin-check"><input id="dlAdminMandatory" type="checkbox" ${v.mandatory?'checked':''}> 필수 업데이트</label>
     </div>
@@ -4552,8 +4586,13 @@ function renderDownload(d, opts={}){
     bindDownloadAdminUi(box);
     return;
   }
+  const downloadHref = normalizeDownloadUrl(d.url || '');
   const mandatory = d.mandatory ? `<span class="portal-mandatory-pill">${esc(t.mandatory)}</span>` : '';
-  const notes = d.notes||d.description ? `<p class="portal-download-notes">${esc(d.notes||d.description)}</p>` : '';
+  const notesText = sanitizeDownloadNotes(d.notes || d.description || '');
+  const notes = notesText ? `<p class="portal-download-notes">${esc(notesText)}</p>` : '';
+  // Same-tab navigation to an attachment URL (no target=_blank, no cross-origin
+  // download attribute, no window.open / Blob). Browsers treat Content-Disposition
+  // attachment as a download without relying on Chrome-specific Dropbox preview JS.
   box.innerHTML=`<div class="portal-download-inner download-card-pro">
     <div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>
     <div class="portal-download-meta">
@@ -4570,7 +4609,7 @@ function renderDownload(d, opts={}){
       ${notes}
     </div>
     <div class="portal-download-actions">
-      ${d.url?`<a class="primary download-cta" href="${esc(d.url)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>${tr('download')}</span></a>`:''}
+      ${downloadHref?`<a class="primary download-cta" href="${esc(downloadHref)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg><span>${tr('download')}</span></a>`:''}
       <a class="secondary" href="./patch-notes.html">${esc(t.patchNotes)}</a>
     </div>
   </div>${adminHtml}`;
@@ -4580,11 +4619,15 @@ function listenDownload(){ if(!$('downloadBox')) return; listenDoc('downloads','
 async function persistDownloadLatest({version, filename, url, notes, mandatory}){
   if(!isAdminUser) throw new Error(tr('no_permission'));
   const {doc,setDoc,serverTimestamp}=firestoreApi;
+  let cleanedNotes = String(notes||'').trim();
+  if(/Google Chrome/i.test(cleanedNotes) && /(권장|recommend|推奨)/i.test(cleanedNotes)){
+    cleanedNotes = '';
+  }
   await setDoc(doc(db,'downloads','latest'),{
     version:String(version||'').trim(),
     filename:String(filename||'').trim(),
-    url:String(url||'').trim(),
-    notes:String(notes||'').trim(),
+    url:normalizeDownloadUrl(url),
+    notes:cleanedNotes,
     mandatory:!!mandatory,
     releaseDate:serverTimestamp(),
     updatedAt:serverTimestamp()
