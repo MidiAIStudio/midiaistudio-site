@@ -5317,14 +5317,14 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
     max-width:100%;min-width:0;overflow-x:clip
   }
   .admin-console-page .admin-console-pagehead{
-    flex-wrap:wrap;align-items:center;gap:8px;padding-top:8px;padding-bottom:8px
+    flex-wrap:wrap;align-items:center;gap:6px;padding-top:6px;padding-bottom:6px
   }
   .admin-console-page .admin-work-tabs-slot{
     flex:1 1 100%;margin-left:0;order:3
   }
   .admin-console-page .admin-console-lead{font-size:12px}
   .admin-console-page .admin-section-head{
-    flex-direction:column;align-items:stretch;gap:8px
+    flex-direction:column;align-items:stretch;gap:6px;margin-bottom:6px
   }
   .admin-console-page .admin-ticket-bulk,
   .admin-console-page .admin-pricing-actions,
@@ -5335,7 +5335,7 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-crm-toolbar,
   .admin-console-page .admin-logs-toolbar,
   .admin-console-page .admin-cms-toolbar{
-    flex-wrap:wrap;row-gap:8px
+    flex-wrap:wrap;row-gap:6px;gap:6px;margin-bottom:6px
   }
   .admin-console-page .admin-list-toolbar .search-input,
   .admin-console-page .admin-crm-toolbar .search-input,
@@ -5454,21 +5454,47 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
 
 /* Fold open / small tablet — master-detail for detail-pane CRM modes */
 @media(min-width:601px) and (max-width:1000px){
+  body.admin-console-page{
+    --admin-table-row-height:36px;
+    --admin-table-header-height:30px;
+    --admin-kpi-height:48px;
+    --admin-badge-height:18px;
+    --admin-section-gap:6px;
+    --admin-content-gutter:16px
+  }
+  .admin-console-page .admin-console-pagehead{padding-top:6px;padding-bottom:6px;gap:6px}
+  .admin-console-page .admin-crm-toolbar,
+  .admin-console-page .admin-list-toolbar,
+  .admin-console-page .admin-logs-toolbar{margin-bottom:6px;row-gap:6px}
+  .admin-console-page .admin-crm-stats{margin-bottom:6px;gap:4px}
+  .admin-console-page .crm-stat{min-height:44px;padding:5px 8px}
+  .admin-console-page .crm-badge,
+  .admin-console-page .crm-activity,
+  .admin-console-page .crm-role{
+    min-height:18px;height:18px;padding:0 6px 0 5px;font-size:11px
+  }
   /* Must beat body[data-admin-view=crm] #adminCrm{display:block!important} */
   body.admin-console-page[data-admin-view="crm"] #adminCrm.admin-crm.is-detail-open:not(.is-row-expand){
     display:grid!important;
     grid-template-columns:minmax(240px,36%) minmax(0,1fr);
-    gap:12px;align-items:start
+    gap:8px;align-items:start
   }
   body.admin-console-page[data-admin-view="crm"] #adminCrm.admin-crm.is-detail-open:not(.is-row-expand) .admin-crm-list-pane{
     display:flex!important;flex-direction:column;min-width:0;
     max-height:calc(100dvh - 140px);overflow:auto;
-    border:1px solid var(--admin-stroke);border-radius:10px;padding:8px;
+    border:1px solid var(--admin-stroke);border-radius:10px;padding:6px;
     background:rgba(255,255,255,.02)
   }
   body.admin-console-page[data-admin-view="crm"] #adminCrm.admin-crm.is-detail-open:not(.is-row-expand) .admin-crm-detail-pane{
     display:block!important;min-width:0;
     max-height:calc(100dvh - 140px);overflow:auto
+  }
+  .admin-console-page .admin-crm.is-detail-open .admin-crm-card,
+  body.admin-console-page .admin-crm.is-detail-open .admin-crm-card{
+    margin:0 0 8px;padding:8px 10px
+  }
+  .admin-console-page .admin-crm.is-detail-open .admin-crm-detail-head{
+    margin:0 0 8px;padding:8px 10px;gap:8px
   }
   /* Long cells wrap so compact tables do not inflate page width */
   .admin-console-page .admin-member-table,
@@ -5480,7 +5506,17 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-member-table td.admin-member-email,
   .admin-console-page .admin-payment-flat-table td,
   .admin-console-page .admin-payment-flat-table .admin-order-id{
-    white-space:normal!important;overflow-wrap:anywhere;word-break:break-word
+    overflow-wrap:anywhere;word-break:break-word
+  }
+  .admin-console-page .admin-member-table td.admin-member-email{
+    white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis
+  }
+  .admin-console-page .admin-member-table td.admin-member-user{
+    white-space:nowrap!important
+  }
+  .admin-console-page .admin-payment-flat-table td,
+  .admin-console-page .admin-payment-flat-table .admin-order-id{
+    white-space:normal!important
   }
   .admin-console-page .admin-table-wrap,
   .admin-console-page .admin-console-table-wrap{
@@ -5516,6 +5552,24 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-ticket-table{table-layout:auto}
   .admin-console-page .admin-home-stats.admin-crm-stats,
   .admin-console-page #adminHomeStats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  /* Row-expand member detail — tighter vertical rhythm on fold */
+  .admin-console-page .admin-member-expand>td{padding:0 0 8px 8px}
+  .admin-console-page .admin-member-expand .admin-crm-detail{padding:4px 0 10px}
+  .admin-console-page .admin-member-expand .admin-crm-detail-head,
+  .admin-console-page .admin-crm.is-row-expand .admin-crm-detail-head{
+    gap:8px;margin:0 0 6px;padding:0 0 6px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-card,
+  .admin-console-page .admin-crm.is-row-expand .admin-crm-card{
+    margin:0 0 6px;padding:6px 0
+  }
+  .admin-console-page .admin-member-expand .admin-crm-detail-tabs{margin:4px 0 6px;gap:3px}
+  .admin-console-page .admin-member-expand .admin-crm-summary{gap:6px;margin-bottom:6px}
+  .admin-console-page .admin-member-expand .admin-crm-summary-card{min-height:0;padding:6px 8px}
+  .admin-console-page .admin-member-expand .form-split,
+  .admin-console-page .admin-member-expand .admin-crm-license-form{gap:6px}
+  .admin-console-page .admin-member-expand .admin-crm-dash-grid{gap:6px;margin:0 0 6px}
+  .admin-console-page .admin-member-expand .admin-crm-dash-sec{padding:8px 10px}
 }
 
 /* Mobile / folded phone — off-canvas drawer (width stays usable when open) */
@@ -5523,10 +5577,20 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   body.admin-console-page{
     --admin-sidebar-w:0px;
     --admin-drawer-w:min(300px,88vw);
-    --admin-content-gutter:12px
+    --admin-content-gutter:10px;
+    --admin-kpi-height:44px;
+    --admin-section-gap:6px;
+    --admin-badge-height:18px;
+    --admin-card-padding:10px
   }
-  .admin-console-page .topbar{left:0;padding:8px 12px}
+  .admin-console-page .topbar{left:0;padding:6px 10px;height:48px}
+  .admin-console-page .admin-console{padding-top:48px}
   .admin-console-page .admin-console-stage{margin-left:0}
+  .admin-console-page .admin-console-pagehead{
+    padding-top:4px;padding-bottom:4px;gap:4px
+  }
+  .admin-console-page .admin-console-pagehead h1{font-size:15px;margin:0}
+  .admin-console-page .admin-console-lead{font-size:11px;margin:2px 0 0;line-height:1.35}
   .admin-console-page .admin-sidebar{
     width:var(--admin-drawer-w)!important;
     transform:translateX(-110%);
@@ -5536,7 +5600,7 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page.admin-sidebar-open .admin-sidebar{transform:none}
   .admin-console-page .admin-sidebar-toggle{
     display:inline-flex!important;align-items:center;justify-content:center;
-    min-width:42px;min-height:42px;flex:none
+    min-width:40px;min-height:40px;flex:none
   }
   .admin-console-page button.admin-sidebar-toggle.mini-btn{
     display:inline-flex!important
@@ -5547,26 +5611,48 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
     background:rgba(0,0,0,.5)
   }
   .admin-console-page .admin-nav-item{
-    min-height:44px;height:auto;padding:10px 12px
+    min-height:40px;height:auto;padding:8px 10px
   }
   .admin-console-page .admin-crm-stats,
   .admin-console-page .admin-crm-stats.is-cols-6,
   .admin-console-page .admin-crm-stats.is-cols-5,
   .admin-console-page #adminHomeStats{
-    grid-template-columns:repeat(2,minmax(0,1fr))
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:4px;margin-bottom:6px
   }
-  .admin-console-page .admin-home-links{grid-template-columns:1fr}
-  .admin-console-page .admin-console-pagehead h1{font-size:16px}
+  .admin-console-page .crm-stat{min-height:40px;padding:4px 8px}
+  .admin-console-page .crm-stat b{font-size:14px}
+  .admin-console-page .crm-stat span{font-size:10px;margin-top:1px}
+  .admin-console-page .admin-crm-toolbar,
+  .admin-console-page .admin-list-toolbar,
+  .admin-console-page .admin-logs-toolbar,
+  .admin-console-page .admin-cms-toolbar{
+    margin-bottom:6px;row-gap:6px;gap:6px
+  }
+  .admin-console-page .admin-crm-list-head{padding:2px 0 4px;gap:4px;flex-wrap:wrap}
+  .admin-console-page .admin-crm-select-tools{gap:6px;margin-right:0}
+  .admin-console-page .admin-section-head{gap:4px;margin-bottom:6px}
+  .admin-console-page .admin-home-links{grid-template-columns:1fr;gap:6px}
   .admin-console-page .pricing-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   .admin-console-page .pricing-pane-tabs{overflow-x:auto;flex-wrap:nowrap}
   .admin-console-page .admin-cms-drawer-panel{
     width:100%;border-radius:0
   }
+  .admin-console-page .crm-badge,
+  .admin-console-page .crm-activity,
+  .admin-console-page .crm-role{
+    min-height:18px;height:18px;padding:0 6px 0 5px;font-size:11px;line-height:1
+  }
+  .admin-console-page .admin-crm-card-avatar{width:22px;height:22px;border-radius:6px;font-size:10px}
+  .admin-console-page .admin-member-user b{font-size:13px;line-height:1.2}
   body.admin-console-page .edit-modal-backdrop{padding:0;place-items:stretch}
   body.admin-console-page .edit-modal{
     width:100%;max-width:100%;height:100dvh;max-height:100dvh;
-    border-radius:0;padding:14px 14px max(14px, env(safe-area-inset-bottom))
+    border-radius:0;padding:12px 12px max(12px, env(safe-area-inset-bottom))
   }
+  body.admin-console-page .edit-modal-head{margin-bottom:10px}
+  body.admin-console-page .edit-modal-body{gap:10px}
+  body.admin-console-page .edit-modal-actions{margin-top:8px;padding-top:8px;gap:6px}
 
   /* Member table — core columns + row expand for full detail */
   .admin-console-page .admin-member-table thead{display:none}
@@ -5577,14 +5663,14 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   }
   .admin-console-page .admin-member-table tr.admin-crm-member-row{
     display:grid;
-    grid-template-columns:40px minmax(0,1fr) auto;
+    grid-template-columns:36px minmax(0,1fr) auto;
     grid-template-areas:
       "check user status"
       "check email email"
       "check license seen";
-    gap:4px 8px;align-items:center;
-    padding:10px 8px;margin:0 0 8px;
-    border:1px solid var(--admin-stroke);border-radius:10px;
+    gap:2px 6px;align-items:center;
+    padding:8px 8px;margin:0 0 6px;
+    border:1px solid var(--admin-stroke);border-radius:8px;
     background:rgba(255,255,255,.03)
   }
   .admin-console-page .admin-member-table tr.admin-crm-member-row td{
@@ -5594,7 +5680,7 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(1){grid-area:check}
   .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(2){grid-area:user;min-width:0}
   .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(3){
-    grid-area:email;min-width:0;font-size:11px;color:#8b93b3
+    grid-area:email;min-width:0;font-size:11px;line-height:1.25;color:#8b93b3
   }
   .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(4),
   .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(5),
@@ -5604,24 +5690,142 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(6){grid-area:license}
   .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(7){grid-area:status;justify-self:end}
   .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(9){
-    grid-area:seen;font-size:11px;color:#8b93b3
+    grid-area:seen;font-size:10px;line-height:1.25;color:#8b93b3
+  }
+  .admin-console-page .admin-member-table tr.admin-crm-member-row .admin-crm-check{
+    min-width:38px;min-height:38px;align-self:start
   }
   .admin-console-page .admin-member-table tr.admin-member-expand{
-    display:block;width:100%;height:auto;margin:-4px 0 12px;
+    display:block;width:100%;height:auto;margin:0 0 6px;
     position:static;overflow:visible
   }
   .admin-console-page .admin-member-table tr.admin-member-expand>td{
     display:block;width:100%;max-width:100%;height:auto!important;min-height:0!important;
-    padding:0 4px 8px!important;border:0!important;background:transparent!important;
+    padding:0 1px 4px!important;border:0!important;background:transparent!important;
     white-space:normal!important;overflow:visible;position:static
   }
   .admin-console-page .admin-member-expand-inner{
-    border:1px solid var(--admin-stroke);border-radius:10px;padding:10px;
+    border:1px solid var(--admin-stroke);border-radius:8px;padding:6px;
     background:rgba(0,0,0,.18);height:auto;overflow:visible;position:static
   }
+  /* Expanded member detail — denser vertical rhythm (keep normal flow / height:auto) */
   .admin-console-page .admin-member-expand .admin-crm-detail{
     position:static!important;height:auto!important;max-height:none!important;
-    overflow:visible!important;transform:none!important
+    overflow:visible!important;transform:none!important;padding:2px 0 6px!important
+  }
+  .admin-console-page .admin-member-expand .admin-crm-detail-head,
+  .admin-console-page .admin-crm.is-row-expand .admin-crm-detail-head{
+    flex-direction:column;gap:6px;margin:0 0 6px;padding:0 0 6px;
+    border-bottom:1px solid var(--admin-stroke)
+  }
+  .admin-console-page .admin-member-expand .admin-crm-profile{
+    gap:8px;align-items:flex-start
+  }
+  .admin-console-page .admin-member-expand .admin-crm-avatar,
+  .admin-console-page .admin-crm.is-row-expand .admin-crm-avatar{
+    width:36px;height:36px;border-radius:9px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-title-row{
+    gap:4px 6px;margin:0
+  }
+  .admin-console-page .admin-member-expand .admin-crm-title-row h2{
+    font-size:15px;line-height:1.2;margin:0
+  }
+  .admin-console-page .admin-member-expand .admin-crm-email,
+  .admin-console-page .admin-member-expand .admin-crm-uid,
+  .admin-console-page .admin-member-expand .admin-crm-header-meta{
+    margin:2px 0 0;line-height:1.3;font-size:11px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-head-memo,
+  .admin-console-page .admin-crm.is-row-expand .admin-crm-head-memo,
+  .admin-console-page .admin-member-expand #adminCrmMemoCard{
+    margin:0;padding:0
+  }
+  .admin-console-page .admin-member-expand #adminCrmUserMemo,
+  .admin-console-page .admin-crm.is-row-expand #adminCrmUserMemo{
+    min-height:48px;padding:6px 8px;font-size:12px;line-height:1.4
+  }
+  .admin-console-page .admin-member-expand .admin-crm-card,
+  .admin-console-page .admin-crm.is-row-expand .admin-crm-card{
+    margin:0 0 4px!important;padding:6px 0!important;
+    border-radius:0;border-left:0;border-right:0
+  }
+  .admin-console-page .admin-member-expand .admin-crm-card-dense,
+  .admin-console-page .admin-crm.is-row-expand .admin-crm-card-dense{
+    margin-bottom:2px!important;padding:4px 0!important
+  }
+  .admin-console-page .admin-member-expand .admin-crm-card-head{
+    margin-bottom:4px;gap:4px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-card-head h3{
+    font-size:10px;letter-spacing:.04em
+  }
+  .admin-console-page .admin-member-expand .admin-crm-detail-tabs{
+    margin:2px 0 4px;gap:2px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-detail-tabs button{
+    min-height:36px;padding:5px 8px!important;font-size:11px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-summary{
+    gap:4px;margin-bottom:6px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-summary-card{
+    min-height:0;padding:6px 8px;gap:1px;border-radius:8px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-summary-card span b{font-size:13px}
+  .admin-console-page .admin-member-expand .admin-crm-summary-card small{font-size:9px;line-height:1.25}
+  .admin-console-page .admin-member-expand .admin-crm-dash-grid{
+    gap:6px;margin:0 0 6px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-dash-sec{
+    padding:8px 10px;border-radius:8px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-hwid-box,
+  .admin-console-page .admin-member-expand .admin-crm-hwid-actions{
+    gap:4px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-hwid-value{
+    padding:3px 6px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-access-list{
+    gap:3px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-access-list div{
+    gap:2px 8px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-license-form,
+  .admin-console-page .admin-member-expand .form-split{
+    gap:4px
+  }
+  .admin-console-page .admin-member-expand label{gap:2px;font-size:10px}
+  .admin-console-page .admin-member-expand .admin-crm-license-form select,
+  .admin-console-page .admin-member-expand .admin-crm-license-form input,
+  .admin-console-page .admin-member-expand .admin-crm-license-form textarea{
+    min-height:34px;padding:5px 8px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-license-form textarea{
+    min-height:48px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-detail[data-tab="overview"] .admin-crm-bottom-grid,
+  .admin-console-page .admin-member-expand .admin-crm-detail[data-tab="audit"] .admin-crm-bottom-grid{
+    gap:6px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-timeline,
+  .admin-console-page .admin-member-expand .admin-crm-recent-feed{
+    max-height:160px;gap:0
+  }
+  .admin-console-page .admin-member-expand .admin-crm-timeline-item,
+  .admin-console-page .admin-member-expand .admin-crm-feed-item{
+    padding:6px 0;margin:0
+  }
+  .admin-console-page .admin-member-expand .admin-crm-table-wrap{
+    margin-top:2px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-points{
+    gap:6px;padding:0 0 4px
+  }
+  .admin-console-page .admin-member-expand .admin-crm-float-save{
+    margin-top:6px
   }
 
   /* License table — core + expand */
@@ -5630,13 +5834,13 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-license-table tbody{display:block;width:100%}
   .admin-console-page .admin-license-table tr.admin-license-row{
     display:grid;
-    grid-template-columns:40px minmax(0,1fr) auto;
+    grid-template-columns:36px minmax(0,1fr) auto;
     grid-template-areas:
       "check user manage"
       "check license status";
-    gap:4px 8px;align-items:center;
-    padding:10px 8px;margin:0 0 8px;
-    border:1px solid var(--admin-stroke);border-radius:10px;
+    gap:2px 6px;align-items:center;
+    padding:8px 8px;margin:0 0 6px;
+    border:1px solid var(--admin-stroke);border-radius:8px;
     background:rgba(255,255,255,.03)
   }
   .admin-console-page .admin-license-table tr.admin-license-row td{
@@ -5654,11 +5858,11 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(5){grid-area:status}
   .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(11){grid-area:manage;justify-self:end}
   .admin-console-page .admin-license-table tr.admin-license-expand{
-    display:block;width:100%;height:auto;margin:-4px 0 12px;position:static;overflow:visible
+    display:block;width:100%;height:auto;margin:0 0 8px;position:static;overflow:visible
   }
   .admin-console-page .admin-license-table tr.admin-license-expand>td{
     display:block;width:100%;height:auto!important;min-height:0!important;
-    padding:0 4px 8px!important;border:0!important;background:transparent!important;
+    padding:0 2px 6px!important;border:0!important;background:transparent!important;
     white-space:normal!important;overflow:visible;position:static
   }
 
@@ -5673,17 +5877,17 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
       "id status"
       "user amount"
       "product manage";
-    gap:4px 8px;align-items:center;
-    padding:10px 8px;margin:0 0 8px;
-    border:1px solid var(--admin-stroke);border-radius:10px;
+    gap:2px 6px;align-items:center;
+    padding:8px 8px;margin:0 0 6px;
+    border:1px solid var(--admin-stroke);border-radius:8px;
     background:rgba(255,255,255,.03)
   }
   .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td{
     border:0!important;height:auto!important;padding:0!important;white-space:normal;background:transparent!important
   }
-  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(1){grid-area:id;font-size:12px;font-weight:700}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(1){grid-area:id;font-size:12px;font-weight:700;line-height:1.25}
   .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(2){grid-area:user;min-width:0}
-  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(3){grid-area:product;font-size:12px;color:#c5cbe4}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(3){grid-area:product;font-size:11px;line-height:1.25;color:#c5cbe4}
   .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(4),
   .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(7),
   .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(8){display:none}
@@ -5693,8 +5897,8 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-order-group{
     display:grid!important;
     grid-template-columns:minmax(0,1fr) auto;
-    gap:4px 8px;padding:10px 8px;margin:0 0 8px;
-    border:1px solid var(--admin-stroke);border-radius:10px;background:rgba(255,255,255,.03)
+    gap:2px 6px;padding:8px 8px;margin:0 0 6px;
+    border:1px solid var(--admin-stroke);border-radius:8px;background:rgba(255,255,255,.03)
   }
   .admin-console-page .admin-order-group td{
     border:0!important;height:auto!important;padding:0!important;white-space:normal;background:transparent!important
@@ -5715,13 +5919,13 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-ticket-table tbody{display:block;width:100%}
   .admin-console-page .admin-ticket-table tr.admin-ticket-row{
     display:grid;
-    grid-template-columns:36px minmax(0,1fr) auto;
+    grid-template-columns:34px minmax(0,1fr) auto;
     grid-template-areas:
       "check title status"
       "check user user";
-    gap:4px 8px;align-items:center;
-    padding:10px 8px;margin:0 0 8px;
-    border:1px solid var(--admin-stroke);border-radius:10px;
+    gap:2px 6px;align-items:center;
+    padding:8px 8px;margin:0 0 6px;
+    border:1px solid var(--admin-stroke);border-radius:8px;
     background:rgba(255,255,255,.03)
   }
   .admin-console-page .admin-ticket-table tr.admin-ticket-row td{
@@ -5731,25 +5935,34 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-cat,
   .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-date{display:none}
   .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-title{grid-area:title;min-width:0}
-  .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-user{grid-area:user;font-size:11px}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-user{grid-area:user;font-size:10px;line-height:1.25}
   .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-status{grid-area:status;justify-self:end}
+  .admin-console-page .admin-ticket-title-btn b{font-size:13px;line-height:1.25}
   .admin-console-page .admin-ticket-table tr.admin-ticket-expand{
-    display:block;width:100%;height:auto;margin:-4px 0 12px;position:static;overflow:visible
+    display:block;width:100%;height:auto;margin:0 0 8px;position:static;overflow:visible
   }
   .admin-console-page .admin-ticket-table tr.admin-ticket-expand>td{
     display:block;width:100%;height:auto!important;min-height:0!important;
-    padding:0 4px 8px!important;border:0!important;white-space:normal!important;
+    padding:0 2px 6px!important;border:0!important;white-space:normal!important;
     overflow:visible;position:static
   }
   .admin-console-page .admin-ticket-expand-inner{
-    padding-left:0;max-width:none;height:auto;overflow:visible;position:static;
-    overflow-wrap:anywhere;word-break:break-word
+    padding:6px 0 2px;max-width:none;height:auto;overflow:visible;position:static;
+    overflow-wrap:anywhere;word-break:break-word;gap:8px
   }
-  .admin-console-page .admin-ticket-body,
-  .admin-console-page .admin-ticket-reply p,
-  .admin-console-page .admin-ticket-title-btn b{
+  .admin-console-page .admin-ticket-body{
+    padding:8px 10px;margin:0;font-size:12px;line-height:1.5;
     overflow-wrap:anywhere;word-break:break-word;white-space:normal
   }
+  .admin-console-page .admin-ticket-meta{gap:4px 10px;font-size:11px}
+  .admin-console-page .admin-ticket-replies-block,
+  .admin-console-page .admin-ticket-replies{gap:6px}
+  .admin-console-page .admin-ticket-reply{padding:6px 8px}
+  .admin-console-page .admin-ticket-reply p{
+    overflow-wrap:anywhere;word-break:break-word;white-space:normal;font-size:12px;line-height:1.45
+  }
+  .admin-console-page .admin-ticket-reply-form{gap:6px}
+  .admin-console-page .admin-ticket-reply-form textarea{min-height:64px;padding:8px 10px}
 
   /* CMS / generic admin tables — keep wrap scroll only when needed */
   .admin-console-page .admin-cms-table,
@@ -5765,14 +5978,14 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
     flex-direction:column
   }
   .admin-console-page .admin-crm-head-actions{
-    width:100%;justify-content:flex-start
+    width:100%;justify-content:flex-start;gap:6px
   }
   .admin-console-page .admin-crm-head-actions .mini-btn{
     flex:1 1 calc(50% - 6px)
   }
   .admin-console-page .admin-crm-summary{grid-template-columns:1fr}
   .admin-console-page .admin-crm-float-save{
-    position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+    position:fixed;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
     z-index:40;margin:0
   }
 }
