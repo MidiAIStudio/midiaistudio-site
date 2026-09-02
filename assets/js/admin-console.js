@@ -202,6 +202,26 @@ function bindConsole() {
     document.body.classList.remove('admin-sidebar-open');
   });
 
+  // Live fold/unfold / resize: drawer is mobile-only (<=600). Clear open state
+  // when crossing back to rail/desktop so layout does not stick open.
+  const mobileDrawerMq = window.matchMedia('(max-width: 600px)');
+  const syncAdminSidebarMode = () => {
+    if (!mobileDrawerMq.matches) {
+      document.body.classList.remove('admin-sidebar-open');
+    }
+  };
+  if (typeof mobileDrawerMq.addEventListener === 'function') {
+    mobileDrawerMq.addEventListener('change', syncAdminSidebarMode);
+  } else if (typeof mobileDrawerMq.addListener === 'function') {
+    mobileDrawerMq.addListener(syncAdminSidebarMode);
+  }
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(syncAdminSidebarMode, 80);
+  });
+  syncAdminSidebarMode();
+
   const params = new URLSearchParams((location.hash || '').replace(/^#/, ''));
   const initial = params.get('view') || 'home';
   showAdminView(initial, {

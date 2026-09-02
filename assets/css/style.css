@@ -4649,7 +4649,7 @@ body.admin-console-page:not([data-admin-view="logs"]):not([data-license-page="hi
   margin:3px 0 0;font-size:13px;line-height:1.45;color:var(--muted);font-weight:500
 }
 .admin-console-page .admin-console-lead:empty{display:none}
-.admin-console-page .admin-sidebar-toggle{display:none}
+.admin-console-page .admin-sidebar-toggle{display:none!important}
 .admin-console-page .admin-console-backdrop{display:none}
 .admin-console-page .admin-console-main{
   max-width:calc(var(--admin-content-max) + var(--admin-content-gutter) * 2);
@@ -4882,20 +4882,19 @@ body.admin-console-page .admin-crm-detail-pane{
   .admin-console-page .admin-crm-stats.is-cols-5{grid-template-columns:repeat(4,minmax(0,1fr))}
   .admin-console-page .admin-home-links{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media(max-width:900px){
-  .admin-console-page{--admin-sidebar-w:0px}
-  .admin-console-page .topbar{left:0}
-  .admin-console-page .admin-sidebar{
-    transform:translateX(-110%);transition:transform .2s ease
+/* Fold / tablet shell — always-visible compact rail (drawer rules live in ADMIN RWD block) */
+@media(min-width:601px) and (max-width:1000px){
+  body.admin-console-page{
+    --admin-sidebar-w:188px;
+    --admin-content-gutter:18px
   }
-  .admin-console-page.admin-sidebar-open .admin-sidebar{transform:none}
-  .admin-console-page .admin-sidebar-toggle{display:inline-flex}
-  .admin-console-page.admin-sidebar-open .admin-console-backdrop{
-    display:block;position:fixed;inset:0;z-index:35;background:rgba(0,0,0,.45)
-  }
-  .admin-console-page{--admin-content-gutter:16px}
-  .admin-console-page .admin-console-stage{margin-left:0}
-  .admin-console-page .admin-crm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .admin-console-page .admin-sidebar-brand span{display:none}
+  .admin-console-page .admin-nav-group{font-size:9px;letter-spacing:.06em}
+  .admin-console-page .admin-nav-item{font-size:12px;padding:0 8px 0 10px}
+  .admin-console-page .admin-crm-stats,
+  .admin-console-page .admin-crm-stats.is-cols-6,
+  .admin-console-page .admin-crm-stats.is-cols-5{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .admin-console-page .admin-home-links{grid-template-columns:repeat(2,minmax(0,1fr))}
   .admin-console-page .admin-crm-toolbar{flex-wrap:wrap}
 }
 .admin-console-page .admin-crm-bulkbar[hidden]{display:none!important}
@@ -4918,6 +4917,8 @@ body.admin-console-page .admin-logs-toolbar select{
   padding:0 10px!important;border-radius:8px!important;box-sizing:border-box;
   line-height:1;font-weight:700;white-space:nowrap;transform:none
 }
+/* Must follow .mini-btn !important so desktop/fold hide the drawer toggle */
+.admin-console-page button.admin-sidebar-toggle.mini-btn{display:none!important}
 .admin-console-page .mini-btn:hover,
 .admin-console-page .table-actions .mini-btn:hover{transform:none}
 .admin-console-page .admin-section-head{margin-bottom:8px}
@@ -5273,9 +5274,500 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-ticket-bulk{margin-left:0}
 }
 
+/* ============================================================
+   ADMIN RESPONSIVE (viewport-based — no UA sniffing)
+   MOBILE  <=600 | FOLD/TABLET 601–1000 | DESKTOP >=1001
+   Layout/CSS only — no API / auth / data changes
+   ============================================================ */
 
+/* Shared fold+mobile: prevent page-level horizontal overflow */
+@media(max-width:1000px){
+  body.admin-console-page{overflow-x:hidden}
+  .admin-console-page .admin-console,
+  .admin-console-page .admin-console-main,
+  .admin-console-page .admin-shell,
+  .admin-console-page .admin-workspace,
+  .admin-console-page .admin-crm,
+  .admin-console-page .admin-payments-section,
+  .admin-console-page .admin-tickets-section,
+  .admin-console-page .admin-table-wrap,
+  .admin-console-page .admin-console-table-wrap{
+    max-width:100%;min-width:0
+  }
+  /* Stage already offsets via margin-left:var(--admin-sidebar-w) — do not also set width:100% */
+  .admin-console-page .admin-console-stage{
+    max-width:none;min-width:0;width:auto;box-sizing:border-box
+  }
+  .admin-console-page .admin-table-wrap,
+  .admin-console-page .admin-console-table-wrap{
+    overflow-x:auto
+  }
+  .admin-console-page #admin,
+  .admin-console-page .content-card.admin-locked,
+  .admin-console-page #admin.content-card{
+    max-width:100%;min-width:0;overflow-x:clip
+  }
+  .admin-console-page .admin-console-pagehead{
+    flex-wrap:wrap;align-items:center;gap:8px;padding-top:8px;padding-bottom:8px
+  }
+  .admin-console-page .admin-work-tabs-slot{
+    flex:1 1 100%;margin-left:0;order:3
+  }
+  .admin-console-page .admin-console-lead{font-size:12px}
+  .admin-console-page .admin-section-head{
+    flex-direction:column;align-items:stretch;gap:8px
+  }
+  .admin-console-page .admin-ticket-bulk,
+  .admin-console-page .admin-pricing-actions,
+  .admin-console-page .admin-logs-head-actions{
+    margin-left:0;width:100%;justify-content:flex-start
+  }
+  .admin-console-page .admin-list-toolbar,
+  .admin-console-page .admin-crm-toolbar,
+  .admin-console-page .admin-logs-toolbar,
+  .admin-console-page .admin-cms-toolbar{
+    flex-wrap:wrap;row-gap:8px
+  }
+  .admin-console-page .admin-list-toolbar .search-input,
+  .admin-console-page .admin-crm-toolbar .search-input,
+  .admin-console-page .admin-tickets-section .admin-list-toolbar .search-input,
+  .admin-console-page .admin-cms-toolbar .search-input{
+    flex:1 1 100%;min-width:0;max-width:none
+  }
+  .admin-console-page .admin-crm-sort,
+  .admin-console-page .admin-list-toolbar select,
+  .admin-console-page .admin-logs-toolbar select{
+    width:auto;min-width:0;flex:1 1 140px;max-width:100%
+  }
+  /* Touch-friendly controls without ballooning desktop */
+  .admin-console-page .mini-btn,
+  .admin-console-page .admin-page-tab,
+  .admin-console-page .admin-logs-tab,
+  .admin-console-page .admin-crm-detail-tabs button{
+    min-height:40px;height:auto;padding:8px 12px!important
+  }
+  .admin-console-page .admin-crm-check,
+  .admin-console-page .admin-ticket-check{
+    min-width:40px;min-height:40px;justify-content:center
+  }
+  .admin-console-page .admin-crm-check input,
+  .admin-console-page .admin-ticket-check input{
+    width:18px;height:18px
+  }
+  .admin-console-page .admin-crm-pager .mini-btn{
+    min-width:44px
+  }
+  .admin-console-page .admin-crm-filter-popover{
+    right:auto;left:0;width:min(280px,calc(100vw - 32px))
+  }
+  /* Tables: drop forced min-width; allow intentional wrap overflow only inside wrap */
+  .admin-console-page .admin-table,
+  .admin-console-page .admin-member-table,
+  .admin-console-page .admin-license-table,
+  .admin-console-page .admin-order-table,
+  .admin-console-page .admin-ticket-table,
+  .admin-console-page .admin-payments-table,
+  .admin-console-page .admin-cms-table,
+  .admin-console-page .admin-logs-table{
+    min-width:0!important
+  }
+  .admin-console-page .admin-table th,
+  .admin-console-page .admin-table td{
+    white-space:normal
+  }
+  .admin-console-page .admin-member-table th,
+  .admin-console-page .admin-member-table td,
+  .admin-console-page .admin-license-table th,
+  .admin-console-page .admin-license-table td,
+  .admin-console-page .admin-order-table th,
+  .admin-console-page .admin-order-table td{
+    white-space:nowrap
+  }
+  /* Drawers full-bleed relative to stage (sidebar rail may still exist) */
+  body.admin-console-page .admin-crm-drawer,
+  .admin-console-page .admin-cms-drawer{
+    inset:0;left:0
+  }
+  .admin-console-page .admin-cms-drawer-panel{
+    width:min(560px,100%)
+  }
+  /* Pricing / logs collapse to single column */
+  .admin-console-page .pricing-layout,
+  .admin-console-page .admin-logs-layout{
+    grid-template-columns:1fr!important
+  }
+  .admin-console-page .admin-logs-users{
+    max-height:220px;border-right:0;border-bottom:1px solid rgba(255,255,255,.06)
+  }
+  .admin-console-page .admin-crm-dash-grid,
+  .admin-console-page .admin-crm-detail[data-tab="overview"] .admin-crm-bottom-grid,
+  .admin-console-page .admin-crm-detail[data-tab="audit"] .admin-crm-bottom-grid{
+    grid-template-columns:1fr
+  }
+  .admin-console-page .form-split,
+  .admin-console-page .admin-license-inline-form .form-split{
+    grid-template-columns:1fr!important
+  }
+  /* Modals — viewport-safe, sticky footer actions */
+  body.admin-console-page .edit-modal-backdrop{
+    padding:max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    align-items:stretch;place-items:stretch;overflow:auto
+  }
+  body.admin-console-page .edit-modal{
+    width:100%;max-width:100%;
+    max-height:min(92dvh,920px);
+    display:flex;flex-direction:column;
+    border-radius:18px;padding:16px;margin:auto
+  }
+  body.admin-console-page .edit-modal-body{
+    flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch
+  }
+  body.admin-console-page .edit-modal-actions{
+    flex:none;position:sticky;bottom:0;z-index:2;
+    margin-top:12px;padding-top:10px;gap:8px;flex-wrap:wrap;
+    background:linear-gradient(180deg,transparent,rgba(20,22,34,.98) 28%);
+  }
+  body.admin-console-page .edit-modal-actions .primary,
+  body.admin-console-page .edit-modal-actions .secondary,
+  body.admin-console-page .edit-modal-actions .ghost{
+    min-height:42px;flex:1 1 120px
+  }
+  body.admin-console-page .edit-modal-x{
+    min-width:40px;min-height:40px
+  }
+}
 
+/* Fold open / small tablet — master-detail for detail-pane CRM modes */
+@media(min-width:601px) and (max-width:1000px){
+  /* Must beat body[data-admin-view=crm] #adminCrm{display:block!important} */
+  body.admin-console-page[data-admin-view="crm"] #adminCrm.admin-crm.is-detail-open:not(.is-row-expand){
+    display:grid!important;
+    grid-template-columns:minmax(240px,36%) minmax(0,1fr);
+    gap:12px;align-items:start
+  }
+  body.admin-console-page[data-admin-view="crm"] #adminCrm.admin-crm.is-detail-open:not(.is-row-expand) .admin-crm-list-pane{
+    display:flex!important;flex-direction:column;min-width:0;
+    max-height:calc(100dvh - 140px);overflow:auto;
+    border:1px solid var(--admin-stroke);border-radius:10px;padding:8px;
+    background:rgba(255,255,255,.02)
+  }
+  body.admin-console-page[data-admin-view="crm"] #adminCrm.admin-crm.is-detail-open:not(.is-row-expand) .admin-crm-detail-pane{
+    display:block!important;min-width:0;
+    max-height:calc(100dvh - 140px);overflow:auto
+  }
+  /* Long cells wrap so compact tables do not inflate page width */
+  .admin-console-page .admin-member-table,
+  .admin-console-page .admin-payment-flat-table,
+  .admin-console-page .admin-license-table{
+    width:100%;max-width:100%;table-layout:fixed
+  }
+  .admin-console-page .admin-member-table td.admin-member-user,
+  .admin-console-page .admin-member-table td.admin-member-email,
+  .admin-console-page .admin-payment-flat-table td,
+  .admin-console-page .admin-payment-flat-table .admin-order-id{
+    white-space:normal!important;overflow-wrap:anywhere;word-break:break-word
+  }
+  .admin-console-page .admin-table-wrap,
+  .admin-console-page .admin-console-table-wrap{
+    overflow-x:auto;max-width:100%
+  }
+  /* Compact full tables — hide lowest-priority columns, keep expand/detail for rest */
+  .admin-console-page .admin-member-table th:nth-child(4),
+  .admin-console-page .admin-member-table td:nth-child(4),
+  .admin-console-page .admin-member-table th:nth-child(5),
+  .admin-console-page .admin-member-table td:nth-child(5),
+  .admin-console-page .admin-member-table th:nth-child(8),
+  .admin-console-page .admin-member-table td:nth-child(8),
+  .admin-console-page .admin-member-table th:nth-child(10),
+  .admin-console-page .admin-member-table td:nth-child(10),
+  .admin-console-page .admin-member-table th:nth-child(11),
+  .admin-console-page .admin-member-table td:nth-child(11){display:none}
+  .admin-console-page .admin-license-table th:nth-child(7),
+  .admin-console-page .admin-license-table td:nth-child(7),
+  .admin-console-page .admin-license-table th:nth-child(8),
+  .admin-console-page .admin-license-table td:nth-child(8),
+  .admin-console-page .admin-license-table th:nth-child(9),
+  .admin-console-page .admin-license-table td:nth-child(9),
+  .admin-console-page .admin-license-table th:nth-child(10),
+  .admin-console-page .admin-license-table td:nth-child(10){display:none}
+  .admin-console-page .admin-payment-flat-table th:nth-child(4),
+  .admin-console-page .admin-payment-flat-table td:nth-child(4),
+  .admin-console-page .admin-payment-flat-table th:nth-child(8),
+  .admin-console-page .admin-payment-flat-table td:nth-child(8){display:none}
+  .admin-console-page .admin-ticket-table th:nth-child(2),
+  .admin-console-page .admin-ticket-table td.admin-ticket-cat,
+  .admin-console-page .admin-ticket-table th:nth-child(6),
+  .admin-console-page .admin-ticket-table td.admin-ticket-date{display:none}
+  .admin-console-page .admin-ticket-table{table-layout:auto}
+  .admin-console-page .admin-home-stats.admin-crm-stats,
+  .admin-console-page #adminHomeStats{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
 
+/* Mobile / folded phone — off-canvas drawer (width stays usable when open) */
+@media(max-width:600px){
+  body.admin-console-page{
+    --admin-sidebar-w:0px;
+    --admin-drawer-w:min(300px,88vw);
+    --admin-content-gutter:12px
+  }
+  .admin-console-page .topbar{left:0;padding:8px 12px}
+  .admin-console-page .admin-console-stage{margin-left:0}
+  .admin-console-page .admin-sidebar{
+    width:var(--admin-drawer-w)!important;
+    transform:translateX(-110%);
+    transition:transform .2s ease;
+    box-shadow:12px 0 40px rgba(0,0,0,.45)
+  }
+  .admin-console-page.admin-sidebar-open .admin-sidebar{transform:none}
+  .admin-console-page .admin-sidebar-toggle{
+    display:inline-flex!important;align-items:center;justify-content:center;
+    min-width:42px;min-height:42px;flex:none
+  }
+  .admin-console-page button.admin-sidebar-toggle.mini-btn{
+    display:inline-flex!important
+  }
+  .admin-console-page .admin-console-backdrop{display:none}
+  .admin-console-page.admin-sidebar-open .admin-console-backdrop{
+    display:block;position:fixed;inset:0;z-index:150;
+    background:rgba(0,0,0,.5)
+  }
+  .admin-console-page .admin-nav-item{
+    min-height:44px;height:auto;padding:10px 12px
+  }
+  .admin-console-page .admin-crm-stats,
+  .admin-console-page .admin-crm-stats.is-cols-6,
+  .admin-console-page .admin-crm-stats.is-cols-5,
+  .admin-console-page #adminHomeStats{
+    grid-template-columns:repeat(2,minmax(0,1fr))
+  }
+  .admin-console-page .admin-home-links{grid-template-columns:1fr}
+  .admin-console-page .admin-console-pagehead h1{font-size:16px}
+  .admin-console-page .pricing-summary{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .admin-console-page .pricing-pane-tabs{overflow-x:auto;flex-wrap:nowrap}
+  .admin-console-page .admin-cms-drawer-panel{
+    width:100%;border-radius:0
+  }
+  body.admin-console-page .edit-modal-backdrop{padding:0;place-items:stretch}
+  body.admin-console-page .edit-modal{
+    width:100%;max-width:100%;height:100dvh;max-height:100dvh;
+    border-radius:0;padding:14px 14px max(14px, env(safe-area-inset-bottom))
+  }
+
+  /* Member table — core columns + row expand for full detail */
+  .admin-console-page .admin-member-table thead{display:none}
+  .admin-console-page .admin-member-table,
+  .admin-console-page .admin-member-table tbody,
+  .admin-console-page .admin-member-table tr.admin-crm-member-row{
+    display:block;width:100%
+  }
+  .admin-console-page .admin-member-table tr.admin-crm-member-row{
+    display:grid;
+    grid-template-columns:40px minmax(0,1fr) auto;
+    grid-template-areas:
+      "check user status"
+      "check email email"
+      "check license seen";
+    gap:4px 8px;align-items:center;
+    padding:10px 8px;margin:0 0 8px;
+    border:1px solid var(--admin-stroke);border-radius:10px;
+    background:rgba(255,255,255,.03)
+  }
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td{
+    border:0!important;height:auto!important;padding:0!important;
+    white-space:normal;background:transparent!important
+  }
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(1){grid-area:check}
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(2){grid-area:user;min-width:0}
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(3){
+    grid-area:email;min-width:0;font-size:11px;color:#8b93b3
+  }
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(4),
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(5),
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(8),
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(10),
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(11){display:none}
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(6){grid-area:license}
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(7){grid-area:status;justify-self:end}
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(9){
+    grid-area:seen;font-size:11px;color:#8b93b3
+  }
+  .admin-console-page .admin-member-table tr.admin-member-expand{
+    display:block;width:100%;margin:-4px 0 12px
+  }
+  .admin-console-page .admin-member-table tr.admin-member-expand>td{
+    display:block;width:100%;max-width:100%;padding:0 4px 8px!important;
+    border:0!important;background:transparent!important
+  }
+  .admin-console-page .admin-member-expand-inner{
+    border:1px solid var(--admin-stroke);border-radius:10px;padding:10px;
+    background:rgba(0,0,0,.18)
+  }
+
+  /* License table — core + expand */
+  .admin-console-page .admin-license-table thead{display:none}
+  .admin-console-page .admin-license-table,
+  .admin-console-page .admin-license-table tbody{display:block;width:100%}
+  .admin-console-page .admin-license-table tr.admin-license-row{
+    display:grid;
+    grid-template-columns:40px minmax(0,1fr) auto;
+    grid-template-areas:
+      "check user manage"
+      "check license status";
+    gap:4px 8px;align-items:center;
+    padding:10px 8px;margin:0 0 8px;
+    border:1px solid var(--admin-stroke);border-radius:10px;
+    background:rgba(255,255,255,.03)
+  }
+  .admin-console-page .admin-license-table tr.admin-license-row td{
+    border:0!important;height:auto!important;padding:0!important;white-space:normal;background:transparent!important
+  }
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(1){grid-area:check}
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(2){grid-area:user;min-width:0}
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(3),
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(6),
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(7),
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(8),
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(9),
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(10){display:none}
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(4){grid-area:license}
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(5){grid-area:status}
+  .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(11){grid-area:manage;justify-self:end}
+  .admin-console-page .admin-license-table tr.admin-license-expand{display:block;width:100%;margin:-4px 0 12px}
+  .admin-console-page .admin-license-table tr.admin-license-expand>td{
+    display:block;width:100%;padding:0 4px 8px!important;border:0!important;background:transparent!important;white-space:normal!important
+  }
+
+  /* Payment / order flat table — core + horizontal scroll fallback for nested */
+  .admin-console-page .admin-payment-flat-table thead{display:none}
+  .admin-console-page .admin-payment-flat-table,
+  .admin-console-page .admin-payment-flat-table tbody{display:block;width:100%}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    grid-template-areas:
+      "id status"
+      "user amount"
+      "product manage";
+    gap:4px 8px;align-items:center;
+    padding:10px 8px;margin:0 0 8px;
+    border:1px solid var(--admin-stroke);border-radius:10px;
+    background:rgba(255,255,255,.03)
+  }
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td{
+    border:0!important;height:auto!important;padding:0!important;white-space:normal;background:transparent!important
+  }
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(1){grid-area:id;font-size:12px;font-weight:700}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(2){grid-area:user;min-width:0}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(3){grid-area:product;font-size:12px;color:#c5cbe4}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(4),
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(7),
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(8){display:none}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(5){grid-area:amount;justify-self:end;font-weight:700}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(6){grid-area:status;justify-self:end}
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(9){grid-area:manage}
+  .admin-console-page .admin-order-group{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:4px 8px;padding:10px 8px;margin:0 0 8px;
+    border:1px solid var(--admin-stroke);border-radius:10px;background:rgba(255,255,255,.03)
+  }
+  .admin-console-page .admin-order-group td{
+    border:0!important;height:auto!important;padding:0!important;white-space:normal;background:transparent!important
+  }
+  .admin-console-page .admin-order-nested{
+    display:block;width:100%;max-width:100%;min-width:0;
+    overflow-x:auto;-webkit-overflow-scrolling:touch
+  }
+  .admin-console-page .admin-order-nested .admin-table{min-width:560px!important}
+  .admin-console-page .admin-order-expand>td,
+  .admin-console-page .admin-payments-section .admin-table-wrap{
+    max-width:100%;overflow-x:auto;min-width:0
+  }
+
+  /* Tickets — core + existing expand panel */
+  .admin-console-page .admin-ticket-table thead{display:none}
+  .admin-console-page .admin-ticket-table,
+  .admin-console-page .admin-ticket-table tbody{display:block;width:100%}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row{
+    display:grid;
+    grid-template-columns:36px minmax(0,1fr) auto;
+    grid-template-areas:
+      "check title status"
+      "check user user";
+    gap:4px 8px;align-items:center;
+    padding:10px 8px;margin:0 0 8px;
+    border:1px solid var(--admin-stroke);border-radius:10px;
+    background:rgba(255,255,255,.03)
+  }
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row td{
+    border:0!important;height:auto!important;padding:0!important;white-space:normal;background:transparent!important;width:auto!important
+  }
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row td:nth-child(1){grid-area:check}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-cat,
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-date{display:none}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-title{grid-area:title;min-width:0}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-user{grid-area:user;font-size:11px}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-status{grid-area:status;justify-self:end}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-expand{display:block;width:100%;margin:-4px 0 12px}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-expand>td{
+    display:block;width:100%;padding:0 4px 8px!important;border:0!important
+  }
+  .admin-console-page .admin-ticket-expand-inner{padding-left:0;max-width:none}
+
+  /* CMS / generic admin tables — keep wrap scroll only when needed */
+  .admin-console-page .admin-cms-table,
+  .admin-console-page .admin-logs-table{
+    display:block;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch
+  }
+  .admin-console-page .admin-cms-table{min-width:0}
+  .admin-console-page .admin-logs-table{min-width:520px}
+
+  /* Detail head / actions wrap safely */
+  .admin-console-page .admin-crm.is-detail-open .admin-crm-detail-head,
+  .admin-console-page .admin-crm.is-row-expand .admin-crm-detail-head{
+    flex-direction:column
+  }
+  .admin-console-page .admin-crm-head-actions{
+    width:100%;justify-content:flex-start
+  }
+  .admin-console-page .admin-crm-head-actions .mini-btn{
+    flex:1 1 calc(50% - 6px)
+  }
+  .admin-console-page .admin-crm-summary{grid-template-columns:1fr}
+  .admin-console-page .admin-crm-float-save{
+    position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));
+    z-index:40;margin:0
+  }
+}
+
+/* Prefer reduced motion */
+@media(max-width:600px) and (prefers-reduced-motion:reduce){
+  .admin-console-page .admin-sidebar{transition:none}
+}
+
+/* Long-content stress — keep data accessible, avoid page overflow */
+@media(max-width:1000px){
+  .admin-console-page .admin-member-user b,
+  .admin-console-page .admin-member-email,
+  .admin-console-page .admin-payment-user-name,
+  .admin-console-page .admin-payment-user-email,
+  .admin-console-page .admin-order-id,
+  .admin-console-page .admin-ticket-title-btn b,
+  .admin-console-page .admin-ticket-user,
+  .admin-console-page .admin-crm-email,
+  .admin-console-page .admin-crm-title-row h2{
+    overflow-wrap:anywhere;word-break:break-word;max-width:100%
+  }
+  .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(2),
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(1),
+  .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row>td:nth-child(3){
+    min-width:0;overflow-wrap:anywhere;word-break:break-word;white-space:normal!important
+  }
+  .admin-console-page .admin-order-nested .admin-order-id,
+  .admin-console-page .admin-order-nested td{
+    overflow-wrap:anywhere;word-break:break-word
+  }
+}
 
 
 
