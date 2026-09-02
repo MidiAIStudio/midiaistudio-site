@@ -4940,6 +4940,15 @@ body.admin-console-page .admin-logs-toolbar select{
   height:var(--admin-table-row-height);padding:0 10px;box-sizing:border-box;
   border-bottom:1px solid var(--admin-stroke-muted);font-size:13px
 }
+/* Expand/detail rows must size to content — fixed row height would collapse them
+   once mobile CSS switches td to display:block, causing sibling card overlap. */
+.admin-console-page .admin-table tr.admin-member-expand>td,
+.admin-console-page .admin-table tr.admin-ticket-expand>td,
+.admin-console-page .admin-table tr.admin-license-expand>td,
+.admin-console-page .admin-table tr.admin-order-expand>td{
+  height:auto;min-height:0;max-height:none;white-space:normal;vertical-align:top;
+  overflow:visible
+}
 .admin-console-page .admin-table tr:hover td{background:var(--admin-fill-hover)}
 .admin-console-page .admin-table td b{font-size:13px;line-height:1.25;margin:0}
 .admin-console-page .admin-table td small{margin-top:0}
@@ -5383,6 +5392,12 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-order-table td{
     white-space:nowrap
   }
+  .admin-console-page .admin-member-table tr.admin-member-expand>td,
+  .admin-console-page .admin-license-table tr.admin-license-expand>td,
+  .admin-console-page .admin-ticket-table tr.admin-ticket-expand>td,
+  .admin-console-page .admin-order-table tr.admin-order-expand>td{
+    white-space:normal!important;height:auto!important;overflow:visible
+  }
   /* Drawers full-bleed relative to stage (sidebar rail may still exist) */
   body.admin-console-page .admin-crm-drawer,
   .admin-console-page .admin-cms-drawer{
@@ -5592,15 +5607,21 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
     grid-area:seen;font-size:11px;color:#8b93b3
   }
   .admin-console-page .admin-member-table tr.admin-member-expand{
-    display:block;width:100%;margin:-4px 0 12px
+    display:block;width:100%;height:auto;margin:-4px 0 12px;
+    position:static;overflow:visible
   }
   .admin-console-page .admin-member-table tr.admin-member-expand>td{
-    display:block;width:100%;max-width:100%;padding:0 4px 8px!important;
-    border:0!important;background:transparent!important
+    display:block;width:100%;max-width:100%;height:auto!important;min-height:0!important;
+    padding:0 4px 8px!important;border:0!important;background:transparent!important;
+    white-space:normal!important;overflow:visible;position:static
   }
   .admin-console-page .admin-member-expand-inner{
     border:1px solid var(--admin-stroke);border-radius:10px;padding:10px;
-    background:rgba(0,0,0,.18)
+    background:rgba(0,0,0,.18);height:auto;overflow:visible;position:static
+  }
+  .admin-console-page .admin-member-expand .admin-crm-detail{
+    position:static!important;height:auto!important;max-height:none!important;
+    overflow:visible!important;transform:none!important
   }
 
   /* License table — core + expand */
@@ -5632,9 +5653,13 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(4){grid-area:license}
   .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(5){grid-area:status}
   .admin-console-page .admin-license-table tr.admin-license-row td:nth-child(11){grid-area:manage;justify-self:end}
-  .admin-console-page .admin-license-table tr.admin-license-expand{display:block;width:100%;margin:-4px 0 12px}
+  .admin-console-page .admin-license-table tr.admin-license-expand{
+    display:block;width:100%;height:auto;margin:-4px 0 12px;position:static;overflow:visible
+  }
   .admin-console-page .admin-license-table tr.admin-license-expand>td{
-    display:block;width:100%;padding:0 4px 8px!important;border:0!important;background:transparent!important;white-space:normal!important
+    display:block;width:100%;height:auto!important;min-height:0!important;
+    padding:0 4px 8px!important;border:0!important;background:transparent!important;
+    white-space:normal!important;overflow:visible;position:static
   }
 
   /* Payment / order flat table — core + horizontal scroll fallback for nested */
@@ -5708,11 +5733,23 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-title{grid-area:title;min-width:0}
   .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-user{grid-area:user;font-size:11px}
   .admin-console-page .admin-ticket-table tr.admin-ticket-row td.admin-ticket-status{grid-area:status;justify-self:end}
-  .admin-console-page .admin-ticket-table tr.admin-ticket-expand{display:block;width:100%;margin:-4px 0 12px}
-  .admin-console-page .admin-ticket-table tr.admin-ticket-expand>td{
-    display:block;width:100%;padding:0 4px 8px!important;border:0!important
+  .admin-console-page .admin-ticket-table tr.admin-ticket-expand{
+    display:block;width:100%;height:auto;margin:-4px 0 12px;position:static;overflow:visible
   }
-  .admin-console-page .admin-ticket-expand-inner{padding-left:0;max-width:none}
+  .admin-console-page .admin-ticket-table tr.admin-ticket-expand>td{
+    display:block;width:100%;height:auto!important;min-height:0!important;
+    padding:0 4px 8px!important;border:0!important;white-space:normal!important;
+    overflow:visible;position:static
+  }
+  .admin-console-page .admin-ticket-expand-inner{
+    padding-left:0;max-width:none;height:auto;overflow:visible;position:static;
+    overflow-wrap:anywhere;word-break:break-word
+  }
+  .admin-console-page .admin-ticket-body,
+  .admin-console-page .admin-ticket-reply p,
+  .admin-console-page .admin-ticket-title-btn b{
+    overflow-wrap:anywhere;word-break:break-word;white-space:normal
+  }
 
   /* CMS / generic admin tables — keep wrap scroll only when needed */
   .admin-console-page .admin-cms-table,
