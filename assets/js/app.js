@@ -96,8 +96,23 @@ function purchaseActionsLocked(){
 let authStateResolved = false;
 const $ = (id) => document.getElementById(id);
 const qs = (s, root = document) => root.querySelector(s);
-const page = location.pathname.split('/').pop() || 'index.html';
+/** Pathname last segment. Trailing-slash dirs like /guide/youtube-to-midi/ must NOT become index.html. */
+function resolvePageFile(){
+  const parts = location.pathname.replace(/\\/g, '/').split('/').filter(Boolean);
+  if(!parts.length) return 'index.html';
+  const last = parts[parts.length - 1];
+  if(parts.length === 1 && /^(en|ja|ko)$/i.test(last)) return 'index.html';
+  if(/\.[a-z0-9]+$/i.test(last)) return last;
+  // Directory URLs under /guide/ use the existing guide.html page key.
+  if(parts.some((p) => p.toLowerCase() === 'guide')) return 'guide.html';
+  return last;
+}
+const page = resolvePageFile();
 const pathLower = location.pathname.toLowerCase();
+function isSiteHomePath(){
+  const p = pathLower.replace(/\/index\.html$/i, '').replace(/\/+$/, '') || '';
+  return p === '' || p === '/' || /^\/(en|ja|ko)$/i.test(p);
+}
 /** True on real admin console (admin.html), including odd local paths like /admin or rewrite. */
 function isAdminConsolePage(){
   if(page === 'admin.html' || page === 'admin') return true;
@@ -4553,8 +4568,8 @@ function routeLoadPublic(){
   if(publicRouteBound) return;
   publicRouteBound = true;
   refreshPricingUi();
-  if(['downloads.html','purchase.html'].includes(page) || (page==='index.html' && $('downloadBox')) || (page==='' && $('downloadBox'))) listenDownload();
-  if((page==='' || page==='index.html') && !isGuideCmsListPath()) initHomePage();
+  if(['downloads.html','purchase.html'].includes(page) || (isSiteHomePath() && $('downloadBox'))) listenDownload();
+  if(isSiteHomePath() && !isGuideCmsListPath()) initHomePage();
   if(page==='notices.html') listenAnnouncements();
   if(page==='notice.html') listenNoticeDetail();
   if(page==='patch-notes.html') listenPatchNotes();
@@ -14479,8 +14494,19 @@ function initSidebarLayout(){
   topbar.classList.add('topbar-slim');
   topbar.querySelector('#mainNav')?.remove();
   topbar.querySelector('.topbar-page')?.remove();
+  let menuBtn=topbar.querySelector('#menuBtn');
+  if(!menuBtn){
+    menuBtn=document.createElement('button');
+    menuBtn.id='menuBtn';
+    menuBtn.className='menu-btn';
+    menuBtn.type='button';
+    menuBtn.setAttribute('aria-label', tt('메뉴 열기'));
+    menuBtn.textContent='☰';
+    const brand=topbar.querySelector('.brand');
+    if(brand) brand.insertAdjacentElement('afterend', menuBtn);
+    else topbar.insertBefore(menuBtn, topbar.firstChild);
+  }
   const actions=topbar.querySelector('.actions');
-  const menuBtn=topbar.querySelector('#menuBtn');
   if(actions) topbar.insertBefore(nav, actions);
   else if(menuBtn) topbar.insertBefore(nav, menuBtn.nextSibling);
   else topbar.appendChild(nav);
@@ -14596,8 +14622,8 @@ function initSidebarNav(){
     } else {
       active = (target===file || targetKey===fileKey) && !isGuideHubLink && !dataGuide;
     }
-    // Locale home paths like ./en/ → treat as home
-    if(!active && a.getAttribute('data-nav')==='home' && (fileKey==='' || fileKey==='index' || fileKey==='en' || fileKey==='ja' || fileKey==='ko')){
+    // Locale home paths like ./en/ → treat as home (never on /guide/* etc.)
+    if(!active && a.getAttribute('data-nav')==='home' && isSiteHomePath()){
       active = true;
     }
     a.classList.toggle('active', active);
@@ -14641,8 +14667,7 @@ function todayKey(){
 
 function shouldShowSalePromo(){
   if(!isPromoPopupActive()) return false;
-  const home = !page || page==='index.html' || page==='';
-  if(!home) return false;
+  if(!isSiteHomePath()) return false;
   if(currentLicenseLifetime) return false;
   const copy = salePromoCopy();
   if(!copy || !copy.promo) return false;
