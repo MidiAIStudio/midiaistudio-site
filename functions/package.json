@@ -10,7 +10,8 @@
     "deploy:functions": "firebase deploy --only functions:web",
     "test:retrieval": "node knowledge/tests/retrievalGolden.js",
     "test:answer-quality": "node knowledge/tests/answerQuality.js",
-    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality"
+    "test:conversation": "node knowledge/tests/conversationGolden.js",
+    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality && npm run test:conversation"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0",
