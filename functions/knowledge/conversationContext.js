@@ -7,11 +7,11 @@
 
 /** Follow-up / ellipsis surface forms (detection only — not canned answers). */
 const FOLLOW_UP_RE =
-  /^(그거|그건|그것|그\s*기능|이거|저거|아까|방금|그게|그건요)\b|기능\s*설명|자세히\s*(알려|설명)|어떻게\s*해\s*\??$|왜\s*그래\s*\??$|^그럼\s*\??$|설치는\s*\??$|사용법은\s*\??$|다시\s*설명|해결\s*방법|어디\s*(있어|있나요)|안\s*되(는데|요|다)?|그리고\s*\??$|다음은\s*\??$|^어떻게\s*\??$|^왜\s*\??$|설명해\s*줘|알려\s*줘|초기화는|리셋은|그거\s*어떻게|그건\s*어떻게/i;
+  /^(그거|그건|그것|그\s*기능|이거|저거|아까|방금|그게|그건요|그중|그중에|그\s*중)\b|기능\s*설명|자세히\s*(알려|설명)|어떻게\s*해\s*\??$|왜\s*그래\s*\??$|^그럼\s*\??$|설치는\s*\??$|사용법은\s*\??$|다시\s*설명|해결\s*방법|어디\s*(있어|있나요)|안\s*되(는데|요|다)?|그리고\s*\??$|다음은\s*\??$|^어떻게\s*\??$|^왜\s*\??$|설명해\s*줘|알려\s*줘|초기화는|리셋은|그거\s*어떻게|그건\s*어떻게|그중/i;
 
 /** Clear product / feature nouns that can start or switch a topic. */
 const EXPLICIT_TOPIC_RE =
-  /(템포|bpm|속도|pdf|유튜브|youtube|yt|오디오|mp3|wav|m4a|사운드팩|soundpack|고품질|고음질|음원|easy\s*key|easier\s*key|쉬운\s*조|크레딧|라이선스|이용권|미리\s*듣|미리듣|구간|웨이브|파형|노트|음표|벨로시티|velocity|악보|musicxml|변환|midi\s*editor|미디\s*에디터|라이브러리|library|assistant|어시스턴트|설치\s*파일|installer|403|404|cuda|ffmpeg|로그|trial|체험)/i;
+  /(템포|bpm|속도|pdf|유튜브|youtube|yt|오디오|mp3|wav|m4a|사운드팩|soundpack|고품질|고음질|음원|easy\s*key|easier\s*key|쉬운\s*조|크레딧|라이선스|이용권|미리\s*듣|미리듣|구간|웨이브|파형|노트|음표|벨로시티|velocity|악보|musicxml|변환|midi\s*editor|미디\s*에디터|라이브러리|library|assistant|어시스턴트|설치\s*파일|installer|403|404|cuda|ffmpeg|로그|trial|체험|패치|업데이트|릴리스|릴리즈|공지|\d+\.\d+(?:\.\d+)?)/i;
 
 /** Short pivots that should NOT inherit the previous topic (clarification path). */
 const AMBIGUOUS_PIVOT_RE =
@@ -75,6 +75,7 @@ function looksLikeFollowUp(rawQuestion) {
   const raw = normalizeSpace(rawQuestion);
   if (!raw) return false;
   if (isAmbiguousPivot(raw)) return false;
+  if (/^(그중|그중에|그\s*중)/.test(raw)) return true;
   // New clear topic of its own → not a carry-forward follow-up
   if (hasExplicitTopic(raw) && raw.length >= 8 && !FOLLOW_UP_RE.test(raw)) {
     // e.g. "템포 변경 방법은?" — standalone
@@ -200,7 +201,8 @@ function resolveConversationQuery({ rawQuestion, priorUserTurns = [] } = {}) {
   }
 
   // Follow-up that also introduces a strong new topic → switch (prefer raw)
-  if (hasExplicitTopic(raw) && !/^(그거|그건|이거|저거|아까|방금)/i.test(raw)) {
+  // Referential openers (그거/그중) keep prior topic even if a facet noun appears.
+  if (hasExplicitTopic(raw) && !/^(그거|그건|이거|저거|아까|방금|그중|그중에|그\s*중)/i.test(raw)) {
     // e.g. still matched FOLLOW_UP_RE weakly but has its own topic — keep raw
     // Exception: pure follow-ups like "그거 템포는?" are rare; explicit topic wins.
     if (raw.length >= 10) {

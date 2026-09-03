@@ -15,8 +15,12 @@ const {
   resolveConversationQuery
 } = require('./knowledge/conversationContext');
 
-const { applyLowConfidencePolicy } = require('./supportAiAgent/lowConfidencePolicy');
-const { generateDiagnosticClarifyQuestion } = require('./supportAiAgent/diagnosticQuestion');
+const { runSupportAgent } = require('./supportAiAgent/runAgent');
+const {
+  loadLivePatchPassages,
+  loadLiveNoticePassages,
+  loadLiveGuidePassages
+} = require('./supportAiAgent/liveCms');
 
 const MODE = {
   AI: 'ai',
@@ -895,72 +899,53 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
   const clarifySource = resolution.ambiguousPivot || rawQuestion;
   const clarifyEarly = !personal ? ambiguousClarification(clarifySource, locale) : null;
 
-  const staticPassages = personal
-    ? retrieve(question, 1, { includeInternal: false, locale })
-    : retrieve(question, 4, { includeInternal: false, locale });
-  const faqPassages = personal ? [] : await loadLiveFaqPassages(db, question, 2);
-  const catalogPassages = personal ? [] : await loadLiveCatalogPassages(db, question, locale);
-  let passages = [...catalogPassages, ...staticPassages, ...faqPassages];
-  // Live catalog wins over static license/price seed copy.
-  if (catalogPassages.length) {
-    passages = passages.filter((p) => p.id !== 'license-full-lifetime');
-  }
-  passages = passages.slice(0, 4);
-  // Unknown / novel error codes: do not force nearest weak conversion docs
-  if (UNKNOWN_ERROR_RE.test(rawQuestion)) {
-    const top = passages[0];
-    const strong =
-      top &&
-      (Number(top.score || 0) >= 15 ||
-        /error|403|404|cuda|ffmpeg|timeout|오류/i.test(String(top.id || '') + String(top.title || '')));
-    if (!strong) passages = [];
-  }
+  const sourceAdapters = {
+    retrieveStatic: async ({ question: q, limit, minScore, locale: loc }) =>
+      retrieve(q, limit, { includeInternal: false, locale: loc, minScore }),
+    loadLiveFaq: async ({ question: q, limit }) =>
+      loadLiveFaqPassages(db, q, limit).then((out) => out || []).slice(0, limit || 3),
+    loadLiveCatalog: async ({ question: q, locale: loc }) => loadLiveCatalogPassages(db, q, loc),
+    loadLiveRelease: async ({ question: q, version, preferLatest }) =>
+      loadLivePatchPassages(db, q, { limit: 3, version, preferLatest }),
+    loadLiveNotice: async ({ question: q }) => loadLiveNoticePassages(db, q, { limit: 2 }),
+    loadLiveGuide: async ({ question: q }) => loadLiveGuidePassages(db, q, { limit: 2 })
+  };
 
-  let clarify =
-    clarifyEarly ||
-    (!personal && !catalogPassages.length && isWeakOrConflictingRetrieval(passages)
-      ? ambiguousClarification(clarifySource, locale)
-      : null);
-  // If ultra-short ambiguous, drop weak passages so we don't invent wrong-topic answers
-  if (clarifyEarly) passages = [];
+  const agentOut = await runSupportAgent({
+    question,
+    rawQuestion,
+    locale,
+    personal,
+    userTurns,
+    clarifyEarly,
+    adapters: sourceAdapters,
+    retrieveStaticInitial: ({ limit }) => retrieve(question, limit, { includeInternal: false, locale }),
+    isWeakOrConflictingRetrieval,
+    detectAnswerIntent,
+    ambiguousClarification,
+    UNKNOWN_ERROR_RE
+  });
 
-  let lowConfidence =
-    !personal && !clarify && (passages.length === 0 || isWeakOrConflictingRetrieval(passages));
+  let passages = agentOut.passages || [];
+  let clarify = agentOut.clarify || null;
+  let lowConfidence = !!agentOut.lowConfidence;
 
-  // Compute once: used for diagnostics + system prompt.
+  ragDebug.agent = {
+    need: agentOut.debug && agentOut.debug.need,
+    facts: agentOut.debug && agentOut.debug.facts,
+    hypotheses: agentOut.debug && agentOut.debug.hypotheses,
+    plannerActions: ((agentOut.debug && agentOut.debug.plannerActions) || []).map((d) => ({
+      action: d.action,
+      sourceType: d.sourceType,
+      reason: d.reason
+    })),
+    sourcesSearched: agentOut.debug && agentOut.debug.sourcesSearched,
+    researchCount: agentOut.debug && agentOut.debug.researchCount,
+    diagnosticReason: agentOut.debug && agentOut.debug.diagnosticReason,
+    finalAction: agentOut.debug && agentOut.debug.finalAction
+  };
+
   const answerIntent = detectAnswerIntent(question);
-
-  if (lowConfidence && !clarify) {
-    const policy = await applyLowConfidencePolicy({
-      question,
-      rawQuestion,
-      locale,
-      intent: answerIntent,
-      personal,
-      clarifyExisting: clarify,
-      passages,
-      adapters: {
-        retrieveStatic: async ({ question: q, limit, minScore, locale: loc }) =>
-          retrieve(q, limit, { includeInternal: false, locale: loc, minScore }),
-        loadLiveFaq: async ({ question: q, limit, locale: loc }) =>
-          loadLiveFaqPassages(db, q, limit).then((out) => out || []).slice(0, limit || 3),
-        loadLiveCatalog: async ({ question: q, locale: loc }) => loadLiveCatalogPassages(db, q, loc)
-      },
-      maxResearchActions: 3,
-      isWeakOrConflictingRetrieval,
-      generateDiagnosticClarifyQuestion
-    });
-
-    passages = policy.passages;
-    clarify = policy.clarify;
-    lowConfidence = policy.lowConfidence;
-
-    // Live catalog must win over static seed copies even after research.
-    const hasLiveCatalog = (passages || []).some((p) => String(p.id || '').startsWith('live-catalog'));
-    if (hasLiveCatalog) {
-      passages = (passages || []).filter((p) => p.id !== 'license-full-lifetime');
-    }
-  }
 
   ragDebug.retrieved = passages.map((p) => ({
     id: p.id,
@@ -1136,5 +1121,6 @@ module.exports = {
   pickPassageText,
   isWeakOrConflictingRetrieval,
   collectUserTurns,
-  resolveConversationQuery
+  resolveConversationQuery,
+  runSupportAgent
 };

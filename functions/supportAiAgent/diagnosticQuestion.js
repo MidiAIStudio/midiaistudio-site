@@ -22,11 +22,29 @@ function generateDiagnosticClarifyQuestion({
   intent = 'general',
   rawQuestion = '',
   question = '',
-  passages = []
+  passages = [],
+  facts = {},
+  hypotheses = []
 } = {}) {
   const loc = locale === 'en' ? 'en' : locale === 'ja' ? 'ja' : 'ko';
   const raw = cleanSpace(rawQuestion || question || '');
-  const errCode = detectErrorCode(raw);
+  const errCode = facts.errorCode || detectErrorCode(raw);
+  const hyps = Array.isArray(hypotheses) ? hypotheses : [];
+
+  if (loc === 'ko') {
+    if (hyps.includes('transcription') && hyps.includes('playback')) {
+      return '변환 결과 음표가 이상한가요, 악기/사운드 재생이 다른가요, 아니면 재생 자체 문제인가요?';
+    }
+    if (hyps.includes('youtube_fetch') && !facts.sourceType) {
+      return 'YouTube에서 오디오를 가져오는 중인지, 설치 파일을 받는 중인지, 다른 저장/내보내기인지 알려주세요.';
+    }
+    if (hyps.includes('youtube') && !facts.conversionKind) {
+      return '어떤 변환에서 문제가 생기나요? YouTube / 오디오 파일 / PDF 중 하나를 알려주시고, 오류 문구가 있으면 같이 보내주세요.';
+    }
+    if (facts.conversionKind === 'youtube' && !facts.errorCode) {
+      return 'YouTube 영상을 불러오는 단계인지, 오디오 분석/변환 단계인지 확인할게요. 화면에 오류 코드나 문구가 보이나요?';
+    }
+  }
 
   // If evidence indicates a "where" style question, prefer location/screen info.
   const evidenceIds = (passages || []).map((p) => String(p.id || ''));
