@@ -15,6 +15,9 @@ const {
   resolveConversationQuery
 } = require('./knowledge/conversationContext');
 
+const { applyLowConfidencePolicy } = require('./supportAiAgent/lowConfidencePolicy');
+const { generateDiagnosticClarifyQuestion } = require('./supportAiAgent/diagnosticQuestion');
+
 const MODE = {
   AI: 'ai',
   WAITING: 'waiting_human',
@@ -913,16 +916,50 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     if (!strong) passages = [];
   }
 
-  const clarify = clarifyEarly || (!personal && !catalogPassages.length && isWeakOrConflictingRetrieval(passages)
-    ? ambiguousClarification(clarifySource, locale)
-    : null);
+  let clarify =
+    clarifyEarly ||
+    (!personal && !catalogPassages.length && isWeakOrConflictingRetrieval(passages)
+      ? ambiguousClarification(clarifySource, locale)
+      : null);
   // If ultra-short ambiguous, drop weak passages so we don't invent wrong-topic answers
   if (clarifyEarly) passages = [];
 
-  const lowConfidence = !personal && !clarify && (passages.length === 0 || isWeakOrConflictingRetrieval(passages));
+  let lowConfidence =
+    !personal && !clarify && (passages.length === 0 || isWeakOrConflictingRetrieval(passages));
+
+  // Compute once: used for diagnostics + system prompt.
+  const answerIntent = detectAnswerIntent(question);
+
   if (lowConfidence && !clarify) {
-    // keep empty → counselor path only when truly no signal; if weak but not clarify, clear passages
-    if (passages.length && Number(passages[0].score || 0) < 10) passages = [];
+    const policy = await applyLowConfidencePolicy({
+      question,
+      rawQuestion,
+      locale,
+      intent: answerIntent,
+      personal,
+      clarifyExisting: clarify,
+      passages,
+      adapters: {
+        retrieveStatic: async ({ question: q, limit, minScore, locale: loc }) =>
+          retrieve(q, limit, { includeInternal: false, locale: loc, minScore }),
+        loadLiveFaq: async ({ question: q, limit, locale: loc }) =>
+          loadLiveFaqPassages(db, q, limit).then((out) => out || []).slice(0, limit || 3),
+        loadLiveCatalog: async ({ question: q, locale: loc }) => loadLiveCatalogPassages(db, q, loc)
+      },
+      maxResearchActions: 3,
+      isWeakOrConflictingRetrieval,
+      generateDiagnosticClarifyQuestion
+    });
+
+    passages = policy.passages;
+    clarify = policy.clarify;
+    lowConfidence = policy.lowConfidence;
+
+    // Live catalog must win over static seed copies even after research.
+    const hasLiveCatalog = (passages || []).some((p) => String(p.id || '').startsWith('live-catalog'));
+    if (hasLiveCatalog) {
+      passages = (passages || []).filter((p) => p.id !== 'license-full-lifetime');
+    }
   }
 
   ragDebug.retrieved = passages.map((p) => ({
@@ -932,7 +969,6 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     verification: p.verification || (String(p.id).startsWith('faq-') || String(p.id).startsWith('live-') ? 'live' : 'verified')
   }));
 
-  const answerIntent = detectAnswerIntent(question);
   const system = [
     'You are MidiAI Studio official support AI.',
     'Answer ONLY from the provided official context. Do not invent prices, pack sizes, policies, or personal account data.',

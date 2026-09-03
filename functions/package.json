@@ -11,7 +11,8 @@
     "test:retrieval": "node knowledge/tests/retrievalGolden.js",
     "test:answer-quality": "node knowledge/tests/answerQuality.js",
     "test:conversation": "node knowledge/tests/conversationGolden.js",
-    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality && npm run test:conversation"
+    "test:agent": "node knowledge/tests/agentGolden.js",
+    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality && npm run test:conversation && npm run test:agent"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0",
