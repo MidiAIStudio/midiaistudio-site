@@ -14429,31 +14429,31 @@ function initTopbarActions(){
   if(currentUser) updateTopbarProfile(currentUser);
   else syncTopbarProfileAuthUi(false);
 }
-function topNavMenuItem({href, title, desc, icon, attrs=''}){
-  const descHtml = desc ? `<span>${desc}</span>` : '';
-  return `<a class="top-nav-item" href="${href}" ${attrs} role="menuitem"><span class="top-nav-item-icon" aria-hidden="true">${icon||''}</span><span class="top-nav-item-copy"><b>${title}</b>${descHtml}</span></a>`;
+function topNavMenuItem({href, title, desc, icon, attrs='', tone=''}){
+  const toneClass = tone ? ` is-${tone}` : '';
+  return `<a class="top-nav-item" href="${href}" ${attrs} role="menuitem"><span class="top-nav-item-icon${toneClass}" aria-hidden="true">${icon||''}</span><span class="top-nav-item-copy"><b>${title}</b></span></a>`;
 }
 function buildMainNavHtml(base, purchaseHref){
   // Leaf destinations preserved; Guides expands to existing /guide/* pages.
   const guideItems=[
-    {slug:'getting-started', title:'시작하기', desc:'설치와 첫 변환', icon:'01'},
-    {slug:'youtube-to-midi', title:'YouTube → MIDI', desc:'링크 변환 방법', icon:'YT'},
-    {slug:'audio-to-midi', title:'Audio → MIDI', desc:'MP3·WAV 변환', icon:'AU'},
-    {slug:'midi-editor', title:'MIDI Editor', desc:'편집·음원 사용', icon:'ED'},
-    {slug:'pdf-to-midi', title:'PDF → MIDI', desc:'악보 인식', icon:'PDF'},
-    {slug:'troubleshooting', title:'문제 해결', desc:'설치·로그인·변환', icon:'?'}
+    {slug:'getting-started', title:'시작하기', icon:'01', tone:'start'},
+    {slug:'youtube-to-midi', title:'YouTube → MIDI', icon:'YT', tone:'yt'},
+    {slug:'audio-to-midi', title:'Audio → MIDI', icon:'AU', tone:'audio'},
+    {slug:'midi-editor', title:'MIDI Editor', icon:'ED', tone:'editor'},
+    {slug:'pdf-to-midi', title:'PDF → MIDI', icon:'PDF', tone:'pdf'},
+    {slug:'troubleshooting', title:'문제 해결', icon:'?', tone:'help'}
   ].map((g)=>topNavMenuItem({
     href:`${base}guide/${g.slug}/`,
     title:g.title,
-    desc:g.desc,
     icon:g.icon,
+    tone:g.tone,
     attrs:`data-guide="${g.slug}"`
   })).join('');
   const guideHub=topNavMenuItem({
     href:`${base}guide/index.html`,
     title:'전체 가이드',
-    desc:'프로그램 사용 가이드 목록',
     icon:'ALL',
+    tone:'all',
     attrs:'data-nav="guides"'
   });
   return [
@@ -14462,9 +14462,9 @@ function buildMainNavHtml(base, purchaseHref){
     `<div class="top-nav-group is-wide" data-nav-group="guides"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>가이드</span><span class="nav-soon-badge">준비중</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${guideHub}${guideItems}</div></div></div>`,
     `<a class="top-nav-link" href="${base}downloads.html" data-nav="downloads"><span>다운로드</span></a>`,
     `<a class="top-nav-link is-purchase" href="${purchaseHref}" data-nav="purchase"><span>구매</span></a>`,
-    `<div class="top-nav-group is-wide" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', desc:'중요 운영 안내', icon:'N', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}patch-notes.html`, title:'패치노트', desc:'버전별 변경사항', icon:'P', attrs:'data-hub="patches"'})}${topNavMenuItem({href:`${base}faq.html`, title:'FAQ', desc:'자주 묻는 질문', icon:'F', attrs:'data-hub="faq"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', desc:'사용자 게시글', icon:'B', attrs:'data-hub="board"'})}</div></div></div>`,
-    `<div class="top-nav-group" data-nav-group="support"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>고객지원</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}support.html`, title:'1:1 문의', desc:'개별 문의 접수', icon:'1:1', attrs:'data-hub="support"'})}${topNavMenuItem({href:`${base}my-tickets.html`, title:'나의 문의', desc:'답변과 내역 확인', icon:'MY', attrs:'data-hub="tickets"'})}</div></div></div>`,
-    `<div class="top-nav-group" data-nav-group="account"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>계정</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}account.html`, title:'내 계정', desc:'라이선스·로그인 정보', icon:'ME', attrs:'data-nav="account"'})}<a class="top-nav-item hidden" id="adminNav" hidden aria-hidden="true" href="${base}admin.html" role="menuitem"><span class="top-nav-item-icon" aria-hidden="true">AD</span><span class="top-nav-item-copy"><b>관리자</b><span>운영 콘솔</span></span></a></div></div></div>`
+    `<div class="top-nav-group is-wide" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', icon:'N', tone:'notice', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}patch-notes.html`, title:'패치노트', icon:'P', tone:'patch', attrs:'data-hub="patches"'})}${topNavMenuItem({href:`${base}faq.html`, title:'FAQ', icon:'F', tone:'faq', attrs:'data-hub="faq"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', icon:'B', tone:'board', attrs:'data-hub="board"'})}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="support"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>고객지원</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}support.html`, title:'1:1 문의', icon:'1:1', tone:'support', attrs:'data-hub="support"'})}${topNavMenuItem({href:`${base}my-tickets.html`, title:'나의 문의', icon:'MY', tone:'tickets', attrs:'data-hub="tickets"'})}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="account"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>계정</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}account.html`, title:'내 계정', icon:'ME', tone:'account', attrs:'data-nav="account"'})}<a class="top-nav-item hidden" id="adminNav" hidden aria-hidden="true" href="${base}admin.html" role="menuitem"><span class="top-nav-item-icon is-admin" aria-hidden="true">AD</span><span class="top-nav-item-copy"><b>관리자</b></span></a></div></div></div>`
   ].join('');
 }
 function initSidebarLayout(){

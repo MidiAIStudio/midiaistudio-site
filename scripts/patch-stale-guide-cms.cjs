@@ -10,8 +10,6 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { createRequire } = require('module');
-const requireFromFunctions = createRequire(path.join(__dirname, '..', 'functions', 'package.json'));
 
 const DRY = process.argv.includes('--dry-run') || !process.argv.includes('--write');
 const WRITE = process.argv.includes('--write');
@@ -141,12 +139,129 @@ function planPatch(live, desired) {
   return { patch, reasons };
 }
 
-async function getAdmin() {
-  const admin = requireFromFunctions('firebase-admin');
-  if (!admin.apps.length) {
-    admin.initializeApp({ projectId: PROJECT });
+/** Hard allow-list — abort if anything outside these paths is targeted. */
+const ALLOWED_WRITE_TARGETS = ['guides/license', 'guides/troubleshooting'];
+const FORBIDDEN_WRITE_RE =
+  /\b(licenses|payments|orders|products|credits?|entitlement|hwid|users\/)\b/i;
+
+/** Firebase CLI OAuth client (public; used by `firebase login`). */
+const FIREBASE_CLI_CLIENT = {
+  client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
+  client_secret: 'j9iV0ub7oerJviowQgEuvokD'
+};
+
+function loadFirebaseCliTokens() {
+  const confPath = path.join(require('os').homedir(), '.config', 'configstore', 'firebase-tools.json');
+  if (!fs.existsSync(confPath)) return null;
+  const conf = JSON.parse(fs.readFileSync(confPath, 'utf8'));
+  return conf.tokens || null;
+}
+
+async function getCliAccessToken() {
+  const tokens = loadFirebaseCliTokens();
+  if (!tokens || !tokens.refresh_token) {
+    throw new Error('Firebase CLI tokens missing. Run: firebase login --reauth');
   }
-  return admin;
+  const stillValid =
+    tokens.access_token &&
+    typeof tokens.expires_at === 'number' &&
+    tokens.expires_at > Date.now() + 60_000;
+  if (stillValid) return tokens.access_token;
+
+  const body = new URLSearchParams({
+    grant_type: 'refresh_token',
+    refresh_token: tokens.refresh_token,
+    client_id: FIREBASE_CLI_CLIENT.client_id,
+    client_secret: FIREBASE_CLI_CLIENT.client_secret
+  });
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body
+  });
+  const json = await res.json();
+  if (!res.ok || !json.access_token) {
+    throw new Error(json.error_description || json.error || 'token refresh failed');
+  }
+  return json.access_token;
+}
+
+function docUrl(id) {
+  return `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/guides/${encodeURIComponent(id)}`;
+}
+
+function fromFirestoreValue(v) {
+  if (v == null) return null;
+  if ('stringValue' in v) return v.stringValue;
+  if ('integerValue' in v) return Number(v.integerValue);
+  if ('doubleValue' in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('nullValue' in v) return null;
+  if ('timestampValue' in v) return v.timestampValue;
+  if ('arrayValue' in v) return (v.arrayValue.values || []).map(fromFirestoreValue);
+  if ('mapValue' in v) {
+    const out = {};
+    for (const [k, child] of Object.entries(v.mapValue.fields || {})) out[k] = fromFirestoreValue(child);
+    return out;
+  }
+  return null;
+}
+
+function decodeDoc(json) {
+  const out = {};
+  for (const [k, v] of Object.entries(json.fields || {})) out[k] = fromFirestoreValue(v);
+  return out;
+}
+
+function toFirestoreValue(v) {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'string') return { stringValue: v };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') {
+    return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  }
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(toFirestoreValue) } };
+  if (typeof v === 'object') {
+    const fields = {};
+    for (const [k, child] of Object.entries(v)) fields[k] = toFirestoreValue(child);
+    return { mapValue: { fields } };
+  }
+  return { stringValue: String(v) };
+}
+
+async function restGetGuide(token, id) {
+  const res = await fetch(docUrl(id), { headers: { Authorization: `Bearer ${token}` } });
+  if (res.status === 404) return { exists: false, data: null };
+  const json = await res.json();
+  if (!res.ok) {
+    const msg = (json.error && json.error.message) || res.statusText;
+    const err = new Error(msg);
+    err.code = json.error && json.error.status;
+    throw err;
+  }
+  return { exists: true, data: decodeDoc(json) };
+}
+
+async function restMergeGuide(token, id, patch) {
+  const target = `guides/${id}`;
+  if (!ALLOWED_WRITE_TARGETS.includes(target) || FORBIDDEN_WRITE_RE.test(target)) {
+    throw new Error(`REFUSED unsafe write target: ${target}`);
+  }
+  const fields = {};
+  for (const [k, v] of Object.entries(patch)) fields[k] = toFirestoreValue(v);
+  fields.updatedAt = { timestampValue: new Date().toISOString() };
+  const mask = [...Object.keys(patch), 'updatedAt'].map((f) => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&');
+  const res = await fetch(`${docUrl(id)}?${mask}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ fields })
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error((json.error && json.error.message) || res.statusText);
+  return decodeDoc(json);
 }
 
 async function main() {
@@ -155,39 +270,47 @@ async function main() {
     process.exit(2);
   }
   const mode = WRITE ? 'WRITE' : 'DRY_RUN';
-  console.log(JSON.stringify({ mode, project: PROJECT }, null, 2));
+  const writeTargets = ALLOWED_WRITE_TARGETS.slice();
+  if (writeTargets.some((t) => FORBIDDEN_WRITE_RE.test(t)) || writeTargets.length !== 2) {
+    console.error(JSON.stringify({ FIRESTORE_PATCH: 'FAIL', REASON: 'UNSAFE_WRITE_TARGETS', writeTargets }));
+    process.exit(5);
+  }
+  console.log(JSON.stringify({ mode, project: PROJECT, writeTargets }, null, 2));
 
-  let admin;
+  let token;
   try {
-    admin = await getAdmin();
+    token = await getCliAccessToken();
   } catch (err) {
     console.error(JSON.stringify({ FIRESTORE_PATCH: 'BLOCKED', REASON: 'AUTH_REQUIRED', message: String(err.message || err) }));
     process.exit(3);
   }
 
-  const db = admin.firestore();
-  const report = { mode, docs: [] };
+  const report = { mode, writeTargets, docs: [], unrelatedWrites: 0, licensesWrites: 0, userEntitlementWrites: 0, paymentWrites: 0, productWrites: 0, creditWrites: 0 };
 
   for (const id of ['license', 'troubleshooting']) {
-    const ref = db.collection('guides').doc(id);
     let snap;
     try {
-      snap = await ref.get();
+      snap = await restGetGuide(token, id);
     } catch (err) {
-      console.error(JSON.stringify({ FIRESTORE_PATCH: 'BLOCKED', REASON: 'AUTH_REQUIRED', doc: id, message: String(err.message || err) }));
-      process.exit(3);
+      const msg = String(err.message || err);
+      if (/credentials|auth|login|permission|unauthenticated|UNAUTHENTICATED/i.test(msg)) {
+        console.error(JSON.stringify({ FIRESTORE_PATCH: 'BLOCKED', REASON: 'AUTH_REQUIRED', doc: id, message: msg }));
+        process.exit(3);
+      }
+      throw err;
     }
     if (!snap.exists) {
-      report.docs.push({ id, existed: false, action: 'skip_missing' });
+      report.docs.push({ id, existed: false, action: 'skip_missing', fieldsToPatch: [] });
       continue;
     }
-    const live = snap.data() || {};
+    const live = snap.data || {};
     const desired = DESIRED[id];
     const { patch, reasons } = planPatch(live, desired);
     const preserved = Object.keys(live).filter((k) => !Object.prototype.hasOwnProperty.call(patch, k));
     const entry = {
       id,
       existed: true,
+      action: Object.keys(patch).length ? 'field_scoped_patch' : 'no_change',
       staleDetected: fieldStale(live),
       fieldsToPatch: Object.keys(patch),
       patchReasons: reasons,
@@ -218,15 +341,7 @@ async function main() {
     entry.snapshot = path.relative(path.join(__dirname, '..'), snapPath).replace(/\\/g, '/');
 
     if (WRITE && Object.keys(patch).length) {
-      await ref.set(
-        {
-          ...patch,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
-      const after = await ref.get();
-      const afterData = after.data() || {};
+      const afterData = await restMergeGuide(token, id, patch);
       entry.postRead = {
         summary: afterData.summary || null,
         features: afterData.features || null,
@@ -236,6 +351,7 @@ async function main() {
         preservedSections: Array.isArray(afterData.sections),
         preservedHeroImage: afterData.heroImage !== undefined
       };
+      entry.wrote = true;
     }
   }
 

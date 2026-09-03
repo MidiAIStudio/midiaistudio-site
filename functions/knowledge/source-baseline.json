@@ -42,7 +42,19 @@
     "internal-log-checklist": "06ebd8200f6cd3a5",
     "internal-pdf-stages": "409bd978965442f2",
     "needs-review-ffmpeg-user-copy": "cc0884f9818ff8b6",
-    "needs-review-live-faq-sync": "1043da14dc64bd6b"
+    "needs-review-live-faq-sync": "1043da14dc64bd6b",
+    "studio-preview-range": "cc286b8f8d0b49d0",
+    "studio-preview-playback": "44a189c79fa35ca7",
+    "midi-editor-tempo": "3b6513ac2476bfda",
+    "midi-editor-note-edit": "18623c5ad1f8fd1c",
+    "midi-editor-velocity": "34a0707e89986dc3",
+    "midi-editor-instrument": "7770aac93d228618",
+    "midi-editor-playback-zoom": "276e564026edc562",
+    "midi-editor-undo-save": "3740a3b94ac39fc4",
+    "score-editor-ops": "665496d6a74cc0ee",
+    "ai-assistant-ops": "f3bfe05382ea575d",
+    "library-ops": "843b17590abec2fe",
+    "high-quality-sound-ops": "c2e086ecc3b78e3f"
   },
-  "updatedAt": "2026-09-03T03:55:46.980Z"
+  "updatedAt": "2026-09-03T04:58:58.269Z"
 }

@@ -1,0 +1,638 @@
+[
+  {
+    "id": "studio-preview-range",
+    "title": {
+      "ko": "Studio 미리듣기·변환 구간 조정",
+      "en": "Studio preview & conversion range",
+      "ja": "Studioプレビュー・変換区間"
+    },
+    "category": "studio_ops",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py WaveformWidget",
+      "MidiAI/run_gui.py on_wave_range_changed",
+      "MidiAI/lang/ko.json track_range preview reset"
+    ],
+    "appVersion": "1.6.x",
+    "relatedGuideUrl": "/guide/youtube-to-midi/",
+    "keywords": [
+      "미리듣기",
+      "미리 듣기",
+      "미리듣",
+      "미리보기",
+      "구간",
+      "구간 수정",
+      "구간수정",
+      "변환 구간",
+      "변환구간",
+      "변환 범위",
+      "선택 구간",
+      "선택구간",
+      "시작점",
+      "시작 위치",
+      "끝점",
+      "끝 위치",
+      "범위",
+      "파형",
+      "웨이브폼",
+      "웨이브",
+      "트랙 범위",
+      "초기화",
+      "preview",
+      "range",
+      "waveform",
+      "start",
+      "end",
+      "track range"
+    ],
+    "summary": {
+      "ko": "Studio 하단 Audio Preview(트랙 범위) 파형에서 시작·끝 핸들을 드래그해 미리듣기·변환에 쓰는 구간을 바꿉니다.",
+      "en": "In Studio’s bottom Audio Preview (Track Range) waveform, drag the start/end handles to change the preview and conversion range."
+    },
+    "details": {
+      "ko": "파형 양끝의 구간 핸들을 드래그하면 선택 구간이 바뀝니다. 파형 안을 클릭하거나 재생 헤드를 드래그하면 재생 위치(seek)만 바뀌고 구간 자체는 바뀌지 않습니다. 숫자로 시작/끝을 직접 입력하는 칸은 없습니다. ↺ 초기화로 전체 구간으로 되돌릴 수 있습니다. 체험판에서는 미리듣기 구간이 최대 1분으로 고정되며 핸들 드래그가 제한됩니다.",
+      "en": "Drag the range handles on either end of the waveform. Clicking inside the waveform or dragging the playhead only seeks playback; it does not change the range. There is no numeric start/end spin box. Use ↺ Reset to restore the full range. On Trial, the preview range is locked to about 1 minute."
+    },
+    "steps": [
+      {
+        "ko": "Studio에서 YouTube 분석 또는 오디오를 불러옵니다.",
+        "en": "In Studio, analyze a YouTube link or load audio."
+      },
+      {
+        "ko": "하단 Audio Preview(트랙 범위) 파형을 확인합니다.",
+        "en": "Open the bottom Audio Preview (Track Range) waveform."
+      },
+      {
+        "ko": "시작·끝 핸들을 드래그해 원하는 구간을 만듭니다.",
+        "en": "Drag the start and end handles to set the range."
+      },
+      {
+        "ko": "▶ 미리듣기로 선택 구간을 확인한 뒤 MIDI로 변환합니다.",
+        "en": "Use ▶ Preview to hear the selection, then Convert to MIDI."
+      }
+    ],
+    "sourceHash": "cc286b8f8d0b49d0",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "studio-preview-playback",
+    "title": {
+      "ko": "Studio 미리듣기 재생·정지",
+      "en": "Studio preview play/stop",
+      "ja": "Studioプレビュー再生"
+    },
+    "category": "studio_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py _qt_play_preview",
+      "MidiAI/lang/ko.json preview stop"
+    ],
+    "relatedGuideUrl": "/guide/youtube-to-midi/",
+    "keywords": [
+      "미리듣기 재생",
+      "미리듣기 정지",
+      "재생",
+      "정지",
+      "플레이",
+      "preview play",
+      "stop",
+      "선택구간 재생",
+      "선택 구간 재생"
+    ],
+    "summary": {
+      "ko": "Studio 미리듣기에서 ▶ 미리듣기 / ■ 정지로 선택 구간을 재생·멈춥니다.",
+      "en": "In Studio preview, use ▶ Preview / ■ Stop to play or stop the selected range."
+    },
+    "details": {
+      "ko": "재생은 현재 재생 헤드(또는 구간 시작)에서 시작해 구간 끝에서 멈춥니다. 구간을 먼저 맞춘 뒤 미리듣기 하는 것이 일반적입니다.",
+      "en": "Playback starts at the playhead (or range start) and stops at the range end."
+    },
+    "steps": [
+      {
+        "ko": "구간을 맞춘 뒤 ▶ 미리듣기를 누릅니다.",
+        "en": "Set the range, then press ▶ Preview."
+      },
+      {
+        "ko": "멈추려면 ■ 정지를 누릅니다.",
+        "en": "Press ■ Stop to halt playback."
+      }
+    ],
+    "sourceHash": "44a189c79fa35ca7",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "midi-editor-tempo",
+    "title": {
+      "ko": "MIDI Editor 템포(BPM) 변경",
+      "en": "MIDI Editor tempo (BPM)",
+      "ja": "MIDI Editorテンポ(BPM)"
+    },
+    "category": "midi_editor_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py midi_editor_bpm_spin update_bpm",
+      "MidiAI/ui/studio_editor/chrome/toolbar.py MidiBpmSpin",
+      "MidiAI/lang/ko.json midi_tip_bpm studio_bpm_label"
+    ],
+    "relatedGuideUrl": "/guide/midi-editor/",
+    "keywords": [
+      "템포",
+      "템포 변경",
+      "템포변경",
+      "템포변경방법",
+      "BPM",
+      "bpm",
+      "BPM 변경",
+      "BPM변경",
+      "속도",
+      "속도 변경",
+      "곡 속도",
+      "재생 속도",
+      "빠르기",
+      "tempo",
+      "change tempo",
+      "set tempo"
+    ],
+    "summary": {
+      "ko": "MIDI Editor 상단 툴바의 BPM 숫자칸에서 프로젝트 템포를 바꿉니다.",
+      "en": "Change project tempo with the BPM number box on the MIDI Editor top toolbar."
+    },
+    "details": {
+      "ko": "BPM 라벨 옆 스핀 박스(약 20–400) 값을 바꾸면 프로젝트 전체 재생 템포가 적용됩니다. 선택 노트만의 개별 템포가 아니라 프로젝트 기준입니다. 툴팁 안내: 템포(BPM) · 프로젝트 재생 속도.",
+      "en": "Edit the BPM spin box (about 20–400) next to the BPM label. It sets project-wide playback tempo, not a per-note tempo. Tooltip: Tempo (BPM) · Project playback speed."
+    },
+    "steps": [
+      {
+        "ko": "MIDI Edit(미디 편집) 화면을 엽니다.",
+        "en": "Open MIDI Edit."
+      },
+      {
+        "ko": "상단 툴바에서 BPM 숫자를 변경합니다.",
+        "en": "Change the BPM value on the top toolbar."
+      },
+      {
+        "ko": "재생으로 템포가 반영됐는지 확인한 뒤 필요하면 저장합니다.",
+        "en": "Play to confirm, then save if needed."
+      }
+    ],
+    "sourceHash": "3b6513ac2476bfda",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "midi-editor-note-edit",
+    "title": {
+      "ko": "MIDI Editor 노트 편집",
+      "en": "MIDI Editor note editing",
+      "ja": "MIDI Editorノート編集"
+    },
+    "category": "midi_editor_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py MidiEditorPianoRoll",
+      "MidiAI/run_gui.py _delete_selected"
+    ],
+    "relatedGuideUrl": "/guide/midi-editor/",
+    "keywords": [
+      "노트",
+      "음표",
+      "노트 이동",
+      "음 높이",
+      "음높이",
+      "피치",
+      "pitch",
+      "길이",
+      "노트 길이",
+      "삭제",
+      "note",
+      "move",
+      "resize",
+      "delete"
+    ],
+    "summary": {
+      "ko": "MIDI Editor 피아노롤에서 노트를 드래그해 이동·음높이·길이를 바꾸고, 선택 후 삭제할 수 있습니다.",
+      "en": "In the MIDI Editor piano roll, drag notes to move/pitch/resize, and delete the selection."
+    },
+    "details": {
+      "ko": "노트 본체를 드래그하면 위치·음높이(pitch)가 바뀌고, 끝부분을 드래그하면 길이가 조절됩니다. 여러 노트를 선택한 뒤 삭제할 수 있습니다.",
+      "en": "Drag the note body to move/change pitch; drag the edge to resize length. Select notes then delete."
+    },
+    "steps": [
+      {
+        "ko": "MIDI Edit에서 피아노롤 노트를 선택합니다.",
+        "en": "Select notes on the piano roll."
+      },
+      {
+        "ko": "드래그로 이동·음높이·길이를 조정합니다.",
+        "en": "Drag to move, change pitch, or resize."
+      },
+      {
+        "ko": "필요하면 선택한 노트를 삭제합니다.",
+        "en": "Delete selected notes if needed."
+      }
+    ],
+    "sourceHash": "18623c5ad1f8fd1c",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "midi-editor-velocity",
+    "title": {
+      "ko": "MIDI Editor 벨로시티",
+      "en": "MIDI Editor velocity",
+      "ja": "MIDI Editorベロシティ"
+    },
+    "category": "midi_editor_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py MidiEditorDataLane",
+      "MidiAI/lang velocity context"
+    ],
+    "relatedGuideUrl": "/guide/midi-editor/",
+    "keywords": [
+      "벨로시티",
+      "velocity",
+      "세기",
+      "강약",
+      "노트 세기"
+    ],
+    "summary": {
+      "ko": "MIDI Editor의 벨로시티(데이터) 레인·관련 메뉴로 노트 세기를 조정합니다.",
+      "en": "Adjust note strength with the MIDI Editor velocity / data lane and related menus."
+    },
+    "details": {
+      "ko": "피아노롤 아래 데이터 레인에서 벨로시티를 편집하거나, 노트 컨텍스트 메뉴의 벨로시티 항목을 사용할 수 있습니다.",
+      "en": "Edit velocity in the data lane under the piano roll, or via the note context menu."
+    },
+    "steps": [
+      {
+        "ko": "노트를 선택한 뒤 벨로시티 레인 또는 컨텍스트 메뉴에서 값을 바꿉니다.",
+        "en": "Select notes, then change values in the velocity lane or context menu."
+      }
+    ],
+    "sourceHash": "34a0707e89986dc3",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "midi-editor-instrument",
+    "title": {
+      "ko": "MIDI Editor 악기 변경",
+      "en": "MIDI Editor instrument change",
+      "ja": "MIDI Editor音色変更"
+    },
+    "category": "midi_editor_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py _midi_editor_apply_instrument"
+    ],
+    "relatedGuideUrl": "/guide/midi-editor/",
+    "keywords": [
+      "악기",
+      "악기 변경",
+      "악기바꾸기",
+      "instrument",
+      "사운드",
+      "GM"
+    ],
+    "summary": {
+      "ko": "MIDI Editor에서 트랙 악기(GM 프로그램)를 선택해 재생 소리를 바꿉니다.",
+      "en": "Change a track’s GM instrument in MIDI Editor to change playback sound."
+    },
+    "details": {
+      "ko": "트랙/악기 메뉴에서 프로그램을 적용하면 해당 트랙 재생 음색이 바뀝니다. 고품질 음원(Soundpack)이 설치된 경우 그에 맞는 소리로 들릴 수 있습니다.",
+      "en": "Apply a program from the track/instrument menu. With a high-quality soundpack installed, playback may use those samples."
+    },
+    "steps": [
+      {
+        "ko": "MIDI Edit에서 대상 트랙을 고릅니다.",
+        "en": "Select the target track in MIDI Edit."
+      },
+      {
+        "ko": "악기 메뉴에서 원하는 악기를 적용합니다.",
+        "en": "Apply an instrument from the instrument menu."
+      }
+    ],
+    "sourceHash": "7770aac93d228618",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "midi-editor-playback-zoom",
+    "title": {
+      "ko": "MIDI Editor 재생·확대",
+      "en": "MIDI Editor playback & zoom",
+      "ja": "MIDI Editor再生・ズーム"
+    },
+    "category": "midi_editor_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py MidiEditorPlayback",
+      "MidiAI/run_gui.py midi_editor_zoom_slider"
+    ],
+    "relatedGuideUrl": "/guide/midi-editor/",
+    "keywords": [
+      "재생",
+      "정지",
+      "줌",
+      "확대",
+      "축소",
+      "zoom",
+      "playback",
+      "스크롤"
+    ],
+    "summary": {
+      "ko": "MIDI Editor 툴바에서 재생/정지하고, 줌 슬라이더로 피아노롤 확대를 조절합니다.",
+      "en": "Use MIDI Editor toolbar play/stop and the zoom slider to scale the piano roll."
+    },
+    "steps": [
+      {
+        "ko": "재생/정지 버튼으로 미리 듣습니다.",
+        "en": "Use play/stop to audition."
+      },
+      {
+        "ko": "줌 슬라이더로 화면 배율을 바꿉니다.",
+        "en": "Adjust the zoom slider for scale."
+      }
+    ],
+    "sourceHash": "276e564026edc562",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "midi-editor-undo-save",
+    "title": {
+      "ko": "MIDI Editor 되돌리기·저장",
+      "en": "MIDI Editor undo & save",
+      "ja": "MIDI Editor元に戻す・保存"
+    },
+    "category": "midi_editor_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py MidiEditorHistory",
+      "MidiAI/run_gui.py save_midi"
+    ],
+    "relatedGuideUrl": "/guide/midi-editor/",
+    "keywords": [
+      "되돌리기",
+      "undo",
+      "redo",
+      "다시실행",
+      "저장",
+      "save",
+      "다른 이름으로",
+      "midi 저장"
+    ],
+    "summary": {
+      "ko": "MIDI Editor에서 편집 이력을 되돌리거나 다시 실행하고, 파일 메뉴로 MIDI를 저장합니다.",
+      "en": "Undo/redo edits in MIDI Editor, and save MIDI from the File menu."
+    },
+    "details": {
+      "ko": "편집 히스토리로 트랙·템포 변경을 되돌릴 수 있습니다. 저장/다른 이름 저장으로 MIDI 파일로 남깁니다.",
+      "en": "History covers track/tempo edits. Use Save / Save As for MIDI files."
+    },
+    "steps": [
+      {
+        "ko": "잘못 편집했다면 되돌리기를 사용합니다.",
+        "en": "Use Undo after a mistaken edit."
+      },
+      {
+        "ko": "파일 메뉴에서 저장 또는 다른 이름 저장을 합니다.",
+        "en": "Save or Save As from the File menu."
+      }
+    ],
+    "sourceHash": "3740a3b94ac39fc4",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "score-editor-ops",
+    "title": {
+      "ko": "Score Editor 편집·내보내기",
+      "en": "Score Editor edit & export",
+      "ja": "Score Editor編集・書き出し"
+    },
+    "category": "score_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/score_editor/ui/editor_page.py",
+      "MidiAI/score_editor/ui/editor_page.py _on_export_pdf _on_export_musicxml"
+    ],
+    "relatedGuideUrl": "/guide/score-editor/",
+    "keywords": [
+      "악보",
+      "스코어",
+      "음표 수정",
+      "악보 편집",
+      "PDF 내보내기",
+      "MusicXML",
+      "score editor",
+      "export pdf",
+      "PDF로",
+      "PDF로 내보내기",
+      "내보내기",
+      "export"
+    ],
+    "summary": {
+      "ko": "Score Editor에서 악보 음표를 고치고 PDF·MusicXML로 내보낼 수 있습니다.",
+      "en": "Edit notation in Score Editor and export PDF or MusicXML."
+    },
+    "details": {
+      "ko": "Score Editor 화면에서 음표·쉼표 등을 편집하고, 내보내기로 PDF 또는 MusicXML을 저장합니다. 템포 편집 대화상자도 Score Editor 쪽에 있습니다. PDF 악보를 MIDI로 가져오는 OMR은 Beta입니다.",
+      "en": "Edit notes/rests in Score Editor, then export PDF or MusicXML. Tempo edit dialogs also exist here. PDF→MIDI OMR remains Beta."
+    },
+    "steps": [
+      {
+        "ko": "Score Editor를 엽니다.",
+        "en": "Open Score Editor."
+      },
+      {
+        "ko": "음표를 수정한 뒤 PDF 또는 MusicXML로 내보냅니다.",
+        "en": "Edit notes, then export PDF or MusicXML."
+      }
+    ],
+    "sourceHash": "665496d6a74cc0ee",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "ai-assistant-ops",
+    "title": {
+      "ko": "AI Assistant 실행",
+      "en": "Run AI Assistant actions",
+      "ja": "AI Assistant実行"
+    },
+    "category": "ai_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/ui/midi_ai_assistant/actions.py AI_ACTIONS"
+    ],
+    "relatedGuideUrl": "/guide/ai-assistant/",
+    "keywords": [
+      "ai assistant",
+      "어시스턴트",
+      "analyze",
+      "cleanup",
+      "humanize",
+      "정리",
+      "분석",
+      "쉬운 조",
+      "easier key"
+    ],
+    "summary": {
+      "ko": "MIDI Editor의 AI Assistant에서 Analyze, Cleanup, Humanize, Easier Key 등 동작을 실행합니다.",
+      "en": "Run Analyze, Cleanup, Humanize, Easier Key, and related actions from MIDI Editor’s AI Assistant."
+    },
+    "details": {
+      "ko": "대상 MIDI/선택 상태에 따라 제안·보정을 적용합니다. Easier Key는 곡 전체를 같은 간격으로 이조해 흰건반 비중을 높이는 데 도움을 줍니다. 생성형으로 새 연주를 만드는 기능이 아니라 정리·보정 도구입니다.",
+      "en": "Actions apply suggestions/corrections to the current MIDI/selection. Easier Key transposes the piece by a constant interval to favor white keys. These are cleanup/arrangement tools, not generative performance models."
+    },
+    "steps": [
+      {
+        "ko": "MIDI Edit에서 AI Assistant를 엽니다.",
+        "en": "Open AI Assistant in MIDI Edit."
+      },
+      {
+        "ko": "원하는 동작(예: Cleanup, Easier Key)을 실행하고 결과를 확인합니다.",
+        "en": "Run an action (e.g. Cleanup, Easier Key) and review the result."
+      },
+      {
+        "ko": "마음에 들지 않으면 되돌리기를 사용합니다.",
+        "en": "Use Undo if you dislike the result."
+      }
+    ],
+    "sourceHash": "f3bfe05382ea575d",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "library-ops",
+    "title": {
+      "ko": "Library에서 다시 열기",
+      "en": "Reopen from Library",
+      "ja": "Libraryから再開"
+    },
+    "category": "library_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI Library navigation",
+      "guide/library"
+    ],
+    "relatedGuideUrl": "/guide/library/",
+    "keywords": [
+      "라이브러리",
+      "library",
+      "다시 열기",
+      "저장 목록",
+      "결과 열기"
+    ],
+    "summary": {
+      "ko": "Library에서 변환·저장한 항목을 다시 열어 편집을 이어갈 수 있습니다.",
+      "en": "Reopen converted/saved items from Library to continue editing."
+    },
+    "steps": [
+      {
+        "ko": "Library 메뉴를 엽니다.",
+        "en": "Open Library."
+      },
+      {
+        "ko": "항목을 선택해 MIDI Edit 등으로 다시 엽니다.",
+        "en": "Select an item to reopen in MIDI Edit or related views."
+      }
+    ],
+    "sourceHash": "843b17590abec2fe",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "high-quality-sound-ops",
+    "title": {
+      "ko": "고품질 음원·재생 소리",
+      "en": "High-quality sounds & playback",
+      "ja": "高品質音源・再生"
+    },
+    "category": "sound_ops",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "guide/high-quality-sound",
+      "MidiAI soundpack settings"
+    ],
+    "relatedGuideUrl": "/guide/high-quality-sound/",
+    "keywords": [
+      "고품질 음원",
+      "사운드팩",
+      "soundpack",
+      "악기 소리",
+      "재생 소리",
+      "음원 설치"
+    ],
+    "summary": {
+      "ko": "고품질 음원(Soundpack)을 설치·적용하면 MIDI 재생 소리가 기본음보다 풍부해질 수 있습니다.",
+      "en": "Install/apply a high-quality soundpack to improve MIDI playback tone versus the default sound."
+    },
+    "steps": [
+      {
+        "ko": "앱의 음원/사운드팩 안내 또는 설정에서 고품질 음원을 설치합니다.",
+        "en": "Install the high-quality soundpack from the app’s soundpack/settings flow."
+      },
+      {
+        "ko": "MIDI Editor에서 재생해 소리가 바뀌었는지 확인합니다.",
+        "en": "Play in MIDI Editor to confirm the sound changed."
+      }
+    ],
+    "sourceHash": "c2e086ecc3b78e3f",
+    "knowledgeUpdatedAt": "2026-09-03"
+  }
+]

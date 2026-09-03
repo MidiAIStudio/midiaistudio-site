@@ -93,16 +93,50 @@ function toRetrievalDoc(doc, locale = 'ko') {
   };
 }
 
+function normalizeForMatch(text) {
+  return String(text || '')
+    .toLowerCase()
+    .normalize('NFKC')
+    .replace(/[\s\-_/·•・‧]+/g, '')
+    .replace(/[?？!！.。,，'"`~()[\]{}]/g, '');
+}
+
+function queryTokens(text) {
+  const raw = String(text || '').toLowerCase();
+  const parts = raw.split(/[\s\-_/·•]+/).filter((t) => t && t.length >= 2);
+  const compact = normalizeForMatch(raw);
+  // Hangul/Latin chunks of length >= 2 from compacted string via simple sliding keywords later
+  return { parts, compact, raw };
+}
+
 function scoreDoc(q, doc) {
-  const s = String(q || '').toLowerCase();
+  const { parts, compact, raw } = queryTokens(q);
   let score = 0;
+  const seen = new Set();
   for (const kw of doc.keywords || []) {
-    const k = String(kw).toLowerCase();
-    if (k && s.includes(k)) score += Math.max(3, Math.min(8, k.length));
+    const k = String(kw || '').toLowerCase().trim();
+    if (!k || k.length < 2) continue;
+    const kCompact = normalizeForMatch(k);
+    let hit = 0;
+    if (raw.includes(k)) hit = Math.max(3, Math.min(10, k.length));
+    else if (kCompact.length >= 2 && compact.includes(kCompact)) hit = Math.max(3, Math.min(9, kCompact.length));
+    else {
+      for (const t of parts) {
+        const tc = normalizeForMatch(t);
+        if (tc.length >= 2 && (kCompact.includes(tc) || tc.includes(kCompact))) {
+          hit = Math.max(hit, 2);
+        }
+      }
+    }
+    if (hit && !seen.has(kCompact)) {
+      seen.add(kCompact);
+      score += hit;
+    }
   }
   const title = String(doc.title || '').toLowerCase();
-  if (title && s.includes(title)) score += 6;
-  if (doc.category && s.includes(String(doc.category).toLowerCase())) score += 2;
+  const titleCompact = normalizeForMatch(title);
+  if (title && (raw.includes(title) || (titleCompact.length >= 4 && compact.includes(titleCompact)))) score += 6;
+  if (doc.category && raw.includes(String(doc.category).toLowerCase())) score += 2;
   return score;
 }
 

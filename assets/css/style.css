@@ -2543,8 +2543,8 @@ body.topnav-layout #mainNav.top-nav .nav-unread-badge{margin-left:4px}
 body.topnav-layout #mainNav.top-nav .top-nav-group{position:relative;display:flex;align-items:center}
 body.topnav-layout #mainNav.top-nav .top-nav-chevron{display:none}
 body.topnav-layout #mainNav.top-nav .top-nav-panel{
-  position:absolute;top:calc(100% + 10px);left:-10px;z-index:50;
-  width:300px;padding:0;
+  position:absolute;top:calc(100% + 8px);left:-6px;z-index:50;
+  width:260px;padding:0;
   opacity:0;visibility:hidden;pointer-events:none;
   transform:translateY(-8px) scale(.985);
   filter:blur(5px);
@@ -2555,25 +2555,28 @@ body.topnav-layout #mainNav.top-nav .top-nav-panel{
     visibility 0s linear .22s;
   background:transparent
 }
-body.topnav-layout #mainNav.top-nav .top-nav-group.is-wide > .top-nav-panel{width:370px}
+body.topnav-layout #mainNav.top-nav .top-nav-group.is-wide > .top-nav-panel{width:300px}
 body.topnav-layout #mainNav.top-nav .top-nav-panel:before{
   content:"";position:absolute;top:-12px;left:0;right:0;height:12px
 }
 body.topnav-layout #mainNav.top-nav .top-nav-panel-inner{
-  display:grid;gap:5px;padding:10px;
-  border-radius:15px;border:1px solid rgba(255,255,255,.075);
+  display:grid;gap:2px;padding:6px;
+  border-radius:12px;border:1px solid rgba(255,255,255,.075);
   background:linear-gradient(180deg,rgba(14,24,38,.98),rgba(9,16,28,.98));
-  box-shadow:0 24px 80px rgba(0,0,0,.32)
+  box-shadow:0 18px 48px rgba(0,0,0,.3)
 }
 body.topnav-layout #mainNav.top-nav .top-nav-panel-inner.is-grid{
-  grid-template-columns:1fr 1fr
+  grid-template-columns:1fr 1fr;column-gap:4px;row-gap:2px
 }
 body.topnav-layout #mainNav.top-nav .top-nav-item{
-  display:flex!important;gap:10px;align-items:flex-start;width:100%;
-  padding:10px!important;margin:0;border:0!important;border-radius:11px!important;
-  color:#d7dbf2!important;background:transparent!important;text-align:left!important;
-  transform:none!important;box-shadow:none!important;white-space:normal;
-  transition:background .16s ease,transform .16s ease!important
+  display:flex!important;gap:9px;align-items:center;width:100%;
+  padding:8px 10px!important;margin:0;
+  border:0!important;border-radius:8px!important;
+  color:#d7dbf2!important;
+  background:transparent!important;
+  text-align:left!important;
+  transform:none!important;box-shadow:none!important;white-space:nowrap;
+  transition:background .14s ease,color .14s ease!important
 }
 body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > a.hidden,
 body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > a[hidden],
@@ -2582,18 +2585,64 @@ body.topnav-layout #mainNav.top-nav .top-nav-item[hidden]{
   display:none!important
 }
 body.topnav-layout #mainNav.top-nav .top-nav-item-icon{
-  width:29px;height:29px;border-radius:8px;flex:0 0 29px;
+  width:24px;height:24px;border-radius:7px;flex:0 0 24px;
   display:grid;place-items:center;
-  font-size:10px;font-weight:900;color:#bdd1ff;line-height:1;
-  background:linear-gradient(145deg,rgba(132,108,255,.18),rgba(74,190,255,.09))
+  font-size:9px;font-weight:800;color:#c8d4e6;line-height:1;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.08);
+  box-shadow:none
 }
-body.topnav-layout #mainNav.top-nav .top-nav-item-copy{min-width:0;display:grid;gap:2px}
+/* Light, readable tints — not murky */
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-all{
+  color:#dff3ff;background:rgba(125,211,252,.18);border-color:rgba(125,211,252,.28)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-start{
+  color:#d8fff0;background:rgba(110,231,183,.18);border-color:rgba(110,231,183,.28)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-yt{
+  color:#ffe4e8;background:rgba(252,165,165,.2);border-color:rgba(252,165,165,.3)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-audio{
+  color:#dffcff;background:rgba(103,232,249,.18);border-color:rgba(103,232,249,.28)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-editor{
+  color:#fff3c4;background:rgba(252,211,77,.2);border-color:rgba(252,211,77,.3)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-pdf{
+  color:#ffedd5;background:rgba(253,186,116,.2);border-color:rgba(253,186,116,.3)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-help{
+  color:#ffe4e6;background:rgba(253,164,175,.2);border-color:rgba(253,164,175,.3)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-notice{
+  color:#dffcff;background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.26)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-patch{
+  color:#d8fff0;background:rgba(110,231,183,.16);border-color:rgba(110,231,183,.26)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-faq{
+  color:#fff3c4;background:rgba(252,211,77,.16);border-color:rgba(252,211,77,.26)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-board{
+  color:#e8ecff;background:rgba(165,180,252,.16);border-color:rgba(165,180,252,.26)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-support{
+  color:#dffcff;background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.26)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-tickets{
+  color:#fff3c4;background:rgba(252,211,77,.16);border-color:rgba(252,211,77,.26)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-account{
+  color:#e8ecff;background:rgba(165,180,252,.16);border-color:rgba(165,180,252,.26)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-admin{
+  color:#ffe4e6;background:rgba(253,164,175,.16);border-color:rgba(253,164,175,.26)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item-copy{min-width:0;display:block}
 body.topnav-layout #mainNav.top-nav .top-nav-item-copy b{
-  display:block;font-size:12.5px;font-weight:800;color:#f4f8ff;line-height:1.25
+  display:block;font-size:12.5px;font-weight:750;color:#e8eef8;line-height:1.25
 }
-body.topnav-layout #mainNav.top-nav .top-nav-item-copy span{
-  display:block;color:#77869a;font-size:10.5px;font-weight:600;line-height:1.38
-}
+body.topnav-layout #mainNav.top-nav .top-nav-item-copy span{display:none}
 body.topnav-layout #mainNav.top-nav .top-nav-group:hover > .top-nav-panel,
 body.topnav-layout #mainNav.top-nav .top-nav-group:focus-within > .top-nav-panel,
 body.topnav-layout #mainNav.top-nav .top-nav-group.is-open > .top-nav-panel{
@@ -2604,14 +2653,18 @@ body.topnav-layout #mainNav.top-nav .top-nav-group.is-open > .top-nav-panel{
 body.topnav-layout #mainNav.top-nav .top-nav-item:hover,
 body.topnav-layout #mainNav.top-nav .top-nav-item:focus-visible,
 body.topnav-layout #mainNav.top-nav .top-nav-item.active{
-  background:rgba(111,166,255,.07)!important;
-  transform:translateX(2px)!important;color:#fff!important
+  background:rgba(255,255,255,.06)!important;
+  border-color:transparent!important;
+  transform:none!important;color:#fff!important
 }
+body.topnav-layout #mainNav.top-nav .top-nav-item:hover .top-nav-item-copy b,
+body.topnav-layout #mainNav.top-nav .top-nav-item:focus-visible .top-nav-item-copy b,
+body.topnav-layout #mainNav.top-nav .top-nav-item.active .top-nav-item-copy b{color:#fff}
 @media(min-width:981px) and (max-width:1180px){
   body.topnav-layout #mainNav.top-nav .top-nav-link,
   body.topnav-layout #mainNav.top-nav .top-nav-trigger{padding:8px 8px!important;font-size:12.5px!important}
   body.topnav-layout .topbar-slim .brand b{display:none}
-  body.topnav-layout #mainNav.top-nav .top-nav-group.is-wide > .top-nav-panel{width:340px}
+  body.topnav-layout #mainNav.top-nav .top-nav-group.is-wide > .top-nav-panel{width:280px}
 }
 @media(max-width:980px){
   body.topnav-layout .sidebar-backdrop{display:block;opacity:0;pointer-events:none;transition:opacity .22s ease;z-index:25}
@@ -2659,11 +2712,13 @@ body.topnav-layout #mainNav.top-nav .top-nav-item.active{
     background:transparent;box-shadow:none
   }
   body.topnav-layout #mainNav.top-nav .top-nav-item{
-    border-radius:11px!important;padding:9px 10px!important;align-items:center
+    border-radius:8px!important;padding:10px 10px!important;align-items:center;
+    border:0!important;background:transparent!important
   }
   body.topnav-layout #mainNav.top-nav .top-nav-item:hover,
   body.topnav-layout #mainNav.top-nav .top-nav-item.active{
-    background:rgba(111,166,255,.1)!important;transform:none!important
+    background:rgba(255,255,255,.06)!important;transform:none!important;
+    border-color:transparent!important
   }
   body.topnav-layout .menu-btn{display:inline-flex!important;order:3;margin-left:6px}
   body.topnav-layout .topbar-slim .brand{order:1}
