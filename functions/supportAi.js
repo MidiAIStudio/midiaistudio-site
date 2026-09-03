@@ -923,7 +923,8 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     isWeakOrConflictingRetrieval,
     detectAnswerIntent,
     ambiguousClarification,
-    UNKNOWN_ERROR_RE
+    UNKNOWN_ERROR_RE,
+    callLlm: callLlmIfConfigured
   });
 
   let passages = agentOut.passages || [];
@@ -934,14 +935,21 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     need: agentOut.debug && agentOut.debug.need,
     facts: agentOut.debug && agentOut.debug.facts,
     hypotheses: agentOut.debug && agentOut.debug.hypotheses,
+    plannerMode: agentOut.debug && agentOut.debug.plannerMode,
+    plannerTrigger: agentOut.debug && agentOut.debug.plannerTrigger,
+    sourcePlan: agentOut.debug && agentOut.debug.sourcePlan,
+    missingInfo: agentOut.debug && agentOut.debug.missingInfo,
     plannerActions: ((agentOut.debug && agentOut.debug.plannerActions) || []).map((d) => ({
       action: d.action,
       sourceType: d.sourceType,
-      reason: d.reason
+      reason: d.reason,
+      plannerMode: d.plannerMode || null
     })),
     sourcesSearched: agentOut.debug && agentOut.debug.sourcesSearched,
     researchCount: agentOut.debug && agentOut.debug.researchCount,
     diagnosticReason: agentOut.debug && agentOut.debug.diagnosticReason,
+    diagnosticMode: agentOut.debug && agentOut.debug.diagnosticMode,
+    llmCalls: agentOut.debug && agentOut.debug.llmCalls,
     finalAction: agentOut.debug && agentOut.debug.finalAction
   };
 

@@ -3,6 +3,8 @@
 const { ACTIONS } = require('./actions');
 const { classifyNeed, decideNextAction, researchBudget, sourceKindOf } = require('./planner');
 const { mergeAndRerank, shouldEarlyStop, pickAuthoritativeOnConflict } = require('./evidence');
+const { shouldUseLlmPlanner } = require('./plannerAmbiguity');
+const { runSelectiveLlmPlanner } = require('./llmPlanner');
 
 function isOpsPassage(p) {
   return sourceKindOf(p) === 'operation';
@@ -51,6 +53,100 @@ async function callSource(sourceType, adapters, ctx) {
   return [];
 }
 
+async function decideWithOptionalLlm({
+  question,
+  rawQuestion,
+  intent,
+  facts,
+  passages,
+  searched,
+  researchCount,
+  budgetLeft,
+  weak,
+  conflict,
+  personal,
+  hypotheses,
+  callLlm,
+  llmPlannerState
+}) {
+  const deterministic = decideNextAction({
+    question,
+    rawQuestion,
+    intent,
+    facts,
+    passages,
+    searched,
+    researchCount,
+    budgetLeft,
+    weak,
+    conflict,
+    personal
+  });
+
+  // Fast path / already used LLM this turn → deterministic only
+  if (!llmPlannerState || llmPlannerState.used) {
+    return {
+      decision: deterministic,
+      plannerMode: llmPlannerState && llmPlannerState.mode ? llmPlannerState.mode : 'deterministic',
+      sourcePlan: llmPlannerState && llmPlannerState.sourcePlan ? llmPlannerState.sourcePlan : [],
+      missingInfo: llmPlannerState && llmPlannerState.missingInfo ? llmPlannerState.missingInfo : []
+    };
+  }
+
+  const gate = shouldUseLlmPlanner({
+    question,
+    rawQuestion,
+    intent,
+    facts,
+    passages,
+    weak,
+    conflict,
+    hypotheses,
+    researchedOnce: researchCount > 0
+  });
+
+  if (!gate.use) {
+    llmPlannerState.mode = 'deterministic';
+    llmPlannerState.trigger = gate.reason;
+    return {
+      decision: deterministic,
+      plannerMode: 'deterministic',
+      sourcePlan: [],
+      missingInfo: []
+    };
+  }
+
+  // Mark used before await so we never call twice even on parallel mistakes
+  llmPlannerState.used = true;
+  llmPlannerState.trigger = gate.reason;
+
+  const llmOut = await runSelectiveLlmPlanner({
+    callLlm,
+    rawQuestion,
+    question,
+    intent,
+    facts,
+    passages,
+    searched,
+    budgetLeft,
+    hypotheses,
+    triggerReason: gate.reason,
+    fallbackDecision: deterministic
+  });
+
+  llmPlannerState.mode = llmOut.mode;
+  llmPlannerState.sourcePlan = llmOut.sourcePlan || [];
+  llmPlannerState.missingInfo = llmOut.missingInfo || [];
+  llmPlannerState.decision = llmOut.decision;
+
+  return {
+    decision: llmOut.decision,
+    plannerMode: llmOut.mode,
+    sourcePlan: llmOut.sourcePlan || [],
+    missingInfo: llmOut.missingInfo || []
+  };
+}
+
 async function runResearchLoop({
   question,
   rawQuestion,
@@ -63,7 +159,9 @@ async function runResearchLoop({
   conflict,
   personal,
   isWeakOrConflictingRetrieval,
-  maxResearchActions = 3
+  maxResearchActions = 3,
+  callLlm = null,
+  hypotheses = []
 } = {}) {
   const need = classifyNeed({ question, rawQuestion, intent, facts });
   const searched = new Set();
@@ -71,15 +169,29 @@ async function runResearchLoop({
   if (top0 && Number(top0.score || 0) >= 14) searched.add(sourceKindOf(top0));
 
   let budget = Math.min(maxResearchActions, researchBudget({ need, weak, conflict, passages, searched }));
+  const llmPlannerState = {
+    used: false,
+    mode: 'deterministic',
+    trigger: null,
+    sourcePlan: [],
+    missingInfo: [],
+    decision: null
+  };
+
   const debug = {
     need,
     budgetStart: budget,
     actions: [],
-    planner: []
+    planner: [],
+    plannerMode: 'deterministic',
+    plannerTrigger: null,
+    sourcePlan: [],
+    missingInfo: []
   };
 
   let current = passages || [];
   let researchCount = 0;
+  let pendingSourcePlan = [];
 
   const evalWeak = () => {
     if (!current.length) return true;
@@ -88,20 +200,57 @@ async function runResearchLoop({
 
   while (budget > 0) {
     const w = evalWeak();
-    const decision = decideNextAction({
-      question,
-      rawQuestion,
-      intent,
-      facts,
-      passages: current,
-      searched,
-      researchCount,
-      budgetLeft: budget,
-      weak: w,
-      conflict: w && current.length > 1,
-      personal
-    });
-    debug.planner.push(decision);
+    const conflictNow = (w && current.length > 1) || conflict;
+
+    let decision;
+    let plannerMode = llmPlannerState.mode;
+    let sourcePlan = pendingSourcePlan;
+
+    if (pendingSourcePlan.length) {
+      const nextSrc = pendingSourcePlan.find((s) => !searched.has(s));
+      if (nextSrc) {
+        decision = {
+          action: searched.size ? ACTIONS.SEARCH_ANOTHER_SOURCE : ACTIONS.SEARCH,
+          sourceType: nextSrc,
+          reason: 'llm_source_plan',
+          intent,
+          topic: need
+        };
+      } else {
+        pendingSourcePlan = [];
+      }
+    }
+
+    if (!decision) {
+      const picked = await decideWithOptionalLlm({
+        question,
+        rawQuestion,
+        intent,
+        facts,
+        passages: current,
+        searched,
+        researchCount,
+        budgetLeft: budget,
+        weak: w,
+        conflict: conflictNow,
+        personal,
+        hypotheses,
+        callLlm,
+        llmPlannerState
+      });
+      decision = picked.decision;
+      plannerMode = picked.plannerMode;
+      sourcePlan = picked.sourcePlan || [];
+      if (sourcePlan.length > 1) {
+        pendingSourcePlan = sourcePlan.slice();
+      }
+      debug.missingInfo = picked.missingInfo || [];
+    }
+
+    debug.planner.push({ ...decision, plannerMode });
+    debug.plannerMode = plannerMode;
+    debug.plannerTrigger = llmPlannerState.trigger;
+    debug.sourcePlan = llmPlannerState.sourcePlan || sourcePlan || [];
 
     if (decision.action === ACTIONS.ANSWER || decision.action === ACTIONS.ASK_DIAGNOSTIC || decision.action === ACTIONS.HANDOFF) {
       debug.finalAction = decision.action;
@@ -119,6 +268,24 @@ async function runResearchLoop({
 
     const sourceType = decision.sourceType;
     if (!sourceType || searched.has(sourceType)) {
+      // Try next from source plan
+      const alt = (pendingSourcePlan || []).find((s) => !searched.has(s));
+      if (alt) {
+        pendingSourcePlan = pendingSourcePlan.filter((s) => s !== alt);
+        budget -= 1;
+        researchCount += 1;
+        searched.add(alt);
+        debug.actions.push({ kind: 'search', sourceType: alt, q: question, via: 'source_plan' });
+        const extra = (await callSource(alt, adapters, { question, searchQuery: question, locale, facts })) || [];
+        current = mergeAndRerank({ initialPassages: current, extraPassages: extra, need, limit: 4 });
+        if (shouldEarlyStop({ passages: current, need, weak: evalWeak(), conflict: false })) {
+          debug.finalAction = ACTIONS.ANSWER;
+          debug.earlyStop = true;
+          break;
+        }
+        continue;
+      }
+
       const again = decideNextAction({
         question,
         rawQuestion,
@@ -139,6 +306,7 @@ async function runResearchLoop({
     budget -= 1;
     researchCount += 1;
     searched.add(sourceType);
+    pendingSourcePlan = (pendingSourcePlan || []).filter((s) => s !== sourceType);
     debug.actions.push({ kind: 'search', sourceType, q: question });
     const extra = (await callSource(sourceType, adapters, { question, searchQuery: question, locale, facts })) || [];
     current = mergeAndRerank({ initialPassages: current, extraPassages: extra, need, limit: 4 });
@@ -172,8 +340,9 @@ async function runResearchLoop({
     searched: [...searched],
     researchCount,
     finalAction: debug.finalAction,
-    debug
+    debug,
+    llmPlannerState
   };
 }
 
-module.exports = { runResearchLoop, callSource };
+module.exports = { runResearchLoop, callSource, decideWithOptionalLlm };
