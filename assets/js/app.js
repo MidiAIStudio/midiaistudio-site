@@ -14546,7 +14546,9 @@ function initSidebarLayout(){
   appMain.appendChild(main);
   if(footer) appMain.appendChild(footer);
   shell.appendChild(appMain);
-  shell.appendChild(backdrop);
+  // Backdrop must live inside .app-main (isolation:isolate). If it stays a shell
+  // sibling, it paints above the whole app-main context and steals drawer taps.
+  appMain.appendChild(backdrop);
   document.body.classList.add('sidebar-layout','topnav-layout');
   // Reveal after chrome lays out (and product CMS paint when present).
   scheduleShellReveal();
