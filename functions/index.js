@@ -2293,25 +2293,29 @@ exports.recordAccessInfo = functions.https.onRequest(async (req, res) => {
 
 /**
  * Support chat AI reply + handoff summary.
- * OPENAI_API_KEY from Secret Manager (bound below). Optional GEMINI_API_KEY / GOOGLE_AI_API_KEY via env still preferred if present.
+ * OPENAI_API_KEY from Secret Manager (bound below; Gen2 HTTPS — must stay v2 to match Production).
+ * Optional GEMINI_API_KEY / GOOGLE_AI_API_KEY via env still preferred if present.
  * Without keys, keyword RAG template answers still work.
  */
+const { onRequest: onRequestV2 } = require('firebase-functions/v2/https');
 const { createSupportAiHandlers } = require('./supportAi');
 const supportAiHandlers = createSupportAiHandlers({ db, cors, requireUser });
-exports.supportAiReply = functionsV1Https
-  .runWith({
+exports.supportAiReply = onRequestV2(
+  {
     secrets: [openaiApiKey],
     timeoutSeconds: 60,
-    memory: '256MB'
-  })
-  .https.onRequest(supportAiHandlers.supportAiReply);
-exports.supportAiHandoffSummary = functionsV1Https
-  .runWith({
+    memory: '256MiB'
+  },
+  supportAiHandlers.supportAiReply
+);
+exports.supportAiHandoffSummary = onRequestV2(
+  {
     secrets: [openaiApiKey],
     timeoutSeconds: 60,
-    memory: '256MB'
-  })
-  .https.onRequest(supportAiHandlers.supportAiHandoffSummary);
+    memory: '256MiB'
+  },
+  supportAiHandlers.supportAiHandoffSummary
+);
 
 /**
  * PortOne webhook. Signature is checked when PORTONE_WEBHOOK_SECRET is set.
