@@ -2047,6 +2047,7 @@ const {
   notifyPaymentCompleted,
   isLicenseGrantedOrder
 } = require('./discordNotify');
+const SUPPORT_AI_WAITING_MODE = 'waiting_human';
 const { broadcastPublishedContent } = require('./broadcastNotify');
 
 const functionsV1 = require('firebase-functions/v1');
@@ -2167,9 +2168,42 @@ exports.notifyDiscordOnInquiryCreate = functionsV1
   .onCreate(async (snap, context) => {
     const ticketId = context.params.ticketId;
     try {
-      await notifyInquiryCreated(ticketId, snap.data() || {}, snap.ref);
+      // Most AI-chat tickets are created in MODE.AI.
+      // Only notify Discord when the ticket is already in counselor-request mode.
+      const data = snap.data() || {};
+      if (data.conversationMode !== SUPPORT_AI_WAITING_MODE) return null;
+      await notifyInquiryCreated(ticketId, data, snap.ref);
     } catch (err) {
       console.error('notifyDiscordOnInquiryCreate', {
+        ticketId,
+        message: err && err.message ? err.message : String(err)
+      });
+    }
+    return null;
+  });
+
+/**
+ * AI-chat에서 "상담사 연결 요청" 시점 알림.
+ * supportTickets/{ticketId}의 conversationMode가 waiting_human로 바뀔 때만 전송.
+ */
+exports.notifyDiscordOnHumanRequest = functionsV1
+  .runWith({ secrets: [discordInquiryWebhook], timeoutSeconds: 30, memory: '256MB' })
+  .firestore.document('supportTickets/{ticketId}')
+  .onUpdate(async (change, context) => {
+    const ticketId = context.params.ticketId;
+    try {
+      if (!change.after.exists) return null;
+      const before = change.before.data() || {};
+      const after = change.after.data() || {};
+
+      // Only trigger on conversationMode transition to counselor-request mode.
+      if (before.conversationMode === after.conversationMode) return null;
+      if (after.conversationMode !== SUPPORT_AI_WAITING_MODE) return null;
+
+      // Idempotency: notifyInquiryCreated() uses discordNotified flag on the doc.
+      await notifyInquiryCreated(ticketId, after, change.after.ref);
+    } catch (err) {
+      console.error('notifyDiscordOnHumanRequest', {
         ticketId,
         message: err && err.message ? err.message : String(err)
       });
