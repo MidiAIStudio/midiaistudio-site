@@ -306,7 +306,8 @@ export function setPricingAdminAuth({ isAdmin: admin, db: nextDb, firestoreApi }
 }
 
 async function bootstrapSelf() {
-  if ((location.pathname.split('/').pop() || '') !== 'admin.html') return;
+  if ((location.pathname.split('/').pop() || '') !== 'admin.html'
+    && !document.body?.classList?.contains('admin-console-page')) return;
   ensureBoot();
   setListStatus('<p class="muted">권한·Firestore 연결 중…</p>');
   try {
@@ -2005,6 +2006,7 @@ const pricingAdminApi = {
 };
 if (typeof window !== 'undefined') window.__midiaiPricingAdmin = pricingAdminApi;
 
-if ((location.pathname.split('/').pop() || '') === 'admin.html') {
+if ((location.pathname.split('/').pop() || '') === 'admin.html'
+  || (typeof document !== 'undefined' && document.body?.classList?.contains('admin-console-page'))) {
   initPricingAdmin();
 }

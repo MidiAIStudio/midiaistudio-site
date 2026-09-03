@@ -36,7 +36,21 @@ service firebase.storage {
       allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
       allow write: if signedIn()
         && request.auth.uid == userId
-        && request.resource.size < 50 * 1024 * 1024;
+        && request.resource.size < 25 * 1024 * 1024
+        && (
+          request.resource.contentType.matches('image/(jpeg|jpg|png|webp|gif)')
+          || request.resource.contentType.matches('text/.*')
+          || request.resource.contentType in [
+            'application/pdf',
+            'application/zip',
+            'application/x-zip-compressed',
+            'application/octet-stream',
+            'audio/midi',
+            'audio/x-midi',
+            'application/xml',
+            'text/xml'
+          ]
+        );
     }
 
     // Guide / Product CMS media

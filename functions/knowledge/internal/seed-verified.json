@@ -1,0 +1,167 @@
+[
+  {
+    "id": "internal-youtube-error-classes",
+    "title": {
+      "ko": "YouTube 오류 분류(상담사용)",
+      "en": "YouTube error classes (agent)"
+    },
+    "category": "troubleshooting",
+    "locale": "ko",
+    "visibility": "internal",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/core/youtube_preview_download.py codes"
+    ],
+    "keywords": [
+      "YT_HTTP_403",
+      "YT_PO_TOKEN",
+      "YT_NETWORK",
+      "YT_VIDEO_PRIVATE",
+      "429",
+      "yt-dlp"
+    ],
+    "summary": {
+      "ko": "YouTube 다운로드 실패는 내부 코드로 분류됩니다. 사용자에게는 공개 가능한 증상/확인 절차만 안내하고, 내부 코드명은 필요 시에만 상담 메모로 사용합니다.",
+      "en": "YouTube download failures are classified by internal codes. Share only safe user steps; keep code names for agent notes."
+    },
+    "details": {
+      "ko": "대표 분류 예: YT_HTTP_403, YT_PO_TOKEN_REQUIRED, YT_NETWORK_ERROR, YT_VIDEO_PRIVATE, YT_VIDEO_DELETED, YT_LOGIN_REQUIRED, YT_REGION_BLOCKED, http_429. 비밀키/토큰 값은 절대 요청·기록하지 않습니다.",
+      "en": "Example classes: YT_HTTP_403, YT_PO_TOKEN_REQUIRED, YT_NETWORK_ERROR, YT_VIDEO_PRIVATE, YT_VIDEO_DELETED, YT_LOGIN_REQUIRED, YT_REGION_BLOCKED, http_429. Never request or store secret token values."
+    },
+    "fixSteps": [
+      {
+        "ko": "사용자에게 공개 여부·URL·앱 버전·발생 시각을 요청합니다.",
+        "en": "Ask for public status, URL, app version, and time of failure."
+      },
+      {
+        "ko": "로그에서 ERROR/403/429 주변만 확인하되 토큰·경로는 redaction합니다.",
+        "en": "Inspect ERROR/403/429 neighborhoods only; redact tokens/paths."
+      }
+    ],
+    "whenToEscalate": {
+      "ko": "동일 공개 URL이 최신 앱에서도 반복 실패하고 알려진 제한으로 설명되지 않을 때",
+      "en": "When the same public URL fails on latest app and is not explained by known restrictions"
+    },
+    "sourceHash": "50bf045053896651",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "internal-cuda-fallback",
+    "title": {
+      "ko": "CUDA/GPU 폴백(상담사용)",
+      "en": "CUDA/GPU fallback (agent)"
+    },
+    "category": "gpu_cuda",
+    "locale": "ko",
+    "visibility": "internal",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/core/audio_pipeline/device_manager.py",
+      "transkun_adapter CUDA_ATTEMPT_FAILED_CPU_RETRY"
+    ],
+    "keywords": [
+      "CUDA",
+      "GPU",
+      "OOM",
+      "device",
+      "CPU"
+    ],
+    "summary": {
+      "ko": "변환 중 CUDA 시도 후 CPU 재시도 로그가 남을 수 있습니다. 사용자에게는 GPU 필수 실패로 단정하지 말고, 재시도·다른 구간·로그 첨부를 안내합니다.",
+      "en": "Logs may show CUDA attempt then CPU retry. Do not assert hard GPU failure to users; guide retry and log attach."
+    },
+    "details": {
+      "ko": "내부 코드 예: CUDA_BUILD_MISSING, CUDA_NOT_AVAILABLE, CUDA_OOM, CUDA_INIT_OR_TENSOR_FAILED, CUDA_ATTEMPT_FAILED_CPU_RETRY. 드라이버 강제 설치 절차를 추측으로 작성하지 마세요.",
+      "en": "Example codes: CUDA_BUILD_MISSING, CUDA_NOT_AVAILABLE, CUDA_OOM, CUDA_INIT_OR_TENSOR_FAILED, CUDA_ATTEMPT_FAILED_CPU_RETRY. Do not invent driver install procedures."
+    },
+    "fixSteps": [
+      {
+        "ko": "앱/Installer 복구 여부, 재현 구간, 로그의 CUDA/OOM 키워드 유무를 확인합니다.",
+        "en": "Check Installer repair, repro range, and CUDA/OOM keywords in logs."
+      }
+    ],
+    "sourceHash": "b89b404a5da8e385",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "internal-log-checklist",
+    "title": {
+      "ko": "상담사 로그 수집 체크리스트",
+      "en": "Agent log collection checklist"
+    },
+    "category": "troubleshooting",
+    "locale": "ko",
+    "visibility": "internal",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/troubleshooting",
+      "downloads.html System Check"
+    ],
+    "keywords": [
+      "system check",
+      "hwid",
+      "로그",
+      "스크린샷",
+      "버전"
+    ],
+    "summary": {
+      "ko": "상담 시 우선 수집: 앱 버전, 오류 메시지 원문, 발생 기능/단계, System Check, HWID, 가능하면 로그 TXT/스크린샷.",
+      "en": "Collect first: app version, exact error text, feature/stage, System Check, HWID, and if possible log TXT/screenshot."
+    },
+    "fixSteps": [
+      {
+        "ko": "개인정보·토큰·전체 경로가 보이면 AI 전달 전에 가립니다.",
+        "en": "Redact PII/tokens/full paths before any AI context."
+      },
+      {
+        "ko": "AI에는 ERROR/Exception 주변만 전달하고 원본 파일은 필요 시 상담사가 별도 확인합니다.",
+        "en": "Send only ERROR/Exception neighborhoods to AI; agents can review full files separately if needed."
+      }
+    ],
+    "sourceHash": "7a7798b2623cec5c",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "internal-pdf-stages",
+    "title": {
+      "ko": "PDF 변환 단계(상담사용)",
+      "en": "PDF conversion stages (agent)"
+    },
+    "category": "pdf_to_midi",
+    "locale": "ko",
+    "visibility": "internal",
+    "featureStatus": "beta",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI score_pdf_step_*"
+    ],
+    "keywords": [
+      "pdf",
+      "①",
+      "②",
+      "omr",
+      "musicxml"
+    ],
+    "summary": {
+      "ko": "PDF→MIDI 사용자-facing 단계는 대략 분석→페이지 준비→인식→MusicXML→MIDI→최적화→저장입니다. 멈춘 단계로 원인을 좁힙니다.",
+      "en": "PDF→MIDI stages roughly: analyze → prepare pages → recognize → MusicXML → MIDI → optimize → save. Narrow by stuck stage."
+    },
+    "sourceHash": "409bd978965442f2",
+    "knowledgeUpdatedAt": "2026-09-03"
+  }
+]

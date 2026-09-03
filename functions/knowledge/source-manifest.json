@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "note": "Maps safe source files to Knowledge ids. FAQ is runtime-authoritative (Firestore). Prices come from live products.",
+  "sources": [
+    {
+      "id": "guide-getting-started",
+      "paths": ["guide/getting-started/index.html"],
+      "affects": ["getting-started-install", "nav-workspace"]
+    },
+    {
+      "id": "guide-youtube",
+      "paths": ["guide/youtube-to-midi/index.html"],
+      "affects": ["youtube-to-midi", "conversion-progress-piano", "youtube-fetch-errors"]
+    },
+    {
+      "id": "guide-audio",
+      "paths": ["guide/audio-to-midi/index.html"],
+      "affects": ["audio-to-midi"]
+    },
+    {
+      "id": "guide-pdf",
+      "paths": ["guide/pdf-to-midi/index.html"],
+      "affects": ["pdf-to-midi", "pdf-timeout"]
+    },
+    {
+      "id": "guide-midi-editor",
+      "paths": ["guide/midi-editor/index.html"],
+      "affects": ["midi-editor", "easier-key", "high-quality-sounds"]
+    },
+    {
+      "id": "guide-score",
+      "paths": ["guide/score-editor/index.html"],
+      "affects": ["score-editor"]
+    },
+    {
+      "id": "guide-ai",
+      "paths": ["guide/ai-assistant/index.html"],
+      "affects": ["ai-assistant"]
+    },
+    {
+      "id": "guide-library",
+      "paths": ["guide/library/index.html"],
+      "affects": ["library-local", "export-formats"]
+    },
+    {
+      "id": "guide-license",
+      "paths": ["guide/license/index.html"],
+      "affects": ["trial-limits", "license-full-lifetime", "credits-usage"]
+    },
+    {
+      "id": "guide-troubleshooting",
+      "paths": ["guide/troubleshooting/index.html"],
+      "affects": ["troubleshooting-basics", "conversion-generic-failure", "youtube-fetch-errors"]
+    },
+    {
+      "id": "downloads-page",
+      "paths": ["downloads.html"],
+      "affects": ["getting-started-install"]
+    },
+    {
+      "id": "knowledge-public-seed",
+      "paths": ["functions/knowledge/public/seed-verified.json"],
+      "affects": ["*public"]
+    },
+    {
+      "id": "knowledge-internal-seed",
+      "paths": ["functions/knowledge/internal/seed-verified.json"],
+      "affects": ["*internal"]
+    }
+  ]
+}

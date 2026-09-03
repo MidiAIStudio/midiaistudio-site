@@ -2256,6 +2256,16 @@ exports.recordAccessInfo = functions.https.onRequest(async (req, res) => {
 });
 
 /**
+ * Support chat AI reply + handoff summary.
+ * Credentials: GEMINI_API_KEY / OPENAI_API_KEY via Functions env (never client).
+ * Without keys, keyword RAG template answers still work.
+ */
+const { createSupportAiHandlers } = require('./supportAi');
+const supportAiHandlers = createSupportAiHandlers({ db, cors, requireUser });
+exports.supportAiReply = functions.https.onRequest(supportAiHandlers.supportAiReply);
+exports.supportAiHandoffSummary = functions.https.onRequest(supportAiHandlers.supportAiHandoffSummary);
+
+/**
  * PortOne webhook. Signature is checked when PORTONE_WEBHOOK_SECRET is set.
  * Payment status is always re-fetched from PortOne — the body is never trusted.
  */

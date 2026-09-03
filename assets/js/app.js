@@ -1,4 +1,5 @@
 import { applyGuidesI18n } from './guides-i18n.js?v=20260720-drop-zone';
+import { initSupportChat } from './support-chat.js?v=support-chat-persist-1';
 import {
   ensurePricing,
   checkoutContext,
@@ -97,6 +98,16 @@ const $ = (id) => document.getElementById(id);
 const qs = (s, root = document) => root.querySelector(s);
 const page = location.pathname.split('/').pop() || 'index.html';
 const pathLower = location.pathname.toLowerCase();
+/** True on real admin console (admin.html), including odd local paths like /admin or rewrite. */
+function isAdminConsolePage(){
+  if(page === 'admin.html' || page === 'admin') return true;
+  if(/\/admin(\.html)?$/i.test(pathLower.replace(/\/+$/, ''))) return true;
+  try{
+    return document.body?.classList?.contains('admin-console-page') && !!document.getElementById('admin');
+  }catch(_){
+    return false;
+  }
+}
 const pathLang = (/\/en(\/|$)/.test(pathLower) ? 'en'
   : /\/ja(\/|$)/.test(pathLower) ? 'ja'
   : /\/ko(\/|$)/.test(pathLower) ? 'ko'
@@ -232,7 +243,29 @@ let activeBoardComments = [];
 let likedActivePost = false;
 let latestDownloadData = null;
 let downloadAdminExpanded = false;
+let downloadAdminAutoOpenedForEmpty = false;
+/** Last known production installer (display fallback + admin restore when Firestore doc is missing/empty). */
+const DOWNLOAD_RESTORE_DEFAULTS = {
+  version: '1.6.3',
+  filename: 'MidiAI Installer.exe',
+  url: 'https://dl.dropbox.com/scl/fi/o00m87zgqz1om57vccohj/MidiAI-Installer.exe?rlkey=vrn4m7fmln57jg5hjk9ydjeve&dl=1',
+  notes: '',
+  mandatory: false
+};
+function downloadPayloadUsable(d){
+  return !!(d && String(d.url || '').trim());
+}
+function coalesceDownloadData(d){
+  if(downloadPayloadUsable(d)) return d;
+  // Firestore missing/empty: restore last known production installer so the public card works again.
+  return { ...DOWNLOAD_RESTORE_DEFAULTS, ...(d && typeof d === 'object' ? d : {}), url: DOWNLOAD_RESTORE_DEFAULTS.url, version: (d && d.version) || DOWNLOAD_RESTORE_DEFAULTS.version, filename: (d && d.filename) || DOWNLOAD_RESTORE_DEFAULTS.filename };
+}
 let ticketNotifyUnsub = null;
+let myTicketsUnsub = null;
+let myTicketReplyUnsub = null;
+let myTicketRows = [];
+let myTicketOpenId = '';
+let ticketDetailUnsub = null;
 let unreadReplyCount = 0;
 const ticketNotifyInFlight = new Set();
 const ticketReadInFlight = new Set();
@@ -702,12 +735,13 @@ function tr(k){
     check_failed:'확인 실패', empty:'표시할 내용이 없습니다.', saved:'저장 완료', ticket_created:'문의가 등록되었습니다.', privacy_required:'개인정보 수집·이용에 동의해주세요.',
     need_login:'로그인이 필요합니다.', download:'다운로드', admin_required:'관리자 로그인이 필요합니다.',
     no_permission:'권한이 없습니다.', answered:'답변 완료', closed:'종료', open:'접수', reply_placeholder:'답변 또는 추가 내용 입력',
+    chat_placeholder:'메시지를 입력하세요 (Enter 전송)', chat_send:'보내기',
     submit:'등록', edit:'수정', del:'삭제', close:'종료 처리', updated:'수정 완료', deleted:'삭제 완료', manage:'관리', confirm_delete:'정말 삭제할까요?',
-    reply_toast_title:'💬 문의 답변이 등록되었습니다.', reply_toast_body:'문의하신 내용에 답변이 작성되었습니다.', reply_toast_action:'답변 보기',
+    reply_toast_title:'💬 상담사가 대화를 시작했습니다.', reply_toast_body:'문의 채팅에서 상담사와 이어서 대화할 수 있습니다.', reply_toast_action:'대화 보기',
     admin_ticket_toast_title:'💬 새로운 문의가 등록되었습니다.', admin_ticket_toast_body:'새 1:1 문의가 접수되었습니다.', admin_ticket_toast_action:'문의 보기',
     admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
     notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_clear_all:'모두 삭제', notify_clear_confirm:'알림을 모두 삭제할까요?', notify_delete_aria:'알림 삭제', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
-    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'문의에 답변이 등록되었습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_payment_complete:'결제가 완료되었습니다.', notify_payment_cancel:'결제가 취소되었습니다.', notify_payment_partial:'부분 환불이 적용되었습니다.', notify_refund_review:'환불 검토가 필요합니다.', notify_admin_message:'관리자 쪽지', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
+    notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'상담사가 대화를 시작했습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_payment_complete:'결제가 완료되었습니다.', notify_payment_cancel:'결제가 취소되었습니다.', notify_payment_partial:'부분 환불이 적용되었습니다.', notify_refund_review:'환불 검토가 필요합니다.', notify_admin_message:'관리자 쪽지', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
     notify_filter_all:'전체', notify_filter_payment:'결제', notify_filter_license:'라이선스', notify_filter_inquiry:'문의', notify_filter_community:'커뮤니티', notify_filter_other:'기타',
     notify_credit_purchase:'크레딧 충전 완료', notify_credit_purchase_body:'{n} 크레딧이 지급되었습니다.', notify_credit_grant:'크레딧 지급', notify_credit_grant_body:'관리자가 {n} 크레딧을 지급했습니다.', notify_credit_deduct:'크레딧 조정', notify_credit_deduct_body:'{n} 크레딧이 회수되었습니다.', notify_reservation_complete:'예약 변환이 완료되었습니다.', notify_reservation_failed:'예약 변환이 실패했습니다.', notify_time_just_now:'방금', notify_time_minutes:'{n}분 전', notify_time_hours:'{n}시간 전', notify_time_yesterday:'어제',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
@@ -730,12 +764,13 @@ function tr(k){
     check_failed:'Check failed', empty:'Nothing to show.', saved:'Saved', ticket_created:'Ticket created.', privacy_required:'Please agree to the privacy policy.',
     need_login:'Sign-in required.', download:'Download', admin_required:'Admin sign-in required.',
     no_permission:'You do not have permission.', answered:'Answered', closed:'Closed', open:'Open', reply_placeholder:'Reply or add more details',
+    chat_placeholder:'Type a message (Enter to send)', chat_send:'Send',
     submit:'Submit', edit:'Edit', del:'Delete', close:'Close', updated:'Updated', deleted:'Deleted', manage:'Manage', confirm_delete:'Delete this item?',
-    reply_toast_title:'💬 A reply was posted on your ticket.', reply_toast_body:'An admin replied to your support request.', reply_toast_action:'View reply',
+    reply_toast_title:'💬 A counselor started the chat.', reply_toast_body:'You can continue the conversation in your support chat.', reply_toast_action:'Open chat',
     admin_ticket_toast_title:'💬 A new support ticket was submitted.', admin_ticket_toast_body:'A new 1:1 inquiry has been received.', admin_ticket_toast_action:'View ticket',
     admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
     notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_clear_all:'Clear all', notify_clear_confirm:'Delete all notifications?', notify_delete_aria:'Delete notification', notify_login:'Sign in to see notifications.',
-    notify_board_comment:' commented on your post.', notify_ticket_reply:'A reply was posted on your ticket.', notify_license_change:'Your license was updated.', notify_payment_complete:'Payment completed.', notify_payment_cancel:'Payment was cancelled.', notify_payment_partial:'Partial refund applied.', notify_refund_review:'Refund review required.', notify_admin_message:'Admin message', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
+    notify_board_comment:' commented on your post.', notify_ticket_reply:'A counselor started the chat.', notify_license_change:'Your license was updated.', notify_payment_complete:'Payment completed.', notify_payment_cancel:'Payment was cancelled.', notify_payment_partial:'Partial refund applied.', notify_refund_review:'Refund review required.', notify_admin_message:'Admin message', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
     notify_filter_all:'All', notify_filter_payment:'Payment', notify_filter_license:'License', notify_filter_inquiry:'Support', notify_filter_community:'Community', notify_filter_other:'Other',
     notify_credit_purchase:'Credit purchase complete', notify_credit_purchase_body:'{n} credits were added.', notify_credit_grant:'Credits granted', notify_credit_grant_body:'An admin granted {n} credits.', notify_credit_deduct:'Credit adjustment', notify_credit_deduct_body:'{n} credits were deducted.', notify_reservation_complete:'Scheduled conversion finished.', notify_reservation_failed:'Scheduled conversion failed.', notify_time_just_now:'Just now', notify_time_minutes:'{n} min ago', notify_time_hours:'{n} hr ago', notify_time_yesterday:'Yesterday',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
@@ -758,12 +793,13 @@ function tr(k){
     check_failed:'確認失敗', empty:'表示する内容がありません。', saved:'保存完了', ticket_created:'問い合わせを登録しました。', privacy_required:'個人情報の収集・利用に同意してください。',
     need_login:'ログインが必要です。', download:'ダウンロード', admin_required:'管理者ログインが必要です。',
     no_permission:'権限がありません。', answered:'回答済み', closed:'終了', open:'受付', reply_placeholder:'返信または追加内容を入力',
+    chat_placeholder:'メッセージを入力 (Enterで送信)', chat_send:'送信',
     submit:'登録', edit:'編集', del:'削除', close:'終了にする', updated:'更新しました', deleted:'削除しました', manage:'管理', confirm_delete:'本当に削除しますか？',
-    reply_toast_title:'💬 お問い合わせに返信がありました。', reply_toast_body:'ご質問への回答が登録されました。', reply_toast_action:'返信を見る',
+    reply_toast_title:'💬 相談員が会話を開始しました。', reply_toast_body:'サポートチャットで会話を続けられます。', reply_toast_action:'会話を見る',
     admin_ticket_toast_title:'💬 新しいお問い合わせが登録されました。', admin_ticket_toast_body:'新しい1:1問い合わせが届きました。', admin_ticket_toast_action:'問い合わせを見る',
     admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
     notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_clear_all:'すべて削除', notify_clear_confirm:'通知をすべて削除しますか？', notify_delete_aria:'通知を削除', notify_login:'ログインすると通知を確認できます。',
-    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'お問い合わせに返信がありました。', notify_license_change:'ライセンスが変更されました。', notify_payment_complete:'お支払いが完了しました。', notify_payment_cancel:'お支払いがキャンセルされました。', notify_payment_partial:'一部返金が適用されました。', notify_refund_review:'返金の確認が必要です。', notify_admin_message:'管理者メッセージ', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
+    notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'相談員が会話を開始しました。', notify_license_change:'ライセンスが変更されました。', notify_payment_complete:'お支払いが完了しました。', notify_payment_cancel:'お支払いがキャンセルされました。', notify_payment_partial:'一部返金が適用されました。', notify_refund_review:'返金の確認が必要です。', notify_admin_message:'管理者メッセージ', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
     notify_filter_all:'すべて', notify_filter_payment:'決済', notify_filter_license:'ライセンス', notify_filter_inquiry:'問い合わせ', notify_filter_community:'コミュニティ', notify_filter_other:'その他',
     notify_credit_purchase:'クレジット購入完了', notify_credit_purchase_body:'{n} クレジットが付与されました。', notify_credit_grant:'クレジット付与', notify_credit_grant_body:'管理者が {n} クレジットを付与しました。', notify_credit_deduct:'クレジット調整', notify_credit_deduct_body:'{n} クレジットが回収されました。', notify_reservation_complete:'予約変換が完了しました。', notify_reservation_failed:'予約変換に失敗しました。', notify_time_just_now:'たった今', notify_time_minutes:'{n}分前', notify_time_hours:'{n}時間前', notify_time_yesterday:'昨日',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
@@ -3158,6 +3194,8 @@ function setAuthUiSignedOut(){
   clearUnsubs();
   clearTicketReplyObserver();
   dismissAllAppToasts();
+  toastedReplyKeys.clear();
+  try{ toastedAdminTicketKeys.clear(); }catch(_){}
   updateTicketUnreadBadges(0);
   updateAdminTicketUnreadBadges(0);
   stopUserNotifications();
@@ -3165,6 +3203,8 @@ function setAuthUiSignedOut(){
   updateTopbarLicensePeriod(null);
   pendingTicketOpenId = '';
   pendingAdminTicketOpenId = '';
+  myTicketRows = [];
+  myTicketOpenId = '';
   userNotifyPrefs = defaultNotifyPrefs();
   currentUser = null; currentUserDoc = null; isAdminUser = false;
   currentLicenseActive = false;
@@ -3188,9 +3228,17 @@ function setAuthUiSignedOut(){
   if ($('licenseBadge')) { $('licenseBadge').className='badge pending'; $('licenseBadge').textContent=tr('license_wait'); }
   updateAccountProfileBadges(null);
   if ($('accountMeta')) renderAccountDashboard('', null, null);
-  if (page==='my-tickets.html' && $('myTicketList')) $('myTicketList').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
-  if (page==='ticket.html' && $('ticketDetail')) $('ticketDetail').innerHTML=`<div class="empty-card">${tr('need_login')}</div>`;
-  if (page==='admin.html') setAdminGate(`<p>${tr('need_login')}</p><p class="muted">Google 로그인 후 role=admin 계정만 접근할 수 있습니다.</p>`);
+  if ($('myTicketList')) {
+    $('myTicketList').innerHTML = authStateResolved
+      ? `<div class="empty-card">${tr('need_login')}</div>`
+      : `<div class="empty-card muted">불러오는 중...</div>`;
+  }
+  if ($('ticketDetail')) {
+    $('ticketDetail').innerHTML = authStateResolved
+      ? `<div class="empty-card">${tr('need_login')}</div>`
+      : `<div class="empty-card muted">불러오는 중...</div>`;
+  }
+  if (isAdminConsolePage()) setAdminGate(`<p>${tr('need_login')}</p><p class="muted">Google 로그인 후 role=admin 계정만 접근할 수 있습니다.</p>`);
   downloadAdminExpanded = false;
   refreshDownloadCard(true);
   updateBoardPinnedUi();
@@ -4119,19 +4167,28 @@ async function setAuthUiSignedIn(user){
   });
   updateTopbarProfile(user);
   syncTopbarProfileAuthUi(true);
-  await upsertUser(user);
-  recordAccessInfoQuiet();
-  await loadLicense(user.uid);
+  // Bind private pages immediately — do not wait for upsert/license (avoids stuck "need login")
+  try{
+    if($('myTicketList')) listenMyTickets();
+    if($('ticketDetail')) listenTicketDetail();
+  }catch(e){ console.warn('early private route bind', e); }
+  try{
+    await upsertUser(user);
+    recordAccessInfoQuiet();
+    await loadLicense(user.uid);
+  }catch(e){
+    console.error('post-login bootstrap', e);
+  }
   resumePendingPurchase();
   listenTicketNotifications();
   listenAdminTicketNotifications();
   listenUserNotifications();
   setNotifyBellVisible(true);
-  if (page==='my-tickets.html') listenMyTickets();
-  if (page==='ticket.html') listenTicketDetail();
+  if($('myTicketList')) listenMyTickets();
+  if($('ticketDetail')) listenTicketDetail();
   if (page==='board-write.html') initBoardPostEditor();
   if (page==='board-post.html'){ refreshBoardPostActions(); maybeFocusBoardCommentFromQuery(); }
-  if (page==='admin.html') {
+  if (isAdminConsolePage()) {
     if (isAdminUser) {
       unlockAdminPanel();
       listenAdminUsers(); listenAdminTickets();
@@ -4169,7 +4226,10 @@ async function upsertUser(user){
       const code = currentUserDoc?.accessInfo?.countryCode || old?.accessInfo?.countryCode;
       if(code) cacheAccessCountryCode(code);
     }catch(_){}
-    await ensureUserLicenseDoc(user.uid, { role: data.role || old.role || 'user' });
+    // Don't block admin unlock / UI on license bootstrap
+    ensureUserLicenseDoc(user.uid, { role: data.role || old.role || 'user' }).catch((err)=>{
+      console.warn('ensureUserLicenseDoc', err);
+    });
   } catch(e) {
     console.error('user upsert',e);
     isAdminUser=false;
@@ -4393,6 +4453,7 @@ async function initAuth(){
       clearAuthPending();
       if(u) setAuthUiSignedIn(u);
       else setAuthUiSignedOut();
+      emitAuthChange(u || null);
     });
     routeLoadPublic();
   }catch(e){
@@ -4537,24 +4598,27 @@ function sanitizeDownloadNotes(notes){
   if(/Google Chrome/i.test(s) && /(권장|recommend|推奨)/i.test(s)) return '';
   return s;
 }
-function downloadAdminPanelHtml(d){
+function downloadAdminPanelHtml(d, firestoreMissing=false){
   if(!isAdminUser) return '';
   const toggleLabel = downloadAdminExpanded ? '닫기' : tr('edit');
   const toggle = `<button type="button" class="secondary mini-btn download-admin-toggle" data-dl-admin="toggle">${esc(toggleLabel)}</button>`;
   if(!downloadAdminExpanded) return `<div class="download-admin-bar">${toggle}</div>`;
-  const v = d||{};
+  const v = coalesceDownloadData(d);
   return `<div class="download-admin-bar">${toggle}</div>
   <div class="download-admin-panel" role="region" aria-label="다운로드 설정 수정">
-    <p class="download-admin-hint">관리자만 보입니다. 저장하면 모든 사용자에게 바로 반영됩니다. Dropbox 공유 링크는 저장 시 dl.dropbox.com?dl=1 로 정규화됩니다.</p>
+    <p class="download-admin-hint">${firestoreMissing
+      ? 'Firestore <code>downloads/latest</code> 가 비어 있습니다. 아래는 수정 이전 프로덕션 설치 파일 값입니다. <strong>저장하고 복구</strong>를 누르면 Firestore에 다시 기록됩니다.'
+      : '관리자만 보입니다. 저장하면 모든 사용자에게 바로 반영됩니다. Dropbox 공유 링크는 저장 시 dl.dropbox.com?dl=1 로 정규화됩니다.'}</p>
     <div class="download-admin-grid">
-      <label class="download-admin-field"><span>버전</span><input id="dlAdminVersion" type="text" value="${esc(v.version||'')}" placeholder="예: 1.5.7" autocomplete="off"></label>
+      <label class="download-admin-field"><span>버전</span><input id="dlAdminVersion" type="text" value="${esc(v.version||'')}" placeholder="예: 1.6.3" autocomplete="off" required></label>
       <label class="download-admin-field"><span>파일명</span><input id="dlAdminFilename" type="text" value="${esc(v.filename||'')}" placeholder="MidiAI Installer.exe" autocomplete="off"></label>
-      <label class="download-admin-field download-admin-field-full"><span>다운로드 URL</span><input id="dlAdminUrl" type="url" value="${esc(v.url||'')}" placeholder="https://dl.dropbox.com/scl/fi/...?dl=1" autocomplete="off"></label>
+      <label class="download-admin-field download-admin-field-full"><span>다운로드 URL</span><input id="dlAdminUrl" type="url" value="${esc(v.url||'')}" placeholder="https://dl.dropbox.com/scl/fi/...?dl=1" autocomplete="off" required></label>
       <label class="download-admin-field download-admin-field-full"><span>업데이트 설명</span><textarea id="dlAdminNotes" rows="6" placeholder="업데이트 설명 (줄바꿈 가능)">${esc(v.notes||v.description||'')}</textarea></label>
       <label class="check download-admin-check"><input id="dlAdminMandatory" type="checkbox" ${v.mandatory?'checked':''}> 필수 업데이트</label>
     </div>
     <div class="download-admin-actions">
-      <button type="button" class="primary" data-dl-admin="save">${tt('저장')}</button>
+      <button type="button" class="primary" data-dl-admin="save">${firestoreMissing ? '저장하고 복구' : tt('저장')}</button>
+      ${firestoreMissing ? `<button type="button" class="secondary" data-dl-admin="restore-defaults">이전 설치파일 값 채우기</button>` : ''}
       <button type="button" class="secondary" data-dl-admin="cancel">취소</button>
     </div>
   </div>`;
@@ -4569,6 +4633,14 @@ function bindDownloadAdminUi(box){
     downloadAdminExpanded = false;
     refreshDownloadCard(true);
   });
+  box.querySelector('[data-dl-admin="restore-defaults"]')?.addEventListener('click',()=>{
+    const d = DOWNLOAD_RESTORE_DEFAULTS;
+    if($('dlAdminVersion')) $('dlAdminVersion').value = d.version;
+    if($('dlAdminFilename')) $('dlAdminFilename').value = d.filename;
+    if($('dlAdminUrl')) $('dlAdminUrl').value = d.url;
+    if($('dlAdminNotes')) $('dlAdminNotes').value = d.notes || '';
+    if($('dlAdminMandatory')) $('dlAdminMandatory').checked = !!d.mandatory;
+  });
   box.querySelector('[data-dl-admin="save"]')?.addEventListener('click',()=>saveDownloadFromInline());
 }
 function refreshDownloadCard(force=false){
@@ -4577,33 +4649,38 @@ function refreshDownloadCard(force=false){
 }
 function renderDownload(d, opts={}){
   const box=$('downloadBox'); if(!box)return;
-  latestDownloadData = d || null;
+  // Keep raw Firestore snapshot (may be null/empty). Display uses coalesce when needed.
+  if(!opts.optimistic) latestDownloadData = d || null;
   if(downloadAdminExpanded && !opts.force && box.querySelector('.download-admin-panel')) return;
   const t = downloadLocaleText();
-  const adminHtml = downloadAdminPanelHtml(d);
-  if(!d){
-    box.innerHTML=`<div class="portal-download-inner download-card-pro portal-download-empty"><div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></div><div class="portal-download-meta"><h3>MidiAI Studio</h3><p class="muted">${tr('empty')}</p></div><div class="portal-download-actions"><a class="secondary" href="${esc(lifetimePurchaseHref())}">${esc(t.buyLicense)}</a></div></div>${adminHtml}`;
-    bindDownloadAdminUi(box);
-    return;
+  const firestoreMissing = !downloadPayloadUsable(d);
+  const view = coalesceDownloadData(d);
+  if(firestoreMissing && isAdminUser && !downloadAdminAutoOpenedForEmpty){
+    downloadAdminExpanded = true;
+    downloadAdminAutoOpenedForEmpty = true;
   }
-  const downloadHref = normalizeDownloadUrl(d.url || '');
-  const mandatory = d.mandatory ? `<span class="portal-mandatory-pill">${esc(t.mandatory)}</span>` : '';
-  const notesText = sanitizeDownloadNotes(d.notes || d.description || '');
+  const adminHtml = downloadAdminPanelHtml(view, firestoreMissing);
+  const downloadHref = normalizeDownloadUrl(view.url || '');
+  const mandatory = view.mandatory ? `<span class="portal-mandatory-pill">${esc(t.mandatory)}</span>` : '';
+  const notesText = sanitizeDownloadNotes(view.notes || view.description || '');
   const notes = notesText ? `<p class="portal-download-notes">${esc(notesText)}</p>` : '';
+  const restoreBanner = firestoreMissing && isAdminUser
+    ? `<p class="muted" style="margin:0 0 .5rem">Firestore가 비어 이전 설치 파일로 표시 중입니다. 아래 폼에서 <strong>저장하고 복구</strong>를 눌러 Firestore에 기록하세요.</p>`
+    : '';
   // Same-tab navigation to an attachment URL (no target=_blank, no cross-origin
   // download attribute, no window.open / Blob). Browsers treat Content-Disposition
   // attachment as a download without relying on Chrome-specific Dropbox preview JS.
-  box.innerHTML=`<div class="portal-download-inner download-card-pro">
+  box.innerHTML=`${restoreBanner}<div class="portal-download-inner download-card-pro">
     <div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg></div>
     <div class="portal-download-meta">
       <div class="download-card-main-row">
         <div class="download-card-line download-card-line-top">
-          <div class="portal-download-badges"><span class="portal-version-pill">v${esc(d.version||'-')}</span>${mandatory}<span class="download-platform-pill">Windows</span></div>
+          <div class="portal-download-badges"><span class="portal-version-pill">v${esc(view.version||'-')}</span>${mandatory}<span class="download-platform-pill">Windows</span></div>
           <h3>MidiAI Studio</h3>
         </div>
         <div class="download-card-line download-card-line-bottom">
-          <p class="portal-download-file"><span class="download-file-ext">EXE</span>${esc(d.filename||'MidiAI Installer.exe')}</p>
-          <div class="download-card-meta-row"><span>${esc(fmtDate(d.releaseDate)||'')}</span><span>${esc(t.officialInstaller)}</span></div>
+          <p class="portal-download-file"><span class="download-file-ext">EXE</span>${esc(view.filename||'MidiAI Installer.exe')}</p>
+          <div class="download-card-meta-row"><span>${esc(fmtDate(view.releaseDate)||'')}</span><span>${esc(t.officialInstaller)}</span></div>
         </div>
       </div>
       ${notes}
@@ -4619,34 +4696,42 @@ function listenDownload(){ if(!$('downloadBox')) return; listenDoc('downloads','
 async function persistDownloadLatest({version, filename, url, notes, mandatory}){
   if(!isAdminUser) throw new Error(tr('no_permission'));
   const {doc,setDoc,serverTimestamp}=firestoreApi;
+  const cleanedUrl = normalizeDownloadUrl(url);
+  const cleanedVersion = String(version||'').trim();
+  const cleanedFilename = String(filename||'').trim() || DOWNLOAD_RESTORE_DEFAULTS.filename;
+  if(!cleanedUrl) throw new Error('다운로드 URL이 필요합니다.');
+  if(!cleanedVersion) throw new Error('버전을 입력해 주세요.');
   let cleanedNotes = String(notes||'').trim();
   if(/Google Chrome/i.test(cleanedNotes) && /(권장|recommend|推奨)/i.test(cleanedNotes)){
     cleanedNotes = '';
   }
-  await setDoc(doc(db,'downloads','latest'),{
-    version:String(version||'').trim(),
-    filename:String(filename||'').trim(),
-    url:normalizeDownloadUrl(url),
-    notes:cleanedNotes,
-    mandatory:!!mandatory,
-    releaseDate:serverTimestamp(),
-    updatedAt:serverTimestamp()
-  },{merge:true});
+  const payload = {
+    version: cleanedVersion,
+    filename: cleanedFilename,
+    url: cleanedUrl,
+    notes: cleanedNotes,
+    mandatory: !!mandatory,
+    releaseDate: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  };
+  await setDoc(doc(db,'downloads','latest'), payload, {merge:true});
+  return { ...payload, releaseDate: new Date(), updatedAt: new Date() };
 }
 async function saveDownloadFromInline(){
   if(!isAdminUser) return alert(tr('no_permission'));
   const btn = document.querySelector('[data-dl-admin="save"]');
   if(btn){ btn.disabled=true; btn.textContent='저장 중...'; }
   try{
-    await persistDownloadLatest({
+    const saved = await persistDownloadLatest({
       version:$('dlAdminVersion')?.value||'',
       filename:$('dlAdminFilename')?.value||'',
       url:$('dlAdminUrl')?.value||'',
       notes:$('dlAdminNotes')?.value||'',
       mandatory:!!$('dlAdminMandatory')?.checked
     });
+    latestDownloadData = saved;
     downloadAdminExpanded = false;
-    refreshDownloadCard(true);
+    renderDownload(saved, {force:true, optimistic:true});
     alert(tr('saved'));
   }catch(e){
     alert(e.message||e);
@@ -5151,8 +5236,12 @@ function applySupportI18n(){
 
 const TICKET_MAX_ATTACHMENTS = 5;
 const TICKET_MAX_FILE_SIZE = 20 * 1024 * 1024;
-const TICKET_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm)|application\/pdf|text\/(plain|csv|log)|application\/(zip|x-zip-compressed))$/i;
+const TICKET_ALLOWED_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm)|application\/pdf|text\/(plain|csv|log|xml)|application\/(zip|x-zip-compressed|xml|octet-stream)|audio\/(midi|x-midi))$/i;
+const TICKET_BLOCKED_EXT = /^(exe|msi|bat|cmd|ps1|com|scr|js|vbs|dll)$/i;
 let selectedTicketFiles = [];
+const authChangeListeners = [];
+function onAuthChange(cb){ if(typeof cb === 'function') authChangeListeners.push(cb); }
+function emitAuthChange(user){ authChangeListeners.forEach((cb)=>{ try{ cb(user||null); }catch(e){ console.warn(e); } }); }
 
 function ticketFileExt(fileOrAttachment){
   const name = String(fileOrAttachment?.name || fileOrAttachment?.fileName || '');
@@ -5276,7 +5365,11 @@ function addTicketFiles(files){
   const incoming = Array.from(files || []);
   const t = supportLocaleText();
   for(const file of incoming){
-    if(!TICKET_ALLOWED_MIME.test(file.type || '')){ showTicketAttachmentMsg(t.attachUnsupported); continue; }
+    const ext = ticketFileExt(file);
+    if(TICKET_BLOCKED_EXT.test(ext)){ showTicketAttachmentMsg(t.attachUnsupported); continue; }
+    if(!TICKET_ALLOWED_MIME.test(file.type || '') && !['mid','midi','musicxml','xml','log','txt','zip'].includes(ext)){
+      showTicketAttachmentMsg(t.attachUnsupported); continue;
+    }
     if(file.size > TICKET_MAX_FILE_SIZE){ showTicketAttachmentMsg(t.attachTooBig); continue; }
     if(selectedTicketFiles.length >= TICKET_MAX_ATTACHMENTS){ showTicketAttachmentMsg(t.attachMax); break; }
     selectedTicketFiles.push(file);
@@ -5359,7 +5452,10 @@ function updateSupportFormUi(){
 
 
 function hasUnreadTicketReply(t){
-  return !!(t && t.replyRead === false && t.replyAt);
+  // AI chat replies are live in the widget — only human/admin answers should badge/toast.
+  if(!t || t.replyRead !== false || !t.replyAt) return false;
+  if(String(t.lastSender || '') === 'ai') return false;
+  return true;
 }
 function ticketReplyFocusHref(ticketId){
   const base = window.MIDIAI_BASE_PATH || './';
@@ -5367,7 +5463,137 @@ function ticketReplyFocusHref(ticketId){
 }
 function ticketDetailFocusHref(ticketId){
   const base = window.MIDIAI_BASE_PATH || './';
-  return `${base}ticket.html?id=${encodeURIComponent(ticketId)}&focus=reply`;
+  return `${base}my-tickets.html?open=${encodeURIComponent(ticketId)}`;
+}
+function maybeOpenTicketFromQuery(){
+  if(page !== 'my-tickets.html') return;
+  const openId = getParam('open') || '';
+  if(!openId) return;
+  pendingTicketOpenId = openId;
+  myTicketOpenId = openId;
+}
+function consumePendingTicketOpen(listRoot){
+  if(!pendingTicketOpenId || !listRoot) return;
+  const id = pendingTicketOpenId;
+  pendingTicketOpenId = '';
+  myTicketOpenId = id;
+  expandMyTicket(id, listRoot);
+}
+function stopMyTicketReplies(){
+  if(typeof myTicketReplyUnsub === 'function'){
+    try{ myTicketReplyUnsub(); }catch(_){}
+  }
+  myTicketReplyUnsub = null;
+}
+function myTicketRowHtml(t){
+  const open = myTicketOpenId === t.id;
+  const unreadCls = hasUnreadTicketReply(t) ? ' is-unread' : '';
+  const preview = String(t.lastMessage || t.content || '').replace(/\s+/g,' ').slice(0, 72);
+  return `<article class="my-ticket-item${open?' is-open':''}${unreadCls}" data-my-ticket="${esc(t.id)}">
+    <button type="button" class="my-ticket-summary" data-my-ticket-toggle="${esc(t.id)}" aria-expanded="${open?'true':'false'}">
+      <span class="my-ticket-summary-main">
+        <b>${esc(t.title||'(제목 없음)')}</b>
+        <small>${esc(preview || '대화를 열려면 클릭하세요')}</small>
+      </span>
+      <span class="my-ticket-summary-meta">
+        ${statusBadge(t.status,t)}
+        <em>${esc(fmtListDate(t.updatedAt||t.createdAt))}</em>
+      </span>
+    </button>
+    <div class="my-ticket-panel" data-my-ticket-panel="${esc(t.id)}" ${open?'':'hidden'}>
+      <div class="my-ticket-chat admin-chat-thread" data-my-replies="${esc(t.id)}"><p class="muted admin-chat-empty">대화를 불러오는 중...</p></div>
+      ${String(t.status)==='closed' || t.conversationMode==='closed'
+        ? `<div class="my-ticket-closed-note">종료된 상담입니다. 새 문제가 있으면 <a href="./support.html">새 문의</a>를 작성해 주세요.</div>`
+        : `<form class="reply-form my-ticket-composer admin-chat-composer" data-ticket="${esc(t.id)}">
+            <textarea rows="1" placeholder="${esc(tr('chat_placeholder'))}" required></textarea>
+            <div class="admin-ticket-reply-actions">
+              <button class="primary mini-btn" type="submit">${esc(tr('chat_send'))}</button>
+              <button type="button" class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button>
+            </div>
+          </form>`}
+    </div>
+  </article>`;
+}
+function renderMyTicketList(){
+  const list=$('myTicketList'); if(!list) return;
+  const rows = myTicketRows || [];
+  if(!rows.length){
+    stopMyTicketReplies();
+    list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`;
+    return;
+  }
+  if(myTicketOpenId && !rows.some((t)=>t.id===myTicketOpenId)){
+    myTicketOpenId = '';
+  }
+  const draftEl = myTicketOpenId
+    ? list.querySelector(`[data-ticket="${CSS.escape(myTicketOpenId)}"] textarea`)
+    : null;
+  const draft = draftEl ? String(draftEl.value || '') : '';
+  list.innerHTML = `<div class="my-ticket-list">${rows.map(myTicketRowHtml).join('')}</div>`;
+  bindMyTicketList(list);
+  if(myTicketOpenId){
+    mountMyTicketThread(myTicketOpenId, list);
+    if(draft){
+      const next = list.querySelector(`[data-ticket="${CSS.escape(myTicketOpenId)}"] textarea`);
+      if(next) next.value = draft;
+    }
+  }
+}
+function bindMyTicketList(list){
+  if(!list) return;
+  if(!list.dataset.myTicketBound){
+    list.dataset.myTicketBound='1';
+    list.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-my-ticket-toggle]');
+      if(!btn) return;
+      e.preventDefault();
+      const id = btn.getAttribute('data-my-ticket-toggle');
+      if(!id) return;
+      const next = myTicketOpenId === id ? '' : id;
+      myTicketOpenId = next;
+      renderMyTicketList();
+    });
+  }
+  bindTicketActions(list);
+  bindReplyForms(list);
+}
+function expandMyTicket(ticketId, listRoot){
+  if(!ticketId) return;
+  myTicketOpenId = ticketId;
+  const list = listRoot || $('myTicketList');
+  if(!list) return;
+  if(!list.querySelector(`[data-my-ticket="${CSS.escape(ticketId)}"]`)){
+    renderMyTicketList();
+  } else {
+    renderMyTicketList();
+  }
+  const row = list.querySelector(`[data-my-ticket="${CSS.escape(ticketId)}"]`);
+  if(row){
+    try{ row.scrollIntoView({ behavior:'smooth', block:'start' }); }catch{ row.scrollIntoView(true); }
+  }
+}
+function mountMyTicketThread(ticketId, listRoot){
+  stopMyTicketReplies();
+  const list = listRoot || $('myTicketList');
+  if(!list || !ticketId || !firestoreApi) return;
+  const replyBox = list.querySelector(`[data-my-replies="${CSS.escape(ticketId)}"]`);
+  if(!replyBox) return;
+  const ticket = myTicketRows.find((t)=>t.id===ticketId) || { id: ticketId };
+  const {collection,query,orderBy,onSnapshot}=firestoreApi;
+  const q=query(collection(db,'supportTickets',ticketId,'replies'),orderBy('createdAt','asc'));
+  myTicketReplyUnsub = onSnapshot(q, snap => {
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
+    replyBox.innerHTML = adminTicketThreadHtml(ticket, rows);
+    replyBox.scrollTop = replyBox.scrollHeight;
+    bindTicketReplyActions(replyBox);
+    if(currentUser && ticket.uid === currentUser.uid && hasUnreadTicketReply(ticket)){
+      observeTicketReplyVisibility(ticketId, replyBox);
+    }
+  }, err => {
+    console.error('my ticket replies', err);
+    replyBox.innerHTML = `<p class="muted">${esc(err.message||String(err))}</p>`;
+  });
+  bindReplyForms(list);
 }
 function ensureToastHost(){
   let host = document.getElementById('appToastHost');
@@ -5385,18 +5611,33 @@ function dismissAllAppToasts(){
     el.remove();
   });
 }
-function showAppToast({title, body, actionLabel, onAction}={}){
+function showAppToast({title, body, actionLabel, onAction, ttlMs=5200, replaceGroup=''}={}){
   const host = ensureToastHost();
+  if(replaceGroup){
+    host.querySelectorAll(`.app-toast[data-toast-group="${CSS.escape(replaceGroup)}"]`).forEach((old)=>{
+      try{ old._dismissToast?.(true); }catch{}
+    });
+  }
+  // Hard cap: keep UI usable when many events fire at once
+  const existing = [...host.querySelectorAll('.app-toast')];
+  if(existing.length >= 3){
+    existing.slice(0, existing.length - 2).forEach((old)=>{
+      try{ old._dismissToast?.(true); }catch{}
+    });
+  }
   const el = document.createElement('div');
   el.className = 'app-toast';
   el.setAttribute('role', 'status');
+  if(replaceGroup) el.dataset.toastGroup = replaceGroup;
   el.innerHTML = `<p class="app-toast-title">${esc(title||'')}</p><p class="app-toast-body">${esc(body||'')}</p><div class="app-toast-actions">${actionLabel?`<button type="button" class="primary" data-toast-action>${esc(actionLabel)}</button>`:''}<button type="button" class="app-toast-close" data-toast-close aria-label="close">×</button></div>`;
   host.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('is-in'));
   let closed = false;
+  let timer = 0;
   const dismiss = (immediate=false) => {
     if(closed) return;
     closed = true;
+    if(timer) clearTimeout(timer);
     el.classList.remove('is-in');
     el.classList.add('is-out');
     const remove = () => { try{ el.remove(); }catch{} };
@@ -5409,11 +5650,21 @@ function showAppToast({title, body, actionLabel, onAction}={}){
     try{ onAction?.(); }catch(e){ console.error(e); }
     dismiss(false);
   });
+  const ms = Number(ttlMs);
+  if(Number.isFinite(ms) && ms > 0){
+    timer = setTimeout(()=>dismiss(false), ms);
+  }
   return el;
 }
 function updateTicketUnreadBadges(count){
   unreadReplyCount = Math.max(0, Number(count)||0);
-  const targets = document.querySelectorAll('#mainNav [data-hub="tickets"], #mainNav [data-hub="support"], .hub-subnav [data-hub="tickets"], .hub-subnav [data-hub="support"], #mainNav a[href*="my-tickets.html"]');
+  // Clear legacy badges that were previously attached to 1:1 compose links
+  document.querySelectorAll('[data-hub="support"] [data-ticket-unread-badge], a[href*="support.html"] [data-ticket-unread-badge]').forEach((badge)=>{
+    badge.hidden = true;
+    badge.textContent = '';
+  });
+  // Only badge "나의 문의" — not the 1:1 compose page
+  const targets = document.querySelectorAll('#mainNav [data-hub="tickets"], .hub-subnav [data-hub="tickets"], #mainNav a[href*="my-tickets.html"], .top-nav-panel a[href*="my-tickets.html"]');
   targets.forEach(link => {
     if(link.classList.contains('mini-btn') || link.classList.contains('secondary')) return;
     let badge = link.querySelector('[data-ticket-unread-badge]');
@@ -5440,7 +5691,7 @@ function stopTicketNotifyListener(){
   }
   ticketNotifyInFlight.clear();
   ticketReadInFlight.clear();
-  toastedReplyKeys.clear();
+  // Keep toastedReplyKeys across listener restarts in the same session to avoid toast storms.
 }
 function clearTicketReplyObserver(){
   if(ticketReplyObserver){
@@ -5489,6 +5740,8 @@ function showTicketReplyToast(ticket){
     title: tr('reply_toast_title'),
     body: tr('reply_toast_body'),
     actionLabel: tr('reply_toast_action'),
+    replaceGroup: 'ticket-reply',
+    ttlMs: 5200,
     onAction: ()=>{ location.href = ticketReplyFocusHref(ticket.id); }
   });
   markTicketReplyNotified(ticket.id).finally(()=>{ ticketNotifyInFlight.delete(ticket.id); });
@@ -5540,24 +5793,6 @@ function focusTicketReplySection(root=document){
   try{ target.scrollIntoView({ behavior:'smooth', block:'center' }); }catch{ target.scrollIntoView(true); }
   setTimeout(()=>panel.classList.remove('is-focus-target'), 1800);
 }
-function maybeOpenTicketFromQuery(){
-  if(page !== 'my-tickets.html') return;
-  const openId = getParam('open') || '';
-  if(!openId) return;
-  pendingTicketOpenId = openId;
-}
-function consumePendingTicketOpen(listRoot){
-  if(!pendingTicketOpenId || !listRoot) return;
-  const id = pendingTicketOpenId;
-  const row = listRoot.querySelector(`a.hub-ticket-row[data-ticket-id="${CSS.escape(id)}"]`);
-  if(row){
-    row.classList.add('is-focus');
-    try{ row.scrollIntoView({ behavior:'smooth', block:'center' }); }catch{ row.scrollIntoView(true); }
-  }
-  pendingTicketOpenId = '';
-  setTimeout(()=>{ location.href = ticketDetailFocusHref(id); }, 450);
-}
-
 
 function hasUnreadAdminTicket(t){
   return !!(t && t.adminRead === false);
@@ -5634,6 +5869,8 @@ function showAdminTicketToast(ticket){
     title: tr(isReply ? 'admin_reply_toast_title' : 'admin_ticket_toast_title'),
     body,
     actionLabel: tr(isReply ? 'admin_reply_toast_action' : 'admin_ticket_toast_action'),
+    replaceGroup: isReply ? 'admin-ticket-reply' : 'admin-ticket-new',
+    ttlMs: 5200,
     onAction: ()=>{ location.href = adminTicketFocusHref(ticket.id); }
   });
   markAdminTicketNotified(ticket.id).finally(()=>{ adminTicketNotifyInFlight.delete(ticket.id); });
@@ -5663,10 +5900,10 @@ function listenAdminTicketNotifications(){
   }, err => {
     console.error('admin ticket notifications', err);
   });
-  if(page==='admin.html') applyAdminTicketDeepLink();
+  if(isAdminConsolePage()) applyAdminTicketDeepLink();
 }
 function applyAdminTicketDeepLink(){
-  if(page !== 'admin.html' || !isAdminUser) return;
+  if(!isAdminConsolePage() || !isAdminUser) return;
   const tab = getParam('tab');
   const openId = getParam('open') || '';
   if(tab === 'tickets' || openId){
@@ -5725,6 +5962,10 @@ async function createTicket(e){
       displayName:currentUser.displayName||'',
       category,appVersion,os,
       title,content,status:'open',private:true,attachments:[],
+      conversationMode:'ai',
+      lastMessage:content,
+      lastMessageAt:serverTimestamp(),
+      lastSender:'user',
       adminRead:false,
       adminNotified:false,
       adminNotifyKind:'ticket',
@@ -5735,6 +5976,7 @@ async function createTicket(e){
     if(uploaded.length){
       await updateDoc(doc(db,'supportTickets',ref.id),{attachments:uploaded,updatedAt:serverTimestamp()});
     }
+    try{ await callFunctionJsonFallback(['supportAiReply'], { ticketId: ref.id }); }catch(err){ console.warn('supportAiReply', err); }
     $('ticketTitle').value='';
     $('ticketContent').value='';
     if($('ticketAppVersion')) $('ticketAppVersion').value='';
@@ -5747,7 +5989,16 @@ async function createTicket(e){
   finally{ if(submitBtn) submitBtn.disabled = !currentUser; }
 }
 function showFormMsg(key,ok=true){ const el=$('ticketFormMsg'); if(el){ el.textContent=tr(key)===key?key:tr(key); el.style.color=ok?'#8ff3c5':'#ff9aac'; } }
-function statusBadge(st){ const key=st==='answered'?'answered':st==='closed'?'closed':'open'; return `<span class="badge ${esc(st||'open')}">${tr(key)}</span>`; }
+function statusBadge(st, row){
+  if(row && row.conversationMode){
+    const mode=String(row.conversationMode).toLowerCase();
+    if(mode==='waiting_human') return `<span class="badge mode-waiting">상담사 요청</span>`;
+    if(mode==='human') return `<span class="badge mode-human">상담중</span>`;
+    if(mode==='ai' && String(row.status||'open')!=='closed') return `<span class="badge mode-ai">AI 상담중</span>`;
+  }
+  const key=st==='answered'?'answered':st==='closed'?'closed':'open';
+  return `<span class="badge ${esc(st||'open')}">${tr(key)}</span>`;
+}
 function ticketShell(t, detail=false, admin=false){
   const canManage = admin || detail;
   const metaExtra=[
@@ -5758,12 +6009,15 @@ function ticketShell(t, detail=false, admin=false){
   ].join('');
   if(detail){
     const form=(admin||detail)?`<form class="reply-form hub-reply-form" data-ticket="${esc(t.id)}"><input placeholder="${esc(tr('reply_placeholder'))}" required><button class="primary" type="submit">${tr('submit')}</button></form>`:'';
-    const actions=canManage?`<div class="post-actions hub-post-actions"><button class="secondary mini-btn" data-ticket-edit="${esc(t.id)}">${tr('edit')}</button><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div>`:'';
-    return `<article class="hub-post-detail"><div class="post-card-head"><div class="post-kicker">1:1 문의</div><h1>${esc(t.title||'')}</h1><div class="post-meta-grid"><span>${statusBadge(t.status)}</span><span><em>작성일</em><b>${esc(fmtShortDate(t.createdAt))}</b></span>${metaExtra}</div></div><div class="post-body-content hub-post-body">${nl2br(t.content||'')}</div>${ticketAttachmentsHtml(t.attachments)}${actions}<section class="hub-replies-panel" id="ticketReplies"><h3>답변</h3><div class="ticket-replies hub-reply-list" data-replies="${esc(t.id)}"></div>${form}</section></article>`;
+    const handoff=(!admin && detail && t.status!=='closed' && t.conversationMode!=='waiting_human' && t.conversationMode!=='human')
+      ? `<button type="button" class="secondary mini-btn" data-ticket-handoff="${esc(t.id)}">상담사 연결</button>` : '';
+    const actions=canManage?`<div class="post-actions hub-post-actions">${handoff}<button class="secondary mini-btn" data-ticket-edit="${esc(t.id)}">${tr('edit')}</button><button class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button><button class="secondary mini-btn danger-btn" data-ticket-delete="${esc(t.id)}">${tr('del')}</button></div>`:`<div class="post-actions hub-post-actions">${handoff}</div>`;
+    const summary = t.aiSummary ? `<div class="admin-ticket-ai-summary"><b>AI 상담 요약</b>\n${esc(t.aiSummary)}</div>` : '';
+    return `<article class="hub-post-detail"><div class="post-card-head"><div class="post-kicker">1:1 문의</div><h1>${esc(t.title||'')}</h1><div class="post-meta-grid"><span>${statusBadge(t.status,t)}</span><span><em>작성일</em><b>${esc(fmtShortDate(t.createdAt))}</b></span>${metaExtra}</div></div>${summary}<div class="post-body-content hub-post-body">${nl2br(t.content||'')}</div>${ticketAttachmentsHtml(t.attachments)}${actions}<section class="hub-replies-panel" id="ticketReplies"><h3>대화</h3><div class="ticket-replies hub-reply-list" data-replies="${esc(t.id)}"></div>${form}</section></article>`;
   }
-  const href=`./ticket.html?id=${encodeURIComponent(t.id)}${hasUnreadTicketReply(t)?'&focus=reply':''}`;
+  const href=`./my-tickets.html?open=${encodeURIComponent(t.id)}`;
   const unreadCls = hasUnreadTicketReply(t) ? ' is-unread' : '';
-  return `<a class="hub-list-row hub-ticket-row${unreadCls}" href="${href}" data-ticket-id="${esc(t.id)}"><div class="hub-col-title"><b>${esc(t.title||'(제목 없음)')}</b></div><div class="hub-col-cat">${esc(ticketCategoryLabel(t.category))}</div><div class="hub-col-badge">${statusBadge(t.status)}</div><div class="hub-col-date">${esc(fmtListDate(t.createdAt))}</div></a>`;
+  return `<a class="hub-list-row hub-ticket-row${unreadCls}" href="${href}" data-ticket-id="${esc(t.id)}"><div class="hub-col-title"><b>${esc(t.title||'(제목 없음)')}</b></div><div class="hub-col-cat">${esc(ticketCategoryLabel(t.category))}</div><div class="hub-col-badge">${statusBadge(t.status,t)}</div><div class="hub-col-date">${esc(fmtListDate(t.createdAt))}</div></a>`;
 }
 function listenReplies(ticketId, container, {adminView=false}={}){
   const {collection,query,orderBy,onSnapshot}=firestoreApi;
@@ -5777,16 +6031,57 @@ function listenReplies(ticketId, container, {adminView=false}={}){
   }, err => { console.error('replies',err); container.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
 function ticketReplyItemHtml(r, ticketId, {adminView=false}={}){
-  const author = r.role==='admin' ? BRAND_AUTHOR : (r.displayName||r.email||'user');
+  const role = r.role || 'user';
+  const author = role==='admin'
+    ? 'MidiAI Studio 상담사'
+    : role==='ai'
+      ? 'MidiAI Studio AI'
+      : (r.displayName||r.email||'사용자');
   const when = fmtDate(r.createdAt);
   const edited = r.edited ? ' · 수정됨' : '';
-  const manage = isAdminUser
-    ? `<div class="ticket-reply-actions"><button type="button" class="secondary mini-btn" data-reply-edit data-ticket="${esc(ticketId)}" data-reply="${esc(r.id)}">${tr('edit')}</button><button type="button" class="secondary mini-btn danger-btn" data-reply-delete data-ticket="${esc(ticketId)}" data-reply="${esc(r.id)}">${tr('del')}</button></div>`
+  const aiTag = role==='ai' ? '<em class="admin-chat-ai-tag">AI 답변</em>' : '';
+  const manage = isAdminUser && role!=='ai' && !r._legacyOpen
+    ? `<div class="ticket-reply-actions admin-chat-actions"><button type="button" class="secondary mini-btn" data-reply-edit data-ticket="${esc(ticketId)}" data-reply="${esc(r.id)}">${tr('edit')}</button><button type="button" class="secondary mini-btn danger-btn" data-reply-delete data-ticket="${esc(ticketId)}" data-reply="${esc(r.id)}">${tr('del')}</button></div>`
     : '';
+  const atts = ticketAttachmentsHtml(r.attachments);
+  const refs = Array.isArray(r.sourceReferences) ? r.sourceReferences.filter(x=>x?.href && x?.label) : [];
+  const refsHtml = refs.length
+    ? `<div class="support-chat-refs">${refs.map(x=>`<a href="${esc(x.href)}" target="_blank" rel="noopener noreferrer">${esc(x.label)}</a>`).join('')}</div>`
+    : '';
+  const side = role === 'user' ? 'is-user' : 'is-agent';
+  const bubbleCls = role === 'admin' ? 'is-admin' : role === 'ai' ? 'is-ai' : 'is-user';
   if(adminView){
-    return `<div class="admin-ticket-reply ${r.role==='admin'?'is-admin':''}" data-reply-id="${esc(r.id)}"><b>${esc(author)} · ${esc(when)}${edited}</b><p>${nl2br(r.content||'')}</p>${manage}</div>`;
+    if(r.messageType === 'system' || r.messageType === 'ai_summary'){
+      return `<div class="admin-chat-system" data-reply-id="${esc(r.id||'')}"><b>${esc(author)}</b><div>${nl2br(r.content||'')}</div>${atts}${refsHtml}</div>`;
+    }
+    return `<div class="admin-chat-row ${side}" data-reply-id="${esc(r.id||'')}">
+      <div class="admin-chat-bubble ${bubbleCls}">
+        <div class="admin-chat-meta"><b>${esc(author)}</b>${aiTag}<span>${esc(when)}${edited}</span></div>
+        <div class="admin-chat-text">${nl2br(r.content||'')}</div>
+        ${atts}${refsHtml}${manage}
+      </div>
+    </div>`;
   }
-  return `<div class="reply ${r.role==='admin'?'is-admin':''}" data-reply-id="${esc(r.id)}"><b>${esc(author)} · ${esc(when)}${edited}</b><p>${nl2br(r.content||'')}</p>${manage}</div>`;
+  const roleCls = role==='admin' ? 'is-admin' : role==='ai' ? 'is-ai' : '';
+  return `<div class="reply ${roleCls}" data-reply-id="${esc(r.id)}"><b>${esc(author)} · ${esc(when)}${edited}${role==='ai'?' · AI 답변':''}</b><p>${nl2br(r.content||'')}</p>${atts}${refsHtml}${manage}</div>`;
+}
+function adminTicketThreadHtml(ticket, replies){
+  const openMsg = ticket?.content
+    ? {
+        id: 'legacy-open',
+        _legacyOpen: true,
+        role: 'user',
+        displayName: ticket.displayName || ticket.email || '사용자',
+        content: ticket.content,
+        createdAt: ticket.createdAt,
+        attachments: ticket.attachments || []
+      }
+    : null;
+  const rows = [];
+  if(openMsg) rows.push(openMsg);
+  for(const r of replies || []) rows.push(r);
+  if(!rows.length) return `<p class="muted admin-chat-empty">아직 대화가 없습니다.</p>`;
+  return rows.map((r)=>ticketReplyItemHtml(r, ticket.id, {adminView:true})).join('');
 }
 function bindTicketReplyActions(root=document){
   root.querySelectorAll('[data-reply-edit]').forEach(btn=>{
@@ -5836,11 +6131,61 @@ async function deleteTicketReply(ticketId, replyId){
     await updateDoc(ticketRef, patch);
   }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
 }
-function bindReplyForms(root=document){ root.querySelectorAll('.reply-form').forEach(f=>{ if(f.dataset.bound) return; f.dataset.bound='1'; f.addEventListener('submit',ticketReply); }); bindTicketActions(root); bindTicketReplyActions(root); }
+function bindReplyForms(root=document){
+  root.querySelectorAll('.reply-form').forEach(f=>{
+    if(f.dataset.bound) return;
+    f.dataset.bound='1';
+    f.addEventListener('submit',ticketReply);
+  });
+  root.querySelectorAll('.admin-chat-composer textarea').forEach((ta)=>{
+    if(ta.dataset.chatKeys) return;
+    ta.dataset.chatKeys='1';
+    ta.addEventListener('keydown', (ev)=>{
+      if(ev.key !== 'Enter' || ev.shiftKey || ev.isComposing) return;
+      ev.preventDefault();
+      ta.closest('form')?.requestSubmit();
+    });
+  });
+  bindTicketActions(root);
+  bindTicketReplyActions(root);
+}
 function bindTicketActions(root=document){
   root.querySelectorAll('[data-ticket-edit]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>editTicket(btn.dataset.ticketEdit)); });
   root.querySelectorAll('[data-ticket-delete]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>deleteTicket(btn.dataset.ticketDelete)); });
   root.querySelectorAll('[data-ticket-close]').forEach(btn=>{ if(btn.dataset.bound) return; btn.dataset.bound='1'; btn.addEventListener('click',()=>closeTicket(btn.dataset.ticketClose)); });
+  root.querySelectorAll('[data-ticket-handoff]').forEach(btn=>{
+    if(btn.dataset.bound) return;
+    btn.dataset.bound='1';
+    btn.addEventListener('click',()=>requestTicketHumanHandoff(btn.dataset.ticketHandoff));
+  });
+}
+async function requestTicketHumanHandoff(ticketId){
+  if(!currentUser || !ticketId) return;
+  try{
+    const {doc,updateDoc,serverTimestamp,collection,addDoc}=firestoreApi;
+    await updateDoc(doc(db,'supportTickets',ticketId),{
+      conversationMode:'waiting_human',
+      humanRequestedAt:serverTimestamp(),
+      updatedAt:serverTimestamp(),
+      adminRead:false,
+      adminNotified:false,
+      adminNotifyKind:'ticket',
+      adminNotifyAt:serverTimestamp(),
+      lastMessage:'상담사 연결 요청',
+      lastMessageAt:serverTimestamp(),
+      lastSender:'user'
+    });
+    await addDoc(collection(db,'supportTickets',ticketId,'replies'),{
+      uid:currentUser.uid,
+      role:'user',
+      displayName:currentUser.displayName||'',
+      content:'상담사 연결을 요청했습니다.',
+      messageType:'system',
+      createdAt:serverTimestamp()
+    });
+    try{ await callFunctionJsonFallback(['supportAiHandoffSummary'], { ticketId }); }catch(err){ console.warn(err); }
+    alert('상담사 연결을 요청했습니다. 지금까지의 대화가 함께 전달됩니다.');
+  }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
 }
 
 function modalEscapeClose(root, handler){
@@ -6090,72 +6435,77 @@ async function deleteTicket(ticketId){
 }
 async function closeTicket(ticketId){
   if(!currentUser)return;
+  if(!confirm('이 상담을 종료할까요?')) return;
   try{
-    const {doc,getDoc,updateDoc,serverTimestamp}=firestoreApi;
+    const {doc,getDoc,updateDoc,serverTimestamp,collection,addDoc}=firestoreApi;
     const ref=doc(db,'supportTickets',ticketId); const snap=await getDoc(ref); if(!snap.exists())return;
     const t=snap.data(); if(!isAdminUser && t.uid!==currentUser.uid){ alert(tr('no_permission')); return; }
-    await updateDoc(ref,{status:'closed',updatedAt:serverTimestamp()});
+    await updateDoc(ref,{
+      status:'closed',
+      conversationMode:'closed',
+      closedAt:serverTimestamp(),
+      closedReason:'user_end',
+      humanChatNotified:false,
+      updatedAt:serverTimestamp(),
+      lastMessage:'상담 종료',
+      lastMessageAt:serverTimestamp(),
+      lastSender:'system'
+    });
+    await addDoc(collection(db,'supportTickets',ticketId,'replies'),{
+      uid:currentUser.uid,
+      role:'user',
+      displayName:currentUser.displayName||'',
+      content:'사용자가 상담을 종료했습니다.',
+      messageType:'system',
+      createdAt:serverTimestamp()
+    });
   }catch(e){ alert(e.message); }
+}
+function stopMyTicketsListener(){
+  stopMyTicketReplies();
+  if(typeof myTicketsUnsub === 'function'){
+    try{ myTicketsUnsub(); }catch(_){}
+  }
+  myTicketsUnsub = null;
 }
 function listenMyTickets(){
   const list=$('myTicketList'); if(!list)return;
-  if(!currentUser){ list.innerHTML=`<div class="empty-card">${tr('need_login')}</div>`; return; }
+  stopMyTicketsListener();
+  if(!currentUser){
+    myTicketRows = [];
+    list.innerHTML = authStateResolved
+      ? `<div class="empty-card">${tr('need_login')}</div>`
+      : `<div class="empty-card muted">불러오는 중...</div>`;
+    return;
+  }
+  if(!db || !firestoreApi?.onSnapshot){
+    list.innerHTML=`<div class="empty-card muted">불러오는 중...</div>`;
+    return;
+  }
+  list.innerHTML=`<div class="empty-card muted">불러오는 중...</div>`;
   maybeOpenTicketFromQuery();
   const {collection,query,where,onSnapshot}=firestoreApi;
   const q=query(collection(db,'supportTickets'),where('uid','==',currentUser.uid));
-  addUnsub(onSnapshot(q, snap=>{
-    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
-    if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-    list.innerHTML=`${hubTicketHeadHtml()}<div class="hub-list-body">${rows.map(t=>ticketShell(t,false,false)).join('')}</div>`;
-    bindTicketActions(list);
+  myTicketsUnsub = onSnapshot(q, snap=>{
+    myTicketRows=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.updatedAt?.seconds||b.createdAt?.seconds||0)-(a.updatedAt?.seconds||a.createdAt?.seconds||0));
+    renderMyTicketList();
     if(pendingTicketOpenId) consumePendingTicketOpen(list);
-  }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
+  }, err=>{
+    console.error('listenMyTickets', err);
+    list.innerHTML=`<div class="empty-card"><p class="muted">${esc(err.message||'문의를 불러오지 못했습니다.')}</p><p class="muted">로그인 상태를 확인한 뒤 새로고침 해 주세요.</p></div>`;
+  });
+  addUnsub(() => stopMyTicketsListener());
 }
 function listenTicketDetail(){
-  const box=$('ticketDetail'); if(!box||!currentUser)return;
-  const id=getParam('id'); if(!id){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-  const {doc,onSnapshot}=firestoreApi;
-  let renderedKey = '';
-  let detailRepliesUnsub = null;
-  addUnsub(onSnapshot(doc(db,'supportTickets',id), snap=>{
-    if(!snap.exists()){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-    const t={id:snap.id,...snap.data()};
-    if(!isAdminUser && t.uid!==currentUser.uid){ box.innerHTML=`<p class="muted">${tr('no_permission')}</p>`; return; }
-    if(isAdminUser && hasUnreadAdminTicket(t)) markAdminTicketRead(id);
-    const key = [t.title,t.content,t.status,t.updatedAt?.seconds||t.updatedAt,t.replyAt?.seconds||t.replyAt,(t.attachments||[]).length].join('|');
-    if(key !== renderedKey){
-      renderedKey = key;
-      clearTicketReplyObserver();
-      if(detailRepliesUnsub){ try{ detailRepliesUnsub(); }catch{} detailRepliesUnsub=null; }
-      box.innerHTML=ticketShell(t,true,isAdminUser);
-      const replyBox=box.querySelector(`[data-replies="${CSS.escape(id)}"]`);
-      if(replyBox){
-        const {collection,query,orderBy,onSnapshot:onRepliesSnap}=firestoreApi;
-        const rq=query(collection(db,'supportTickets',id,'replies'),orderBy('createdAt','asc'));
-        detailRepliesUnsub = onRepliesSnap(rq, replySnap => {
-          const rows=replySnap.docs.map(d=>({id:d.id,...d.data()}));
-          replyBox.innerHTML=rows.length
-            ? rows.map(r=>ticketReplyItemHtml(r, id, {adminView:false})).join('')
-            : '';
-          bindTicketReplyActions(replyBox);
-          const panel = replyBox.closest('.hub-replies-panel') || replyBox;
-          const shouldFocus = getParam('focus') === 'reply' || location.hash === '#ticketReplies';
-          if(shouldFocus) requestAnimationFrame(()=>focusTicketReplySection(panel));
-          const isOwner = currentUser && t.uid === currentUser.uid;
-          if(isOwner && hasUnreadTicketReply(t) && rows.some(r => r.role === 'admin')){
-            const watchTarget = panel.querySelector('.reply.is-admin:last-of-type') || panel;
-            observeTicketReplyVisibility(id, watchTarget);
-          }
-        }, err => { console.error('replies',err); replyBox.innerHTML=`<p class="muted">${esc(err.message)}</p>`; });
-        addUnsub(detailRepliesUnsub);
-      }
-      bindReplyForms(box);
-    } else if(currentUser && t.uid === currentUser.uid && hasUnreadTicketReply(t)){
-      const panel = box.querySelector('.hub-replies-panel');
-      const watchTarget = panel?.querySelector('.reply.is-admin:last-of-type') || panel;
-      if(watchTarget) observeTicketReplyVisibility(id, watchTarget);
-    }
-  }, err=>{ console.error(err); box.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
+  const box=$('ticketDetail'); if(!box)return;
+  const id=getParam('id');
+  if(!id){
+    location.replace('./my-tickets.html');
+    return;
+  }
+  // Deep links go to expandable chat list
+  location.replace(`./my-tickets.html?open=${encodeURIComponent(id)}`);
 }
 async function ticketReply(e){
   e.preventDefault();
@@ -6166,26 +6516,78 @@ async function ticketReply(e){
   const content=input.value.trim();
   const ticketId=form.dataset.ticket;
   if(!content)return;
+  const sendingAdminChat = isAdminUser && form.classList.contains('admin-chat-composer');
+  if(sendingAdminChat){
+    form.classList.add('is-sending');
+    input.disabled = true;
+  }
   try{
-    const {collection,addDoc,doc,updateDoc,serverTimestamp}=firestoreApi;
-    const replyRef = await addDoc(collection(db,'supportTickets',ticketId,'replies'),{uid:currentUser.uid,role:isAdminUser?'admin':'user',displayName:isAdminUser?BRAND_AUTHOR:(currentUser.displayName||''),content,createdAt:serverTimestamp()});
-    const ticketPatch = {status:isAdminUser?'answered':'open', updatedAt:serverTimestamp()};
+    const {collection,addDoc,doc,getDoc,updateDoc,serverTimestamp}=firestoreApi;
+    const ticketSnap = await getDoc(doc(db,'supportTickets',ticketId));
+    const ticketData = ticketSnap.exists() ? (ticketSnap.data()||{}) : {};
+    const prevMode = ticketData.conversationMode || 'ai';
+    const replyRef = await addDoc(collection(db,'supportTickets',ticketId,'replies'),{
+      uid:currentUser.uid,
+      role:isAdminUser?'admin':'user',
+      displayName:isAdminUser?BRAND_AUTHOR:(currentUser.displayName||''),
+      content,
+      messageType:'text',
+      createdAt:serverTimestamp()
+    });
+    const ticketPatch = {
+      status:isAdminUser?'answered':'open',
+      updatedAt:serverTimestamp(),
+      lastMessage:content.slice(0,120),
+      lastMessageAt:serverTimestamp(),
+      lastSender:isAdminUser?'admin':'user'
+    };
+    let notifyOwnerOnce = false;
     if(isAdminUser){
-      ticketPatch.replyRead = false;
-      ticketPatch.replyNotified = false;
-      ticketPatch.replyAt = serverTimestamp();
+      ticketPatch.conversationMode = 'human';
+      if(!ticketData.humanAssignedUid){
+        ticketPatch.humanAssignedAt = serverTimestamp();
+        ticketPatch.humanAssignedUid = currentUser.uid;
+      }
+      // Notify user only when counselor first joins this chat session
+      const alreadyNotified = ticketData.humanChatNotified === true && prevMode === 'human';
+      if(!alreadyNotified){
+        ticketPatch.replyRead = false;
+        ticketPatch.replyNotified = false;
+        ticketPatch.replyAt = serverTimestamp();
+        ticketPatch.humanChatNotified = true;
+        notifyOwnerOnce = true;
+      }
     } else {
-      ticketPatch.adminRead = false;
-      ticketPatch.adminNotified = false;
-      ticketPatch.adminNotifyKind = 'reply';
-      ticketPatch.adminNotifyAt = serverTimestamp();
+      const mode = prevMode || 'ai';
+      // AI 상담 중에는 관리자 토스트를 올리지 않음. 상담사 요청/상담 중에만 알림.
+      if(mode === 'waiting_human' || mode === 'human'){
+        ticketPatch.adminRead = false;
+        ticketPatch.adminNotified = false;
+        ticketPatch.adminNotifyKind = 'reply';
+        ticketPatch.adminNotifyAt = serverTimestamp();
+      }
     }
     await updateDoc(doc(db,'supportTickets',ticketId), ticketPatch);
     if(isAdminUser){
-      notifyTicketOwnerReply(ticketId, content, replyRef.id).catch(err=>console.error(err));
+      if(notifyOwnerOnce){
+        notifyTicketOwnerReply(ticketId, content, replyRef.id, { sessionStart:true }).catch(err=>console.error(err));
+      }
+    } else if(prevMode === 'ai'){
+      callFunctionJsonFallback(['supportAiReply'], { ticketId }).catch(err=>console.warn('supportAiReply', err));
     }
     input.value='';
+    if(sendingAdminChat){
+      const thread = form.closest('.admin-chat-thread-wrap')?.querySelector('.admin-chat-thread');
+      if(thread) thread.scrollTop = thread.scrollHeight;
+      input.focus();
+    }
   }catch(e){ console.error(e); alert(e.message || tr('check_failed')); }
+  finally{
+    if(sendingAdminChat){
+      form.classList.remove('is-sending');
+      input.disabled = false;
+    }
+  }
 }
 function filterRows(rows, searchId, statusId, fields){
   const q = normalize($(searchId)?.value || '').toLowerCase();
@@ -6240,7 +6642,7 @@ function adminCmsFind(kind, id){
   return adminCmsRows(kind).find(x=>x.id===id) || null;
 }
 function adminCmsStay(){
-  return page==='admin.html' && !!$('adminCmsList');
+  return isAdminConsolePage() && !!$('adminCmsList');
 }
 function openAdminCmsAfterWrite(kind, id){
   if(!adminCmsStay() || !id) return false;
@@ -6791,6 +7193,10 @@ function adminTicketStatusLabel(st){
   return ({open:'미답변', pending:'처리 중', answered:'답변완료', closed:'종료'})[v] || st || '미답변';
 }
 function ticketStatusPill(row){
+  const mode=String(row?.conversationMode||'').toLowerCase();
+  if(mode==='waiting_human') return `<span class="badge mode-waiting">상담사 요청</span>`;
+  if(mode==='human') return `<span class="badge mode-human">상담중</span>`;
+  if(mode==='ai' && String(row?.status||'open')!=='closed') return `<span class="badge mode-ai">AI 상담중</span>`;
   const st=String(row?.status||'open').toLowerCase();
   const cls = st==='answered'?'answered':st==='closed'?'closed':st==='pending'?'pending':'open';
   return `<span class="badge ${esc(cls)}">${esc(adminTicketStatusLabel(st))}</span>`;
@@ -6886,13 +7292,13 @@ function mountAdminTicketExpandPanel(box){
   if(!openId) return;
   const replyBox = box.querySelector(`[data-replies="${CSS.escape(openId)}"]`);
   if(!replyBox) return;
+  const ticket = adminTicketRows.find((t)=>t.id===openId) || { id: openId };
   const {collection,query,orderBy,onSnapshot}=firestoreApi;
   const q=query(collection(db,'supportTickets',openId,'replies'),orderBy('createdAt','asc'));
   adminTicketReplyUnsub = onSnapshot(q, snap => {
     const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    replyBox.innerHTML = rows.length
-      ? rows.map(r=>ticketReplyItemHtml(r, openId, {adminView:true})).join('')
-      : `<p class="muted">아직 답변이 없습니다.</p>`;
+    replyBox.innerHTML = adminTicketThreadHtml(ticket, rows);
+    replyBox.scrollTop = replyBox.scrollHeight;
     bindTicketReplyActions(replyBox);
   }, err => {
     console.error('admin replies', err);
@@ -6943,15 +7349,14 @@ function renderAdminTicketTable(){
     <tr class="admin-ticket-expand" data-ticket-panel="${esc(t.id)}" ${open?'':'hidden'}>
       <td colspan="6"><div class="admin-ticket-expand-inner">
         <div class="admin-ticket-meta">${metaBits}</div>
-        <div class="admin-ticket-body">${nl2br(t.content||'') || '<span class="muted">내용 없음</span>'}</div>
-        ${ticketAttachmentsHtml(t.attachments)}
-        <div class="admin-ticket-replies-block">
-          <h4>답변</h4>
-          <div class="admin-ticket-replies" data-replies="${esc(t.id)}"></div>
-          <form class="reply-form admin-ticket-reply-form" data-ticket="${esc(t.id)}">
-            <textarea rows="3" placeholder="${esc(tr('reply_placeholder'))}" required></textarea>
+        ${t.aiSummary ? `<div class="admin-ticket-ai-summary"><b>AI 상담 요약</b>\n${esc(t.aiSummary)}</div>` : ''}
+        <div class="admin-ticket-replies-block admin-chat-thread-wrap">
+          <h4>실시간 대화</h4>
+          <div class="admin-ticket-replies admin-chat-thread" data-replies="${esc(t.id)}"></div>
+          <form class="reply-form admin-ticket-reply-form admin-chat-composer" data-ticket="${esc(t.id)}">
+            <textarea rows="2" placeholder="${esc(tr('chat_placeholder'))}" required></textarea>
             <div class="admin-ticket-reply-actions">
-              <button class="primary mini-btn" type="submit">답변 등록</button>
+              <button class="primary mini-btn" type="submit">${esc(tr('chat_send'))}</button>
               <button type="button" class="secondary mini-btn" data-ticket-close="${esc(t.id)}">${tr('close')}</button>
             </div>
           </form>
@@ -7116,13 +7521,55 @@ async function deleteAdminPost(raw){
     return true;
   }catch(e){ alert(e.message); return false; }
 }
+function patchAdminTicketTableRows(){
+  const box=$('adminTicketList');
+  if(!box) return;
+  box.querySelectorAll('[data-ticket-row]').forEach((tr)=>{
+    const id = tr.getAttribute('data-ticket-row');
+    const t = adminTicketRows.find((x)=>x.id===id);
+    if(!t) return;
+    const statusTd = tr.querySelector('.admin-ticket-status');
+    if(statusTd) statusTd.innerHTML = ticketStatusPill(t);
+    const dateTd = tr.querySelector('.admin-ticket-date');
+    if(dateTd) dateTd.textContent = fmtAdminStamp(t.updatedAt||t.createdAt);
+    tr.classList.toggle('is-unread', hasUnreadAdminTicket(t));
+  });
+  const openId = box.dataset.openTicketId || '';
+  if(openId){
+    const t = adminTicketRows.find((x)=>x.id===openId);
+    const panel = box.querySelector(`[data-ticket-panel="${CSS.escape(openId)}"]`);
+    const sumHost = panel?.querySelector('.admin-ticket-ai-summary');
+    if(t?.aiSummary){
+      const html = `<b>AI 상담 요약</b>\n${esc(t.aiSummary)}`;
+      if(sumHost) sumHost.innerHTML = html;
+      else if(panel){
+        const meta = panel.querySelector('.admin-ticket-meta');
+        const el = document.createElement('div');
+        el.className = 'admin-ticket-ai-summary';
+        el.innerHTML = html;
+        meta?.after(el);
+      }
+    }
+  }
+}
 function listenAdminTickets(){
   const list=$('adminTicketList'); if(!list||!isAdminUser)return;
   bindAdminFilters();
   const {collection,onSnapshot}=firestoreApi;
   addUnsub(onSnapshot(collection(db,'supportTickets'), snap=>{
     adminTicketRows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderAdminTicketTable();
+    const box=$('adminTicketList');
+    const openId = box?.dataset.openTicketId || '';
+    const panelOpen = !!(openId && box.querySelector(`[data-ticket-panel="${CSS.escape(openId)}"]:not([hidden])`));
+    // Keep open chat composer mounted so admin dialogue feels continuous
+    if(panelOpen){
+      patchAdminTicketTableRows();
+      syncAdminTicketTabs();
+      const rows=getAdminTicketFilteredRows();
+      $('adminTicketCount') && ($('adminTicketCount').textContent = `${rows.length} / ${adminTicketRows.length}`);
+    } else {
+      renderAdminTicketTable();
+    }
   }, err=>{ console.error(err); list.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
 function listenAdminPostManager(){
@@ -12508,7 +12955,7 @@ function notifyTargetHref(n){
   if(type === 'license_change') return `${base}account.html`;
   if(type === 'credit_purchase' || type === 'credit_admin_grant' || type === 'credit_admin_deduct') return `${base}account.html#plan`;
   if(type === 'reservation_complete' || type === 'reservation_failed' || type === 'queue_done') return `${base}account.html#plan`;
-  if(type === 'ticket_reply' && n.ticketId) return `${base}ticket.html?id=${encodeURIComponent(n.ticketId)}&focus=reply`;
+  if(type === 'ticket_reply' && n.ticketId) return `${base}my-tickets.html?open=${encodeURIComponent(n.ticketId)}`;
   if(type === 'notice' && n.postId) return `${base}notice.html?id=${encodeURIComponent(n.postId)}`;
   if(type === 'patch_note' && n.postId) return `${base}patch-note.html?id=${encodeURIComponent(n.postId)}`;
   const postId = n?.postId || '';
@@ -12673,7 +13120,7 @@ async function notifyBoardPostOwner({postId, commentId, content, parentId}={}){
     console.error('notifyBoardPostOwner', e);
   }
 }
-async function notifyTicketOwnerReply(ticketId, content, replyId){
+async function notifyTicketOwnerReply(ticketId, content, replyId, { sessionStart=false }={}){
   if(!isAdminUser || !ticketId || !firestoreApi) return;
   try{
     const {doc, getDoc} = firestoreApi;
@@ -12685,10 +13132,12 @@ async function notifyTicketOwnerReply(ticketId, content, replyId){
     await createUserNotification(ownerUid, {
       type:'ticket_reply',
       category: 'inquiry',
-      targetUrl: `/ticket.html?id=${encodeURIComponent(ticketId)}&focus=reply`,
+      targetUrl: `/my-tickets.html?open=${encodeURIComponent(ticketId)}`,
       ticketId,
-      replyId: replyId || '',
-      sourceId: replyId || ticketId,
+      replyId: sessionStart ? '' : (replyId || ''),
+      // One stable notification id per counselor session start
+      id: sessionStart ? `ticket_human_${ticketId}` : undefined,
+      sourceId: sessionStart ? `human_start_${ticketId}` : (replyId || ticketId),
       actorName: BRAND_AUTHOR,
       postTitle: t.title || '',
       preview: content || ''
@@ -13965,6 +14414,44 @@ function initTopbarActions(){
   if(currentUser) updateTopbarProfile(currentUser);
   else syncTopbarProfileAuthUi(false);
 }
+function topNavMenuItem({href, title, desc, icon, attrs=''}){
+  const descHtml = desc ? `<span>${desc}</span>` : '';
+  return `<a class="top-nav-item" href="${href}" ${attrs} role="menuitem"><span class="top-nav-item-icon" aria-hidden="true">${icon||''}</span><span class="top-nav-item-copy"><b>${title}</b>${descHtml}</span></a>`;
+}
+function buildMainNavHtml(base, purchaseHref){
+  // Leaf destinations preserved; Guides expands to existing /guide/* pages.
+  const guideItems=[
+    {slug:'getting-started', title:'시작하기', desc:'설치와 첫 변환', icon:'01'},
+    {slug:'youtube-to-midi', title:'YouTube → MIDI', desc:'링크 변환 방법', icon:'YT'},
+    {slug:'audio-to-midi', title:'Audio → MIDI', desc:'MP3·WAV 변환', icon:'AU'},
+    {slug:'midi-editor', title:'MIDI Editor', desc:'편집·음원 사용', icon:'ED'},
+    {slug:'pdf-to-midi', title:'PDF → MIDI', desc:'악보 인식', icon:'PDF'},
+    {slug:'troubleshooting', title:'문제 해결', desc:'설치·로그인·변환', icon:'?'}
+  ].map((g)=>topNavMenuItem({
+    href:`${base}guide/${g.slug}/`,
+    title:g.title,
+    desc:g.desc,
+    icon:g.icon,
+    attrs:`data-guide="${g.slug}"`
+  })).join('');
+  const guideHub=topNavMenuItem({
+    href:`${base}guide/index.html`,
+    title:'전체 가이드',
+    desc:'프로그램 사용 가이드 목록',
+    icon:'ALL',
+    attrs:'data-nav="guides"'
+  });
+  return [
+    `<a class="top-nav-link" href="${localeHomeHref()}" data-nav="home"><span>홈</span></a>`,
+    `<a class="top-nav-link" href="${base}product.html" data-nav="product"><span>제품</span></a>`,
+    `<div class="top-nav-group is-wide" data-nav-group="guides"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>가이드</span><span class="nav-soon-badge">준비중</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${guideHub}${guideItems}</div></div></div>`,
+    `<a class="top-nav-link" href="${base}downloads.html" data-nav="downloads"><span>다운로드</span></a>`,
+    `<a class="top-nav-link is-purchase" href="${purchaseHref}" data-nav="purchase"><span>구매</span></a>`,
+    `<div class="top-nav-group is-wide" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', desc:'중요 운영 안내', icon:'N', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}patch-notes.html`, title:'패치노트', desc:'버전별 변경사항', icon:'P', attrs:'data-hub="patches"'})}${topNavMenuItem({href:`${base}faq.html`, title:'FAQ', desc:'자주 묻는 질문', icon:'F', attrs:'data-hub="faq"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', desc:'사용자 게시글', icon:'B', attrs:'data-hub="board"'})}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="support"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>고객지원</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}support.html`, title:'1:1 문의', desc:'개별 문의 접수', icon:'1:1', attrs:'data-hub="support"'})}${topNavMenuItem({href:`${base}my-tickets.html`, title:'나의 문의', desc:'답변과 내역 확인', icon:'MY', attrs:'data-hub="tickets"'})}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="account"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>계정</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}account.html`, title:'내 계정', desc:'라이선스·로그인 정보', icon:'ME', attrs:'data-nav="account"'})}<a class="top-nav-item hidden" id="adminNav" hidden aria-hidden="true" href="${base}admin.html" role="menuitem"><span class="top-nav-item-icon" aria-hidden="true">AD</span><span class="top-nav-item-copy"><b>관리자</b><span>운영 콘솔</span></span></a></div></div></div>`
+  ].join('');
+}
 function initSidebarLayout(){
   if(document.body.classList.contains('admin-console-page')){
     document.documentElement.classList.add('sidebar-ready');
@@ -13977,51 +14464,34 @@ function initSidebarLayout(){
   const footer=document.querySelector('footer');
   const base=window.MIDIAI_BASE_PATH||'./';
   const purchaseHref=lifetimePurchaseHref();
-  const brand=topbar.querySelector('.brand');
   const shell=document.createElement('div');
   shell.className='app-shell';
-  const sidebar=document.createElement('aside');
-  sidebar.className='sidebar';
-  sidebar.id='sidebar';
-  if(brand){
-    const brandClone=brand.cloneNode(true);
-    brandClone.classList.add('sidebar-brand');
-    const identity=document.createElement('div');
-    identity.className='sidebar-identity';
-    identity.appendChild(brandClone);
-    sidebar.appendChild(identity);
-  }
   const nav=document.createElement('nav');
   nav.id='mainNav';
-  nav.className='sidebar-nav';
+  nav.className='top-nav';
   nav.setAttribute('aria-label', tt('사이트 메뉴'));
-  nav.innerHTML=`<div class="sidebar-primary"><a href="${localeHomeHref()}" data-nav="home">${navIcon('home')}<span>홈</span></a><a href="${base}product.html" data-nav="product">${navIcon('product')}<span>제품</span></a><a href="${base}guide/index.html" data-nav="guides">${navIcon('guide')}<span>가이드</span><span class="nav-soon-badge">준비중</span></a><a href="${base}downloads.html" data-nav="downloads">${navIcon('download')}<span>다운로드</span></a><a href="${purchaseHref}" data-nav="purchase">${navIcon('purchase')}<span>구매</span></a></div><div class="sidebar-section"><p class="sidebar-label">커뮤니티</p><div class="sidebar-links"><a href="${base}notices.html" data-hub="notices">${navIcon('notice')}<span>공지사항</span></a><a href="${base}patch-notes.html" data-hub="patches">${navIcon('patch')}<span>패치노트</span></a><a href="${base}faq.html" data-hub="faq">${navIcon('faq')}<span>FAQ</span></a><a href="${base}board.html" data-hub="board">${navIcon('board')}<span>자유게시판</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">고객지원</p><div class="sidebar-links"><a href="${base}support.html" data-hub="support">${navIcon('support')}<span>1:1 문의</span></a><a href="${base}my-tickets.html" data-hub="tickets">${navIcon('tickets')}<span>나의 문의</span></a></div></div><div class="sidebar-section"><p class="sidebar-label">계정</p><div class="sidebar-links"><a href="${base}account.html" data-nav="account">${navIcon('account')}<span>내 계정</span></a><a id="adminNav" class="hidden" hidden aria-hidden="true" href="${base}admin.html">${navIcon('admin')}<span>관리자</span></a></div></div>`;
-  sidebar.appendChild(nav);
+  nav.innerHTML=buildMainNavHtml(base, purchaseHref);
   const backdrop=document.createElement('div');
   backdrop.className='sidebar-backdrop';
   backdrop.id='sidebarBackdrop';
   const appMain=document.createElement('div');
   appMain.className='app-main';
   topbar.classList.add('topbar-slim');
-  topbar.querySelector('.brand')?.remove();
   topbar.querySelector('#mainNav')?.remove();
-  const pageTitle=resolveTopbarPageTitle();
-  const topbarPage=document.createElement('div');
-  topbarPage.className='topbar-page';
-  topbarPage.textContent=pageTitle;
+  topbar.querySelector('.topbar-page')?.remove();
   const actions=topbar.querySelector('.actions');
-  if(actions) topbar.insertBefore(topbarPage, actions);
-  else topbar.appendChild(topbarPage);
+  const menuBtn=topbar.querySelector('#menuBtn');
+  if(actions) topbar.insertBefore(nav, actions);
+  else if(menuBtn) topbar.insertBefore(nav, menuBtn.nextSibling);
+  else topbar.appendChild(nav);
   topbar.parentNode.insertBefore(shell, topbar);
-  shell.appendChild(sidebar);
   appMain.appendChild(topbar);
   appMain.appendChild(main);
   if(footer) appMain.appendChild(footer);
   shell.appendChild(appMain);
   shell.appendChild(backdrop);
-  document.body.classList.add('sidebar-layout');
-  // Reveal only after the sidebar column has laid out (avoids full-width→narrow flash).
-  // On product page also wait for CMS seed paint so static→CMS media swap isn't visible.
+  document.body.classList.add('sidebar-layout','topnav-layout');
+  // Reveal after chrome lays out (and product CMS paint when present).
   scheduleShellReveal();
 }
 function scheduleShellReveal(){
@@ -14050,33 +14520,92 @@ function scheduleShellReveal(){
     poll();
   });
 }
+function closeTopNavChrome(){
+  $('mainNav')?.classList.remove('open');
+  $('sidebarBackdrop')?.classList.remove('open');
+  document.body.classList.remove('sidebar-open');
+  document.querySelectorAll('#mainNav .top-nav-group.is-open').forEach((g)=>{
+    g.classList.remove('is-open');
+    g.querySelector('.top-nav-trigger')?.setAttribute('aria-expanded','false');
+  });
+}
 function bindSidebar(){
-  const close=()=>{
-    $('sidebar')?.classList.remove('open');
-    $('sidebarBackdrop')?.classList.remove('open');
-    document.body.classList.remove('sidebar-open');
-  };
+  const close=()=>closeTopNavChrome();
   $('menuBtn')?.addEventListener('click',()=>{
-    $('sidebar')?.classList.toggle('open');
-    $('sidebarBackdrop')?.classList.toggle('open');
-    document.body.classList.toggle('sidebar-open');
+    const nav=$('mainNav');
+    if(!nav) return;
+    const willOpen=!nav.classList.contains('open');
+    nav.classList.toggle('open', willOpen);
+    $('sidebarBackdrop')?.classList.toggle('open', willOpen);
+    document.body.classList.toggle('sidebar-open', willOpen);
   });
   $('sidebarBackdrop')?.addEventListener('click',close);
   document.querySelectorAll('#mainNav a').forEach(a=>a.addEventListener('click',()=>{ if(window.matchMedia('(max-width:980px)').matches) close(); }));
+  document.querySelectorAll('#mainNav .top-nav-group').forEach((group)=>{
+    const trigger=group.querySelector('.top-nav-trigger');
+    if(!trigger) return;
+    trigger.addEventListener('click',(e)=>{
+      // Mobile drawer shows all panels expanded; ignore trigger clicks there.
+      if(window.matchMedia('(max-width:980px)').matches) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const willOpen=!group.classList.contains('is-open');
+      document.querySelectorAll('#mainNav .top-nav-group.is-open').forEach((g)=>{
+        if(g===group) return;
+        g.classList.remove('is-open');
+        g.querySelector('.top-nav-trigger')?.setAttribute('aria-expanded','false');
+      });
+      group.classList.toggle('is-open', willOpen);
+      trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+  });
+  if(!document.body.dataset.topNavOutsideBound){
+    document.body.dataset.topNavOutsideBound='1';
+    document.addEventListener('click',(e)=>{
+      if(e.target.closest?.('#mainNav .top-nav-group')) return;
+      document.querySelectorAll('#mainNav .top-nav-group.is-open').forEach((g)=>{
+        g.classList.remove('is-open');
+        g.querySelector('.top-nav-trigger')?.setAttribute('aria-expanded','false');
+      });
+    });
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==='Escape') close();
+    });
+  }
 }
 function initSidebarNav(){
   const parentPage={'notice.html':'notices.html','patch-note.html':'patch-notes.html','board-post.html':'board.html','board-write.html':'board.html','ticket.html':'my-tickets.html','guide.html':'guide/index.html'};
-  const file=parentPage[page]||page||'index.html';
+  const rawPage=page||'index.html';
+  const file=parentPage[rawPage]||rawPage;
+  const fileKey=String(file).replace(/\.html$/i,'').toLowerCase() || 'index';
   const path=location.pathname.replace(/\\/g,'/').toLowerCase();
-  const inGuideCms=page==='guide.html' || /\/guide\//.test(path);
+  const inGuideArea=page==='guide.html' || /\/guide(\/|$)/.test(path);
+  const guideSlugMatch=path.match(/\/guide\/([a-z0-9-]+)(?:\/|\/index\.html)?$/i);
+  const guideSlug=guideSlugMatch ? guideSlugMatch[1].toLowerCase() : '';
+  const onGuideHub=/\/guide\/?(index\.html)?$/.test(path) || path.endsWith('/guide/index.html');
   document.querySelectorAll('#mainNav a[href]').forEach(a=>{
     const href=a.getAttribute('href')||'';
     const target=href.split('/').pop()?.split('?')[0]||'';
-    const isGuideCmsLink=a.getAttribute('data-nav')==='guides';
+    const targetKey=String(target).replace(/\.html$/i,'').toLowerCase() || 'index';
+    const isGuideHubLink=a.getAttribute('data-nav')==='guides';
+    const dataGuide=(a.getAttribute('data-guide')||'').toLowerCase();
     let active=false;
-    if(inGuideCms) active = isGuideCmsLink;
-    else active = target===file && !isGuideCmsLink;
+    if(inGuideArea){
+      if(dataGuide && guideSlug) active = dataGuide===guideSlug;
+      else if(isGuideHubLink) active = onGuideHub || (!guideSlug && !dataGuide);
+    } else {
+      active = (target===file || targetKey===fileKey) && !isGuideHubLink && !dataGuide;
+    }
+    // Locale home paths like ./en/ → treat as home
+    if(!active && a.getAttribute('data-nav')==='home' && (fileKey==='' || fileKey==='index' || fileKey==='en' || fileKey==='ja' || fileKey==='ko')){
+      active = true;
+    }
     a.classList.toggle('active', active);
+  });
+  document.querySelectorAll('#mainNav .top-nav-group').forEach((group)=>{
+    const hasActive=!!group.querySelector('a.active') || (group.getAttribute('data-nav-group')==='guides' && inGuideArea);
+    group.classList.toggle('has-active', hasActive);
+    group.querySelector('.top-nav-trigger')?.classList.toggle('active', hasActive);
   });
 }
 
@@ -14191,3 +14720,16 @@ initAuth();
 initPurchasePhone();
 initPayPal();
 initPurchasePoints();
+
+initSupportChat({
+  $,
+  getUser: () => currentUser,
+  isAdmin: () => isAdminUser,
+  getDb: () => db,
+  getFs: () => firestoreApi,
+  getStorageApi: () => (storage && storageApi?.ref ? { ...storageApi, storage } : null),
+  callFn: (names, payload) => callFunctionJsonFallback(names, payload),
+  basePath: window.MIDIAI_BASE_PATH || './',
+  brandAuthor: typeof BRAND_AUTHOR !== 'undefined' ? BRAND_AUTHOR : 'MidiAI Studio',
+  onAuthChange
+});

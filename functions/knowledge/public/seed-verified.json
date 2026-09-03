@@ -1,0 +1,1012 @@
+[
+  {
+    "id": "nav-workspace",
+    "title": {
+      "ko": "앱 주요 메뉴",
+      "en": "Main app menus",
+      "ja": "主なメニュー"
+    },
+    "category": "getting_started",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/lang/en.json nav labels"
+    ],
+    "appVersion": "1.6.2",
+    "relatedGuideUrl": "/guide/getting-started/",
+    "keywords": [
+      "메뉴",
+      "홈",
+      "스튜디오",
+      "studio",
+      "library",
+      "라이브러리",
+      "settings",
+      "설정",
+      "어디"
+    ],
+    "summary": {
+      "ko": "MidiAI Studio 주요 화면은 Home, Studio, MIDI Edit, Score Editor, Score Conversion, Library, Community, Settings, 1:1 Support 입니다.",
+      "en": "Main screens: Home, Studio, MIDI Edit, Score Editor, Score Conversion, Library, Community, Settings, 1:1 Support."
+    },
+    "details": {
+      "ko": "변환은 Studio에서 시작하고, 편집은 MIDI Edit / Score Editor, 저장 목록은 Library, 계정·언어·출력 폴더는 Settings에서 확인합니다.",
+      "en": "Start conversion in Studio; edit in MIDI Edit / Score Editor; saved items in Library; account/language/output folder in Settings."
+    },
+    "sourceHash": "5c485d67e5c7e387",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "getting-started-install",
+    "title": {
+      "ko": "설치와 시작하기",
+      "en": "Install & get started",
+      "ja": "インストールと開始"
+    },
+    "category": "installation",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/getting-started",
+      "downloads.html"
+    ],
+    "relatedGuideUrl": "/guide/getting-started/",
+    "keywords": [
+      "설치",
+      "install",
+      "시작",
+      "다운로드",
+      "download",
+      "installer",
+      "업데이트",
+      "update",
+      "C:\\MidiAI"
+    ],
+    "summary": {
+      "ko": "Windows용 MidiAI Installer로 설치·업데이트·복구를 진행한 뒤 Google 로그인으로 시작합니다.",
+      "en": "Use the Windows MidiAI Installer for install/update/repair, then sign in with Google."
+    },
+    "steps": [
+      {
+        "ko": "사이트 다운로드에서 MidiAI Installer.exe를 받습니다.",
+        "en": "Download MidiAI Installer.exe from the Downloads page."
+      },
+      {
+        "ko": "Installer의 Install/Update로 설치 또는 복구합니다. 기본 경로 예시는 C:\\MidiAI 입니다.",
+        "en": "Run Install/Update. Default path example: C:\\MidiAI."
+      },
+      {
+        "ko": "앱을 실행하고 Google 로그인 후 Trial 또는 Full 라이선스를 확인합니다.",
+        "en": "Launch the app, sign in with Google, then check Trial or Full license."
+      },
+      {
+        "ko": "Studio에서 YouTube 또는 오디오로 첫 변환을 시도합니다.",
+        "en": "Try your first conversion from YouTube or audio in Studio."
+      }
+    ],
+    "fixSteps": [
+      {
+        "ko": "설치/실행 문제가 있으면 Installer를 다시 실행하고 System Check 결과를 저장해 1:1 문의에 첨부합니다.",
+        "en": "If install/run fails, re-run Installer, save System Check, and attach it to 1:1 support."
+      }
+    ],
+    "sourceHash": "80076fa4e8c4c77a",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "youtube-to-midi",
+    "title": {
+      "ko": "YouTube → MIDI",
+      "en": "YouTube → MIDI",
+      "ja": "YouTube → MIDI"
+    },
+    "category": "youtube",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/youtube-to-midi",
+      "MidiAI Studio convert mode Piano MIDI"
+    ],
+    "relatedGuideUrl": "/guide/youtube-to-midi/",
+    "keywords": [
+      "youtube",
+      "유튜브",
+      "yt",
+      "변환",
+      "convert",
+      "url",
+      "링크",
+      "스튜디오"
+    ],
+    "summary": {
+      "ko": "Studio에서 YouTube URL을 넣거나 검색한 뒤 웨이브폼 구간을 선택하고 Piano MIDI(권장)로 변환합니다.",
+      "en": "In Studio, paste/search a YouTube URL, pick a waveform range, then convert with Piano MIDI (Recommended)."
+    },
+    "steps": [
+      {
+        "ko": "Studio를 엽니다.",
+        "en": "Open Studio."
+      },
+      {
+        "ko": "YouTube 링크를 입력하거나 검색합니다.",
+        "en": "Enter or search a YouTube URL."
+      },
+      {
+        "ko": "미리듣기로 구간을 확인하고 변환 범위를 선택합니다.",
+        "en": "Preview and select the conversion range."
+      },
+      {
+        "ko": "Piano MIDI(권장)로 변환을 시작합니다.",
+        "en": "Start conversion with Piano MIDI (Recommended)."
+      },
+      {
+        "ko": "결과를 MIDI Editor에서 다듬거나 저장/내보냅니다.",
+        "en": "Refine in MIDI Editor, then save/export."
+      }
+    ],
+    "details": {
+      "ko": "공개 영상이 기본입니다. 비공개·연령제한·지역 제한 영상은 실패할 수 있습니다. 피아노/솔로처럼 음고가 분명한 소스가 유리합니다.",
+      "en": "Public videos are the baseline. Private, age-restricted, or region-blocked videos may fail. Clear piano/solo sources work better."
+    },
+    "sourceHash": "0b86c691d0bc52d0",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "audio-to-midi",
+    "title": {
+      "ko": "Audio → MIDI",
+      "en": "Audio → MIDI",
+      "ja": "Audio → MIDI"
+    },
+    "category": "audio",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/audio-to-midi",
+      "MidiAI drop formats mp3/wav/m4a/webm"
+    ],
+    "relatedGuideUrl": "/guide/audio-to-midi/",
+    "keywords": [
+      "audio",
+      "오디오",
+      "mp3",
+      "wav",
+      "m4a",
+      "webm",
+      "음원",
+      "변환"
+    ],
+    "summary": {
+      "ko": "로컬 오디오(MP3·WAV·M4A·WEBM 등)를 Studio/Library로 가져와 구간을 고른 뒤 MIDI로 변환합니다.",
+      "en": "Import local audio (MP3/WAV/M4A/WEBM, etc.) into Studio/Library, choose a range, then convert to MIDI."
+    },
+    "steps": [
+      {
+        "ko": "오디오 파일을 드래그하거나 불러옵니다.",
+        "en": "Drag/drop or open an audio file."
+      },
+      {
+        "ko": "변환 구간과 미리듣기를 확인합니다.",
+        "en": "Confirm range and preview."
+      },
+      {
+        "ko": "변환 후 MIDI Editor에서 수정합니다.",
+        "en": "Convert, then edit in MIDI Editor."
+      }
+    ],
+    "details": {
+      "ko": "노이즈가 적고 음고가 분명할수록 결과가 안정적인 편입니다.",
+      "en": "Lower noise and clearer pitch usually give more stable results."
+    },
+    "sourceHash": "7582f3ce54b6278a",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "pdf-to-midi",
+    "title": {
+      "ko": "PDF 악보 → MIDI",
+      "en": "PDF score → MIDI",
+      "ja": "PDF楽譜 → MIDI"
+    },
+    "category": "pdf_to_midi",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "beta",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "product",
+    "sourceRefs": [
+      "guide/pdf-to-midi",
+      "product-cms PDF 악보 · Beta",
+      "MidiAI score_pdf steps"
+    ],
+    "relatedGuideUrl": "/guide/pdf-to-midi/",
+    "keywords": [
+      "pdf",
+      "악보",
+      "omr",
+      "score",
+      "musicxml",
+      "beta"
+    ],
+    "summary": {
+      "ko": "PDF 악보를 인식해 MIDI/MusicXML로 만드는 기능입니다. 제품상 Beta이며 YouTube·오디오 변환만큼 완성된 경로가 아닙니다.",
+      "en": "Converts score PDFs to MIDI/MusicXML. Marked Beta in product copy; not as mature as YouTube/audio conversion.",
+      "ja": "PDF楽譜を認識してMIDI/MusicXMLに変換します。製品上はBetaで、YouTube・音声変換ほど完成度は高くありません。"
+    },
+    "steps": [
+      {
+        "ko": "Score Conversion 또는 Score Editor에서 PDF를 엽니다.",
+        "en": "Open a PDF from Score Conversion or Score Editor.",
+        "ja": "Score ConversionまたはScore EditorでPDFを開きます。"
+      },
+      {
+        "ko": "인식 후 MIDI/MusicXML 결과를 확인합니다.",
+        "en": "Review recognized MIDI/MusicXML."
+      },
+      {
+        "ko": "필요하면 MIDI Editor / Score Editor에서 수정합니다.",
+        "en": "Fix issues in MIDI Editor / Score Editor."
+      }
+    ],
+    "details": {
+      "ko": "스캔본도 가능하지만 해상도·대비·기울기에 따라 인식 품질이 달라집니다. 암호화 PDF·빈 PDF·타임아웃 오류가 날 수 있습니다.",
+      "en": "Scans work better with good resolution/contrast/straight pages. Encrypted/empty PDFs or timeouts can fail."
+    },
+    "fixSteps": [
+      {
+        "ko": "짧은 악보나 해상도가 낮은 PDF로 다시 시도합니다.",
+        "en": "Retry with a shorter score or lower-complexity PDF."
+      },
+      {
+        "ko": "반복되면 앱 버전과 오류 메시지를 1:1 문의에 첨부합니다.",
+        "en": "If it repeats, attach app version and error text to 1:1 support."
+      }
+    ],
+    "sourceHash": "72d92f72d9c35efd",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "band-orchestra-preview",
+    "title": {
+      "ko": "Band / Orchestra MIDI (Preview)",
+      "en": "Band / Orchestra MIDI (Preview)",
+      "ja": "Band / Orchestra MIDI (Preview)"
+    },
+    "category": "conversion",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "preview",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/lang convert_mode_band_orchestra",
+      "product-cms Band/Orchestra Preview"
+    ],
+    "relatedGuideUrl": "/guide/youtube-to-midi/",
+    "keywords": [
+      "band",
+      "orchestra",
+      "preview",
+      "experimental",
+      "멀티트랙",
+      "스템",
+      "demucs"
+    ],
+    "summary": {
+      "ko": "Band / Orchestra MIDI는 Preview·Experimental 기능입니다. 스템을 나눈 뒤 지원 악기만 MIDI로 변환하며, 곡에 따라 품질 편차가 큽니다.",
+      "en": "Band / Orchestra MIDI is Preview · Experimental. It separates stems and converts supported instruments only; quality varies by song."
+    },
+    "details": {
+      "ko": "추가 AI 구성요소(예: Instrument Separation) 설치가 필요할 수 있습니다. Piano MIDI(권장)는 별도 설치 없이 사용할 수 있습니다. Preview를 정식 Production처럼 안내하지 마세요.",
+      "en": "Optional AI components (e.g. instrument separation) may need install. Piano MIDI (Recommended) works without that pack. Do not describe Preview as full production."
+    },
+    "sourceHash": "03d66a7c4824496e",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "conversion-progress-piano",
+    "title": {
+      "ko": "변환 진행 단계(Piano)",
+      "en": "Piano conversion progress stages",
+      "ja": "Piano変換の進行段階"
+    },
+    "category": "conversion",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/run_gui.py piano progress [n/4]"
+    ],
+    "keywords": [
+      "1/4",
+      "2/4",
+      "3/4",
+      "진행",
+      "멈춤",
+      "단계",
+      "progress",
+      "변환중"
+    ],
+    "summary": {
+      "ko": "Piano MIDI 변환은 대략 [1/4] 오디오 준비/다운로드 → [2/4] 구간 자르기 → [3/4] AI MIDI 변환 순으로 진행됩니다.",
+      "en": "Piano MIDI progress is roughly [1/4] prepare/download audio → [2/4] cut range → [3/4] AI MIDI conversion."
+    },
+    "details": {
+      "ko": "특정 단계에서 오래 멈추면 해당 단계(네트워크 다운로드, 오디오 처리, AI 엔진)를 중심으로 확인합니다. GPU(CUDA) 사용 중 CPU로 재시도하는 경우가 있을 수 있습니다.",
+      "en": "If stuck on a stage, focus on that stage (network download, audio processing, AI engine). CUDA attempts may fall back to CPU."
+    },
+    "fixSteps": [
+      {
+        "ko": "인터넷 연결·영상 공개 여부·다른 구간으로 재시도합니다.",
+        "en": "Check network, video availability, and retry another range."
+      },
+      {
+        "ko": "계속 실패하면 로그와 앱 버전을 첨부해 상담사에게 연결합니다.",
+        "en": "If it keeps failing, attach logs and app version for human support."
+      }
+    ],
+    "sourceHash": "1e121959b864cfcd",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "midi-editor",
+    "title": {
+      "ko": "MIDI Editor",
+      "en": "MIDI Editor",
+      "ja": "MIDI Editor"
+    },
+    "category": "midi_editor",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/midi-editor"
+    ],
+    "relatedGuideUrl": "/guide/midi-editor/",
+    "keywords": [
+      "midi editor",
+      "미디 편집",
+      "피아노롤",
+      "노트",
+      "벨로시티",
+      "양자화",
+      "악기"
+    ],
+    "summary": {
+      "ko": "MIDI Editor(피아노롤)에서 음높이·길이·벨로시티·트랙 악기 등을 수정하고 저장/내보낼 수 있습니다.",
+      "en": "In MIDI Editor (piano roll) you can edit pitch, length, velocity, track instruments, then save/export."
+    },
+    "steps": [
+      {
+        "ko": "변환 결과 또는 Library에서 MIDI를 엽니다.",
+        "en": "Open MIDI from a conversion result or Library."
+      },
+      {
+        "ko": "노트·악기·벨로시티를 수정합니다.",
+        "en": "Edit notes, instruments, and velocity."
+      },
+      {
+        "ko": "저장하거나 악보(PDF·MusicXML)로 내보냅니다.",
+        "en": "Save or export score (PDF/MusicXML)."
+      }
+    ],
+    "sourceHash": "f80d9eee6ab22150",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "score-editor",
+    "title": {
+      "ko": "Score Editor",
+      "en": "Score Editor",
+      "ja": "Score Editor"
+    },
+    "category": "score_editor",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/score-editor",
+      "product-cms Score Editor"
+    ],
+    "relatedGuideUrl": "/guide/score-editor/",
+    "keywords": [
+      "score editor",
+      "스코어",
+      "악보",
+      "musicxml",
+      "pdf 내보내기"
+    ],
+    "summary": {
+      "ko": "Score Editor는 MIDI/MusicXML/PDF 기반 악보를 보고 다듬은 뒤 PDF·MusicXML로 내보내는 화면입니다.",
+      "en": "Score Editor lets you review/edit MIDI/MusicXML/PDF-based scores and export PDF/MusicXML."
+    },
+    "details": {
+      "ko": "전문 출판용 악보 편집기를 대체하는 제품은 아니며, 복잡한 악보는 표기/레이아웃 차이가 날 수 있습니다.",
+      "en": "It is not a full professional publishing engraver; complex scores may show notation/layout differences."
+    },
+    "sourceHash": "fc59a13af6937300",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "ai-assistant",
+    "title": {
+      "ko": "AI Assistant",
+      "en": "AI Assistant",
+      "ja": "AI Assistant"
+    },
+    "category": "ai_assistant",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/ai-assistant",
+      "product-cms AI Assistant features"
+    ],
+    "relatedGuideUrl": "/guide/ai-assistant/",
+    "keywords": [
+      "ai assistant",
+      "어시스턴트",
+      "cleanup",
+      "humanize",
+      "optimize",
+      "verify",
+      "제안"
+    ],
+    "summary": {
+      "ko": "AI Assistant는 변환/편집 결과를 검토·정리하는 보조 도구입니다. Cleanup, Humanize, Optimize, Verify, Easy Key 등 제안 기능을 제공합니다.",
+      "en": "AI Assistant helps review/clean conversion results (Cleanup, Humanize, Optimize, Verify, Easy Key, etc.)."
+    },
+    "details": {
+      "ko": "제안은 참고용이며 최종 판단은 연주/청취로 확인하세요.",
+      "en": "Suggestions are assistive; confirm by listening/playing."
+    },
+    "sourceHash": "edc303d2ace67737",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "easier-key",
+    "title": {
+      "ko": "쉬운 조 추천(Easier Key)",
+      "en": "Easier Key",
+      "ja": "Easier Key"
+    },
+    "category": "easy_key",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/lang midi_ai_easy_key",
+      "midi_ctx_help_ai_easy_key"
+    ],
+    "relatedGuideUrl": "/guide/ai-assistant/",
+    "keywords": [
+      "easy key",
+      "easier key",
+      "쉬운 조",
+      "이조",
+      "transpose",
+      "흰건반",
+      "black keys"
+    ],
+    "summary": {
+      "ko": "Easier Key(쉬운 조 추천)는 곡 전체를 같은 간격으로 이조해 검은 건반을 줄이도록 돕는 AI Assistant 기능입니다.",
+      "en": "Easier Key transposes the whole song by the same interval to use fewer black keys.",
+      "ja": "Easier Keyは曲全体を同じ間隔で移調し、黒鍵を減らすAI Assistant機能です。"
+    },
+    "sourceHash": "101b82286f66850d",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "high-quality-sounds",
+    "title": {
+      "ko": "고품질 음원(High-quality sounds)",
+      "en": "High-quality sounds",
+      "ja": "高品質サウンド"
+    },
+    "category": "soundpack",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/lang soundpack_*"
+    ],
+    "keywords": [
+      "고품질",
+      "음원",
+      "soundpack",
+      "sf2",
+      "재생",
+      "playback",
+      "설치"
+    ],
+    "summary": {
+      "ko": "고품질 음원(High-quality sounds)은 MIDI 재생용 사운드팩입니다. 관리 화면에서 그룹별 설치/업데이트 후 'Use high-quality sounds'를 켭니다.",
+      "en": "High-quality sounds are playback soundpacks. Install/update groups in the manager, then enable “Use high-quality sounds”."
+    },
+    "fixSteps": [
+      {
+        "ko": "인터넷 연결을 확인하고 해당 그룹을 다시 설치합니다.",
+        "en": "Check internet and reinstall the needed sound group."
+      },
+      {
+        "ko": "설정은 다음 재생부터 적용됩니다.",
+        "en": "Settings apply from the next playback."
+      }
+    ],
+    "sourceHash": "02c52f43917b51fb",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "library-local",
+    "title": {
+      "ko": "Library(로컬 저장)",
+      "en": "Library (local storage)",
+      "ja": "Library（ローカル保存）"
+    },
+    "category": "library",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/library"
+    ],
+    "relatedGuideUrl": "/guide/library/",
+    "keywords": [
+      "library",
+      "라이브러리",
+      "저장",
+      "위치",
+      "파일",
+      "cloud"
+    ],
+    "summary": {
+      "ko": "Library는 앱 로컬에 작업물을 저장하고 다시 여는 공간입니다. 클라우드 동기화 저장소가 아닙니다.",
+      "en": "Library stores and reopens projects locally in the app. It is not cloud sync storage."
+    },
+    "sourceHash": "d8556dd0e97d0d7e",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "export-formats",
+    "title": {
+      "ko": "지원 형식·내보내기",
+      "en": "Formats & export",
+      "ja": "対応形式・書き出し"
+    },
+    "category": "export",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI file dialogs",
+      "guide export mentions"
+    ],
+    "keywords": [
+      "midi",
+      "musicxml",
+      "pdf",
+      "mp3",
+      "wav",
+      "내보내기",
+      "export",
+      "형식"
+    ],
+    "summary": {
+      "ko": "입력 예: YouTube URL, 오디오(MP3/WAV/M4A/WEBM), PDF, MIDI, MusicXML. 출력 예: MIDI, PDF, MusicXML, 프로젝트 파일.",
+      "en": "Inputs include YouTube URL, audio (MP3/WAV/M4A/WEBM), PDF, MIDI, MusicXML. Outputs include MIDI, PDF, MusicXML, project files."
+    },
+    "details": {
+      "ko": "목록에 없는 형식은 지원한다고 단정하지 마세요.",
+      "en": "Do not claim formats that are not listed."
+    },
+    "sourceHash": "1bb6406cf9cd900b",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "trial-limits",
+    "title": {
+      "ko": "무료 체험(Trial) 제한",
+      "en": "Free trial limits",
+      "ja": "無料体験の制限"
+    },
+    "category": "trial",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/lang trial_badge",
+      "trial_cap_msg",
+      "website purchase trial copy"
+    ],
+    "relatedGuideUrl": "/guide/license/",
+    "keywords": [
+      "trial",
+      "체험",
+      "무료",
+      "1분",
+      "제한",
+      "free"
+    ],
+    "summary": {
+      "ko": "무료 체험에서는 MIDI 저장/내보내기가 최대 1분까지로 제한됩니다. 전체 곡 변환은 Full 이용권이 필요합니다.",
+      "en": "Free trial MIDI save/export is limited to 1 minute. Full-track conversion requires a Full plan."
+    },
+    "sourceHash": "4aa5e136b299890c",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "license-full-lifetime",
+    "title": {
+      "ko": "Full / Lifetime 이용권",
+      "en": "Full / Lifetime plans",
+      "ja": "Full / Lifetimeプラン"
+    },
+    "category": "license",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "product",
+    "sourceRefs": [
+      "purchase.html",
+      "catalog-engine SEED_PRODUCTS",
+      "guide/license"
+    ],
+    "relatedGuideUrl": "/guide/license/",
+    "keywords": [
+      "라이선스",
+      "lifetime",
+      "기간",
+      "full",
+      "구매",
+      "이용권",
+      "7일",
+      "30일",
+      "90일"
+    ],
+    "summary": {
+      "ko": "기간 Full(7/30/90일)과 Lifetime Full이 있습니다. Full 이용 중에는 AI 변환 횟수 제한 없이 Full 기능을 쓰며, 자동결제는 없습니다. 구매 후 앱에서 Google 로그인으로 활성화합니다.",
+      "en": "Plans include period Full (7/30/90 days) and Lifetime Full. Full plans allow unlimited AI conversions with no auto-renewal. Activate via Google sign-in after purchase."
+    },
+    "details": {
+      "ko": "개인 만료일·결제 성공 여부는 Knowledge로 추측하지 말고 계정 확인 또는 상담사에게 연결합니다. 표시 가격은 구매 페이지/상품 데이터를 우선합니다.",
+      "en": "Do not guess personal expiry/payment status from Knowledge—check account or escalate. Prefer live purchase catalog for prices."
+    },
+    "sourceHash": "5ce32631a98d48b7",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "credits-usage",
+    "title": {
+      "ko": "크레딧",
+      "en": "Credits",
+      "ja": "クレジット"
+    },
+    "category": "purchase",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "structured_data",
+    "sourceRefs": [
+      "website support knowledge credits",
+      "account credit UI"
+    ],
+    "relatedGuideUrl": "/purchase.html",
+    "keywords": [
+      "크레딧",
+      "credit",
+      "충전",
+      "차감",
+      "잔액",
+      "포인트"
+    ],
+    "summary": {
+      "ko": "크레딧은 Full 이용권이 없을 때 AI 변환 등에 사용하는 횟수 단위입니다. 일반적으로 변환 1회에 1이 차감되며, 기간/Lifetime Full에서는 차감되지 않습니다.",
+      "en": "Credits are usage units for AI conversions when you do not have a Full plan. Typically 1 credit per conversion; period/Lifetime Full does not deduct credits."
+    },
+    "details": {
+      "ko": "개인 잔액·결제 내역은 AI가 조회/추측하지 않습니다. 계정 화면 확인 또는 상담사 연결이 필요합니다.",
+      "en": "AI must not look up or guess personal balances. Use account UI or human support."
+    },
+    "sourceHash": "2675f70612a5a247",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "youtube-fetch-errors",
+    "title": {
+      "ko": "YouTube 오디오 가져오기 실패",
+      "en": "YouTube audio fetch failed",
+      "ja": "YouTube音声取得失敗"
+    },
+    "category": "troubleshooting",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI convert_err_download",
+      "youtube_preview_download error classes"
+    ],
+    "relatedGuideUrl": "/guide/troubleshooting/",
+    "keywords": [
+      "403",
+      "forbidden",
+      "yt-dlp",
+      "youtube",
+      "다운로드",
+      "가져오지",
+      "네트워크",
+      "429"
+    ],
+    "summary": {
+      "ko": "YouTube 변환 중 오디오를 가져오지 못하면 네트워크, 영상 공개 상태, 일시적 제한(예: 429), 권한/지역 제한 등을 확인합니다.",
+      "en": "If YouTube audio fetch fails, check network, video availability, temporary limits (e.g. 429), and permission/region restrictions."
+    },
+    "knownSymptoms": [
+      "Could not fetch audio",
+      "HTTP 403",
+      "Forbidden",
+      "429"
+    ],
+    "fixSteps": [
+      {
+        "ko": "인터넷 연결을 확인합니다.",
+        "en": "Check internet connection."
+      },
+      {
+        "ko": "공개 영상인지, 동일 URL을 다시 시도합니다.",
+        "en": "Confirm the video is public and retry the same URL."
+      },
+      {
+        "ko": "잠시 후 재시도하거나 다른 구간/영상으로 확인합니다.",
+        "en": "Wait and retry, or try another range/video."
+      },
+      {
+        "ko": "반복되면 앱 버전·오류 문구·로그를 첨부해 상담사에게 연결합니다.",
+        "en": "If repeated, attach app version, error text, and logs for human support."
+      }
+    ],
+    "whenToEscalate": {
+      "ko": "공식 확인 절차로 해결되지 않거나 동일 오류가 반복될 때",
+      "en": "When safe steps fail or the same error keeps repeating"
+    },
+    "sourceHash": "803182ab4d81791d",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "conversion-generic-failure",
+    "title": {
+      "ko": "변환 실패(일반)",
+      "en": "Generic conversion failure",
+      "ja": "変換失敗（一般）"
+    },
+    "category": "troubleshooting",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI convert_err_generic",
+      "convert_err_engine",
+      "convert_err_audio"
+    ],
+    "relatedGuideUrl": "/guide/troubleshooting/",
+    "keywords": [
+      "변환 실패",
+      "conversion failed",
+      "엔진",
+      "오디오 처리",
+      "로그"
+    ],
+    "summary": {
+      "ko": "변환 실패 메시지는 원인별로 다를 수 있습니다. 일반 실패·엔진 실행 실패·오디오 처리 실패가 대표적입니다.",
+      "en": "Conversion failures vary: generic failure, engine launch failure, or audio processing failure."
+    },
+    "fixSteps": [
+      {
+        "ko": "앱을 최신 Installer로 업데이트/복구합니다.",
+        "en": "Update/repair with the latest Installer."
+      },
+      {
+        "ko": "다른 파일/구간으로 재시도합니다.",
+        "en": "Retry with another file or range."
+      },
+      {
+        "ko": "로그를 저장해 1:1 문의에 첨부합니다.",
+        "en": "Save logs and attach them to 1:1 support."
+      }
+    ],
+    "sourceHash": "0e687710f13ae8ef",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "pdf-timeout",
+    "title": {
+      "ko": "PDF 변환 시간 초과",
+      "en": "PDF conversion timeout",
+      "ja": "PDF変換タイムアウト"
+    },
+    "category": "troubleshooting",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "beta",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI score_pdf_err_timeout"
+    ],
+    "relatedGuideUrl": "/guide/pdf-to-midi/",
+    "keywords": [
+      "pdf",
+      "timeout",
+      "시간 초과",
+      "타임아웃"
+    ],
+    "summary": {
+      "ko": "PDF 변환 시간이 초과되면 페이지 수가 적거나 단순한 악보로 다시 시도합니다.",
+      "en": "If PDF conversion times out, retry with a shorter or simpler score."
+    },
+    "sourceHash": "536acf7483e9b987",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "troubleshooting-basics",
+    "title": {
+      "ko": "기본 문제 해결",
+      "en": "Basic troubleshooting",
+      "ja": "基本トラブルシュート"
+    },
+    "category": "troubleshooting",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "guide/troubleshooting",
+      "downloads.html"
+    ],
+    "relatedGuideUrl": "/guide/troubleshooting/",
+    "keywords": [
+      "문제",
+      "오류",
+      "system check",
+      "hwid",
+      "로그인",
+      "installer"
+    ],
+    "summary": {
+      "ko": "설치·변환·로그인 문제는 Installer 복구, System Check 저장, 버전·HWID·오류 메시지 첨부 순으로 확인합니다.",
+      "en": "For install/convert/login issues: repair via Installer, save System Check, attach version/HWID/error text."
+    },
+    "fixSteps": [
+      {
+        "ko": "Installer Install/Update로 복구합니다.",
+        "en": "Repair with Installer Install/Update."
+      },
+      {
+        "ko": "System Check 결과를 저장합니다.",
+        "en": "Save System Check results."
+      },
+      {
+        "ko": "로그인 문제는 인앱 브라우저보다 Chrome/Edge 포털 로그인을 시도합니다.",
+        "en": "For login issues, try Chrome/Edge portal login rather than in-app browser."
+      },
+      {
+        "ko": "1:1 문의에 로그·HWID·버전을 첨부합니다.",
+        "en": "Attach logs, HWID, and version to 1:1 support."
+      }
+    ],
+    "sourceHash": "8c1d9e8375b3f905",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "support-contact",
+    "title": {
+      "ko": "고객지원 문의",
+      "en": "Contact support",
+      "ja": "サポート問い合わせ"
+    },
+    "category": "support",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 2,
+    "sourceType": "guide",
+    "sourceRefs": [
+      "website support chat",
+      "guide/troubleshooting"
+    ],
+    "relatedGuideUrl": "/support.html",
+    "keywords": [
+      "문의",
+      "상담",
+      "support",
+      "1:1",
+      "티켓"
+    ],
+    "summary": {
+      "ko": "사이트 1:1 문의/상담 채팅 또는 앱의 1:1 Support로 문의할 수 있습니다. 개인 계정·결제·재현 불가 오류는 상담사 연결이 필요합니다.",
+      "en": "Use website 1:1 support/chat or in-app 1:1 Support. Personal account/payment issues and unreproducible errors need a human agent."
+    },
+    "sourceHash": "b71f5e4bd4918a80",
+    "knowledgeUpdatedAt": "2026-09-03"
+  }
+]

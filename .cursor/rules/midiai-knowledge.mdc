@@ -1,0 +1,22 @@
+---
+description: MidiAI Studio Support Knowledge updates when product/docs change
+globs:
+  - functions/knowledge/**
+  - functions/supportAi.js
+  - guide/**/*
+  - assets/js/product-cms.js
+alwaysApply: false
+---
+
+# Support Knowledge
+
+If this change affects what customers should be told about MidiAI Studio:
+
+1. Update `functions/knowledge/public` or `internal` curated docs (not raw source dumps).
+2. Set `verification` to `verified` only when confirmed against current app + official guide/product copy.
+3. Use `needs_review` + `active:false` when unsure.
+4. Never store secrets, credentials, or personal data in Knowledge.
+5. Keep Preview/Beta `featureStatus` accurate.
+6. Public AI retrieval must stay limited to public+verified+active docs.
+7. After Knowledge or Guide HTML changes, run `node functions/knowledge/auditStale.js` (use `--write-baseline` only after intentional Knowledge update).
+8. FAQ and product prices are runtime Firestore sources — do not bake stale prices into JSON.

@@ -1,0 +1,57 @@
+[
+  {
+    "id": "needs-review-ffmpeg-user-copy",
+    "title": {
+      "ko": "ffmpeg 사용자 문구 정리",
+      "en": "ffmpeg user-facing copy review"
+    },
+    "category": "ffmpeg",
+    "locale": "ko",
+    "visibility": "internal",
+    "featureStatus": "production",
+    "verification": "needs_review",
+    "active": false,
+    "priority": 3,
+    "sourceType": "app_source",
+    "sourceRefs": [
+      "MidiAI/ffmpeg bundle",
+      "runtime cut failures"
+    ],
+    "keywords": [
+      "ffmpeg"
+    ],
+    "summary": {
+      "ko": "ffmpeg 관련 실패는 존재하나 전용 EN/KO 오류 키가 적어 공개 해결 문장을 확정하지 않았습니다.",
+      "en": "ffmpeg-related failures exist, but dedicated user-facing strings are sparse; public fix copy is not finalized."
+    },
+    "sourceHash": "cc0884f9818ff8b6",
+    "knowledgeUpdatedAt": "2026-09-03"
+  },
+  {
+    "id": "needs-review-live-faq-sync",
+    "title": {
+      "ko": "Firestore FAQ 동기화",
+      "en": "Firestore FAQ sync"
+    },
+    "category": "support",
+    "locale": "ko",
+    "visibility": "internal",
+    "featureStatus": "production",
+    "verification": "needs_review",
+    "active": false,
+    "priority": 3,
+    "sourceType": "faq",
+    "sourceRefs": [
+      "firestore faq collection"
+    ],
+    "keywords": [
+      "faq"
+    ],
+    "summary": {
+      "ko": "운영 FAQ 본문은 Firestore에만 있어 저장소 시드에 복제하지 않았습니다. 런타임 검색으로 보완 중입니다.",
+      "en": "Live FAQ bodies live in Firestore only and were not duplicated into the seed. Runtime retrieval supplements them."
+    },
+    "sourceHash": "1043da14dc64bd6b",
+    "knowledgeUpdatedAt": "2026-09-03"
+  }
+]

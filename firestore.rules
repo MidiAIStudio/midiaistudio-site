@@ -257,15 +257,24 @@ service cloud.firestore {
 
     match /supportTickets/{ticketId} {
       allow create: if signedIn()
-        && request.resource.data.uid == request.auth.uid;
+        && request.resource.data.uid == request.auth.uid
+        && (!('conversationMode' in request.resource.data)
+          || request.resource.data.conversationMode in ['ai', 'waiting_human', 'human', 'closed']);
 
       allow read: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid);
 
       // Owners may bump unread flags on follow-up replies, but cannot mark admin-read themselves.
+      // Admin-only / AI-only fields cannot be forged by ticket owners.
       allow update: if isAdmin()
         || (signedIn()
           && resource.data.uid == request.auth.uid
+          && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['aiSummary', 'aiSummaryUpdatedAt', 'humanAssignedUid', 'humanAssignedAt'])
+          && (
+            !('conversationMode' in request.resource.data.diff(resource.data).affectedKeys())
+            || request.resource.data.conversationMode in ['ai', 'waiting_human', 'closed']
+          )
           && (
             !request.resource.data.diff(resource.data).affectedKeys()
               .hasAny(['adminRead', 'adminNotified', 'adminNotifyKind', 'adminNotifyAt'])
@@ -283,14 +292,24 @@ service cloud.firestore {
           || (signedIn()
           && get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.uid == request.auth.uid);
 
+        // Clients may only create user/admin roles matching their auth. AI messages: Admin SDK only.
         allow create: if signedIn()
+          && request.resource.data.uid == request.auth.uid
           && (
-            isAdmin()
-            || get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.uid == request.auth.uid
+            (isAdmin() && request.resource.data.role == 'admin')
+            || (
+              get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.uid == request.auth.uid
+              && request.resource.data.role == 'user'
+            )
           );
 
         allow update, delete: if isAdmin();
       }
+    }
+
+    // Server-side rate limit docs for support AI (Admin SDK write). Clients: no access.
+    match /aiSupportRate/{uid} {
+      allow read, write: if false;
     }
 
     function boardEngagementUpdate() {
