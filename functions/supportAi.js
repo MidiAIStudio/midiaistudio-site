@@ -850,6 +850,11 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
   // Resolve follow-ups from recent USER turns BEFORE retrieval.
   // AI history is intentionally ignored so a wrong prior answer cannot poison topic.
   const userTurns = collectUserTurns(ticket, replies);
+  const priorAiReplies = (replies || [])
+    .filter((r) => String(r.role || '') === 'ai')
+    .map((r) => String(r.content || '').trim())
+    .filter(Boolean)
+    .slice(-4);
   const rawQuestion = String(userTurns[userTurns.length - 1] || '').trim();
   if (!rawQuestion) return { ok: true, skipped: true, reason: 'empty' };
   const priorUserTurns = userTurns.slice(0, -1).slice(-5);
@@ -917,6 +922,7 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     locale,
     personal,
     userTurns,
+    priorAiReplies,
     clarifyEarly,
     adapters: sourceAdapters,
     retrieveStaticInitial: ({ limit }) => retrieve(question, limit, { includeInternal: false, locale }),
@@ -950,7 +956,13 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     diagnosticReason: agentOut.debug && agentOut.debug.diagnosticReason,
     diagnosticMode: agentOut.debug && agentOut.debug.diagnosticMode,
     llmCalls: agentOut.debug && agentOut.debug.llmCalls,
-    finalAction: agentOut.debug && agentOut.debug.finalAction
+    finalAction: agentOut.debug && agentOut.debug.finalAction,
+    candidateFeature: agentOut.debug && agentOut.debug.candidateFeature,
+    candidateEntities: agentOut.debug && agentOut.debug.candidateEntities,
+    discoveryTriggered: agentOut.debug && agentOut.debug.discoveryTriggered,
+    discoverySources: agentOut.debug && agentOut.debug.discoverySources,
+    newUserFactsSinceLastAi: agentOut.debug && agentOut.debug.newUserFactsSinceLastAi,
+    diagnosticRepeatPrevented: agentOut.debug && agentOut.debug.diagnosticRepeatPrevented
   };
 
   const answerIntent = detectAnswerIntent(question);

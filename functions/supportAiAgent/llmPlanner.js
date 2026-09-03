@@ -28,8 +28,19 @@ function summarizeEvidence(passages, limit = 4) {
 
 function factsSummary(facts) {
   if (!facts || typeof facts !== 'object') return '(none)';
-  const keys = ['sourceType', 'conversionKind', 'errorCode', 'stage', 'feature', 'version'];
+  const keys = [
+    'sourceType',
+    'conversionKind',
+    'errorCode',
+    'stage',
+    'feature',
+    'candidateFeature',
+    'version'
+  ];
   const parts = keys.filter((k) => facts[k]).map((k) => `${k}=${facts[k]}`);
+  if (facts.candidateEntities && facts.candidateEntities.length) {
+    parts.push(`entities=${facts.candidateEntities.slice(0, 4).join('|')}`);
+  }
   return parts.length ? parts.join(', ') : '(none)';
 }
 
@@ -51,10 +62,12 @@ function buildPlannerUserPrompt({
     `INTENT: ${intent || 'general'}`,
     `DETERMINISTIC_NEED: ${classifyNeed({ question, rawQuestion, intent, facts })}`,
     `USER_FACTS: ${factsSummary(facts)}`,
+    `CANDIDATE_FEATURE: ${(facts && facts.candidateFeature) || '(none)'}`,
     `HYPOTHESES: ${(hypotheses || []).slice(0, 6).join(',') || '(none)'}`,
     `SEARCHED: ${[...(searched || [])].join(',') || '(none)'}`,
     `BUDGET_LEFT: ${budgetLeft}`,
     `EVIDENCE: ${summarizeEvidence(passages) || '(none)'}`,
+    'If candidateFeature is set and evidence is weak, prefer SEARCH operation then knowledge/guide before ASK_DIAGNOSTIC.',
     'Choose nextAction + sourceType (and optional sourceTypes[1..2]). JSON only.'
   ].join('\n');
 }

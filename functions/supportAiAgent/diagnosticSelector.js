@@ -15,6 +15,7 @@ function knownFactLabels(facts = {}) {
   if (facts.errorCode) labels.push(`error=${facts.errorCode}`);
   if (facts.stage) labels.push(`stage=${facts.stage}`);
   if (facts.feature) labels.push(`feature=${facts.feature}`);
+  if (facts.candidateFeature) labels.push(`candidateFeature=${facts.candidateFeature}`);
   if (facts.version) labels.push(`version=${facts.version}`);
   return labels;
 }
@@ -25,6 +26,10 @@ function knownFactLabels(facts = {}) {
 function questionReasksKnownFacts(questionText, facts = {}) {
   const q = clean(questionText);
   if (!q) return true;
+  // USER already named a feature — never ask generic "what task?"
+  if (facts.candidateFeature && /어떤\s*작업을\s*하려는|지금\s*어떤\s*작업|어떤\s*기능\s*\(?메뉴\)?\s*질문인지|what\s+task\s+are\s+you\s+trying|which\s+specific\s+feature/i.test(q)) {
+    return true;
+  }
   if (facts.conversionKind === 'youtube' && /(어떤\s*변환|YouTube\s*\/\s*오디오|유튜브\s*\/\s*오디오|PDF\s*중)/i.test(q)) {
     return true;
   }
@@ -49,6 +54,9 @@ function questionReasksKnownFacts(questionText, facts = {}) {
 function shouldUseLlmDiagnostic({ facts, hypotheses, passages, clarifyCandidate }) {
   const hyps = Array.isArray(hypotheses) ? hypotheses : [];
   const factCount = knownFactLabels(facts).length;
+  if (facts && facts.candidateFeature && clarifyCandidate && questionReasksKnownFacts(clarifyCandidate, facts)) {
+    return { use: true, reason: 'feature_candidate_reask' };
+  }
   if (hyps.length >= 2) return { use: true, reason: 'multi_hypothesis' };
   if (factCount >= 2 && clarifyCandidate && questionReasksKnownFacts(clarifyCandidate, facts)) {
     return { use: true, reason: 'would_reask_known' };
@@ -91,6 +99,18 @@ function deterministicEvidenceAware({ locale, intent, rawQuestion, question, pas
   });
   if (!questionReasksKnownFacts(base, facts)) return base;
 
+  // Named feature lock → targeted feature clarification
+  if (facts && facts.candidateFeature) {
+    const { buildTargetedFeatureDiagnostic } = require('./featureDiscovery');
+    const targeted = buildTargetedFeatureDiagnostic({
+      locale,
+      candidateFeature: facts.candidateFeature,
+      intent,
+      hypotheses
+    });
+    if (targeted) return targeted;
+  }
+
   // Rewrite around known facts — ask only missing high-gain slot
   const slot = missingHighGainSlot(facts || {}, hypotheses || []);
   const loc = locale === 'en' ? 'en' : locale === 'ja' ? 'ja' : 'ko';
@@ -123,6 +143,7 @@ const DIAG_SYSTEM = [
   'You write ONE short customer-facing diagnostic question for MidiAI Studio support.',
   'Ask only for the highest information-gain missing detail.',
   'Never re-ask facts already listed as known.',
+  'If candidateFeature is known, ask where that label was seen (screen/menu/button) — never ask "what task are you trying to do?".',
   'Do not mention Knowledge, RAG, planner, scores, or internal IDs.',
   'Do not invent causes. Output the question text only (max 2 short sentences).'
 ].join(' ');

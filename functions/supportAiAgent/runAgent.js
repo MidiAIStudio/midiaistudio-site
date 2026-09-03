@@ -6,6 +6,13 @@ const { classifyNeed, decideNextAction, researchBudget } = require('./planner');
 const { runResearchLoop } = require('./researchLoop');
 const { selectDiagnosticQuestion } = require('./diagnosticSelector');
 const { shouldUseLlmPlanner, isDeterministicFastPath } = require('./plannerAmbiguity');
+const {
+  diffNewUserFacts,
+  isGenericTaskDiagnostic,
+  buildTargetedFeatureDiagnostic,
+  shouldTriggerFeatureDiscovery,
+  applyDiscoveryBoosts
+} = require('./featureDiscovery');
 
 function unknownErrorCleared(rawQuestion, passages, UNKNOWN_ERROR_RE) {
   if (!UNKNOWN_ERROR_RE || !UNKNOWN_ERROR_RE.test(String(rawQuestion || ''))) return passages;
@@ -23,6 +30,7 @@ async function runSupportAgent({
   locale,
   personal,
   userTurns,
+  priorAiReplies = [],
   clarifyEarly,
   adapters,
   retrieveStaticInitial,
@@ -32,10 +40,18 @@ async function runSupportAgent({
   UNKNOWN_ERROR_RE,
   callLlm = null
 } = {}) {
-  const facts = extractUserFacts(userTurns || [rawQuestion]);
+  const turns = userTurns || [rawQuestion];
+  const facts = extractUserFacts(turns);
+  const priorTurns = turns.length > 1 ? turns.slice(0, -1) : [];
+  const prevFacts = priorTurns.length ? extractUserFacts(priorTurns) : {};
+  const newUserFactsSinceLastAi = diffNewUserFacts(prevFacts, facts);
   const hypotheses = inferHypotheses(question || rawQuestion, facts);
   const intent = detectAnswerIntent(question);
   const need = classifyNeed({ question, rawQuestion, intent, facts });
+
+  const lastAi = priorAiReplies && priorAiReplies.length ? priorAiReplies[priorAiReplies.length - 1] : '';
+  const lastAiWasGenericDiag = isGenericTaskDiagnostic(lastAi);
+  let diagnosticRepeatPrevented = false;
 
   const debug = {
     facts,
@@ -52,7 +68,13 @@ async function runSupportAgent({
     plannerTrigger: null,
     sourcePlan: [],
     missingInfo: [],
-    llmCalls: { planner: 0, diagnostic: 0 }
+    llmCalls: { planner: 0, diagnostic: 0 },
+    candidateFeature: facts.candidateFeature || null,
+    candidateEntities: facts.candidateEntities || [],
+    discoveryTriggered: false,
+    discoverySources: [],
+    newUserFactsSinceLastAi,
+    diagnosticRepeatPrevented: false
   };
 
   if (personal) {
@@ -62,13 +84,20 @@ async function runSupportAgent({
   }
 
   if (clarifyEarly) {
-    debug.finalAction = ACTIONS.ASK_DIAGNOSTIC;
-    debug.diagnosticReason = 'ambiguous_pivot';
-    debug.diagnosticMode = 'deterministic';
-    return { passages: [], clarify: clarifyEarly, lowConfidence: false, debug };
+    // If USER already supplied a feature candidate, do not use generic pivot clarify
+    if (facts.candidateFeature && isGenericTaskDiagnostic(clarifyEarly)) {
+      diagnosticRepeatPrevented = true;
+      debug.diagnosticRepeatPrevented = true;
+    } else {
+      debug.finalAction = ACTIONS.ASK_DIAGNOSTIC;
+      debug.diagnosticReason = 'ambiguous_pivot';
+      debug.diagnosticMode = 'deterministic';
+      return { passages: [], clarify: clarifyEarly, lowConfidence: false, debug };
+    }
   }
 
   let passages = retrieveStaticInitial ? retrieveStaticInitial({ limit: 4 }) : [];
+  passages = applyDiscoveryBoosts(passages, facts.candidateFeature);
   passages = unknownErrorCleared(rawQuestion, passages, UNKNOWN_ERROR_RE);
 
   const weak0 = !passages.length || isWeakOrConflictingRetrieval(passages);
@@ -86,7 +115,8 @@ async function runSupportAgent({
     weak: weak0,
     conflict: weak0 && passages.length > 1,
     passages,
-    searched: []
+    searched: [],
+    facts
   });
 
   const compoundGate = shouldUseLlmPlanner({
@@ -101,7 +131,20 @@ async function runSupportAgent({
     researchedOnce: false
   });
 
-  if (budgetHint > 0 || need === 'release' || need === 'catalog' || need === 'notice' || compoundGate.use) {
+  const discoveryLikely = shouldTriggerFeatureDiscovery(facts, {
+    weak: weak0,
+    intent,
+    need
+  });
+
+  if (
+    budgetHint > 0 ||
+    need === 'release' ||
+    need === 'catalog' ||
+    need === 'notice' ||
+    compoundGate.use ||
+    discoveryLikely
+  ) {
     const loop = await runResearchLoop({
       question,
       rawQuestion,
@@ -128,6 +171,8 @@ async function runSupportAgent({
     debug.plannerTrigger = loop.debug.plannerTrigger || null;
     debug.sourcePlan = loop.debug.sourcePlan || [];
     debug.missingInfo = loop.debug.missingInfo || [];
+    debug.discoveryTriggered = !!loop.debug.discoveryTriggered;
+    debug.discoverySources = loop.debug.discoverySources || [];
     if (loop.llmPlannerState && loop.llmPlannerState.used && loop.llmPlannerState.mode === 'llm') {
       debug.llmCalls.planner = 1;
       debug.plannerMode = 'llm';
@@ -171,7 +216,7 @@ async function runSupportAgent({
   debug.plannerActions = [...(debug.plannerActions || []), decision];
 
   if (decision.action === ACTIONS.ASK_DIAGNOSTIC || (weak && decision.action !== ACTIONS.ANSWER)) {
-    const diag = await selectDiagnosticQuestion({
+    let diag = await selectDiagnosticQuestion({
       callLlm,
       locale,
       intent,
@@ -185,6 +230,41 @@ async function runSupportAgent({
         ? debug.missingInfo
         : [missingHighGainSlot(facts, hypotheses)].filter(Boolean)
     });
+
+    // Repeat prevention: last AI was generic task ask + USER added feature fact → force targeted
+    if (
+      (lastAiWasGenericDiag || diagnosticRepeatPrevented) &&
+      facts.candidateFeature &&
+      (newUserFactsSinceLastAi.length > 0 || isGenericTaskDiagnostic(diag.text))
+    ) {
+      const targeted = buildTargetedFeatureDiagnostic({
+        locale,
+        candidateFeature: facts.candidateFeature,
+        intent,
+        hypotheses
+      });
+      if (targeted && (isGenericTaskDiagnostic(diag.text) || lastAiWasGenericDiag)) {
+        diag = { text: targeted, mode: 'deterministic', reason: 'diagnostic_repeat_prevented' };
+        diagnosticRepeatPrevented = true;
+        debug.diagnosticRepeatPrevented = true;
+      }
+    }
+
+    // Absolute lock: never emit generic task diagnostic when candidateFeature is known
+    if (facts.candidateFeature && isGenericTaskDiagnostic(diag.text)) {
+      const targeted = buildTargetedFeatureDiagnostic({
+        locale,
+        candidateFeature: facts.candidateFeature,
+        intent,
+        hypotheses
+      });
+      if (targeted) {
+        diag = { text: targeted, mode: 'deterministic', reason: 'feature_fact_lock' };
+        diagnosticRepeatPrevented = true;
+        debug.diagnosticRepeatPrevented = true;
+      }
+    }
+
     clarify = diag.text;
     lowConfidence = true;
     debug.finalAction = ACTIONS.ASK_DIAGNOSTIC;
@@ -212,10 +292,21 @@ async function runSupportAgent({
     hypotheses,
     searched: debug.sourcesSearched
   });
+  let fallbackText = diagFallback.text;
+  if (facts.candidateFeature && isGenericTaskDiagnostic(fallbackText)) {
+    fallbackText =
+      buildTargetedFeatureDiagnostic({
+        locale,
+        candidateFeature: facts.candidateFeature,
+        intent,
+        hypotheses
+      }) || fallbackText;
+    debug.diagnosticRepeatPrevented = true;
+  }
   clarify =
-    ambiguousClarification && ambiguousClarification(rawQuestion, locale)
+    ambiguousClarification && ambiguousClarification(rawQuestion, locale) && !facts.candidateFeature
       ? ambiguousClarification(rawQuestion, locale)
-      : diagFallback.text;
+      : fallbackText;
   debug.finalAction = ACTIONS.ASK_DIAGNOSTIC;
   debug.diagnosticReason = 'fallback_clarify';
   debug.diagnosticMode = diagFallback.mode;

@@ -1,6 +1,7 @@
 'use strict';
 
 const { classifyNeed, sourceKindOf, passagesMatchNeed } = require('./planner');
+const { shouldTriggerFeatureDiscovery } = require('./featureDiscovery');
 
 function compact(s) {
   return String(s || '')
@@ -116,6 +117,18 @@ function shouldUseLlmPlanner({
 
   if (Array.isArray(hypotheses) && hypotheses.length >= 3 && weak) {
     return { use: true, reason: 'multi_hypothesis' };
+  }
+
+  // Unknown named feature candidate → let LLM pick discovery sources
+  if (
+    facts &&
+    shouldTriggerFeatureDiscovery(facts, {
+      weak: !!weak,
+      intent: intent || 'general',
+      need
+    })
+  ) {
+    return { use: true, reason: 'unknown_feature_candidate' };
   }
 
   // Ambiguous / unfamiliar: weak evidence and no clear single need signal

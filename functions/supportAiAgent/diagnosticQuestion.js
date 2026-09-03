@@ -53,6 +53,10 @@ function generateDiagnosticClarifyQuestion({
     evidenceIds.some((id) => /youtube|yt/i.test(id)) || /\b유튜브\b/i.test(raw) || /\byt\b/i.test(raw);
 
   if (loc === 'en') {
+    if (facts.candidateFeature) {
+      const name = cleanSpace(facts.candidateFeature);
+      return `I couldn’t verify “${name}” in the official docs yet. Where did you see that label (screen/menu/button)?`;
+    }
     if (intent === 'troubleshoot') {
       return `Which step fails (install / login / conversion / playback)? If possible, paste the exact error message (one line is enough).`;
     }
@@ -76,6 +80,10 @@ function generateDiagnosticClarifyQuestion({
   }
 
   if (loc === 'ja') {
+    if (facts.candidateFeature) {
+      const name = cleanSpace(facts.candidateFeature);
+      return `「${name}」という表示をどの画面・メニューで見ましたか？場所が分かると確認できます。`;
+    }
     if (intent === 'troubleshoot') {
       return `どの手順で失敗していますか（インストール / ログイン / 変換 / 再生）？可能なら、エラーメッセージをそのまま1行で教えてください。`;
     }
@@ -95,6 +103,18 @@ function generateDiagnosticClarifyQuestion({
     return `何をしたいのか、そしてどの手順で失敗しているのかを教えてください。エラーがあれば文言／コード${
       errCode ? `（${errCode}）` : ''
     }もお願いします。`;
+  }
+
+  // ko — lock known feature candidate: never re-ask "어떤 작업을"
+  if (facts.candidateFeature) {
+    const name = cleanSpace(facts.candidateFeature);
+    if (hyps.length >= 2) {
+      return `"${name}"이 어떤 작업에 가까운지, 그리고 그 이름을 본 화면을 알려주시면 확인하겠습니다.`;
+    }
+    if (intent === 'where') {
+      return `"${name}"이라고 표시된 메뉴나 버튼을 어디에서 보셨나요? 화면 이름이나 근처 버튼 위치를 알려주시면 확인해볼게요.`;
+    }
+    return `"${name}" 기능을 말씀하시는 거죠? 같은 이름으로 바로 확인이 안 돼서, 그 이름이 보인 화면이나 버튼 위치를 알려주시면 맞춰볼게요.`;
   }
 
   // ko

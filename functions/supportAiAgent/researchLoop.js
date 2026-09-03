@@ -5,6 +5,11 @@ const { classifyNeed, decideNextAction, researchBudget, sourceKindOf } = require
 const { mergeAndRerank, shouldEarlyStop, pickAuthoritativeOnConflict } = require('./evidence');
 const { shouldUseLlmPlanner } = require('./plannerAmbiguity');
 const { runSelectiveLlmPlanner } = require('./llmPlanner');
+const {
+  discoverySearchQuery,
+  applyDiscoveryBoosts,
+  shouldTriggerFeatureDiscovery
+} = require('./featureDiscovery');
 
 function isOpsPassage(p) {
   return sourceKindOf(p) === 'operation';
@@ -168,7 +173,16 @@ async function runResearchLoop({
   const top0 = passages && passages[0];
   if (top0 && Number(top0.score || 0) >= 14) searched.add(sourceKindOf(top0));
 
-  let budget = Math.min(maxResearchActions, researchBudget({ need, weak, conflict, passages, searched }));
+  const discoveryOn = shouldTriggerFeatureDiscovery(facts || {}, {
+    weak: !!weak,
+    intent: intent || 'general',
+    need
+  });
+  let budget = Math.min(
+    maxResearchActions,
+    researchBudget({ need, weak, conflict, passages, searched, facts })
+  );
+  const searchQ = discoveryOn ? discoverySearchQuery(facts, question) : question;
   const llmPlannerState = {
     used: false,
     mode: 'deterministic',
@@ -186,12 +200,21 @@ async function runResearchLoop({
     plannerMode: 'deterministic',
     plannerTrigger: null,
     sourcePlan: [],
-    missingInfo: []
+    missingInfo: [],
+    discoveryTriggered: discoveryOn,
+    discoverySources: []
   };
 
-  let current = passages || [];
+  let current = discoveryOn
+    ? applyDiscoveryBoosts(passages || [], facts && facts.candidateFeature)
+    : passages || [];
   let researchCount = 0;
   let pendingSourcePlan = [];
+
+  // Prefer discovery source plan when named feature is unknown (not release/catalog)
+  if (discoveryOn && budget > 0 && (need === 'operation' || need === 'knowledge')) {
+    pendingSourcePlan = ['operation', 'knowledge', 'guide'].filter((s) => !searched.has(s));
+  }
 
   const evalWeak = () => {
     if (!current.length) return true;
@@ -275,8 +298,16 @@ async function runResearchLoop({
         budget -= 1;
         researchCount += 1;
         searched.add(alt);
-        debug.actions.push({ kind: 'search', sourceType: alt, q: question, via: 'source_plan' });
-        const extra = (await callSource(alt, adapters, { question, searchQuery: question, locale, facts })) || [];
+        debug.actions.push({ kind: 'search', sourceType: alt, q: searchQ, via: 'source_plan' });
+        if (discoveryOn) debug.discoverySources.push(alt);
+        const extraRaw =
+          (await callSource(alt, adapters, {
+            question,
+            searchQuery: searchQ,
+            locale,
+            facts
+          })) || [];
+        const extra = applyDiscoveryBoosts(extraRaw, facts && facts.candidateFeature);
         current = mergeAndRerank({ initialPassages: current, extraPassages: extra, need, limit: 4 });
         if (shouldEarlyStop({ passages: current, need, weak: evalWeak(), conflict: false })) {
           debug.finalAction = ACTIONS.ANSWER;
@@ -307,8 +338,16 @@ async function runResearchLoop({
     researchCount += 1;
     searched.add(sourceType);
     pendingSourcePlan = (pendingSourcePlan || []).filter((s) => s !== sourceType);
-    debug.actions.push({ kind: 'search', sourceType, q: question });
-    const extra = (await callSource(sourceType, adapters, { question, searchQuery: question, locale, facts })) || [];
+    debug.actions.push({ kind: 'search', sourceType, q: searchQ });
+    if (discoveryOn) debug.discoverySources.push(sourceType);
+    const extraRaw =
+      (await callSource(sourceType, adapters, {
+        question,
+        searchQuery: searchQ,
+        locale,
+        facts
+      })) || [];
+    const extra = applyDiscoveryBoosts(extraRaw, facts && facts.candidateFeature);
     current = mergeAndRerank({ initialPassages: current, extraPassages: extra, need, limit: 4 });
 
     if (shouldEarlyStop({ passages: current, need, weak: evalWeak(), conflict: false })) {

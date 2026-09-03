@@ -1,5 +1,7 @@
 'use strict';
 
+const { extractCandidateFeatures } = require('./featureDiscovery');
+
 function clean(s) {
   return String(s || '').replace(/\s+/g, ' ').trim();
 }
@@ -11,11 +13,13 @@ function compact(s) {
 /**
  * Reconstruct diagnostic facts from USER turns only.
  * User guesses are tagged as userHypothesis, never confirmedCause.
+ * Unknown product feature nouns become candidateFeature (USER fact lock).
  */
 function extractUserFacts(userTurns = []) {
   const texts = (userTurns || []).map(clean).filter(Boolean);
   const joined = texts.join('\n');
   const c = compact(joined);
+  const featureCands = extractCandidateFeatures(texts);
 
   const facts = {
     sourceType: null,
@@ -24,7 +28,10 @@ function extractUserFacts(userTurns = []) {
     stage: null,
     feature: null,
     version: null,
-    userHypothesis: null
+    userHypothesis: null,
+    candidateFeature: featureCands.candidateFeature || null,
+    candidateEntities: featureCands.candidateEntities || [],
+    _joined: joined
   };
 
   const ver = joined.match(/\b(\d+\.\d+(?:\.\d+)?)\b/);

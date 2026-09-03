@@ -1,6 +1,10 @@
 'use strict';
 
 const { ACTIONS, SOURCE_TYPES, ALLOWED_SOURCES, validateDecision } = require('./actions');
+const {
+  shouldTriggerFeatureDiscovery,
+  DISCOVERY_SOURCE_ORDER
+} = require('./featureDiscovery');
 
 function compact(s) {
   return String(s || '')
@@ -26,6 +30,20 @@ function classifyNeed({ question, rawQuestion, intent, facts }) {
   ) {
     if (/(공지)/i.test(c) && !/(패치|업데이트|버전|\d+\.\d+)/i.test(c)) return 'notice';
     return 'release';
+  }
+  // Unknown named feature → discover via operation/UI sources first (not instant diagnostic)
+  if (
+    facts &&
+    facts.candidateFeature &&
+    shouldTriggerFeatureDiscovery(facts, {
+      weak: true,
+      intent: intent || 'general',
+      need: null
+    }) &&
+    !facts.version
+  ) {
+    if (intent === 'where' || /(어디|메뉴|버튼|화면|위치)/i.test(q)) return 'operation';
+    return 'operation';
   }
   if (
     intent === 'where' ||
@@ -72,8 +90,19 @@ function passagesMatchNeed(need, passages) {
   return Number(passages[0].score || 0) >= 14;
 }
 
-function researchBudget({ need, weak, conflict, passages, searched }) {
+function researchBudget({ need, weak, conflict, passages, searched, facts }) {
   const searchedSet = searched instanceof Set ? searched : new Set(searched || []);
+  const discovery =
+    facts &&
+    shouldTriggerFeatureDiscovery(facts, {
+      weak: weak !== false,
+      intent: need === 'operation' ? 'where' : 'how',
+      need
+    });
+  if (discovery) {
+    const remaining = DISCOVERY_SOURCE_ORDER.filter((s) => !searchedSet.has(s)).length;
+    return Math.min(3, Math.max(2, remaining));
+  }
   if (need === 'release' && !searchedSet.has('release') && !hasSource(passages, 'release')) {
     return weak || conflict ? 2 : 1;
   }
@@ -88,17 +117,26 @@ function researchBudget({ need, weak, conflict, passages, searched }) {
   return 0;
 }
 
-function nextUnsearched(need, searched) {
+function nextUnsearched(need, searched, facts) {
+  const discovery =
+    facts &&
+    facts.candidateFeature &&
+    shouldTriggerFeatureDiscovery(facts, { weak: true, intent: 'how', need });
   const orderByNeed = {
     release: ['release', 'notice', 'faq', 'knowledge'],
     notice: ['notice', 'release', 'faq'],
     catalog: ['catalog'],
-    operation: ['operation', 'knowledge', 'guide', 'faq'],
+    operation: discovery
+      ? DISCOVERY_SOURCE_ORDER.slice()
+      : ['operation', 'knowledge', 'guide', 'faq'],
     error: ['error', 'faq', 'knowledge', 'guide'],
-    knowledge: ['knowledge', 'operation', 'faq', 'guide']
+    knowledge: discovery
+      ? DISCOVERY_SOURCE_ORDER.slice()
+      : ['knowledge', 'operation', 'faq', 'guide']
   };
   const order = orderByNeed[need] || orderByNeed.knowledge;
-  return order.find((s) => !searched.has(s)) || null;
+  const set = searched instanceof Set ? searched : new Set(searched || []);
+  return order.find((s) => !set.has(s)) || null;
 }
 
 function decideNextAction({
@@ -137,12 +175,16 @@ function decideNextAction({
   }
 
   if (budgetLeft > 0) {
-    const next = nextUnsearched(need, searchedSet);
+    const next = nextUnsearched(need, searchedSet, facts);
     if (next) {
+      const discovery =
+        facts &&
+        facts.candidateFeature &&
+        shouldTriggerFeatureDiscovery(facts, { weak: true, intent, need });
       return validateDecision({
         action: searchedSet.size ? ACTIONS.SEARCH_ANOTHER_SOURCE : ACTIONS.SEARCH,
         sourceType: next,
-        reason: `need_${need}`,
+        reason: discovery ? `feature_discovery_${need}` : `need_${need}`,
         intent,
         topic: need
       });
@@ -152,6 +194,21 @@ function decideNextAction({
   const missingCore =
     need === 'error' &&
     (!facts.conversionKind && !facts.sourceType || !facts.errorCode && !facts.stage);
+
+  // Named feature already known → targeted feature clarification (not generic task ask)
+  if (
+    facts &&
+    facts.candidateFeature &&
+    weak &&
+    shouldTriggerFeatureDiscovery(facts, { weak: true, intent, need })
+  ) {
+    return validateDecision({
+      action: ACTIONS.ASK_DIAGNOSTIC,
+      reason: 'feature_discovery_miss',
+      intent,
+      topic: need
+    });
+  }
 
   if (need === 'error' || need === 'knowledge' || missingCore) {
     return validateDecision({
