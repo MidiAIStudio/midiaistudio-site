@@ -8,15 +8,15 @@
     "guide-score": "cb54885acc24ef31",
     "guide-ai": "f05dbee08870bfb2",
     "guide-library": "d5d145e99f0c75b3",
-    "guide-license": "3478e3b655a1d68b",
-    "guide-troubleshooting": "1490d3bc7facbef3",
-    "downloads-page": "26aeaa5e2b4d4dd9",
-    "knowledge-public-seed": "6da41989c63f07cc",
-    "knowledge-internal-seed": "045ba0ba13c188b1"
+    "guide-license": "d8e4a9e412d3919e",
+    "guide-troubleshooting": "5ecdd98608b1d474",
+    "downloads-page": "572d7e099e9ffd35",
+    "knowledge-public-seed": "502eb3ecbb294574",
+    "knowledge-internal-seed": "0c8a2b60b9de62df"
   },
   "docs": {
     "nav-workspace": "5c485d67e5c7e387",
-    "getting-started-install": "80076fa4e8c4c77a",
+    "getting-started-install": "38f0452a4bc2cfaf",
     "youtube-to-midi": "0b86c691d0bc52d0",
     "audio-to-midi": "7582f3ce54b6278a",
     "pdf-to-midi": "72d92f72d9c35efd",
@@ -29,20 +29,20 @@
     "high-quality-sounds": "02c52f43917b51fb",
     "library-local": "d8556dd0e97d0d7e",
     "export-formats": "1bb6406cf9cd900b",
-    "trial-limits": "4aa5e136b299890c",
-    "license-full-lifetime": "5ce32631a98d48b7",
-    "credits-usage": "2675f70612a5a247",
+    "trial-limits": "56bd9b06330cb0ae",
+    "license-full-lifetime": "8b982f8fa08510d2",
+    "credits-usage": "9cc7a247da7a3b3b",
     "youtube-fetch-errors": "803182ab4d81791d",
     "conversion-generic-failure": "0e687710f13ae8ef",
     "pdf-timeout": "536acf7483e9b987",
-    "troubleshooting-basics": "8c1d9e8375b3f905",
+    "troubleshooting-basics": "6fb0de415268780a",
     "support-contact": "b71f5e4bd4918a80",
     "internal-youtube-error-classes": "50bf045053896651",
     "internal-cuda-fallback": "b89b404a5da8e385",
-    "internal-log-checklist": "7a7798b2623cec5c",
+    "internal-log-checklist": "06ebd8200f6cd3a5",
     "internal-pdf-stages": "409bd978965442f2",
     "needs-review-ffmpeg-user-copy": "cc0884f9818ff8b6",
     "needs-review-live-faq-sync": "1043da14dc64bd6b"
   },
-  "updatedAt": "2026-09-03T02:38:03.182Z"
+  "updatedAt": "2026-09-03T03:55:46.980Z"
 }

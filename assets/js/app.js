@@ -625,7 +625,7 @@ function downloadLocaleText(){
       'If launch fails or files are missing, run the same <strong>Install / Update</strong> action again for automatic repair.',
       'After install, launch MidiAI Studio from the <code>C:\\MidiAI</code> folder.',
       'License activation happens after launch by signing in with your Google account.',
-      'If issues continue, attach Installer <strong>System Check</strong> and <strong>Show HWID</strong> results to a 1:1 support ticket.'
+      'If issues continue, use 1:1 support with the error message, a screenshot, and log files when available. Installer <strong>System Check</strong> results also help.'
     ],
     mandatory:'Required update',
     officialInstaller:'Official installer',
@@ -651,7 +651,7 @@ function downloadLocaleText(){
       '起動エラーやファイル欠損がある場合も、同じ<strong>Install / Update</strong>で自動修復を試します。',
       'インストール後は<code>C:\\MidiAI</code>フォルダからMidiAI Studioを起動します。',
       'ライセンス認証はアプリ起動後、Googleアカウントでログインして行います。',
-      '問題が続く場合はInstallerの<strong>System Check</strong>と<strong>Show HWID</strong>結果を1:1問い合わせに添付してください。'
+      '問題が続く場合は、エラーメッセージ・スクリーンショット・ログファイル（可能な場合）とInstallerの<strong>System Check</strong>結果を添えて1:1問い合わせをご利用ください。'
     ],
     mandatory:'必須アップデート',
     officialInstaller:'公式インストーラー',
@@ -677,7 +677,7 @@ function downloadLocaleText(){
       '실행 오류나 파일 누락이 있어도 같은 <strong>Install / Update</strong>로 자동 복구를 시도합니다.',
       '설치 후 <code>C:\\MidiAI</code> 폴더에서 MidiAI Studio를 실행합니다.',
       '라이선스 인증은 앱 실행 후 Google 계정으로 로그인해 진행합니다.',
-      '문제가 계속되면 Installer의 <strong>System Check</strong>와 <strong>Show HWID</strong> 결과를 1:1 문의에 첨부해 주세요.'
+      '문제가 계속되면 오류 메시지, 스크린샷, 로그 파일(가능한 경우)과 Installer <strong>System Check</strong> 결과를 함께 1:1 문의를 이용해 주세요.'
     ],
     mandatory:'필수 업데이트',
     officialInstaller:'공식 설치 프로그램',
@@ -1485,7 +1485,7 @@ function pointCopy(){
     kakaoVerifyFail:'Payment completed, but confirmation is required. Please keep your payment ID.',
     verifying:'Verifying payment...',
     complete:'Payment complete. Your license is active.',
-    heroLead:'Choose a period Full Pass or Lifetime Full.',
+    heroLead:'Choose from the passes, Lifetime license, and Credit options currently available.',
     heroLeadOwned:'You are using a Lifetime Full license.',
     comingSoon:'This product is not available for purchase.',
     ownedBannerTitle:'Lifetime Full active',
@@ -1567,7 +1567,7 @@ function pointCopy(){
     compactNote:'',
     detailsToggle:'Pass details',
     detailsItems:[
-      {title:'Period Full Pass', desc:'Unlimited conversions and Full features for 7 / 30 / 90 days. No auto-renewal.'},
+      {title:'Period Full Pass', desc:'Unlimited conversions and Full features for the selected period shown on the purchase page. No auto-renewal.'},
       {title:'Lifetime Full', desc:'Permanent Full access after purchase'},
       {title:'MIDI editing / playback', desc:'Included with Full access'},
       {title:'AI Assistant', desc:'Included with Full access'},
@@ -1614,7 +1614,7 @@ function pointCopy(){
     kakaoVerifyFail:'決済は完了しましたが、確認が必要です。paymentIdを控えてください。',
     verifying:'決済を確認しています...',
     complete:'決済が完了しました。ライセンスが付与されました。',
-    heroLead:'期間Full利用権またはLifetime Fullを選択してください。',
+    heroLead:'現在販売中の利用券・ライセンス・Creditから選択してください。',
     heroLeadOwned:'Lifetime Fullをご利用中です。',
     comingSoon:'この商品は現在購入できません。',
     ownedBannerTitle:'Lifetime Full保有中',
@@ -1696,7 +1696,7 @@ function pointCopy(){
     compactNote:'',
     detailsToggle:'利用権の詳細',
     detailsItems:[
-      {title:'期間Full利用権', desc:'7 / 30 / 90日間、変換回数制限なしでFull機能を利用。自動更新なし'},
+      {title:'期間Full利用権', desc:'購入ページに表示された期間中、変換回数制限なしでFull機能を利用。自動更新なし'},
       {title:'Lifetime Full', desc:'購入後ずっとFull利用'},
       {title:'MIDI編集・再生', desc:'Full利用に含まれます'},
       {title:'AIアシスタント', desc:'Full利用に含まれます'},
@@ -1743,7 +1743,7 @@ function pointCopy(){
     kakaoVerifyFail:'결제는 완료되었으나 확인이 필요합니다. 주문번호를 보관해 주세요.',
     verifying:'결제를 검증하는 중입니다...',
     complete:'결제가 완료되었습니다. 이용권이 지급되었습니다.',
-    heroLead:'기간 Full 이용권 또는 Lifetime Full을 선택하세요.',
+    heroLead:'현재 판매 중인 이용권·라이선스·Credit 상품을 선택하세요.',
     heroLeadOwned:'Lifetime Full을 이용 중입니다.',
     comingSoon:'현재 구매할 수 없는 상품입니다.',
     ownedBannerTitle:'Lifetime Full 보유 중',
@@ -1825,7 +1825,7 @@ function pointCopy(){
     compactNote:'',
     detailsToggle:'이용권 안내 자세히 보기',
     detailsItems:[
-      {title:'기간 Full 이용권', desc:'7 / 30 / 90일 동안 변환 횟수 제한 없이 Full 기능 이용 · 자동결제 없음'},
+      {title:'기간 Full 이용권', desc:'구매 페이지에 표시된 기간 동안 변환 횟수 제한 없이 Full 기능 이용 · 자동결제 없음'},
       {title:'Lifetime Full', desc:'구매 후 영구 Full 이용'},
       {title:'MIDI 편집/재생', desc:'Full 이용권에 포함'},
       {title:'AI Assistant', desc:'Full 이용권에 포함'},

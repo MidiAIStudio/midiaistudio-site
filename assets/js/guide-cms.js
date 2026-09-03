@@ -57,8 +57,8 @@ const SEED_GUIDES = [
   { slug: 'score-editor', title: 'Score Editor', category: '편집', summary: '악보를 페이지·타임라인으로 보고 음표를 수정합니다.', order: 60, features: ['페이지/연속 보기', '음표 속성', 'AI 검토'], steps: [{ title: '악보 열기', body: '변환된 악보 또는 MusicXML을 엽니다.' }, { title: '편집', body: '음표를 선택해 피치·길이 등을 수정합니다.' }, { title: '검토', body: 'AI 검토 제안으로 이상 음을 확인합니다.' }], faq: [{ q: 'PDF로 다시 저장되나요?', a: '네. 편집 후 PDF·MusicXML로 내보낼 수 있습니다.' }], tips: '변환 직후 AI 검토를 한 번 돌리면 수정 포인트가 빨리 보입니다.', relatedGuides: ['pdf-to-midi', 'midi-editor'] },
   { slug: 'ai-assistant', title: 'AI Assistant', category: '기능', summary: '변환·편집 중 AI 도움으로 품질을 다듬습니다.', order: 70, features: ['검토 제안', '작업 힌트'], steps: [{ title: '제안 열기', body: '편집 화면에서 AI 검토를 실행합니다.' }, { title: '적용', body: '제안 항목을 확인한 뒤 반영합니다.' }], faq: [{ q: '항상 정확한가요?', a: '제안은 보조입니다. 최종 판단은 연주·청취로 확인하세요.' }], tips: '피치 점프·겹침 음표 위주로 먼저 확인하세요.', relatedGuides: ['score-editor', 'midi-editor'] },
   { slug: 'library', title: 'Library', category: '관리', summary: '변환·편집한 MIDI를 모아 다시 엽니다.', order: 80, features: ['프로젝트 목록', '다시 열기'], steps: [{ title: '저장', body: '작업물을 라이브러리에 저장합니다.' }, { title: '다시 열기', body: '목록에서 선택해 Editor로 이어갑니다.' }], faq: [{ q: '클라우드 동기화인가요?', a: '라이브러리는 앱 로컬 저장을 기준으로 합니다. 버전별 동작은 패치노트를 확인하세요.' }], tips: '파일명에 곡명·날짜를 넣으면 찾기 쉽습니다.', relatedGuides: ['midi-editor', 'getting-started'] },
-  { slug: 'license', title: 'License', category: '계정', summary: '라이선스 구매·활성화·기기 정보를 확인합니다.', order: 90, features: ['Google 로그인', '평생 라이선스', 'HWID'], steps: [{ title: '구매', body: '구매 페이지에서 라이선스를 결제합니다.' }, { title: '활성화', body: '앱에서 Google 로그인하면 라이선스가 연결됩니다.' }], faq: [{ q: '기기를 바꾸면?', a: '계정 기준으로 관리됩니다. 문제가 있으면 1:1 문의로 HWID를 알려주세요.' }], tips: 'Installer의 Show HWID로 기기 정보를 확인할 수 있습니다.', relatedGuides: ['getting-started', 'troubleshooting'] },
-  { slug: 'troubleshooting', title: 'Troubleshooting', category: '도움말', summary: '설치·변환·로그인 문제를 해결합니다.', order: 110, features: ['설치 복구', '로그인', '변환 실패'], steps: [{ title: 'Installer 복구', body: 'Installer에서 Install/Update로 복구를 실행합니다.' }, { title: '로그 확인', body: 'System Check 결과를 저장해 둡니다.' }, { title: '문의', body: '1:1 문의에 로그·HWID를 첨부합니다.' }], faq: [{ q: '로그인이 안 돼요', a: '인앱 브라우저가 아닌 Chrome/Edge에서 포털에 로그인해 보세요.' }], tips: '지원 티켓에 버전·HWID·오류 메시지를 함께 보내면 해결이 빠릅니다.', relatedGuides: ['license', 'getting-started'] }
+  { slug: 'license', title: 'License', category: '계정', summary: '구매한 이용권이나 라이선스는 구매에 사용한 Google 계정으로 앱에 로그인하면 연결됩니다.', order: 90, features: ['Google 계정 연동', '기간 이용권 / Lifetime', '계정 기반 활성화'], steps: [{ title: '구매', body: '구매 페이지에서 원하는 이용권·라이선스·Credit 상품을 구매합니다. 현재 판매 상품은 구매 페이지에서 확인하세요.' }, { title: '로그인', body: 'MidiAI Studio 앱에서 구매에 사용한 Google 계정으로 로그인합니다.' }, { title: '확인', body: '계정에 연결된 현재 이용 상태를 앱의 계정/프로필 영역에서 확인합니다.' }], faq: [{ q: '기기를 변경했는데 이용권이 인식되지 않아요.', a: '기기 변경 후 인증 문제가 발생하면 1:1 문의를 통해 확인을 요청해 주세요.' }], tips: '기기를 변경했거나 인증 문제가 발생한 경우 1:1 문의를 이용해주세요.', relatedGuides: ['getting-started', 'troubleshooting'] },
+  { slug: 'troubleshooting', title: 'Troubleshooting', category: '도움말', summary: '설치·변환·로그인 문제를 해결합니다.', order: 110, features: ['설치 복구', '로그인', '변환 실패'], steps: [{ title: 'Installer 복구', body: 'Installer에서 Install/Update로 복구를 실행합니다.' }, { title: '오류 정보 확인', body: '화면에 표시된 오류 메시지, 발생 단계, 앱 버전을 확인합니다. 가능하면 System Check 결과도 저장합니다.' }, { title: '문의', body: '문제가 계속되면 1:1 문의에 오류 메시지, 스크린샷, 로그 파일(가능한 경우)을 첨부합니다.' }], faq: [{ q: '로그인이 안 돼요', a: '인앱 브라우저가 아닌 Chrome/Edge에서 포털에 로그인해 보세요.' }], tips: '지원 티켓에 오류 메시지·앱 버전·스크린샷·로그를 함께 보내면 해결이 빠릅니다.', relatedGuides: ['license', 'getting-started'] }
 ];
 
 const pathBase = () => window.MIDIAI_BASE_PATH || './';
@@ -370,19 +370,85 @@ async function loadPublishedGuides() {
   try {
     const q = query(collection(db, COLLECTION), where('published', '==', true), orderBy('order', 'asc'));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    return snap.docs.map((d) => sanitizeStaleGuideCopy({ id: d.id, ...d.data() }));
   } catch (e) {
     console.warn('guides orderBy fallback', e);
     const q = query(collection(db, COLLECTION), where('published', '==', true));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
+    return snap.docs.map((d) => sanitizeStaleGuideCopy({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
   }
 }
 
 async function loadAllGuidesAdmin() {
   const { collection, getDocs } = fs;
   const snap = await getDocs(collection(db, COLLECTION));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
+  return snap.docs.map((d) => sanitizeStaleGuideCopy({ id: d.id, ...d.data() })).sort((a, b) => (a.order || 0) - (b.order || 0));
+}
+
+/** Legacy STALE defense only — replace fields that still contain known stale markers. */
+function sanitizeStaleGuideCopy(data) {
+  if (!data) return data;
+  const slug = data.slug || data.id;
+  if (slug !== 'license' && slug !== 'troubleshooting') return data;
+  const seed = SEED_GUIDES.find((g) => g.slug === slug);
+  if (!seed) return data;
+  const staleRe =
+    /Show HWID|평생 라이선스|로그·HWID|버전·HWID|기기\(HWID\)|1:1 문의로 HWID|(^|[^\w])HWID([^\w]|$)/i;
+  const isStale = (v) => {
+    try {
+      return staleRe.test(JSON.stringify(v));
+    } catch (_) {
+      return false;
+    }
+  };
+  const out = { ...data };
+  let changed = false;
+  for (const key of ['summary', 'features', 'steps', 'faq', 'tips']) {
+    if (isStale(out[key]) && seed[key] !== undefined) {
+      out[key] = seed[key];
+      changed = true;
+    }
+  }
+  // Title/category only if they themselves look Lifetime/HWID-era.
+  if (isStale(out.title) && seed.title) {
+    out.title = seed.title;
+    changed = true;
+  }
+  if (changed) out._staleCmsSanitized = true;
+  return out;
+}
+
+async function repairStaleGuideDocsIfAdmin() {
+  if (!isAdmin || !fs) return;
+  const { doc, setDoc, serverTimestamp, getDoc } = fs;
+  for (const slug of ['license', 'troubleshooting']) {
+    const seed = SEED_GUIDES.find((g) => g.slug === slug);
+    if (!seed) continue;
+    try {
+      const ref = doc(db, COLLECTION, slug);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) continue;
+      const raw = { id: snap.id, ...snap.data() };
+      const cleaned = sanitizeStaleGuideCopy(raw);
+      if (!cleaned._staleCmsSanitized) continue;
+      const patch = {};
+      for (const key of ['summary', 'features', 'steps', 'faq', 'tips', 'title']) {
+        if (JSON.stringify(raw[key]) !== JSON.stringify(cleaned[key])) patch[key] = cleaned[key];
+      }
+      if (!Object.keys(patch).length) continue;
+      await setDoc(
+        ref,
+        {
+          ...patch,
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+      console.info('[guide-cms] repaired stale guide fields', slug, Object.keys(patch));
+    } catch (e) {
+      console.warn('[guide-cms] repair failed', slug, e);
+    }
+  }
 }
 
 async function loadGuideBySlug(slug) {
@@ -390,7 +456,7 @@ async function loadGuideBySlug(slug) {
   try {
     const byId = await getDoc(doc(db, COLLECTION, slug));
     if (byId.exists()) {
-      const data = { id: byId.id, ...byId.data() };
+      const data = sanitizeStaleGuideCopy({ id: byId.id, ...byId.data() });
       if (!isAdmin && data.published === false) return null;
       return data;
     }
@@ -405,7 +471,7 @@ async function loadGuideBySlug(slug) {
     const snap = await getDocs(q);
     if (snap.empty) return SEED_GUIDES.find((g) => g.slug === slug) || null;
     const d = snap.docs[0];
-    return { id: d.id, ...d.data() };
+    return sanitizeStaleGuideCopy({ id: d.id, ...d.data() });
   } catch (e) {
     console.error('guide getBySlug', e);
     return SEED_GUIDES.find((g) => g.slug === slug) || null;
@@ -1521,7 +1587,10 @@ export async function initGuideCms() {
   bindCmsBar();
   try {
     await initFirebase();
-    if (isAdmin) await ensureSeed();
+    if (isAdmin) {
+      await ensureSeed();
+      await repairStaleGuideDocsIfAdmin();
+    }
     allGuides = isAdmin
       ? await loadAllGuidesAdmin()
       : await loadPublishedGuides();

@@ -19,7 +19,7 @@ const MODE = {
 };
 
 const PERSONAL_RE =
-  /(제\s*(라이선스|결제|환불|계정|크레딧|포인트)|내\s*(라이선스|결제|환불|계정|크레딧)|언제\s*끝|남은\s*기간|차단됐|환불됐|결제\s*성공|어떤\s*상품|my\s+(license|payment|refund|account|credit)|when\s+does\s+my|ライセンス.*(いつ|期限)|アカウント)/i;
+  /(제\s*(라이선스|이용권|결제|환불|계정|크레딧|포인트)|내\s*(라이선스|이용권|결제|환불|계정|크레딧)|언제\s*끝|남은\s*기간|차단됐|환불됐|결제\s*성공|my\s+(license|payment|refund|account|credit|pass)|when\s+does\s+my|ライセンス.*(いつ|期限)|アカウント)/i;
 
 const HUMAN_WANT_RE =
   /(상담사|사람|관리자|human|agent|operator|직원).{0,12}(연결|통화|이야기|상담)|사람과\s*이야기|상담원|オペレーター|有人対応|talk\s+to\s+(a\s+)?(human|agent|person)/i;
@@ -30,11 +30,14 @@ const SECRET_PROBE_RE =
 const INJECTION_RE =
   /(이전|ignore|disregard).{0,40}(지침|instruction|prompt)|internal\s*knowledge|내부\s*(지식|문서|knowledge)|관리자용.{0,20}(문서|지식)|cuda\s*내부|시스템\s*프롬프트|show\s+(me\s+)?(the\s+)?(system|hidden)\s+prompt|source\s*code\s*(보여|輸出|dump|print)/i;
 
-const PRICE_RE =
-  /(가격|얼마|요금|price|cost|구매\s*상품|판매\s*상품|lifetime\s*가격|크레딧\s*(팩|가격|얼마)|料金|いくら)/i;
+const PRODUCT_RE =
+  /(가격|얼마|요금|price|cost|구매\s*상품|판매\s*상품|이용권|라이선스|패스|상품\s*종류|어떤\s*(상품|이용권|플랜)|몇\s*일\s*권|7일|30일|90일|lifetime|크레딧\s*(팩|가격|얼마|종류)|料金|いくら|plans?|passes?)/i;
 
 const UNKNOWN_ERROR_RE =
   /[A-Z]{2,}[-_]?\d{2,}|(처음\s*보는|모르는|unknown)\s*(오류|에러|error)|見たことない\s*(エラー|誤り)/i;
+
+const FORBIDDEN_USER_FACING_RE =
+  /\bKnowledge\s*Base\b|\bKnowledge\b|\bRAG\b|\bretrieval\b|\bseed\b|\b(public|internal)\s+knowledge\b|\bsource\s*priority\b|\bconfidence(\s*score)?\b|\bFirestore\b|\bCloud\s*Functions?\b|\binternal\s+policy\b|공식\s*Knowledge|Knowledge로|내부\s*지식\s*베이스/gi;
 
 function cfg(name, fallback = '') {
   return process.env[name] || fallback;
@@ -147,10 +150,10 @@ function templateAnswer(question, passages, { personal, lowConfidence, wantHuman
     return {
       text:
         loc === 'en'
-          ? 'Personal account, payment, or license expiry cannot be confirmed from public docs alone. Connect to a counselor to check your account?'
+          ? 'Personal plan expiry or payment status needs an account check. I can connect you to a counselor for an accurate confirmation.'
           : loc === 'ja'
-            ? '個人のライセンス期限・決済状態は公開資料だけでは確認できません。オペレーター接続で正確に確認しますか？'
-            : '개인 계정·결제·라이선스 만료일 등은 공식 문서만으로 확인할 수 없습니다. 상담사에게 연결해 정확한 계정 상태를 확인해 드릴까요?',
+            ? '個人の利用期限やお支払い状況はアカウント確認が必要な情報です。正確な確認のためオペレーターに接続できます。'
+            : '개인 이용권 만료일이나 결제 상태는 계정 확인이 필요한 정보입니다. 정확한 확인이 필요하시면 상담사에게 연결해드릴게요.',
       suggestHandoff: true,
       confidence: 0.95,
       refs: passages.slice(0, 1).map((p) => ({ label: `${p.title}`, href: p.href }))
@@ -335,50 +338,172 @@ async function loadLiveFaqPassages(db, question, limit = 2) {
   }
 }
 
-/** Live catalog for prices / sellable products — authoritative over static Knowledge. */
-async function loadLiveCatalogPassages(db, question) {
-  if (!PRICE_RE.test(String(question || ''))) return [];
+/** Live catalog for sellable products/prices — authoritative over static seed copy. */
+function isSellableProduct(p) {
+  if (!p || typeof p !== 'object') return false;
+  if (p.active === false || p.archived === true || p.enabled === false || p.saleOk === false) return false;
+  const status = String(p.status || p.saleStatus || 'active').trim().toLowerCase();
+  return status === 'active' || status === 'on_sale' || status === 'selling';
+}
+
+function normalizeProductId(raw) {
+  return String(raw || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_]/g, '');
+}
+
+function customerFacingProductName(p, locale = 'ko') {
+  const loc = locale || 'ko';
+  const pid = normalizeProductId(p.productId || p.id);
+  const days = Math.floor(Number(p.durationDays || 0));
+  const credits = Math.floor(Number(p.creditAmount || 0));
+  if (pid === 'LIFETIME' || p.type === 'lifetime' || p.entitlement === 'lifetime') {
+    return 'Lifetime';
+  }
+  if (pid.startsWith('PASS_') || p.type === 'full_pass' || p.entitlement === 'full_pass') {
+    const d =
+      days ||
+      (pid === 'PASS_7D' ? 7 : pid === 'PASS_30D' ? 30 : pid === 'PASS_90D' ? 90 : 0);
+    if (d > 0) {
+      return loc === 'en' ? `${d}-Day Pass` : loc === 'ja' ? `${d}日利用券` : `${d}일 이용권`;
+    }
+  }
+  if (p.type === 'credit_pack' || pid.startsWith('CREDIT') || credits > 0) {
+    const n = credits || '';
+    if (loc === 'en') return n ? `Credit ${n}` : 'Credits';
+    if (loc === 'ja') return n ? `クレジット ${n}` : 'クレジット';
+    return n ? `크레딧 ${n}` : '크레딧';
+  }
+  const raw = String(
+    (loc === 'en' ? p.nameEn || p.titleEn : loc === 'ja' ? p.nameJa || p.titleJa : p.nameKo || p.titleKo) ||
+      p.title ||
+      p.name ||
+      pid ||
+      ''
+  );
+  return raw.replace(/\bFull\b/gi, '').replace(/\s+/g, ' ').trim() || pid;
+}
+
+function sanitizeUserFacingText(text, locale = 'ko') {
+  const raw = String(text || '');
+  let out = raw;
+  const personalNeedAccount =
+    locale === 'en'
+      ? 'Personal plan expiry or payment status needs an account check. I can connect you to a counselor for an accurate confirmation.'
+      : locale === 'ja'
+        ? '個人の利用期限やお支払い状況はアカウント確認が必要な情報です。正確な確認のためオペレーターに接続できます。'
+        : '개인 이용권 만료일이나 결제 상태는 계정 확인이 필요한 정보입니다. 정확한 확인이 필요하시면 상담사에게 연결해드릴게요.';
+  const hadInternal =
+    /Knowledge|RAG|\bretrieval\b|\bFirestore\b|\bseed\b/i.test(raw) ||
+    FORBIDDEN_USER_FACING_RE.test(raw);
+  FORBIDDEN_USER_FACING_RE.lastIndex = 0;
+
+  // Replace leaked phrases before stripping tokens (avoid dangling particles like "로").
+  out = out
+    .replace(/개인[^.。\n]{0,100}Knowledge[^.。\n]{0,120}[.。!?]*/gi, personalNeedAccount)
+    .replace(/cannot[^.]*from\s+Knowledge[^.]*[.!]?/gi, personalNeedAccount)
+    .replace(/Knowledge로\s*(추측|확인)[^.。\n]*/gi, personalNeedAccount)
+    .replace(/Do not guess[^.]*Knowledge[^.]*\./gi, '')
+    .replace(/from\s+Knowledge[^.]*\./gi, '')
+    .replace(/기간\s*Full\s*\(?\s*7\s*\/?\s*30\s*\/?\s*90\s*일\s*\)?/gi, locale === 'en' ? 'period passes' : '기간 이용권')
+    .replace(/Lifetime\s*Full/gi, 'Lifetime')
+    .replace(/\bFull\s*이용권/gi, '이용권')
+    .replace(/\bFull\s*Pass(?:es)?\b/gi, locale === 'en' ? 'Pass' : '이용권')
+    .replace(/공식\s*자료만으로\s*확인할\s*수\s*없습니다?[.?!]*/gi, '')
+    .replace(/cannot be confirmed from (public )?docs?[^.]*\./gi, '');
+  out = out.replace(FORBIDDEN_USER_FACING_RE, '');
+  out = out
+    .replace(/개인\s*(만료일|이용권|결제)[^.。\n]{0,40}여부는\s*$/g, personalNeedAccount)
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\s+([.。,，])/g, '$1')
+    .trim();
+  if (!out && hadInternal) out = personalNeedAccount;
+  return out;
+}
+
+async function loadLiveCatalogPassages(db, question, locale = 'ko') {
+  if (!PRODUCT_RE.test(String(question || ''))) return [];
   try {
-    const snap = await db.collection('products').limit(40).get();
-    const lines = [];
+    const snap = await db.collection('products').limit(80).get();
+    const sellable = [];
+    const archivedHits = [];
     snap.docs.forEach((d) => {
-      const p = d.data() || {};
-      const status = String(p.status || p.saleStatus || 'active').toLowerCase();
-      if (['paused', 'archived', 'hidden', 'disabled', 'draft'].includes(status)) return;
-      const name = p.title || p.name || p.productId || d.id;
-      const type = p.type || p.plan || p.kind || '';
-      const list = p.listPriceKrw ?? p.priceKrw ?? p.listPrice;
-      const sale = p.salePriceKrw ?? p.salePrice;
-      lines.push(
-        `- ${name} | type=${type || '-'} | listPriceKrw=${list ?? 'n/a'}${sale != null ? ` | salePriceKrw=${sale}` : ''} | status=${status}`
-      );
+      const p = { id: d.id, ...(d.data() || {}) };
+      const pid = normalizeProductId(p.productId || d.id);
+      p.productId = pid || d.id;
+      if (isSellableProduct(p)) sellable.push(p);
+      else archivedHits.push(p);
     });
+
+    const loc = locale || 'ko';
+    const lines = sellable
+      .sort((a, b) => Number(a.sortOrder || 99) - Number(b.sortOrder || 99))
+      .map((p) => {
+        const name = customerFacingProductName(p, loc);
+        const list = p.listPriceKrw ?? p.priceKrw ?? p.listPrice;
+        const sale = p.salePriceKrw ?? p.salePrice;
+        const days = Number(p.durationDays || 0);
+        const credits = Number(p.creditAmount || 0);
+        const bits = [`name=${name}`, `id=${p.productId}`];
+        if (days > 0) bits.push(`durationDays=${days}`);
+        if (credits > 0) bits.push(`credits=${credits}`);
+        if (list != null) bits.push(`listPriceKrw=${list}`);
+        if (sale != null) bits.push(`salePriceKrw=${sale}`);
+        return `- ${bits.join(' | ')}`;
+      });
+
+    const q = String(question || '');
+    const asked7 = /(7\s*일|7-?day|PASS_7D|일주일)/i.test(q);
+    const seven = archivedHits.find((p) => normalizeProductId(p.productId || p.id) === 'PASS_7D');
+    const sevenNote =
+      asked7 && seven && !isSellableProduct(seven)
+        ? loc === 'en'
+          ? 'User asked about a 7-day pass: it is NOT currently for sale. Say it is not sold right now; do not list it as available.'
+          : loc === 'ja'
+            ? '7日利用券の質問: 現在は販売していません。販売中と案内しないでください。'
+            : '7일 이용권 질문: 현재 판매 중이 아닙니다. 판매 중이라고 안내하지 마세요.'
+        : asked7 && !sellable.some((p) => normalizeProductId(p.productId) === 'PASS_7D')
+          ? loc === 'en'
+            ? 'User asked about a 7-day pass: it is not in the current sellable catalog. Do not present it as available.'
+            : '7일 이용권은 현재 판매 목록에 없습니다. 판매 중이라고 안내하지 마세요.'
+          : '';
+
     if (!lines.length) {
       return [
         {
           id: 'live-catalog-empty',
           priority: 1,
-          title: 'Purchase catalog',
+          title: loc === 'en' ? 'Purchase catalog' : '구매 상품',
           href: '/purchase.html',
           keywords: [],
-          text: 'No active products returned from live catalog. Tell the user to open the Purchase page; do not invent prices.',
-          score: 20,
+          text:
+            (loc === 'en'
+              ? 'No active sellable products from the live catalog. Tell the user to open the Purchase page; do not invent plans or prices.'
+              : '현재 판매 상품 목록을 불러오지 못했습니다. 구매 페이지를 안내하고 가격·상품을 임의로 만들지 마세요.') +
+            (sevenNote ? ` ${sevenNote}` : ''),
+          score: 30,
           visibility: 'public',
           featureStatus: 'production'
         }
       ];
     }
+
+    const header =
+      loc === 'en'
+        ? 'LIVE SELLABLE CATALOG (authoritative). Only list these as currently for sale. Use customer-facing names exactly as given (e.g. 30-Day Pass, Lifetime). Never say internal labels like "Full" plan family, Knowledge, RAG, or Firestore. Archived/paused products must not be described as currently sold.'
+        : '현재 판매 중인 상품(권위 소스). 아래 항목만 현재 판매 상품으로 안내하세요. 고객용 이름(예: 30일 이용권, Lifetime)을 쓰세요. "Full" 같은 내부 구분명·Knowledge·RAG·Firestore 등은 사용자에게 말하지 마세요. 보관/중지 상품은 현재 판매처럼 안내하지 마세요.';
+
     return [
       {
         id: 'live-catalog',
         priority: 1,
-        title: '현재 판매 상품 (live)',
+        title: loc === 'en' ? 'Current plans for sale' : '현재 판매 상품',
         href: '/purchase.html',
         keywords: [],
-        text:
-          'Authoritative live catalog (prefer over static Knowledge for prices). Only list these sellable items:\n' +
-          lines.join('\n'),
-        score: 20,
+        text: `${header}\n${lines.join('\n')}${sevenNote ? `\n${sevenNote}` : ''}`,
+        score: 30,
         visibility: 'public',
         featureStatus: 'production'
       }
@@ -511,8 +636,13 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     ? retrieve(question, 1, { includeInternal: false, locale })
     : retrieve(question, 4, { includeInternal: false, locale });
   const faqPassages = personal ? [] : await loadLiveFaqPassages(db, question, 2);
-  const catalogPassages = personal ? [] : await loadLiveCatalogPassages(db, question);
-  let passages = [...catalogPassages, ...staticPassages, ...faqPassages].slice(0, 4);
+  const catalogPassages = personal ? [] : await loadLiveCatalogPassages(db, question, locale);
+  let passages = [...catalogPassages, ...staticPassages, ...faqPassages];
+  // Live catalog wins over static license/price seed copy.
+  if (catalogPassages.length) {
+    passages = passages.filter((p) => p.id !== 'license-full-lifetime');
+  }
+  passages = passages.slice(0, 4);
   // Unknown / novel error codes: do not force nearest weak conversion docs
   if (UNKNOWN_ERROR_RE.test(question)) {
     const top = passages[0];
@@ -533,12 +663,15 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
   const system = [
     'You are MidiAI Studio official support AI.',
     'Answer ONLY from the provided official context. Do not invent prices, pack sizes, policies, or personal account data.',
-    'If live catalog context is present, use it for prices/products and ignore any conflicting static price guesses.',
+    'If a live sellable catalog is present, it is the only source for currently sold plans/prices. Ignore conflicting static plan lists.',
+    'Use customer-facing product names from the catalog (e.g. "30일 이용권", "90일 이용권", "Lifetime"). Never say internal labels like "Full", "Knowledge", "RAG", "retrieval", "seed", "Firestore", or "functions" to the user.',
+    'Archived/paused/hidden products must never be described as currently for sale.',
+    'For personal expiry/payment questions: say account confirmation is required and offer a counselor. Never say you cannot find it in Knowledge.',
     'Answer the user question directly first. Do not paste a related-info dump or repeat the same sentence.',
     'Respect featureStatus: do not describe Preview/Beta/Experimental features as full production.',
     `Reply in ${locale === 'en' ? 'English' : locale === 'ja' ? 'Japanese' : 'Korean'}.`,
     'Keep answers short and practical (conclusion first, then up to 5 steps if needed).',
-    'If unsure, say you need a human agent. Never approve refunds, grant licenses, or reveal secrets/credentials/source/internal knowledge.'
+    'If unsure, say you need a human agent. Never approve refunds, grant licenses, or reveal secrets/credentials/source code.'
   ].join(' ');
 
   const contextBlock = passages.map((p) => `[${p.title}] ${p.text} (${p.href})`).join('\n');
@@ -550,7 +683,7 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     if (!lowConfidence || personal) {
       const llm = await callLlmIfConfigured(
         system,
-        `Official context:\n${contextBlock || '(none)'}\n\nTranscript (recent):\n${transcript}\n\nLatest question:\n${question}\n\nWrite a direct short answer to the latest question using only the official context. Do not add a related-info dump.`
+        `Official context:\n${contextBlock || '(none)'}\n\nTranscript (recent):\n${transcript}\n\nLatest question:\n${question}\n\nWrite a direct short customer-facing answer to the latest question using only the official context. Do not mention internal systems. Do not add a related-info dump.`
       );
       if (llm) {
         answer = {
@@ -581,6 +714,10 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     // else keep templateAnswer from passages
   }
 
+  answer = {
+    ...answer,
+    text: sanitizeUserFacingText(answer.text, locale)
+  };
   await writeAiReply(db, ticketId, answer);
   const out = {
     ok: true,
@@ -642,5 +779,8 @@ module.exports = {
   isPersonal,
   wantsHuman,
   isSecretProbe,
-  isInjectionProbe
+  isInjectionProbe,
+  sanitizeUserFacingText,
+  isSellableProduct,
+  customerFacingProductName
 };

@@ -134,28 +134,51 @@ export const GUIDE_SEO = {
     related: ["midi-editor", "getting-started"]
   },
   license: {
-    title: "라이선스 활성화 가이드 | MidiAI Studio",
-    description: "MidiAI Studio Lifetime 라이선스 구매 후 Google 로그인으로 활성화하고 기기(HWID)를 확인하는 방법입니다.",
-    h1: "라이선스 구매와 활성화",
-    summary: "구매 페이지에서 결제하고 앱에서 Google 로그인하면 라이선스가 연결됩니다.",
+    title: "라이선스 및 이용권 활성화 | MidiAI Studio",
+    description:
+      "구매한 이용권·라이선스는 구매에 사용한 Google 계정으로 앱에 로그인하면 연결됩니다. 기간 이용권, Lifetime, Credit 안내.",
+    h1: "라이선스 및 이용권 활성화",
+    summary:
+      "구매한 이용권이나 라이선스는 구매에 사용한 Google 계정으로 앱에 로그인하면 연결됩니다.",
     steps: [
-      { name: "구매", text: "구매 페이지에서 라이선스를 결제합니다." },
-      { name: "활성화", text: "앱에서 Google 로그인하면 라이선스가 연결됩니다." }
+      {
+        name: "구매",
+        text: "구매 페이지에서 원하는 이용권·라이선스·Credit 상품을 구매합니다. 현재 판매 상품은 구매 페이지에서 확인하세요."
+      },
+      {
+        name: "로그인",
+        text: "MidiAI Studio 앱에서 구매에 사용한 Google 계정으로 로그인합니다."
+      },
+      {
+        name: "확인",
+        text: "계정에 연결된 현재 이용 상태를 앱의 계정/프로필 영역에서 확인합니다."
+      }
     ],
     faq: [
-      { q: "기기를 바꾸면?", a: "계정 기준으로 관리됩니다. 문제가 있으면 1:1 문의로 HWID를 알려주세요." }
+      {
+        q: "기기를 변경했는데 이용권이 인식되지 않아요.",
+        a: "기기 변경 후 인증 문제가 발생하면 1:1 문의를 통해 확인을 요청해 주세요."
+      }
     ],
     related: ["getting-started", "troubleshooting"]
   },
   troubleshooting: {
     title: "문제 해결 | MidiAI Studio",
-    description: "설치 복구, 로그인 실패, MIDI 변환 오류를 해결하는 방법. 로그와 HWID를 1:1 문의에 첨부하는 팁을 안내합니다.",
+    description:
+      "설치 복구, 로그인 실패, MIDI 변환 오류를 해결하는 방법. 오류 메시지·앱 버전·로그를 1:1 문의에 첨부하는 팁을 안내합니다.",
     h1: "설치·변환·로그인 문제 해결",
-    summary: "Installer 복구, System Check 로그, 지원 티켓에 버전·HWID를 함께 보내면 해결이 빠릅니다.",
+    summary:
+      "Installer 복구 후 오류 메시지·앱 버전을 확인하고, 필요하면 System Check 로그·스크린샷과 함께 1:1 문의에 첨부하세요.",
     steps: [
       { name: "Installer 복구", text: "Installer에서 Install/Update로 복구를 실행합니다." },
-      { name: "로그 확인", text: "System Check 결과를 저장해 둡니다." },
-      { name: "문의", text: "1:1 문의에 로그·HWID를 첨부합니다." }
+      {
+        name: "오류 정보 확인",
+        text: "화면에 표시된 오류 메시지, 발생 단계, 앱 버전을 확인합니다. 가능하면 System Check 결과도 저장합니다."
+      },
+      {
+        name: "문의",
+        text: "문제가 계속되면 1:1 문의에 오류 메시지, 스크린샷, 로그 파일(가능한 경우)을 첨부합니다."
+      }
     ],
     faq: [
       { q: "로그인이 안 돼요", a: "인앱 브라우저가 아닌 Chrome/Edge에서 포털에 로그인해 보세요." }

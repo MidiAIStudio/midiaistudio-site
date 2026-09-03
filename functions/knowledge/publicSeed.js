@@ -45,10 +45,10 @@ module.exports = [
     keywords: ['설치', '시작', '다운로드', '첫', '체험', 'install', '시작하기'],
     summary: 'Installer로 설치한 뒤 Google 로그인하고 Studio에서 첫 변환을 합니다.',
     details:
-      '다운로드 페이지에서 MidiAI Installer.exe를 받아 설치합니다. 기본 설치 경로는 문서상 C:\\MidiAI입니다. Installer는 Install / Update로 설치·업데이트·복구를 수행합니다. 설치 후 Google 계정으로 로그인하고 라이선스 또는 체험을 확인한 뒤, Studio에서 YouTube 또는 오디오로 첫 MIDI 변환을 진행합니다.',
+      '다운로드 페이지에서 MidiAI Installer.exe를 받아 설치합니다. 기본 설치 경로는 문서상 C:\\MidiAI입니다. Installer는 Install / Update로 설치·업데이트·복구를 수행합니다. 설치 후 구매에 사용한 Google 계정으로 로그인하고 현재 이용 상태(Trial, 기간 이용권, Lifetime, Credit 등)를 확인한 뒤, Studio에서 YouTube 또는 오디오로 첫 MIDI 변환을 진행합니다.',
     steps: [
       '다운로드 페이지에서 Installer를 받아 설치합니다.',
-      'Google 계정으로 로그인하고 라이선스(또는 체험)를 확인합니다.',
+      '구매에 사용한 Google 계정으로 로그인하고 현재 이용 상태를 확인합니다.',
       'Studio에서 YouTube 또는 오디오를 불러와 MIDI로 변환합니다.'
     ],
     relatedGuideUrl: '/guide/getting-started/',
@@ -239,7 +239,7 @@ module.exports = [
     keywords: ['크레딧', 'credit', '포인트', '충전', '차감', '잔액', '횟수'],
     summary: 'AI 변환 이용 횟수 단위입니다. 일반적으로 1회 변환 = 1 크레딧입니다.',
     details:
-      '크레딧은 YouTube·Audio·PDF 등 AI 변환을 실행할 때 쓰는 이용 횟수 단위입니다. 일반적으로 AI 변환 1회에 크레딧 1이 차감됩니다. 기간 Full·Lifetime Full처럼 AI 변환이 무제한인 이용권은 크레딧이 차감되지 않습니다. 팩 단위 충전은 구매 페이지에서 가능합니다. 개인 잔액·결제 내역은 계정에서 확인하거나 상담사에게 문의하세요. 지원 AI는 개인 잔액을 조회·추측하지 않습니다.',
+      '크레딧은 YouTube·Audio·PDF 등 AI 변환을 실행할 때 쓰는 이용 횟수 단위입니다. 일반적으로 AI 변환 1회에 크레딧 1이 차감됩니다. 기간 이용권·Lifetime처럼 AI 변환이 무제한인 이용권은 크레딧이 차감되지 않습니다. 팩 단위 충전은 구매 페이지에서 가능합니다. 개인 잔액·결제 내역은 계정에서 확인하거나 상담사에게 문의하세요. 지원 AI는 개인 잔액을 조회·추측하지 않습니다.',
     relatedGuideUrl: '/purchase.html',
     sourceType: 'product',
     sourceRefs: ['purchase/credit UI', 'supportAi credits passage']
@@ -250,9 +250,9 @@ module.exports = [
     category: 'license',
     priority: 1,
     keywords: ['라이선스', 'lifetime', 'trial', '체험', 'pass', '기간', '구매', '이용권'],
-    summary: 'Google 로그인으로 라이선스를 연결합니다. Trial·기간 Full·Lifetime Full 상품이 있습니다.',
+    summary: '구매에 사용한 Google 계정으로 앱에 로그인하면 이용권이 연결됩니다. 현재 판매 상품은 구매 페이지를 따릅니다.',
     details:
-      '구매 후 앱에서 Google 계정으로 로그인하면 라이선스가 연결됩니다. Trial(체험)은 다운로드 후 로그인으로 확인할 수 있으며, 구매 페이지 안내상 MIDI 편집·AI 체험이 가능하고 변환·내보내기에 길이 제한(최대 1분)이 있습니다. 기간 Full 이용권과 Lifetime Full은 AI 변환 무제한·Full 기능을 제공하며 자동결제가 없다는 안내가 있습니다. Lifetime은 영구 Full로 안내됩니다. 실제 가격·판매 상태는 구매 페이지의 현재 상품 데이터를 따릅니다(지식에 가격을 고정하지 않음).',
+      '구매 후 앱에서 구매에 사용한 Google 계정으로 로그인하면 이용권/라이선스가 계정에 연결됩니다. Trial(체험)은 다운로드 후 로그인으로 확인할 수 있으며, 구매 페이지 안내상 최대 1분 범위의 이용 제한이 있습니다. 기간 이용권과 Lifetime은 AI 변환 무제한·전체 기능을 제공하며 자동결제가 없다는 안내가 있습니다. 7일 이용권은 현재 신규 판매하지 않지만, 기존 보유자 이용은 지원됩니다. 실제 가격·판매 상태는 구매 페이지의 현재 상품 데이터를 따릅니다(지식에 가격을 고정하지 않음).',
     relatedGuideUrl: '/guide/license/',
     sourceType: 'product',
     sourceRefs: ['guide/license', 'purchase UI / storefront copy']
@@ -265,12 +265,12 @@ module.exports = [
     keywords: ['설치', '업데이트', 'update', 'installer', '복구', '다운로드'],
     summary: '공식 Installer의 Install/Update로 설치·업데이트·복구합니다.',
     details:
-      '공식 다운로드는 MidiAI Installer.exe입니다. Installer · Updater · Runtime Manager 역할을 하며, 한 버튼 Install/Update로 설치·업데이트·복구를 진행합니다. 파이프라인은 Core → Media → Library → Runtime → Check로 안내됩니다. 문제 시 Installer에서 복구를 실행하고 System Check 결과를 저장해 1:1 문의에 첨부합니다.',
+      '공식 다운로드는 MidiAI Installer.exe입니다. Installer · Updater · Runtime Manager 역할을 하며, 한 버튼 Install/Update로 설치·업데이트·복구를 진행합니다. 파이프라인은 Core → Media → Library → Runtime → Check로 안내됩니다. 문제 시 Installer에서 복구를 실행하고 System Check 결과·오류 메시지·스크린샷을 저장해 1:1 문의에 첨부합니다.',
     steps: [
       '다운로드 페이지에서 최신 Installer를 받습니다.',
       'Install/Update를 실행합니다.',
-      '문제가 있으면 System Check 로그를 저장합니다.',
-      '필요 시 1:1 문의에 로그·버전·HWID를 첨부합니다.'
+      '문제가 있으면 System Check 로그와 오류 메시지를 저장합니다.',
+      '필요 시 1:1 문의에 로그·버전·스크린샷을 첨부합니다.'
     ],
     relatedGuideUrl: '/guide/troubleshooting/',
     sourceRefs: ['downloads.html', 'guide/troubleshooting']
@@ -283,7 +283,7 @@ module.exports = [
     keywords: ['로그인', 'login', 'google', '인앱', '브라우저'],
     summary: '포털 로그인은 Chrome/Edge를 권장합니다. 인앱 브라우저는 비권장입니다.',
     details:
-      '로그인이 안 될 때는 인앱 브라우저가 아닌 Chrome 또는 Edge에서 포털에 로그인해 보세요. 앱 라이선스도 Google 계정 연동을 사용합니다.',
+      '로그인이 안 될 때는 인앱 브라우저가 아닌 Chrome 또는 Edge에서 포털에 로그인해 보세요. 앱 이용권도 Google 계정 연동을 사용합니다.',
     knownSymptoms: ['로그인이 안 돼요', '로그인 실패'],
     fixSteps: [
       'Chrome 또는 Edge에서 midiaistudio.com에 로그인합니다.',
@@ -300,13 +300,13 @@ module.exports = [
     category: 'troubleshooting',
     priority: 2,
     keywords: ['오류', '에러', '문제', '안됨', '실패', 'troubleshooting'],
-    summary: 'Installer 복구 → System Check 로그 → 버전·HWID와 함께 1:1 문의.',
+    summary: 'Installer 복구 → 오류·버전 확인 → System Check·스크린샷·로그와 함께 1:1 문의.',
     details:
-      '일반적인 설치·변환·로그인 문제는 Installer에서 Install/Update 복구를 실행하고, System Check 결과를 저장한 뒤, 1:1 문의에 로그·앱 버전·HWID를 첨부하면 해결이 빨라집니다.',
+      '일반적인 설치·변환·로그인 문제는 Installer에서 Install/Update 복구를 실행하고, 오류 메시지·앱 버전을 확인한 뒤, 가능하면 System Check 결과·스크린샷·로그를 1:1 문의에 첨부하면 해결이 빨라집니다. 기기 변경 후 인증 문제가 있으면 1:1 문의를 안내합니다.',
     steps: [
       'Installer에서 Install/Update로 복구를 실행합니다.',
-      'System Check 결과를 저장합니다.',
-      '1:1 문의에 로그·HWID·버전을 첨부합니다.'
+      '오류 메시지·발생 단계·앱 버전을 확인합니다. 가능하면 System Check 결과를 저장합니다.',
+      '1:1 문의에 오류 메시지·스크린샷·로그를 첨부합니다.'
     ],
     whenToEscalate: '복구와 재시도 후에도 동일하면 상담사 연결을 권합니다.',
     relatedGuideUrl: '/guide/troubleshooting/',

@@ -49,14 +49,14 @@ export const GUIDE_SEO = {
     "h1": "라이브러리 사용법"
   },
   "license": {
-    "title": "라이선스 활성화 가이드 | MidiAI Studio",
-    "description": "MidiAI Studio Lifetime 라이선스 구매 후 Google 로그인으로 활성화하고 기기(HWID)를 확인하는 방법입니다.",
+    "title": "라이선스 및 이용권 활성화 | MidiAI Studio",
+    "description": "구매한 이용권·라이선스는 구매에 사용한 Google 계정으로 앱에 로그인하면 연결됩니다. 기간 이용권, Lifetime, Credit 안내.",
     "canonical": "https://midiaistudio.com/guide/license/",
-    "h1": "라이선스 구매와 활성화"
+    "h1": "라이선스 및 이용권 활성화"
   },
   "troubleshooting": {
     "title": "문제 해결 | MidiAI Studio",
-    "description": "설치 복구, 로그인 실패, MIDI 변환 오류를 해결하는 방법. 로그와 HWID를 1:1 문의에 첨부하는 팁을 안내합니다.",
+    "description": "설치 복구, 로그인 실패, MIDI 변환 오류를 해결하는 방법. 오류 메시지·앱 버전·로그를 1:1 문의에 첨부하는 팁을 안내합니다.",
     "canonical": "https://midiaistudio.com/guide/troubleshooting/",
     "h1": "설치·변환·로그인 문제 해결"
   }

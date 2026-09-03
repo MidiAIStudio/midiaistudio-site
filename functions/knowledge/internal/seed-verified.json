@@ -117,8 +117,8 @@
       "버전"
     ],
     "summary": {
-      "ko": "상담 시 우선 수집: 앱 버전, 오류 메시지 원문, 발생 기능/단계, System Check, HWID, 가능하면 로그 TXT/스크린샷.",
-      "en": "Collect first: app version, exact error text, feature/stage, System Check, HWID, and if possible log TXT/screenshot."
+      "ko": "상담 시 우선 수집: 앱 버전, 오류 메시지 원문, 발생 기능/단계, System Check, 가능하면 로그 TXT/스크린샷. 기기 인증 이슈가 의심되면 계정·기기 바인딩 확인은 상담 채널에서 진행(사용자에게 Show HWID UI를 안내하지 않음).",
+      "en": "Collect first: app version, exact error text, feature/stage, System Check, and if possible log TXT/screenshot. For suspected device-auth issues, confirm account/device binding via support channels—do not tell users to find a Show HWID button."
     },
     "fixSteps": [
       {
@@ -130,7 +130,7 @@
         "en": "Send only ERROR/Exception neighborhoods to AI; agents can review full files separately if needed."
       }
     ],
-    "sourceHash": "7a7798b2623cec5c",
+    "sourceHash": "06ebd8200f6cd3a5",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
