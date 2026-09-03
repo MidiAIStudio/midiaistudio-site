@@ -38,6 +38,7 @@
       "시작 위치",
       "끝점",
       "끝 위치",
+      "시작점 끝점",
       "범위",
       "파형",
       "웨이브폼",
@@ -77,7 +78,7 @@
         "en": "Use ▶ Preview to hear the selection, then Convert to MIDI."
       }
     ],
-    "sourceHash": "cc286b8f8d0b49d0",
+    "sourceHash": "aa1b413c63eebb25",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -102,8 +103,8 @@
     "keywords": [
       "미리듣기 재생",
       "미리듣기 정지",
-      "재생",
-      "정지",
+      "재생정지",
+      "재생 정지",
       "플레이",
       "preview play",
       "stop",
@@ -128,7 +129,7 @@
         "en": "Press ■ Stop to halt playback."
       }
     ],
-    "sourceHash": "44a189c79fa35ca7",
+    "sourceHash": "48530ac3116825b4",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -320,8 +321,9 @@
       "악기 변경",
       "악기바꾸기",
       "instrument",
-      "사운드",
-      "GM"
+      "GM",
+      "트랙 악기",
+      "프로그램 변경"
     ],
     "summary": {
       "ko": "MIDI Editor에서 트랙 악기(GM 프로그램)를 선택해 재생 소리를 바꿉니다.",
@@ -341,7 +343,7 @@
         "en": "Apply an instrument from the instrument menu."
       }
     ],
-    "sourceHash": "7770aac93d228618",
+    "sourceHash": "ba509ffb5077ee0a",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -364,14 +366,15 @@
     ],
     "relatedGuideUrl": "/guide/midi-editor/",
     "keywords": [
-      "재생",
-      "정지",
+      "미디 재생",
+      "에디터 재생",
       "줌",
       "확대",
       "축소",
       "zoom",
       "playback",
-      "스크롤"
+      "스크롤",
+      "피아노롤 줌"
     ],
     "summary": {
       "ko": "MIDI Editor 툴바에서 재생/정지하고, 줌 슬라이더로 피아노롤 확대를 조절합니다.",
@@ -387,7 +390,7 @@
         "en": "Adjust the zoom slider for scale."
       }
     ],
-    "sourceHash": "276e564026edc562",
+    "sourceHash": "9bf9e766788fc146",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -465,13 +468,12 @@
       "음표 수정",
       "악보 편집",
       "PDF 내보내기",
+      "pdfexport",
       "MusicXML",
       "score editor",
       "export pdf",
       "PDF로",
-      "PDF로 내보내기",
-      "내보내기",
-      "export"
+      "PDF로 내보내기"
     ],
     "summary": {
       "ko": "Score Editor에서 악보 음표를 고치고 PDF·MusicXML로 내보낼 수 있습니다.",
@@ -491,7 +493,7 @@
         "en": "Edit notes, then export PDF or MusicXML."
       }
     ],
-    "sourceHash": "665496d6a74cc0ee",
+    "sourceHash": "8eaeb350d5e12331",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -520,8 +522,8 @@
       "humanize",
       "정리",
       "분석",
-      "쉬운 조",
-      "easier key"
+      "arrange",
+      "verify"
     ],
     "summary": {
       "ko": "MIDI Editor의 AI Assistant에서 Analyze, Cleanup, Humanize, Easier Key 등 동작을 실행합니다.",
@@ -545,7 +547,7 @@
         "en": "Use Undo if you dislike the result."
       }
     ],
-    "sourceHash": "f3bfe05382ea575d",
+    "sourceHash": "096134f5dd12fa24",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -612,11 +614,19 @@
     "relatedGuideUrl": "/guide/high-quality-sound/",
     "keywords": [
       "고품질 음원",
+      "고품질음원",
+      "고음질",
+      "고음질 음원",
+      "고음질음원",
       "사운드팩",
+      "사운드 팩",
       "soundpack",
+      "sound pack",
       "악기 소리",
       "재생 소리",
-      "음원 설치"
+      "음원 설치",
+      "고품질음원 설치",
+      "Use high-quality sounds"
     ],
     "summary": {
       "ko": "고품질 음원(Soundpack)을 설치·적용하면 MIDI 재생 소리가 기본음보다 풍부해질 수 있습니다.",
@@ -632,7 +642,7 @@
         "en": "Play in MIDI Editor to confirm the sound changed."
       }
     ],
-    "sourceHash": "c2e086ecc3b78e3f",
+    "sourceHash": "69b6523b947a7551",
     "knowledgeUpdatedAt": "2026-09-03"
   }
 ]

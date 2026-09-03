@@ -70,7 +70,10 @@
       "installer",
       "업데이트",
       "update",
-      "C:\\MidiAI"
+      "설치방법",
+      "설치 방법",
+      "복구",
+      "repair"
     ],
     "summary": {
       "ko": "Windows용 MidiAI Installer로 설치·업데이트·복구를 진행한 뒤 Google 로그인으로 시작합니다.",
@@ -100,7 +103,7 @@
         "en": "If install/run fails, re-run Installer and attach the error message, System Check results, and a screenshot to 1:1 support."
       }
     ],
-    "sourceHash": "38f0452a4bc2cfaf",
+    "sourceHash": "a5ca0db9a46f3312",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -127,8 +130,9 @@
       "youtube",
       "유튜브",
       "yt",
-      "변환",
-      "convert",
+      "youtubetomidi",
+      "유튜브 변환",
+      "youtube to midi",
       "url",
       "링크",
       "스튜디오"
@@ -163,7 +167,7 @@
       "ko": "공개 영상이 기본입니다. 비공개·연령제한·지역 제한 영상은 실패할 수 있습니다. 피아노/솔로처럼 음고가 분명한 소스가 유리합니다.",
       "en": "Public videos are the baseline. Private, age-restricted, or region-blocked videos may fail. Clear piano/solo sources work better."
     },
-    "sourceHash": "0b86c691d0bc52d0",
+    "sourceHash": "ecb4e60d2456786a",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -193,8 +197,14 @@
       "wav",
       "m4a",
       "webm",
-      "음원",
-      "변환"
+      "오디오 파일",
+      "음원 파일",
+      "로컬 오디오",
+      "audio to midi",
+      "audiotomidi",
+      "오디오 변환",
+      "오디오를 midi로",
+      "로컬 파일 변환"
     ],
     "summary": {
       "ko": "로컬 오디오(MP3·WAV·M4A·WEBM 등)를 Studio/Library로 가져와 구간을 고른 뒤 MIDI로 변환합니다.",
@@ -218,7 +228,7 @@
       "ko": "노이즈가 적고 음고가 분명할수록 결과가 안정적인 편입니다.",
       "en": "Lower noise and clearer pitch usually give more stable results."
     },
-    "sourceHash": "7582f3ce54b6278a",
+    "sourceHash": "5b244f64b926a2a0",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -243,11 +253,13 @@
     ],
     "relatedGuideUrl": "/guide/pdf-to-midi/",
     "keywords": [
-      "pdf",
-      "악보",
+      "pdf to midi",
+      "pdftomidi",
+      "pdf→midi",
+      "pdf 악보",
       "omr",
-      "score",
-      "musicxml",
+      "score pdf",
+      "악보 인식",
       "beta"
     ],
     "summary": {
@@ -284,7 +296,7 @@
         "en": "If it repeats, attach app version and error text to 1:1 support."
       }
     ],
-    "sourceHash": "72d92f72d9c35efd",
+    "sourceHash": "8c7e01e353ef9cab",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -310,11 +322,13 @@
     "keywords": [
       "band",
       "orchestra",
-      "preview",
-      "experimental",
+      "bandorchestra",
+      "밴드",
+      "오케스트라",
       "멀티트랙",
       "스템",
-      "demucs"
+      "demucs",
+      "band orchestra"
     ],
     "summary": {
       "ko": "Band / Orchestra MIDI는 Preview·Experimental 기능입니다. 스템을 나눈 뒤 지원 악기만 MIDI로 변환하며, 곡에 따라 품질 편차가 큽니다.",
@@ -324,7 +338,7 @@
       "ko": "추가 AI 구성요소(예: Instrument Separation) 설치가 필요할 수 있습니다. Piano MIDI(권장)는 별도 설치 없이 사용할 수 있습니다. Preview를 정식 Production처럼 안내하지 마세요.",
       "en": "Optional AI components (e.g. instrument separation) may need install. Piano MIDI (Recommended) works without that pack. Do not describe Preview as full production."
     },
-    "sourceHash": "03d66a7c4824496e",
+    "sourceHash": "3db04090554fcd08",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -398,11 +412,9 @@
     "keywords": [
       "midi editor",
       "미디 편집",
+      "미디편집",
       "피아노롤",
-      "노트",
-      "벨로시티",
-      "양자화",
-      "악기"
+      "양자화"
     ],
     "summary": {
       "ko": "MIDI Editor(피아노롤)에서 음높이·길이·벨로시티·트랙 악기 등을 수정하고 저장/내보낼 수 있습니다.",
@@ -422,7 +434,7 @@
         "en": "Save or export score (PDF/MusicXML)."
       }
     ],
-    "sourceHash": "f80d9eee6ab22150",
+    "sourceHash": "007f66f6ba96d54b",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -527,6 +539,7 @@
       "easy key",
       "easier key",
       "쉬운 조",
+      "쉬운조",
       "이조",
       "transpose",
       "흰건반",
@@ -537,7 +550,7 @@
       "en": "Easier Key transposes the whole song by the same interval to use fewer black keys.",
       "ja": "Easier Keyは曲全体を同じ間隔で移調し、黒鍵を減らすAI Assistant機能です。"
     },
-    "sourceHash": "101b82286f66850d",
+    "sourceHash": "80df6af5703c6637",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -560,12 +573,24 @@
     ],
     "keywords": [
       "고품질",
-      "음원",
+      "고품질 음원",
+      "고품질음원",
+      "고음질",
+      "고음질 음원",
+      "고음질음원",
+      "사운드팩",
+      "사운드 팩",
       "soundpack",
+      "sound pack",
       "sf2",
-      "재생",
-      "playback",
-      "설치"
+      "high quality",
+      "high-quality",
+      "hq",
+      "악기 소리",
+      "좋은 소리",
+      "재생 음원",
+      "음원 설치",
+      "고품질음원 설치"
     ],
     "summary": {
       "ko": "고품질 음원(High-quality sounds)은 MIDI 재생용 사운드팩입니다. 관리 화면에서 그룹별 설치/업데이트 후 'Use high-quality sounds'를 켭니다.",
@@ -581,7 +606,7 @@
         "en": "Settings apply from the next playback."
       }
     ],
-    "sourceHash": "02c52f43917b51fb",
+    "sourceHash": "84767d1b1e045818",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -640,12 +665,11 @@
     "keywords": [
       "midi",
       "musicxml",
-      "pdf",
-      "mp3",
-      "wav",
       "내보내기",
       "export",
-      "형식"
+      "지원 형식",
+      "파일 형식",
+      "formats"
     ],
     "summary": {
       "ko": "입력 예: YouTube URL, 오디오(MP3/WAV/M4A/WEBM), PDF, MIDI, MusicXML. 출력 예: MIDI, PDF, MusicXML, 프로젝트 파일.",
@@ -655,7 +679,7 @@
       "ko": "목록에 없는 형식은 지원한다고 단정하지 마세요.",
       "en": "Do not claim formats that are not listed."
     },
-    "sourceHash": "1bb6406cf9cd900b",
+    "sourceHash": "20001e2e6e361c4d",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -684,6 +708,8 @@
       "체험",
       "무료",
       "1분",
+      "체험 1분",
+      "체험판",
       "제한",
       "free"
     ],
@@ -691,7 +717,7 @@
       "ko": "무료 체험에서는 최대 1분 범위의 이용 제한이 적용됩니다. 전체 곡 이용은 유료 이용권이 필요합니다.",
       "en": "Free trial includes up to a 1-minute usage limit. Full-track use requires a paid plan."
     },
-    "sourceHash": "56bd9b06330cb0ae",
+    "sourceHash": "fe1cff743d9d9985",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -718,7 +744,8 @@
     "keywords": [
       "라이선스",
       "lifetime",
-      "기간",
+      "라이선스기간",
+      "이용권 기간",
       "구매",
       "이용권",
       "30일",
@@ -737,7 +764,7 @@
       "ko": "개인 이용권 만료일이나 결제 상태는 계정 확인이 필요한 정보입니다. 정확한 확인이 필요하시면 상담사에게 연결해 주세요. 보관·중지된 과거 상품은 현재 판매 상품처럼 안내하지 마세요. 기존에 보유한 7일 이용권은 지원되며, ‘존재하지 않는다’고 말하지 마세요.",
       "en": "Personal plan expiry and payment status need an account check. Offer a counselor when exact confirmation is needed. Do not present archived or paused plans as currently for sale. Existing 7-day pass holders remain supported—do not say the 7-day pass does not exist."
     },
-    "sourceHash": "8b982f8fa08510d2",
+    "sourceHash": "39593cbd12717d46",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
@@ -951,7 +978,8 @@
       "system check",
       "로그인",
       "installer",
-      "문의"
+      "문제 해결",
+      "troubleshooting"
     ],
     "summary": {
       "ko": "설치·변환·로그인 문제는 Installer 복구 → 오류 메시지·앱 버전 확인 → 필요 시 System Check·스크린샷·로그와 함께 1:1 문의 순으로 확인합니다.",
@@ -975,7 +1003,7 @@
         "en": "If issues continue, attach the error message, a screenshot, and log files (when available) to 1:1 support."
       }
     ],
-    "sourceHash": "6fb0de415268780a",
+    "sourceHash": "0b594673debd8446",
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {

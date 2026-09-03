@@ -7,7 +7,10 @@
     "node": "20"
   },
   "scripts": {
-    "deploy:functions": "firebase deploy --only functions:web"
+    "deploy:functions": "firebase deploy --only functions:web",
+    "test:retrieval": "node knowledge/tests/retrievalGolden.js",
+    "test:answer-quality": "node knowledge/tests/answerQuality.js",
+    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0",
