@@ -4611,6 +4611,12 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
   transform:none!important;background:transparent;margin:0
 }
 .topbar-profile-links a:hover{background:rgba(255,255,255,.06)!important;color:#fff!important;transform:none!important}
+.topbar-profile-links a.topbar-profile-admin{
+  color:#ffb4c0!important;
+  display:flex!important;align-items:center;justify-content:space-between;gap:8px
+}
+.topbar-profile-links a.topbar-profile-admin[hidden]{display:none!important}
+.topbar-profile-links a.topbar-profile-admin .nav-unread-badge{margin-left:auto}
 .topbar-profile-logout{
   display:block;width:calc(100% - 6px);box-sizing:border-box;
   margin:1px 3px 4px;padding:6px 7px;border-radius:7px;

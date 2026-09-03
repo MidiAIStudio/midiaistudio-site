@@ -759,7 +759,7 @@ function tr(k){
     notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'상담사가 대화를 시작했습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_payment_complete:'결제가 완료되었습니다.', notify_payment_cancel:'결제가 취소되었습니다.', notify_payment_partial:'부분 환불이 적용되었습니다.', notify_refund_review:'환불 검토가 필요합니다.', notify_admin_message:'관리자 쪽지', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
     notify_filter_all:'전체', notify_filter_payment:'결제', notify_filter_license:'라이선스', notify_filter_inquiry:'문의', notify_filter_community:'커뮤니티', notify_filter_other:'기타',
     notify_credit_purchase:'크레딧 충전 완료', notify_credit_purchase_body:'{n} 크레딧이 지급되었습니다.', notify_credit_grant:'크레딧 지급', notify_credit_grant_body:'관리자가 {n} 크레딧을 지급했습니다.', notify_credit_deduct:'크레딧 조정', notify_credit_deduct_body:'{n} 크레딧이 회수되었습니다.', notify_reservation_complete:'예약 변환이 완료되었습니다.', notify_reservation_failed:'예약 변환이 실패했습니다.', notify_time_just_now:'방금', notify_time_minutes:'{n}분 전', notify_time_hours:'{n}시간 전', notify_time_yesterday:'어제',
-    profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정',
+    profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정', profile_admin:'관리자',
     credit_label:'Credit', credit_balance:'보유 크레딧', credit_buy:'크레딧 충전', credit_history:'크레딧 사용내역',
     credit_history_all:'전체 사용내역', credit_history_more:'더 보기', credit_refresh:'새로고침',
     credit_unlimited:'AI 변환 무제한', credit_no_deduct:'Credit 차감 없음',
@@ -788,7 +788,7 @@ function tr(k){
     notify_board_comment:' commented on your post.', notify_ticket_reply:'A counselor started the chat.', notify_license_change:'Your license was updated.', notify_payment_complete:'Payment completed.', notify_payment_cancel:'Payment was cancelled.', notify_payment_partial:'Partial refund applied.', notify_refund_review:'Refund review required.', notify_admin_message:'Admin message', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
     notify_filter_all:'All', notify_filter_payment:'Payment', notify_filter_license:'License', notify_filter_inquiry:'Support', notify_filter_community:'Community', notify_filter_other:'Other',
     notify_credit_purchase:'Credit purchase complete', notify_credit_purchase_body:'{n} credits were added.', notify_credit_grant:'Credits granted', notify_credit_grant_body:'An admin granted {n} credits.', notify_credit_deduct:'Credit adjustment', notify_credit_deduct_body:'{n} credits were deducted.', notify_reservation_complete:'Scheduled conversion finished.', notify_reservation_failed:'Scheduled conversion failed.', notify_time_just_now:'Just now', notify_time_minutes:'{n} min ago', notify_time_hours:'{n} hr ago', notify_time_yesterday:'Yesterday',
-    profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings',
+    profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings', profile_admin:'Admin',
     credit_label:'Credit', credit_balance:'Credit Balance', credit_buy:'Buy Credits', credit_history:'Credit History',
     credit_history_all:'View All', credit_history_more:'Load more', credit_refresh:'Refresh',
     credit_unlimited:'Unlimited AI Conversions', credit_no_deduct:'No Credit Deduction',
@@ -817,7 +817,7 @@ function tr(k){
     notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'相談員が会話を開始しました。', notify_license_change:'ライセンスが変更されました。', notify_payment_complete:'お支払いが完了しました。', notify_payment_cancel:'お支払いがキャンセルされました。', notify_payment_partial:'一部返金が適用されました。', notify_refund_review:'返金の確認が必要です。', notify_admin_message:'管理者メッセージ', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
     notify_filter_all:'すべて', notify_filter_payment:'決済', notify_filter_license:'ライセンス', notify_filter_inquiry:'問い合わせ', notify_filter_community:'コミュニティ', notify_filter_other:'その他',
     notify_credit_purchase:'クレジット購入完了', notify_credit_purchase_body:'{n} クレジットが付与されました。', notify_credit_grant:'クレジット付与', notify_credit_grant_body:'管理者が {n} クレジットを付与しました。', notify_credit_deduct:'クレジット調整', notify_credit_deduct_body:'{n} クレジットが回収されました。', notify_reservation_complete:'予約変換が完了しました。', notify_reservation_failed:'予約変換に失敗しました。', notify_time_just_now:'たった今', notify_time_minutes:'{n}分前', notify_time_hours:'{n}時間前', notify_time_yesterday:'昨日',
-    profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定',
+    profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定', profile_admin:'管理者',
     credit_label:'Credit', credit_balance:'保有クレジット', credit_buy:'クレジット購入', credit_history:'クレジット利用履歴',
     credit_history_all:'全履歴', credit_history_more:'さらに表示', credit_refresh:'更新',
     credit_unlimited:'AI変換 無制限', credit_no_deduct:'Credit消費なし',
@@ -3058,13 +3058,25 @@ function updateBoardPinnedUi(){
   if(!show && $('boardPostPinned')) $('boardPostPinned').checked=false;
 }
 function setAdminNavVisible(show){
+  // Legacy main-nav #adminNav (if any static HTML remains): always hide — admin lives in profile menu.
+  document.querySelectorAll('#mainNav #adminNav, .top-nav #adminNav, nav#mainNav > #adminNav').forEach(el=>{
+    el.classList.add('hidden');
+    el.hidden = true;
+    el.setAttribute('aria-hidden', 'true');
+  });
+  // Keep any non-nav #adminNav (unlikely) in sync for unread badge hooks
   document.querySelectorAll('#adminNav').forEach(el=>{
+    if(el.closest?.('#mainNav, .top-nav, .top-nav-group')) return;
     el.classList.toggle('hidden', !show);
     el.hidden = !show;
     el.setAttribute('aria-hidden', show ? 'false' : 'true');
   });
+  ensureTopbarProfileAdminLink();
   const profileAdmin = $('topbarProfileAdmin');
-  if(profileAdmin) profileAdmin.hidden = !show;
+  if(profileAdmin){
+    profileAdmin.hidden = !show;
+    profileAdmin.setAttribute('aria-hidden', show ? 'false' : 'true');
+  }
   syncBoardAdminUi();
   if(show) updateAdminTicketUnreadBadges(unreadAdminTicketCount);
   else updateAdminTicketUnreadBadges(0);
@@ -3600,11 +3612,6 @@ function updateAccountCtas({plan, lifetime, downloadUrl}){
   el.removeAttribute('target');
   el.removeAttribute('rel');
   el.removeAttribute('aria-disabled');
-  if(isAdminUser){
-    el.textContent = lang==='en' ? 'Admin page' : lang==='ja' ? '管理ページ' : '관리자 페이지';
-    el.setAttribute('href', './admin.html');
-    return;
-  }
   if(isLife){
     el.textContent = lang==='en' ? 'Lifetime Full' : lang==='ja' ? 'Lifetime Full' : 'Lifetime Full';
     el.classList.add('is-status');
@@ -5818,7 +5825,7 @@ function adminTicketFocusHref(ticketId){
 }
 function updateAdminTicketUnreadBadges(count){
   unreadAdminTicketCount = Math.max(0, Number(count)||0);
-  const targets = document.querySelectorAll('#adminNav, [data-admin-tab="tickets"]');
+  const targets = document.querySelectorAll('#adminNav, #topbarProfileAdmin, [data-admin-tab="tickets"]');
   targets.forEach(link => {
     if(link.classList.contains('hidden') || link.hidden) {
       // still attach badge so it appears when shown
@@ -14210,6 +14217,8 @@ function refreshTopbarActionLabels(){
   if(logoutBtn) logoutBtn.textContent = tr('logout');
   const profileBtn = $('topbarProfileBtn');
   if(profileBtn) profileBtn.setAttribute('aria-label', tr('profile_menu_aria'));
+  const profileAdmin = $('topbarProfileAdmin');
+  if(profileAdmin) profileAdmin.textContent = tr('profile_admin');
 }
 
 let topbarProfilePanelOpen = false;
@@ -14281,12 +14290,33 @@ async function doLogout(){
   }
 }
 
+function ensureTopbarProfileAdminLink(){
+  const links = document.querySelector('#topbarProfilePanel .topbar-profile-links');
+  if(!links) return null;
+  let adminLink = $('topbarProfileAdmin');
+  const base = window.MIDIAI_BASE_PATH || './';
+  if(!adminLink){
+    adminLink = document.createElement('a');
+    adminLink.id = 'topbarProfileAdmin';
+    adminLink.href = `${base}admin.html`;
+    adminLink.className = 'topbar-profile-admin';
+    adminLink.hidden = true;
+    adminLink.setAttribute('aria-hidden', 'true');
+    links.appendChild(adminLink);
+  }
+  adminLink.textContent = tr('profile_admin');
+  adminLink.hidden = !(currentUser && isAdminUser);
+  adminLink.setAttribute('aria-hidden', adminLink.hidden ? 'true' : 'false');
+  return adminLink;
+}
+
 function ensureTopbarProfile(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
   let wrap = $('topbarProfile');
   if(wrap){
     ensureTopbarProfileCreditSlot();
+    ensureTopbarProfileAdminLink();
     return wrap;
   }
 
@@ -14316,6 +14346,7 @@ function ensureTopbarProfile(){
       <a href="${base}account.html">${esc(tr('profile_my_account'))}</a>
       <a href="${base}my-tickets.html">${esc(tr('profile_my_tickets'))}</a>
       <a href="${base}board.html?mine=1">${esc(tr('profile_my_posts'))}</a>
+      <a id="topbarProfileAdmin" class="topbar-profile-admin" href="${base}admin.html" hidden aria-hidden="true">${esc(tr('profile_admin'))}</a>
     </nav>
     <button type="button" class="topbar-profile-login" id="loginBtn" aria-label="${esc(tr('login'))}"><span class="login-google-icon">${GOOGLE_MARK_SVG}</span><span class="login-label">${esc(tr('login'))}</span></button>
     <button type="button" class="topbar-profile-logout hidden" id="logoutBtn" hidden aria-hidden="true">${esc(tr('logout'))}</button>
@@ -14464,7 +14495,7 @@ function buildMainNavHtml(base, purchaseHref){
     `<a class="top-nav-link is-purchase" href="${purchaseHref}" data-nav="purchase"><span>구매</span></a>`,
     `<div class="top-nav-group is-wide" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', icon:'N', tone:'notice', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}patch-notes.html`, title:'패치노트', icon:'P', tone:'patch', attrs:'data-hub="patches"'})}${topNavMenuItem({href:`${base}faq.html`, title:'FAQ', icon:'F', tone:'faq', attrs:'data-hub="faq"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', icon:'B', tone:'board', attrs:'data-hub="board"'})}</div></div></div>`,
     `<div class="top-nav-group" data-nav-group="support"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>고객지원</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}support.html`, title:'1:1 문의', icon:'1:1', tone:'support', attrs:'data-hub="support"'})}${topNavMenuItem({href:`${base}my-tickets.html`, title:'나의 문의', icon:'MY', tone:'tickets', attrs:'data-hub="tickets"'})}</div></div></div>`,
-    `<div class="top-nav-group" data-nav-group="account"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>계정</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}account.html`, title:'내 계정', icon:'ME', tone:'account', attrs:'data-nav="account"'})}<a class="top-nav-item hidden" id="adminNav" hidden aria-hidden="true" href="${base}admin.html" role="menuitem"><span class="top-nav-item-icon is-admin" aria-hidden="true">AD</span><span class="top-nav-item-copy"><b>관리자</b></span></a></div></div></div>`
+    `<div class="top-nav-group" data-nav-group="account"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>계정</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}account.html`, title:'내 계정', icon:'ME', tone:'account', attrs:'data-nav="account"'})}</div></div></div>`
   ].join('');
 }
 function initSidebarLayout(){
