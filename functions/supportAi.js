@@ -264,8 +264,12 @@ function isWeakOrConflictingRetrieval(passages) {
   const second = passages[1];
   if (second) {
     const s2 = Number(second.score || 0);
-    if (s2 >= score - 2 && String(top.category || '') !== String(second.category || '')) {
-      // close scores across different categories → ambiguous
+    const c1 = String(top.category || '');
+    const c2 = String(second.category || '');
+    // close scores across different categories → ambiguous
+    // BUT: some dynamic passages (e.g. live FAQ) may not carry `category`.
+    // Avoid treating "category missing" as a hard conflict — it leads to unnecessary lowConfidence fallback.
+    if (s2 >= score - 2 && c1 && c2 && c1 !== c2) {
       if (score < 30) return true;
     }
   }

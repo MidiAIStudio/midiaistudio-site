@@ -200,5 +200,17 @@ for (const c of cases) {
   console.log('PASS  AI history ignored for topic');
 }
 
+// live FAQ passages may not have `category` — category-less passages should not
+// trigger "conflicting retrieval" ambiguity by themselves.
+{
+  const passages = [
+    { id: 'youtube-fetch-errors', score: 28, category: 'troubleshooting' },
+    { id: 'faq-123', score: 27 } // category missing
+  ];
+  const weak = isWeakOrConflictingRetrieval(passages);
+  assert.ok(!weak, 'category-less passage should not force lowConfidence conflict');
+  console.log('PASS  category-less conflict avoidance');
+}
+
 console.log(`\nconversationGolden: ${cases.length - failed}/${cases.length} cases + poison guard`);
 if (failed) process.exit(1);
