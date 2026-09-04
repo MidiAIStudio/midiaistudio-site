@@ -857,18 +857,24 @@
       "상호",
       "대표자",
       "통신판매",
-      "business"
+      "연락처",
+      "전화",
+      "대표전화",
+      "이메일",
+      "고객지원",
+      "business",
+      "contact"
     ],
     "summary": {
-      "ko": "미디에이아이스튜디오 사업자등록번호는 332-22-02381입니다. 상호·대표자·통신판매업 신고번호 등 상세는 사업자정보 페이지에서 확인할 수 있습니다.",
-      "en": "Business registration number for MidiAI Studio (미디에이아이스튜디오) is 332-22-02381. Full company details are on the Business Info page."
+      "ko": "미디에이아이스튜디오 사업자등록번호는 332-22-02381입니다. 대표전화 010-2166-5563, 이메일 midiaistudio@gmail.com. 고객 문의는 사이트 1:1 문의 게시판을 이용합니다. 상세는 사업자정보 페이지에서 확인할 수 있습니다.",
+      "en": "Business registration number: 332-22-02381. Phone: 010-2166-5563. Email: midiaistudio@gmail.com. Customer inquiries via website 1:1 support. Full details on the Business Info page."
     },
     "details": {
-      "ko": "상호: 미디에이아이스튜디오. 대표자: 최정환. 사업자등록번호: 332-22-02381. 통신판매업 신고번호: 제2026-창원성산-0312호. 상세: /business-info.html",
-      "en": "Trade name: 미디에이아이스튜디오. Representative: 최정환. VAT/Business ID: 332-22-02381. Details: /business-info.html"
+      "ko": "상호: 미디에이아이스튜디오. 대표자: 최정환. 사업자등록번호: 332-22-02381. 통신판매업 신고번호: 제2026-창원성산-0312호. 대표전화: 010-2166-5563. 이메일: midiaistudio@gmail.com. 고객센터: 1:1 문의 게시판. 상세: /business-info.html",
+      "en": "Trade name: 미디에이아이스튜디오. Representative: 최정환. VAT/Business ID: 332-22-02381. Phone: 010-2166-5563. Email: midiaistudio@gmail.com. Support: website 1:1 board. Details: /business-info.html"
     },
-    "sourceHash": "55cb1dea10531e70",
-    "knowledgeUpdatedAt": "2026-09-04"
+    "sourceHash": "e19329a563d5a108",
+    "knowledgeUpdatedAt": "2026-09-05"
   },
   {
     "id": "youtube-fetch-errors",
@@ -1098,13 +1104,17 @@
       "상담",
       "support",
       "1:1",
-      "티켓"
+      "티켓",
+      "연락처",
+      "전화",
+      "고객지원",
+      "고객센터"
     ],
     "summary": {
-      "ko": "사이트 1:1 문의/상담 채팅 또는 앱의 1:1 Support로 문의할 수 있습니다. 개인 계정·결제·재현 불가 오류는 상담사 연결이 필요합니다.",
-      "en": "Use website 1:1 support/chat or in-app 1:1 Support. Personal account/payment issues and unreproducible errors need a human agent."
+      "ko": "사이트 1:1 문의/상담 채팅 또는 앱의 1:1 Support로 문의할 수 있습니다. 대표전화·이메일은 사업자정보 페이지에 안내되어 있으며, 개인 계정·결제·재현 불가 오류는 상담사 연결이 필요합니다.",
+      "en": "Use website 1:1 support/chat or in-app 1:1 Support. Phone/email are listed on the Business Info page. Personal account/payment issues and unreproducible errors need a human agent."
     },
-    "sourceHash": "b71f5e4bd4918a80",
-    "knowledgeUpdatedAt": "2026-09-03"
+    "sourceHash": "940a9a502eaf22da",
+    "knowledgeUpdatedAt": "2026-09-05"
   }
 ]

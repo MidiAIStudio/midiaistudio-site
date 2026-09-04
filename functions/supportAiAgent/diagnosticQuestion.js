@@ -105,16 +105,27 @@ function generateDiagnosticClarifyQuestion({
     }もお願いします。`;
   }
 
-  // ko — lock known feature candidate: never re-ask "어떤 작업을"
+  // ko — lock known UI feature candidate only (never company/contact info asks)
   if (facts.candidateFeature) {
-    const name = cleanSpace(facts.candidateFeature);
-    if (hyps.length >= 2) {
-      return `"${name}"이 어떤 작업에 가까운지, 그리고 그 이름을 본 화면을 알려주시면 확인하겠습니다.`;
+    const { looksLikeInfoAsk } = require('./featureDiscovery');
+    if (!looksLikeInfoAsk(facts.candidateFeature) && !looksLikeInfoAsk(raw)) {
+      const name = cleanSpace(facts.candidateFeature);
+      if (hyps.length >= 2) {
+        return `"${name}"이 어떤 작업에 가까운지, 그리고 그 이름을 본 화면을 알려주시면 확인하겠습니다.`;
+      }
+      if (intent === 'where') {
+        return `"${name}"이라고 표시된 메뉴나 버튼을 어디에서 보셨나요? 화면 이름이나 근처 버튼 위치를 알려주시면 확인해볼게요.`;
+      }
+      return `"${name}" 기능을 말씀하시는 거죠? 같은 이름으로 바로 확인이 안 돼서, 그 이름이 보인 화면이나 버튼 위치를 알려주시면 맞춰볼게요.`;
     }
-    if (intent === 'where') {
-      return `"${name}"이라고 표시된 메뉴나 버튼을 어디에서 보셨나요? 화면 이름이나 근처 버튼 위치를 알려주시면 확인해볼게요.`;
+  }
+
+  // Informational ask with no evidence — do not invent a "feature" interpretation
+  {
+    const { looksLikeInfoAsk } = require('./featureDiscovery');
+    if (looksLikeInfoAsk(raw)) {
+      return `현재 자료에서 해당 정보를 바로 확인하기 어렵습니다. 사이트 1:1 문의로 남겨 주시면 확인 도와드릴게요.`;
     }
-    return `"${name}" 기능을 말씀하시는 거죠? 같은 이름으로 바로 확인이 안 돼서, 그 이름이 보인 화면이나 버튼 위치를 알려주시면 맞춰볼게요.`;
   }
 
   // ko

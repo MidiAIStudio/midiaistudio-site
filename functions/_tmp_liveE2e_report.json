@@ -1,0 +1,2460 @@
+{
+  "sequences": {
+    "MULTI": {
+      "ticketId": "au7UCuUFf2enCbQc5MdK",
+      "results": [
+        {
+          "i": 1,
+          "user": "변환 안돼",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 11051,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "I can't convert.",
+            "productArea": "troubleshooting",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 1,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "conversion-generic-failure"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "troubleshooting",
+              "currentGoal": "I can't convert.",
+              "currentTopic": "conversion issue",
+              "activeFacts": [],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "I can't convert.",
+              "currentTopic": "conversion issue",
+              "relation": "TOPIC_SHIFT",
+              "productArea": "troubleshooting",
+              "epoch": 1,
+              "epochTopic": "troubleshooting",
+              "activeFacts": [
+                "goal=I can't convert."
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [],
+              "rejectedOldTopics": [
+                "troubleshooting"
+              ],
+              "historySelectReason": "topic_shift_cleared"
+            },
+            "synthContract": {
+              "answeredGoal": "I can't convert.",
+              "usedEvidence": [
+                "변환 실패(일반): 변환 실패 메시지는 원인별로 다를 수 있습니다. 일반 실패·엔진 실행 실패·오디오 처리 실패가 대표적입니다."
+              ],
+              "needsMoreInfo": true,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "변환 실패 메시지는 여러 원인으로 발생할 수 있습니다. 일반적인 실패, 엔진 실행 실패, 또는 오디오 처리 실패가 있을 수 있습니다. 구체적인 오류 메시지를 확인해 주시면 더 도움을 드릴 수 있습니다.",
+          "fails": []
+        },
+        {
+          "i": 2,
+          "user": "403 떠",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 5057,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "I can't convert.",
+            "productArea": "troubleshooting",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "youtube-fetch-errors"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "troubleshooting",
+              "currentGoal": "I can't convert.",
+              "currentTopic": "conversion issue",
+              "activeFacts": [
+                "403 error occurred during conversion."
+              ],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "I can't convert.",
+              "currentTopic": "conversion issue",
+              "relation": "FOLLOW_UP",
+              "productArea": "troubleshooting",
+              "epoch": 2,
+              "epochTopic": "troubleshooting",
+              "activeFacts": [
+                "403 error occurred during conversion.",
+                "goal=I can't convert."
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [
+                "변환 안돼",
+                "403 떠"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "I can't convert.",
+              "usedEvidence": [
+                "403 error occurred during conversion."
+              ],
+              "needsMoreInfo": true,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "변환 중 403 오류가 발생하는 것은 여러 원인으로 인해 발생할 수 있습니다. 네트워크 상태, 영상 공개 설정, 권한 또는 지역 제한 등을 확인해 보시기 바랍니다.",
+          "fails": []
+        },
+        {
+          "i": 3,
+          "user": "그건 됐고 회사에 연락할 곳 있어?",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 6537,
+          "meta": {
+            "turnRelation": "TOPIC_SHIFT",
+            "userGoal": "Find a contact for the company.",
+            "productArea": "company",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 1,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "business-registration",
+              "support-contact"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 4,
+              "epochTopic": "company",
+              "currentGoal": "Find a contact for the company.",
+              "currentTopic": "company contact",
+              "activeFacts": [
+                "403 error occurred during conversion."
+              ],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company contact",
+                "company"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "Find a contact for the company.",
+              "currentTopic": "company contact",
+              "relation": "TOPIC_SHIFT",
+              "productArea": "company",
+              "epoch": 3,
+              "epochTopic": "company",
+              "activeFacts": [
+                "403 error occurred during conversion.",
+                "goal=Find a contact for the company."
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company"
+              ],
+              "historySelectReason": "topic_shift_cleared"
+            },
+            "synthContract": {
+              "answeredGoal": "Find a contact for the company.",
+              "usedEvidence": [
+                "사업자정보",
+                "고객지원 문의"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "회사의 연락처는 대표전화 010-2166-5563이며, 이메일은 midiaistudio@gmail.com입니다. 고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+          "fails": []
+        },
+        {
+          "i": 4,
+          "user": "전화는 말고",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 4819,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "전화는 말고",
+            "productArea": "company",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "business-registration"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 4,
+              "epochTopic": "company",
+              "currentGoal": "전화는 말고",
+              "currentTopic": "company contact",
+              "activeFacts": [
+                "403 error occurred during conversion.",
+                "need_non_phone_support_channel"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=회사의 연락처는 대표전화 010-2166-5563이며, 이메일은 midiaistudio@gmail.com입니다. 고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+                "need_phone_number"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company contact",
+                "company"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "전화는 말고",
+              "currentTopic": "company contact",
+              "relation": "CORRECTION",
+              "productArea": "company",
+              "epoch": 4,
+              "epochTopic": "company",
+              "activeFacts": [
+                "403 error occurred during conversion.",
+                "need_non_phone_support_channel",
+                "goal=전화는 말고"
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [
+                "그건 됐고 회사에 연락할 곳 있어?",
+                "전화는 말고"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company contact",
+                "company"
+              ],
+              "historySelectReason": "correction_last_exchange"
+            },
+            "synthContract": {
+              "answeredGoal": "전화는 말고",
+              "usedEvidence": [],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+          "fails": []
+        },
+        {
+          "i": 5,
+          "user": "문의 남기는 곳",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 4962,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "문의 남기는 곳",
+            "productArea": "company",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "support-contact"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 4,
+              "epochTopic": "company",
+              "currentGoal": "문의 남기는 곳",
+              "currentTopic": "company contact",
+              "activeFacts": [
+                "403 error occurred during conversion.",
+                "need_non_phone_support_channel"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=회사의 연락처는 대표전화 010-2166-5563이며, 이메일은 midiaistudio@gmail.com입니다. 고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+                "need_phone_number"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company contact",
+                "company"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "문의 남기는 곳",
+              "currentTopic": "company contact",
+              "relation": "FOLLOW_UP",
+              "productArea": "company",
+              "epoch": 4,
+              "epochTopic": "company",
+              "activeFacts": [
+                "403 error occurred during conversion.",
+                "need_non_phone_support_channel",
+                "goal=문의 남기는 곳"
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [
+                "그건 됐고 회사에 연락할 곳 있어?",
+                "전화는 말고",
+                "문의 남기는 곳"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company contact",
+                "company"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "문의 남기는 곳",
+              "usedEvidence": [
+                "support-contact"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+          "fails": []
+        },
+        {
+          "i": 6,
+          "user": "그리고 30일짜리 어제 샀는데",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 7574,
+          "meta": {
+            "turnRelation": "TOPIC_SHIFT",
+            "userGoal": "문의 남기는 곳",
+            "productArea": "commerce",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_PAYMENT",
+                "ok": true,
+                "summary": "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "queryStatus": "NOT_FOUND"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "NONE",
+            "retrievalDocs": [],
+            "finalAction": "ASK_DIAGNOSTIC",
+            "conversationState": {
+              "epoch": 6,
+              "epochTopic": "commerce",
+              "currentGoal": "문의 남기는 곳",
+              "currentTopic": "company contact",
+              "activeFacts": [
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "30일짜리 어제 샀음",
+                "user_reports_purchase_or_entitlement_issue",
+                "product=30-day",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=회사의 연락처는 대표전화 010-2166-5563이며, 이메일은 midiaistudio@gmail.com입니다. 고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+                "need_phone_number"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company",
+                "company contact",
+                "commerce"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "그리고 30일짜리 어제 샀는데",
+              "currentTopic": "company contact",
+              "relation": "TOPIC_SHIFT",
+              "productArea": "commerce",
+              "epoch": 5,
+              "epochTopic": "commerce",
+              "activeFacts": [
+                "30일짜리 어제 샀음",
+                "user_reports_purchase_or_entitlement_issue",
+                "product=30-day",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=문의 남기는 곳"
+              ],
+              "toolEvidenceCount": 12,
+              "relevantUserTurns": [],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company contact",
+                "company",
+                "commerce"
+              ],
+              "historySelectReason": "topic_shift_cleared"
+            },
+            "synthContract": {
+              "answeredGoal": "그리고 30일짜리 어제 샀는데",
+              "usedEvidence": [
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}"
+              ],
+              "needsMoreInfo": true,
+              "retried": true
+            },
+            "answerGateFailures": [
+              "tool_license_not_reflected",
+              "tool_lifetime_not_reflected",
+              "tool_lifetime_not_reflected",
+              "fallback_tool_bound"
+            ],
+            "answerSynthesisFallbackReason": "semantic_drift_resynth"
+          },
+          "answer": "「그리고 30일짜리 어제 샀는데」 기준으로 계정 조회 결과: Lifetime 이용권 활성 / 이 계정에서 최근 결제·구매 기록은 확인되지 않음. 이 계정에서 최근 결제 기록은 확인되지 않았습니다. 확인된 사실: 30일짜리 어제 샀음, user_reports_purchase_or_entitlement_issue, product=30-day. 구매 내용과 다르면 결제 시각·상품명을 알려 주세요.",
+          "fails": []
+        },
+        {
+          "i": 7,
+          "user": "아직 안들어왔어",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 9776,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "아직 안들어왔어",
+            "productArea": "commerce",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_PAYMENT",
+                "ok": true,
+                "summary": "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "queryStatus": "NOT_FOUND"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "MEDIUM",
+            "retrievalDocs": [],
+            "finalAction": "ASK_DIAGNOSTIC",
+            "conversationState": {
+              "epoch": 6,
+              "epochTopic": "commerce",
+              "currentGoal": "아직 안들어왔어",
+              "currentTopic": "company contact",
+              "activeFacts": [
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "product=30-day",
+                "30일짜리 어제 샀음",
+                "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "user_reports_purchase_or_entitlement_issue",
+                "entitlement_not_reflected_yet",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=회사의 연락처는 대표전화 010-2166-5563이며, 이메일은 midiaistudio@gmail.com입니다. 고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+                "need_phone_number"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company",
+                "company contact",
+                "commerce"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "아직 안들어왔어",
+              "currentTopic": "company contact",
+              "relation": "FOLLOW_UP",
+              "productArea": "commerce",
+              "epoch": 6,
+              "epochTopic": "commerce",
+              "activeFacts": [
+                "product=30-day",
+                "30일짜리 어제 샀음",
+                "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "user_reports_purchase_or_entitlement_issue",
+                "entitlement_not_reflected_yet",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "Lifetime 이용권 활성",
+                "goal=아직 안들어왔어"
+              ],
+              "toolEvidenceCount": 12,
+              "relevantUserTurns": [
+                "그건 됐고 회사에 연락할 곳 있어?",
+                "그리고 30일짜리 어제 샀는데",
+                "아직 안들어왔어"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company",
+                "company contact",
+                "commerce"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "아직 안들어왔어",
+              "usedEvidence": [
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_plan=lifetime",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none"
+              ],
+              "needsMoreInfo": false,
+              "retried": true
+            },
+            "answerGateFailures": [
+              "tool_license_not_reflected",
+              "tool_lifetime_not_reflected",
+              "tool_lifetime_not_reflected",
+              "fallback_tool_bound"
+            ],
+            "answerSynthesisFallbackReason": "semantic_drift_resynth"
+          },
+          "answer": "「아직 안들어왔어」 기준으로 계정 조회 결과: Lifetime 이용권 활성 / 이 계정에서 최근 결제·구매 기록은 확인되지 않음. 이 계정에서 최근 결제 기록은 확인되지 않았습니다. 확인된 사실: product=30-day, 30일짜리 어제 샀음, 이 계정에서 최근 결제·구매 기록은 확인되지 않음. 구매 내용과 다르면 결제 시각·상품명을 알려 주세요.",
+          "fails": []
+        },
+        {
+          "i": 8,
+          "user": "결제는 됐어",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 9796,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "결제가 되었지만 아직 상품이 들어오지 않았음",
+            "productArea": "commerce",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 1,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_PAYMENT",
+                "ok": true,
+                "summary": "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "queryStatus": "NOT_FOUND"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "MEDIUM",
+            "retrievalDocs": [],
+            "finalAction": "ASK_DIAGNOSTIC",
+            "conversationState": {
+              "epoch": 6,
+              "epochTopic": "commerce",
+              "currentGoal": "결제가 되었지만 아직 상품이 들어오지 않았음",
+              "currentTopic": "commerce",
+              "activeFacts": [
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "product=30-day",
+                "entitlement_not_reflected_yet",
+                "30일짜리 어제 샀음",
+                "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "user_reports_purchase_or_entitlement_issue",
+                "user_reports_payment_succeeded",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=회사의 연락처는 대표전화 010-2166-5563이며, 이메일은 midiaistudio@gmail.com입니다. 고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+                "need_phone_number"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company",
+                "company contact",
+                "commerce"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "결제가 되었지만 아직 상품이 들어오지 않았음",
+              "currentTopic": "commerce",
+              "relation": "FOLLOW_UP",
+              "productArea": "commerce",
+              "epoch": 6,
+              "epochTopic": "commerce",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "30일짜리 어제 샀음",
+                "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "user_reports_purchase_or_entitlement_issue",
+                "user_reports_payment_succeeded",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "Lifetime 이용권 활성",
+                "goal=결제가 되었지만 아직 상품이 들어오지 않았음"
+              ],
+              "toolEvidenceCount": 15,
+              "relevantUserTurns": [
+                "그건 됐고 회사에 연락할 곳 있어?",
+                "그리고 30일짜리 어제 샀는데",
+                "아직 안들어왔어",
+                "결제는 됐어"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company",
+                "company contact",
+                "commerce"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "결제가 되었지만 아직 상품이 들어오지 않았음",
+              "usedEvidence": [
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "이 계정에서 최근 결제·구매 기록은 확인되지 않음"
+              ],
+              "needsMoreInfo": true,
+              "retried": true
+            },
+            "answerGateFailures": [
+              "tool_license_not_reflected",
+              "tool_lifetime_not_reflected",
+              "fallback_tool_bound"
+            ],
+            "answerSynthesisFallbackReason": "semantic_drift_resynth"
+          },
+          "answer": "「결제는 됐어」 기준으로 계정 조회 결과: Lifetime 이용권 활성 / 이 계정에서 최근 결제·구매 기록은 확인되지 않음. 이 계정에서 최근 결제 기록은 확인되지 않았습니다. 확인된 사실: entitlement_not_reflected_yet, 30일짜리 어제 샀음, 이 계정에서 최근 결제·구매 기록은 확인되지 않음. 구매 내용과 다르면 결제 시각·상품명을 알려 주세요.",
+          "fails": []
+        },
+        {
+          "i": 9,
+          "user": "그럼 뭘 확인해야돼?",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 9223,
+          "meta": {
+            "turnRelation": "AMBIGUOUS",
+            "userGoal": "상품이 들어오지 않았으니 확인해야 할 사항",
+            "productArea": "commerce",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_PAYMENT",
+                "ok": true,
+                "summary": "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "queryStatus": "NOT_FOUND"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              },
+              {
+                "tool": "LOOKUP_ENTITLEMENT",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성 / 크레딧 잔액 0"
+              }
+            ],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "license-full-lifetime"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 6,
+              "epochTopic": "commerce",
+              "currentGoal": "상품이 들어오지 않았으니 확인해야 할 사항",
+              "currentTopic": "commerce",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "user_reports_purchase_or_entitlement_issue",
+                "user_reports_payment_succeeded",
+                "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "30일짜리 어제 샀음",
+                "결제는 됐어",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "credit_balance=0"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=회사의 연락처는 대표전화 010-2166-5563이며, 이메일은 midiaistudio@gmail.com입니다. 고객 문의는 사이트의 1:1 문의 게시판을 이용하실 수 있습니다.",
+                "need_phone_number"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company",
+                "company contact",
+                "commerce"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "상품이 들어오지 않았으니 확인해야 할 사항",
+              "currentTopic": "commerce",
+              "relation": "FOLLOW_UP",
+              "productArea": "commerce",
+              "epoch": 6,
+              "epochTopic": "commerce",
+              "activeFacts": [
+                "user_reports_payment_succeeded",
+                "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "30일짜리 어제 샀음",
+                "결제는 됐어",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "credit_balance=0",
+                "Lifetime 이용권 활성",
+                "goal=상품이 들어오지 않았으니 확인해야 할 사항"
+              ],
+              "toolEvidenceCount": 15,
+              "relevantUserTurns": [
+                "그리고 30일짜리 어제 샀는데",
+                "아직 안들어왔어",
+                "결제는 됐어",
+                "그럼 뭘 확인해야돼?"
+              ],
+              "rejectedOldTopics": [
+                "conversion issue",
+                "troubleshooting",
+                "company",
+                "company contact",
+                "commerce"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "상품이 들어오지 않았으니 확인해야 할 사항",
+              "usedEvidence": [
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "[LOOKUP_PAYMENT] 이 계정에서 최근 결제·구매 기록은 확인되지 않음"
+              ],
+              "needsMoreInfo": false,
+              "retried": true
+            },
+            "answerGateFailures": [
+              "tool_license_not_reflected",
+              "tool_lifetime_not_reflected",
+              "fallback_tool_bound"
+            ],
+            "answerSynthesisFallbackReason": "semantic_drift_resynth"
+          },
+          "answer": "「그럼 뭘 확인해야돼?」 기준으로 계정 조회 결과: Lifetime 이용권 활성 / 크레딧 잔액 0 / 이 계정에서 최근 결제·구매 기록은 확인되지 않음 / 크레딧 잔액 0. 이 계정에서 최근 결제 기록은 확인되지 않았습니다. 확인된 사실: user_reports_payment_succeeded, 이 계정에서 최근 결제·구매 기록은 확인되지 않음, 30일짜리 어제 샀음. 구매 내용과 다르면 결제 시각·상품명을 알려 주세요.",
+          "fails": []
+        }
+      ]
+    },
+    "TOOL": {
+      "ticketId": "nMgUoY5HV9u14GeMsjbW",
+      "results": [
+        {
+          "i": 1,
+          "user": "내 이용권 언제까지야?",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 5809,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "내 이용권의 만료일을 알고 싶다.",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              },
+              {
+                "tool": "LOOKUP_ENTITLEMENT",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성 / 크레딧 잔액 0"
+              }
+            ],
+            "evidenceConfidence": "MEDIUM",
+            "retrievalDocs": [],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": "이용권 만료일",
+              "currentGoal": "내 이용권의 만료일을 알고 싶다.",
+              "currentTopic": "이용권 만료일",
+              "activeFacts": [
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "credit_balance=0"
+              ],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "내 이용권의 만료일을 알고 싶다.",
+              "currentTopic": "이용권 만료일",
+              "relation": "FOLLOW_UP",
+              "productArea": "account",
+              "epoch": 0,
+              "epochTopic": "이용권 만료일",
+              "activeFacts": [
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "credit_balance=0",
+                "goal=내 이용권의 만료일을 알고 싶다."
+              ],
+              "toolEvidenceCount": 14,
+              "relevantUserTurns": [
+                "내 이용권 언제까지야?"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "내 이용권의 만료일을 알고 싶다.",
+              "usedEvidence": [
+                "license_plan=lifetime",
+                "license_status=active",
+                "license:Lifetime 이용권 활성"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "당신의 이용권은 평생 이용권으로, 만료일이 없습니다.",
+          "fails": []
+        },
+        {
+          "i": 2,
+          "user": "결제했는데 이용권이 없어",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 7002,
+          "meta": {
+            "turnRelation": "TOPIC_SHIFT",
+            "userGoal": "I want to know the expiration date of my license.",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "live-catalog"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "account",
+              "currentGoal": "I want to know the expiration date of my license.",
+              "currentTopic": "license expiration date",
+              "activeFacts": [
+                "account_email_masked=ka***@gmail.com",
+                "account_authenticated=true",
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "user_reports_purchase_or_entitlement_issue",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": [
+                "이용권 만료일",
+                "license expiration date",
+                "account"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "I want to know the expiration date of my license.",
+              "currentTopic": "license expiration date",
+              "relation": "TOPIC_SHIFT",
+              "productArea": "account",
+              "epoch": 1,
+              "epochTopic": "account",
+              "activeFacts": [
+                "account_email_masked=ka***@gmail.com",
+                "account_authenticated=true",
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "user_reports_purchase_or_entitlement_issue",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=I want to know the expiration date of my license."
+              ],
+              "toolEvidenceCount": 11,
+              "relevantUserTurns": [],
+              "rejectedOldTopics": [
+                "이용권 만료일",
+                "account"
+              ],
+              "historySelectReason": "topic_shift_cleared"
+            },
+            "synthContract": null,
+            "answerGateFailures": [
+              "empty_answer",
+              "fallback_tool_bound"
+            ],
+            "answerSynthesisFallbackReason": "semantic_drift_resynth"
+          },
+          "answer": "「결제했는데 이용권이 없어」 기준으로 계정 조회 결과: Lifetime 이용권 활성. 확인된 사실: account_email_masked=ka***@gmail.com, account_authenticated=true, license_plan=lifetime. 구매 내용과 다르면 결제 시각·상품명을 알려 주세요.",
+          "fails": []
+        }
+      ]
+    },
+    "DIRECT": {
+      "ticketId": "ynpJ8QVl0eW5y0pIrXox",
+      "results": [
+        {
+          "i": 1,
+          "user": "사업자번호 알려줘",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 4813,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "사업자번호를 알고 싶다",
+            "productArea": "company",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "business-registration"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": "사업자번호",
+              "currentGoal": "사업자번호를 알고 싶다",
+              "currentTopic": "사업자번호",
+              "activeFacts": [],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "사업자번호를 알고 싶다",
+              "currentTopic": "사업자번호",
+              "relation": "FOLLOW_UP",
+              "productArea": "company",
+              "epoch": 0,
+              "epochTopic": "사업자번호",
+              "activeFacts": [
+                "goal=사업자번호를 알고 싶다"
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [
+                "사업자번호 알려줘"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "사업자번호를 알고 싶다",
+              "usedEvidence": [
+                "사업자정보: 미디에이아이스튜디오 사업자등록번호는 332-22-02381입니다."
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "미디에이아이스튜디오의 사업자등록번호는 332-22-02381입니다.",
+          "fails": []
+        },
+        {
+          "i": 2,
+          "user": "30일짜리얼마",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 4980,
+          "meta": {
+            "turnRelation": "TOPIC_SHIFT",
+            "userGoal": "30일짜리 가격을 알고 싶다",
+            "productArea": "commerce",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "live-catalog"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "commerce",
+              "currentGoal": "30일짜리 가격을 알고 싶다",
+              "currentTopic": "가격",
+              "activeFacts": [
+                "user_asks_price"
+              ],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": [
+                "사업자번호",
+                "가격",
+                "commerce"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "30일짜리 가격을 알고 싶다",
+              "currentTopic": "가격",
+              "relation": "TOPIC_SHIFT",
+              "productArea": "commerce",
+              "epoch": 1,
+              "epochTopic": "commerce",
+              "activeFacts": [
+                "user_asks_price",
+                "goal=30일짜리 가격을 알고 싶다"
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [],
+              "rejectedOldTopics": [
+                "사업자번호",
+                "commerce"
+              ],
+              "historySelectReason": "topic_shift_cleared"
+            },
+            "synthContract": {
+              "answeredGoal": "30일짜리 가격을 알고 싶다",
+              "usedEvidence": [],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "30일 이용권의 가격은 29,900원입니다.",
+          "fails": []
+        },
+        {
+          "i": 3,
+          "user": "그거 어제 샀는데 아직 안들어왔어",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 7183,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "어제 구매한 30일 이용권이 아직 들어오지 않았다",
+            "productArea": "commerce",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_PAYMENT",
+                "ok": true,
+                "summary": "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "queryStatus": "NOT_FOUND"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "license-full-lifetime"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "commerce",
+              "currentGoal": "어제 구매한 30일 이용권이 아직 들어오지 않았다",
+              "currentTopic": "구매 상태",
+              "activeFacts": [
+                "user_asks_price",
+                "user_reports_purchase_or_entitlement_issue",
+                "entitlement_not_reflected_yet",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": [
+                "사업자번호",
+                "가격",
+                "commerce"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "어제 구매한 30일 이용권이 아직 들어오지 않았다",
+              "currentTopic": "구매 상태",
+              "relation": "FOLLOW_UP",
+              "productArea": "commerce",
+              "epoch": 2,
+              "epochTopic": "commerce",
+              "activeFacts": [
+                "user_asks_price",
+                "user_reports_purchase_or_entitlement_issue",
+                "entitlement_not_reflected_yet",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=어제 구매한 30일 이용권이 아직 들어오지 않았다"
+              ],
+              "toolEvidenceCount": 12,
+              "relevantUserTurns": [
+                "30일짜리얼마",
+                "그거 어제 샀는데 아직 안들어왔어"
+              ],
+              "rejectedOldTopics": [
+                "사업자번호",
+                "가격",
+                "commerce"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "어제 구매한 30일 이용권이 아직 들어오지 않았다",
+              "usedEvidence": [
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_plan=lifetime",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "[LOOKUP_PAYMENT] 이 계정에서 최근 결제·구매 기록은 확인되지 않음"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "어제 구매한 30일 이용권이 아직 들어오지 않은 것 같습니다. 현재 결제 기록이 확인되지 않으며, 활성화된 이용권은 Lifetime입니다. 구매한 계정으로 로그인하여 확인해 보시기 바랍니다.",
+          "fails": []
+        }
+      ]
+    },
+    "CORRECTION": {
+      "ticketId": "NN07kuncaYUs6vWZGRc0",
+      "results": [
+        {
+          "i": 1,
+          "user": "고객센터 번호는?",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 5422,
+          "meta": {
+            "turnRelation": "AMBIGUOUS",
+            "userGoal": "What is the customer service number?",
+            "productArea": "company",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 1,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "business-registration",
+              "support-contact"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "company",
+              "currentGoal": "What is the customer service number?",
+              "currentTopic": "customer service contact",
+              "activeFacts": [],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": [
+                "customer service contact",
+                "company"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "What is the customer service number?",
+              "currentTopic": "customer service contact",
+              "relation": "TOPIC_SHIFT",
+              "productArea": "company",
+              "epoch": 1,
+              "epochTopic": "company",
+              "activeFacts": [
+                "goal=What is the customer service number?"
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [],
+              "rejectedOldTopics": [
+                "company"
+              ],
+              "historySelectReason": "topic_shift_cleared"
+            },
+            "synthContract": {
+              "answeredGoal": "What is the customer service number?",
+              "usedEvidence": [
+                "사업자정보"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "고객센터 번호는 010-2166-5563입니다.",
+          "fails": []
+        },
+        {
+          "i": 2,
+          "user": "아니 전화 말고",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 4737,
+          "meta": {
+            "turnRelation": "FOLLOW_UP",
+            "userGoal": "아니 전화 말고",
+            "productArea": "company",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "business-registration"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "company",
+              "currentGoal": "아니 전화 말고",
+              "currentTopic": "customer service contact",
+              "activeFacts": [
+                "need_non_phone_support_channel"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=고객센터 번호는 010-2166-5563입니다.",
+                "need_phone_number"
+              ],
+              "rejectedOldTopics": [
+                "customer service contact",
+                "company"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "아니 전화 말고",
+              "currentTopic": "customer service contact",
+              "relation": "CORRECTION",
+              "productArea": "company",
+              "epoch": 2,
+              "epochTopic": "company",
+              "activeFacts": [
+                "need_non_phone_support_channel",
+                "goal=아니 전화 말고"
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [
+                "고객센터 번호는?",
+                "아니 전화 말고"
+              ],
+              "rejectedOldTopics": [
+                "customer service contact",
+                "company"
+              ],
+              "historySelectReason": "correction_last_exchange"
+            },
+            "synthContract": {
+              "answeredGoal": "아니 전화 말고",
+              "usedEvidence": [],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "전화가 아닌 다른 방법으로 지원을 원하신다면, 미디에이아이스튜디오의 사이트에서 1:1 문의 게시판을 이용해 주시기 바랍니다.",
+          "fails": []
+        },
+        {
+          "i": 3,
+          "user": "문의 남기는 곳만",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 5944,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "문의 남기는 곳만",
+            "productArea": "company",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 1,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "support-contact"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "company",
+              "currentGoal": "문의 남기는 곳만",
+              "currentTopic": "customer service contact",
+              "activeFacts": [
+                "need_non_phone_support_channel"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=고객센터 번호는 010-2166-5563입니다.",
+                "need_phone_number"
+              ],
+              "rejectedOldTopics": [
+                "customer service contact",
+                "company"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "문의 남기는 곳만",
+              "currentTopic": "customer service contact",
+              "relation": "FOLLOW_UP",
+              "productArea": "company",
+              "epoch": 2,
+              "epochTopic": "company",
+              "activeFacts": [
+                "need_non_phone_support_channel",
+                "goal=문의 남기는 곳만"
+              ],
+              "toolEvidenceCount": 0,
+              "relevantUserTurns": [
+                "고객센터 번호는?",
+                "아니 전화 말고",
+                "문의 남기는 곳만"
+              ],
+              "rejectedOldTopics": [
+                "customer service contact",
+                "company"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "문의 남기는 곳만",
+              "usedEvidence": [
+                "[support-contact] 고객지원 문의: 사이트 1:1 문의/상담 채팅 또는 앱의 1:1 Support로 문의할 수 있습니다."
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "문의 남기는 곳은 미디에이아이스튜디오의 사이트에서 1:1 문의 게시판이나 앱의 1:1 Support를 이용하시면 됩니다.",
+          "fails": []
+        }
+      ]
+    },
+    "UNSEEN": {
+      "ticketId": "WGg0uACCvFhse54FFGAv",
+      "results": [
+        {
+          "i": 1,
+          "user": "그거 언제 끝나?",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 5483,
+          "meta": {
+            "turnRelation": "AMBIGUOUS",
+            "userGoal": "When does it end?",
+            "productArea": "general",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              },
+              {
+                "tool": "LOOKUP_ENTITLEMENT",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성 / 크레딧 잔액 0"
+              }
+            ],
+            "evidenceConfidence": "MEDIUM",
+            "retrievalDocs": [],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": null,
+              "currentGoal": null,
+              "currentTopic": null,
+              "activeFacts": [],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "When does it end?",
+              "currentTopic": "unknown",
+              "relation": "AMBIGUOUS",
+              "productArea": "general",
+              "epoch": 0,
+              "epochTopic": null,
+              "activeFacts": [
+                "goal=When does it end?"
+              ],
+              "toolEvidenceCount": 14,
+              "relevantUserTurns": [
+                "그거 언제 끝나?"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "When does it end?",
+              "usedEvidence": [
+                "license_plan=lifetime",
+                "license_status=active",
+                "license_active=true"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "이용권은 평생 활성 상태이며 만료일이 없습니다.",
+          "fails": []
+        },
+        {
+          "i": 2,
+          "user": "방금 산 거 안 보이는데",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 8132,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "방금 구매한 이용권이 보이지 않음",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "license-full-lifetime"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "currentGoal": "방금 구매한 이용권이 보이지 않음",
+              "currentTopic": "이용권 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "방금 구매한 이용권이 보이지 않음",
+              "currentTopic": "이용권 상태",
+              "relation": "FOLLOW_UP",
+              "productArea": "account",
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=방금 구매한 이용권이 보이지 않음"
+              ],
+              "toolEvidenceCount": 11,
+              "relevantUserTurns": [
+                "그거 언제 끝나?",
+                "방금 산 거 안 보이는데"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "방금 구매한 이용권이 보이지 않음",
+              "usedEvidence": [
+                "license_status=active",
+                "license_plan=lifetime",
+                "license:Lifetime 이용권 활성"
+              ],
+              "needsMoreInfo": false,
+              "retried": true
+            },
+            "answerGateFailures": [
+              "tool_lifetime_not_reflected",
+              "fallback_tool_bound"
+            ],
+            "answerSynthesisFallbackReason": "semantic_drift_resynth"
+          },
+          "answer": "「방금 산 거 안 보이는데」 기준으로 계정 조회 결과: Lifetime 이용권 활성. 확인된 사실: entitlement_not_reflected_yet, license_status=active, license_licensed=true. 구매 내용과 다르면 결제 시각·상품명을 알려 주세요.",
+          "fails": []
+        },
+        {
+          "i": 3,
+          "user": "아까 말한 거 말고 결제 쪽",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 5587,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "결제 관련 정보 확인",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "license-full-lifetime"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "relation": "FOLLOW_UP",
+              "productArea": "account",
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=결제 관련 정보 확인"
+              ],
+              "toolEvidenceCount": 11,
+              "relevantUserTurns": [
+                "그거 언제 끝나?",
+                "방금 산 거 안 보이는데",
+                "아까 말한 거 말고 결제 쪽"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "결제 관련 정보 확인",
+              "usedEvidence": [
+                "license_plan=lifetime",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다.",
+          "fails": []
+        },
+        {
+          "i": 4,
+          "user": "그게 아니라 이용권이야",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 5416,
+          "meta": {
+            "turnRelation": "CORRECTION",
+            "userGoal": "결제 관련 정보 확인",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "live-catalog"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다."
+              ],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "relation": "CORRECTION",
+              "productArea": "account",
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=결제 관련 정보 확인"
+              ],
+              "toolEvidenceCount": 11,
+              "relevantUserTurns": [
+                "아까 말한 거 말고 결제 쪽",
+                "그게 아니라 이용권이야"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "correction_last_exchange"
+            },
+            "synthContract": {
+              "answeredGoal": "결제 관련 정보 확인",
+              "usedEvidence": [
+                "license_status=active",
+                "license_plan=lifetime",
+                "license:Lifetime 이용권 활성"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다.",
+          "fails": []
+        },
+        {
+          "i": 5,
+          "user": "어제 산 패스 아직도 대기중",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 5487,
+          "meta": {
+            "turnRelation": "AMBIGUOUS",
+            "userGoal": "결제 관련 정보 확인",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "live-catalog"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다."
+              ],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "relation": "FOLLOW_UP",
+              "productArea": "account",
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=결제 관련 정보 확인"
+              ],
+              "toolEvidenceCount": 11,
+              "relevantUserTurns": [
+                "방금 산 거 안 보이는데",
+                "아까 말한 거 말고 결제 쪽",
+                "그게 아니라 이용권이야",
+                "어제 산 패스 아직도 대기중"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "결제 관련 정보 확인",
+              "usedEvidence": [
+                "license_status=active",
+                "license_plan=lifetime",
+                "license_active=true"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 어제 구매하신 패스는 대기 중인 상태가 아닙니다.",
+          "fails": []
+        },
+        {
+          "i": 6,
+          "user": "승인 메일은 왔는데 계정엔 없어",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 6081,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "결제 관련 정보 확인",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "MEDIUM",
+            "retrievalDocs": [
+              "license-full-lifetime"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다."
+              ],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "relation": "FOLLOW_UP",
+              "productArea": "account",
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=결제 관련 정보 확인"
+              ],
+              "toolEvidenceCount": 11,
+              "relevantUserTurns": [
+                "아까 말한 거 말고 결제 쪽",
+                "그게 아니라 이용권이야",
+                "어제 산 패스 아직도 대기중",
+                "승인 메일은 왔는데 계정엔 없어"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "결제 관련 정보 확인",
+              "usedEvidence": [
+                "license_plan=lifetime",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 승인 메일이 왔지만 계정에 반영되지 않은 경우, 잠시 기다리신 후 다시 확인해 보시기 바랍니다.",
+          "fails": []
+        },
+        {
+          "i": 7,
+          "user": "다른 계정으로 산 건 아니고",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 6249,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "결제 관련 정보 확인",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "MEDIUM",
+            "retrievalDocs": [
+              "license-full-lifetime"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다."
+              ],
+              "rejectedOldTopics": []
+            },
+            "authorityContext": {
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "relation": "FOLLOW_UP",
+              "productArea": "account",
+              "epoch": 0,
+              "epochTopic": "이용권 상태",
+              "activeFacts": [
+                "entitlement_not_reflected_yet",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "license_plan=lifetime",
+                "goal=결제 관련 정보 확인"
+              ],
+              "toolEvidenceCount": 11,
+              "relevantUserTurns": [
+                "그게 아니라 이용권이야",
+                "어제 산 패스 아직도 대기중",
+                "승인 메일은 왔는데 계정엔 없어",
+                "다른 계정으로 산 건 아니고"
+              ],
+              "rejectedOldTopics": [],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "결제 관련 정보 확인",
+              "usedEvidence": [
+                "license_plan=lifetime",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "license:Lifetime 이용권 활성"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 결제 관련 정보는 정상적으로 반영되어야 하며, 승인 메일이 왔지만 계정에 반영되지 않은 경우 잠시 기다리신 후 다시 확인해 보시기 바랍니다.",
+          "fails": []
+        },
+        {
+          "i": 8,
+          "user": "환불은 아니고 반영만",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 7757,
+          "meta": {
+            "turnRelation": "TOPIC_SHIFT",
+            "userGoal": "결제 관련 정보 확인",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 1,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_ACCOUNT",
+                "ok": true,
+                "summary": "로그인 계정 확인됨 (ka***@gmail.com)"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              }
+            ],
+            "evidenceConfidence": "NONE",
+            "retrievalDocs": [],
+            "finalAction": "ASK_DIAGNOSTIC",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "account",
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "activeFacts": [
+                "account_email_masked=ka***@gmail.com",
+                "account_authenticated=true",
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다."
+              ],
+              "rejectedOldTopics": [
+                "이용권 상태",
+                "결제 상태",
+                "account"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "결제 관련 정보 확인",
+              "currentTopic": "결제 상태",
+              "relation": "TOPIC_SHIFT",
+              "productArea": "account",
+              "epoch": 1,
+              "epochTopic": "account",
+              "activeFacts": [
+                "account_email_masked=ka***@gmail.com",
+                "account_authenticated=true",
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "goal=결제 관련 정보 확인"
+              ],
+              "toolEvidenceCount": 11,
+              "relevantUserTurns": [],
+              "rejectedOldTopics": [
+                "결제 상태",
+                "이용권 상태",
+                "account"
+              ],
+              "historySelectReason": "topic_shift_cleared"
+            },
+            "synthContract": {
+              "answeredGoal": "결제 관련 정보 확인",
+              "usedEvidence": [
+                "license_plan=lifetime",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다.",
+          "fails": []
+        },
+        {
+          "i": 9,
+          "user": "그럼 지금 내 권한 상태 뭐야",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 7138,
+          "meta": {
+            "turnRelation": "CONTINUE",
+            "userGoal": "Check the status of my permissions",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_PAYMENT",
+                "ok": true,
+                "summary": "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "queryStatus": "NOT_FOUND"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              },
+              {
+                "tool": "LOOKUP_ENTITLEMENT",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성 / 크레딧 잔액 0"
+              }
+            ],
+            "evidenceConfidence": "HIGH",
+            "retrievalDocs": [
+              "license-full-lifetime"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "account",
+              "currentGoal": "Check the status of my permissions",
+              "currentTopic": "Payment status",
+              "activeFacts": [
+                "account_email_masked=ka***@gmail.com",
+                "account_authenticated=true",
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "credit_balance=0"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다."
+              ],
+              "rejectedOldTopics": [
+                "이용권 상태",
+                "결제 상태",
+                "account"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "Check the status of my permissions",
+              "currentTopic": "Payment status",
+              "relation": "FOLLOW_UP",
+              "productArea": "account",
+              "epoch": 2,
+              "epochTopic": "account",
+              "activeFacts": [
+                "account_email_masked=ka***@gmail.com",
+                "account_authenticated=true",
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "credit_balance=0",
+                "goal=Check the status of my permissions"
+              ],
+              "toolEvidenceCount": 15,
+              "relevantUserTurns": [
+                "승인 메일은 왔는데 계정엔 없어",
+                "다른 계정으로 산 건 아니고",
+                "환불은 아니고 반영만",
+                "그럼 지금 내 권한 상태 뭐야"
+              ],
+              "rejectedOldTopics": [
+                "이용권 상태",
+                "결제 상태",
+                "account"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": {
+              "answeredGoal": "Check the status of my permissions",
+              "usedEvidence": [
+                "license_plan=lifetime",
+                "license_status=active",
+                "payment_query_status=NOT_FOUND"
+              ],
+              "needsMoreInfo": false,
+              "retried": false
+            },
+            "answerGateFailures": [],
+            "answerSynthesisFallbackReason": null
+          },
+          "answer": "현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 결제 기록은 확인되지 않고 있습니다.",
+          "fails": []
+        },
+        {
+          "i": 10,
+          "user": "만료일만 짧게 알려줘",
+          "httpStatus": 200,
+          "ok": true,
+          "latencyMs": 8109,
+          "meta": {
+            "turnRelation": "FOLLOW_UP",
+            "userGoal": "만료일을 확인하고 싶다",
+            "productArea": "account",
+            "source": "llm",
+            "llmCalls": {
+              "planner": 0,
+              "diagnostic": 0,
+              "understanding": 1
+            },
+            "toolCalls": [
+              {
+                "tool": "LOOKUP_PAYMENT",
+                "ok": true,
+                "summary": "이 계정에서 최근 결제·구매 기록은 확인되지 않음",
+                "queryStatus": "NOT_FOUND"
+              },
+              {
+                "tool": "LOOKUP_LICENSE",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성"
+              },
+              {
+                "tool": "LOOKUP_ENTITLEMENT",
+                "ok": true,
+                "summary": "Lifetime 이용권 활성 / 크레딧 잔액 0"
+              }
+            ],
+            "evidenceConfidence": "MEDIUM",
+            "retrievalDocs": [
+              "license-full-lifetime"
+            ],
+            "finalAction": "ANSWER",
+            "conversationState": {
+              "epoch": 2,
+              "epochTopic": "account",
+              "currentGoal": "만료일을 확인하고 싶다",
+              "currentTopic": "권한 상태",
+              "activeFacts": [
+                "account_email_masked=ka***@gmail.com",
+                "account_authenticated=true",
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "credit_balance=0"
+              ],
+              "invalidatedFacts": [
+                "invalidated_assumption=현재 귀하의 계정은 평생 이용권이 활성 상태이며, 만료일이 없습니다. 자동 결제는 없으며, AI 변환 횟수 제한 없이 기능을 사용할 수 있습니다."
+              ],
+              "rejectedOldTopics": [
+                "이용권 상태",
+                "결제 상태",
+                "account"
+              ]
+            },
+            "authorityContext": {
+              "currentGoal": "만료일을 확인하고 싶다",
+              "currentTopic": "권한 상태",
+              "relation": "FOLLOW_UP",
+              "productArea": "account",
+              "epoch": 2,
+              "epochTopic": "account",
+              "activeFacts": [
+                "account_email_masked=ka***@gmail.com",
+                "account_authenticated=true",
+                "license_plan=lifetime",
+                "license:{\"found\":true,\"status\":\"active\",\"plan\":\"lifetime\",\"active\":true,\"expiresAt\":null}",
+                "license_canonical=plan:lifetime|active:true|expires:none",
+                "payment_query_status=NOT_FOUND",
+                "payment:{\"found\":false,\"status\":\"NOT_FOUND\"}",
+                "license_status=active",
+                "license_licensed=true",
+                "license_active=true",
+                "credit_balance=0",
+                "goal=만료일을 확인하고 싶다"
+              ],
+              "toolEvidenceCount": 15,
+              "relevantUserTurns": [
+                "다른 계정으로 산 건 아니고",
+                "환불은 아니고 반영만",
+                "그럼 지금 내 권한 상태 뭐야",
+                "만료일만 짧게 알려줘"
+              ],
+              "rejectedOldTopics": [
+                "이용권 상태",
+                "결제 상태",
+                "account"
+              ],
+              "historySelectReason": "goal_filtered"
+            },
+            "synthContract": null,
+            "answerGateFailures": [
+              "empty_answer",
+              "fallback_tool_bound"
+            ],
+            "answerSynthesisFallbackReason": "semantic_drift_resynth"
+          },
+          "answer": "「만료일만 짧게 알려줘」 기준으로 계정 조회 결과: Lifetime 이용권 활성 / 크레딧 잔액 0 / 이 계정에서 최근 결제·구매 기록은 확인되지 않음 / 크레딧 잔액 0. 이 계정에서 최근 결제 기록은 확인되지 않았습니다. 확인된 사실: account_email_masked=ka***@gmail.com, account_authenticated=true, license_plan=lifetime. 구매 내용과 다르면 결제 시각·상품명을 알려 주세요.",
+          "fails": []
+        }
+      ]
+    }
+  },
+  "startedAt": "2026-09-04T17:35:39.913Z"
+}

@@ -72,8 +72,32 @@ const STOP_FEATURES = new Set(
     '오디오',
     '유튜브',
     'youtube',
-    'pdf'
+    'pdf',
+    '번호',
+    '연락처',
+    '전화',
+    '가격',
+    '요금',
+    '환불',
+    '결제',
+    '크레딧',
+    '이용권'
   ].map(compact)
+);
+
+/**
+ * Company / contact / commerce info asks — never treat as in-app UI feature names.
+ * Category signals only (not per-phrase aliases like a fixed "고객센터번호" route).
+ */
+const COMPANY_CONTACT_ASK_RE =
+  /(연락|전화|대표\s*번|고객\s*지원|고객\s*센터|어디로\s*전화|상담\s*(가능|번호|전화)|문의|이메일|메일|사업자|상호|대표자|회사\s*정보)/i;
+
+const COMMERCE_INFO_ASK_RE =
+  /(환불|가격|요금|얼마|결제|입금|계좌|영수증|세금|살\s*건데|사려|사려고|구매|이용권|평생권|lifetime|라이프)/i;
+
+const INFO_ASK_RE = new RegExp(
+  `${COMPANY_CONTACT_ASK_RE.source}|${COMMERCE_INFO_ASK_RE.source}`,
+  'i'
 );
 
 const GENERIC_TASK_DIAG_RE =
@@ -92,9 +116,18 @@ function isStopFeature(phrase) {
 const REJECT_CANDIDATE_RE =
   /(바꿔|이상|실패|오류|에러|됐는데|하는데|합칠|있어|알려|설명|소리|됐|뜨|안돼|안됨|문제|도와|제발|이거|저거|그거|그중|뭐야|무엇|어디|어떻게|선택|방금|줄일|숨길|넘겨|바뀌)/i;
 
+function looksLikeInfoAsk(text) {
+  return INFO_ASK_RE.test(String(text || ''));
+}
+
+function looksLikeCompanyContactAsk(text) {
+  return COMPANY_CONTACT_ASK_RE.test(String(text || ''));
+}
+
 function looksLikeFeatureNoun(phrase) {
   const s = clean(phrase);
   if (!s || isStopFeature(s)) return false;
+  if (looksLikeInfoAsk(s)) return false;
   if (REJECT_CANDIDATE_RE.test(s)) return false;
   const c = compact(s);
   if (c.length < 2 || c.length > 16) return false;
@@ -135,6 +168,8 @@ function normalizeFeaturePhrase(raw) {
 function extractCandidatesFromText(text) {
   const s0 = clean(text);
   if (!s0) return [];
+  // Info / company / commerce asks are never UI feature candidates
+  if (looksLikeInfoAsk(s0)) return [];
   const found = [];
   const push = (raw, { prefer = false } = {}) => {
     const n = normalizeFeaturePhrase(raw);
@@ -339,17 +374,20 @@ function applyDiscoveryBoosts(passages, candidateFeature) {
 }
 
 /**
- * Targeted clarification when a named feature candidate was not verified.
- * Interpolates the dynamic candidate — no product-specific hardcoding.
+ * Targeted clarification when a named *UI feature* candidate was not verified.
+ * Must NOT run for company/contact/price/refund informational questions.
  */
 function buildTargetedFeatureDiagnostic({
   locale = 'ko',
   candidateFeature,
   intent = 'general',
-  hypotheses = []
+  hypotheses = [],
+  isUiFeatureAsk = true
 } = {}) {
+  if (isUiFeatureAsk === false) return null;
   const name = clean(candidateFeature);
   if (!name) return null;
+  if (looksLikeInfoAsk(name)) return null;
   const loc = locale === 'en' ? 'en' : locale === 'ja' ? 'ja' : 'ko';
   const hyps = Array.isArray(hypotheses) ? hypotheses : [];
 
@@ -390,6 +428,8 @@ module.exports = {
   discoveryMatchBoost,
   applyDiscoveryBoosts,
   buildTargetedFeatureDiagnostic,
+  looksLikeInfoAsk,
+  looksLikeCompanyContactAsk,
   GENERIC_TASK_DIAG_RE,
   compact,
   clean

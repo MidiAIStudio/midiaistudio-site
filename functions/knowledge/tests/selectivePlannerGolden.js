@@ -79,7 +79,7 @@ async function run() {
   };
 
   await check('1 known tempo → planner LLM 0', async () => {
-    let llmCalls = 0;
+    let plannerCalls = 0;
     const out = await agent({
       question: '템포 어디서 바꿔?',
       retrieveStaticInitial: () => [
@@ -91,19 +91,28 @@ async function run() {
           title: '템포'
         })
       ],
-      callLlm: async () => {
-        llmCalls += 1;
+      callLlm: async (system) => {
+        if (/conversation analyst|query analyst/i.test(String(system || ''))) {
+          return JSON.stringify({
+            userGoal: '템포 변경 위치',
+            productArea: 'product_ui',
+            searchQueries: ['템포 어디서'],
+            plannedActions: ['SEARCH_KNOWLEDGE'],
+            isUiFeatureAsk: true
+          });
+        }
+        plannerCalls += 1;
         return '{}';
       }
     });
-    assert.strictEqual(llmCalls, 0, 'LLM must not run on known tempo');
+    assert.strictEqual(plannerCalls, 0, 'planner LLM must not run on known tempo');
     assert.ok(out.debug.llmCalls.planner === 0);
     assert.ok(out.debug.plannerMode === 'deterministic' || out.debug.plannerTrigger === 'fast_path');
     assert.strictEqual(out.debug.finalAction, ACTIONS.ANSWER);
   });
 
   await check('2 catalog → planner LLM 0', async () => {
-    let llmCalls = 0;
+    let plannerCalls = 0;
     const out = await agent({
       question: '지금 판매 상품 뭐야?',
       retrieveStaticInitial: () => [],
@@ -112,17 +121,26 @@ async function run() {
           passage({ id: 'live-catalog', sourceKind: 'catalog', score: 30, title: '판매 상품' })
         ]
       },
-      callLlm: async () => {
-        llmCalls += 1;
+      callLlm: async (system) => {
+        if (/conversation analyst|query analyst/i.test(String(system || ''))) {
+          return JSON.stringify({
+            userGoal: '판매 상품 목록',
+            productArea: 'commerce',
+            searchQueries: ['판매 상품'],
+            plannedActions: ['SEARCH_KNOWLEDGE'],
+            isUiFeatureAsk: false
+          });
+        }
+        plannerCalls += 1;
         return '{}';
       }
     });
-    assert.strictEqual(llmCalls, 0);
+    assert.strictEqual(plannerCalls, 0);
     assert.ok(out.passages.some((p) => p.id === 'live-catalog'));
   });
 
   await check('3 simple release → planner LLM 0', async () => {
-    let llmCalls = 0;
+    let plannerCalls = 0;
     const out = await agent({
       question: '1.6.3 패치내용이 뭐야?',
       retrieveStaticInitial: () => [],
@@ -131,17 +149,26 @@ async function run() {
           passage({ id: 'patch-163', sourceKind: 'release', score: 22, title: '1.6.3', version: '1.6.3' })
         ]
       },
-      callLlm: async () => {
-        llmCalls += 1;
+      callLlm: async (system) => {
+        if (/conversation analyst|query analyst/i.test(String(system || ''))) {
+          return JSON.stringify({
+            userGoal: '1.6.3 패치 내용',
+            productArea: 'release',
+            searchQueries: ['1.6.3 패치'],
+            plannedActions: ['SEARCH_KNOWLEDGE'],
+            isUiFeatureAsk: false
+          });
+        }
+        plannerCalls += 1;
         return '{}';
       }
     });
-    assert.strictEqual(llmCalls, 0, `unexpected llm on simple release, mode=${out.debug.plannerMode}`);
+    assert.strictEqual(plannerCalls, 0, `unexpected planner llm on simple release, mode=${out.debug.plannerMode}`);
     assert.strictEqual(out.passages[0].id, 'patch-163');
   });
 
   await check('4 release+error compound → planner LLM 1', async () => {
-    let llmCalls = 0;
+    let plannerCalls = 0;
     let lastSystem = '';
     const q = '패치 이후부터 변환 오류랑 관련 있어?';
     assert.ok(isCompoundQuery(q, {}), 'expected compound');
@@ -165,7 +192,16 @@ async function run() {
         ]
       },
       callLlm: async (system, user) => {
-        llmCalls += 1;
+        if (/conversation analyst|query analyst/i.test(String(system || ''))) {
+          return JSON.stringify({
+            userGoal: q,
+            productArea: 'troubleshooting',
+            searchQueries: ['패치 이후 변환 오류'],
+            plannedActions: ['SEARCH_KNOWLEDGE'],
+            isUiFeatureAsk: false
+          });
+        }
+        plannerCalls += 1;
         lastSystem = system;
         assert.ok(/planner|NEXT investigation|nextAction/i.test(system), 'planner system prompt');
         assert.ok(!/Write a direct short customer/i.test(system));
@@ -180,7 +216,7 @@ async function run() {
         });
       }
     });
-    assert.strictEqual(llmCalls, 1, `expected 1 planner call, got ${llmCalls}`);
+    assert.strictEqual(plannerCalls, 1, `expected 1 planner call, got ${plannerCalls}`);
     assert.ok(out.debug.plannerMode === 'llm' || out.debug.llmCalls.planner === 1);
     assert.ok(
       (out.debug.sourcesSearched || []).includes('release') ||
