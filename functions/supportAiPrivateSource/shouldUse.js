@@ -44,6 +44,13 @@ function buildSearchTerms({ question, rawQuestion, facts, sourcePlan } = {}) {
     push('Arrange');
     push('AI Assistant');
     push('instrument arrange');
+    push('midi_ai_instrument_arrange');
+  }
+  if (/자동.*악기|악기.*나(?:누|눠)|instrument\s*arrange|스템|stem\s*split/i.test(q)) {
+    push('AI Instrument Arrange');
+    push('midi_ai_instrument_arrange');
+    push('instrument arrange');
+    push('Guided Arrangement');
   }
   if (/쉬운\s*키|이지\s*키|easy\s*key/i.test(q)) {
     push('Easier Key');

@@ -15,6 +15,8 @@ const gmailUser = defineSecret('GMAIL_USER');
 const gmailAppPassword = defineSecret('GMAIL_APP_PASSWORD');
 /** Support AI LLM — Secret Manager; bound only on supportAi* HTTPS functions */
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
+/** Support AI private GitHub source — fine-grained read-only PAT (Contents+Metadata) */
+const githubSupportAiToken = defineSecret('GITHUB_SUPPORT_AI_TOKEN');
 /** Kakao OAuth / admin Talk notify — Secret Manager */
 const kakaoRestApiKey = defineSecret('KAKAO_REST_API_KEY');
 const kakaoClientSecret = defineSecret('KAKAO_CLIENT_SECRET');
@@ -2323,7 +2325,7 @@ const { createSupportAiHandlers } = require('./supportAi');
 const supportAiHandlers = createSupportAiHandlers({ db, cors, requireUser });
 exports.supportAiReply = onRequestV2(
   {
-    secrets: [openaiApiKey],
+    secrets: [openaiApiKey, githubSupportAiToken],
     timeoutSeconds: 60,
     memory: '256MiB'
   },

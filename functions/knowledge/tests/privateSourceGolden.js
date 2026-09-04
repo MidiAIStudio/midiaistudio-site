@@ -68,7 +68,7 @@ async function run() {
   };
 
   await check('config single sourceRef', async () => {
-    assert.strictEqual(PRIVATE_SOURCE_CONFIG.sourceRef, 'repo-cleanup-support-ai');
+    assert.strictEqual(PRIVATE_SOURCE_CONFIG.sourceRef, 'main');
     assert.strictEqual(PRIVATE_SOURCE_CONFIG.owner, 'MidiAIStudio');
     assert.strictEqual(PRIVATE_SOURCE_CONFIG.repo, 'MidiAI-Studio');
   });

@@ -84,6 +84,91 @@ function createPrivateSourceAdapter(opts = {}) {
     }
   }
 
+  async function scorePreferredOnGitHub(terms, policy) {
+    const hits = [];
+    const seen = new Set();
+    let fetched = 0;
+    for (const rel of PRIVATE_SOURCE_CONFIG.preferredPaths) {
+      if (fetched >= PRIVATE_SOURCE_CONFIG.maxFileFetches) break;
+      const dec = evaluatePath(rel, policy);
+      if (!dec.allowed) continue;
+      let bytes;
+      try {
+        bytes = await readBytes(dec.normalized);
+      } catch (_) {
+        continue;
+      }
+      if (!bytes) continue;
+      fetched += 1;
+      const text = bytes.toString('utf8');
+      if (text.length > 2_000_000) continue;
+      for (const term of terms) {
+        const tokens = String(term || '')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .slice(0, 6);
+        if (!tokens.length) continue;
+        const low = text.toLowerCase();
+        const requireAll = tokens.length > 1;
+        if (requireAll && !tokens.every((t) => low.includes(t.toLowerCase()))) continue;
+        let bestLine = 1;
+        let score = 0;
+        const lines = text.split(/\r?\n/);
+        const phrase = tokens.join(' ').toLowerCase();
+        for (let i = 0; i < Math.min(lines.length, 8000); i += 1) {
+          const ll = lines[i].toLowerCase();
+          let lineScore = 0;
+          if (phrase && ll.includes(phrase)) lineScore += 100;
+          if (
+            /midi_ai_easy_key|midi_ai_cleanup|midi_ai_instrument_arrange|easier key|ai cleanup|instrument arrange|guided arrangement/i.test(
+              lines[i]
+            ) &&
+            /(easy_key|easier|cleanup|arrange|정리|쉬운|편곡|instrument\s*arrange)/i.test(tokens.join(' '))
+          ) {
+            lineScore += 80;
+          }
+          let tokenHits = 0;
+          for (const t of tokens) {
+            if (ll.includes(t.toLowerCase())) tokenHits += 1;
+          }
+          if (tokenHits === tokens.length) lineScore += 40;
+          if (lineScore > score) {
+            score = lineScore;
+            bestLine = i + 1;
+          }
+        }
+        if (score <= 0) {
+          for (const t of tokens) {
+            const idx = low.indexOf(t.toLowerCase());
+            if (idx >= 0) {
+              score = 15;
+              bestLine = text.slice(0, idx).split(/\n/).length;
+              break;
+            }
+          }
+        }
+        if (score <= 0) continue;
+        if (/^lang\//i.test(dec.normalized)) score += 25;
+        if (/^run_gui\.py$/i.test(dec.normalized)) score += 15;
+        if (!seen.has(dec.normalized) || score > (hits.find((h) => h.path === dec.normalized) || {}).score) {
+          seen.add(dec.normalized);
+          const existing = hits.findIndex((h) => h.path === dec.normalized);
+          const row = {
+            path: dec.normalized,
+            line: bestLine,
+            score,
+            kind: 'preferred_scan'
+          };
+          if (existing >= 0) hits[existing] = row;
+          else hits.push(row);
+        }
+      }
+    }
+    hits.sort((a, b) => b.score - a.score);
+    return hits.slice(0, PRIVATE_SOURCE_CONFIG.maxFileFetches);
+  }
+
   async function stageASearch(terms, policy) {
     const queries = [];
     const hits = [];
@@ -111,6 +196,18 @@ function createPrivateSourceAdapter(opts = {}) {
         hits.push({ path: dec.normalized, line: h.line || 1, score: h.score || 1, kind: h.kind || 'search' });
       }
     }
+
+    // GitHub code search often lags after merges (incomplete_results / empty).
+    // Fall back to bounded preferred-file scan — still path-gated, never repo-wide enumerate.
+    if (!hits.length && !localRoot) {
+      const preferred = await scorePreferredOnGitHub(terms, policy);
+      for (const h of preferred) {
+        if (seen.has(h.path)) continue;
+        seen.add(h.path);
+        hits.push(h);
+      }
+    }
+
     hits.sort((a, b) => b.score - a.score);
     return { queries, hits: hits.slice(0, PRIVATE_SOURCE_CONFIG.maxFileFetches) };
   }

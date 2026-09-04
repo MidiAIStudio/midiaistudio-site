@@ -7,9 +7,20 @@
 const PRIVATE_SOURCE_CONFIG = Object.freeze({
   owner: 'MidiAIStudio',
   repo: 'MidiAI-Studio',
-  /** Temporary until cleanup branch merges to main */
-  sourceRef: process.env.SUPPORT_AI_SOURCE_REF || 'repo-cleanup-support-ai',
+  /** Production: cleaned app source on main */
+  sourceRef: process.env.SUPPORT_AI_SOURCE_REF || 'main',
   policyPath: 'support-ai-source-policy.json',
+  /** Bounded Stage A candidates when GitHub code search index is empty/lagging */
+  preferredPaths: Object.freeze([
+    'lang/en.json',
+    'lang/ko.json',
+    'lang/ja.json',
+    'run_gui.py',
+    'app_version.py',
+    'AGENTS.md',
+    'core/audio_pipeline/guided_arrangement.py',
+    'core/audio_pipeline/instrument_assistant.py'
+  ]),
   maxSearchCalls: 3,
   maxFileFetches: 5,
   contextLines: 80,

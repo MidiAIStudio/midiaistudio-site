@@ -150,17 +150,16 @@ function createGitHubClient({
         timeoutMs: PRIVATE_SOURCE_CONFIG.searchTimeoutMs
       }
     );
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 401) {
       throw Object.assign(new Error('github_auth_failure'), {
         code: 'github_auth_failure',
         status: res.status
       });
     }
-    if (!res.ok) {
-      throw Object.assign(new Error('github_search_failed'), {
-        code: 'github_api_error',
-        status: res.status
-      });
+    // 403/429 on code search is often secondary rate-limit or empty index ACL —
+    // do not disable the whole adapter; preferred-file Stage A can still run.
+    if (res.status === 403 || res.status === 429 || !res.ok) {
+      return [];
     }
     const body = await res.json();
     const items = Array.isArray(body.items) ? body.items : [];
