@@ -108,6 +108,31 @@ const FEATURE_MARKERS = [
       'youtube-engine',
       '변환'
     ]
+  },
+  {
+    family: 'humanize',
+    question: /휴머나이즈|사람처럼\s*연주|humanize/i,
+    markers: ['midi_ai_humanize', 'humanize', '휴머나이즈']
+  },
+  {
+    family: 'sound',
+    question: /사운드팩|고품질\s*음원|소리(?:가)?\s*(?:별로|이상)|음질/i,
+    markers: ['soundpack', 'high-quality', '고품질', '사운드팩', 'use high-quality sounds']
+  },
+  {
+    family: 'velocity',
+    question: /벨로시티|velocity|세기/i,
+    markers: ['velocity', '벨로시티', 'midi_editor_velocity']
+  },
+  {
+    family: 'pdf_export',
+    question: /악보\s*(?:뽑|pdf)|pdf\s*(?:저장|내보내|export)|score.*pdf/i,
+    markers: ['pdf export', 'export pdf', '악보 pdf', 'score_editor_export']
+  },
+  {
+    family: 'library',
+    question: /라이브러리|library|저장한거\s*다시|다시\s*열/i,
+    markers: ['library', '라이브러리', 'recent files', 'open library']
   }
 ];
 
@@ -267,6 +292,33 @@ function evidenceMatchesQuestion(question, text, terms) {
   if (family === 'cleanup') {
     if (!/cleanup|정리|midi_ai_cleanup/i.test(body)) {
       return { ok: false, reason: 'cleanup_missing_marker' };
+    }
+  }
+
+  // Cross-topic false positives
+  if (family === 'tempo' || /템포|bpm/i.test(q)) {
+    if (/velocity|벨로시티/i.test(body) && !/tempo|bpm|템포/i.test(body)) {
+      return { ok: false, reason: 'tempo_vs_velocity' };
+    }
+  }
+  if (family === 'sound' || /사운드팩|고품질|소리(?:가)?\s*(?:별로|이상)|음질/i.test(q)) {
+    if (/score.?editor|악보\s*편집|barline|musicxml/i.test(body) && !/sound|사운드|음원|high.?quality/i.test(body)) {
+      return { ok: false, reason: 'sound_vs_score' };
+    }
+  }
+  if (family === 'pdf_export' || /악보\s*(?:뽑|pdf)|pdf\s*(?:저장|내보내)/i.test(q)) {
+    if (/pdf.?to.?midi|pdftomidi|pdf\s*→\s*midi|pdf를\s*midi/i.test(body) && !/export|내보내|저장|뽑/i.test(body)) {
+      return { ok: false, reason: 'pdf_export_vs_pdf_to_midi' };
+    }
+  }
+  if (family === 'library' || /라이브러리|저장한거\s*다시|다시\s*열/i.test(q)) {
+    if (/installer|설치\s*파일|repair|uninstall/i.test(body) && !/library|라이브러리|open|다시\s*열/i.test(body)) {
+      return { ok: false, reason: 'library_vs_installer' };
+    }
+  }
+  if (family === 'velocity' || /벨로시티|velocity/i.test(q)) {
+    if (/tempo|bpm|템포/i.test(body) && !/velocity|벨로시티/i.test(body)) {
+      return { ok: false, reason: 'velocity_vs_tempo' };
     }
   }
 

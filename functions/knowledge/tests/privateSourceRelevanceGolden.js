@@ -118,6 +118,20 @@ async function run() {
     assert.ok(!/run_gui\.py/.test(s));
   });
 
+  const extraNeg = [
+    ['tempo vs velocity', '템포 어디서 바꿔', 'velocity lane 벨로시티 only', ['tempo']],
+    ['sound vs score', '소리가 별로야', 'score editor barline musicxml', ['사운드팩']],
+    ['pdf export vs pdf-midi', '악보 pdf로 뽑기', 'pdf to midi recognition pdftomidi only', ['pdf export']],
+    ['library vs installer', '라이브러리에서 다시 열기', 'installer repair uninstall', ['library']],
+    ['velocity vs tempo', 'velocity 조절', 'project tempo bpm only', ['velocity']]
+  ];
+  for (const [name, q, body, terms] of extraNeg) {
+    await check(`neg:${name}`, async () => {
+      const r = evidenceMatchesQuestion(q, body, terms);
+      assert.ok(!r.ok, name);
+    });
+  }
+
   const failed = results.filter((r) => !r.ok);
   console.log(`\nprivateSourceRelevanceGolden: ${results.length - failed.length}/${results.length} passed`);
   if (failed.length) process.exit(1);

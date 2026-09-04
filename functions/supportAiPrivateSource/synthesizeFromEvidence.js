@@ -170,6 +170,66 @@ function synthesizeFromEvidence({ question, locale = 'ko', privateDebug, passage
         en: 'MidiAI Studio converts YouTube/audio/PDF scores to MIDI, then you refine them in the editors.',
         ja: 'MidiAI StudioはYouTube・音声・PDF譜面などをMIDIに変換し、Editorで整えられます。'
       }
+    },
+    humanize: {
+      exists: {
+        ko: '네. AI Assistant의 Humanize로 노트 타이밍·세기를 조금 흔들어 사람 연주에 가깝게 만들 수 있습니다.',
+        en: 'Yes. AI Assistant Humanize gently varies timing and velocity for a more human feel.',
+        ja: 'はい。AI AssistantのHumanizeでタイミングや強さを少し揺らし、人の演奏に近づけられます。'
+      },
+      what: {
+        ko: 'Humanize는 기계적인 MIDI 연주를 사람 연주에 가깝게 다듬는 AI Assistant 기능입니다.',
+        en: 'Humanize makes rigid MIDI performances feel more human.',
+        ja: 'Humanizeは機械的なMIDIを人の演奏に近づける機能です。'
+      }
+    },
+    sound: {
+      exists: {
+        ko: '네. 고품질 음원(사운드팩)을 설치하고 Use high-quality sounds를 켜면 재생 음질을 바꿀 수 있습니다.',
+        en: 'Yes. Install high-quality soundpacks and enable Use high-quality sounds to improve playback tone.',
+        ja: 'はい。高品質サウンドパックを入れて Use high-quality sounds をオンにすると再生音質を変えられます。'
+      },
+      how: {
+        ko: '고품질 음원 관리에서 그룹을 설치/업데이트한 뒤 Use high-quality sounds를 켜세요. 특정 악기만 이상하면 해당 그룹 설치 상태를 확인하세요.',
+        en: 'Install/update soundpack groups, then enable Use high-quality sounds. If only one instrument sounds wrong, check that group.',
+        ja: '高品質サウンドをインストール/更新し、Use high-quality sounds をオンにしてください。'
+      }
+    },
+    velocity: {
+      where: {
+        ko: 'MIDI Editor에서 노트를 선택한 뒤 벨로시티(세기)를 조절할 수 있습니다.',
+        en: 'Select notes in the MIDI Editor, then adjust velocity.',
+        ja: 'MIDI Editorでノートを選んでベロシティを調整できます。'
+      },
+      how: {
+        ko: 'MIDI Editor에서 노트를 선택한 다음 벨로시티 값을 바꾸면 연주 세기가 바뀝니다.',
+        en: 'Select notes in the MIDI Editor and change velocity to adjust loudness.',
+        ja: 'MIDI Editorでノートを選び、ベロシティを変えると強さが変わります。'
+      }
+    },
+    library: {
+      how: {
+        ko: 'Library에서 저장·최근 작업한 MIDI를 다시 열어 편집을 이어갈 수 있습니다.',
+        en: 'Re-open saved or recent MIDI from Library to continue editing.',
+        ja: 'Libraryから保存済み・最近のMIDIを開き直して編集を続けられます。'
+      },
+      where: {
+        ko: '앱의 Library에서 저장한 작업물을 찾아 다시 열 수 있습니다.',
+        en: 'Open saved work from Library in the app.',
+        ja: 'アプリのLibraryから保存した作業を開き直せます。'
+      }
+    },
+    pdf_export: {
+      how: {
+        ko: 'Score Editor에서 악보를 확인한 뒤 PDF로 내보내기/저장할 수 있습니다. PDF→MIDI(악보 인식)와는 다른 흐름입니다.',
+        en: 'From Score Editor, export/save the score as PDF. This is different from PDF→MIDI recognition.',
+        ja: 'Score Editorから譜面をPDF書き出しできます。PDF→MIDI認識とは別フローです。'
+      },
+      exists: {
+        ko: '네. Score Editor에서 악보를 PDF로 내보낼 수 있습니다.',
+        en: 'Yes. You can export the score as PDF from Score Editor.',
+        ja: 'はい。Score Editorから譜面をPDF書き出しできます。'
+      }
     }
   };
 

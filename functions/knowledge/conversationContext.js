@@ -11,11 +11,22 @@ const FOLLOW_UP_RE =
 
 /** Clear product / feature nouns that can start or switch a topic. */
 const EXPLICIT_TOPIC_RE =
-  /(템포|bpm|속도|pdf|유튜브|youtube|yt|오디오|mp3|wav|m4a|사운드팩|soundpack|고품질|고음질|음원|easy\s*key|easier\s*key|쉬운\s*조|쉬운\s*키|편곡|arrange|instrument\s*arrange|예약\s*변환|예약변환|크레딧|라이선스|이용권|미리\s*듣|미리듣|구간|웨이브|파형|노트|음표|벨로시티|velocity|악보|musicxml|변환|midi\s*editor|미디\s*에디터|라이브러리|library|assistant|어시스턴트|설치\s*파일|installer|403|404|cuda|ffmpeg|로그|trial|체험|패치|업데이트|릴리스|릴리즈|공지|\d+\.\d+(?:\.\d+)?)/i;
+  /(템포|bpm|속도|pdf|유튜브|유튭|youtube|yt|오디오|mp3|wav|m4a|사운드팩|soundpack|고품질|고음질|음원|easy\s*key|easier\s*key|쉬운\s*조|쉬운\s*키|이지\s*키|편곡|arrange|instrument\s*arrange|예약\s*변환|예약변환|크레딧|라이선스|이용권|라이프\s*타임|lifetime|미리\s*듣|미리듣|구간|웨이브|파형|노트|음표|벨로시티|velocity|악보|musicxml|변환|midi\s*editor|미디\s*에디터|미디\s*편집|라이브러리|library|assistant|어시스턴트|설치\s*파일|installer|403|404|cuda|ffmpeg|로그|trial|체험|패치|업데이트|릴리스|릴리즈|공지|\d+\.\d+(?:\.\d+)?)/i;
+
+/**
+ * Strong feature anchors used when choosing which prior USER turn to carry.
+ * Excludes thin facet nouns (로그/노트 alone) so follow-ups do not steal the topic.
+ */
+const STRONG_TOPIC_RE =
+  /(템포|bpm|편곡|arrange|쉬운\s*키|쉬운\s*조|이지\s*키|easy\s*key|easier\s*key|cleanup|클린업|노트\s*정리|humanize|휴머나이즈|사람처럼\s*연주|analyze|유튜브|유튭|youtube|오디오|사운드팩|고품질|고음질|라이브러리|library|score\s*editor|악보|pdf|벨로시티|velocity|midi\s*editor|미디\s*편집|미디\s*에디터|예약\s*변환|예약변환|403|lifetime|라이프|이용권|체험|trial|크레딧|installer|uninstall|repair|미리\s*듣|미리듣|변환\s*실패|변환\s*방법|유튜브\s*변환)/i;
 
 /** Short pivots that should NOT inherit the previous topic (clarification path). */
 const AMBIGUOUS_PIVOT_RE =
   /(?:그리고\s*)?(소리|사운드|음|속도|빠르기|pdf)[은는을를]?\s*\??$/i;
+
+/** Facet / incomplete questions that refine the prior topic (checked before standalone-topic cut). */
+const FACET_FOLLOW_RE =
+  /^(왜|어떻게|어디|로그|원인|해결|그다음|다음엔|자세히|몇번|되돌리|저장\s*위치|원본|마음에|켜는\s*법|어디서\s*사|안돼|안됨|링크만|넣으면)/i;
 
 function normalizeSpace(s) {
   return String(s || '')
@@ -67,6 +78,25 @@ function hasExplicitTopic(text) {
   return EXPLICIT_TOPIC_RE.test(String(text || ''));
 }
 
+function hasStrongTopic(text) {
+  return STRONG_TOPIC_RE.test(String(text || ''));
+}
+
+/** Thin surface that should not become the carried topic root. */
+function isThinTopicSurface(text) {
+  const s = normalizeSpace(text);
+  if (!s) return true;
+  if (FACET_FOLLOW_RE.test(s) && !hasStrongTopic(s)) return true;
+  if (s.length <= 16 && !hasStrongTopic(s)) return true;
+  if (
+    /(원본|바뀌|저장은|적용|몇번|그다음|켜는|마음에|링크만|넣으면|재시도|잡았어|켰어|만\s*그래|어디\s*있어|어떻게\s*써|왜\s*그래)/i.test(s) &&
+    !hasStrongTopic(s)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * True when the latest message is a short referential / incomplete follow-up.
  * Does not rewrite standalone clear questions.
@@ -76,14 +106,33 @@ function looksLikeFollowUp(rawQuestion) {
   if (!raw) return false;
   if (isAmbiguousPivot(raw)) return false;
   if (/^(그중|그중에|그\s*중)/.test(raw)) return true;
+
+  // Facet refinements (even if they contain secondary nouns like 로그)
+  if (raw.length <= 28 && FACET_FOLLOW_RE.test(raw) && !hasStrongTopic(raw)) return true;
+  if (raw.length <= 18 && /^(안돼|안됨|자세히|그다음엔\??|다음엔\??|몇번이야\??|되돌리기는\??|켜는\s*법|저장\s*위치는\??)/i.test(raw)) {
+    return true;
+  }
+
+  // Short USER fact addenda — may include weak nouns without being a new topic root
+  if (
+    raw.length <= 28 &&
+    !hasStrongTopic(raw) &&
+    /(특정|일부|트랙만|악기만|만\s*그래|재시도|해도\s*안|같이\s*옮|여러\s*개|잡았어|켰어|아니\s+|나중에\s*자동|링크만|넣으면돼)/i.test(raw)
+  ) {
+    return true;
+  }
+
   // New clear topic of its own → not a carry-forward follow-up
   if (hasExplicitTopic(raw) && raw.length >= 8 && !FOLLOW_UP_RE.test(raw)) {
-    // e.g. "템포 변경 방법은?" — standalone
     if (!/^(그거|그건|이거|저거|아까|방금)/i.test(raw)) return false;
   }
   if (FOLLOW_UP_RE.test(raw)) return true;
   // Short how/where/why/install without its own topic noun
-  if (raw.length <= 22 && !hasExplicitTopic(raw) && /(설명|방법|어떻게|어디|왜|설치|해결|사용|초기화|리셋|자세히|원본|바뀌|저장은|적용)/i.test(raw)) {
+  if (
+    raw.length <= 22 &&
+    !hasExplicitTopic(raw) &&
+    /(설명|방법|어떻게|어디|왜|설치|해결|사용|초기화|리셋|자세히|원본|바뀌|저장은|적용)/i.test(raw)
+  ) {
     return true;
   }
   // Pronoun-only openers
@@ -106,7 +155,7 @@ function compressTopic(userText) {
 
 function detectFollowUpIntent(followUp) {
   const f = normalizeSpace(followUp);
-  if (/(해결|고치|안\s*되|실패|오류|에러)/i.test(f)) return 'troubleshoot';
+  if (/(해결|고치|안\s*되|안돼|실패|오류|에러)/i.test(f)) return 'troubleshoot';
   if (/(설치)/i.test(f)) return 'install';
   if (/(어디|위치)/i.test(f)) return 'where';
   if (/(초기화|리셋|reset)/i.test(f)) return 'reset';
@@ -143,13 +192,17 @@ function combineTopicAndIntent(topicCore, followUp, intent) {
 }
 
 /**
- * Pick the most recent prior USER turn that still carries topic substance.
- * Never reads AI text.
+ * Prefer strong feature anchors; never let thin follow-ups steal the topic.
  */
 function pickCarriedUserTopic(priorUserTurns) {
   const list = (priorUserTurns || []).filter(Boolean);
   for (let i = list.length - 1; i >= 0; i--) {
     const t = list[i];
+    if (hasStrongTopic(t)) return t;
+  }
+  for (let i = list.length - 1; i >= 0; i--) {
+    const t = list[i];
+    if (isThinTopicSurface(t)) continue;
     if (hasExplicitTopic(t) || compressTopic(t).length >= 4) return t;
   }
   return list.length ? list[list.length - 1] : null;
@@ -157,13 +210,6 @@ function pickCarriedUserTopic(priorUserTurns) {
 
 /**
  * @param {{ rawQuestion: string, priorUserTurns?: string[] }} input
- * @returns {{
- *   rawQuestion: string,
- *   resolvedQuestion: string,
- *   followUp: boolean,
- *   carriedTopic: string|null,
- *   ambiguousPivot: string|null
- * }}
  */
 function resolveConversationQuery({ rawQuestion, priorUserTurns = [] } = {}) {
   const raw = normalizeSpace(rawQuestion);
@@ -177,7 +223,6 @@ function resolveConversationQuery({ rawQuestion, priorUserTurns = [] } = {}) {
     };
   }
 
-  // Ambiguous short pivot ("그리고 소리는?") — do not inherit previous topic
   if (isAmbiguousPivot(raw)) {
     const pivot = extractAmbiguousPivot(raw);
     return {
@@ -189,7 +234,6 @@ function resolveConversationQuery({ rawQuestion, priorUserTurns = [] } = {}) {
     };
   }
 
-  // Clear standalone / topic-switch questions keep raw as resolved
   if (!looksLikeFollowUp(raw)) {
     return {
       rawQuestion: raw,
@@ -200,11 +244,24 @@ function resolveConversationQuery({ rawQuestion, priorUserTurns = [] } = {}) {
     };
   }
 
-  // Follow-up that also introduces a strong new topic → switch (prefer raw)
-  // Referential openers (그거/그중) keep prior topic even if a facet noun appears.
+  // Strong new topic on a follow-up-looking string → switch (except referential openers)
+  if (
+    hasStrongTopic(raw) &&
+    !/^(그거|그건|이거|저거|아까|방금|그중|그중에|그\s*중)/i.test(raw) &&
+    raw.length >= 6
+  ) {
+    return {
+      rawQuestion: raw,
+      resolvedQuestion: raw,
+      followUp: false,
+      carriedTopic: null,
+      ambiguousPivot: null
+    };
+  }
+
+  // Legacy: explicit topic switch for clear standalone product questions
   if (hasExplicitTopic(raw) && !/^(그거|그건|이거|저거|아까|방금|그중|그중에|그\s*중)/i.test(raw)) {
-    // e.g. "변환방법알려줘" after Arrange — new explicit topic, do not carry Arrange
-    if (raw.length >= 6) {
+    if (raw.length >= 6 && hasStrongTopic(raw)) {
       return {
         rawQuestion: raw,
         resolvedQuestion: raw,
@@ -242,8 +299,10 @@ module.exports = {
   resolveConversationQuery,
   looksLikeFollowUp,
   hasExplicitTopic,
+  hasStrongTopic,
   compressTopic,
   isAmbiguousPivot,
   FOLLOW_UP_RE,
-  EXPLICIT_TOPIC_RE
+  EXPLICIT_TOPIC_RE,
+  STRONG_TOPIC_RE
 };

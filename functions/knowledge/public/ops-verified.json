@@ -228,7 +228,14 @@
       "note",
       "move",
       "resize",
-      "delete"
+      "delete",
+      "다중선택",
+      "여러개 선택",
+      "여러개 옮기기",
+      "같이 옮기기",
+      "노트편집",
+      "noteedit",
+      "multi select"
     ],
     "summary": {
       "ko": "MIDI Editor 피아노롤에서 노트를 드래그해 이동·음높이·길이를 바꾸고, 선택 후 삭제할 수 있습니다.",

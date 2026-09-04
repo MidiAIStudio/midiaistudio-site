@@ -72,8 +72,8 @@ const QUERY_SYNONYM_RULES = [
   [/유튜브\s*(를\s*)?(midi|미디|변환)/gi, 'youtubetomidi'],
   [/유\s*튭/gi, '유튜브'],
   [/yt\s*변환/gi, 'youtubetomidi'],
-  [/pdf\s*[→\-–—]?\s*(to\s*)?(midi|미디)/gi, 'pdftomidi'],
-  [/pdf\s*악보/gi, 'pdftomidi'],
+  [/pdf\s*(?:를\s*)?[→\-–—]?\s*(to\s*)?(midi|미디)/gi, 'pdftomidi'],
+  [/pdf\s*악보|pdf\s*인식|악보\s*인식/gi, 'pdftomidi'],
   [/악보\s*(를\s*)?pdf/gi, 'pdfexport'],
   [/pdf\s*내보내/gi, 'pdfexport'],
   [/설치\s*방법/gi, '설치'],
@@ -81,7 +81,7 @@ const QUERY_SYNONYM_RULES = [
   [/재생\s*(하고\s*)?정지/gi, '재생정지'],
   [/\b(band|orchestra)\b|밴드|오케스트라/gi, (m) => `${String(m)} bandorchestra`],
   [/쉬운\s*조/gi, '쉬운조'],
-  [/쉬운\s*키|이지\s*키|easy\s*key|easier\s*key/gi, '쉬운조 easykey'],
+  [/쉬운\s*키|이지\s*키|easy\s*key|easier\s*key|키\s*쉽게|쉽게\s*(?:바꾸|변경)/gi, '쉬운조 easykey'],
   [/벨로\s*시티/gi, '벨로시티'],
   [/라이선스\s*기간|이용권\s*기간/gi, '라이선스기간'],
   // Product concept families (colloquial → stable retrieval tokens already on Knowledge docs)
@@ -89,8 +89,21 @@ const QUERY_SYNONYM_RULES = [
   [/노트\s*정리|클린\s*업|(?:^|[^a-z])cleanup/gi, 'cleanup 정리'],
   [/휴머나이즈|사람처럼\s*연주|humanize/gi, 'humanize'],
   [/예약\s*변환|예약변환|예액\s*변환|예액변환/gi, 'reservation 예약변환 schedule'],
-  [/미디\s*편집|midi\s*edit/gi, 'midieditor'],
-  [/악보\s*뽑|악보\s*내보내/gi, 'pdfexport scoreeditor']
+  [/미디\s*편집|미디에디터|midi\s*edit/gi, 'midieditor'],
+  [/악보\s*뽑|악보\s*내보내/gi, 'pdfexport scoreeditor'],
+  // Sound / playback quality colloquial → soundpack tokens
+  [/소리(?:가|가\s*)?(?:별로|이상|안\s*좋|이상해|안좋)|음질\s*(?:별로|이상|안\s*좋)|소리가\s*안/gi, '사운드팩 고품질음원 음질'],
+  [/음원\s*바꾸|소리\s*바꾸|사운드\s*바꾸/gi, '사운드팩 고품질음원'],
+  // Multi-select / batch note moves
+  [/다중\s*선택|여러\s*개\s*(?:선택|잡|옮)|노트\s*여러|같이\s*옮|multi[\s-]*select/gi, '다중선택 노트편집 noteedit'],
+  // Lifetime / pass colloquial
+  [/라이프\s*타임|라이프타임|평생\s*이용|평생권|자동\s*결제/gi, 'lifetime 이용권 자동결제'],
+  // Analyze / undo colloquial
+  [/(?:^|[^a-z])analyze|분석\s*(?:해|기능|뭐)/gi, 'analyze 분석'],
+  [/언두|리두|되돌리기|undo|redo/gi, 'undo redo 되돌리기'],
+  // Conversion failure / colloquial song→MIDI
+  [/변환\s*안\s*되|변환안돼|변환\s*안됨|변환안됨|변환\s*느/gi, '변환실패 youtubetomidi audiotomidi'],
+  [/노래(?:를)?\s*(?:를\s*)?피아노|피아노로\s*따|피아노로\s*바꾸/gi, 'youtubetomidi audiotomidi 피아노']
 ];
 
 function readJsonSafe(filePath) {
