@@ -1,11 +1,15 @@
 /**
  * Kakao OAuth callback for future admin Talk notifications ("나와의 채팅").
  * Stores refresh token via Admin SDK in a client-denied Firestore doc.
- * Never logs or returns token values.
+ * Never logs or returns token / secret / authorization-code values.
  */
 
 const KAKAO_TOKEN_URL = 'https://kauth.kakao.com/oauth/token';
+/** Must match Kakao Developers Redirect URI byte-for-byte (Gen2 Host may be *.run.app). */
+const CANONICAL_REDIRECT_URI =
+  'https://us-central1-midiaistudio.cloudfunctions.net/kakaoOAuthCallback';
 const DOC_PATH = { collection: 'systemPrivate', id: 'kakaoAdminOAuth' };
+const PLACEHOLDER_RE = /^(unset|none|disabled|-)$/i;
 
 function escHtml(value) {
   return String(value || '')
@@ -37,28 +41,25 @@ function sendHtml(res, status, title, lines) {
   res.status(status).set('Content-Type', 'text/html; charset=utf-8').send(htmlPage(title, lines));
 }
 
-/**
- * Redirect URI must match Kakao Developers exactly (no query string).
- * Prefer KAKAO_REDIRECT_URI when set; otherwise rebuild from the request host/path.
- */
 function resolveRedirectUri(req) {
   const configured = String(process.env.KAKAO_REDIRECT_URI || '').trim();
   if (configured) return configured;
-
-  const host = String(req.get('x-forwarded-host') || req.get('host') || '').trim();
-  const proto = String(req.get('x-forwarded-proto') || 'https').split(',')[0].trim() || 'https';
-  let path = String(req.path || '/').split('?')[0];
-  if (!path || path === '/') {
-    path = '/kakaoOAuthCallback';
-  }
-  if (!host) {
-    return 'https://us-central1-midiaistudio.cloudfunctions.net/kakaoOAuthCallback';
-  }
-  return `${proto}://${host}${path}`;
+  // Prefer canonical cloudfunctions.net URL — Gen2 may present Host as *.a.run.app.
+  return CANONICAL_REDIRECT_URI;
 }
 
 function envSecret(name) {
   return String(process.env[name] || '').trim();
+}
+
+function isPlaceholder(value) {
+  return !value || PLACEHOLDER_RE.test(value);
+}
+
+function safeDiag(fields) {
+  // Never accept raw secrets/tokens into logs.
+  const out = { tag: '[KAKAO_OAUTH]', ...fields };
+  console.error(JSON.stringify(out));
 }
 
 /**
@@ -69,7 +70,10 @@ function envSecret(name) {
 async function storeKakaoAdminTokens(db, FieldValue, tokenPayload) {
   const refreshToken = String(tokenPayload.refresh_token || '').trim();
   if (!refreshToken) {
-    throw Object.assign(new Error('Kakao token response missing refresh_token'), { status: 502 });
+    throw Object.assign(new Error('Kakao token response missing refresh_token'), {
+      status: 502,
+      stage: 'token_response_incomplete'
+    });
   }
 
   const nowMs = Date.now();
@@ -94,8 +98,6 @@ async function storeKakaoAdminTokens(db, FieldValue, tokenPayload) {
     update.refreshTokenExpiresAt = new Date(nowMs + refreshExpiresIn * 1000);
   }
 
-  // Merge so a later refresh that omits refresh_token can update access expiry only
-  // via a dedicated refresh helper; this callback always writes a refresh_token.
   await ref.set(update, { merge: true });
 }
 
@@ -105,8 +107,16 @@ async function storeKakaoAdminTokens(db, FieldValue, tokenPayload) {
  */
 async function exchangeAuthorizationCode(code, redirectUri) {
   const restApiKey = envSecret('KAKAO_REST_API_KEY');
-  if (!restApiKey) {
-    throw Object.assign(new Error('Kakao REST API key is not configured'), { status: 500 });
+  if (isPlaceholder(restApiKey)) {
+    safeDiag({
+      stage: 'secret_load_failed',
+      secret: 'KAKAO_REST_API_KEY',
+      reason: 'missing_or_placeholder'
+    });
+    throw Object.assign(new Error('Kakao REST API key is not configured'), {
+      status: 500,
+      stage: 'secret_load_failed'
+    });
   }
 
   const body = new URLSearchParams();
@@ -116,9 +126,8 @@ async function exchangeAuthorizationCode(code, redirectUri) {
   body.set('code', code);
 
   const clientSecret = envSecret('KAKAO_CLIENT_SECRET');
-  // Placeholder values allow the optional secret to exist in Secret Manager
-  // when Kakao Console Client Secret is disabled.
-  if (clientSecret && !/^(none|disabled|-)$/i.test(clientSecret)) {
+  const clientSecretIncluded = !isPlaceholder(clientSecret);
+  if (clientSecretIncluded) {
     body.set('client_secret', clientSecret);
   }
 
@@ -130,24 +139,56 @@ async function exchangeAuthorizationCode(code, redirectUri) {
     body: body.toString()
   });
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const errCode = data.error || data.error_code || res.status;
-    console.error('kakaoOAuthCallback token exchange failed', {
+  const data = await res.json().catch(() => null);
+  if (data == null) {
+    safeDiag({
+      stage: 'token_exchange_parse_failed',
       httpStatus: res.status,
-      error: String(errCode),
-      // Never log error_description if it might echo tokens; Kakao usually returns codes only.
-      hasErrorDescription: Boolean(data.error_description)
+      redirectUri,
+      clientSecretIncluded,
+      restKeyLen: restApiKey.length
     });
-    throw Object.assign(new Error('Kakao token exchange failed'), { status: 502, kakaoError: String(errCode) });
+    throw Object.assign(new Error('Kakao token response parse failed'), {
+      status: 502,
+      stage: 'token_exchange_parse_failed'
+    });
+  }
+
+  if (!res.ok) {
+    const oauthError = String(data.error || '').trim();
+    const oauthDesc = String(data.error_description || '').trim();
+    const kakaoCode = String(data.error_code || data.code || '').trim();
+    safeDiag({
+      stage: 'token_exchange_failed',
+      httpStatus: res.status,
+      error: oauthError || null,
+      error_description: oauthDesc || null,
+      kakao_code: kakaoCode || null,
+      redirectUri,
+      clientSecretIncluded,
+      restKeyLen: restApiKey.length,
+      redirectUriExactCanonical: redirectUri === CANONICAL_REDIRECT_URI
+    });
+    throw Object.assign(new Error('Kakao token exchange failed'), {
+      status: 502,
+      stage: 'token_exchange_failed',
+      kakaoError: oauthError || String(res.status),
+      kakaoCode: kakaoCode || null,
+      kakaoHttpStatus: res.status,
+      kakaoErrorDescription: oauthDesc || null
+    });
   }
 
   if (!data.access_token || !data.refresh_token) {
-    console.error('kakaoOAuthCallback token response incomplete', {
+    safeDiag({
+      stage: 'token_response_incomplete',
       hasAccessToken: Boolean(data.access_token),
       hasRefreshToken: Boolean(data.refresh_token)
     });
-    throw Object.assign(new Error('Kakao token response incomplete'), { status: 502 });
+    throw Object.assign(new Error('Kakao token response incomplete'), {
+      status: 502,
+      stage: 'token_response_incomplete'
+    });
   }
 
   return data;
@@ -185,7 +226,11 @@ function createKakaoOAuthCallbackHandler({ db, FieldValue }) {
     const oauthError = String(q.error || '').trim();
     if (oauthError) {
       const desc = String(q.error_description || '').trim();
-      console.warn('kakaoOAuthCallback oauth error', { error: oauthError, hasDescription: Boolean(desc) });
+      safeDiag({
+        stage: 'authorize_redirect_error',
+        error: oauthError,
+        error_description: desc || null
+      });
       return sendHtml(res, 400, 'Kakao authorization failed', [
         'Kakao authorization failed.',
         desc ? `Reason: ${desc}` : `Error: ${oauthError}`,
@@ -195,6 +240,7 @@ function createKakaoOAuthCallbackHandler({ db, FieldValue }) {
 
     const code = String(q.code || '').trim();
     if (!code) {
+      safeDiag({ stage: 'missing_authorization_code' });
       return sendHtml(res, 400, 'Missing authorization code', [
         'Kakao authorization code is missing.',
         'Open the Kakao authorize URL to sign in, then you will be redirected here with a code.',
@@ -205,23 +251,37 @@ function createKakaoOAuthCallbackHandler({ db, FieldValue }) {
     try {
       const redirectUri = resolveRedirectUri(req);
       const tokens = await exchangeAuthorizationCode(code, redirectUri);
-      await storeKakaoAdminTokens(db, FieldValue, tokens);
-      console.info('kakaoOAuthCallback success', {
+      try {
+        await storeKakaoAdminTokens(db, FieldValue, tokens);
+      } catch (storeErr) {
+        safeDiag({
+          stage: 'firestore_store_failed',
+          firestoreCode: storeErr && storeErr.code ? String(storeErr.code) : null,
+          message: storeErr && storeErr.message ? String(storeErr.message).slice(0, 200) : null
+        });
+        throw Object.assign(storeErr, { stage: 'firestore_store_failed', status: 500 });
+      }
+      console.info(JSON.stringify({
+        tag: '[KAKAO_OAUTH]',
+        stage: 'success',
         hasRefreshToken: true,
-        hasAccessToken: Boolean(tokens.access_token),
         expiresInPresent: Number.isFinite(Number(tokens.expires_in)),
         refreshExpiresInPresent: Number.isFinite(Number(tokens.refresh_token_expires_in))
-      });
+      }));
       return sendHtml(res, 200, 'Kakao authorization completed', [
         'Kakao authorization completed successfully.',
         'You can close this window.'
       ]);
     } catch (err) {
       const status = err.status || 500;
-      console.error('kakaoOAuthCallback', {
+      safeDiag({
+        stage: err.stage || 'callback_unhandled',
         status,
         message: err && err.message ? err.message : String(err),
-        kakaoError: err.kakaoError || null
+        kakaoError: err.kakaoError || null,
+        kakao_code: err.kakaoCode || null,
+        httpStatus: err.kakaoHttpStatus || null,
+        error_description: err.kakaoErrorDescription || null
       });
       return sendHtml(res, status, 'Kakao authorization error', [
         'Kakao authorization could not be completed.',
@@ -234,6 +294,7 @@ function createKakaoOAuthCallbackHandler({ db, FieldValue }) {
 
 module.exports = {
   DOC_PATH,
+  CANONICAL_REDIRECT_URI,
   createKakaoOAuthCallbackHandler,
   resolveRedirectUri,
   storeKakaoAdminTokens,
