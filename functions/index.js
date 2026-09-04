@@ -21,6 +21,8 @@ const openaiApiKey = defineSecret('OPENAI_API_KEY');
 /** Kakao OAuth (admin Talk notify prep) — Secret Manager; bound only on kakaoOAuthCallback */
 const kakaoRestApiKey = defineSecret('KAKAO_REST_API_KEY');
 const kakaoClientSecret = defineSecret('KAKAO_CLIENT_SECRET');
+/** Optional CLI header for testKakaoAdminNotification when Firebase admin JWT is unavailable */
+const kakaoAdminTestKey = defineSecret('KAKAO_ADMIN_TEST_KEY');
 
 function cfg(name, fallback = '') {
   return process.env[name] || fallback;
@@ -2337,6 +2339,26 @@ exports.kakaoOAuthCallback = onRequestV2(
   createKakaoOAuthCallbackHandler({
     db,
     FieldValue: admin.firestore.FieldValue
+  })
+);
+
+/**
+ * Admin-only Kakao Talk "나와의 채팅" connectivity test.
+ * Does not alter payment/inquiry Discord production notify paths.
+ */
+const { createTestKakaoAdminNotificationHandler } = require('./kakaoAdminNotify');
+exports.testKakaoAdminNotification = onRequestV2(
+  {
+    region: 'us-central1',
+    secrets: [kakaoRestApiKey, kakaoClientSecret, kakaoAdminTestKey],
+    timeoutSeconds: 30,
+    memory: '256MiB'
+  },
+  createTestKakaoAdminNotificationHandler({
+    db,
+    FieldValue: admin.firestore.FieldValue,
+    cors,
+    requireAdmin
   })
 );
 
