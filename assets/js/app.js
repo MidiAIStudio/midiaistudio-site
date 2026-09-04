@@ -1,6 +1,6 @@
 import { applyGuidesI18n } from './guides-i18n.js?v=20260720-drop-zone';
 import { initSupportChat, applySupportChatBranding } from './support-chat.js?v=support-chat-ai-brand-1';
-import { initTheme, readPreference, setThemePreference } from './theme.js?v=theme-1';
+import { initTheme, readPreference, setThemePreference } from './theme.js?v=theme-2';
 import {
   ensurePricing,
   checkoutContext,
@@ -4052,40 +4052,56 @@ function ensureTopbarProfileCreditSlot(){
   else panel.appendChild(slot);
 }
 
-function themePickerHtml(){
-  const themePref = readPreference();
-  const themeLabel = tr('theme_label');
-  const themeOpts = [
+function themeOptionsHtml(selected){
+  const pref = selected || readPreference();
+  return [
     ['system', tr('theme_system')],
     ['light', tr('theme_light')],
     ['dark', tr('theme_dark')]
-  ];
+  ].map(([id, label]) =>
+    `<option value="${id}"${pref===id?' selected':''}>${esc(label)}</option>`
+  ).join('');
+}
+
+function themePickerHtml(){
+  const themeLabel = tr('theme_label');
   return `<div class="account-theme-row" data-i18n-skip>
-      <span>${esc(themeLabel)}</span>
-      <div class="account-theme-segment" role="group" aria-label="${esc(themeLabel)}">
-        ${themeOpts.map(([id, label]) =>
-          `<button type="button" class="account-theme-opt${themePref===id?' is-active':''}" data-theme-pref="${id}" aria-pressed="${themePref===id?'true':'false'}">${esc(label)}</button>`
-        ).join('')}
-      </div>
+      <label class="account-theme-label" for="accountThemeSelect">${esc(themeLabel)}</label>
+      <select id="accountThemeSelect" class="account-theme-select" aria-label="${esc(themeLabel)}">
+        ${themeOptionsHtml()}
+      </select>
     </div>`;
+}
+
+function syncThemeSelects(pref){
+  const v = pref || readPreference();
+  document.querySelectorAll('#accountThemeSelect, #topbarThemeSelect').forEach((el) => {
+    if(el && el.value !== v) el.value = v;
+  });
+}
+
+function bindThemeSelect(el){
+  if(!el || el.dataset.themeBound === '1') return;
+  el.dataset.themeBound = '1';
+  el.addEventListener('change', () => {
+    const pref = String(el.value || 'system');
+    setThemePreference(pref);
+    syncThemeSelects(pref);
+  });
 }
 
 function bindAccountThemePicker(root){
   const box = root || $('accountMeta');
   if(!box) return;
-  box.querySelectorAll('[data-theme-pref]').forEach((btn) => {
-    if(btn.dataset.themeBound === '1') return;
-    btn.dataset.themeBound = '1';
-    btn.addEventListener('click', () => {
-      const pref = String(btn.getAttribute('data-theme-pref') || 'system');
-      setThemePreference(pref);
-      box.querySelectorAll('[data-theme-pref]').forEach((el) => {
-        const on = el.getAttribute('data-theme-pref') === pref;
-        el.classList.toggle('is-active', on);
-        el.setAttribute('aria-pressed', on ? 'true' : 'false');
-      });
-    });
-  });
+  bindThemeSelect(box.querySelector('#accountThemeSelect'));
+}
+
+function bindTopbarThemeSelect(){
+  const sel = $('topbarThemeSelect');
+  if(!sel) return;
+  sel.innerHTML = themeOptionsHtml();
+  bindThemeSelect(sel);
+  syncThemeSelects();
 }
 
 function renderAccountDashboard(uid, d, downloadData){
@@ -14362,6 +14378,26 @@ function ensureTopbarProfileAdminLink(){
   return adminLink;
 }
 
+function ensureTopbarProfileThemeSlot(){
+  const panel = $('topbarProfilePanel');
+  if(!panel) return null;
+  let slot = panel.querySelector('.topbar-profile-theme');
+  if(!slot){
+    slot = document.createElement('div');
+    slot.className = 'topbar-profile-theme';
+    slot.setAttribute('data-i18n-skip', '');
+    slot.innerHTML = `<label class="topbar-profile-theme-label" for="topbarThemeSelect">${esc(tr('theme_label'))}</label>
+      <select id="topbarThemeSelect" class="topbar-profile-theme-select" aria-label="${esc(tr('theme_label'))}"></select>`;
+    const links = panel.querySelector('.topbar-profile-links');
+    const credit = panel.querySelector('.topbar-profile-credit');
+    if(links) panel.insertBefore(slot, links);
+    else if(credit?.nextSibling) panel.insertBefore(slot, credit.nextSibling);
+    else panel.appendChild(slot);
+  }
+  bindTopbarThemeSelect();
+  return slot;
+}
+
 function ensureTopbarProfile(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
@@ -14369,6 +14405,7 @@ function ensureTopbarProfile(){
   if(wrap){
     ensureTopbarProfileCreditSlot();
     ensureTopbarProfileAdminLink();
+    ensureTopbarProfileThemeSlot();
     return wrap;
   }
 
@@ -14394,6 +14431,12 @@ function ensureTopbarProfile(){
       </div>
     </div>
     <div class="topbar-profile-credit" id="topbarProfileCredit" hidden></div>
+    <div class="topbar-profile-theme" data-i18n-skip>
+      <label class="topbar-profile-theme-label" for="topbarThemeSelect">${esc(tr('theme_label'))}</label>
+      <select id="topbarThemeSelect" class="topbar-profile-theme-select" aria-label="${esc(tr('theme_label'))}">
+        ${themeOptionsHtml()}
+      </select>
+    </div>
     <nav class="topbar-profile-links" hidden aria-hidden="true" aria-label="${esc(tr('profile_menu_aria'))}">
       <a href="${base}account.html">${esc(tr('profile_my_account'))}</a>
       <a href="${base}my-tickets.html">${esc(tr('profile_my_tickets'))}</a>
@@ -14427,6 +14470,7 @@ function ensureTopbarProfile(){
   if(logoutBtn) logoutBtn.onclick = ()=>{ doLogout(); };
   ensureTopbarProfileCreditSlot();
   paintProfileCreditStrip();
+  bindTopbarThemeSelect();
   return wrap;
 }
 function setTopbarProfileVisible(show){
@@ -14819,6 +14863,10 @@ if(!document.documentElement.classList.contains('sidebar-ready')){
 initTopbarActions();
 bindSidebar();
 initTheme();
+window.addEventListener('midiai:theme', (e) => {
+  syncThemeSelects(e?.detail?.preference || readPreference());
+});
+bindTopbarThemeSelect();
 applyStaticI18n();
 document.addEventListener('midiai:static-i18n', () => applyStaticI18n());
 applyGuidesI18n(lang);
