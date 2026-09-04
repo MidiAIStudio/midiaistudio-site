@@ -107,6 +107,22 @@ function looksLikeFollowUp(rawQuestion) {
   if (isAmbiguousPivot(raw)) return false;
   if (/^(그중|그중에|그\s*중)/.test(raw)) return true;
 
+  // Referential failure addenda refining a prior turn (not a new error topic)
+  if (
+    raw.length <= 48 &&
+    /(라고\s*떠|라\s*떠|그렇게\s*떠|실패라고|실패라\s*떠|실패\s*뜸|오류라고)/i.test(raw)
+  ) {
+    return true;
+  }
+  if (
+    raw.length <= 28 &&
+    /(실패|오류|에러|안\s*되|안돼)/i.test(raw) &&
+    !hasStrongTopic(raw) &&
+    !/(타임아웃|timeout|403|404|cuda|ffmpeg)/i.test(raw)
+  ) {
+    return true;
+  }
+
   // Facet refinements (even if they contain secondary nouns like 로그)
   if (raw.length <= 28 && FACET_FOLLOW_RE.test(raw) && !hasStrongTopic(raw)) return true;
   if (raw.length <= 18 && /^(안돼|안됨|자세히|그다음엔\??|다음엔\??|몇번이야\??|되돌리기는\??|켜는\s*법|저장\s*위치는\??)/i.test(raw)) {

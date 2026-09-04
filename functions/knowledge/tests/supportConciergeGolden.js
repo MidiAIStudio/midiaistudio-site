@@ -49,7 +49,7 @@ async function agent(question, opts = {}) {
     priorAiReplies: opts.priorAiReplies || [],
     clarifyEarly: null,
     adapters: emptyAdapters(opts.adapters || {}),
-    retrieveStaticInitial: () => retrieve(opts.rawQuestion || question),
+    retrieveStaticInitial: ({ limit, question: q }) => retrieve(q || opts.rawQuestion || question),
     isWeakOrConflictingRetrieval,
     detectAnswerIntent,
     callLlm: opts.callLlm || null
