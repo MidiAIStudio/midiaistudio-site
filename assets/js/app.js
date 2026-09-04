@@ -1866,6 +1866,17 @@ function isPurchaseCatalogReady(){
   if(isCreditPurchaseEnabled() && !isCreditCatalogReady()) return false;
   return true;
 }
+function purchasePlanGridCols(count){
+  const n = Math.max(0, Number(count) || 0);
+  if(n <= 1) return 1;
+  if(n === 2) return 2;
+  if(n === 3) return 3;
+  if(n === 4) return 2; // 2×2
+  if(n <= 6) return 3;  // 3×2 (6개)
+  if(n === 9) return 3; // 3×3
+  if(n <= 8) return 4;
+  return 4;
+}
 function renderPurchasePlanGrid(){
   const grid = $('purchasePlanGrid');
   if(!grid) return;
@@ -1875,6 +1886,7 @@ function renderPurchasePlanGrid(){
   if(!isPurchaseCatalogReady()){
     grid.setAttribute('aria-busy', 'true');
     grid.classList.add('is-catalog-loading');
+    grid.removeAttribute('data-cols');
     const loadingLabel = lang==='en' ? 'Loading prices…' : (lang==='ja' ? '価格を読み込み中…' : '가격 불러오는 중…');
     grid.innerHTML = `<p class="purchase-plan-loading" role="status">${esc(loadingLabel)}</p>`;
     return;
@@ -1960,6 +1972,8 @@ function renderPurchasePlanGrid(){
       }));
     }
   }
+  const cols = purchasePlanGridCols(cards.length);
+  grid.dataset.cols = String(cols);
   grid.innerHTML = cards.join('');
 }
 function renderPurchaseTrialRow(){
