@@ -639,34 +639,375 @@ html[data-theme='light'] .stat-card {
   color: var(--text) !important;
 }
 
-/* Admin */
+/* ——— Admin console / CRM / tickets / bulk ——— */
+html[data-theme='light'] body.admin-console-page,
+html[data-theme='light'] body.admin-page.admin-console-page {
+  --admin-stroke: rgba(36, 52, 78, 0.12);
+  --admin-stroke-muted: rgba(36, 52, 78, 0.08);
+  --admin-fill: rgba(36, 52, 78, 0.04);
+  --admin-fill-hover: rgba(107, 92, 231, 0.08);
+  --admin-header-fill: rgba(242, 245, 250, 0.96);
+  --crm-line: rgba(36, 52, 78, 0.12);
+  --crm-soft: rgba(36, 52, 78, 0.04);
+  --crm-accent: #4f6bed;
+  background: var(--body-bg) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] body.admin-console-page > .orb {
+  opacity: 0.12 !important;
+}
+
+html[data-theme='light'] .admin-console-page .topbar {
+  background: var(--admin-header-fill) !important;
+  border-bottom-color: var(--admin-stroke) !important;
+  box-shadow: 0 6px 18px rgba(40, 55, 85, 0.05) !important;
+}
+
 html[data-theme='light'] .admin-console-page .admin-sidebar {
-  background: var(--sidebar-bg) !important;
-  border-right-color: var(--line) !important;
+  background: #eef2f7 !important;
+  border-right-color: var(--admin-stroke) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-sidebar-brand strong {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-sidebar-brand span,
+html[data-theme='light'] .admin-console-page .admin-nav-group {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-nav-item {
+  color: var(--ink-soft) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-nav-item:hover {
+  background: rgba(107, 92, 231, 0.08) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-nav-item.is-active,
+html[data-theme='light'] .admin-console-page .admin-nav-item.active {
+  background: rgba(107, 92, 231, 0.12) !important;
+  color: var(--text) !important;
+  box-shadow: inset 2px 0 0 rgba(107, 92, 231, 0.85) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-sidebar-site {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-sidebar-site:hover {
+  color: var(--text) !important;
+  background: rgba(36, 52, 78, 0.06) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-console-pagehead h1,
+html[data-theme='light'] .admin-console-page .admin-console-title,
+html[data-theme='light'] #adminConsoleTitle {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-console-lead,
+html[data-theme='light'] #adminConsoleLead {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-work-tabs-slot .admin-page-tab {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-work-tabs-slot .admin-page-tab.is-active {
+  color: var(--text) !important;
+  background: rgba(107, 92, 231, 0.12) !important;
+  border-color: rgba(107, 92, 231, 0.32) !important;
+}
+
+html[data-theme='light'] .admin-gate,
+html[data-theme='light'] .admin-flash {
+  color: var(--ink-soft) !important;
+}
+
+html[data-theme='light'] .admin-flash {
+  background: rgba(8, 145, 178, 0.08) !important;
+  border-color: rgba(8, 145, 178, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-flash a {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .dash-card,
+html[data-theme='light'] .admin-page .admin-quick-card,
+html[data-theme='light'] .admin-page .crm-stat,
+html[data-theme='light'] .admin-page .admin-crm-summary-card {
+  background: #fff !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+  box-shadow: var(--final-shadow) !important;
+}
+
+html[data-theme='light'] .dash-card b,
+html[data-theme='light'] .admin-page .admin-quick-card b,
+html[data-theme='light'] .admin-page .crm-stat b,
+html[data-theme='light'] .admin-page .admin-crm-summary-card span b {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .dash-card small,
+html[data-theme='light'] .admin-page .crm-stat span {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-panel .admin-section-head h3,
+html[data-theme='light'] .admin-panel .form-card h3,
+html[data-theme='light'] .admin-message-view-title,
+html[data-theme='light'] .admin-page .admin-tickets-section .admin-section-head h3,
+html[data-theme='light'] .admin-page .admin-ticket-replies-block h4,
+html[data-theme='light'] .admin-console-page .admin-license-credit-head h3 {
+  color: var(--heading) !important;
 }
 
 html[data-theme='light'] .admin-table th,
 html[data-theme='light'] .admin-panel .admin-table th,
-html[data-theme='light'] .board-table th {
+html[data-theme='light'] .board-table th,
+html[data-theme='light'] .bulk-email-hist-table th {
   background: #eef2f7 !important;
   color: var(--muted) !important;
 }
 
 html[data-theme='light'] .admin-table-wrap,
-html[data-theme='light'] .admin-panel .admin-table-wrap {
-  background: var(--surface) !important;
+html[data-theme='light'] .admin-panel .admin-table-wrap,
+html[data-theme='light'] .admin-page .admin-tickets-section .admin-table-wrap {
+  background: #fff !important;
   border-color: var(--line) !important;
 }
 
 html[data-theme='light'] .admin-panel .admin-table td,
-html[data-theme='light'] .admin-gate,
-html[data-theme='light'] .admin-message-view-body {
+html[data-theme='light'] .admin-panel .admin-table td b,
+html[data-theme='light'] .admin-message-view-body,
+html[data-theme='light'] .admin-page .admin-ticket-title-btn b,
+html[data-theme='light'] .admin-page .admin-ticket-body,
+html[data-theme='light'] .admin-page .admin-ticket-reply p,
+html[data-theme='light'] .board-admin-hidden td b,
+html[data-theme='light'] .board-admin-hidden td small {
+  color: var(--ink-soft) !important;
+}
+
+html[data-theme='light'] .admin-panel .admin-table td small,
+html[data-theme='light'] .admin-page .admin-ticket-meta,
+html[data-theme='light'] .admin-page .admin-ticket-meta em {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-ticket-title-btn:hover b {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .admin-page .admin-tickets-section,
+html[data-theme='light'] .admin-page .admin-ticket-expand td,
+html[data-theme='light'] .admin-page .admin-chat-thread {
+  background: #f7f9fc !important;
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-chat-bubble.is-ai,
+html[data-theme='light'] .admin-page .admin-chat-system {
+  background: #fff !important;
+  border-color: var(--line) !important;
   color: var(--text) !important;
 }
 
+html[data-theme='light'] .admin-page .admin-chat-meta {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-page .secondary,
+html[data-theme='light'] .admin-page .ghost,
+html[data-theme='light'] .admin-page button.secondary,
+html[data-theme='light'] .admin-page button.ghost,
+html[data-theme='light'] .admin-page .mini-btn {
+  color: var(--text) !important;
+  background: #fff !important;
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-page .secondary:hover,
+html[data-theme='light'] .admin-page .ghost:hover,
+html[data-theme='light'] .admin-page .mini-btn:hover {
+  color: var(--text) !important;
+  background: rgba(36, 52, 78, 0.05) !important;
+  border-color: rgba(107, 92, 231, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-page .danger-btn,
+html[data-theme='light'] .admin-page button.danger-btn,
+html[data-theme='light'] .admin-page .secondary.danger-btn,
+html[data-theme='light'] .danger-btn {
+  color: #be123c !important;
+  border-color: rgba(244, 63, 94, 0.35) !important;
+  background: rgba(244, 63, 94, 0.08) !important;
+}
+
+html[data-theme='light'] .admin-page .primary {
+  color: #fff !important;
+}
+
+/* CRM */
+html[data-theme='light'] .admin-page .admin-crm,
+html[data-theme='light'] .admin-page .admin-crm-pane,
+html[data-theme='light'] .admin-page .admin-crm-list-pane,
+html[data-theme='light'] .admin-page .admin-crm-detail-pane,
+html[data-theme='light'] .admin-page .admin-crm-toolbar,
+html[data-theme='light'] .admin-page .admin-crm-drawer-panel {
+  background: #fff !important;
+  border-color: var(--crm-line) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-list-head,
+html[data-theme='light'] .admin-page .admin-crm-pager-info,
+html[data-theme='light'] .admin-page .admin-crm-member-meta span,
+html[data-theme='light'] .admin-page .admin-crm-empty,
+html[data-theme='light'] .admin-page .admin-crm-email,
+html[data-theme='light'] .admin-page .admin-crm-uid,
+html[data-theme='light'] .admin-page .admin-crm-header-meta,
+html[data-theme='light'] .admin-page .admin-crm-header-meta em,
+html[data-theme='light'] .admin-page .admin-id-item,
+html[data-theme='light'] .admin-console-page .admin-id-item,
+html[data-theme='light'] .admin-console-page .admin-license-expand-meta {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-member-top b,
+html[data-theme='light'] .admin-page .admin-crm-title-row h2,
+html[data-theme='light'] .admin-page .admin-crm-feed-item b,
+html[data-theme='light'] .admin-page .admin-crm-timeline-item b,
+html[data-theme='light'] .admin-page .admin-crm-post-main b,
+html[data-theme='light'] .admin-page .crm-mini-table .crm-td-id,
+html[data-theme='light'] .admin-page .admin-crm-order-dl dd,
+html[data-theme='light'] .admin-page .admin-crm-usage-value,
+html[data-theme='light'] .admin-page .admin-crm-access-list dd,
+html[data-theme='light'] .admin-page .crm-chip,
+html[data-theme='light'] .admin-page .admin-crm-menu button,
+html[data-theme='light'] .admin-page .admin-id-item code.mono,
+html[data-theme='light'] .admin-console-page .admin-id-item code.mono,
+html[data-theme='light'] .admin-page .admin-crm-hwid-value {
+  color: var(--ink-soft) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-card-avatar,
+html[data-theme='light'] .admin-page .admin-crm-avatar.is-fallback {
+  color: var(--ink-soft) !important;
+  background: rgba(36, 52, 78, 0.06) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-member {
+  border-bottom-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-member:hover,
+html[data-theme='light'] .admin-page .admin-crm-member.is-selected {
+  background: rgba(79, 107, 237, 0.06) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-menu {
+  background: #fff !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-menu button:hover {
+  background: rgba(36, 52, 78, 0.05) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-menu button.is-danger {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-toolbar input,
+html[data-theme='light'] .admin-page .admin-crm-toolbar select,
+html[data-theme='light'] .admin-panel .admin-list-toolbar select,
+html[data-theme='light'] .admin-panel .search-input.compact,
+html[data-theme='light'] .admin-page .admin-crm-filter input,
+html[data-theme='light'] .admin-page .admin-crm-filter select {
+  background: #fff !important;
+  color: var(--text) !important;
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-license-expand-col,
+html[data-theme='light'] .admin-page .admin-crm-proof-item,
+html[data-theme='light'] .admin-page .admin-crm-collapse,
+html[data-theme='light'] .edit-field-note .edit-note {
+  background: var(--surface-2) !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+/* CRM badges — darker ink on pastel fills */
+html[data-theme='light'] .admin-page .crm-badge.is-lifetime {
+  color: #5b21b6 !important;
+  background: rgba(107, 92, 231, 0.12) !important;
+  border-color: rgba(107, 92, 231, 0.28) !important;
+}
+html[data-theme='light'] .admin-page .crm-badge.is-trial {
+  color: #a16207 !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+html[data-theme='light'] .admin-page .crm-badge.is-period {
+  color: #c2410c !important;
+  background: rgba(251, 146, 60, 0.14) !important;
+  border-color: rgba(251, 146, 60, 0.3) !important;
+}
+html[data-theme='light'] .admin-page .crm-badge.is-banned,
+html[data-theme='light'] .admin-page .crm-badge.is-suspended,
+html[data-theme='light'] .admin-page .crm-role.is-admin {
+  color: #be123c !important;
+  background: rgba(244, 63, 94, 0.1) !important;
+  border-color: rgba(244, 63, 94, 0.28) !important;
+}
+html[data-theme='light'] .admin-page .crm-badge.is-active,
+html[data-theme='light'] .admin-page .crm-activity.is-online,
+html[data-theme='light'] .admin-page .crm-role.is-user {
+  color: #047857 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.28) !important;
+}
+html[data-theme='light'] .admin-page .crm-activity.is-active {
+  color: #1d4ed8 !important;
+  background: rgba(59, 130, 246, 0.12) !important;
+}
+html[data-theme='light'] .admin-page .crm-activity.is-idle {
+  color: #a16207 !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+}
+html[data-theme='light'] .admin-page .crm-badge.is-loading,
+html[data-theme='light'] .admin-page .crm-badge.is-expired,
+html[data-theme='light'] .admin-page .crm-badge.is-none,
+html[data-theme='light'] .admin-page .crm-activity.is-offline {
+  color: #64748b !important;
+  background: rgba(100, 116, 139, 0.1) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+}
+
+html[data-theme='light'] .admin-page .admin-portone-sync-hint,
+html[data-theme='light'] .admin-page .admin-portone-sync-hint b {
+  color: #a16207 !important;
+}
+
+html[data-theme='light'] .admin-portone-cancel-warn {
+  color: #be123c !important;
+}
+
+/* Bulk email / modals */
 html[data-theme='light'] .edit-modal,
 html[data-theme='light'] .credit-history-modal,
-html[data-theme='light'] .md-modal {
+html[data-theme='light'] .md-modal,
+html[data-theme='light'] .bulk-composer-modal {
   background: #f8fafc !important;
   border-color: var(--line) !important;
   color: var(--text) !important;
@@ -677,6 +1018,160 @@ html[data-theme='light'] .credit-history-backdrop,
 html[data-theme='light'] .md-modal-backdrop,
 html[data-theme='light'] .bulk-composer-backdrop {
   background: rgba(30, 42, 66, 0.35) !important;
+}
+
+html[data-theme='light'] .bulk-email-center-tab {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .bulk-email-center-tab.is-active {
+  color: var(--text) !important;
+  border-bottom-color: #7c3aed !important;
+}
+
+html[data-theme='light'] .bulk-email-hist-meta p,
+html[data-theme='light'] .bulk-app-preview-body,
+html[data-theme='light'] .bulk-schedule-detail p,
+html[data-theme='light'] .bulk-confirm-copy,
+html[data-theme='light'] .bulk-send-mode-opt {
+  color: var(--ink-soft) !important;
+}
+
+html[data-theme='light'] .bulk-recipient-card b,
+html[data-theme='light'] .bulk-recipient-row b,
+html[data-theme='light'] .bulk-app-preview-title {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .bulk-recipient-card,
+html[data-theme='light'] .bulk-app-preview-card,
+html[data-theme='light'] .bulk-decorate-panel,
+html[data-theme='light'] .bulk-preview-frame {
+  background: #fff !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .bulk-email-dup-warn,
+html[data-theme='light'] .bulk-confirm-warn {
+  color: #a16207 !important;
+}
+
+html[data-theme='light'] .bulk-composer-error,
+html[data-theme='light'] .bulk-email-hist-fails ul {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .bulk-email-hist-filters .mini-btn.is-active,
+html[data-theme='light'] .bulk-preview-width .mini-btn.is-active {
+  color: var(--text) !important;
+  background: rgba(107, 92, 231, 0.12) !important;
+  border-color: rgba(107, 92, 231, 0.35) !important;
+}
+
+html[data-theme='light'] .admin-console-backdrop {
+  background: rgba(30, 42, 66, 0.28) !important;
+}
+
+.admin-sidebar-theme {
+  display: grid;
+  gap: 6px;
+  margin: 10px 8px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--admin-stroke, var(--line));
+  background: var(--admin-fill, rgba(255, 255, 255, 0.03));
+  flex: none;
+}
+
+.admin-sidebar-theme-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.admin-sidebar-theme-select {
+  width: 100%;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--admin-stroke, var(--line));
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 8px;
+}
+
+html[data-theme='light'] .admin-sidebar-theme {
+  background: #fff !important;
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-sidebar-theme-select {
+  background: #fff !important;
+  color: var(--text) !important;
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-home-link {
+  background: #fff !important;
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-home-link b {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-home-link small {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-preview-page .admin-preview-badge {
+  color: #0e7490 !important;
+  background: rgba(8, 145, 178, 0.12) !important;
+  border-color: rgba(8, 145, 178, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-preview-page .admin-dash-user {
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-preview-page .admin-dash-user:hover {
+  background: rgba(79, 107, 237, 0.06) !important;
+}
+
+html[data-theme='light'] .admin-preview-page .admin-dash-user-main b {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .admin-preview-page .admin-dash-user-main small,
+html[data-theme='light'] .admin-preview-page .admin-dash-user-meta em {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-page-tab,
+html[data-theme='light'] .admin-console-page .admin-page-tab em,
+html[data-theme='light'] .admin-console-page .admin-logs-tab,
+html[data-theme='light'] .admin-console-page .admin-logs-tab em {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-page-tab.is-active,
+html[data-theme='light'] .admin-console-page .admin-page-tab.is-active em,
+html[data-theme='light'] .admin-console-page .admin-page-tab:hover,
+html[data-theme='light'] .admin-console-page .admin-logs-tab.is-active,
+html[data-theme='light'] .admin-console-page .admin-logs-tab.is-active em,
+html[data-theme='light'] .admin-console-page .admin-logs-tab:hover {
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-page-tab.is-active,
+html[data-theme='light'] .admin-console-page .admin-logs-tab.is-active {
+  background: transparent !important;
+  border-bottom-color: rgba(107, 92, 231, 0.85) !important;
 }
 
 /* Support chat */

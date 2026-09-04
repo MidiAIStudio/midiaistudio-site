@@ -140,4 +140,52 @@
   }
 
   document.addEventListener('click', onClick, true);
+
+  function readThemePref() {
+    try {
+      var v = String(localStorage.getItem('midiai_theme') || '').toLowerCase();
+      if (v === 'light' || v === 'dark' || v === 'system') return v;
+    } catch (_) {}
+    return 'system';
+  }
+
+  function applyThemePref(pref) {
+    var preference = pref === 'light' || pref === 'dark' || pref === 'system' ? pref : 'system';
+    var effective = preference;
+    if (preference === 'system') {
+      try {
+        effective = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+          ? 'light'
+          : 'dark';
+      } catch (_) {
+        effective = 'dark';
+      }
+    }
+    try { localStorage.setItem('midiai_theme', preference); } catch (_) {}
+    document.documentElement.setAttribute('data-theme-preference', preference);
+    document.documentElement.setAttribute('data-theme', effective);
+    document.documentElement.style.colorScheme = effective;
+    try {
+      window.dispatchEvent(new CustomEvent('midiai:theme', {
+        detail: { preference: preference, effective: effective }
+      }));
+    } catch (_) {}
+    return preference;
+  }
+
+  function bindAdminThemeSelect() {
+    var sel = $('adminThemeSelect');
+    if (!sel || sel.dataset.themeBound === '1') return;
+    sel.dataset.themeBound = '1';
+    sel.value = readThemePref();
+    sel.addEventListener('change', function () {
+      applyThemePref(sel.value);
+    });
+    window.addEventListener('midiai:theme', function (e) {
+      var pref = (e && e.detail && e.detail.preference) || readThemePref();
+      if (sel.value !== pref) sel.value = pref;
+    });
+  }
+
+  bindAdminThemeSelect();
 })();

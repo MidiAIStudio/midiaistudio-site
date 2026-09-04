@@ -41,7 +41,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/css/style.css?v=theme-2">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=theme-3">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=theme-6">
 
 </head>
 <body class="admin-page admin-console-page admin-preview-page portal-page" data-admin-view="home">
@@ -90,6 +90,14 @@
         <button type="button" class="admin-nav-item" data-admin-nav="content">콘텐츠</button>
         <button type="button" class="admin-nav-item" data-admin-nav="pricing" data-admin-tab="pricing">가격·상품</button>
       </nav>
+      <div class="admin-sidebar-theme" data-i18n-skip>
+        <label class="admin-sidebar-theme-label" for="adminThemeSelect">테마</label>
+        <select id="adminThemeSelect" class="admin-sidebar-theme-select" aria-label="테마">
+          <option value="system">시스템 설정</option>
+          <option value="light">라이트</option>
+          <option value="dark">다크</option>
+        </select>
+      </div>
       <a class="admin-sidebar-site" href="./index.html">사이트로 돌아가기</a>
     </aside>
     <div class="admin-console-stage">
@@ -780,7 +788,7 @@
     </div>
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
-  <script src="./assets/js/admin-nav.js?v=admin-pay-1"></script>
+  <script src="./assets/js/admin-nav.js?v=theme-5"></script>
   <script type="module" src="./assets/js/admin-preview.js?v=credit-ledger-v2-3"></script>
 </body>
 </html>
