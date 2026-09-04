@@ -11,14 +11,11 @@ const portoneRefundSync = require('./portoneRefundSync');
 const userNotify = require('./userNotify');
 const paypalCurrency = require('./paypalCurrency');
 
-/** Discord webhooks — set via Secret Manager / `firebase functions:secrets:set` */
-const discordInquiryWebhook = defineSecret('DISCORD_INQUIRY_WEBHOOK');
-const discordPaymentWebhook = defineSecret('DISCORD_PAYMENT_WEBHOOK');
 const gmailUser = defineSecret('GMAIL_USER');
 const gmailAppPassword = defineSecret('GMAIL_APP_PASSWORD');
 /** Support AI LLM — Secret Manager; bound only on supportAi* HTTPS functions */
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
-/** Kakao OAuth (admin Talk notify prep) — Secret Manager; bound only on kakaoOAuthCallback */
+/** Kakao OAuth / admin Talk notify — Secret Manager */
 const kakaoRestApiKey = defineSecret('KAKAO_REST_API_KEY');
 const kakaoClientSecret = defineSecret('KAKAO_CLIENT_SECRET');
 /** Optional CLI header for testKakaoAdminNotification when Firebase admin JWT is unavailable */
@@ -2053,7 +2050,7 @@ const {
   notifyInquiryCreated,
   notifyPaymentCompleted,
   isLicenseGrantedOrder
-} = require('./discordNotify');
+} = require('./adminNotify');
 const SUPPORT_AI_WAITING_MODE = 'waiting_human';
 const { broadcastPublishedContent } = require('./broadcastNotify');
 
@@ -2166,22 +2163,22 @@ exports.onAdminBulkCreditQueued = functionsV1
   });
 
 /**
- * New 1:1 support ticket → Discord inquiry channel.
- * Uses DISCORD_INQUIRY_WEBHOOK secret. Never blocks the client create path.
+ * New 1:1 support ticket → Kakao admin alert (counselor-request mode only).
+ * Side-effect only — never blocks the client create path.
  */
-exports.notifyDiscordOnInquiryCreate = functionsV1
-  .runWith({ secrets: [discordInquiryWebhook], timeoutSeconds: 30, memory: '256MB' })
+exports.notifyAdminOnInquiryCreate = functionsV1
+  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 30, memory: '256MB' })
   .firestore.document('supportTickets/{ticketId}')
   .onCreate(async (snap, context) => {
     const ticketId = context.params.ticketId;
     try {
       // Most AI-chat tickets are created in MODE.AI.
-      // Only notify Discord when the ticket is already in counselor-request mode.
+      // Only notify when the ticket is already in counselor-request mode.
       const data = snap.data() || {};
       if (data.conversationMode !== SUPPORT_AI_WAITING_MODE) return null;
       await notifyInquiryCreated(ticketId, data, snap.ref);
     } catch (err) {
-      console.error('notifyDiscordOnInquiryCreate', {
+      console.error('notifyAdminOnInquiryCreate', {
         ticketId,
         message: err && err.message ? err.message : String(err)
       });
@@ -2193,8 +2190,8 @@ exports.notifyDiscordOnInquiryCreate = functionsV1
  * AI-chat에서 "상담사 연결 요청" 시점 알림.
  * supportTickets/{ticketId}의 conversationMode가 waiting_human로 바뀔 때만 전송.
  */
-exports.notifyDiscordOnHumanRequest = functionsV1
-  .runWith({ secrets: [discordInquiryWebhook], timeoutSeconds: 30, memory: '256MB' })
+exports.notifyAdminOnHumanRequest = functionsV1
+  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 30, memory: '256MB' })
   .firestore.document('supportTickets/{ticketId}')
   .onUpdate(async (change, context) => {
     const ticketId = context.params.ticketId;
@@ -2207,10 +2204,10 @@ exports.notifyDiscordOnHumanRequest = functionsV1
       if (before.conversationMode === after.conversationMode) return null;
       if (after.conversationMode !== SUPPORT_AI_WAITING_MODE) return null;
 
-      // Idempotency: notifyInquiryCreated() uses discordNotified flag on the doc.
+      // Idempotency: notifyInquiryCreated() uses adminNotified / legacy discordNotified.
       await notifyInquiryCreated(ticketId, after, change.after.ref);
     } catch (err) {
-      console.error('notifyDiscordOnHumanRequest', {
+      console.error('notifyAdminOnHumanRequest', {
         ticketId,
         message: err && err.message ? err.message : String(err)
       });
@@ -2219,22 +2216,22 @@ exports.notifyDiscordOnHumanRequest = functionsV1
   });
 
 /**
- * Order completed + license issued → Discord payment channel.
- * Uses DISCORD_PAYMENT_WEBHOOK secret. Ignores created/cancelled/failed orders.
+ * Order completed + license issued → Kakao admin payment alert.
+ * Ignores created/cancelled/failed orders. Side-effect only.
  */
-exports.notifyDiscordOnOrderCompleted = functionsV1
-  .runWith({ secrets: [discordPaymentWebhook], timeoutSeconds: 30, memory: '256MB' })
+exports.notifyAdminOnOrderCompleted = functionsV1
+  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 30, memory: '256MB' })
   .firestore.document('orders/{orderId}')
   .onWrite(async (change, context) => {
     const orderId = context.params.orderId;
     try {
       if (!change.after.exists) return null;
       const after = change.after.data() || {};
-      if (after.discordNotified === true) return null;
+      if (after.adminNotified === true || after.discordNotified === true) return null;
       if (!isLicenseGrantedOrder(after)) return null;
       await notifyPaymentCompleted(orderId, after, change.after.ref);
     } catch (err) {
-      console.error('notifyDiscordOnOrderCompleted', {
+      console.error('notifyAdminOnOrderCompleted', {
         orderId,
         message: err && err.message ? err.message : String(err)
       });
@@ -2323,9 +2320,8 @@ exports.supportAiHandoffSummary = onRequestV2(
 );
 
 /**
- * Kakao Login OAuth redirect callback for future admin "나와의 채팅" notifications.
- * Does not replace Discord webhooks. Does not change payment/inquiry production notify paths.
- * Secrets: KAKAO_REST_API_KEY (required), KAKAO_CLIENT_SECRET (optional if enabled in Kakao console).
+ * Kakao Login OAuth redirect callback for admin "나와의 채팅" notifications.
+ * Secrets: KAKAO_REST_API_KEY (required), KAKAO_CLIENT_SECRET (when enabled in Kakao console).
  * Refresh token stored in Firestore systemPrivate/kakaoAdminOAuth (client read/write denied).
  */
 const { createKakaoOAuthCallbackHandler } = require('./kakaoOAuth');
@@ -2344,7 +2340,6 @@ exports.kakaoOAuthCallback = onRequestV2(
 
 /**
  * Admin-only Kakao Talk "나와의 채팅" connectivity test.
- * Does not alter payment/inquiry Discord production notify paths.
  */
 const { createTestKakaoAdminNotificationHandler } = require('./kakaoAdminNotify');
 exports.testKakaoAdminNotification = onRequestV2(

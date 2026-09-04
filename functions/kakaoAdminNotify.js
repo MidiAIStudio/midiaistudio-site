@@ -153,8 +153,8 @@ async function sendKakaoAdminNotification(db, FieldValue, { type, title, message
   const accessToken = await getKakaoAdminAccessToken(db, FieldValue);
   const headline = String(title || 'MidiAI Studio').trim();
   const body = String(message || '').trim();
-  const typeLine = type ? `[${String(type).trim()}]` : '';
-  const text = truncateText([headline, typeLine, body].filter(Boolean).join('\n\n'));
+  // `type` is for logs only — keep Kakao text concise (200 char limit).
+  const text = truncateText([headline, body].filter(Boolean).join('\n\n'));
 
   const templateObject = {
     object_type: 'text',
@@ -196,7 +196,7 @@ async function sendKakaoAdminNotification(db, FieldValue, { type, title, message
     type: type || null,
     textLength: text.length
   }));
-  return { ok: true };
+  return { ok: true, textLength: text.length };
 }
 
 /**
