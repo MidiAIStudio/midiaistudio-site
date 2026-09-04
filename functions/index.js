@@ -2167,7 +2167,7 @@ exports.onAdminBulkCreditQueued = functionsV1
  * Side-effect only — never blocks the client create path.
  */
 exports.notifyAdminOnInquiryCreate = functionsV1
-  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 30, memory: '256MB' })
+  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 60, memory: '256MB' })
   .firestore.document('supportTickets/{ticketId}')
   .onCreate(async (snap, context) => {
     const ticketId = context.params.ticketId;
@@ -2175,7 +2175,15 @@ exports.notifyAdminOnInquiryCreate = functionsV1
       // Most AI-chat tickets are created in MODE.AI.
       // Only notify when the ticket is already in counselor-request mode.
       const data = snap.data() || {};
-      if (data.conversationMode !== SUPPORT_AI_WAITING_MODE) return null;
+      if (data.conversationMode !== SUPPORT_AI_WAITING_MODE) {
+        console.log(JSON.stringify({
+          tag: '[ADMIN_NOTIFY]',
+          stage: 'create_skip_not_waiting',
+          ticketId,
+          mode: data.conversationMode || null
+        }));
+        return null;
+      }
       await notifyInquiryCreated(ticketId, data, snap.ref);
     } catch (err) {
       console.error('notifyAdminOnInquiryCreate', {
@@ -2191,7 +2199,7 @@ exports.notifyAdminOnInquiryCreate = functionsV1
  * supportTickets/{ticketId}의 conversationMode가 waiting_human로 바뀔 때만 전송.
  */
 exports.notifyAdminOnHumanRequest = functionsV1
-  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 30, memory: '256MB' })
+  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 60, memory: '256MB' })
   .firestore.document('supportTickets/{ticketId}')
   .onUpdate(async (change, context) => {
     const ticketId = context.params.ticketId;
@@ -2202,9 +2210,18 @@ exports.notifyAdminOnHumanRequest = functionsV1
 
       // Only trigger on conversationMode transition to counselor-request mode.
       if (before.conversationMode === after.conversationMode) return null;
-      if (after.conversationMode !== SUPPORT_AI_WAITING_MODE) return null;
+      if (after.conversationMode !== SUPPORT_AI_WAITING_MODE) {
+        console.log(JSON.stringify({
+          tag: '[ADMIN_NOTIFY]',
+          stage: 'human_skip_not_waiting',
+          ticketId,
+          from: before.conversationMode || null,
+          to: after.conversationMode || null
+        }));
+        return null;
+      }
 
-      // Idempotency: notifyInquiryCreated() uses adminNotified / legacy discordNotified.
+      // Idempotency: kakaoAlertSent / legacy discordNotified (not CRM adminNotified).
       await notifyInquiryCreated(ticketId, after, change.after.ref);
     } catch (err) {
       console.error('notifyAdminOnHumanRequest', {
@@ -2227,7 +2244,9 @@ exports.notifyAdminOnOrderCompleted = functionsV1
     try {
       if (!change.after.exists) return null;
       const after = change.after.data() || {};
-      if (after.adminNotified === true || after.discordNotified === true) return null;
+      // kakaoAlertSent = Kakao idempotency; discordNotified = legacy Discord claim.
+      // Do not use adminNotified (CRM toast flag on tickets; unused on orders).
+      if (after.kakaoAlertSent === true || after.discordNotified === true) return null;
       if (!isLicenseGrantedOrder(after)) return null;
       await notifyPaymentCompleted(orderId, after, change.after.ref);
     } catch (err) {

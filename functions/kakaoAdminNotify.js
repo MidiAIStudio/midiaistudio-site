@@ -26,7 +26,7 @@ function isPlaceholder(value) {
 }
 
 function safeDiag(fields) {
-  console.error(JSON.stringify({ tag: '[KAKAO_ADMIN_NOTIFY]', ...fields }));
+  console.log(JSON.stringify({ tag: '[KAKAO_ADMIN_NOTIFY]', ...fields }));
 }
 
 function truncateText(text, max = TEXT_MAX) {

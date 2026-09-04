@@ -116,8 +116,10 @@ function buildInquiryAlert(ticketId, data) {
 }
 
 /**
- * Claim after successful Kakao send. Honors legacy discordNotified so cutover
- * does not re-alert documents already notified via Discord.
+ * Claim after successful Kakao send.
+ * IMPORTANT: Do NOT reuse supportTickets.adminNotified — that flag is for admin UI toasts
+ * (client/supportAi set it false on handoff; admin console sets it true when toast shown).
+ * Idempotency uses kakaoAlertSent (+ legacy discordNotified).
  */
 async function claimAdminNotify(ref) {
   const db = admin.firestore();
@@ -125,10 +127,10 @@ async function claimAdminNotify(ref) {
     const snap = await tx.get(ref);
     if (!snap.exists) return false;
     const data = snap.data() || {};
-    if (data.adminNotified === true || data.discordNotified === true) return false;
+    if (data.kakaoAlertSent === true || data.discordNotified === true) return false;
     tx.set(ref, {
-      adminNotified: true,
-      adminNotifiedAt: admin.firestore.FieldValue.serverTimestamp(),
+      kakaoAlertSent: true,
+      kakaoAlertSentAt: admin.firestore.FieldValue.serverTimestamp(),
       adminNotifyChannel: 'kakao'
     }, { merge: true });
     return true;
@@ -139,7 +141,12 @@ async function alreadyNotified(ref) {
   const snap = await ref.get();
   if (!snap.exists) return false;
   const data = snap.data() || {};
-  return data.adminNotified === true || data.discordNotified === true;
+  return data.kakaoAlertSent === true || data.discordNotified === true;
+}
+
+function logAdmin(stage, fields) {
+  // console.log is reliably captured on Gen1 Firestore triggers.
+  console.log(JSON.stringify({ tag: '[ADMIN_NOTIFY]', stage, ...fields }));
 }
 
 /**
@@ -150,28 +157,29 @@ async function notifyInquiryCreated(ticketId, data, ref, deps = {}) {
   const db = deps.db || admin.firestore();
   const FieldValue = deps.FieldValue || admin.firestore.FieldValue;
   try {
-    if (await alreadyNotified(ref)) return true;
+    if (await alreadyNotified(ref)) {
+      logAdmin('inquiry_skip_already_sent', { ticketId: String(ticketId || '') });
+      return true;
+    }
     const alert = buildInquiryAlert(ticketId, data || {});
     await send(db, FieldValue, {
       type: alert.type,
       title: alert.title,
       message: alert.message
     });
-    await claimAdminNotify(ref);
-    console.info(JSON.stringify({
-      tag: '[ADMIN_NOTIFY]',
-      stage: 'inquiry_sent',
-      ticketId: String(ticketId || '')
-    }));
+    const claimed = await claimAdminNotify(ref);
+    logAdmin('inquiry_sent', {
+      ticketId: String(ticketId || ''),
+      claimed: !!claimed
+    });
     return true;
   } catch (err) {
-    console.error(JSON.stringify({
-      tag: '[ADMIN_NOTIFY]',
-      stage: 'inquiry_failed',
+    logAdmin('inquiry_failed', {
       ticketId: String(ticketId || ''),
       message: err && err.message ? err.message : String(err),
-      kakaoStage: err && err.stage ? err.stage : null
-    }));
+      kakaoStage: err && err.stage ? err.stage : null,
+      kakaoCode: err && err.kakaoCode != null ? err.kakaoCode : null
+    });
     return false;
   }
 }
@@ -185,28 +193,29 @@ async function notifyPaymentCompleted(orderId, data, ref, deps = {}) {
   const db = deps.db || admin.firestore();
   const FieldValue = deps.FieldValue || admin.firestore.FieldValue;
   try {
-    if (await alreadyNotified(ref)) return true;
+    if (await alreadyNotified(ref)) {
+      logAdmin('payment_skip_already_sent', { orderId: String(orderId || '') });
+      return true;
+    }
     const alert = buildPaymentAlert(orderId, data || {});
     await send(db, FieldValue, {
       type: alert.type,
       title: alert.title,
       message: alert.message
     });
-    await claimAdminNotify(ref);
-    console.info(JSON.stringify({
-      tag: '[ADMIN_NOTIFY]',
-      stage: 'payment_sent',
-      orderId: String(orderId || '')
-    }));
+    const claimed = await claimAdminNotify(ref);
+    logAdmin('payment_sent', {
+      orderId: String(orderId || ''),
+      claimed: !!claimed
+    });
     return true;
   } catch (err) {
-    console.error(JSON.stringify({
-      tag: '[ADMIN_NOTIFY]',
-      stage: 'payment_failed',
+    logAdmin('payment_failed', {
       orderId: String(orderId || ''),
       message: err && err.message ? err.message : String(err),
-      kakaoStage: err && err.stage ? err.stage : null
-    }));
+      kakaoStage: err && err.stage ? err.stage : null,
+      kakaoCode: err && err.kakaoCode != null ? err.kakaoCode : null
+    });
     return false;
   }
 }
