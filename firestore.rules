@@ -312,6 +312,12 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Server-only integration secrets/tokens (Admin SDK write). Clients: no access.
+    // e.g. systemPrivate/kakaoAdminOAuth — Kakao admin Talk refresh token.
+    match /systemPrivate/{docId} {
+      allow read, write: if false;
+    }
+
     function boardEngagementUpdate() {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
       let commentOk = changed.hasOnly(['commentCount', 'updatedAt'])

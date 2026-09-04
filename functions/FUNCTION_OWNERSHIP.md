@@ -26,6 +26,11 @@ Do not export these names from `index.js`:
 - refundStalePointJobs
 - capturePayPalCreditOrder / capturePayPalPointOrder (Python credit PayPal)
 
+Node-owned (this codebase) OAuth prep:
+
+- `kakaoOAuthCallback` — Kakao Login redirect; admin Talk notify prep only.
+  Named deploy: `firebase deploy --only functions:web:kakaoOAuthCallback`
+
 Wallet display on the website still calls the same public URL
 `.../getCreditBalance`. Python owns that function.
 

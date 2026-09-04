@@ -18,6 +18,9 @@ const gmailUser = defineSecret('GMAIL_USER');
 const gmailAppPassword = defineSecret('GMAIL_APP_PASSWORD');
 /** Support AI LLM — Secret Manager; bound only on supportAi* HTTPS functions */
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
+/** Kakao OAuth (admin Talk notify prep) — Secret Manager; bound only on kakaoOAuthCallback */
+const kakaoRestApiKey = defineSecret('KAKAO_REST_API_KEY');
+const kakaoClientSecret = defineSecret('KAKAO_CLIENT_SECRET');
 
 function cfg(name, fallback = '') {
   return process.env[name] || fallback;
@@ -2315,6 +2318,26 @@ exports.supportAiHandoffSummary = onRequestV2(
     memory: '256MiB'
   },
   supportAiHandlers.supportAiHandoffSummary
+);
+
+/**
+ * Kakao Login OAuth redirect callback for future admin "나와의 채팅" notifications.
+ * Does not replace Discord webhooks. Does not change payment/inquiry production notify paths.
+ * Secrets: KAKAO_REST_API_KEY (required), KAKAO_CLIENT_SECRET (optional if enabled in Kakao console).
+ * Refresh token stored in Firestore systemPrivate/kakaoAdminOAuth (client read/write denied).
+ */
+const { createKakaoOAuthCallbackHandler } = require('./kakaoOAuth');
+exports.kakaoOAuthCallback = onRequestV2(
+  {
+    region: 'us-central1',
+    secrets: [kakaoRestApiKey, kakaoClientSecret],
+    timeoutSeconds: 30,
+    memory: '256MiB'
+  },
+  createKakaoOAuthCallbackHandler({
+    db,
+    FieldValue: admin.firestore.FieldValue
+  })
 );
 
 /**
