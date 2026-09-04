@@ -1,5 +1,6 @@
 import { applyGuidesI18n } from './guides-i18n.js?v=20260720-drop-zone';
 import { initSupportChat, applySupportChatBranding } from './support-chat.js?v=support-chat-ai-brand-1';
+import { initTheme, readPreference, setThemePreference } from './theme.js?v=theme-1';
 import {
   ensurePricing,
   checkoutContext,
@@ -761,6 +762,7 @@ function tr(k){
     notify_filter_all:'전체', notify_filter_payment:'결제', notify_filter_license:'라이선스', notify_filter_inquiry:'문의', notify_filter_community:'커뮤니티', notify_filter_other:'기타',
     notify_credit_purchase:'크레딧 충전 완료', notify_credit_purchase_body:'{n} 크레딧이 지급되었습니다.', notify_credit_grant:'크레딧 지급', notify_credit_grant_body:'관리자가 {n} 크레딧을 지급했습니다.', notify_credit_deduct:'크레딧 조정', notify_credit_deduct_body:'{n} 크레딧이 회수되었습니다.', notify_reservation_complete:'예약 변환이 완료되었습니다.', notify_reservation_failed:'예약 변환이 실패했습니다.', notify_time_just_now:'방금', notify_time_minutes:'{n}분 전', notify_time_hours:'{n}시간 전', notify_time_yesterday:'어제',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정', profile_admin:'관리자',
+    theme_label:'테마', theme_system:'시스템 설정', theme_light:'라이트', theme_dark:'다크',
     credit_label:'Credit', credit_balance:'보유 크레딧', credit_buy:'크레딧 충전', credit_history:'크레딧 사용내역',
     credit_history_all:'전체 사용내역', credit_history_more:'더 보기', credit_refresh:'새로고침',
     credit_unlimited:'AI 변환 무제한', credit_no_deduct:'Credit 차감 없음',
@@ -790,6 +792,7 @@ function tr(k){
     notify_filter_all:'All', notify_filter_payment:'Payment', notify_filter_license:'License', notify_filter_inquiry:'Support', notify_filter_community:'Community', notify_filter_other:'Other',
     notify_credit_purchase:'Credit purchase complete', notify_credit_purchase_body:'{n} credits were added.', notify_credit_grant:'Credits granted', notify_credit_grant_body:'An admin granted {n} credits.', notify_credit_deduct:'Credit adjustment', notify_credit_deduct_body:'{n} credits were deducted.', notify_reservation_complete:'Scheduled conversion finished.', notify_reservation_failed:'Scheduled conversion failed.', notify_time_just_now:'Just now', notify_time_minutes:'{n} min ago', notify_time_hours:'{n} hr ago', notify_time_yesterday:'Yesterday',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings', profile_admin:'Admin',
+    theme_label:'Theme', theme_system:'System', theme_light:'Light', theme_dark:'Dark',
     credit_label:'Credit', credit_balance:'Credit Balance', credit_buy:'Buy Credits', credit_history:'Credit History',
     credit_history_all:'View All', credit_history_more:'Load more', credit_refresh:'Refresh',
     credit_unlimited:'Unlimited AI Conversions', credit_no_deduct:'No Credit Deduction',
@@ -819,6 +822,7 @@ function tr(k){
     notify_filter_all:'すべて', notify_filter_payment:'決済', notify_filter_license:'ライセンス', notify_filter_inquiry:'問い合わせ', notify_filter_community:'コミュニティ', notify_filter_other:'その他',
     notify_credit_purchase:'クレジット購入完了', notify_credit_purchase_body:'{n} クレジットが付与されました。', notify_credit_grant:'クレジット付与', notify_credit_grant_body:'管理者が {n} クレジットを付与しました。', notify_credit_deduct:'クレジット調整', notify_credit_deduct_body:'{n} クレジットが回収されました。', notify_reservation_complete:'予約変換が完了しました。', notify_reservation_failed:'予約変換に失敗しました。', notify_time_just_now:'たった今', notify_time_minutes:'{n}分前', notify_time_hours:'{n}時間前', notify_time_yesterday:'昨日',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定', profile_admin:'管理者',
+    theme_label:'テーマ', theme_system:'システム設定', theme_light:'ライト', theme_dark:'ダーク',
     credit_label:'Credit', credit_balance:'保有クレジット', credit_buy:'クレジット購入', credit_history:'クレジット利用履歴',
     credit_history_all:'全履歴', credit_history_more:'さらに表示', credit_refresh:'更新',
     credit_unlimited:'AI変換 無制限', credit_no_deduct:'Credit消費なし',
@@ -4048,12 +4052,55 @@ function ensureTopbarProfileCreditSlot(){
   else panel.appendChild(slot);
 }
 
+function themePickerHtml(){
+  const themePref = readPreference();
+  const themeLabel = tr('theme_label');
+  const themeOpts = [
+    ['system', tr('theme_system')],
+    ['light', tr('theme_light')],
+    ['dark', tr('theme_dark')]
+  ];
+  return `<div class="account-theme-row" data-i18n-skip>
+      <span>${esc(themeLabel)}</span>
+      <div class="account-theme-segment" role="group" aria-label="${esc(themeLabel)}">
+        ${themeOpts.map(([id, label]) =>
+          `<button type="button" class="account-theme-opt${themePref===id?' is-active':''}" data-theme-pref="${id}" aria-pressed="${themePref===id?'true':'false'}">${esc(label)}</button>`
+        ).join('')}
+      </div>
+    </div>`;
+}
+
+function bindAccountThemePicker(root){
+  const box = root || $('accountMeta');
+  if(!box) return;
+  box.querySelectorAll('[data-theme-pref]').forEach((btn) => {
+    if(btn.dataset.themeBound === '1') return;
+    btn.dataset.themeBound = '1';
+    btn.addEventListener('click', () => {
+      const pref = String(btn.getAttribute('data-theme-pref') || 'system');
+      setThemePreference(pref);
+      box.querySelectorAll('[data-theme-pref]').forEach((el) => {
+        const on = el.getAttribute('data-theme-pref') === pref;
+        el.classList.toggle('is-active', on);
+        el.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+    });
+  });
+}
+
 function renderAccountDashboard(uid, d, downloadData){
   const box = $('accountMeta'); if(!box) return;
   if(!currentUser){
-    box.innerHTML = `<div class="account-login-card hub-card"><p class="muted">${esc(tr('need_login'))}</p></div>`;
+    box.innerHTML = `<div class="account-dashboard-grid">
+      <div class="account-login-card hub-card"><p class="muted">${esc(tr('need_login'))}</p></div>
+      <article class="hub-card account-panel account-panel-account">
+        <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">♟</span><h2>Account</h2></header>
+        <div class="account-panel-body">${themePickerHtml()}</div>
+      </article>
+    </div>`;
     updateAccountCtas({plan:'trial', lifetime:false, downloadUrl:''});
     updateAccountProfileBadges(null);
+    bindAccountThemePicker(box);
     return;
   }
   const plan = normalizePlan(d);
@@ -4084,12 +4131,15 @@ function renderAccountDashboard(uid, d, downloadData){
     </div>
   </article>`;
 
+  const themeRow = themePickerHtml();
+
   const accountCard = `<article class="hub-card account-panel account-panel-account">
     <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">♟</span><h2>Account</h2></header>
     <div class="account-panel-body">
       ${accountField(lang==='en'?'Name':lang==='ja'?'名前':'이름', name)}
       ${accountField(lang==='en'?'Email':lang==='ja'?'メール':'이메일', email)}
       ${accountField(lang==='en'?'Sign-in':lang==='ja'?'ログイン方式':'로그인 방식', loginMethod)}
+      ${themeRow}
     </div>
   </article>`;
 
@@ -4132,6 +4182,7 @@ function renderAccountDashboard(uid, d, downloadData){
   box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${ordersCard}${supportCard}${developerCard}</div>`;
   paintAccountCreditPanel();
   bindCreditAccountListeners();
+  bindAccountThemePicker(box);
   loadAccountOrders(uid);
   if(location.hash === '#credit' || location.hash === '#plan'){
     queueMicrotask(()=> $('accountCreditPanel')?.scrollIntoView({behavior:'smooth', block:'start'}));
@@ -14767,6 +14818,7 @@ if(!document.documentElement.classList.contains('sidebar-ready')){
 }
 initTopbarActions();
 bindSidebar();
+initTheme();
 applyStaticI18n();
 document.addEventListener('midiai:static-i18n', () => applyStaticI18n());
 applyGuidesI18n(lang);
