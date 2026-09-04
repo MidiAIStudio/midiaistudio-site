@@ -260,9 +260,11 @@ async function run() {
   });
 
   await check('K tempo search terms stay bounded', async () => {
-    const terms = buildSearchTerms({ question: '템포 바꾸는 법', rawQuestion: '템포 바꾸는 법', facts: {} });
+    const built = buildSearchTerms({ question: '템포 바꾸는 법', rawQuestion: '템포 바꾸는 법', facts: {} });
+    const terms = built.terms || built;
     assert.ok(terms.length <= 8);
-    assert.ok(terms.some((t) => /tempo|템포/i.test(t)));
+    assert.ok(terms.some((t) => /tempo|템포|BPM/i.test(t)));
+    assert.ok(!terms.some((t) => /^(operation|private_source|knowledge|guide)$/i.test(t)));
     // No repo-wide enumerate: research with mock counts search calls
     let searchCalls = 0;
     const policy = normalizePolicy({
@@ -305,6 +307,19 @@ async function run() {
     }
   });
 
+  await check('L sourcePlan routing labels never become search queries', async () => {
+    const built = buildSearchTerms({
+      question: '편곡기능있어?',
+      rawQuestion: '편곡기능있어?',
+      facts: {},
+      sourcePlan: ['operation', 'private_source', 'knowledge', 'guide']
+    });
+    const terms = built.terms || [];
+    for (const bad of ['operation', 'private_source', 'knowledge', 'guide', 'faq', 'catalog']) {
+      assert.ok(!terms.some((t) => t.toLowerCase() === bad), `leaked ${bad}`);
+    }
+  });
+
   if (!HAS_LOCAL) {
     await check('A-C-D SKIPPED (no local MidiAI-Studio fixture)', async () => {
       console.log('  (set SUPPORT_AI_LOCAL_SOURCE_ROOT or clone MidiAI-Studio)');
@@ -322,7 +337,9 @@ async function run() {
         rawQuestion: '편곡기능이 있다던데',
         facts: {}
       });
-      assert.ok(terms.some((t) => /Arrange|편곡|AI Assistant/i.test(t)));
+      const termList = terms.terms || terms;
+      assert.ok(termList.some((t) => /Arrange|편곡|AI Assistant/i.test(t)));
+      assert.ok(!termList.some((t) => /^(operation|private_source|knowledge)$/i.test(t)));
       const out = await adapter.research({
         question: '편곡기능이 있다던데',
         rawQuestion: '편곡기능이 있다던데',
@@ -335,6 +352,9 @@ async function run() {
       assert.ok(out.passages.length >= 1, 'expected Arrange-related safe passages');
       assert.ok(out.debug.privateSourceUsed);
       assert.ok(out.llmContext);
+      assert.ok(!(out.passages[0].text || '').trim(), 'raw snippet must not be customer text');
+      assert.ok(out.passages[0]._groundingOnly);
+      assert.ok(Number(out.passages[0].score) < 22, 'no fake fixed score 22');
       assert.ok(!containsRawSecretLeak(out.llmContext));
       // Agent ANSWER path
       const agentOut = await runSupportAgent({
@@ -368,10 +388,7 @@ async function run() {
         facts: { candidateFeature: '쉬운키' }
       });
       assert.ok(out.passages.length >= 1, 'expected Easy Key evidence');
-      assert.ok(
-        /easy|쉬운|key|조/i.test(out.passages.map((p) => p.text).join(' ')),
-        'passage should mention easy key behavior'
-      );
+      assert.ok(out.llmContext && /easy_key|Easier Key|쉬운/i.test(out.llmContext));
     });
 
     await check('C 노트 정리해주는거 → Cleanup evidence', async () => {
@@ -383,7 +400,57 @@ async function run() {
         facts: {}
       });
       assert.ok(out.passages.length >= 1, 'expected Cleanup evidence');
-      assert.ok(/cleanup|정리|Cleanup|AI Cleanup/i.test(out.passages.map((p) => p.text).join(' ')));
+      assert.ok(out.llmContext && /cleanup|정리|Cleanup|AI Cleanup/i.test(out.llmContext));
+    });
+
+    await check('A2 예약변환 → no score-editor false evidence', async () => {
+      const out = await adapter.research({
+        question: '예약변환 등록',
+        rawQuestion: '예약변환 등록',
+        weak: true,
+        need: 'knowledge',
+        facts: {}
+      });
+      assert.ok(!/barline|palette_lines|score_editor_palette/i.test(out.llmContext || ''));
+      if (out.passages.length) {
+        assert.ok(/예약|schedule|queue|reservation|convert/i.test(out.llmContext || ''));
+      }
+    });
+
+    await check('D2 변환방법 → Arrange dump forbidden', async () => {
+      const out = await adapter.research({
+        question: '변환방법알려줘',
+        rawQuestion: '변환방법알려줘',
+        weak: true,
+        need: 'knowledge',
+        facts: {}
+      });
+      // Must not accept Arrange-only evidence for general conversion
+      const arrangeOnly =
+        /midi_ai_instrument_arrange|instrument arrange/i.test(out.llmContext || '') &&
+        !/youtube|audio|pdf|conversion|convert/i.test(out.llmContext || '');
+      assert.ok(!arrangeOnly, 'Arrange-only dump for conversion question');
+    });
+
+    await check('cache keys differ by query', async () => {
+      const a = await adapter.research({
+        question: '편곡기능있어?',
+        rawQuestion: '편곡기능있어?',
+        weak: true,
+        need: 'knowledge',
+        facts: {}
+      });
+      const b = await adapter.research({
+        question: '변환방법알려줘',
+        rawQuestion: '변환방법알려줘',
+        weak: true,
+        need: 'knowledge',
+        facts: {}
+      });
+      assert.notStrictEqual(
+        JSON.stringify(a.debug.privateActualQueries || a.debug.privateSearchQueries),
+        JSON.stringify(b.debug.privateActualQueries || b.debug.privateSearchQueries)
+      );
     });
 
     await check('D 퀀텀폴드 → no hallucination evidence', async () => {

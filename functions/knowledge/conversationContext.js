@@ -11,7 +11,7 @@ const FOLLOW_UP_RE =
 
 /** Clear product / feature nouns that can start or switch a topic. */
 const EXPLICIT_TOPIC_RE =
-  /(템포|bpm|속도|pdf|유튜브|youtube|yt|오디오|mp3|wav|m4a|사운드팩|soundpack|고품질|고음질|음원|easy\s*key|easier\s*key|쉬운\s*조|크레딧|라이선스|이용권|미리\s*듣|미리듣|구간|웨이브|파형|노트|음표|벨로시티|velocity|악보|musicxml|변환|midi\s*editor|미디\s*에디터|라이브러리|library|assistant|어시스턴트|설치\s*파일|installer|403|404|cuda|ffmpeg|로그|trial|체험|패치|업데이트|릴리스|릴리즈|공지|\d+\.\d+(?:\.\d+)?)/i;
+  /(템포|bpm|속도|pdf|유튜브|youtube|yt|오디오|mp3|wav|m4a|사운드팩|soundpack|고품질|고음질|음원|easy\s*key|easier\s*key|쉬운\s*조|쉬운\s*키|편곡|arrange|instrument\s*arrange|예약\s*변환|예약변환|크레딧|라이선스|이용권|미리\s*듣|미리듣|구간|웨이브|파형|노트|음표|벨로시티|velocity|악보|musicxml|변환|midi\s*editor|미디\s*에디터|라이브러리|library|assistant|어시스턴트|설치\s*파일|installer|403|404|cuda|ffmpeg|로그|trial|체험|패치|업데이트|릴리스|릴리즈|공지|\d+\.\d+(?:\.\d+)?)/i;
 
 /** Short pivots that should NOT inherit the previous topic (clarification path). */
 const AMBIGUOUS_PIVOT_RE =
@@ -203,9 +203,8 @@ function resolveConversationQuery({ rawQuestion, priorUserTurns = [] } = {}) {
   // Follow-up that also introduces a strong new topic → switch (prefer raw)
   // Referential openers (그거/그중) keep prior topic even if a facet noun appears.
   if (hasExplicitTopic(raw) && !/^(그거|그건|이거|저거|아까|방금|그중|그중에|그\s*중)/i.test(raw)) {
-    // e.g. still matched FOLLOW_UP_RE weakly but has its own topic — keep raw
-    // Exception: pure follow-ups like "그거 템포는?" are rare; explicit topic wins.
-    if (raw.length >= 10) {
+    // e.g. "변환방법알려줘" after Arrange — new explicit topic, do not carry Arrange
+    if (raw.length >= 6) {
       return {
         rawQuestion: raw,
         resolvedQuestion: raw,
