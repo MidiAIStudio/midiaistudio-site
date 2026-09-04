@@ -1690,49 +1690,50 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   padding:7px 12px!important;border-radius:9px!important;font-size:12px!important;line-height:1.2!important;
   min-height:0!important;height:auto!important
 }
-.hub-page:has(#myTicketList) .hub-card{padding:12px!important;border-radius:16px}
-.hub-page .my-ticket-list{display:grid;gap:10px}
+.hub-page:has(#myTicketList) .hub-card{padding:6px!important;border-radius:12px}
+.hub-page .my-ticket-list{display:grid;gap:4px}
 .hub-page .my-ticket-item{
-  border:1px solid var(--line);border-radius:14px;overflow:hidden;
-  background:rgba(0,0,0,.18);min-height:0
+  border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  background:rgba(0,0,0,.18);min-height:0;padding:0!important;margin:0;box-shadow:none
 }
 .hub-page .my-ticket-item.is-unread{border-color:rgba(139,92,246,.45);box-shadow:0 0 0 1px rgba(139,92,246,.18)}
 .hub-page .my-ticket-item.is-open{border-color:rgba(54,211,153,.35)}
 .hub-page .my-ticket-summary{
-  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:12px 14px;min-height:0;border:0;background:transparent;color:inherit;
-  font:inherit;font-size:13px;line-height:1.35;text-align:left;cursor:pointer
+  width:100%;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+  padding:6px 9px;min-height:0;height:auto;border:0;background:transparent;color:inherit;
+  font:inherit;font-size:12px;line-height:1.25;text-align:left;cursor:pointer;
+  transform:none!important;box-shadow:none!important
 }
-.hub-page .my-ticket-summary:hover{background:rgba(255,255,255,.04)}
-.hub-page .my-ticket-summary-main{display:grid;gap:4px;min-width:0;flex:1}
+.hub-page .my-ticket-summary:hover{background:rgba(255,255,255,.04);transform:none!important}
+.hub-page .my-ticket-summary-main{display:grid;gap:1px;min-width:0;flex:1;padding-top:1px}
 .hub-page .my-ticket-summary-main b{
-  margin:0;font-size:15px;font-weight:650;line-height:1.35;letter-spacing:-.01em;
+  margin:0;font-size:13px;font-weight:650;line-height:1.25;letter-spacing:-.01em;
   color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
 }
 .hub-page .my-ticket-summary-main small{
-  margin:0;color:var(--muted);font-size:12px;font-weight:500;line-height:1.4;
+  margin:0;color:var(--muted);font-size:10.5px;font-weight:500;line-height:1.25;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap
 }
 .hub-page .my-ticket-summary-meta{
-  display:grid;gap:4px;justify-items:end;align-content:center;flex:0 0 auto;max-width:42%
+  display:grid;gap:1px;justify-items:end;align-content:start;flex:0 0 auto;max-width:42%;padding-top:1px
 }
 .hub-page .my-ticket-summary-meta .badge,
 .hub-page .my-ticket-summary .badge{
   display:inline-flex;align-items:center;justify-content:center;
-  margin:0!important;padding:4px 9px!important;border-radius:999px!important;
-  font-size:11px!important;font-weight:700!important;line-height:1.2!important;
+  margin:0!important;padding:1px 6px!important;border-radius:999px!important;
+  font-size:10px!important;font-weight:700!important;line-height:1.15!important;
   letter-spacing:0;white-space:nowrap
 }
 .hub-page .my-ticket-summary-meta em{
-  font-style:normal;font-size:10px;font-weight:500;line-height:1.2;color:var(--muted)
+  font-style:normal;font-size:9.5px;font-weight:500;line-height:1.15;color:var(--muted)
 }
 .hub-page .my-ticket-panel{
-  display:grid;gap:8px;padding:0 12px 12px;border-top:1px solid rgba(255,255,255,.08)
+  display:grid;gap:6px;padding:0 9px 8px;border-top:1px solid rgba(255,255,255,.08)
 }
 .hub-page .my-ticket-panel[hidden]{display:none!important}
 .hub-page .my-ticket-chat{
-  max-height:min(42vh,380px);overflow:auto;margin:8px 0 0;
-  display:flex;flex-direction:column;gap:7px;padding:10px;border-radius:12px;
+  max-height:min(42vh,380px);overflow:auto;margin:4px 0 0;
+  display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:10px;
   border:1px solid rgba(255,255,255,.08);
   background:radial-gradient(ellipse at top,rgba(139,92,246,.08),transparent 55%),rgba(0,0,0,.22)
 }
@@ -1740,8 +1741,8 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .hub-page .my-ticket-chat .admin-chat-row.is-user{justify-content:flex-end}
 .hub-page .my-ticket-chat .admin-chat-row.is-agent{justify-content:flex-start}
 .hub-page .my-ticket-chat .admin-chat-bubble{
-  max-width:min(74%,480px);padding:8px 10px;border-radius:12px;border:1px solid transparent;
-  font-size:12.5px;font-weight:400;line-height:1.45;color:var(--text)
+  max-width:min(74%,480px);padding:6px 9px;border-radius:10px;border:1px solid transparent;
+  font-size:12.5px;font-weight:400;line-height:1.4;color:var(--text)
 }
 .hub-page .my-ticket-chat .admin-chat-bubble.is-user{
   background:linear-gradient(135deg,rgba(139,92,246,.9),rgba(109,40,217,.86));
@@ -1821,18 +1822,18 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
   line-height:1.2!important;min-height:34px!important;height:auto!important
 }
 .hub-page .my-ticket-closed-note{
-  padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.4;color:var(--muted);
+  padding:6px 9px;border-radius:8px;font-size:11.5px;line-height:1.35;color:var(--muted);
   background:rgba(255,255,255,.04);border:1px dashed var(--line)
 }
 .hub-page .my-ticket-closed-note a{color:var(--accent2);text-decoration:underline}
 @media(max-width:720px){
-  .hub-page .my-ticket-summary{padding:12px 12px;align-items:flex-start}
-  .hub-page .my-ticket-summary-main b{font-size:14px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .hub-page .my-ticket-summary{padding:6px 8px;align-items:flex-start}
+  .hub-page .my-ticket-summary-main b{font-size:12.5px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .hub-page .my-ticket-summary-meta{max-width:46%}
-  .hub-page .my-ticket-chat{max-height:min(46vh,360px);padding:8px}
+  .hub-page .my-ticket-chat{max-height:min(46vh,360px);padding:7px}
   .hub-page .my-ticket-chat .admin-chat-bubble{max-width:88%;font-size:12px}
   .hub-page .my-ticket-chat .admin-chat-text{font-size:12px}
-  .hub-page .my-ticket-composer textarea{font-size:12px;min-height:40px}
+  .hub-page .my-ticket-composer textarea{font-size:12px;min-height:36px}
 }
 .hub-page .hub-reply-list{display:grid;gap:8px;margin-bottom:10px}
 .hub-page .hub-reply-list .reply{padding:10px 12px;border-radius:14px;background:rgba(0,0,0,.18);border:1px solid var(--line)}
@@ -1843,7 +1844,10 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .hub-page .timeline-item h3{margin:6px 0 8px;font-size:16px}
 .hub-page .timeline-item .content{font-size:14px;line-height:1.65}
 .hub-page .faq-list{display:grid;gap:8px}
-.hub-page .faq-item{padding:12px 14px;border-radius:16px;border:1px solid var(--final-stroke)}
+.hub-page .faq-item{
+  padding:12px 14px;border-radius:16px;border:1px solid var(--final-stroke);
+  background:linear-gradient(135deg,rgba(255,255,255,.08),rgba(139,92,246,.07),rgba(34,211,238,.05))
+}
 .hub-page .faq-item h3{margin:0 0 8px;font-size:15px;line-height:1.45}
 .hub-page .faq-item .content{margin:0;font-size:14px;line-height:1.65;color:var(--muted)}
 .hub-page .community-comment-form,.hub-page .comment-form{display:flex;gap:8px;margin:8px 0 12px}
@@ -1862,7 +1866,11 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .portal-page .portal-pill{margin-bottom:14px}
 .portal-page .portal-hero h1{margin:0 0 14px;font-size:clamp(34px,5.2vw,64px);line-height:1.02;letter-spacing:-.06em}
 .portal-page .portal-gradient{background:linear-gradient(135deg,#fff 0%,#bfefff 45%,#d7c7ff 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-.portal-page .portal-lead{margin:0 0 18px;color:var(--muted);font-size:15px;line-height:1.7;max-width:560px}
+.portal-page .portal-lead{margin:0 0 18px;color:var(--muted);font-size:15px;line-height:1.7;max-width:min(900px,100%);word-break:keep-all;overflow-wrap:break-word}
+.portal-page .portal-lead-line{display:block}
+@media(min-width:860px){
+  .portal-page .portal-lead-line{white-space:nowrap}
+}
 .portal-page .portal-cta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .portal-page .portal-cta .primary,
 .portal-page .portal-cta .secondary,
@@ -2358,8 +2366,8 @@ a.home-support-card{text-decoration:none;color:inherit;cursor:pointer}
 .portal-step p{margin:0;font-size:13px;color:var(--muted);line-height:1.55}
 .portal-updates-card{padding:16px;border-radius:20px;border:1px solid var(--site-stroke);background:var(--site-card)}
 .home-updates-list{display:grid;gap:0}
-.home-update-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06);color:inherit}
-.home-update-item:last-child{border-bottom:0}
+.home-update-item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:0;color:inherit;position:relative}
+.home-update-item:not(:last-child):after{content:'';position:absolute;left:10%;right:10%;bottom:0;height:1px;background:rgba(255,255,255,.1);pointer-events:none}
 .home-update-item:hover b{color:#fff}
 .home-update-tag{padding:3px 8px;border-radius:999px;background:rgba(139,92,246,.14);color:#d7c7ff;font-size:10px;font-weight:900}
 .home-update-item b{font-size:14px;color:#e3e6f8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2544,7 +2552,7 @@ body.topnav-layout #mainNav.top-nav .top-nav-group{position:relative;display:fle
 body.topnav-layout #mainNav.top-nav .top-nav-chevron{display:none}
 body.topnav-layout #mainNav.top-nav .top-nav-panel{
   position:absolute;top:calc(100% + 8px);left:-6px;z-index:50;
-  width:260px;padding:0;
+  width:248px;padding:0;
   opacity:0;visibility:hidden;pointer-events:none;
   transform:translateY(-8px) scale(.985);
   filter:blur(5px);
@@ -2555,28 +2563,37 @@ body.topnav-layout #mainNav.top-nav .top-nav-panel{
     visibility 0s linear .22s;
   background:transparent
 }
-body.topnav-layout #mainNav.top-nav .top-nav-group.is-wide > .top-nav-panel{width:300px}
+body.topnav-layout #mainNav.top-nav .top-nav-group.is-wide > .top-nav-panel{width:260px}
 body.topnav-layout #mainNav.top-nav .top-nav-panel:before{
   content:"";position:absolute;top:-12px;left:0;right:0;height:12px
 }
 body.topnav-layout #mainNav.top-nav .top-nav-panel-inner{
-  display:grid;gap:2px;padding:6px;
-  border-radius:12px;border:1px solid rgba(255,255,255,.075);
-  background:linear-gradient(180deg,rgba(14,24,38,.98),rgba(9,16,28,.98));
-  box-shadow:0 18px 48px rgba(0,0,0,.3)
+  display:grid;gap:1px;padding:7px;
+  border-radius:15px;
+  border:1px solid color-mix(in srgb,#5da9f6 50%,#263952);
+  background:linear-gradient(160deg,#152235,#101925);
+  box-shadow:0 20px 48px rgba(0,0,0,.33),0 0 35px rgba(70,145,220,.12)
 }
 body.topnav-layout #mainNav.top-nav .top-nav-panel-inner.is-grid{
-  grid-template-columns:1fr 1fr;column-gap:4px;row-gap:2px
+  grid-template-columns:1fr 1fr;column-gap:0;row-gap:0
 }
 body.topnav-layout #mainNav.top-nav .top-nav-item{
-  display:flex!important;gap:9px;align-items:center;width:100%;
-  padding:8px 10px!important;margin:0;
-  border:0!important;border-radius:8px!important;
+  display:flex!important;gap:10px;align-items:center;width:100%;
+  padding:7px 9px!important;margin:0;min-height:0;
+  border:0!important;border-radius:9px!important;
   color:#d7dbf2!important;
   background:transparent!important;
   text-align:left!important;
-  transform:none!important;box-shadow:none!important;white-space:nowrap;
-  transition:background .14s ease,color .14s ease!important
+  transform:none!important;box-shadow:none!important;white-space:normal;
+  transition:background .15s ease,color .15s ease,box-shadow .15s ease!important
+}
+body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > .top-nav-item:first-child,
+body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > a.top-nav-item:first-child,
+body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > .top-nav-item:last-child,
+body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > a.top-nav-item:last-child,
+body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > .top-nav-item:only-child,
+body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > a.top-nav-item:only-child{
+  border-radius:10px!important
 }
 body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > a.hidden,
 body.topnav-layout #mainNav.top-nav .top-nav-panel-inner > a[hidden],
@@ -2585,64 +2602,25 @@ body.topnav-layout #mainNav.top-nav .top-nav-item[hidden]{
   display:none!important
 }
 body.topnav-layout #mainNav.top-nav .top-nav-item-icon{
-  width:24px;height:24px;border-radius:7px;flex:0 0 24px;
-  display:grid;place-items:center;
-  font-size:9px;font-weight:800;color:#c8d4e6;line-height:1;
-  border:1px solid rgba(255,255,255,.12);
-  background:rgba(255,255,255,.08);
-  box-shadow:none
+  display:grid!important;place-items:center;flex:none;
+  width:26px;height:26px;border-radius:8px;
+  color:#9ec8f5;background:transparent;border:0
 }
-/* Light, readable tints — not murky */
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-all{
-  color:#dff3ff;background:rgba(125,211,252,.18);border-color:rgba(125,211,252,.28)
+body.topnav-layout #mainNav.top-nav .top-nav-item-icon svg{
+  width:18px;height:18px;display:block
 }
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-start{
-  color:#d8fff0;background:rgba(110,231,183,.18);border-color:rgba(110,231,183,.28)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-yt{
-  color:#ffe4e8;background:rgba(252,165,165,.2);border-color:rgba(252,165,165,.3)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-audio{
-  color:#dffcff;background:rgba(103,232,249,.18);border-color:rgba(103,232,249,.28)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-editor{
-  color:#fff3c4;background:rgba(252,211,77,.2);border-color:rgba(252,211,77,.3)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-pdf{
-  color:#ffedd5;background:rgba(253,186,116,.2);border-color:rgba(253,186,116,.3)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-help{
-  color:#ffe4e6;background:rgba(253,164,175,.2);border-color:rgba(253,164,175,.3)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-notice{
-  color:#dffcff;background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.26)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-patch{
-  color:#d8fff0;background:rgba(110,231,183,.16);border-color:rgba(110,231,183,.26)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-faq{
-  color:#fff3c4;background:rgba(252,211,77,.16);border-color:rgba(252,211,77,.26)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-board{
-  color:#e8ecff;background:rgba(165,180,252,.16);border-color:rgba(165,180,252,.26)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-support{
-  color:#dffcff;background:rgba(103,232,249,.16);border-color:rgba(103,232,249,.26)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-tickets{
-  color:#fff3c4;background:rgba(252,211,77,.16);border-color:rgba(252,211,77,.26)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-account{
-  color:#e8ecff;background:rgba(165,180,252,.16);border-color:rgba(165,180,252,.26)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-icon.is-admin{
-  color:#ffe4e6;background:rgba(253,164,175,.16);border-color:rgba(253,164,175,.26)
-}
-body.topnav-layout #mainNav.top-nav .top-nav-item-copy{min-width:0;display:block}
+body.topnav-layout #mainNav.top-nav .top-nav-item-copy{min-width:0;display:grid;gap:1px}
 body.topnav-layout #mainNav.top-nav .top-nav-item-copy b{
-  display:block;font-size:12.5px;font-weight:750;color:#e8eef8;line-height:1.25
+  display:block;font-size:12.5px;font-weight:750;color:#e8eef8;line-height:1.15
 }
-body.topnav-layout #mainNav.top-nav .top-nav-item-copy span{display:none}
+body.topnav-layout #mainNav.top-nav .top-nav-item-copy span{
+  display:block;font-size:10.5px;font-weight:550;line-height:1.25;color:rgba(169,174,200,.92)
+}
+body.topnav-layout #mainNav.top-nav .top-nav-item:hover .top-nav-item-copy span,
+body.topnav-layout #mainNav.top-nav .top-nav-item:focus-visible .top-nav-item-copy span,
+body.topnav-layout #mainNav.top-nav .top-nav-item.active .top-nav-item-copy span{
+  color:rgba(219,225,240,.88)
+}
 body.topnav-layout #mainNav.top-nav .top-nav-group:hover > .top-nav-panel,
 body.topnav-layout #mainNav.top-nav .top-nav-group:focus-within > .top-nav-panel,
 body.topnav-layout #mainNav.top-nav .top-nav-group.is-open > .top-nav-panel{
@@ -2650,11 +2628,17 @@ body.topnav-layout #mainNav.top-nav .top-nav-group.is-open > .top-nav-panel{
   transform:translateY(0) scale(1);filter:blur(0);
   transition-delay:.03s,.03s,.03s,0s
 }
+/* If another group is hovered, hide click-locked open panels so menus never stack. */
+body.topnav-layout #mainNav.top-nav:has(.top-nav-group:hover) .top-nav-group.is-open:not(:hover) > .top-nav-panel{
+  opacity:0;visibility:hidden;pointer-events:none;
+  transform:translateY(-8px) scale(.985);filter:blur(5px);
+  transition-delay:0s,0s,0s,.18s
+}
 body.topnav-layout #mainNav.top-nav .top-nav-item:hover,
 body.topnav-layout #mainNav.top-nav .top-nav-item:focus-visible,
 body.topnav-layout #mainNav.top-nav .top-nav-item.active{
-  background:rgba(255,255,255,.06)!important;
-  border-color:transparent!important;
+  background:#17314d!important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,#5da9f6 35%,transparent)!important;
   transform:none!important;color:#fff!important
 }
 body.topnav-layout #mainNav.top-nav .top-nav-item:hover .top-nav-item-copy b,
@@ -2664,7 +2648,8 @@ body.topnav-layout #mainNav.top-nav .top-nav-item.active .top-nav-item-copy b{co
   body.topnav-layout #mainNav.top-nav .top-nav-link,
   body.topnav-layout #mainNav.top-nav .top-nav-trigger{padding:8px 8px!important;font-size:12.5px!important}
   body.topnav-layout .topbar-slim .brand b{display:none}
-  body.topnav-layout #mainNav.top-nav .top-nav-group.is-wide > .top-nav-panel{width:280px}
+  body.topnav-layout #mainNav.top-nav .top-nav-group.is-wide > .top-nav-panel{width:230px}
+  body.topnav-layout #mainNav.top-nav .top-nav-panel{width:220px}
 }
 @media(max-width:980px){
   body.topnav-layout .sidebar-backdrop{display:block;opacity:0;pointer-events:none;transition:opacity .22s ease;z-index:25}
@@ -2749,6 +2734,11 @@ body.topnav-layout #mainNav.top-nav .top-nav-item.active .top-nav-item-copy b{co
 .product-feature-reverse .product-feature-copy{order:2}
 .product-feature-reverse .product-feature-media{order:1}
 .product-feature-copy{display:grid;gap:10px}
+.product-page .product-flow > .eyebrow,
+.product-page .product-feature-copy > .eyebrow,
+.product-page .product-license .eyebrow{
+  border-radius:8px!important
+}
 .product-feature-copy h2{margin:0;font-size:clamp(22px,2.8vw,28px);letter-spacing:-.03em}
 .product-feature-copy p{margin:0;color:var(--muted);font-size:14px;line-height:1.7}
 .product-points{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:6px}
@@ -2793,87 +2783,340 @@ body.topnav-layout #mainNav.top-nav .top-nav-item.active .top-nav-item-copy b{co
 
 /* V39 Download guide */
 .download-guide{margin-top:14px;padding:20px;display:grid;gap:18px}
-.download-guide-intro{display:grid;grid-template-columns:minmax(260px,.95fr) minmax(0,1.05fr);gap:18px;align-items:center}
+.download-guide-intro{display:grid;grid-template-columns:minmax(260px,.95fr) minmax(0,1.05fr);gap:18px;align-items:start}
 .download-guide-intro h2{margin:6px 0 8px;font-size:clamp(22px,2.8vw,28px);letter-spacing:-.03em}
-.installer-anim{position:relative;padding:10px;border-radius:20px;background:linear-gradient(145deg,rgba(139,92,246,.16),rgba(34,211,238,.08));border:1px solid rgba(255,255,255,.1);box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
-.installer-anim:before{content:'';position:absolute;inset:-40%;background:conic-gradient(from 180deg,transparent,rgba(34,211,238,.14),transparent,rgba(139,92,246,.16),transparent);animation:installerAura 8s linear infinite;pointer-events:none}
-.installer-window{position:relative;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(180deg,#12182b,#0b1020);overflow:hidden;animation:installerFloat 6s ease-in-out infinite}
-.installer-titlebar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(0,0,0,.35);border-bottom:1px solid rgba(255,255,255,.08)}
-.installer-dots{display:flex;gap:5px}
-.installer-dots i{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.22);display:block}
+.installer-anim{
+  position:relative;max-width:460px;margin:0;padding:8px;border-radius:18px;
+  background:linear-gradient(145deg,rgba(59,158,255,.14),rgba(34,211,238,.07));
+  border:1px solid rgba(59,158,255,.2);
+  box-shadow:0 18px 42px rgba(40,55,85,.14);
+  overflow:hidden
+}
+.installer-anim:before{
+  content:'';position:absolute;inset:-50%;
+  background:conic-gradient(from 200deg,transparent,rgba(59,158,255,.12),transparent,rgba(34,211,238,.1),transparent);
+  animation:installerAura 10s linear infinite;pointer-events:none
+}
+.installer-window{
+  position:relative;z-index:1;border-radius:12px;overflow:hidden;
+  border:1px solid rgba(36,52,78,.12);background:#fff;
+  box-shadow:0 10px 28px rgba(40,55,85,.1);
+  font-family:'Segoe UI',Inter,'Noto Sans KR',system-ui,sans-serif;color:#1e293b;
+  animation:installerFloat 7s ease-in-out infinite
+}
+.installer-titlebar{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  background:linear-gradient(180deg,#f7f9fc,#eef2f7);
+  border-bottom:1px solid rgba(36,52,78,.1)
+}
+.installer-dots{display:flex;gap:4px}
+.installer-dots i{width:7px;height:7px;border-radius:999px;display:block;background:#c5cedb}
 .installer-dots i:first-child{background:#ff6b7a}
 .installer-dots i:nth-child(2){background:#ffd166}
 .installer-dots i:nth-child(3){background:#36d399}
-.installer-titlebar b{font-size:11px;color:#dbe1ff;font-weight:800}
-.installer-banner{position:relative;height:88px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,.08)}
-.installer-banner-glow{position:absolute;inset:0;background:radial-gradient(circle at 20% 50%,rgba(139,92,246,.45),transparent 55%),radial-gradient(circle at 80% 40%,rgba(34,211,238,.35),transparent 50%);animation:installerGlow 4s ease-in-out infinite}
-.installer-banner-wave{position:absolute;left:12px;right:12px;bottom:10px;display:flex;align-items:flex-end;gap:3px;height:34px;opacity:.85}
-.installer-banner-wave i{flex:1;border-radius:3px 3px 1px 1px;background:linear-gradient(180deg,rgba(34,211,238,.85),rgba(139,92,246,.55));animation:installerWave 1.5s ease-in-out infinite}
-.installer-banner-wave i:nth-child(2){animation-delay:.12s;height:55%}
-.installer-banner-wave i:nth-child(3){animation-delay:.24s;height:80%}
-.installer-banner-wave i:nth-child(4){animation-delay:.36s;height:45%}
-.installer-banner-wave i:nth-child(5){animation-delay:.18s;height:70%}
-.installer-banner-wave i:nth-child(6){animation-delay:.3s;height:50%}
-.installer-banner-wave i:nth-child(7){animation-delay:.42s;height:88%}
-.installer-banner-wave i:nth-child(8){animation-delay:.06s;height:38%}
-.installer-banner-copy{position:relative;z-index:1;padding:14px 14px 0;display:grid;gap:2px}
-.installer-banner-copy strong{font-size:15px;color:#fff;letter-spacing:-.02em}
-.installer-banner-copy em{font-size:10px;color:#9af2ff;font-style:normal}
-.installer-engine{position:absolute;top:12px;right:12px;z-index:1;padding:4px 8px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(34,211,238,.3);color:#9af2ff;font-size:9px;font-weight:900;animation:installerPulse 2.4s ease-in-out infinite}
-.installer-body{padding:12px;display:grid;gap:10px}
-.installer-headline{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.installer-headline b{display:block;font-size:14px;color:#fff}
-.installer-headline small{display:block;margin-top:2px;color:var(--muted);font-size:10px}
-.installer-mode{padding:4px 8px;border-radius:999px;border:1px solid rgba(251,191,36,.28);background:rgba(251,191,36,.1);color:#ffd98e;font-size:9px;font-weight:800;white-space:nowrap}
-.installer-path{display:grid;gap:4px}
-.installer-path label{font-size:9px;color:var(--muted);font-weight:800}
-.installer-path code{padding:7px 9px;border-radius:8px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.08);color:#e8ebf8;font-size:10px}
-.installer-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
-.installer-step{padding:6px 4px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.03);text-align:center;transition:.35s border-color,.35s background,.35s transform}
-.installer-step span{display:block;font-size:8px;color:var(--muted);font-weight:900}
-.installer-step b{display:block;margin-top:2px;font-size:9px;color:#dbe1ff}
-.installer-step em{display:block;margin-top:1px;font-size:7px;color:var(--muted);font-style:normal;line-height:1.2}
-.installer-step.is-active{border-color:rgba(34,211,238,.35);background:rgba(34,211,238,.1);transform:translateY(-1px);box-shadow:0 0 16px rgba(34,211,238,.12)}
-.installer-step.is-active b{color:#9af2ff}
-.installer-actions{display:grid;grid-template-columns:1fr;gap:6px}
-.installer-btn{padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);display:grid;gap:2px;text-align:center}
-.installer-btn b{font-size:10px;color:#fff}
-.installer-btn small{font-size:8px;color:var(--muted);line-height:1.35}
-.installer-btn.is-primary{border-color:rgba(34,211,238,.35);background:linear-gradient(135deg,rgba(34,211,238,.22),rgba(139,92,246,.18));animation:installerBtnGlow 2.8s ease-in-out infinite}
-.installer-progress{display:grid;gap:5px}
-.installer-progress-top{display:flex;justify-content:space-between;gap:8px;font-size:9px;color:#c7cbe4;font-weight:800}
-.installer-progress-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}
-.installer-progress-bar i{display:block;height:100%;width:68%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2));animation:installerProgress 5s ease-in-out infinite}
-.installer-log{min-height:54px;padding:8px;border-radius:10px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06);display:grid;gap:3px;overflow:hidden}
-.installer-log-line{margin:0;font-size:8px;color:#9aa3c7;font-family:Consolas,'Courier New',monospace;opacity:0;transform:translateY(6px);animation:installerLog 8s ease-in-out infinite}
-.installer-log-line.is-1{animation-delay:0s}
-.installer-log-line.is-2{animation-delay:1.6s}
-.installer-log-line.is-3{animation-delay:3.2s}
-.installer-log-line.is-4{animation-delay:4.8s}
-.installer-step:nth-child(1){animation:installerStep 10s ease-in-out infinite 0s}
-.installer-step:nth-child(2){animation:installerStep 10s ease-in-out infinite 2s}
-.installer-step:nth-child(3){animation:installerStep 10s ease-in-out infinite 4s}
-.installer-step:nth-child(4){animation:installerStep 10s ease-in-out infinite 6s}
-.installer-step:nth-child(5){animation:installerStep 10s ease-in-out infinite 8s}
-.installer-status,.installer-percent{position:relative;display:inline-block;min-width:9em;height:1.2em;font-style:normal}
-.installer-status i,.installer-percent i{position:absolute;left:0;top:0;opacity:0;font-style:normal;animation:installerText 10s ease-in-out infinite}
-.installer-status i:nth-child(1),.installer-percent i:nth-child(1){animation-delay:0s}
-.installer-status i:nth-child(2),.installer-percent i:nth-child(2){animation-delay:2s}
-.installer-status i:nth-child(3),.installer-percent i:nth-child(3){animation-delay:4s}
-.installer-status i:nth-child(4),.installer-percent i:nth-child(4){animation-delay:6s}
-.installer-status i:nth-child(5),.installer-percent i:nth-child(5){animation-delay:8s}
-.installer-percent{min-width:2.8em;text-align:right}
-@keyframes installerFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.installer-titlebar b{font-size:11px;font-weight:800;color:#0f172a;letter-spacing:-.02em}
+.installer-badge{
+  margin-left:auto;padding:2px 7px;border-radius:999px;
+  background:rgba(59,158,255,.12);border:1px solid rgba(59,158,255,.28);
+  color:#0369a1;font-size:8px;font-weight:900;white-space:nowrap
+}
+.installer-shell{display:grid;grid-template-columns:112px minmax(0,1fr);min-height:210px}
+.installer-side{
+  padding:10px 9px;display:grid;gap:10px;align-content:start;
+  background:linear-gradient(180deg,#eef4fb,#e5edf6);
+  border-right:1px solid rgba(36,52,78,.1)
+}
+.installer-brand{display:flex;align-items:center;gap:8px}
+.installer-mark{
+  position:relative;width:26px;height:26px;flex:none;border-radius:7px;
+  background:linear-gradient(160deg,#e8f3ff,#d7e9fb);
+  border:1px solid rgba(47,127,232,.14);
+  display:grid;grid-template-columns:repeat(3,1fr);align-items:end;gap:2px;padding:6px 5px 5px;
+  box-sizing:border-box;overflow:hidden
+}
+.installer-mark:before{
+  content:'';position:absolute;left:2px;right:2px;top:4px;height:6px;
+  background:radial-gradient(ellipse at center,rgba(47,127,232,.16),transparent 70%);
+  pointer-events:none
+}
+.installer-mark i{display:block;border-radius:1.5px 1.5px 0 0;background:linear-gradient(180deg,#6bb3ff,#2f7fe8)}
+.installer-mark i:nth-child(1){height:55%}
+.installer-mark i:nth-child(2){height:100%}
+.installer-mark i:nth-child(3){height:72%}
+.installer-mark em{
+  position:absolute;width:4px;height:4px;border-radius:50%;
+  background:#5aa4f0;box-shadow:1.5px -2px 0 -.5px #7bb8f5;opacity:.8
+}
+.installer-mark em:nth-of-type(1){top:3px;right:3px;transform:scale(.85)}
+.installer-mark em:nth-of-type(2){top:7px;right:8px;transform:scale(.6);opacity:.5}
+.installer-brand b{display:block;font-size:10px;font-weight:800;line-height:1.15;color:#0f172a;letter-spacing:-.02em}
+.installer-brand small{display:block;margin-top:1px;font-size:7.5px;font-weight:650;color:#64748b}
+.installer-rail{margin:0;padding:0;list-style:none;display:grid;gap:7px}
+.installer-rail li{
+  display:flex;align-items:center;gap:7px;font-size:10px;font-weight:650;color:#94a3b8;line-height:1.2;
+  animation:installerRailText 12s ease-in-out infinite
+}
+.installer-rail li span{
+  width:11px;height:11px;border-radius:999px;box-sizing:border-box;flex:none;
+  border:1.5px solid #94a3b8;background:#fff;position:relative;
+  animation:installerRailDot 12s ease-in-out infinite
+}
+.installer-rail li span:after{
+  content:'';position:absolute;left:2.5px;top:.5px;width:3.5px;height:6px;
+  border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(45deg);opacity:0
+}
+.installer-rail li.r1{animation-name:installerRailText1}
+.installer-rail li.r1 span{animation-name:installerRailDot1}
+.installer-rail li.r1 span:after{animation:installerRailCheck1 12s ease-in-out infinite}
+.installer-rail li.r2{animation-name:installerRailText2}
+.installer-rail li.r2 span{animation-name:installerRailDot2}
+.installer-rail li.r2 span:after{animation:installerRailCheck2 12s ease-in-out infinite}
+.installer-rail li.r3{animation-name:installerRailText3}
+.installer-rail li.r3 span{animation-name:installerRailDot3}
+.installer-stages{position:relative;min-height:210px;background:#fff;overflow:hidden}
+.installer-pane{
+  position:absolute;inset:0;padding:11px 12px 10px;display:grid;gap:6px;align-content:start;
+  opacity:0;transform:translateY(6px);pointer-events:none;
+  animation:installerPaneHide 12s ease-in-out infinite
+}
+.installer-pane.is-welcome{animation-name:installerPane1}
+.installer-pane.is-ready{animation-name:installerPane2}
+.installer-pane.is-run{animation-name:installerPane3}
+.installer-pane h3{margin:0;font-size:14px;font-weight:800;letter-spacing:-.03em;color:#0f172a;line-height:1.2}
+.installer-pane p{margin:0;font-size:10px;line-height:1.45;color:#475569}
+.installer-pane p.is-hint{margin-top:4px;color:#64748b}
+.installer-pane p.is-hint b{color:#0369a1}
+.installer-field{display:grid;gap:3px}
+.installer-field label{font-size:9.5px;font-weight:750;color:#475569}
+.installer-path{
+  padding:5px 8px;border-radius:7px;border:1px solid rgba(36,52,78,.14);
+  background:linear-gradient(180deg,#f8fafc,#f1f5f9);
+  color:#0f172a;font-size:10.5px;font-weight:700;font-family:Consolas,'Segoe UI',monospace
+}
+.installer-field p{margin:0;font-size:9px;line-height:1.35;color:#64748b}
+.installer-prompt{margin:2px 0 0;font-size:10.5px;font-weight:700;color:#334155}
+.installer-opts{display:grid;gap:4px}
+.installer-opt{
+  padding:6px 8px;border-radius:7px;border:1px solid rgba(36,52,78,.12);
+  background:#fff;display:grid;gap:1px
+}
+.installer-opt b{font-size:10.5px;font-weight:750;color:#0f172a;line-height:1.25}
+.installer-opt span{font-size:9px;line-height:1.3;color:#64748b}
+.installer-opt.is-on{
+  border-color:rgba(47,127,232,.55);background:linear-gradient(180deg,#f0f7ff,#e7f1fe);
+  box-shadow:0 0 0 1px rgba(47,127,232,.16),0 0 12px rgba(59,158,255,.1);
+  animation:installerOptPulse 2.8s ease-in-out infinite
+}
+.installer-opt.is-on b{color:#0c4a8a}
+.installer-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-top:2px}
+.installer-step{
+  padding:5px 4px;border-radius:6px;border:1px solid rgba(36,52,78,.1);
+  background:#fff;display:grid;gap:2px;text-align:center;min-width:0;
+  animation:installerStepWait 12s ease-in-out infinite
+}
+.installer-step b{font-size:8px;font-weight:800;color:#334155;white-space:nowrap}
+.installer-step span{font-size:7.5px;font-weight:700;color:#94a3b8}
+.installer-step span:before{content:'대기'}
+.installer-step.s1{animation-name:installerStep1}
+.installer-step.s2{animation-name:installerStep2}
+.installer-step.s3{animation-name:installerStep3}
+.installer-step.s4{animation-name:installerStep4}
+.installer-step.s5{animation-name:installerStep5}
+.installer-step.s1 span:before{animation:installerStepLabel1 12s ease-in-out infinite}
+.installer-step.s2 span:before{animation:installerStepLabel2 12s ease-in-out infinite}
+.installer-step.s3 span:before{animation:installerStepLabel3 12s ease-in-out infinite}
+.installer-step.s4 span:before{animation:installerStepLabel4 12s ease-in-out infinite}
+.installer-step.s5 span:before{animation:installerStepLabel5 12s ease-in-out infinite}
+.installer-status{
+  position:relative;min-height:14px;margin:1px 0 0;overflow:hidden
+}
+.installer-status p{
+  position:absolute;inset:0 auto auto 0;margin:0;
+  font-size:9px;font-weight:650;color:#64748b;
+  font-family:Consolas,'Courier New',monospace;
+  opacity:0;transform:translateY(3px);
+  animation:installerLog 12s ease-in-out infinite
+}
+.installer-status p.is-1{animation-delay:0s}
+.installer-status p.is-2{animation-delay:0s;animation-name:installerLog2}
+.installer-status p.is-3{animation-delay:0s;animation-name:installerLog3}
+.installer-meters{display:grid;gap:5px}
+.installer-meter{display:grid;gap:2px}
+.installer-meter label{
+  font-size:8.5px;font-weight:700;color:#64748b
+}
+.installer-meter i{
+  display:block;height:5px;border-radius:999px;background:rgba(36,52,78,.08);position:relative;overflow:hidden
+}
+.installer-meter i:after{
+  content:'';position:absolute;inset:0 auto 0 0;width:12%;border-radius:999px;
+  background:linear-gradient(90deg,#4aa8ff,#22d3ee);
+  animation:installerBarFile 12s ease-in-out infinite
+}
+.installer-meter.is-total i:after{animation-name:installerBarTotal}
+.installer-log-btn{
+  justify-self:start;margin-top:2px;padding:3px 8px;border-radius:6px;
+  border:1px solid rgba(36,52,78,.12);background:#f8fafc;
+  color:#475569;font-size:9px;font-weight:750
+}
+.installer-foot{
+  display:flex;justify-content:flex-end;gap:6px;padding:8px 10px;
+  background:linear-gradient(180deg,#f4f7fb,#eef2f7);
+  border-top:1px solid rgba(36,52,78,.1)
+}
+.installer-btn{
+  display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:0 11px;
+  border-radius:7px;font-size:10.5px;font-weight:800;line-height:1
+}
+.installer-btn.is-ghost{border:1px solid rgba(36,52,78,.16);background:#fff;color:#334155}
+.installer-btn.is-off{opacity:.42}
+.installer-btn.is-primary{
+  border:1px solid rgba(47,127,232,.45);
+  background:linear-gradient(180deg,#4aa8ff,#2f7fe8);color:#fff;
+  box-shadow:0 6px 16px rgba(59,158,255,.28);
+  animation:installerBtnGlow 3s ease-in-out infinite
+}
+@media(max-width:560px){
+  .installer-anim{max-width:none}
+  .installer-shell{grid-template-columns:1fr;min-height:0}
+  .installer-side{border-right:0;border-bottom:1px solid rgba(36,52,78,.1)}
+  .installer-rail{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  .installer-rail li{font-size:9px}
+  .installer-stages{min-height:200px}
+  .installer-steps{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+  .installer-anim:before,.installer-window,.installer-btn.is-primary,
+  .installer-pane,.installer-rail li,.installer-rail li span,.installer-rail li span:after,
+  .installer-opt.is-on,.installer-step,.installer-step span:before,.installer-status p,
+  .installer-meter i:after{animation:none!important}
+  .installer-pane{opacity:0;transform:none}
+  .installer-pane.is-ready{opacity:1;position:relative}
+  .installer-rail li.r1,.installer-rail li.r2{color:#047857}
+  .installer-rail li.r1 span,.installer-rail li.r2 span{border-color:#10b981;background:#10b981}
+  .installer-rail li.r1 span:after,.installer-rail li.r2 span:after{opacity:1}
+  .installer-rail li.r3{color:#0369a1;font-weight:800}
+  .installer-rail li.r3 span{border-color:#2f7fe8;background:#2f7fe8}
+  .installer-step.s1{border-color:rgba(47,127,232,.5);background:linear-gradient(180deg,#f0f7ff,#e8f2fe)}
+  .installer-step.s1 span:before{content:'진행 중';color:#0369a1}
+}
+
+@keyframes installerFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes installerAura{to{transform:rotate(360deg)}}
-@keyframes installerGlow{0%,100%{opacity:.75}50%{opacity:1}}
-@keyframes installerWave{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
-@keyframes installerPulse{0%,100%{box-shadow:0 0 0 rgba(34,211,238,0)}50%{box-shadow:0 0 14px rgba(34,211,238,.35)}}
-@keyframes installerBtnGlow{0%,100%{box-shadow:0 0 0 rgba(34,211,238,0)}50%{box-shadow:0 0 18px rgba(34,211,238,.22)}}
-@keyframes installerProgress{0%{width:18%}35%{width:68%}70%{width:84%}100%{width:42%}}
-@keyframes installerLog{0%,8%{opacity:0;transform:translateY(6px)}12%,32%{opacity:1;transform:translateY(0)}36%,100%{opacity:.35;transform:translateY(0)}}
-@keyframes installerStep{0%,8%,100%{border-color:rgba(255,255,255,.06);background:rgba(255,255,255,.03);box-shadow:none;transform:none}10%,18%{border-color:rgba(34,211,238,.35);background:rgba(34,211,238,.1);box-shadow:0 0 16px rgba(34,211,238,.12);transform:translateY(-1px)}}
-@keyframes installerText{0%,6%,100%{opacity:0}8%,18%{opacity:1}20%,100%{opacity:0}}
-@media(prefers-reduced-motion:reduce){.installer-anim *,.installer-anim:before{animation:none!important}.installer-log-line{opacity:1;transform:none}.installer-progress-bar i{width:68%}.installer-status i:first-child,.installer-percent i:first-child{opacity:1;position:static}}
+@keyframes installerBtnGlow{0%,100%{box-shadow:0 6px 16px rgba(59,158,255,.22)}50%{box-shadow:0 8px 22px rgba(59,158,255,.4)}}
+@keyframes installerOptPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.04)}}
+@keyframes installerPaneHide{0%,100%{opacity:0;transform:translateY(6px)}}
+@keyframes installerPane1{
+  0%,2%{opacity:0;transform:translateY(6px)}
+  6%,28%{opacity:1;transform:translateY(0)}
+  32%,100%{opacity:0;transform:translateY(-4px)}
+}
+@keyframes installerPane2{
+  0%,32%{opacity:0;transform:translateY(6px)}
+  36%,60%{opacity:1;transform:translateY(0)}
+  64%,100%{opacity:0;transform:translateY(-4px)}
+}
+@keyframes installerPane3{
+  0%,64%{opacity:0;transform:translateY(6px)}
+  68%,96%{opacity:1;transform:translateY(0)}
+  100%{opacity:0;transform:translateY(-4px)}
+}
+@keyframes installerRailDot1{
+  0%,28%{border-color:#2f7fe8;background:#2f7fe8;box-shadow:0 0 0 2px rgba(47,127,232,.16)}
+  32%,100%{border-color:#10b981;background:#10b981;box-shadow:inset 0 0 0 1.5px #fff}
+}
+@keyframes installerRailCheck1{0%,28%{opacity:0}32%,100%{opacity:1}}
+@keyframes installerRailText1{0%,28%{color:#0369a1;font-weight:800}32%,100%{color:#047857;font-weight:650}}
+@keyframes installerRailDot2{
+  0%,28%{border-color:#94a3b8;background:#fff;box-shadow:none}
+  32%,60%{border-color:#2f7fe8;background:#2f7fe8;box-shadow:0 0 0 2px rgba(47,127,232,.16)}
+  64%,100%{border-color:#10b981;background:#10b981;box-shadow:inset 0 0 0 1.5px #fff}
+}
+@keyframes installerRailCheck2{0%,60%{opacity:0}64%,100%{opacity:1}}
+@keyframes installerRailText2{
+  0%,28%{color:#94a3b8;font-weight:650}
+  32%,60%{color:#0369a1;font-weight:800}
+  64%,100%{color:#047857;font-weight:650}
+}
+@keyframes installerRailDot3{
+  0%,60%{border-color:#94a3b8;background:#fff;box-shadow:none}
+  64%,100%{border-color:#2f7fe8;background:#2f7fe8;box-shadow:0 0 0 2px rgba(47,127,232,.16)}
+}
+@keyframes installerRailText3{
+  0%,60%{color:#94a3b8;font-weight:650}
+  64%,100%{color:#0369a1;font-weight:800}
+}
+@keyframes installerStepWait{
+  0%,100%{border-color:rgba(36,52,78,.1);background:#fff;opacity:.72}
+}
+@keyframes installerStep1{
+  0%,64%{border-color:rgba(36,52,78,.1);background:#fff;opacity:.72}
+  68%,76%{border-color:rgba(47,127,232,.5);background:linear-gradient(180deg,#f0f7ff,#e8f2fe);opacity:1;box-shadow:0 0 10px rgba(59,158,255,.16)}
+  78%,100%{border-color:rgba(16,185,129,.35);background:#f0fdf8;opacity:1;box-shadow:none}
+}
+@keyframes installerStep2{
+  0%,76%{border-color:rgba(36,52,78,.1);background:#fff;opacity:.72}
+  78%,86%{border-color:rgba(47,127,232,.5);background:linear-gradient(180deg,#f0f7ff,#e8f2fe);opacity:1;box-shadow:0 0 10px rgba(59,158,255,.16)}
+  88%,100%{border-color:rgba(16,185,129,.35);background:#f0fdf8;opacity:1;box-shadow:none}
+}
+@keyframes installerStep3{
+  0%,86%{border-color:rgba(36,52,78,.1);background:#fff;opacity:.72}
+  88%,94%{border-color:rgba(47,127,232,.5);background:linear-gradient(180deg,#f0f7ff,#e8f2fe);opacity:1}
+  96%,100%{border-color:rgba(36,52,78,.1);background:#fff;opacity:.72}
+}
+@keyframes installerStep4{
+  0%,100%{border-color:rgba(36,52,78,.1);background:#fff;opacity:.72}
+}
+@keyframes installerStep5{
+  0%,100%{border-color:rgba(36,52,78,.1);background:#fff;opacity:.72}
+}
+@keyframes installerStepLabel1{
+  0%,64%{content:'대기';color:#94a3b8}
+  68%,76%{content:'진행 중';color:#0369a1}
+  78%,100%{content:'완료';color:#059669}
+}
+@keyframes installerStepLabel2{
+  0%,76%{content:'대기';color:#94a3b8}
+  78%,86%{content:'진행 중';color:#0369a1}
+  88%,100%{content:'완료';color:#059669}
+}
+@keyframes installerStepLabel3{
+  0%,86%{content:'대기';color:#94a3b8}
+  88%,94%{content:'진행 중';color:#0369a1}
+  96%,100%{content:'대기';color:#94a3b8}
+}
+@keyframes installerStepLabel4{0%,100%{content:'대기';color:#94a3b8}}
+@keyframes installerStepLabel5{0%,100%{content:'대기';color:#94a3b8}}
+@keyframes installerBarFile{
+  0%,64%{width:0%}
+  70%{width:28%}
+  78%{width:62%}
+  86%{width:88%}
+  92%,100%{width:18%}
+}
+@keyframes installerBarTotal{
+  0%,64%{width:0%}
+  72%{width:12%}
+  80%{width:28%}
+  88%{width:42%}
+  96%,100%{width:8%}
+}
+@keyframes installerLog{
+  0%,66%{opacity:0;transform:translateY(3px)}
+  68%,74%{opacity:1;transform:translateY(0)}
+  76%,100%{opacity:0;transform:translateY(0)}
+}
+@keyframes installerLog2{
+  0%,75%{opacity:0;transform:translateY(3px)}
+  77%,84%{opacity:1;transform:translateY(0)}
+  86%,100%{opacity:0;transform:translateY(0)}
+}
+@keyframes installerLog3{
+  0%,85%{opacity:0;transform:translateY(3px)}
+  87%,94%{opacity:1;transform:translateY(0)}
+  96%,100%{opacity:0;transform:translateY(0)}
+}
+
 .download-guide-lead{margin:0;color:var(--muted);font-size:14px;line-height:1.7}
 .download-guide-tags{margin:12px 0 0;padding:0;list-style:none;display:flex;gap:8px;flex-wrap:wrap}
 .download-guide-tags li{padding:6px 10px;border-radius:999px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.2);color:#9af2ff;font-size:12px;font-weight:800}
@@ -2928,9 +3171,16 @@ body.topnav-layout #mainNav.top-nav .top-nav-item.active .top-nav-item-copy b{co
 .download-card-meta-row{display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap}
 .download-card-meta-row span+span:before{content:'·';margin-right:8px;color:rgba(255,255,255,.25)}
 .download-card-pro .portal-download-actions{display:flex;flex-direction:row;gap:6px;align-items:center;flex-shrink:0;justify-self:end;align-self:start;margin-left:0;margin-top:2px}
-.download-card-pro .portal-download-actions .primary,.download-card-pro .portal-download-actions .secondary{padding:7px 12px!important;border-radius:10px!important;font-size:12px!important;line-height:1.2!important;min-height:0!important}
-.download-cta{display:inline-flex!important;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#22d3ee,#8b5cf6)!important;border:0!important;box-shadow:0 6px 18px rgba(34,211,238,.18);transition:transform .18s ease,box-shadow .18s ease;white-space:nowrap}
-.download-cta svg{width:14px;height:14px}
+.download-card-pro .portal-download-actions .primary,
+.download-card-pro .portal-download-actions .secondary{
+  box-sizing:border-box!important;
+  display:inline-flex!important;align-items:center;justify-content:center;
+  height:30px!important;min-height:30px!important;max-height:30px!important;
+  padding:0 12px!important;border-radius:10px!important;
+  font-size:12px!important;line-height:1!important;white-space:nowrap
+}
+.download-cta{display:inline-flex!important;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#22d3ee,#8b5cf6)!important;border:1px solid transparent!important;box-shadow:0 6px 18px rgba(34,211,238,.18);transition:transform .18s ease,box-shadow .18s ease;white-space:nowrap}
+.download-cta svg{width:14px;height:14px;flex:none}
 .download-cta:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(34,211,238,.24)}
 .download-card-pro .portal-download-actions .secondary{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);white-space:nowrap}
 @media(max-width:900px){.download-card-pro{grid-template-columns:auto 1fr;row-gap:8px}.download-card-pro .portal-download-actions{grid-column:1/-1;justify-content:flex-start}.download-card-main-row{align-items:flex-start}}
@@ -3692,6 +3942,7 @@ article .board-attachment-item figcaption b{
 .sale-promo-now span{color:#9af2ff;font-size:13px;font-weight:900}
 .sale-promo-actions{display:grid;gap:10px;position:relative;margin-top:4px}
 .sale-promo-actions .primary{width:100%;justify-content:center;text-align:center;padding:14px 18px}
+.sale-promo-meta{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap}
 .sale-promo-hide{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;user-select:none}
 .sale-promo-hide input{width:auto;accent-color:#22d3ee}
 .sale-promo-close-link{border:0;background:transparent;color:#9aa0bd;font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:4px}
@@ -4422,7 +4673,7 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .pricing-modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;background:rgba(0,0,0,.55)}
 .pricing-modal[hidden]{display:none}
 .pricing-modal-card{width:min(520px,calc(100vw - 32px));padding:18px;border-radius:14px;border:1px solid var(--site-stroke);background:#121826}
-@media(max-width:1100px){.purchase-plan-grid:not([data-cols="2"]):not([data-cols="1"]){--purchase-cols:3}.pricing-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1100px){.purchase-plan-grid:not([data-cols="1"]):not([data-cols="2"]):not([data-cols="4"]){--purchase-cols:3}.pricing-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .pricing-list-pane,.pricing-editor-pane{padding:14px;border:1px solid var(--site-stroke);border-radius:16px;background:rgba(0,0,0,.2)}
 .pricing-product-list{display:grid;gap:8px;margin:10px 0 18px;position:relative}
 .pricing-product-item{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:stretch;gap:4px 6px;text-align:left;padding:8px 8px 8px 6px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:inherit;font:inherit;cursor:default}
@@ -4670,7 +4921,7 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
   /* Override global mobile `nav{position:absolute}` — that rule was stacking
      profile links on top of the Google login button. */
   position:static!important;left:auto!important;right:auto!important;top:auto!important;
-  width:auto!important;inset:auto!important;
+  width:100%!important;min-width:0!important;inset:auto!important;
   background:transparent!important;border:0!important;border-radius:0!important;
   box-shadow:none!important;padding:3px!important;
   text-align:left!important;justify-items:stretch;align-items:stretch!important;
@@ -4695,11 +4946,12 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 }
 .topbar-profile-links[hidden]{display:none!important}
 .topbar-profile-links a{
-  display:block!important;width:100%;box-sizing:border-box;
-  padding:6px 7px!important;border-radius:7px;color:#d7dbf2!important;
+  display:flex!important;align-items:center;width:100%;box-sizing:border-box;
+  padding:8px 10px!important;border-radius:7px;color:#d7dbf2!important;
   font-size:12px;font-weight:700;text-decoration:none;
   text-align:left!important;justify-content:flex-start!important;
-  transform:none!important;background:transparent;margin:0
+  transform:none!important;background:transparent;margin:0;
+  min-height:34px
 }
 .topbar-profile-links a:hover{background:rgba(255,255,255,.06)!important;color:#fff!important;transform:none!important}
 .topbar-profile-links a.topbar-profile-admin{

@@ -57,7 +57,7 @@ import {
   forcePromoWindowForPreview,
   storefrontUiCopy,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=admin-preview-draft-2';
+} from './storefront-render.js?v=promo-meta-row-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=credit-ledger-v2-3';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 

@@ -41,8 +41,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=theme-2">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=theme-6">
+  <link rel="stylesheet" href="./assets/css/style.css?v=nav-icons-1">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=theme-44">
   <script defer src="./assets/js/analytics.js"></script>
   <script type="application/ld+json">
   {
@@ -73,7 +73,7 @@
     <button id="menuBtn" class="menu-btn" aria-label="메뉴 열기" type="button">☰</button>
     <nav id="mainNav">
       <a href="./index.html" data-nav="home">홈</a><a href="./downloads.html" data-nav="downloads">다운로드</a><a href="./purchase.html" data-nav="purchase">구매</a>
-      <a href="./notices.html" data-nav="community">공지사항</a><a href="./patch-notes.html" data-nav="community">패치노트</a><a href="./faq.html" data-nav="community">FAQ</a>
+      <a href="./notices.html" data-nav="community">공지사항</a>
       <a href="./board.html" data-nav="community">자유게시판</a><a href="./support.html" data-nav="support">1:1 문의</a><a href="./my-tickets.html" data-nav="support">나의 문의</a>
       <a href="./account.html" data-nav="account">내 계정</a><a id="adminNav" class="hidden" href="./admin.html">관리자</a>
     </nav>
@@ -85,7 +85,7 @@
         <div><p class="eyebrow">Download</p><h1>다운로드</h1><p class="hub-desc">최신 설치 파일과 버전 정보를 확인합니다. YouTube·MP3·PDF→MIDI 사용법은 <a href="./guides/index.html">가이드</a> · <a href="./product.html">제품</a> · <a href="./purchase.html">구매</a> · <a href="./support.html">지원</a>을 참고하세요.</p></div>
       </div>
       <nav class="hub-subnav" aria-label="게시판 메뉴">
-        <a href="./notices.html" data-hub="notices">공지사항</a><a href="./patch-notes.html" data-hub="patches">패치노트</a><a href="./faq.html" data-hub="faq">FAQ</a>
+        <a href="./notices.html" data-hub="notices">공지사항</a>
         <a href="./board.html" data-hub="board">자유게시판</a><a href="./support.html" data-hub="support">문의 작성</a><a href="./my-tickets.html" data-hub="tickets">나의 문의</a>
       </nav>
       <div id="downloadBox" class="portal-download-card hub-card download-card-shell"><p class="muted">불러오는 중...</p></div>
@@ -95,68 +95,80 @@
           <div class="installer-anim" aria-hidden="true">
             <div class="installer-window">
               <div class="installer-titlebar">
-                <span class="installer-dots"><i></i><i></i><i></i></span>
-                <b>MidiAI Installer</b>
+                <div class="installer-dots"><i></i><i></i><i></i></div>
+                <b>MidiAI Studio 설치</b>
+                <span class="installer-badge">Installer</span>
               </div>
-              <div class="installer-banner">
-                <div class="installer-banner-glow"></div>
-                <div class="installer-banner-wave">
-                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              <div class="installer-shell">
+                <aside class="installer-side">
+                  <div class="installer-brand">
+                    <span class="installer-mark"><i></i><i></i><i></i><em></em><em></em></span>
+                    <div>
+                      <b>MidiAI Studio</b>
+                      <small>설치 마법사</small>
+                    </div>
+                  </div>
+                  <ol class="installer-rail">
+                    <li class="r1"><span></span>시작</li>
+                    <li class="r2"><span></span>설치 준비</li>
+                    <li class="r3"><span></span>설치</li>
+                    <li class="r4"><span></span>완료</li>
+                  </ol>
+                </aside>
+                <div class="installer-stages">
+                  <div class="installer-pane is-welcome">
+                    <h3>MidiAI Studio 설치</h3>
+                    <p>MidiAI Studio 설치 마법사에 오신 것을 환영합니다.</p>
+                    <p>이 마법사로 설치 · 복구 · 제거를 진행할 수 있습니다.</p>
+                    <p class="is-hint">계속하려면 <b>다음</b>을 클릭하세요.</p>
+                  </div>
+                  <div class="installer-pane is-ready">
+                    <h3>설치 준비</h3>
+                    <div class="installer-field">
+                      <label>설치 위치</label>
+                      <div class="installer-path">C:\MidiAI</div>
+                      <p>구성에 맞게 고정된 경로입니다.</p>
+                    </div>
+                    <p class="installer-prompt">수행할 작업을 선택하세요</p>
+                    <div class="installer-opts">
+                      <div class="installer-opt is-on"><b>설치/업데이트</b><span>최신 파일로 설치 · 구성</span></div>
+                      <div class="installer-opt"><b>복구</b><span>누락·손상 파일 검사</span></div>
+                      <div class="installer-opt"><b>제거</b><span>프로그램 완전 제거</span></div>
+                    </div>
+                  </div>
+                  <div class="installer-pane is-run">
+                    <h3>설치</h3>
+                    <div class="installer-steps">
+                      <div class="installer-step s1"><b>01 Core</b><span></span></div>
+                      <div class="installer-step s2"><b>02 Media</b><span></span></div>
+                      <div class="installer-step s3"><b>03 Library</b><span></span></div>
+                      <div class="installer-step s4"><b>04 Runtime</b><span></span></div>
+                      <div class="installer-step s5"><b>05 Check</b><span></span></div>
+                    </div>
+                    <div class="installer-status">
+                      <p class="is-1">[1/6] Loading release manifest...</p>
+                      <p class="is-2">[2/6] Downloading core packages...</p>
+                      <p class="is-3">[3/6] Verifying media assets...</p>
+                    </div>
+                    <div class="installer-meters">
+                      <div class="installer-meter"><label>현재 파일</label><i></i></div>
+                      <div class="installer-meter is-total"><label>전체 진행</label><i></i></div>
+                    </div>
+                    <span class="installer-log-btn">▶ 설치 로그</span>
+                  </div>
                 </div>
-                <div class="installer-banner-copy">
-                  <strong>MidiAI Studio</strong>
-                  <em>AI-Powered MIDI Generation</em>
-                </div>
-                <span class="installer-engine">AI ENGINE</span>
               </div>
-              <div class="installer-body">
-                <div class="installer-headline">
-                  <div>
-                    <b>MidiAI Studio</b>
-                    <small>Installer · Updater · Runtime Manager</small>
-                  </div>
-                  <span class="installer-mode">Install / Update Ready</span>
-                </div>
-                <div class="installer-path">
-                  <label>Install Location</label>
-                  <code>C:\MidiAI</code>
-                </div>
-                <div class="installer-steps">
-                  <div class="installer-step"><span>01</span><b>Core</b><em>Prepare core files</em></div>
-                  <div class="installer-step"><span>02</span><b>Media</b><em>Prepare media engine</em></div>
-                  <div class="installer-step"><span>03</span><b>Library</b><em>Install components</em></div>
-                  <div class="installer-step"><span>04</span><b>Runtime</b><em>Prepare runtime</em></div>
-                  <div class="installer-step"><span>05</span><b>Check</b><em>Final verification</em></div>
-                </div>
-                <div class="installer-actions">
-                  <div class="installer-btn is-primary"><b>Install / Update</b><small>Automatically installs, updates, or repairs MidiAI Studio.</small></div>
-                </div>
-                <div class="installer-progress">
-                  <div class="installer-progress-top">
-                    <span class="installer-status">
-                      <i>Installing core files...</i>
-                      <i>Loading media engine...</i>
-                      <i>Installing components...</i>
-                      <i>Preparing runtime...</i>
-                      <i>Final verification...</i>
-                    </span>
-                    <span class="installer-percent"><i>24%</i><i>48%</i><i>68%</i><i>84%</i><i>100%</i></span>
-                  </div>
-                  <div class="installer-progress-bar"><i></i></div>
-                </div>
-                <div class="installer-log">
-                  <p class="installer-log-line is-1">[Core] Preparing application files...</p>
-                  <p class="installer-log-line is-2">[Media] Loading media engine...</p>
-                  <p class="installer-log-line is-3">[Library] Installing required components...</p>
-                  <p class="installer-log-line is-4">[Runtime] Checking environment...</p>
-                </div>
+              <div class="installer-foot">
+                <span class="installer-btn is-ghost is-off">&lt; 이전</span>
+                <span class="installer-btn is-primary">다음 &gt;</span>
+                <span class="installer-btn is-ghost">취소</span>
               </div>
             </div>
           </div>
           <div>
             <p class="eyebrow">MidiAI Installer.exe</p>
             <h2>공식 설치 · 업데이트 프로그램</h2>
-            <p class="download-guide-lead">MidiAI Installer는 MidiAI Studio의 설치·업데이트·복구와 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다. <strong>Install / Update</strong> 한 번으로 자동 설치 또는 업데이트가 진행됩니다.</p>
+            <p class="download-guide-lead">MidiAI Installer는 MidiAI Studio의 설치·업데이트·복구를 한 마법사에서 처리하는 Windows 전용 도구입니다. <strong>설치 준비</strong>에서 작업을 선택한 뒤 <strong>다음</strong>으로 진행합니다.</p>
             <ul class="download-guide-tags">
               <li>Installer</li>
               <li>Updater</li>
@@ -174,9 +186,9 @@
             <ol class="download-guide-list">
               <li><span class="guide-step-text">위 <strong>다운로드</strong> 버튼으로 <code>MidiAI Installer.exe</code>를 받습니다.</span></li>
               <li><span class="guide-step-text">설치 파일을 실행하고 설치 경로를 확인합니다. 기본 경로는 <code>C:\MidiAI</code>입니다.</span></li>
-              <li><span class="guide-step-text"><strong>Install / Update</strong>를 누릅니다. 미설치면 전체 설치, 이미 설치된 경우 업데이트·복구가 자동으로 진행됩니다.</span></li>
-              <li><span class="guide-step-text">Core → Media → Library → Runtime → Check 순서로 진행되며, 하단 Installation Log에서 상태를 확인합니다.</span></li>
-              <li><span class="guide-step-text">최종 점검이 완료되면 <strong>Open Folder</strong>로 설치 폴더를 열 수 있습니다.</span></li>
+              <li><span class="guide-step-text"><strong>설치 준비</strong>에서 <strong>설치/업데이트</strong>를 선택한 뒤 <strong>다음</strong>을 누릅니다. 미설치면 전체 설치, 이미 설치된 경우 최신 파일로 구성됩니다.</span></li>
+              <li><span class="guide-step-text">마법사가 <strong>시작 → 설치 준비 → 설치 → 완료</strong> 순서로 진행됩니다. 설치 위치는 <code>C:\MidiAI</code>로 고정되어 있습니다.</span></li>
+              <li><span class="guide-step-text"><strong>완료</strong> 화면이 나오면 마법사를 닫고 <code>C:\MidiAI</code>에서 MidiAI Studio를 실행할 수 있습니다.</span></li>
             </ol>
           </section>
           <section class="download-guide-block is-run">
@@ -185,11 +197,11 @@
               <div><p class="download-guide-block-label">Run</p><h3>실행 · 업데이트 방법</h3></div>
             </div>
             <ol class="download-guide-list">
-              <li><span class="guide-step-text">이미 설치된 경우 Installer를 다시 실행한 뒤 <strong>Install / Update</strong>로 앱을 갱신하거나 복구합니다.</span></li>
-              <li><span class="guide-step-text">실행 오류나 파일 누락이 있어도 같은 <strong>Install / Update</strong>로 자동 복구를 시도합니다.</span></li>
+              <li><span class="guide-step-text">이미 설치된 경우 Installer를 다시 실행한 뒤 <strong>설치 준비</strong>에서 <strong>설치/업데이트</strong>를 선택하고 <strong>다음</strong>으로 앱을 갱신합니다.</span></li>
+              <li><span class="guide-step-text">실행 오류나 파일 누락이 있으면 같은 화면에서 <strong>복구</strong>를 선택한 뒤 <strong>다음</strong>으로 복구를 진행합니다.</span></li>
               <li><span class="guide-step-text">설치 후 <code>C:\MidiAI</code> 폴더에서 MidiAI Studio를 실행합니다.</span></li>
               <li><span class="guide-step-text">라이선스 인증은 앱 실행 후 Google 계정으로 로그인해 진행합니다.</span></li>
-              <li><span class="guide-step-text">문제가 계속되면 오류 메시지, 스크린샷, 로그 파일(가능한 경우)과 Installer <strong>System Check</strong> 결과를 함께 1:1 문의를 이용해 주세요.</span></li>
+              <li><span class="guide-step-text">문제가 계속되면 오류 메시지, 스크린샷, 로그 파일(가능한 경우)을 첨부해 <strong>1:1 문의</strong>를 이용해 주세요.</span></li>
             </ol>
           </section>
         </div>
@@ -212,6 +224,6 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=v48-downloads-i18n-20260713"></script>
-  <script type="module" src="./assets/js/app.js?v=theme-3"></script>
+  <script type="module" src="./assets/js/app.js?v=nav-icons-1"></script>
 </body>
 </html>

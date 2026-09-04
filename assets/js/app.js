@@ -62,7 +62,7 @@ import {
   resolvePromotionProducts,
   storefrontUiCopy,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=credit-live-sale-1';
+} from './storefront-render.js?v=promo-meta-row-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -346,6 +346,25 @@ const I18N = {
 };
 
 Object.assign(I18N.en, {
+  'Windows 다운로드':'Windows download',
+  '업데이트 내역':'Update history',
+  '전체 업데이트 내역':'All updates',
+  '업데이트 내역 목록':'Update list',
+  '설치와 첫 변환':'Install & first convert',
+  '링크 변환 방법':'Convert from a link',
+  'MP3·WAV 변환':'Convert MP3 / WAV',
+  '편집·음원 사용':'Edit & play MIDI',
+  '악보 PDF 변환':'Convert score PDFs',
+  '오류·복구 안내':'Errors & repair tips',
+  '가이드 목록':'All guides',
+  '설치 파일 받기':'Get the installer',
+  '버전별 변경점':'Changes by version',
+  '운영·이벤트 안내':'News & events',
+  '회원 소통 공간':'Community board',
+  '자주 묻는 질문':'Common questions',
+  '비공개 상담':'Private support',
+  '내 티켓 확인':'Your tickets',
+  '라이선스·로그인':'License & sign-in',
   '프로그램 사용 가이드':'App usage guide',
   'Windows MIDI 작업 도구':'Windows MIDI workstation',
   '변환에서 악보까지':'From conversion to score',
@@ -398,6 +417,25 @@ Object.assign(I18N.en, {
   '앱 안에서 MIDI를 바로 재생하고, 선택 구간·반복 재생을 사용합니다. 고품질 사운드팩은 선택 설치입니다.':'Play MIDI in-app, including a selected range and loop. High-quality sound packs are optional installs.'
 });
 Object.assign(I18N.ja, {
+  'Windows 다운로드':'Windowsダウンロード',
+  '업데이트 내역':'アップデート履歴',
+  '전체 업데이트 내역':'アップデート履歴一覧',
+  '업데이트 내역 목록':'アップデート履歴一覧',
+  '설치와 첫 변환':'インストールと初回変換',
+  '링크 변환 방법':'リンク変換の方法',
+  'MP3·WAV 변환':'MP3・WAV変換',
+  '편집·음원 사용':'編集・再生',
+  '악보 PDF 변환':'楽譜PDF変換',
+  '오류·복구 안내':'エラー・修復ガイド',
+  '가이드 목록':'ガイド一覧',
+  '설치 파일 받기':'インストーラー取得',
+  '버전별 변경점':'バージョン別の変更',
+  '운영·이벤트 안내':'運営・イベント案内',
+  '회원 소통 공간':'会員コミュニティ',
+  '자주 묻는 질문':'よくある質問',
+  '비공개 상담':'非公開サポート',
+  '내 티켓 확인':'自分の問い合わせ',
+  '라이선스·로그인':'ライセンス・ログイン',
   '프로그램 사용 가이드':'プログラム使い方ガイド',
   'Windows MIDI 작업 도구':'Windows MIDI作業ツール',
   '변환에서 악보까지':'変換から楽譜まで',
@@ -612,79 +650,79 @@ function downloadLocaleText(){
     title:'Downloads',
     desc:'Check the latest installer and version info.',
     guideTitle:'Official installer & updater',
-    guideLead:'MidiAI Installer is a Windows tool for install, update, repair, and runtime checks in one screen. One Install / Update action automatically installs or updates.',
+    guideLead:'MidiAI Installer is a Windows setup wizard for install, update, and repair. On Ready to install, choose a task and click Next.',
     setupTitle:'How to install',
     runTitle:'How to run & update',
     setupSteps:[
       'Use the <strong>Download</strong> button above to get <code>MidiAI Installer.exe</code>.',
-      'Run the installer and confirm the install path. The default is <code>C:\\MidiAI</code>.',
-      'Click <strong>Install / Update</strong>. If MidiAI is not installed yet, a full install runs; if it is already installed, update or repair runs automatically.',
-      'Progress follows Core → Media → Library → Runtime → Check. Check status in the Installation Log below.',
-      'When verification finishes, open the install folder with <strong>Open Folder</strong>.'
+      'Run the installer and confirm the install path. The default is <code>C:\\MidiAI</code> (fixed).',
+      'On <strong>Ready to install</strong>, select <strong>Install/Update</strong>, then click <strong>Next</strong>. A full install runs if needed; if already installed, files are refreshed to the latest state.',
+      'The wizard proceeds <strong>Start → Ready to install → Install → Finish</strong>.',
+      'When <strong>Finish</strong> appears, close the wizard and launch MidiAI Studio from <code>C:\\MidiAI</code>.'
     ],
     runSteps:[
-      'If already installed, run the Installer again and click <strong>Install / Update</strong> to refresh or repair the app.',
-      'If launch fails or files are missing, run the same <strong>Install / Update</strong> action again for automatic repair.',
+      'If already installed, run the Installer again, choose <strong>Install/Update</strong> on <strong>Ready to install</strong>, then click <strong>Next</strong> to refresh the app.',
+      'If launch fails or files are missing, choose <strong>Repair</strong> on the same screen and click <strong>Next</strong>.',
       'After install, launch MidiAI Studio from the <code>C:\\MidiAI</code> folder.',
       'License activation happens after launch by signing in with your Google account.',
-      'If issues continue, use 1:1 support with the error message, a screenshot, and log files when available. Installer <strong>System Check</strong> results also help.'
+      'If issues continue, use 1:1 support with the error message, a screenshot, and log files when available.'
     ],
     mandatory:'Required update',
     officialInstaller:'Official installer',
     buyLicense:'Buy license',
-    patchNotes:'Patch notes'
+    patchNotes:'Update history'
   };
   if(lang === 'ja') return {
     title:'ダウンロード',
     desc:'最新インストーラーとバージョン情報を確認できます。',
     guideTitle:'公式インストール・更新プログラム',
-    guideLead:'MidiAI Installerは、インストール・更新・修復とランタイム確認を1画面で行うWindows専用ツールです。Install / Updateを一度押すだけで自動インストールまたは更新が進みます。',
+    guideLead:'MidiAI Installerは、インストール・更新・修復を行うWindowsセットアップウィザードです。インストール準備で作業を選び、「次へ」で進めます。',
     setupTitle:'インストール方法',
     runTitle:'実行・更新方法',
     setupSteps:[
       '上の<strong>ダウンロード</strong>ボタンで<code>MidiAI Installer.exe</code>を取得します。',
-      'インストーラーを実行し、インストール先を確認します。既定パスは<code>C:\\MidiAI</code>です。',
-      '<strong>Install / Update</strong>を押します。未インストールならフルインストール、既に入っている場合は更新・修復が自動で進みます。',
-      'Core → Media → Library → Runtime → Check の順で進み、下部のInstallation Logで状態を確認します。',
-      '最終確認が終わると<strong>Open Folder</strong>でインストールフォルダを開けます。'
+      'インストーラーを実行し、インストール先を確認します。既定パスは<code>C:\\MidiAI</code>（固定）です。',
+      '<strong>インストール準備</strong>で<strong>インストール/更新</strong>を選び、<strong>次へ</strong>を押します。未インストールならフルインストール、既に入っている場合は最新ファイル状態に構成します。',
+      'ウィザードは<strong>開始 → インストール準備 → インストール → 完了</strong>の順で進みます。',
+      '<strong>完了</strong>画面が出たらウィザードを閉じ、<code>C:\\MidiAI</code>からMidiAI Studioを起動できます。'
     ],
     runSteps:[
-      'すでにインストール済みの場合はInstallerを再実行し、<strong>Install / Update</strong>でアプリを更新または修復します。',
-      '起動エラーやファイル欠損がある場合も、同じ<strong>Install / Update</strong>で自動修復を試します。',
+      'すでにインストール済みの場合はInstallerを再実行し、<strong>インストール準備</strong>で<strong>インストール/更新</strong>を選んで<strong>次へ</strong>でアプリを更新します。',
+      '起動エラーやファイル欠損がある場合は、同じ画面で<strong>修復</strong>を選んで<strong>次へ</strong>を押します。',
       'インストール後は<code>C:\\MidiAI</code>フォルダからMidiAI Studioを起動します。',
       'ライセンス認証はアプリ起動後、Googleアカウントでログインして行います。',
-      '問題が続く場合は、エラーメッセージ・スクリーンショット・ログファイル（可能な場合）とInstallerの<strong>System Check</strong>結果を添えて1:1問い合わせをご利用ください。'
+      '問題が続く場合は、エラーメッセージ・スクリーンショット・ログファイル（可能な場合）を添えて1:1問い合わせをご利用ください。'
     ],
     mandatory:'必須アップデート',
     officialInstaller:'公式インストーラー',
     buyLicense:'ライセンス購入',
-    patchNotes:'パッチノート'
+    patchNotes:'アップデート履歴'
   };
   return {
     title:'다운로드',
     desc:'최신 설치 파일과 버전 정보를 확인합니다.',
     guideTitle:'공식 설치 · 업데이트 프로그램',
-    guideLead:'MidiAI Installer는 MidiAI Studio의 설치·업데이트·복구와 런타임 점검을 한 화면에서 처리하는 Windows 전용 도구입니다. Install / Update 한 번으로 자동 설치 또는 업데이트가 진행됩니다.',
+    guideLead:'MidiAI Installer는 MidiAI Studio의 설치·업데이트·복구를 한 마법사에서 처리하는 Windows 전용 도구입니다. 설치 준비에서 작업을 선택한 뒤 다음으로 진행합니다.',
     setupTitle:'설치 방법',
     runTitle:'실행 · 업데이트 방법',
     setupSteps:[
       '위 <strong>다운로드</strong> 버튼으로 <code>MidiAI Installer.exe</code>를 받습니다.',
       '설치 파일을 실행하고 설치 경로를 확인합니다. 기본 경로는 <code>C:\\MidiAI</code>입니다.',
-      '<strong>Install / Update</strong>를 누릅니다. 미설치면 전체 설치, 이미 설치된 경우 업데이트·복구가 자동으로 진행됩니다.',
-      'Core → Media → Library → Runtime → Check 순서로 진행되며, 하단 Installation Log에서 상태를 확인합니다.',
-      '최종 점검이 완료되면 <strong>Open Folder</strong>로 설치 폴더를 열 수 있습니다.'
+      '<strong>설치 준비</strong>에서 <strong>설치/업데이트</strong>를 선택한 뒤 <strong>다음</strong>을 누릅니다. 미설치면 전체 설치, 이미 설치된 경우 최신 파일로 구성됩니다.',
+      '마법사가 <strong>시작 → 설치 준비 → 설치 → 완료</strong> 순서로 진행됩니다. 설치 위치는 <code>C:\\MidiAI</code>로 고정되어 있습니다.',
+      '<strong>완료</strong> 화면이 나오면 마법사를 닫고 <code>C:\\MidiAI</code>에서 MidiAI Studio를 실행할 수 있습니다.'
     ],
     runSteps:[
-      '이미 설치된 경우 Installer를 다시 실행한 뒤 <strong>Install / Update</strong>로 앱을 갱신하거나 복구합니다.',
-      '실행 오류나 파일 누락이 있어도 같은 <strong>Install / Update</strong>로 자동 복구를 시도합니다.',
+      '이미 설치된 경우 Installer를 다시 실행한 뒤 <strong>설치 준비</strong>에서 <strong>설치/업데이트</strong>를 선택하고 <strong>다음</strong>으로 앱을 갱신합니다.',
+      '실행 오류나 파일 누락이 있으면 같은 화면에서 <strong>복구</strong>를 선택한 뒤 <strong>다음</strong>으로 복구를 진행합니다.',
       '설치 후 <code>C:\\MidiAI</code> 폴더에서 MidiAI Studio를 실행합니다.',
       '라이선스 인증은 앱 실행 후 Google 계정으로 로그인해 진행합니다.',
-      '문제가 계속되면 오류 메시지, 스크린샷, 로그 파일(가능한 경우)과 Installer <strong>System Check</strong> 결과를 함께 1:1 문의를 이용해 주세요.'
+      '문제가 계속되면 오류 메시지, 스크린샷, 로그 파일(가능한 경우)을 첨부해 <strong>1:1 문의</strong>를 이용해 주세요.'
     ],
     mandatory:'필수 업데이트',
     officialInstaller:'공식 설치 프로그램',
     buyLicense:'라이선스 구매',
-    patchNotes:'패치노트'
+    patchNotes:'업데이트 내역'
   };
 }
 function applyDownloadsI18n(){
@@ -712,7 +750,7 @@ function applyDownloadsI18n(){
   const meta = document.querySelector('.download-card-meta-row span:last-child');
   if(meta && /공식|Official|公式/.test(meta.textContent||'')) meta.textContent = t.officialInstaller;
   document.querySelectorAll('.portal-download-actions a.secondary').forEach(a=>{
-    if(/패치노트|Patch notes|パッチノート/.test(a.textContent||'') || (a.getAttribute('href')||'').includes('patch-notes')) a.textContent = t.patchNotes;
+    if(/업데이트 내역|Update history|アップデート履歴|패치노트|Patch notes|パッチノート/.test(a.textContent||'') || (a.getAttribute('href')||'').includes('patch-notes')) a.textContent = t.patchNotes;
     if(/라이선스|Buy license|ライセンス購入/.test(a.textContent||'') || (a.getAttribute('href')||'').includes('purchase')) a.textContent = t.buyLicense;
   });
   refreshTopbarPageTitle();
@@ -1368,7 +1406,7 @@ function patchDetailHtml(d, nav=null){
   }
   return `<article class="hub-post-detail hub-patch-detail">
     <header class="patch-toolbar">
-      <a class="patch-back-link" href="./patch-notes.html">← ${esc(tt('패치노트'))}</a>
+      <a class="patch-back-link" href="./patch-notes.html">← ${esc(tt('업데이트 내역'))}</a>
       <div class="patch-toolbar-actions">
         <button type="button" class="ghost mini-btn" data-share-patch>${esc(tt('공유'))}</button>
         ${hubAdminManageHtml('patchNotes', d.id)}
@@ -1385,7 +1423,7 @@ function patchDetailHtml(d, nav=null){
     </div>
     <div class="patch-detail-body">${bodyHtml}</div>
     <footer class="patch-detail-footer">
-      <a class="patch-footer-link" href="./patch-notes.html">${esc(tt('전체 패치노트'))}</a>
+      <a class="patch-footer-link" href="./patch-notes.html">${esc(tt('전체 업데이트 내역'))}</a>
       <a class="patch-footer-link" href="./faq.html">FAQ</a>
       <a class="patch-footer-link" href="./support.html">${esc(tt('문의'))}</a>
     </footer>
@@ -1871,11 +1909,8 @@ function purchasePlanGridCols(count){
   if(n <= 1) return 1;
   if(n === 2) return 2;
   if(n === 3) return 3;
-  if(n === 4) return 2; // 2×2
-  if(n <= 6) return 3;  // 3×2 (6개)
-  if(n === 9) return 3; // 3×3
-  if(n <= 8) return 4;
-  return 4;
+  if(n === 4) return 4; // desktop: one row
+  return 2; // 5+: two columns
 }
 function renderPurchasePlanGrid(){
   const grid = $('purchasePlanGrid');
@@ -2018,7 +2053,14 @@ function applyPurchaseModeUi(){
     eyebrow.textContent = '';
   }
   if($('purchaseHeroLead')){
-    $('purchaseHeroLead').textContent = locked ? (pt.heroLeadOwned || pt.heroLead) : pt.heroLead;
+    const lead = $('purchaseHeroLead');
+    if(locked){
+      lead.hidden = true;
+      lead.textContent = '';
+    } else {
+      lead.hidden = false;
+      lead.textContent = pt.heroLead || '';
+    }
   }
   const bank = $('bankTransferNotice');
   if(bank) bank.classList.toggle('hidden', locked || points || lang !== 'ko');
@@ -2232,22 +2274,8 @@ function resumePendingPurchase(){
 function renderPurchaseUsageGuide(){
   const el = $('purchaseUsageGuide');
   if(!el) return;
-  const locked = purchaseActionsLocked();
-  if(locked){
-    el.hidden = true;
-    el.innerHTML = '';
-    return;
-  }
-  const pt = pointCopy();
-  const details = pt.detailsItems || pt.usageLifetime || [];
-  el.hidden = false;
-  el.className = 'purchase-usage-note';
-  el.innerHTML = `<details class="purchase-usage-more">
-      <summary>${esc(pt.detailsToggle || '이용권 안내 자세히 보기')}</summary>
-      <ul class="purchase-usage-details">
-        ${details.map((item)=>`<li><b>${esc(item.title || '')}</b><span>${esc(item.desc || '')}</span></li>`).join('')}
-      </ul>
-    </details>`;
+  el.hidden = true;
+  el.innerHTML = '';
 }
 function purchaseUsesKakao(){
   return isKoreanCheckout();
@@ -5687,7 +5715,7 @@ function mountMyTicketThread(ticketId, listRoot){
   const q=query(collection(db,'supportTickets',ticketId,'replies'),orderBy('createdAt','asc'));
   myTicketReplyUnsub = onSnapshot(q, snap => {
     const rows=snap.docs.map(d=>({id:d.id,...d.data()}));
-    replyBox.innerHTML = adminTicketThreadHtml(ticket, rows);
+    replyBox.innerHTML = adminTicketThreadHtml(ticket, rows, { allowManage: false });
     replyBox.scrollTop = replyBox.scrollHeight;
     bindTicketReplyActions(replyBox);
     if(currentUser && ticket.uid === currentUser.uid && hasUnreadTicketReply(ticket)){
@@ -6134,7 +6162,7 @@ function listenReplies(ticketId, container, {adminView=false}={}){
     bindTicketReplyActions(container);
   }, err => { console.error('replies',err); container.innerHTML=`<p class="muted">${esc(err.message)}</p>`; }));
 }
-function ticketReplyItemHtml(r, ticketId, {adminView=false}={}){
+function ticketReplyItemHtml(r, ticketId, {adminView=false, allowManage=true}={}){
   const role = r.role || 'user';
   const author = role==='admin'
     ? 'MidiAI Studio 상담사'
@@ -6144,7 +6172,7 @@ function ticketReplyItemHtml(r, ticketId, {adminView=false}={}){
   const when = fmtDate(r.createdAt);
   const edited = r.edited ? ' · 수정됨' : '';
   const aiTag = role==='ai' ? '<em class="admin-chat-ai-tag">AI 답변</em>' : '';
-  const manage = isAdminUser && role!=='ai' && !r._legacyOpen
+  const manage = allowManage && isAdminUser && role!=='ai' && !r._legacyOpen
     ? `<div class="ticket-reply-actions admin-chat-actions"><button type="button" class="secondary mini-btn" data-reply-edit data-ticket="${esc(ticketId)}" data-reply="${esc(r.id)}">${tr('edit')}</button><button type="button" class="secondary mini-btn danger-btn" data-reply-delete data-ticket="${esc(ticketId)}" data-reply="${esc(r.id)}">${tr('del')}</button></div>`
     : '';
   const atts = ticketAttachmentsHtml(r.attachments);
@@ -6169,7 +6197,10 @@ function ticketReplyItemHtml(r, ticketId, {adminView=false}={}){
   const roleCls = role==='admin' ? 'is-admin' : role==='ai' ? 'is-ai' : '';
   return `<div class="reply ${roleCls}" data-reply-id="${esc(r.id)}"><b>${esc(author)} · ${esc(when)}${edited}${role==='ai'?' · AI 답변':''}</b><p>${nl2br(r.content||'')}</p>${atts}${refsHtml}${manage}</div>`;
 }
-function adminTicketThreadHtml(ticket, replies){
+function adminTicketThreadHtml(ticket, replies, opts={}){
+  const allowManage = opts.allowManage !== false
+    && String(ticket?.status || '') !== 'closed'
+    && String(ticket?.conversationMode || '') !== 'closed';
   const openMsg = ticket?.content
     ? {
         id: 'legacy-open',
@@ -6185,7 +6216,7 @@ function adminTicketThreadHtml(ticket, replies){
   if(openMsg) rows.push(openMsg);
   for(const r of replies || []) rows.push(r);
   if(!rows.length) return `<p class="muted admin-chat-empty">아직 대화가 없습니다.</p>`;
-  return rows.map((r)=>ticketReplyItemHtml(r, ticket.id, {adminView:true})).join('');
+  return rows.map((r)=>ticketReplyItemHtml(r, ticket.id, {adminView:true, allowManage})).join('');
 }
 function bindTicketReplyActions(root=document){
   root.querySelectorAll('[data-reply-edit]').forEach(btn=>{
@@ -14559,42 +14590,64 @@ function initTopbarActions(){
   if(currentUser) updateTopbarProfile(currentUser);
   else syncTopbarProfileAuthUi(false);
 }
-function topNavMenuItem({href, title, desc, icon, attrs='', tone=''}){
-  const toneClass = tone ? ` is-${tone}` : '';
-  return `<a class="top-nav-item" href="${href}" ${attrs} role="menuitem"><span class="top-nav-item-icon${toneClass}" aria-hidden="true">${icon||''}</span><span class="top-nav-item-copy"><b>${title}</b></span></a>`;
+function topNavIcon(name){
+  const common = 'viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+  const icons = {
+    book: `<svg ${common}><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v18H6.5A2.5 2.5 0 0 1 4 18.5Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v18h5.5a2.5 2.5 0 0 0 2.5-2.5Z"/></svg>`,
+    rocket: `<svg ${common}><path d="M12 15c-2.2-1-4-3.2-4.8-5.8C6.4 6.2 8.8 3.5 12 2c3.2 1.5 5.6 4.2 4.8 7.2-.8 2.6-2.6 4.8-4.8 5.8Z"/><path d="M9.2 12.8 7 17l4.2-1.2"/><path d="m14.8 12.8 2.2 4.2-4.2-1.2"/><path d="M12 15v5"/><path d="M8.5 8.2c-.8.2-1.6.7-2.2 1.4"/><path d="M15.5 8.2c.8.2 1.6.7 2.2 1.4"/></svg>`,
+    play: `<svg ${common}><rect x="4" y="4" width="16" height="16" rx="4"/><path d="m10 8.5 6 3.5-6 3.5V8.5z"/></svg>`,
+    wave: `<svg ${common}><path d="M8 8v8"/><path d="M12 5v14"/><path d="M16 8v8"/><path d="M4 11v2"/><path d="M20 11v2"/></svg>`,
+    sliders: `<svg ${common}><path d="M5 4v16"/><path d="M12 4v16"/><path d="M19 4v16"/><circle cx="5" cy="9" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="8" r="1.6" fill="currentColor" stroke="none"/></svg>`,
+    file: `<svg ${common}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9Z"/><path d="M14 3v6h6"/><path d="M10.5 14.5c.5-1.2 1.6-1.8 2.7-1.2.7.4 1 1.1.8 1.9-.3 1.2-1.5 1.7-2.2 2.5-.2.3-.3.6-.3 1"/><path d="M13.2 19.2h.01"/></svg>`,
+    wrench: `<svg ${common}><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5Z"/></svg>`,
+    download: `<svg ${common}><path d="M12 4v10"/><path d="m8 10 4 4 4-4"/><path d="M5 18h14"/></svg>`,
+    history: `<svg ${common}><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 5v4h4"/><path d="M12 8v4.5l3 1.8"/></svg>`,
+    megaphone: `<svg ${common}><path d="m3 11 12-5v12L3 13v-2z"/><path d="M15 9.2A4.2 4.2 0 0 1 15 14.8"/><path d="M7.5 13.5 8 18h2.2l.6-3.2"/></svg>`,
+    chat: `<svg ${common}><path d="M6 17.5 4 20V7a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v7.5a3 3 0 0 1-3 3H9z"/><path d="M9 10h.01"/><path d="M12 10h.01"/><path d="M15 10h.01"/></svg>`,
+    help: `<svg ${common}><circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.4a2.4 2.4 0 1 1 3.5 2.1c-.8.5-1.2 1-1.2 1.9"/><path d="M12 16.5h.01"/></svg>`,
+    support: `<svg ${common}><path d="M7 18.5 5.5 20V8.5A3.5 3.5 0 0 1 9 5h8.5A3.5 3.5 0 0 1 21 8.5V14a3.5 3.5 0 0 1-3.5 3.5H10z"/><path d="M11.5 9.6a1.8 1.8 0 1 1 2.4 1.7c-.7.4-1 .8-1 1.6"/><path d="M12.9 15.2h.01"/></svg>`,
+    inbox: `<svg ${common}><path d="M4 14 6.2 5.8A2 2 0 0 1 8.1 4.5h7.8a2 2 0 0 1 1.9 1.3L20 14"/><path d="M4 14h4.2l1.3 2h5l1.3-2H20v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>`,
+    user: `<svg ${common}><circle cx="12" cy="8" r="3.4"/><path d="M5.5 19.2a6.5 6.5 0 0 1 13 0"/></svg>`
+  };
+  return icons[name] || '';
+}
+function topNavMenuItem({href, title, desc, icon='', attrs=''}){
+  const descHtml = desc ? `<span>${desc}</span>` : '';
+  const iconHtml = icon ? `<span class="top-nav-item-icon" aria-hidden="true">${topNavIcon(icon)}</span>` : '';
+  return `<a class="top-nav-item" href="${href}" ${attrs} role="menuitem">${iconHtml}<span class="top-nav-item-copy"><b>${title}</b>${descHtml}</span></a>`;
 }
 function buildMainNavHtml(base, purchaseHref){
   // Leaf destinations preserved; Guides expands to existing /guide/* pages.
   const guideItems=[
-    {slug:'getting-started', title:'시작하기', icon:'01', tone:'start'},
-    {slug:'youtube-to-midi', title:'YouTube → MIDI', icon:'YT', tone:'yt'},
-    {slug:'audio-to-midi', title:'Audio → MIDI', icon:'AU', tone:'audio'},
-    {slug:'midi-editor', title:'MIDI Editor', icon:'ED', tone:'editor'},
-    {slug:'pdf-to-midi', title:'PDF → MIDI', icon:'PDF', tone:'pdf'},
-    {slug:'troubleshooting', title:'문제 해결', icon:'?', tone:'help'}
+    {slug:'getting-started', title:'시작하기', desc:'설치와 첫 변환', icon:'rocket'},
+    {slug:'youtube-to-midi', title:'YouTube → MIDI', desc:'링크 변환 방법', icon:'play'},
+    {slug:'audio-to-midi', title:'Audio → MIDI', desc:'MP3·WAV 변환', icon:'wave'},
+    {slug:'midi-editor', title:'MIDI Editor', desc:'편집·음원 사용', icon:'sliders'},
+    {slug:'pdf-to-midi', title:'PDF → MIDI', desc:'악보 PDF 변환', icon:'file'},
+    {slug:'troubleshooting', title:'문제 해결', desc:'오류·복구 안내', icon:'wrench'}
   ].map((g)=>topNavMenuItem({
     href:`${base}guide/${g.slug}/`,
     title:g.title,
+    desc:g.desc,
     icon:g.icon,
-    tone:g.tone,
     attrs:`data-guide="${g.slug}"`
   })).join('');
   const guideHub=topNavMenuItem({
     href:`${base}guide/index.html`,
     title:'전체 가이드',
-    icon:'ALL',
-    tone:'all',
+    desc:'가이드 목록',
+    icon:'book',
     attrs:'data-nav="guides"'
   });
   return [
     `<a class="top-nav-link" href="${localeHomeHref()}" data-nav="home"><span>홈</span></a>`,
     `<a class="top-nav-link" href="${base}product.html" data-nav="product"><span>제품</span></a>`,
-    `<div class="top-nav-group is-wide" data-nav-group="guides"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>가이드</span><span class="nav-soon-badge">준비중</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${guideHub}${guideItems}</div></div></div>`,
-    `<a class="top-nav-link" href="${base}downloads.html" data-nav="downloads"><span>다운로드</span></a>`,
+    `<div class="top-nav-group" data-nav-group="guides"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>가이드</span><span class="nav-soon-badge">준비중</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${guideHub}${guideItems}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="downloads"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>다운로드</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}downloads.html`, title:'Windows 다운로드', desc:'설치 파일 받기', icon:'download', attrs:'data-nav="downloads" data-hub="downloads"'})}${topNavMenuItem({href:`${base}patch-notes.html`, title:'업데이트 내역', desc:'버전별 변경점', icon:'history', attrs:'data-hub="patches"'})}</div></div></div>`,
     `<a class="top-nav-link is-purchase" href="${purchaseHref}" data-nav="purchase"><span>구매</span></a>`,
-    `<div class="top-nav-group is-wide" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', icon:'N', tone:'notice', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}patch-notes.html`, title:'패치노트', icon:'P', tone:'patch', attrs:'data-hub="patches"'})}${topNavMenuItem({href:`${base}faq.html`, title:'FAQ', icon:'F', tone:'faq', attrs:'data-hub="faq"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', icon:'B', tone:'board', attrs:'data-hub="board"'})}</div></div></div>`,
-    `<div class="top-nav-group" data-nav-group="support"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>고객지원</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner is-grid" role="menu">${topNavMenuItem({href:`${base}support.html`, title:'1:1 문의', icon:'1:1', tone:'support', attrs:'data-hub="support"'})}${topNavMenuItem({href:`${base}my-tickets.html`, title:'나의 문의', icon:'MY', tone:'tickets', attrs:'data-hub="tickets"'})}</div></div></div>`,
-    `<div class="top-nav-group" data-nav-group="account"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>계정</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}account.html`, title:'내 계정', icon:'ME', tone:'account', attrs:'data-nav="account"'})}</div></div></div>`
+    `<div class="top-nav-group" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', desc:'운영·이벤트 안내', icon:'megaphone', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', desc:'회원 소통 공간', icon:'chat', attrs:'data-hub="board"'})}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="support"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>고객지원</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}faq.html`, title:'FAQ', desc:'자주 묻는 질문', icon:'help', attrs:'data-hub="faq"'})}${topNavMenuItem({href:`${base}support.html`, title:'1:1 문의', desc:'비공개 상담', icon:'support', attrs:'data-hub="support"'})}${topNavMenuItem({href:`${base}my-tickets.html`, title:'나의 문의', desc:'내 티켓 확인', icon:'inbox', attrs:'data-hub="tickets"'})}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="account"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>계정</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}account.html`, title:'내 계정', desc:'라이선스·로그인', icon:'user', attrs:'data-nav="account"'})}</div></div></div>`
   ].join('');
 }
 function initSidebarLayout(){
@@ -14715,6 +14768,16 @@ function bindSidebar(){
       });
       group.classList.toggle('is-open', willOpen);
       trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+    // Hovering another group should dismiss a click-locked open menu (prevents overlap).
+    group.addEventListener('pointerenter',()=>{
+      if(window.matchMedia('(max-width:980px)').matches) return;
+      if(window.matchMedia('(hover:none)').matches) return;
+      document.querySelectorAll('#mainNav .top-nav-group.is-open').forEach((g)=>{
+        if(g===group) return;
+        g.classList.remove('is-open');
+        g.querySelector('.top-nav-trigger')?.setAttribute('aria-expanded','false');
+      });
     });
   });
   if(!document.body.dataset.topNavOutsideBound){

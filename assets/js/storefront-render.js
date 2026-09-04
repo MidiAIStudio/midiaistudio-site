@@ -439,9 +439,13 @@ export function renderPromotionPopupHtml(copy, options = {}) {
     ? `<button type="button" class="primary" disabled aria-disabled="true" data-preview-hl="popup-cta">${escHtml(t.cta || '')}</button>`
     : `<a class="primary" href="${escHtml(href)}" data-preview-hl="popup-cta">${escHtml(t.cta || '')}</a>`;
   const hideHtml = showHide
-    ? `<label class="sale-promo-hide"><input type="checkbox" id="salePromoHideToday"> ${escHtml(t.hideToday || '')}</label>
-        <button type="button" class="sale-promo-close-link" data-close>${escHtml(t.close || '')}</button>`
-    : `<button type="button" class="sale-promo-close-link" disabled>${escHtml(t.close || '')}</button>`;
+    ? `<div class="sale-promo-meta">
+        <label class="sale-promo-hide"><input type="checkbox" id="salePromoHideToday"> ${escHtml(t.hideToday || '')}</label>
+        <button type="button" class="sale-promo-close-link" data-close>${escHtml(t.close || '')}</button>
+      </div>`
+    : `<div class="sale-promo-meta">
+        <button type="button" class="sale-promo-close-link" disabled>${escHtml(t.close || '')}</button>
+      </div>`;
 
   const lead = String(t.lead || '').trim();
   const leadHtml = lead

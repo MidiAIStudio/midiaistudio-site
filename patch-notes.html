@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <script src="assets/js/theme-boot.js?v=theme-2"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>패치노트 — MidiAI Studio 업데이트 기록</title>
-  <meta name="description" content="MidiAI Studio 버전별 패치노트와 업데이트 내역을 확인하세요.">
-  <meta name="keywords" content="MidiAI Studio 패치노트, 업데이트, 버전 기록">
+  <title>업데이트 내역 — MidiAI Studio</title>
+  <meta name="description" content="MidiAI Studio 버전별 업데이트 내역을 확인하세요.">
+  <meta name="keywords" content="MidiAI Studio 업데이트, 업데이트 내역, 버전 기록">
   <meta name="robots" content="index, follow">
   <meta name="author" content="MidiAI Studio">
   <meta name="theme-color" content="#0b1020">
@@ -21,16 +21,16 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="MidiAI Studio">
   <meta property="og:locale" content="ko_KR">
-  <meta property="og:title" content="패치노트 — MidiAI Studio 업데이트 기록">
-  <meta property="og:description" content="MidiAI Studio 버전별 패치노트와 업데이트 내역을 확인하세요.">
+  <meta property="og:title" content="업데이트 내역 — MidiAI Studio">
+  <meta property="og:description" content="MidiAI Studio 버전별 업데이트 내역을 확인하세요.">
   <meta property="og:url" content="https://midiaistudio.com/patch-notes.html">
   <meta property="og:image" content="https://midiaistudio.com/assets/images/product/ai-midi-converter-home.jpg">
   <meta property="og:image:alt" content="MidiAI Studio — AI 피아노 커버를 MIDI로 변환">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="720">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="패치노트 — MidiAI Studio 업데이트 기록">
-  <meta name="twitter:description" content="MidiAI Studio 버전별 패치노트와 업데이트 내역을 확인하세요.">
+  <meta name="twitter:title" content="업데이트 내역 — MidiAI Studio">
+  <meta name="twitter:description" content="MidiAI Studio 버전별 업데이트 내역을 확인하세요.">
   <meta name="twitter:image" content="https://midiaistudio.com/assets/images/product/ai-midi-converter-home.jpg">
   <meta name="twitter:image:alt" content="MidiAI Studio">
   <link rel="dns-prefetch" href="https://fonts.googleapis.com">
@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=theme-2">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=theme-6">
+  <link rel="stylesheet" href="./assets/css/style.css?v=nav-icons-1">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=theme-44">
   <link rel="stylesheet" href="./assets/css/markdown-cms.css?v=md-cms-2">
   <script defer src="./assets/js/analytics.js"></script>
 
@@ -53,7 +53,7 @@
     <button id="menuBtn" class="menu-btn" aria-label="메뉴 열기" type="button">☰</button>
     <nav id="mainNav">
       <a href="./index.html" data-nav="home">홈</a><a href="./downloads.html" data-nav="downloads">다운로드</a><a href="./purchase.html" data-nav="purchase">구매</a>
-      <a href="./notices.html" data-nav="community">공지사항</a><a href="./patch-notes.html" data-nav="community">패치노트</a><a href="./faq.html" data-nav="community">FAQ</a>
+      <a href="./notices.html" data-nav="community">공지사항</a>
       <a href="./board.html" data-nav="community">자유게시판</a><a href="./support.html" data-nav="support">1:1 문의</a><a href="./my-tickets.html" data-nav="support">나의 문의</a>
       <a href="./account.html" data-nav="account">내 계정</a><a id="adminNav" class="hidden" href="./admin.html">관리자</a>
     </nav>
@@ -62,15 +62,15 @@
   <main class="hub-main">
     <section class="wrap hub-shell">
       <div class="hub-topline">
-        <div><p class="eyebrow">Patch Notes</p><h1>패치노트</h1><p class="hub-desc">버전별 변경 사항을 확인합니다.</p></div>
+        <div><p class="eyebrow">Updates</p><h1>업데이트 내역</h1><p class="hub-desc">버전별 변경 사항을 확인합니다.</p></div>
       </div>
       <nav class="hub-subnav" aria-label="게시판 메뉴">
-        <a href="./notices.html" data-hub="notices">공지사항</a><a href="./patch-notes.html" data-hub="patches">패치노트</a><a href="./faq.html" data-hub="faq">FAQ</a>
+        <a href="./notices.html" data-hub="notices">공지사항</a>
         <a href="./board.html" data-hub="board">자유게시판</a><a href="./support.html" data-hub="support">문의 작성</a><a href="./my-tickets.html" data-hub="tickets">나의 문의</a>
       </nav>
       <div class="hub-card">
         <div class="hub-toolbar">
-          <h2>패치노트 목록</h2>
+          <h2>업데이트 내역 목록</h2>
           <div class="hub-tools"><input id="boardSearch" class="search-input" placeholder="검색"></div>
         </div>
         <div id="patchList"><p class="muted">불러오는 중...</p></div>
@@ -93,6 +93,6 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=md-cms-1"></script>
-  <script type="module" src="./assets/js/app.js?v=theme-3"></script>
+  <script type="module" src="./assets/js/app.js?v=nav-icons-1"></script>
 </body>
 </html>
