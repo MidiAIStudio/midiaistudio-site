@@ -17,7 +17,8 @@ const SOURCE_TYPES = Object.freeze({
   release: 'release',
   notice: 'notice',
   error: 'error',
-  guide: 'guide'
+  guide: 'guide',
+  private_source: 'private_source'
 });
 
 const ALLOWED_ACTIONS = new Set(Object.values(ACTIONS));

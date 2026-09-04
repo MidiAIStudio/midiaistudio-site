@@ -15,7 +15,8 @@
     "test:autonomy": "node knowledge/tests/autonomyGolden.js",
     "test:selective-planner": "node knowledge/tests/selectivePlannerGolden.js",
     "test:feature-discovery": "node knowledge/tests/featureDiscoveryGolden.js",
-    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality && npm run test:conversation && npm run test:agent && npm run test:autonomy && npm run test:selective-planner && npm run test:feature-discovery"
+    "test:private-source": "node knowledge/tests/privateSourceGolden.js",
+    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality && npm run test:conversation && npm run test:agent && npm run test:autonomy && npm run test:selective-planner && npm run test:feature-discovery && npm run test:private-source"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0",

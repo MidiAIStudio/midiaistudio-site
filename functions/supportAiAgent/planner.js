@@ -85,9 +85,15 @@ function passagesMatchNeed(need, passages) {
   if (need === 'catalog') return hasSource(passages, 'catalog');
   if (need === 'release') return hasSource(passages, 'release');
   if (need === 'notice') return hasSource(passages, 'notice') || hasSource(passages, 'release');
-  if (need === 'operation') return hasSource(passages, 'operation') || Number(passages[0].score || 0) >= 18;
+  if (need === 'operation') {
+    return (
+      hasSource(passages, 'operation') ||
+      hasSource(passages, 'private_source') ||
+      Number(passages[0].score || 0) >= 18
+    );
+  }
   if (need === 'error') return hasSource(passages, 'error') || Number(passages[0].score || 0) >= 16;
-  return Number(passages[0].score || 0) >= 14;
+  return hasSource(passages, 'private_source') || Number(passages[0].score || 0) >= 14;
 }
 
 function researchBudget({ need, weak, conflict, passages, searched, facts }) {
@@ -128,11 +134,11 @@ function nextUnsearched(need, searched, facts) {
     catalog: ['catalog'],
     operation: discovery
       ? DISCOVERY_SOURCE_ORDER.slice()
-      : ['operation', 'knowledge', 'guide', 'faq'],
-    error: ['error', 'faq', 'knowledge', 'guide'],
+      : ['operation', 'private_source', 'knowledge', 'guide', 'faq'],
+    error: ['error', 'faq', 'private_source', 'knowledge', 'guide'],
     knowledge: discovery
       ? DISCOVERY_SOURCE_ORDER.slice()
-      : ['knowledge', 'operation', 'faq', 'guide']
+      : ['knowledge', 'private_source', 'operation', 'faq', 'guide']
   };
   const order = orderByNeed[need] || orderByNeed.knowledge;
   const set = searched instanceof Set ? searched : new Set(searched || []);

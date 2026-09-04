@@ -74,7 +74,17 @@ async function runSupportAgent({
     discoveryTriggered: false,
     discoverySources: [],
     newUserFactsSinceLastAi,
-    diagnosticRepeatPrevented: false
+    diagnosticRepeatPrevented: false,
+    privateSourceUsed: false,
+    privateSourceRef: null,
+    privateSearchQueries: [],
+    privateSourceHits: [],
+    privateFilesFetched: 0,
+    privateSafeExcerptChars: 0,
+    privateRedactions: 0,
+    privateSanitizations: 0,
+    privateSourceFallbackReason: null,
+    privateSourceLlmContext: null
   };
 
   if (personal) {
@@ -173,6 +183,22 @@ async function runSupportAgent({
     debug.missingInfo = loop.debug.missingInfo || [];
     debug.discoveryTriggered = !!loop.debug.discoveryTriggered;
     debug.discoverySources = loop.debug.discoverySources || [];
+    if (loop.debug.privateSource) {
+      Object.assign(debug, {
+        privateSourceUsed: !!loop.debug.privateSource.privateSourceUsed,
+        privateSourceRef: loop.debug.privateSource.privateSourceRef || null,
+        privateSearchQueries: loop.debug.privateSource.privateSearchQueries || [],
+        privateSourceHits: loop.debug.privateSource.privateSourceHits || [],
+        privateFilesFetched: loop.debug.privateSource.privateFilesFetched || 0,
+        privateSafeExcerptChars: loop.debug.privateSource.privateSafeExcerptChars || 0,
+        privateRedactions: loop.debug.privateSource.privateRedactions || 0,
+        privateSanitizations: loop.debug.privateSource.privateSanitizations || 0,
+        privateSourceFallbackReason: loop.debug.privateSource.privateSourceFallbackReason || null
+      });
+    }
+    if (loop.debug.privateSourceLlmContext) {
+      debug.privateSourceLlmContext = loop.debug.privateSourceLlmContext;
+    }
     if (loop.llmPlannerState && loop.llmPlannerState.used && loop.llmPlannerState.mode === 'llm') {
       debug.llmCalls.planner = 1;
       debug.plannerMode = 'llm';

@@ -55,6 +55,26 @@ async function callSource(sourceType, adapters, ctx) {
   if (sourceType === 'guide') {
     return adapters.loadLiveGuide({ question: q, locale: loc });
   }
+  if (sourceType === 'private_source') {
+    if (typeof adapters.searchPrivateSource !== 'function') return [];
+    const out = await adapters.searchPrivateSource({
+      question: q,
+      rawQuestion: ctx.rawQuestion || q,
+      searchQuery: q,
+      locale: loc,
+      facts: ctx.facts || {},
+      need: ctx.need,
+      weak: true,
+      conflict: false,
+      personal: false,
+      sourcePlan: ctx.sourcePlan || []
+    });
+    if (out && Array.isArray(out.passages)) {
+      if (ctx.onPrivateSourceMeta && out.debug) ctx.onPrivateSourceMeta(out);
+      return out.passages;
+    }
+    return [];
+  }
   return [];
 }
 
@@ -213,7 +233,9 @@ async function runResearchLoop({
 
   // Prefer discovery source plan when named feature is unknown (not release/catalog)
   if (discoveryOn && budget > 0 && (need === 'operation' || need === 'knowledge')) {
-    pendingSourcePlan = ['operation', 'knowledge', 'guide'].filter((s) => !searched.has(s));
+    pendingSourcePlan = ['operation', 'private_source', 'knowledge', 'guide'].filter(
+      (s) => !searched.has(s)
+    );
   }
 
   const evalWeak = () => {
@@ -303,9 +325,16 @@ async function runResearchLoop({
         const extraRaw =
           (await callSource(alt, adapters, {
             question,
+            rawQuestion,
             searchQuery: searchQ,
             locale,
-            facts
+            facts,
+            need,
+            sourcePlan: pendingSourcePlan,
+            onPrivateSourceMeta: (meta) => {
+              debug.privateSource = meta && meta.debug ? meta.debug : null;
+              if (meta && meta.llmContext) debug.privateSourceLlmContext = meta.llmContext;
+            }
           })) || [];
         const extra = applyDiscoveryBoosts(extraRaw, facts && facts.candidateFeature);
         current = mergeAndRerank({ initialPassages: current, extraPassages: extra, need, limit: 4 });
@@ -343,9 +372,16 @@ async function runResearchLoop({
     const extraRaw =
       (await callSource(sourceType, adapters, {
         question,
+        rawQuestion,
         searchQuery: searchQ,
         locale,
-        facts
+        facts,
+        need,
+        sourcePlan: pendingSourcePlan,
+        onPrivateSourceMeta: (meta) => {
+          debug.privateSource = meta && meta.debug ? meta.debug : null;
+          if (meta && meta.llmContext) debug.privateSourceLlmContext = meta.llmContext;
+        }
       })) || [];
     const extra = applyDiscoveryBoosts(extraRaw, facts && facts.candidateFeature);
     current = mergeAndRerank({ initialPassages: current, extraPassages: extra, need, limit: 4 });

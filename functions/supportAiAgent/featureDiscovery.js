@@ -276,7 +276,15 @@ function shouldTriggerFeatureDiscovery(facts = {}, { weak = true, intent = 'gene
   );
 }
 
-const DISCOVERY_SOURCE_ORDER = ['operation', 'knowledge', 'guide', 'faq', 'notice', 'release'];
+const DISCOVERY_SOURCE_ORDER = [
+  'operation',
+  'private_source',
+  'knowledge',
+  'guide',
+  'faq',
+  'notice',
+  'release'
+];
 
 function discoverySearchQuery(facts, question) {
   if (facts && facts.candidateFeature) return String(facts.candidateFeature);
