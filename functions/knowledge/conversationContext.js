@@ -83,7 +83,7 @@ function looksLikeFollowUp(rawQuestion) {
   }
   if (FOLLOW_UP_RE.test(raw)) return true;
   // Short how/where/why/install without its own topic noun
-  if (raw.length <= 22 && !hasExplicitTopic(raw) && /(설명|방법|어떻게|어디|왜|설치|해결|사용|초기화|리셋|자세히)/i.test(raw)) {
+  if (raw.length <= 22 && !hasExplicitTopic(raw) && /(설명|방법|어떻게|어디|왜|설치|해결|사용|초기화|리셋|자세히|원본|바뀌|저장은|적용)/i.test(raw)) {
     return true;
   }
   // Pronoun-only openers

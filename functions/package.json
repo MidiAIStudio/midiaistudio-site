@@ -17,7 +17,8 @@
     "test:feature-discovery": "node knowledge/tests/featureDiscoveryGolden.js",
     "test:private-source": "node knowledge/tests/privateSourceGolden.js",
     "test:private-source-relevance": "node knowledge/tests/privateSourceRelevanceGolden.js",
-    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality && npm run test:conversation && npm run test:agent && npm run test:autonomy && npm run test:selective-planner && npm run test:feature-discovery && npm run test:private-source && npm run test:private-source-relevance"
+    "test:concierge": "node knowledge/tests/supportConciergeGolden.js",
+    "test:knowledge": "npm run test:retrieval && npm run test:answer-quality && npm run test:conversation && npm run test:agent && npm run test:autonomy && npm run test:selective-planner && npm run test:feature-discovery && npm run test:private-source && npm run test:private-source-relevance && npm run test:concierge"
   },
   "dependencies": {
     "firebase-admin": "^12.7.0",

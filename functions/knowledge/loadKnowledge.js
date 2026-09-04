@@ -70,6 +70,7 @@ const QUERY_SYNONYM_RULES = [
   [/(midi|미디).{0,8}(mp3|wav|m4a|webm)/gi, 'audiotomidi'],
   [/youtube\s*to\s*midi/gi, 'youtubetomidi'],
   [/유튜브\s*(를\s*)?(midi|미디|변환)/gi, 'youtubetomidi'],
+  [/유\s*튭/gi, '유튜브'],
   [/yt\s*변환/gi, 'youtubetomidi'],
   [/pdf\s*[→\-–—]?\s*(to\s*)?(midi|미디)/gi, 'pdftomidi'],
   [/pdf\s*악보/gi, 'pdftomidi'],
@@ -80,8 +81,16 @@ const QUERY_SYNONYM_RULES = [
   [/재생\s*(하고\s*)?정지/gi, '재생정지'],
   [/\b(band|orchestra)\b|밴드|오케스트라/gi, (m) => `${String(m)} bandorchestra`],
   [/쉬운\s*조/gi, '쉬운조'],
+  [/쉬운\s*키|이지\s*키|easy\s*key|easier\s*key/gi, '쉬운조 easykey'],
   [/벨로\s*시티/gi, '벨로시티'],
-  [/라이선스\s*기간|이용권\s*기간/gi, '라이선스기간']
+  [/라이선스\s*기간|이용권\s*기간/gi, '라이선스기간'],
+  // Product concept families (colloquial → stable retrieval tokens already on Knowledge docs)
+  [/편곡|악기\s*나(?:누|눠)|instrument\s*arrange|guided\s*arrangement/gi, 'arrange instrumentarrange 편곡'],
+  [/노트\s*정리|클린\s*업|(?:^|[^a-z])cleanup/gi, 'cleanup 정리'],
+  [/휴머나이즈|사람처럼\s*연주|humanize/gi, 'humanize'],
+  [/예약\s*변환|예약변환|예액\s*변환|예액변환/gi, 'reservation 예약변환 schedule'],
+  [/미디\s*편집|midi\s*edit/gi, 'midieditor'],
+  [/악보\s*뽑|악보\s*내보내/gi, 'pdfexport scoreeditor']
 ];
 
 function readJsonSafe(filePath) {

@@ -27,6 +27,7 @@ const {
   CUSTOMER_SAFE_SYSTEM_RULES
 } = require('./supportAiPrivateSource');
 const { looksLikeSourceDump } = require('./supportAiPrivateSource/customerSafe');
+const { synthesizeFromEvidence } = require('./supportAiPrivateSource/synthesizeFromEvidence');
 
 const privateSourceAdapter = createPrivateSourceAdapter();
 
@@ -420,22 +421,31 @@ function templateAnswer(question, passages, { personal, lowConfidence, wantHuman
 async function callLlmIfConfigured(system, userPrompt) {
   const geminiKey = cfg('GEMINI_API_KEY') || cfg('GOOGLE_AI_API_KEY');
   const openaiKey = cfg('OPENAI_API_KEY');
+  const errors = [];
+
   if (geminiKey) {
-    const model = cfg('SUPPORT_AI_MODEL', 'gemini-2.0-flash');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: `${system}\n\n${userPrompt}` }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 512 }
-      })
-    });
-    if (!res.ok) throw new Error(`Gemini ${res.status}`);
-    const data = await res.json();
-    const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
-    return String(text).trim();
+    try {
+      const model = cfg('SUPPORT_AI_MODEL_GEMINI', cfg('SUPPORT_AI_MODEL', 'gemini-2.0-flash'));
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: `${system}\n\n${userPrompt}` }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 512 }
+        })
+      });
+      if (!res.ok) throw new Error(`Gemini ${res.status}`);
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
+      const out = String(text).trim();
+      if (out) return out;
+    } catch (err) {
+      errors.push(err && err.message ? err.message : 'gemini_failed');
+      // Fall through to OpenAI when configured
+    }
   }
+
   if (openaiKey) {
     const model = cfg('SUPPORT_AI_MODEL', 'gpt-4o-mini');
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -454,9 +464,13 @@ async function callLlmIfConfigured(system, userPrompt) {
         ]
       })
     });
-    if (!res.ok) throw new Error(`OpenAI ${res.status}`);
+    if (!res.ok) throw new Error(`OpenAI ${res.status}${errors.length ? ` (gemini: ${errors.join(',')})` : ''}`);
     const data = await res.json();
     return String(data?.choices?.[0]?.message?.content || '').trim();
+  }
+
+  if (errors.length) {
+    throw new Error(errors.join('; '));
   }
   return null;
 }
@@ -1084,6 +1098,27 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
   const onlyPrivate =
     (passages || []).length > 0 && customerFacingPassages(passages).length === 0 && !!(agentOut.debug && agentOut.debug.privateSourceUsed);
 
+  function evidenceBackedFallback(reason) {
+    const syn = synthesizeFromEvidence({
+      question,
+      locale,
+      privateDebug: agentOut.debug,
+      passages
+    });
+    if (syn.ok && syn.text && !looksLikeSourceDump(syn.text)) {
+      answerSynthesisFallbackReason = reason;
+      return {
+        text: syn.text,
+        suggestHandoff: false,
+        confidence: 0.7,
+        refs: customerFacingPassages(passages)
+          .slice(0, 2)
+          .map((p) => ({ label: p.title, href: p.href || '' }))
+      };
+    }
+    return null;
+  }
+
   try {
     if (clarify) {
       // keep clarification — do not let LLM override with wrong topic
@@ -1097,7 +1132,6 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
         if (looksLikeSourceDump(llm)) {
           privateRawFallbackBlocked = true;
           answerSynthesisFallbackReason = 'source_dump_blocked';
-          // one retry with stricter instruction
           const retry = await callLlmIfConfigured(
             system,
             `The previous draft leaked internal keys/source. Rewrite in natural ${locale === 'en' ? 'English' : locale === 'ja' ? 'Japanese' : 'Korean'} product language only.\n\nQuestion:\n${rawQuestion}\n\nGrounding (do not quote):\n${privateCtx || contextBlock || '(none)'}`
@@ -1112,17 +1146,18 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
             answerSynthesisSucceeded = true;
             privateRawFallbackBlocked = false;
           } else {
-            answer = templateAnswer(question, customerFacingPassages(passages), {
-              personal: false,
-              lowConfidence: true,
-              wantHuman: false,
-              locale,
-              clarify:
-                locale === 'en'
-                  ? 'Which feature should I explain — conversion, Arrange, Easy Key, or something else?'
-                  : '어떤 기능을 안내할까요? (변환 / 편곡·Arrange / 쉬운 키 등)'
-            });
-            answerSynthesisFallbackReason = 'source_dump_after_retry';
+            answer =
+              evidenceBackedFallback('source_dump_after_retry') ||
+              templateAnswer(question, customerFacingPassages(passages), {
+                personal: false,
+                lowConfidence: true,
+                wantHuman: false,
+                locale,
+                clarify:
+                  locale === 'en'
+                    ? 'Which feature should I explain — conversion, Arrange, Easy Key, or something else?'
+                    : '어떤 기능을 안내할까요? (변환 / 편곡·Arrange / 쉬운 키 등)'
+              });
           }
         } else {
           answer = {
@@ -1133,40 +1168,44 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
           };
           answerSynthesisSucceeded = true;
         }
-      } else if (onlyPrivate) {
-        answerSynthesisFallbackReason = 'llm_empty_private_only';
-        answer = templateAnswer(question, [], {
-          personal: false,
-          lowConfidence: true,
-          wantHuman: false,
-          locale,
-          clarify:
-            locale === 'en'
-              ? 'Which feature should I explain more specifically?'
-              : '어떤 기능을 더 구체적으로 안내할까요?'
-        });
+      } else if (onlyPrivate || (!customerFacingPassages(passages).length && agentOut.debug && agentOut.debug.privateSourceUsed)) {
+        answer =
+          evidenceBackedFallback('llm_empty_private_only') ||
+          templateAnswer(question, [], {
+            personal: false,
+            lowConfidence: true,
+            wantHuman: false,
+            locale,
+            clarify:
+              locale === 'en'
+                ? 'Which feature should I explain more specifically?'
+                : '어떤 기능을 더 구체적으로 안내할까요?'
+          });
       }
     }
   } catch (err) {
     llmFailed = true;
     answerSynthesisFallbackReason = 'llm_error';
     console.warn('supportAi LLM', err && err.message);
-    if (onlyPrivate || lowConfidence || !customerFacingPassages(passages).length) {
+    const backed = evidenceBackedFallback('llm_error_evidence_fallback');
+    if (backed) {
+      answer = backed;
+      privateRawFallbackBlocked = false;
+    } else if (customerFacingPassages(passages).length && !lowConfidence) {
+      // keep templateAnswer from public passages
+    } else if (onlyPrivate || lowConfidence || !customerFacingPassages(passages).length) {
       privateRawFallbackBlocked = true;
-      answer = {
-        text:
+      answer = templateAnswer(question, customerFacingPassages(passages), {
+        personal: false,
+        lowConfidence: true,
+        wantHuman: false,
+        locale,
+        clarify:
           locale === 'en'
-            ? 'AI answer is temporarily unavailable. Your message was saved — you can connect to a counselor.'
-            : locale === 'ja'
-              ? 'AI回答を一時的に取得できませんでした。メッセージは保存済みです。オペレーターに接続できます。'
-              : 'AI 답변을 불러오지 못했습니다. 메시지는 저장되었습니다. 상담사에게 문의를 전달할 수 있습니다.',
-        suggestHandoff: true,
-        confidence: 0.1,
-        refs: [],
-        noReliableKnowledge: true
-      };
+            ? 'I could not finish the AI draft. Which feature or step should we focus on?'
+            : 'AI 초안을 완성하지 못했습니다. 어떤 기능·단계를 먼저 안내할까요?'
+      });
     }
-    // else keep templateAnswer from public passages only
   }
 
   const catalogPassage = passages.find((p) => String(p.id || '').startsWith('live-catalog'));
