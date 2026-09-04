@@ -1,0 +1,31 @@
+{
+  "tests": {
+    "SINGLE_FAILURE_RECOVERY": {
+      "status": 200,
+      "ok": true,
+      "hasAi": true,
+      "answer": "안녕하세요!",
+      "pass": true
+    },
+    "NEXT_TURN_SAME_TICKET": {
+      "status": 200,
+      "ok": true,
+      "answer": "지금은 답변을 완료하지 못했습니다. 메시지는 저장되었습니다. 다시 메시지를 보내면 AI 상담을 계속할 수 있습니다.",
+      "mode": "ai",
+      "pass": true
+    },
+    "NEW_CHAT_RECOVERY": {
+      "status": 200,
+      "ok": true,
+      "hasAi": true,
+      "answer": "안녕하세요! 새 문의에 대해 어떻게 도와드릴까요?",
+      "stateFresh": true,
+      "pass": true
+    },
+    "HANDOFF_SEPARATION": {
+      "ticketAMode": "ai",
+      "ticketBMode": "ai",
+      "pass": true
+    }
+  }
+}

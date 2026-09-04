@@ -2340,6 +2340,17 @@ exports.supportAiHandoffSummary = onRequestV2(
   supportAiHandlers.supportAiHandoffSummary
 );
 
+const { createSupportCloseHandlers } = require('./supportTicketClose');
+const supportCloseHandlers = createSupportCloseHandlers({ db, cors, requireUser });
+exports.supportCloseTicket = onRequestV2(
+  {
+    timeoutSeconds: 60,
+    memory: '256MiB',
+    invoker: 'public'
+  },
+  supportCloseHandlers.supportCloseTicket
+);
+
 /**
  * Kakao Login OAuth redirect callback for admin "나와의 채팅" notifications.
  * Secrets: KAKAO_REST_API_KEY (required), KAKAO_CLIENT_SECRET (when enabled in Kakao console).

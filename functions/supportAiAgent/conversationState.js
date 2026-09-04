@@ -6,6 +6,7 @@
 
 function emptyState() {
   return {
+    schemaVersion: 2,
     epoch: 0,
     epochTopic: null,
     currentGoal: null,
@@ -52,50 +53,68 @@ function isPersistentFact(f) {
 function loadState(raw) {
   const base = emptyState();
   if (!raw || typeof raw !== 'object') return base;
-  const known = Array.isArray(raw.knownFacts) ? raw.knownFacts.map(normalizeFact).filter(Boolean) : [];
-  const active = Array.isArray(raw.activeFacts)
-    ? raw.activeFacts.map(normalizeFact).filter(Boolean)
-    : known.slice(-8);
-  const persistent = Array.isArray(raw.persistentFacts)
-    ? raw.persistentFacts.map(normalizeFact).filter(Boolean)
-    : known.filter(isPersistentFact);
-  return {
-    epoch: Number(raw.epoch || 0) || 0,
-    epochTopic: raw.epochTopic ? String(raw.epochTopic).slice(0, 80) : null,
-    currentGoal: raw.currentGoal ? String(raw.currentGoal).slice(0, 240) : null,
-    currentTopic: raw.currentTopic ? String(raw.currentTopic).slice(0, 80) : null,
-    previousTopic: raw.previousTopic ? String(raw.previousTopic).slice(0, 80) : null,
-    activeFacts: active.slice(-12),
-    persistentFacts: persistent.slice(-8),
-    historicalFacts: Array.isArray(raw.historicalFacts)
-      ? raw.historicalFacts.map(normalizeFact).filter(Boolean).slice(-16)
-      : [],
-    invalidatedFacts: Array.isArray(raw.invalidatedFacts)
-      ? raw.invalidatedFacts.map(normalizeFact).filter(Boolean).slice(-12)
-      : [],
-    knownFacts: known.slice(-12),
-    userProvidedFacts: Array.isArray(raw.userProvidedFacts)
-      ? raw.userProvidedFacts.map(normalizeFact).filter(Boolean).slice(-12)
-      : [],
-    resolvedReferences: Array.isArray(raw.resolvedReferences)
-      ? raw.resolvedReferences.map(normalizeFact).filter(Boolean).slice(-8)
-      : [],
-    unresolvedIssues: Array.isArray(raw.unresolvedIssues)
-      ? raw.unresolvedIssues.map(normalizeFact).filter(Boolean).slice(-8)
-      : [],
-    lastAssistantAssumption: raw.lastAssistantAssumption
-      ? String(raw.lastAssistantAssumption).slice(0, 200)
-      : null,
-    lastUserCorrection: raw.lastUserCorrection ? String(raw.lastUserCorrection).slice(0, 200) : null,
-    relevantProductState: raw.relevantProductState
-      ? String(raw.relevantProductState).slice(0, 200)
-      : null,
-    lastActions: Array.isArray(raw.lastActions) ? raw.lastActions.map(String).slice(-6) : [],
-    rejectedOldTopics: Array.isArray(raw.rejectedOldTopics)
-      ? raw.rejectedOldTopics.map(String).slice(-6)
-      : [],
-    updatedAtMs: Number(raw.updatedAtMs || 0) || 0
-  };
+  try {
+    const known = Array.isArray(raw.knownFacts) ? raw.knownFacts.map(normalizeFact).filter(Boolean) : [];
+    const active = Array.isArray(raw.activeFacts)
+      ? raw.activeFacts.map(normalizeFact).filter(Boolean)
+      : known.slice(-8);
+    const persistent = Array.isArray(raw.persistentFacts)
+      ? raw.persistentFacts.map(normalizeFact).filter(Boolean)
+      : known.filter(isPersistentFact);
+    const version = Number(raw.schemaVersion || 0) || 0;
+    if (version && version > 2) {
+      console.warn('STATE_RECOVERED', JSON.stringify({ reason: 'future_schema', oldStateVersion: version, newStateVersion: 2 }));
+    }
+    return {
+      schemaVersion: 2,
+      epoch: Number(raw.epoch || 0) || 0,
+      epochTopic: raw.epochTopic ? String(raw.epochTopic).slice(0, 80) : null,
+      currentGoal: raw.currentGoal ? String(raw.currentGoal).slice(0, 240) : null,
+      currentTopic: raw.currentTopic ? String(raw.currentTopic).slice(0, 80) : null,
+      previousTopic: raw.previousTopic ? String(raw.previousTopic).slice(0, 80) : null,
+      activeFacts: active.slice(-12),
+      persistentFacts: persistent.slice(-8),
+      historicalFacts: Array.isArray(raw.historicalFacts)
+        ? raw.historicalFacts.map(normalizeFact).filter(Boolean).slice(-16)
+        : [],
+      invalidatedFacts: Array.isArray(raw.invalidatedFacts)
+        ? raw.invalidatedFacts.map(normalizeFact).filter(Boolean).slice(-12)
+        : [],
+      knownFacts: known.slice(-12),
+      userProvidedFacts: Array.isArray(raw.userProvidedFacts)
+        ? raw.userProvidedFacts.map(normalizeFact).filter(Boolean).slice(-12)
+        : [],
+      resolvedReferences: Array.isArray(raw.resolvedReferences)
+        ? raw.resolvedReferences.map(normalizeFact).filter(Boolean).slice(-8)
+        : [],
+      unresolvedIssues: Array.isArray(raw.unresolvedIssues)
+        ? raw.unresolvedIssues.map(normalizeFact).filter(Boolean).slice(-8)
+        : [],
+      lastAssistantAssumption: raw.lastAssistantAssumption
+        ? String(raw.lastAssistantAssumption).slice(0, 200)
+        : null,
+      lastUserCorrection: raw.lastUserCorrection ? String(raw.lastUserCorrection).slice(0, 200) : null,
+      relevantProductState: raw.relevantProductState
+        ? String(raw.relevantProductState).slice(0, 200)
+        : null,
+      lastActions: Array.isArray(raw.lastActions) ? raw.lastActions.map(String).slice(-6) : [],
+      rejectedOldTopics: Array.isArray(raw.rejectedOldTopics)
+        ? raw.rejectedOldTopics.map(String).slice(-6)
+        : [],
+      updatedAtMs: Number(raw.updatedAtMs || 0) || 0
+    };
+  } catch (err) {
+    console.warn(
+      'STATE_RECOVERED',
+      JSON.stringify({
+        reason: 'corrupt_state',
+        oldStateVersion: raw && raw.schemaVersion,
+        newStateVersion: 2,
+        message: String(err && err.message ? err.message : err).slice(0, 120)
+      })
+    );
+    return base;
+  }
 }
 
 function startNewEpoch(state, topic) {

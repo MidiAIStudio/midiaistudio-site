@@ -1,5 +1,5 @@
 import { applyGuidesI18n } from './guides-i18n.js?v=20260720-drop-zone';
-import { initSupportChat, applySupportChatBranding } from './support-chat.js?v=support-chat-ai-brand-1';
+import { initSupportChat, applySupportChatBranding } from './support-chat.js?v=support-chat-rate-purge-1';
 import { initTheme, readPreference, setThemePreference } from './theme.js?v=theme-2';
 import {
   ensurePricing,
@@ -6517,38 +6517,20 @@ async function editTicket(ticketId){
 async function deleteTicket(ticketId){
   if(!currentUser || !confirm(tr('confirm_delete')))return;
   try{
-    const {doc,getDoc,deleteDoc}=firestoreApi;
-    const ref=doc(db,'supportTickets',ticketId); const snap=await getDoc(ref); if(!snap.exists())return;
-    const t=snap.data(); if(!isAdminUser && t.uid!==currentUser.uid){ alert(tr('no_permission')); return; }
-    await deleteDoc(ref); alert(tr('deleted')); if(page==='ticket.html') location.href='./my-tickets.html';
+    await callFunctionJsonFallback(['supportCloseTicket'], { ticketId });
+    alert(tr('deleted'));
+    if(page==='ticket.html') location.href='./my-tickets.html';
   }catch(e){ alert(e.message); }
 }
 async function closeTicket(ticketId){
   if(!currentUser)return;
-  if(!confirm('이 상담을 종료할까요?')) return;
+  if(!confirm('상담을 종료하시겠습니까?\n종료하면 이 상담 대화는 삭제됩니다.')) return;
   try{
-    const {doc,getDoc,updateDoc,serverTimestamp,collection,addDoc}=firestoreApi;
-    const ref=doc(db,'supportTickets',ticketId); const snap=await getDoc(ref); if(!snap.exists())return;
-    const t=snap.data(); if(!isAdminUser && t.uid!==currentUser.uid){ alert(tr('no_permission')); return; }
-    await updateDoc(ref,{
-      status:'closed',
-      conversationMode:'closed',
-      closedAt:serverTimestamp(),
-      closedReason:'user_end',
-      humanChatNotified:false,
-      updatedAt:serverTimestamp(),
-      lastMessage:'상담 종료',
-      lastMessageAt:serverTimestamp(),
-      lastSender:'system'
-    });
-    await addDoc(collection(db,'supportTickets',ticketId,'replies'),{
-      uid:currentUser.uid,
-      role:'user',
-      displayName:currentUser.displayName||'',
-      content:'사용자가 상담을 종료했습니다.',
-      messageType:'system',
-      createdAt:serverTimestamp()
-    });
+    await callFunctionJsonFallback(['supportCloseTicket'], { ticketId });
+    if(page==='ticket.html' || page==='my-tickets.html'){
+      location.href='./my-tickets.html';
+      return;
+    }
   }catch(e){ alert(e.message); }
 }
 function stopMyTicketsListener(){
@@ -13474,7 +13456,14 @@ async function callFunctionJson(name, payload){
   if(!result.ok){
     throw Object.assign(
       new Error(result.data && result.data.message ? result.data.message : `Function ${name} failed (${result.status})`),
-      { status: result.status, data: result.data, code: result.data && result.data.code }
+      {
+        status: result.status,
+        data: result.data,
+        code: result.data && (result.data.errorCode || result.data.code),
+        errorCode: result.data && result.data.errorCode,
+        retryAfterSeconds: result.data && result.data.retryAfterSeconds,
+        resetAtMs: result.data && result.data.resetAtMs
+      }
     );
   }
   return result.data;

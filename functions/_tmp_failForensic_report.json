@@ -1,0 +1,62 @@
+{
+  "uidPrefix": "EzdgK2",
+  "rateBefore": {
+    "count": 40,
+    "windowStartMs": 1788543342287,
+    "ageMin": 56,
+    "nearLimit": true
+  },
+  "turns": [
+    {
+      "ticket": "A",
+      "i": 1,
+      "user": "안녕",
+      "status": 429,
+      "data": {
+        "ok": false,
+        "message": "AI 요청이 너무 많습니다. 잠시 후 다시 시도하거나 상담사를 연결해 주세요."
+      },
+      "latencyMs": 1545,
+      "message": "AI 요청이 너무 많습니다. 잠시 후 다시 시도하거나 상담사를 연결해 주세요."
+    },
+    {
+      "ticket": "A",
+      "i": 2,
+      "user": "변환이 안돼",
+      "status": 429,
+      "data": {
+        "ok": false,
+        "message": "AI 요청이 너무 많습니다. 잠시 후 다시 시도하거나 상담사를 연결해 주세요."
+      },
+      "latencyMs": 1250,
+      "message": "AI 요청이 너무 많습니다. 잠시 후 다시 시도하거나 상담사를 연결해 주세요."
+    },
+    {
+      "ticket": "B",
+      "i": 1,
+      "user": "새문의테스트",
+      "status": 429,
+      "data": {
+        "ok": false,
+        "message": "AI 요청이 너무 많습니다. 잠시 후 다시 시도하거나 상담사를 연결해 주세요."
+      },
+      "latencyMs": 1011,
+      "message": "AI 요청이 너무 많습니다. 잠시 후 다시 시도하거나 상담사를 연결해 주세요."
+    }
+  ],
+  "rateAfter": {
+    "count": 40,
+    "windowStartMs": 1788543342287
+  },
+  "ticketA": {
+    "conversationMode": "ai",
+    "hasState": false,
+    "stateKeys": []
+  },
+  "ticketB": {
+    "conversationMode": "ai",
+    "hasState": false,
+    "stateKeys": [],
+    "stateCopiedFromA": true
+  }
+}

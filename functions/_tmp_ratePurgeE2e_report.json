@@ -1,0 +1,58 @@
+{
+  "ok": true,
+  "steps": [
+    {
+      "name": "rate_limit_response",
+      "status": 429,
+      "data": {
+        "ok": false,
+        "message": "AI 상담 요청이 많습니다. 잠시 후 다시 이용해 주세요.",
+        "errorCode": "AI_RATE_LIMIT",
+        "retryAfterSeconds": 3296,
+        "resetAtMs": 1788551879485
+      }
+    },
+    {
+      "name": "rate_new_ticket",
+      "status": 429,
+      "data": {
+        "ok": false,
+        "message": "AI 상담 요청이 많습니다. 잠시 후 다시 이용해 주세요.",
+        "errorCode": "AI_RATE_LIMIT",
+        "retryAfterSeconds": 3294,
+        "resetAtMs": 1788551879485
+      }
+    },
+    {
+      "name": "rate_reset_ok",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "name": "close_purge",
+      "status": 200,
+      "data": {
+        "ok": true,
+        "purged": true,
+        "ticketId": "1r15nVIoOh5WWBkdGWrd"
+      }
+    },
+    {
+      "name": "close_idempotent",
+      "status": 200,
+      "data": {
+        "ok": true,
+        "alreadyDeleted": true
+      }
+    },
+    {
+      "name": "auth_forbidden",
+      "status": 403,
+      "data": {
+        "ok": false,
+        "message": "Forbidden"
+      }
+    }
+  ],
+  "verdict": "PASS"
+}

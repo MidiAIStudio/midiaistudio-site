@@ -58,6 +58,8 @@ const MODE = {
   CLOSED: 'closed'
 };
 
+const STATE_SCHEMA_VERSION = 2;
+
 const PERSONAL_RE =
   /(제\s*(라이선스|이용권|결제|환불|계정|크레딧|포인트)|내\s*(라이선스|이용권|결제|환불|계정|크레딧)|언제\s*끝|남은\s*기간|차단됐|환불됐|결제\s*성공|my\s+(license|payment|refund|account|credit|pass)|when\s+does\s+my|ライセンス.*(いつ|期限)|アカウント)/i;
 
@@ -564,42 +566,70 @@ async function callLlmIfConfigured(system, userPrompt) {
   }
 
   if (openaiKey) {
-    const model = cfg('SUPPORT_AI_MODEL', 'gpt-4o-mini');
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${openaiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        max_tokens: 512,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: userPrompt }
-        ]
-      })
-    });
-    if (!res.ok) {
-      console.warn('supportAi LLM OpenAI', res.status);
-      throw new Error(`OpenAI ${res.status}${errors.length ? ` (gemini: ${errors.join(',')})` : ''}`);
+    try {
+      const model = cfg('SUPPORT_AI_MODEL', 'gpt-4o-mini');
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${openaiKey}`
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          max_tokens: 512,
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: userPrompt }
+          ]
+        })
+      });
+      if (!res.ok) {
+        console.warn('supportAi LLM OpenAI', res.status);
+        errors.push(`OpenAI ${res.status}`);
+      } else {
+        const data = await res.json();
+        const out = String(data?.choices?.[0]?.message?.content || '').trim();
+        if (out) return out;
+        errors.push('OpenAI empty');
+      }
+    } catch (err) {
+      errors.push(err && err.message ? err.message : 'openai_failed');
     }
-    const data = await res.json();
-    return String(data?.choices?.[0]?.message?.content || '').trim();
   }
 
   if (errors.length) {
-    throw new Error(errors.join('; '));
+    console.warn('supportAi LLM unavailable', errors.join('; ').slice(0, 200));
   }
   return null;
+}
+
+function buildRateLimitError(windowStartMs, windowMs, now = Date.now()) {
+  const resetAtMs = Number(windowStartMs || now) + windowMs;
+  const retryAfterMs = Math.max(0, resetAtMs - now);
+  const retryAfterSeconds = Math.max(1, Math.ceil(retryAfterMs / 1000));
+  return Object.assign(
+    new Error('AI 상담 요청이 많습니다. 잠시 후 다시 이용해 주세요.'),
+    {
+      status: 429,
+      errorCode: 'AI_RATE_LIMIT',
+      errorCategory: 'AI_RATE_LIMIT',
+      retryable: true,
+      retryAfterSeconds,
+      resetAtMs
+    }
+  );
 }
 
 async function checkRateLimit(db, uid) {
   const ref = db.collection('aiSupportRate').doc(uid);
   const now = Date.now();
   const windowMs = 60 * 60 * 1000;
-  const maxPerHour = Number(cfg('SUPPORT_AI_MAX_PER_HOUR', '40')) || 40;
+  const hardMax = Number(cfg('SUPPORT_AI_MAX_PER_HOUR', '40')) || 40;
+  // Extra soft quota so a burned hard window cannot permanently poison the rest of the hour
+  // (including "+ 새 문의"). Failures never consume quota (increment only on success).
+  // Blocking ceiling is softMax (not hardMax). User-facing retry uses this actual block threshold's window reset.
+  const softMax = Number(cfg('SUPPORT_AI_SOFT_MAX_PER_HOUR', String(hardMax + 30))) || hardMax + 30;
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const data = snap.exists ? snap.data() || {} : {};
@@ -609,16 +639,18 @@ async function checkRateLimit(db, uid) {
       windowStart = now;
       count = 0;
     }
-    if (count >= maxPerHour) {
-      throw Object.assign(new Error('AI 요청이 너무 많습니다. 잠시 후 다시 시도하거나 상담사를 연결해 주세요.'), {
-        status: 429
-      });
+    if (count >= softMax) {
+      throw buildRateLimitError(windowStart, windowMs, now);
     }
     tx.set(
       ref,
       {
         windowStartMs: windowStart,
-        count: count + 1,
+        count,
+        lastAttemptMs: now,
+        hardMax,
+        softMax,
+        pending: true,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       { merge: true }
@@ -626,13 +658,154 @@ async function checkRateLimit(db, uid) {
   });
 }
 
+async function recordRateSuccess(db, uid) {
+  if (!db || !uid) return;
+  const ref = db.collection('aiSupportRate').doc(uid);
+  const now = Date.now();
+  const windowMs = 60 * 60 * 1000;
+  const hardMax = Number(cfg('SUPPORT_AI_MAX_PER_HOUR', '40')) || 40;
+  const softMax = Number(cfg('SUPPORT_AI_SOFT_MAX_PER_HOUR', String(hardMax + 30))) || hardMax + 30;
+  try {
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const data = snap.exists ? snap.data() || {} : {};
+      let windowStart = Number(data.windowStartMs || 0);
+      let count = Number(data.count || 0);
+      if (!windowStart || now - windowStart > windowMs) {
+        windowStart = now;
+        count = 0;
+      }
+      const nextCount = Math.min(count + 1, softMax);
+      tx.set(
+        ref,
+        {
+          windowStartMs: windowStart,
+          count: nextCount,
+          lastSuccessMs: now,
+          pending: false,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+    });
+  } catch (_) {
+    /* non-fatal */
+  }
+}
+
+function classifyAiError(err) {
+  const msg = String((err && err.message) || err || '').toLowerCase();
+  const status = Number((err && err.status) || 0);
+  if (err && err.errorCode === 'AI_RATE_LIMIT') {
+    return {
+      errorCategory: 'AI_RATE_LIMIT',
+      retryable: true,
+      httpStatus: 429,
+      errorCode: 'AI_RATE_LIMIT',
+      retryAfterSeconds: err.retryAfterSeconds,
+      resetAtMs: err.resetAtMs
+    };
+  }
+  if (status === 429 || /rate|too many|quota/i.test(msg)) {
+    return { errorCategory: 'OPENAI_RATE_LIMIT', retryable: true, httpStatus: status || 429 };
+  }
+  if (/timeout|timed out|deadline/i.test(msg)) {
+    return { errorCategory: 'OPENAI_TIMEOUT', retryable: true, httpStatus: status || 504 };
+  }
+  if (/openai\s*5\d\d|gemini\s*5\d\d|provider|econnreset|fetch failed/i.test(msg)) {
+    return { errorCategory: 'OPENAI_PROVIDER_ERROR', retryable: true, httpStatus: status || 502 };
+  }
+  if (/context|token|too large|maximum context/i.test(msg)) {
+    return { errorCategory: 'CONTEXT_TOO_LARGE', retryable: false, httpStatus: status || 400 };
+  }
+  if (/json|parse|synth/i.test(msg)) {
+    return { errorCategory: 'STRUCTURED_OUTPUT_PARSE_FAILURE', retryable: true, httpStatus: status || 500 };
+  }
+  if (/firestore|serialize|unsupported field/i.test(msg)) {
+    return { errorCategory: 'FIRESTORE_FAILURE', retryable: true, httpStatus: status || 500 };
+  }
+  if (status >= 400 && status < 500) {
+    return { errorCategory: 'INVALID_REQUEST', retryable: false, httpStatus: status };
+  }
+  return { errorCategory: 'INTERNAL_EXCEPTION', retryable: true, httpStatus: status || 500 };
+}
+
+function sanitizeStateForFirestore(state) {
+  const loaded = loadState(state);
+  const out = {
+    schemaVersion: Number((state && state.schemaVersion) || STATE_SCHEMA_VERSION) || STATE_SCHEMA_VERSION,
+    ...loaded
+  };
+  // Firestore rejects undefined; null/arrays/strings only
+  return JSON.parse(JSON.stringify(out, (_, v) => (v === undefined ? null : v)));
+}
+
+function logAiTurnFailure(payload) {
+  try {
+    console.error(
+      'AI_TURN_FAILURE',
+      JSON.stringify({
+        ticketId: payload.ticketId ? String(payload.ticketId).slice(0, 28) : null,
+        turnId: payload.turnId || null,
+        stage: payload.stage || null,
+        errorCategory: payload.errorCategory || 'OTHER',
+        httpStatus: payload.httpStatus || null,
+        retryable: !!payload.retryable,
+        historyTurnCount: payload.historyTurnCount || 0,
+        stateSize: payload.stateSize || 0,
+        toolCount: payload.toolCount || 0,
+        durationMs: payload.durationMs || null,
+        message: String(payload.message || '').slice(0, 180)
+      })
+    );
+  } catch (_) {
+    console.error('AI_TURN_FAILURE', payload && payload.errorCategory);
+  }
+}
+
+async function writeTurnScopedFailureReply(db, ticketId, { locale, errorCategory, retryable } = {}) {
+  const loc = locale || 'ko';
+  const text =
+    loc === 'en'
+      ? retryable
+        ? 'I could not finish that reply just now. Your message was saved — send another message to continue with AI support.'
+        : 'I could not finish that reply. Your message was saved. You can try again or connect to a counselor.'
+      : loc === 'ja'
+        ? retryable
+          ? 'ただいま回答を完了できませんでした。メッセージは保存されています。もう一度送るとAI相談を続けられます。'
+          : '回答を完了できませんでした。メッセージは保存されています。再試行するかスタッフ接続もできます。'
+        : retryable
+          ? '지금은 답변을 완료하지 못했습니다. 메시지는 저장되었습니다. 다시 메시지를 보내면 AI 상담을 계속할 수 있습니다.'
+          : '답변을 완료하지 못했습니다. 메시지는 저장되었습니다. 다시 시도하거나 상담사에게 연결할 수 있습니다.';
+  await writeAiReply(db, ticketId, {
+    text,
+    suggestHandoff: false,
+    confidence: 0.2,
+    refs: [],
+    forceWaiting: false,
+    turnFailure: {
+      status: 'AI_FAILED',
+      retryable: !!retryable,
+      errorCategory: errorCategory || 'OTHER',
+      atMs: Date.now()
+    }
+  });
+}
+
 async function writeAiReply(db, ticketId, payload) {
   const ticketRef = db.collection('supportTickets').doc(ticketId);
+  const content = String(payload.text || '').trim();
+  if (!content) {
+    throw Object.assign(new Error('empty_ai_reply_text'), {
+      status: 500,
+      errorCategory: 'ANSWER_SYNTH_FAILURE'
+    });
+  }
   const reply = {
     uid: 'system-ai',
     role: 'ai',
     displayName: 'MidiAI Studio AI',
-    content: payload.text,
+    content,
     messageType: 'text',
     sourceReferences: payload.refs || [],
     aiConfidence: payload.confidence,
@@ -640,13 +813,31 @@ async function writeAiReply(db, ticketId, payload) {
     createdAt: admin.firestore.FieldValue.serverTimestamp()
   };
   if (payload.noReliableKnowledge) reply.noReliableKnowledge = true;
+  if (payload.turnFailure) {
+    reply.turnFailure = {
+      status: 'AI_FAILED',
+      retryable: !!payload.turnFailure.retryable,
+      errorCategory: String(payload.turnFailure.errorCategory || 'OTHER').slice(0, 60)
+    };
+  }
   await ticketRef.collection('replies').add(reply);
   const patch = {
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-    lastMessage: String(payload.text || '').slice(0, 120),
+    lastMessage: content.slice(0, 120),
     lastMessageAt: admin.firestore.FieldValue.serverTimestamp(),
     lastSender: 'ai'
   };
+  // Transient AI failure is turn-scoped metadata only — never permanent handoff.
+  if (payload.turnFailure) {
+    patch.lastAiTurnFailure = {
+      status: 'AI_FAILED',
+      retryable: !!payload.turnFailure.retryable,
+      errorCategory: String(payload.turnFailure.errorCategory || 'OTHER').slice(0, 60),
+      atMs: Date.now()
+    };
+  } else {
+    patch.lastAiTurnFailure = admin.firestore.FieldValue.delete();
+  }
   if (payload.forceWaiting) {
     patch.conversationMode = MODE.WAITING;
     patch.humanRequestedAt = admin.firestore.FieldValue.serverTimestamp();
@@ -1043,6 +1234,7 @@ async function handleHandoffSummary(db, user, ticketId) {
 }
 
 async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) {
+  const startedAt = Date.now();
   if (!ticketId) throw Object.assign(new Error('ticketId required'), { status: 400 });
   const ticketRef = db.collection('supportTickets').doc(ticketId);
   const snap = await ticketRef.get();
@@ -1057,7 +1249,52 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
 
   await checkRateLimit(db, user.uid);
 
-  const replies = await loadRecentReplies(db, ticketId, 12);
+  try {
+    return await handleSupportAiReplyCore(db, user, ticketId, ticket, ticketRef, { debug, startedAt });
+  } catch (err) {
+    const classified = classifyAiError(err);
+    // Hard auth/not-found still bubble; everything else is turn-scoped recovery.
+    if (classified.httpStatus === 403 || classified.httpStatus === 404 || classified.httpStatus === 400) {
+      throw err;
+    }
+    const locale = detectLocale(String((ticket && ticket.content) || '')) || 'ko';
+    logAiTurnFailure({
+      ticketId,
+      stage: 'handleSupportAiReply',
+      errorCategory: classified.errorCategory,
+      httpStatus: classified.httpStatus,
+      retryable: classified.retryable,
+      durationMs: Date.now() - startedAt,
+      message: err && err.message
+    });
+    try {
+      await writeTurnScopedFailureReply(db, ticketId, {
+        locale,
+        errorCategory: classified.errorCategory,
+        retryable: classified.retryable
+      });
+      return {
+        ok: true,
+        turnFailed: true,
+        retryable: classified.retryable,
+        errorCategory: classified.errorCategory
+      };
+    } catch (writeErr) {
+      logAiTurnFailure({
+        ticketId,
+        stage: 'writeTurnScopedFailureReply',
+        errorCategory: 'FIRESTORE_FAILURE',
+        retryable: true,
+        message: writeErr && writeErr.message
+      });
+      throw Object.assign(err, classified);
+    }
+  }
+}
+
+async function handleSupportAiReplyCore(db, user, ticketId, ticket, ticketRef, { debug = false, startedAt } = {}) {
+
+  const replies = await loadRecentReplies(db, ticketId, 8);
   // Resolve follow-ups from recent USER turns BEFORE retrieval.
   // AI history is intentionally ignored so a wrong prior answer cannot poison topic.
   const userTurns = collectUserTurns(ticket, replies);
@@ -1119,6 +1356,7 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
       confidence: 1,
       refs: []
     });
+    await recordRateSuccess(db, user.uid);
     return { ok: true, refused: true, reason: 'secret_or_injection', ...(debug ? { _rag: ragDebug } : {}) };
   }
 
@@ -1130,6 +1368,7 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
       refs: []
     });
     ragDebug.finalAction = 'secret_clarify';
+    await recordRateSuccess(db, user.uid);
     return { ok: true, clarified: true, reason: 'secret_clarify', ...(debug ? { _rag: ragDebug } : {}) };
   }
 
@@ -1503,7 +1742,7 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
   try {
     await ticketRef.set(
       {
-        aiConversationState: nextState,
+        aiConversationState: sanitizeStateForFirestore(nextState),
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       },
       { merge: true }
@@ -1519,7 +1758,9 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
   ragDebug.agent.answerSynthesisSucceeded = answerSynthesisSucceeded;
   ragDebug.agent.answerSynthesisFallbackReason = answerSynthesisFallbackReason;
   ragDebug.agent.privateRawFallbackBlocked = privateRawFallbackBlocked;
+  ragDebug.agent.durationMs = Date.now() - (startedAt || Date.now());
   await writeAiReply(db, ticketId, answer);
+  await recordRateSuccess(db, user.uid);
   const out = {
     ok: true,
     suggestHandoff: !!answer.suggestHandoff,
@@ -1546,7 +1787,17 @@ function createSupportAiHandlers({ db, cors, requireUser }) {
     } catch (err) {
       const status = err.status || 500;
       console.error('supportAiReply', err && err.message);
-      return res.status(status).json({ ok: false, message: err.message || 'supportAiReply failed' });
+      const body = {
+        ok: false,
+        message: err.message || 'supportAiReply failed'
+      };
+      if (err.errorCode) body.errorCode = err.errorCode;
+      if (err.retryAfterSeconds != null) body.retryAfterSeconds = Number(err.retryAfterSeconds) || 0;
+      if (err.resetAtMs != null) body.resetAtMs = Number(err.resetAtMs) || 0;
+      if (status === 429 && body.retryAfterSeconds > 0) {
+        res.set('Retry-After', String(body.retryAfterSeconds));
+      }
+      return res.status(status).json(body);
     }
   }
 

@@ -165,7 +165,74 @@ export function initSupportChat(api){
   let repliesCache = [];
   let aiIdleTimer = 0;
   let closingTicket = false;
+  let rateLimitTimer = 0;
+  let rateLimitResetAtMs = 0;
   const restoredUi = readChatUiState();
+
+  function clearRateLimitUi(){
+    if(rateLimitTimer){
+      clearInterval(rateLimitTimer);
+      rateLimitTimer = 0;
+    }
+    rateLimitResetAtMs = 0;
+    body.querySelectorAll('.support-chat-system[data-ai-rate-limit]').forEach((el) => el.remove());
+  }
+
+  function clearAiFailureTips(){
+    clearRateLimitUi();
+    body.querySelectorAll('.support-chat-system[data-ai-turn-failure]').forEach((el) => el.remove());
+  }
+
+  function formatRateWaitCopy(retryAfterSeconds){
+    const secs = Math.max(0, Math.ceil(Number(retryAfterSeconds) || 0));
+    if(secs < 60){
+      return {
+        headline: 'AI 상담 요청이 많습니다.',
+        detail: `약 ${Math.max(1, secs)}초 후 다시 이용해 주세요.`,
+        countdown: `다시 이용 가능: 약 ${Math.max(1, secs)}초`
+      };
+    }
+    const mins = Math.ceil(secs / 60);
+    if(mins >= 60){
+      return {
+        headline: 'AI 상담 요청이 많습니다.',
+        detail: '약 1시간 후 다시 이용해 주세요.',
+        countdown: '다시 이용 가능: 약 1시간'
+      };
+    }
+    return {
+      headline: 'AI 상담 요청이 많습니다.',
+      detail: `약 ${mins}분 후 다시 이용해 주세요.`,
+      countdown: `다시 이용 가능: 약 ${mins}분`
+    };
+  }
+
+  function showRateLimitUi({ retryAfterSeconds, resetAtMs } = {}){
+    clearRateLimitUi();
+    const secsIn = Math.max(0, Number(retryAfterSeconds) || 0);
+    rateLimitResetAtMs = Number(resetAtMs) > 0
+      ? Number(resetAtMs)
+      : (Date.now() + secsIn * 1000);
+    const tip = document.createElement('div');
+    tip.className = 'support-chat-system';
+    tip.dataset.aiRateLimit = '1';
+    tip.dataset.aiTurnFailure = '1';
+    const paint = () => {
+      const left = Math.max(0, Math.ceil((rateLimitResetAtMs - Date.now()) / 1000));
+      const copy = left > 0
+        ? formatRateWaitCopy(left)
+        : {
+          headline: 'AI 상담 요청이 많습니다.',
+          detail: '곧 다시 이용할 수 있습니다. 메시지를 다시 보내 주세요.',
+          countdown: '다시 이용 가능: 지금'
+        };
+      tip.innerHTML = `<b>안내</b><div>${esc(copy.headline)}<br>${esc(copy.detail)}</div><div class="support-chat-rate-countdown" data-rate-countdown>${esc(copy.countdown)}</div>`;
+    };
+    paint();
+    body.appendChild(tip);
+    // Minute-oriented refresh — no server polling
+    rateLimitTimer = setInterval(paint, 15000);
+  }
 
   function persistUiState(){
     writeChatUiState({ open, ticketId: activeTicketId });
@@ -476,39 +543,63 @@ export function initSupportChat(api){
   async function closeConversation({ reason = 'user', silentConfirm = false } = {}){
     const user = getUser();
     if(!user || !activeTicketId || closingTicket) return;
-    if(isTicketClosed(ticketCache)) return;
+    if(isTicketClosed(ticketCache) && reason === 'idle') return;
     if(!silentConfirm){
-      const ok = window.confirm('이 상담을 종료할까요?');
+      const ok = window.confirm('상담을 종료하시겠습니까?\n종료하면 이 상담 대화는 삭제됩니다.');
       if(!ok) return;
     }
     closingTicket = true;
     clearAiIdleTimer();
+    const ticketId = activeTicketId;
     try{
-      const db = getDb();
-      const fs = getFs();
-      const { doc, updateDoc, serverTimestamp, collection, addDoc } = fs;
-      const note = reason === 'idle'
-        ? 'AI 상담이 일정 시간 응답이 없어 자동 종료되었습니다.'
-        : '사용자가 상담을 종료했습니다.';
-      await updateDoc(doc(db, 'supportTickets', activeTicketId), {
-        status: 'closed',
-        conversationMode: MODE.CLOSED,
-        closedAt: serverTimestamp(),
-        closedReason: reason === 'idle' ? 'ai_idle_timeout' : 'user_end',
-        humanChatNotified: false,
-        updatedAt: serverTimestamp(),
-        lastMessage: reason === 'idle' ? 'AI 상담 자동 종료' : '상담 종료',
-        lastMessageAt: serverTimestamp(),
-        lastSender: 'system'
-      });
-      await addDoc(collection(db, 'supportTickets', activeTicketId, 'replies'), {
-        uid: user.uid,
-        role: 'user',
-        displayName: user.displayName || '',
-        content: note,
-        messageType: 'system',
-        createdAt: serverTimestamp()
-      });
+      if(reason === 'idle'){
+        // Idle timeout keeps a closed marker (not an explicit user purge).
+        const db = getDb();
+        const fs = getFs();
+        const { doc, updateDoc, serverTimestamp, collection, addDoc } = fs;
+        if(isTicketClosed(ticketCache)) return;
+        await updateDoc(doc(db, 'supportTickets', ticketId), {
+          status: 'closed',
+          conversationMode: MODE.CLOSED,
+          closedAt: serverTimestamp(),
+          closedReason: 'ai_idle_timeout',
+          humanChatNotified: false,
+          updatedAt: serverTimestamp(),
+          lastMessage: 'AI 상담 자동 종료',
+          lastMessageAt: serverTimestamp(),
+          lastSender: 'system'
+        });
+        await addDoc(collection(db, 'supportTickets', ticketId, 'replies'), {
+          uid: user.uid,
+          role: 'user',
+          displayName: user.displayName || '',
+          content: 'AI 상담이 일정 시간 응답이 없어 자동 종료되었습니다.',
+          messageType: 'system',
+          createdAt: serverTimestamp()
+        });
+        return;
+      }
+
+      // Explicit user end → purge transcript from user + admin support storage
+      await callFn(['supportCloseTicket'], { ticketId });
+      stopListeners();
+      clearAiFailureTips();
+      setActiveTicketId('');
+      ticketCache = null;
+      repliesCache = [];
+      forceNextAsNew = true;
+      if(select) select.value = '';
+      await refreshTicketSelect();
+      const composer = root.querySelector('.support-chat-composer');
+      composer?.classList.remove('is-disabled');
+      if(input){
+        input.disabled = false;
+        input.placeholder = '메시지를 입력하세요...';
+      }
+      root.querySelector('#supportChatSend')?.removeAttribute('disabled');
+      root.querySelector('#supportChatAttach')?.removeAttribute('disabled');
+      paintWelcome();
+      actions.innerHTML = `<div class="support-chat-waiting">상담이 종료되어 대화가 삭제되었습니다. [+ 새 문의]로 새로 시작할 수 있습니다.</div>`;
     }catch(err){
       console.error(err);
       if(!silentConfirm) alert(err.message || '상담을 종료하지 못했습니다.');
@@ -579,7 +670,13 @@ export function initSupportChat(api){
     unsubTicket = onSnapshot(doc(db, 'supportTickets', ticketId), (snap) => {
       if(!snap.exists()){
         ticketCache = null;
+        repliesCache = [];
+        if(activeTicketId === ticketId){
+          setActiveTicketId('');
+          clearAiFailureTips();
+        }
         paintWelcome();
+        refreshTicketSelect().catch(() => {});
         return;
       }
       ticketCache = { id: snap.id, ...snap.data() };
@@ -648,6 +745,8 @@ export function initSupportChat(api){
     }
     root.querySelector('#supportChatSend')?.removeAttribute('disabled');
     root.querySelector('#supportChatAttach')?.removeAttribute('disabled');
+    // Clear transient AI failure UI — new chat must not inherit tip banners
+    clearAiFailureTips();
     paintWelcome();
     input?.focus();
   }
@@ -680,6 +779,9 @@ export function initSupportChat(api){
         private: true,
         attachments: [],
         conversationMode: MODE.AI,
+        // Explicit fresh AI session — never copy prior ticket state
+        aiConversationState: null,
+        lastAiTurnFailure: null,
         lastMessage: content,
         lastMessageAt: serverTimestamp(),
         lastSender: 'user',
@@ -691,6 +793,8 @@ export function initSupportChat(api){
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      body.querySelectorAll('.support-chat-system[data-ai-turn-failure]').forEach((el) => el.remove());
+      clearAiFailureTips();
       input.value = '';
       selectedFiles = [];
       renderPreview();
@@ -814,17 +918,44 @@ export function initSupportChat(api){
 
   async function requestAi(ticketId){
     try{
-      await callFn(['supportAiReply'], { ticketId });
+      const result = await callFn(['supportAiReply'], { ticketId });
+      // Successful HTTP (including turnFailed with written recoverable reply) clears tip banners
+      clearAiFailureTips();
+      return result;
     }catch(err){
       console.warn('supportAiReply', err);
       const status = Number(err?.status || 0);
-      const tip = document.createElement('div');
-      tip.className = 'support-chat-system';
-      const detail = status === 404
-        ? 'AI 서버가 아직 준비되지 않았습니다. 메시지는 저장되었고, 상담사에게 연결할 수 있습니다.'
-        : 'AI 답변을 불러오지 못했습니다. 메시지는 저장되었습니다. 상담사에게 연결할 수 있습니다.';
-      tip.innerHTML = `<b>안내</b><div>${detail}</div>`;
-      body.appendChild(tip);
+      const data = err?.data || {};
+      const errorCode = String(data.errorCode || err?.errorCode || err?.code || '').trim();
+      const retryAfterSeconds = Number(
+        data.retryAfterSeconds != null ? data.retryAfterSeconds : err?.retryAfterSeconds
+      );
+      const resetAtMs = Number(data.resetAtMs != null ? data.resetAtMs : err?.resetAtMs);
+      if(
+        errorCode === 'AI_RATE_LIMIT'
+        || (status === 429 && Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0)
+      ){
+        showRateLimitUi({
+          retryAfterSeconds: Number.isFinite(retryAfterSeconds) ? retryAfterSeconds : 0,
+          resetAtMs: Number.isFinite(resetAtMs) ? resetAtMs : 0
+        });
+      }else{
+        const serverMsg = String(err?.message || '').trim();
+        const tip = document.createElement('div');
+        tip.className = 'support-chat-system';
+        tip.dataset.aiTurnFailure = '1';
+        let detail;
+        if(status === 404){
+          detail = 'AI 서버가 아직 준비되지 않았습니다. 메시지는 저장되었습니다. 다시 보내거나 상담사에게 연결할 수 있습니다.';
+        }else if(status === 429 || /너무 많|rate|quota/i.test(serverMsg)){
+          // Legacy 429 without machine-readable retry — still not the generic failure copy
+          detail = serverMsg || 'AI 상담 요청이 많습니다. 잠시 후 다시 이용해 주세요.';
+        }else{
+          detail = 'AI 답변을 불러오지 못했습니다. 메시지는 저장되었습니다. 다시 메시지를 보내면 AI 상담을 계속할 수 있습니다.';
+        }
+        tip.innerHTML = `<b>안내</b><div>${esc(detail)}</div>`;
+        body.appendChild(tip);
+      }
       if(!actions.querySelector('#supportChatHuman')){
         const btn = document.createElement('button');
         btn.type = 'button';

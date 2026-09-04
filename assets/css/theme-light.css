@@ -1468,3 +1468,135 @@ html[data-theme='light'] .board-emoji-btn {
   background: #fff !important;
   border-color: var(--line) !important;
 }
+
+/* ——— Purchase plan sales cards (light only; structure unchanged) ——— */
+html[data-theme='light'] .purchase-plan-card {
+  background: #ffffff !important;
+  border-color: rgba(36, 52, 78, 0.12) !important;
+  box-shadow: 0 12px 30px rgba(40, 55, 85, 0.08) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card:hover {
+  border-color: rgba(8, 145, 178, 0.32) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card h3 {
+  color: #1b2436 !important;
+}
+
+html[data-theme='light'] article.purchase-plan-card .purchase-plan-credits-num {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] article.purchase-plan-card .purchase-plan-badge {
+  border-color: rgba(8, 145, 178, 0.32) !important;
+  background: rgba(8, 145, 178, 0.1) !important;
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] article.purchase-plan-card .purchase-plan-badge.is-best {
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  background: rgba(36, 52, 78, 0.05) !important;
+  color: #5a6578 !important;
+}
+
+html[data-theme='light'] .purchase-plan-card .purchase-plan-uses {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .purchase-plan-price-was {
+  color: #8b95a8 !important;
+}
+
+html[data-theme='light'] .purchase-plan-card .purchase-plan-price {
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+  color: #1b2436 !important;
+}
+
+html[data-theme='light'] .purchase-plan-price-skeleton {
+  color: rgba(27, 36, 54, 0.28) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+}
+
+html[data-theme='light'] .purchase-plan-off-pill,
+html[data-theme='light'] article.purchase-plan-card .purchase-plan-off-pill {
+  border-color: rgba(5, 150, 105, 0.32) !important;
+  background: rgba(5, 150, 105, 0.1) !important;
+  color: #047857 !important;
+}
+
+html[data-theme='light'] .purchase-plan-discount-until {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .purchase-plan-card .purchase-plan-unit,
+html[data-theme='light'] .purchase-plan-card .purchase-plan-save {
+  color: #5a6578 !important;
+}
+
+html[data-theme='light'] .purchase-plan-features {
+  border-top-color: rgba(36, 52, 78, 0.1) !important;
+}
+
+html[data-theme='light'] .purchase-plan-features li span {
+  color: #2a3548 !important;
+}
+
+html[data-theme='light'] .purchase-plan-features li span:before {
+  color: #0891b2 !important;
+}
+
+html[data-theme='light'] .purchase-plan-features li strong {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .purchase-plan-buy {
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  background: #f4f6fa !important;
+  color: #1b2436 !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-selected {
+  border-color: rgba(8, 145, 178, 0.4) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-recommended {
+  border-color: rgba(8, 145, 178, 0.48) !important;
+  background: linear-gradient(180deg, rgba(8, 145, 178, 0.09), #ffffff 44%) !important;
+  box-shadow: 0 12px 32px rgba(8, 145, 178, 0.1) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-recommended.is-selected {
+  border-color: rgba(8, 145, 178, 0.58) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-recommended .purchase-plan-buy {
+  border-color: rgba(8, 145, 178, 0.32) !important;
+  background: rgba(8, 145, 178, 0.1) !important;
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-best-value {
+  border-color: rgba(36, 52, 78, 0.14) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-best-value.is-selected {
+  border-color: rgba(8, 145, 178, 0.4) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-locked:hover {
+  border-color: rgba(36, 52, 78, 0.12) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-current-plan {
+  border-color: rgba(8, 145, 178, 0.5) !important;
+}
+
+html[data-theme='light'] .purchase-plan-card.is-loading:hover {
+  border-color: rgba(36, 52, 78, 0.12) !important;
+}
