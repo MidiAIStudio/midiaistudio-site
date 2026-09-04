@@ -1,5 +1,5 @@
 import { applyGuidesI18n } from './guides-i18n.js?v=20260720-drop-zone';
-import { initSupportChat } from './support-chat.js?v=support-chat-persist-1';
+import { initSupportChat, applySupportChatBranding } from './support-chat.js?v=support-chat-ai-brand-1';
 import {
   ensurePricing,
   checkoutContext,
@@ -575,6 +575,7 @@ function applyStaticI18n(){
   refreshTopbarActionLabels();
   refreshTopbarPageTitle();
   applySupportI18n();
+  applySupportChatBranding();
   applyDownloadsI18n();
   applyFooterI18n();
   updatePurchaseI18n();
@@ -14789,5 +14790,6 @@ initSupportChat({
   callFn: (names, payload) => callFunctionJsonFallback(names, payload),
   basePath: window.MIDIAI_BASE_PATH || './',
   brandAuthor: typeof BRAND_AUTHOR !== 'undefined' ? BRAND_AUTHOR : 'MidiAI Studio',
+  getLang: () => lang,
   onAuthChange
 });

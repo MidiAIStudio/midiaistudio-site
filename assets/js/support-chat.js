@@ -14,6 +14,55 @@ const AI_IDLE_CLOSE_MS = 30 * 60 * 1000;
 const CLOSE_CMD_RE = /^\s*(상담\s*종료|종료|대화\s*종료|end(\s*chat)?|close(\s*ticket)?)\s*$/i;
 const CHAT_UI_KEY = 'midiai.supportChat.ui';
 
+/** Branding / chrome copy only — does not change ticket or AI reply logic. */
+const CHAT_BRAND = {
+  ko: {
+    fab: 'AI 도우미',
+    fabAria: 'AI 도우미 열기',
+    panelAria: 'MidiAI AI 도우미',
+    header: 'MidiAI AI 도우미',
+    subtitle: '제품 사용 · 오류 · 기능 안내',
+    human: '상담사 연결',
+    closeAria: '닫기'
+  },
+  en: {
+    fab: 'AI Assistant',
+    fabAria: 'Open AI Assistant',
+    panelAria: 'MidiAI AI Assistant',
+    header: 'MidiAI AI Assistant',
+    subtitle: 'Product help · errors · features',
+    human: 'Connect to counselor',
+    closeAria: 'Close'
+  },
+  ja: {
+    fab: 'AIアシスタント',
+    fabAria: 'AIアシスタントを開く',
+    panelAria: 'MidiAI AIアシスタント',
+    header: 'MidiAI AIアシスタント',
+    subtitle: '使い方・エラー・機能案内',
+    human: 'スタッフに相談',
+    closeAria: '閉じる'
+  }
+};
+
+function fabIconSvg(gradId = 'supportChatFabGrad'){
+  return `
+  <svg class="support-chat-fab-svg" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="${gradId}" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+        <stop stop-color="var(--accent2, #22d3ee)"/>
+        <stop offset="1" stop-color="var(--accent, #8b5cf6)"/>
+      </linearGradient>
+    </defs>
+    <rect x="2.5" y="3.5" width="16.5" height="12.5" rx="6" fill="url(#${gradId})" opacity=".22"/>
+    <rect x="2.5" y="3.5" width="16.5" height="12.5" rx="6" stroke="url(#${gradId})" stroke-width="1.5" fill="none"/>
+    <path d="M7.2 19.2 9.4 16.2" stroke="url(#${gradId})" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M16.2 6.2 16.7 7.5 18 8 16.7 8.5 16.2 9.8 15.7 8.5 14.4 8 15.7 7.5Z" fill="url(#${gradId})"/>
+    <path d="M19.4 10.1 19.65 10.7 20.3 10.95 19.65 11.2 19.4 11.8 19.15 11.2 18.5 10.95 19.15 10.7Z" fill="url(#${gradId})" opacity=".9"/>
+  </svg>
+`.trim();
+}
+
 function readChatUiState(){
   try{
     const raw = sessionStorage.getItem(CHAT_UI_KEY);
@@ -59,6 +108,32 @@ function fmtTime(ts){
   }catch{ return ''; }
 }
 
+function resolveChatLang(getLang){
+  try{
+    const fromApi = typeof getLang === 'function' ? String(getLang() || '').toLowerCase() : '';
+    if(fromApi === 'en' || fromApi === 'ja' || fromApi === 'ko') return fromApi;
+  }catch{ /* ignore */ }
+  try{
+    const htmlLang = String(document.documentElement?.lang || '').toLowerCase().slice(0, 2);
+    if(htmlLang === 'en' || htmlLang === 'ja' || htmlLang === 'ko') return htmlLang;
+  }catch{ /* ignore */ }
+  try{
+    const stored = String(localStorage.getItem('midiai_lang') || '').toLowerCase();
+    if(stored === 'en' || stored === 'ja' || stored === 'ko') return stored;
+  }catch{ /* ignore */ }
+  return 'ko';
+}
+
+function chatCopy(getLang){
+  return CHAT_BRAND[resolveChatLang(getLang)] || CHAT_BRAND.ko;
+}
+
+/** Applied from app.js applyStaticI18n — branding chrome only. */
+let applyBrandingLabels = null;
+export function applySupportChatBranding(){
+  try{ applyBrandingLabels?.(); }catch{ /* ignore */ }
+}
+
 export function initSupportChat(api){
   if(typeof document === 'undefined') return;
   if(document.body?.classList?.contains('admin-console-page')) return;
@@ -74,6 +149,7 @@ export function initSupportChat(api){
     callFn,
     basePath = './',
     brandAuthor = 'MidiAI Studio',
+    getLang,
     onAuthChange
   } = api;
 
@@ -102,24 +178,25 @@ export function initSupportChat(api){
 
   if(restoredUi.ticketId) setActiveTicketId(restoredUi.ticketId, { persist: false });
 
+  const t0 = chatCopy(getLang);
   const root = document.createElement('div');
   root.id = 'supportChatRoot';
   root.className = 'support-chat-root';
   root.innerHTML = `
-    <button type="button" class="support-chat-fab" id="supportChatFab" aria-label="상담 열기">
-      <span class="support-chat-fab-dot" aria-hidden="true"></span>
-      <span>상담</span>
+    <button type="button" class="support-chat-fab" id="supportChatFab" aria-label="${esc(t0.fabAria)}">
+      <span class="support-chat-fab-icon" aria-hidden="true">${fabIconSvg('supportChatFabGrad')}</span>
+      <span class="support-chat-fab-label" id="supportChatFabLabel">${esc(t0.fab)}</span>
     </button>
-    <section class="support-chat-panel" id="supportChatPanel" hidden aria-label="MidiAI Studio 상담">
+    <section class="support-chat-panel" id="supportChatPanel" hidden aria-label="${esc(t0.panelAria)}">
       <header class="support-chat-head">
         <div class="support-chat-brand">
-          <span class="support-chat-avatar" aria-hidden="true">M</span>
+          <span class="support-chat-avatar" aria-hidden="true">${fabIconSvg('supportChatAvatarGrad')}</span>
           <div>
-            <b>MidiAI Studio 상담</b>
-            <small id="supportChatSub">AI 도움 + 1:1 상담</small>
+            <b id="supportChatTitle">${esc(t0.header)}</b>
+            <small id="supportChatSub">${esc(t0.subtitle)}</small>
           </div>
         </div>
-        <button type="button" class="support-chat-x" id="supportChatClose" aria-label="닫기">×</button>
+        <button type="button" class="support-chat-x" id="supportChatClose" aria-label="${esc(t0.closeAria)}">×</button>
       </header>
       <div class="support-chat-toolbar" id="supportChatToolbar" hidden>
         <select id="supportChatTicketSelect" aria-label="문의 선택"></select>
@@ -145,6 +222,26 @@ export function initSupportChat(api){
   const preview = root.querySelector('#supportChatPreview');
   const toolbar = root.querySelector('#supportChatToolbar');
   const select = root.querySelector('#supportChatTicketSelect');
+
+  function applyLabels({ keepModeSub = false } = {}){
+    const t = chatCopy(getLang);
+    const fabLabel = root.querySelector('#supportChatFabLabel');
+    if(fabLabel) fabLabel.textContent = t.fab;
+    fab?.setAttribute('aria-label', t.fabAria);
+    panel?.setAttribute('aria-label', t.panelAria);
+    const title = root.querySelector('#supportChatTitle');
+    if(title) title.textContent = t.header;
+    const closeBtn = root.querySelector('#supportChatClose');
+    if(closeBtn) closeBtn.setAttribute('aria-label', t.closeAria);
+    if(!keepModeSub){
+      const sub = root.querySelector('#supportChatSub');
+      if(sub && !ticketCache) sub.textContent = t.subtitle;
+    }
+    const humanBtn = root.querySelector('#supportChatHuman');
+    if(humanBtn) humanBtn.textContent = t.human;
+  }
+  applyBrandingLabels = () => applyLabels({ keepModeSub: !!ticketCache });
+  applyLabels();
 
   function setOpen(next, { persist = true } = {}){
     open = !!next;
@@ -244,7 +341,7 @@ export function initSupportChat(api){
       document.getElementById('topbarProfileBtn')?.click();
     });
     actions.innerHTML = '';
-    root.querySelector('#supportChatSub').textContent = 'AI 도움 + 1:1 상담';
+    root.querySelector('#supportChatSub').textContent = chatCopy(getLang).subtitle;
   }
 
   function bubbleHtml(msg){
@@ -355,7 +452,7 @@ export function initSupportChat(api){
     const waiting = !closed && mode === MODE.WAITING;
     const canEnd = !closed && (mode === MODE.AI || mode === MODE.WAITING || mode === MODE.HUMAN);
     actions.innerHTML = `
-      ${canHuman ? `<button type="button" class="support-chat-human" id="supportChatHuman">상담사 연결</button>` : ''}
+      ${canHuman ? `<button type="button" class="support-chat-human" id="supportChatHuman">${esc(chatCopy(getLang).human)}</button>` : ''}
       ${canEnd ? `<button type="button" class="support-chat-end" id="supportChatEnd">상담 종료</button>` : ''}
       ${waiting ? `<div class="support-chat-waiting">상담사 연결이 요청되었습니다. 지금까지의 대화가 함께 전달됩니다. 메시지를 계속 남겨도 됩니다.</div>` : ''}
       ${closed ? `<div class="support-chat-waiting">이 상담은 종료되었습니다. 새 문제가 있으면 [+ 새 문의]로 시작해 주세요.</div>` : ''}
@@ -733,7 +830,7 @@ export function initSupportChat(api){
         btn.type = 'button';
         btn.className = 'support-chat-human';
         btn.id = 'supportChatHuman';
-        btn.textContent = '상담사 연결';
+        btn.textContent = chatCopy(getLang).human;
         btn.onclick = () => requestHuman().catch(console.error);
         actions.prepend(btn);
       }
