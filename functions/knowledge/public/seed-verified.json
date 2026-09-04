@@ -831,6 +831,46 @@
     "knowledgeUpdatedAt": "2026-09-03"
   },
   {
+    "id": "business-registration",
+    "title": {
+      "ko": "사업자정보",
+      "en": "Business registration",
+      "ja": "事業者情報"
+    },
+    "category": "company",
+    "locale": "ko",
+    "visibility": "public",
+    "featureStatus": "production",
+    "verification": "verified",
+    "active": true,
+    "priority": 1,
+    "sourceType": "website",
+    "sourceRefs": [
+      "website business-info.html",
+      "footer business box"
+    ],
+    "relatedGuideUrl": "/business-info.html",
+    "keywords": [
+      "사업자",
+      "사업자번호",
+      "사업자등록번호",
+      "상호",
+      "대표자",
+      "통신판매",
+      "business"
+    ],
+    "summary": {
+      "ko": "미디에이아이스튜디오 사업자등록번호는 332-22-02381입니다. 상호·대표자·통신판매업 신고번호 등 상세는 사업자정보 페이지에서 확인할 수 있습니다.",
+      "en": "Business registration number for MidiAI Studio (미디에이아이스튜디오) is 332-22-02381. Full company details are on the Business Info page."
+    },
+    "details": {
+      "ko": "상호: 미디에이아이스튜디오. 대표자: 최정환. 사업자등록번호: 332-22-02381. 통신판매업 신고번호: 제2026-창원성산-0312호. 상세: /business-info.html",
+      "en": "Trade name: 미디에이아이스튜디오. Representative: 최정환. VAT/Business ID: 332-22-02381. Details: /business-info.html"
+    },
+    "sourceHash": "55cb1dea10531e70",
+    "knowledgeUpdatedAt": "2026-09-04"
+  },
+  {
     "id": "youtube-fetch-errors",
     "title": {
       "ko": "YouTube 오디오 가져오기 실패",

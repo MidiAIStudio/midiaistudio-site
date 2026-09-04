@@ -45,6 +45,7 @@ async function runSupportAgent({
   personal,
   userTurns,
   priorAiReplies = [],
+  turnRelation = null,
   clarifyEarly,
   adapters,
   retrieveStaticInitial,
@@ -68,6 +69,18 @@ async function runSupportAgent({
     (understanding.resolvedQuery && understanding.intent === 'troubleshooting')
   ) {
     effectiveQuestion = understanding.resolvedQuery || question;
+  }
+  // TOPIC_SHIFT: never let troubleshooting rewrite from old modes
+  if (turnRelation && turnRelation.relation === 'TOPIC_SHIFT') {
+    effectiveQuestion = rawQuestion || question;
+    if (understanding.productArea === 'studio_conversion' && understanding.intent === 'troubleshooting') {
+      // understanding may still be polluted if turns were wrong — force raw
+      understanding.searchQueries = [rawQuestion].filter(Boolean);
+      understanding.resolvedQuery = rawQuestion;
+      understanding.contradiction = null;
+      understanding.selectedMode = null;
+      understanding.observedLabel = null;
+    }
   }
 
   const facts = extractUserFacts(turns);
@@ -94,6 +107,15 @@ async function runSupportAgent({
     hypotheses,
     need,
     intent,
+    turnRelation: turnRelation
+      ? {
+          relation: turnRelation.relation,
+          reason: turnRelation.reason,
+          currentFamily: turnRelation.currentFamily,
+          previousFamily: turnRelation.previousFamily,
+          historyScope: turnRelation.historyScope
+        }
+      : null,
     understanding: {
       intent: understanding.intent,
       topic: understanding.topic,

@@ -28,10 +28,47 @@ const AMBIGUOUS_PIVOT_RE =
 const FACET_FOLLOW_RE =
   /^(왜|어떻게|어디|로그|원인|해결|그다음|다음엔|자세히|몇번|되돌리|저장\s*위치|원본|마음에|켜는\s*법|어디서\s*사|안돼|안됨|링크만|넣으면)/i;
 
+/** Company / commerce / security subjects that are standalone even when phrased with 어떻게/뭐야. */
+const DOMAIN_SUBJECT_RE =
+  /(사업자|사업자\s*번호|사업자등록|상호|대표자|환불|결제|구매|충전|할인|이벤트|프로모션|쿠폰|비밀\s*키|시크릿|client\s*secret|api\s*key|라이선스\s*키|자격\s*증명|세금계산서|영수증|계좌|입금|가격|얼마|요금)/i;
+
+const CORRECTION_RE =
+  /^(그게\s*아닌|그건\s*아닌|아니\s*그거|아니야|아니요|아니\s*그게|잘못\s*(이해|알았)|내가\s*말한\s*건|그게\s*아니라|그런\s*게\s*아니)/i;
+
 function normalizeSpace(s) {
   return String(s || '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/**
+ * True when the message has its own subject (not a bare pronoun follow-up).
+ * Prevents "사업자번호가어떻게돼" from being treated as follow-up just because of 어떻게.
+ */
+function hasStandaloneSubject(text) {
+  const raw = normalizeSpace(text);
+  if (!raw) return false;
+  if (CORRECTION_RE.test(raw)) return false;
+  // Referential openers are never standalone subjects — even if a noun appears later.
+  if (/^(그거|그건|그것|이거|저거|그게|그중|그중에|그\s*중|아까|방금)/i.test(raw)) return false;
+  // Facet / fact-addendum follow-ups refine the prior topic
+  if (raw.length <= 28 && FACET_FOLLOW_RE.test(raw) && !DOMAIN_SUBJECT_RE.test(raw)) return false;
+  if (
+    raw.length <= 28 &&
+    /(특정|일부|트랙만|악기만|만\s*그래|재시도|해도\s*안|같이\s*옮|여러\s*개|잡았어|켰어|아니\s+|나중에\s*자동|링크만|넣으면돼|원본|저장은)/i.test(
+      raw
+    ) &&
+    !DOMAIN_SUBJECT_RE.test(raw)
+  ) {
+    return false;
+  }
+  // Company / commerce / security subjects — even with 어떻게/뭐야 phrasing
+  if (DOMAIN_SUBJECT_RE.test(raw)) return true;
+  // Clear product feature question that is long enough to stand alone (not a short facet)
+  if ((hasStrongTopic(raw) || hasExplicitTopic(raw)) && raw.length >= 8) {
+    if (!FOLLOW_UP_RE.test(raw) && !FACET_FOLLOW_RE.test(raw)) return true;
+  }
+  return false;
 }
 
 function compactKo(s) {
@@ -105,6 +142,12 @@ function looksLikeFollowUp(rawQuestion) {
   const raw = normalizeSpace(rawQuestion);
   if (!raw) return false;
   if (isAmbiguousPivot(raw)) return false;
+  // Corrections refine the last exchange — treated as follow-up at this layer;
+  // resolveConversationQuery scopes carry to the last USER turn only.
+  if (CORRECTION_RE.test(raw)) return true;
+  // Clear standalone subjects must never inherit prior conversion/commerce topics
+  // just because the sentence contains 어떻게 / 뭐야.
+  if (hasStandaloneSubject(raw)) return false;
   if (/^(그중|그중에|그\s*중)/.test(raw)) return true;
 
   // Referential failure addenda refining a prior turn (not a new error topic)
@@ -147,11 +190,12 @@ function looksLikeFollowUp(rawQuestion) {
   if (
     raw.length <= 22 &&
     !hasExplicitTopic(raw) &&
+    !DOMAIN_SUBJECT_RE.test(raw) &&
     /(설명|방법|어떻게|어디|왜|설치|해결|사용|초기화|리셋|자세히|원본|바뀌|저장은|적용)/i.test(raw)
   ) {
     return true;
   }
-  // Pronoun-only openers
+  // Pronoun-only openers (excluding correction phrases already handled)
   if (/^(그거|그건|그것|이거|저거|그게)\b/i.test(raw) && raw.length <= 40) return true;
   return false;
 }
@@ -260,6 +304,19 @@ function resolveConversationQuery({ rawQuestion, priorUserTurns = [] } = {}) {
     };
   }
 
+  // Correction: only the last USER turn — never dig older history for random topics
+  if (CORRECTION_RE.test(raw)) {
+    const lastUser = (priorUserTurns || []).filter(Boolean).slice(-1)[0] || null;
+    return {
+      rawQuestion: raw,
+      resolvedQuestion: lastUser ? `${compressTopic(lastUser)} ${raw}`.trim() : raw,
+      followUp: true,
+      carriedTopic: lastUser ? compressTopic(lastUser) : null,
+      ambiguousPivot: null,
+      relation: 'CORRECTION'
+    };
+  }
+
   // Strong new topic on a follow-up-looking string → switch (except referential openers)
   if (
     hasStrongTopic(raw) &&
@@ -316,9 +373,12 @@ module.exports = {
   looksLikeFollowUp,
   hasExplicitTopic,
   hasStrongTopic,
+  hasStandaloneSubject,
   compressTopic,
   isAmbiguousPivot,
   FOLLOW_UP_RE,
   EXPLICIT_TOPIC_RE,
-  STRONG_TOPIC_RE
+  STRONG_TOPIC_RE,
+  DOMAIN_SUBJECT_RE,
+  CORRECTION_RE
 };

@@ -11,7 +11,7 @@
     "guide-license": "d8e4a9e412d3919e",
     "guide-troubleshooting": "5ecdd98608b1d474",
     "downloads-page": "572d7e099e9ffd35",
-    "knowledge-public-seed": "502eb3ecbb294574",
+    "knowledge-public-seed": "d3049bcb08e189b4",
     "knowledge-internal-seed": "0c8a2b60b9de62df"
   },
   "docs": {
@@ -32,6 +32,7 @@
     "trial-limits": "56bd9b06330cb0ae",
     "license-full-lifetime": "8b982f8fa08510d2",
     "credits-usage": "9cc7a247da7a3b3b",
+    "business-registration": "55cb1dea10531e70",
     "youtube-fetch-errors": "803182ab4d81791d",
     "conversion-generic-failure": "0e687710f13ae8ef",
     "pdf-timeout": "536acf7483e9b987",

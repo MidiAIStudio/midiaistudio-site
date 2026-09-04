@@ -14,6 +14,7 @@ const {
   collectUserTurns,
   resolveConversationQuery
 } = require('./knowledge/conversationContext');
+const { resolveTurnQuery, RELATION } = require('./supportAiAgent/turnRelation');
 
 const { runSupportAgent } = require('./supportAiAgent/runAgent');
 const {
@@ -57,13 +58,17 @@ const HUMAN_WANT_RE =
   /(상담사|사람|관리자|human|agent|operator|직원).{0,12}(연결|통화|이야기|상담)|사람과\s*이야기|상담원|オペレーター|有人対応|talk\s+to\s+(a\s+)?(human|agent|person)/i;
 
 const SECRET_PROBE_RE =
-  /(api\s*key|secret|비밀번호|패스워드|password|토큰|private\s*key|service\s*account|관리자\s*비번|credentials?)/i;
+  /(api\s*key|secret|비밀\s*키|시크릿|비밀번호|패스워드|password|토큰|private\s*key|service\s*account|관리자\s*비번|credentials?|client\s*secret)/i;
+
+/** Ambiguous secret/credential ask — clarify type; never dump catalog/prices. */
+const SECRET_CLARIFY_RE =
+  /(비밀\s*키|시크릿|client\s*secret|api\s*key|api키|라이선스\s*키|자격\s*증명)/i;
 
 const INJECTION_RE =
   /(이전|ignore|disregard).{0,40}(지침|instruction|prompt)|internal\s*knowledge|내부\s*(지식|문서|knowledge)|관리자용.{0,20}(문서|지식)|cuda\s*내부|시스템\s*프롬프트|show\s+(me\s+)?(the\s+)?(system|hidden)\s+prompt|source\s*code\s*(보여|輸出|dump|print)/i;
 
 const PRODUCT_RE =
-  /(가격|얼마|요금|price|cost|구매\s*상품|판매\s*상품|이용권|라이선스|패스|상품\s*종류|어떤\s*(상품|이용권|플랜)|몇\s*일\s*권|7일|30일|90일|lifetime|크레딧\s*(팩|가격|얼마|종류)|料金|いくら|plans?|passes?|원본\s*그대로|상품\s*정보)/i;
+  /(가격|얼마|요금|price|cost|구매\s*상품|판매\s*상품|이용권|라이선스|패스|상품\s*종류|어떤\s*(상품|이용권|플랜)|몇\s*일\s*권|7일|30일|90일|lifetime|크레딧\s*(팩|가격|얼마|종류|\d+)|충전|할인|이벤트|프로모션|쿠폰|料金|いくら|plans?|passes?|원본\s*그대로|상품\s*정보)/i;
 
 const UNKNOWN_ERROR_RE =
   /[A-Z]{2,}[-_]?\d{2,}|(처음\s*보는|모르는|unknown)\s*(오류|에러|error)|見たことない\s*(エラー|誤り)/i;
@@ -90,6 +95,20 @@ function scoreBoost(question, doc) {
   let score = 0;
   if (doc.id === 'credits-usage' && /(크레딧|credit).{0,12}(뭐|무엇|뭔|무엇인가|이란|뜻|의미|what|mean)/i.test(s))
     score += 12;
+  // Purchase/recharge must not prefer the definition doc
+  if (
+    doc.id === 'credits-usage' &&
+    /(충전|구매|결제|얼마|가격)/i.test(s) &&
+    !/(뭐|무엇|이란|뜻|의미|what|mean)/i.test(s)
+  ) {
+    score -= 14;
+  }
+  if (
+    doc.id === 'business-registration' &&
+    /(사업자|사업자번호|사업자등록|상호|대표자)/i.test(s)
+  ) {
+    score += 20;
+  }
   if (doc.id === 'easier-key' && /(easy\s*key|easier\s*key|쉬운\s*조)/i.test(s)) score += 10;
   // Feature preview docs: boost only for explain/how — not when user reports a failure
   // after selecting a different conversion mode (keyword bait).
@@ -175,7 +194,29 @@ function wantsHuman(q) {
 }
 
 function isSecretProbe(q) {
-  return SECRET_PROBE_RE.test(String(q || ''));
+  const s = String(q || '');
+  // Hard refuse: explicit dump / admin credential asks
+  if (/(관리자\s*비번|service\s*account|private\s*key|보여\s*줘|알려\s*줘).{0,20}(비밀|secret|키|토큰)/i.test(s)) {
+    return true;
+  }
+  if (/(api\s*key|password|패스워드|비밀번호|토큰|credentials?).{0,12}(값|내용|뭐야|알려|보여)/i.test(s)) {
+    return true;
+  }
+  return false;
+}
+
+function isSecretClarify(q) {
+  return SECRET_CLARIFY_RE.test(String(q || ''));
+}
+
+function secretClarifyText(locale = 'ko') {
+  if (locale === 'en') {
+    return 'Which secret do you mean? For example: Kakao Client Secret, an API key, or a license key. I cannot share actual secret values.';
+  }
+  if (locale === 'ja') {
+    return 'どの秘密キーのことですか？例: カカオ Client Secret、APIキー、ライセンスキー。実際の秘密値はご案内できません。';
+  }
+  return '어떤 비밀키를 말씀하시는지 알려주세요. 예: 카카오 Client Secret, API 키, 라이선스 키. 실제 비밀값은 안내할 수 없습니다.';
 }
 
 function isInjectionProbe(q) {
@@ -400,10 +441,48 @@ function templateAnswer(question, passages, { personal, lowConfidence, wantHuman
         refs: [{ label: catalog.title, href: catalog.href }]
       };
     }
+    if (looksLikePromotionQuestion(question)) {
+      const hasSale = (catalog.customerSafeProducts || []).some((p) => {
+        const list = Number(p.listPriceKrw || 0);
+        const price = Number(p.priceKrw || 0);
+        return Number.isFinite(list) && list > 0 && Number.isFinite(price) && price > 0 && price < list;
+      });
+      return {
+        text: hasSale
+          ? loc === 'en'
+            ? 'Some plans currently show a reduced price on the Purchase page. Please check Purchase for the latest promotion.'
+            : loc === 'ja'
+              ? '一部商品に割引価格が表示されている場合があります。最新のプロモーションは購入ページでご確認ください。'
+              : '일부 상품에 할인 가격이 표시되어 있을 수 있습니다. 최신 할인·프로모션은 구매 페이지에서 확인해 주세요.'
+          : loc === 'en'
+            ? 'There is no confirmed discount event in the current sellable catalog. Prices follow the Purchase page.'
+            : loc === 'ja'
+              ? '現在の販売カタログでは確認できる割引イベントはありません。価格は購入ページ表示に従います。'
+              : '현재 확인된 할인 이벤트는 없습니다. 가격은 구매 페이지 표시를 기준으로 합니다.',
+        suggestHandoff: false,
+        confidence: 0.88,
+        refs: [{ label: catalog.title, href: catalog.href }]
+      };
+    }
+    if (looksLikePurchaseMethodQuestion(question) && !parseRequestedCreditAmount(question)) {
+      return {
+        text:
+          loc === 'en'
+            ? 'You can buy credits and passes on the Purchase page after signing in. Open Purchase, choose a credit pack or pass, then complete payment.'
+            : loc === 'ja'
+              ? 'クレジットや利用券はログイン後に購入ページから購入できます。購入ページで商品を選び、決済を完了してください。'
+              : '크레딧·이용권은 로그인 후 구매 페이지에서 충전·구매할 수 있습니다. 구매 페이지에서 원하는 크레딧 팩 또는 이용권을 선택한 뒤 결제를 진행해 주세요.',
+        suggestHandoff: false,
+        confidence: 0.9,
+        refs: [{ label: loc === 'en' ? 'Purchase' : '구매', href: '/purchase.html' }]
+      };
+    }
+    const focusCredit = parseRequestedCreditAmount(question);
     const text =
       catalog.customerSafeProducts && catalog.customerSafeProducts.length
         ? formatCustomerCatalogText(catalog.customerSafeProducts, loc, {
-            sevenDayNote: false
+            sevenDayNote: false,
+            focusCreditAmount: focusCredit
           })
         : String(catalog.text || '').trim();
     return {
@@ -626,17 +705,39 @@ function productPriceKrw(p) {
 function toCustomerSafeProduct(p, locale = 'ko') {
   const displayName = customerFacingProductName(p, locale);
   const priceKrw = productPriceKrw(p);
+  const listPriceKrw = Number(p.listPriceKrw ?? p.priceKrw ?? p.listPrice);
   return {
     displayName,
     priceKrw,
+    listPriceKrw: Number.isFinite(listPriceKrw) && listPriceKrw > 0 ? Math.round(listPriceKrw) : null,
+    creditAmount: Math.floor(Number(p.creditAmount || 0)) || null,
     priceLabel: formatPriceKrw(priceKrw, locale),
     available: true
   };
 }
 
-function formatCustomerCatalogText(products, locale = 'ko', { sevenDayNote = false } = {}) {
+function formatCustomerCatalogText(products, locale = 'ko', { sevenDayNote = false, focusCreditAmount = null } = {}) {
   const loc = locale || 'ko';
-  const lines = (products || [])
+  const list = products || [];
+  const focusN = focusCreditAmount != null ? Number(focusCreditAmount) : null;
+  if (Number.isFinite(focusN) && focusN > 0) {
+    const hit = list.find((p) => {
+      const n = Number(p.creditAmount || 0);
+      if (n === focusN) return true;
+      const name = String(p.displayName || '');
+      return new RegExp(`(크레딧|credit)\\s*${focusN}\\b`, 'i').test(name);
+    });
+    if (hit) {
+      const safe = hit.displayName ? hit : toCustomerSafeProduct(hit, loc);
+      const price = safe.priceLabel || formatPriceKrw(safe.priceKrw, loc);
+      if (price) {
+        if (loc === 'en') return `Credit ${focusN} is ${price}.`;
+        if (loc === 'ja') return `クレジット ${focusN}は${price}です。`;
+        return `크레딧 ${focusN}개는 ${price}입니다.`;
+      }
+    }
+  }
+  const lines = list
     .map((p) => {
       const safe = p.displayName ? p : toCustomerSafeProduct(p, loc);
       if (!safe.displayName) return null;
@@ -661,7 +762,7 @@ function formatCustomerCatalogText(products, locale = 'ko', { sevenDayNote = fal
       ? 'Plans and prices follow what is shown on the Purchase page.'
       : loc === 'ja'
         ? '販売状況と価格は購入ページの表示を基準にします。'
-        : '현재 판매 상태와 가격은 구매 페이지의 표시를 기준으로 합니다.';
+        : '현재 판매 상태와 가격은 구매 페이지의 표시를 기준으로 します.';
   let text = `${intro}\n\n${lines.join('\n')}\n\n${footer}`;
   if (sevenDayNote) {
     text +=
@@ -672,6 +773,25 @@ function formatCustomerCatalogText(products, locale = 'ko', { sevenDayNote = fal
           : '\n\n7일 이용권은 현재 신규 판매하지 않습니다.';
   }
   return text;
+}
+
+function parseRequestedCreditAmount(question) {
+  const q = String(question || '');
+  const m =
+    q.match(/크레딧\s*(\d+)\s*개?/i) ||
+    q.match(/credit\s*(\d+)/i) ||
+    q.match(/(\d+)\s*개.{0,8}(얼마|가격)/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function looksLikePromotionQuestion(question) {
+  return /(할인|이벤트|프로모션|쿠폰)/i.test(String(question || ''));
+}
+
+function looksLikePurchaseMethodQuestion(question) {
+  return /(충전|구매|결제|사려|사려고|어디서\s*사)/i.test(String(question || ''));
 }
 
 function customerFacingProductName(p, locale = 'ko') {
@@ -923,13 +1043,24 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
   const rawQuestion = String(userTurns[userTurns.length - 1] || '').trim();
   if (!rawQuestion) return { ok: true, skipped: true, reason: 'empty' };
   const priorUserTurns = userTurns.slice(0, -1).slice(-5);
-  const resolution = resolveConversationQuery({
+  const turnResolved = resolveTurnQuery({
     rawQuestion,
-    priorUserTurns
+    priorUserTurns,
+    priorAiReplies,
+    legacyResolve: resolveConversationQuery
   });
+  const resolution = {
+    rawQuestion: turnResolved.rawQuestion,
+    resolvedQuestion: turnResolved.resolvedQuestion,
+    followUp: !!turnResolved.followUp,
+    carriedTopic: turnResolved.carriedTopic || null,
+    ambiguousPivot: turnResolved.ambiguousPivot || null,
+    relation: turnResolved.relation || null
+  };
   const resolvedQuestion = String(resolution.resolvedQuestion || rawQuestion).trim() || rawQuestion;
   // Retrieval / intent / FAQ use resolved; safety & personalization stay on raw (+ careful).
   const question = resolvedQuestion;
+  const turnsForUnderstanding = turnResolved.turnsForUnderstanding || [rawQuestion];
 
   const locale = detectLocale(rawQuestion) || detectLocale(question);
   const ragDebug = {
@@ -938,6 +1069,12 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     resolvedQuestion: question.slice(0, 200),
     followUp: !!resolution.followUp,
     carriedTopic: resolution.carriedTopic || null,
+    turnRelation: turnResolved.relation || null,
+    turnRelationReason: turnResolved.reason || null,
+    currentTopic: turnResolved.currentFamily || null,
+    previousTopic: turnResolved.previousFamily || null,
+    usedHistoryTurns: (turnsForUnderstanding || []).slice(0, -1).map((t) => String(t).slice(0, 80)),
+    ignoredHistoryTurns: (turnResolved.ignoredHistoryTurns || []).map((t) => String(t).slice(0, 80)),
     locale,
     retrieved: [],
     visibility: 'public',
@@ -957,6 +1094,17 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
       refs: []
     });
     return { ok: true, refused: true, reason: 'secret_or_injection', ...(debug ? { _rag: ragDebug } : {}) };
+  }
+
+  if (isSecretClarify(rawQuestion)) {
+    await writeAiReply(db, ticketId, {
+      text: secretClarifyText(locale),
+      suggestHandoff: false,
+      confidence: 0.85,
+      refs: []
+    });
+    ragDebug.finalAction = 'secret_clarify';
+    return { ok: true, clarified: true, reason: 'secret_clarify', ...(debug ? { _rag: ragDebug } : {}) };
   }
 
   const personal = isPersonal(rawQuestion);
@@ -997,8 +1145,14 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     rawQuestion,
     locale,
     personal,
-    userTurns,
-    priorAiReplies,
+    userTurns: turnsForUnderstanding,
+    priorAiReplies:
+      turnResolved.relation === RELATION.CORRECTION
+        ? priorAiReplies.slice(-1)
+        : turnResolved.relation === RELATION.TOPIC_SHIFT
+          ? []
+          : priorAiReplies,
+    turnRelation: turnResolved,
     clarifyEarly,
     adapters: sourceAdapters,
     retrieveStaticInitial: ({ limit, question: q }) =>
@@ -1020,6 +1174,17 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     facts: agentOut.debug && agentOut.debug.facts,
     understanding: agentOut.debug && agentOut.debug.understanding,
     relevance: agentOut.debug && agentOut.debug.relevance,
+    turnRelation: turnResolved.relation,
+    searchQueries:
+      (agentOut.debug &&
+        agentOut.debug.understanding &&
+        agentOut.debug.understanding.searchQueries) ||
+      [],
+    retrievalDocIds: (passages || []).map((p) => p.id),
+    rejectedDocIds:
+      (agentOut.debug && agentOut.debug.relevance && agentOut.debug.relevance.rejected) || [],
+    evidenceConfidence:
+      (agentOut.debug && agentOut.debug.relevance && agentOut.debug.relevance.confidence) || null,
     hypotheses: agentOut.debug && agentOut.debug.hypotheses,
     plannerMode: agentOut.debug && agentOut.debug.plannerMode,
     plannerTrigger: agentOut.debug && agentOut.debug.plannerTrigger,
@@ -1070,15 +1235,24 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
   }));
 
   const understandHint = understanding
-    ? `Understood intent=${understanding.intent || ''}; selectedMode=${understanding.selectedMode || ''}; observedLabel=${understanding.observedLabel || ''}; contradiction=${understanding.contradiction || 'none'}.`
+    ? `Understood intent=${understanding.intent || ''}; selectedMode=${understanding.selectedMode || ''}; observedLabel=${understanding.observedLabel || ''}; contradiction=${understanding.contradiction || 'none'}; turnRelation=${turnResolved.relation || ''}.`
     : '';
   const system = [
     'You are MidiAI Studio official support AI — the reasoning layer for customer support.',
-    'First understand what the user actually asked (including recent transcript). Retrieved context is evidence, not the answer.',
+    'CURRENT USER MESSAGE is primary. Relevant recent context is secondary. Old unrelated topics must not rewrite the answer.',
+    `Turn relation: ${turnResolved.relation || 'n/a'} (${turnResolved.reason || ''}).`,
+    turnResolved.relation === RELATION.TOPIC_SHIFT
+      ? 'TOPIC_SHIFT: answer only the current question. Ignore prior YouTube/conversion/purchase history.'
+      : '',
+    turnResolved.relation === RELATION.CORRECTION
+      ? 'CORRECTION: the user says the previous AI answer missed their intent. Re-interpret using the last user question + last AI reply + this correction. Do not jump to older unrelated topics.'
+      : '',
+    'First understand what the user actually asked. Retrieved context is evidence, not the answer.',
     'Ignore retrieved documents that only share keywords but do not address the user situation.',
     'If context is insufficient, ask one focused diagnostic question — do not invent root causes (server bug, UI bug, wrong engine, reinstall) as facts.',
     'Do not invent prices, pack sizes, policies, or personal account data.',
-    'Answer the user question directly. Do not dump whole documents.',
+    'Answer the user question directly first. For a specific price question, lead with that price — do not dump the full catalog unless asked.',
+    'For promotion/discount questions, say whether a discount is confirmed — do not answer with patch notes or a full price table.',
     'If this is a follow-up, use prior USER facts already given — do not re-ask what they already stated.',
     'Never mention internal resolved queries, retrieval, relevance gates, or topic resolution to the user.',
     `Question intent hint: ${answerIntent} (what=explain, how=steps, where=location, install=install steps, troubleshoot=fix, general=short summary).`,
@@ -1107,7 +1281,20 @@ async function handleSupportAiReply(db, user, ticketId, { debug = false } = {}) 
     agentOut.debug && agentOut.debug.privateSourceUsed && agentOut.debug.privateSourceLlmContext
       ? `\n\nSanitized product behavior excerpts (internal grounding only — never cite paths/code/keys to the user):\n${agentOut.debug.privateSourceLlmContext}`
       : '';
-  const transcript = buildTranscript(ticket, replies.slice(-8));
+  // TOPIC_SHIFT: do not feed long prior transcript into the answer LLM.
+  // CORRECTION: last exchange only. FOLLOW_UP/CONTINUE: recent window.
+  let transcriptReplies = replies;
+  if (turnResolved.relation === RELATION.TOPIC_SHIFT) {
+    transcriptReplies = [];
+  } else if (turnResolved.relation === RELATION.CORRECTION) {
+    transcriptReplies = replies.slice(-2);
+  } else {
+    transcriptReplies = replies.slice(-4);
+  }
+  const transcript =
+    turnResolved.relation === RELATION.TOPIC_SHIFT
+      ? `(topic shifted — current question only)\nUSER: ${rawQuestion}`
+      : buildTranscript(ticket, transcriptReplies);
   let answer = templateAnswer(question, passages, {
     personal,
     lowConfidence: lowConfidence && !clarify,

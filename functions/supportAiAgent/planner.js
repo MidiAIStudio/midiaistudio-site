@@ -16,12 +16,18 @@ function classifyNeed({ question, rawQuestion, intent, facts }) {
   const q = `${question || ''} ${rawQuestion || ''}`;
   const c = compact(q);
 
+  if (/(할인|이벤트|프로모션|쿠폰)/i.test(q) && !/(패치|업데이트|릴리스|릴리즈)/i.test(q)) {
+    return 'catalog';
+  }
   if (
-    /(가격|얼마|요금|price|판매\s*상품|구매\s*상품|상품\s*종류|이용권|라이선스|패스|lifetime|크레딧\s*팩|plans?)/i.test(
+    /(가격|얼마|요금|price|판매\s*상품|구매\s*상품|상품\s*종류|이용권|라이선스|패스|lifetime|크레딧\s*팩|크레딧\s*\d+|충전|plans?)/i.test(
       q
     )
   ) {
     return 'catalog';
+  }
+  if (/(사업자|사업자번호|사업자등록|상호|대표자)/i.test(q)) {
+    return 'knowledge';
   }
   if (
     /(패치|업데이트|업뎃|릴리스|릴리즈|changelog|patchnote|변경사항|뭐바뀐|뭐가바뀌|공지)/i.test(c) ||
