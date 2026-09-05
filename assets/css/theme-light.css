@@ -294,6 +294,8 @@ html[data-theme='light'] .topbar-profile-credit-main span {
 
 html[data-theme='light'] .topbar-profile-links a {
   color: var(--text) !important;
+  width: 100% !important;
+  justify-self: stretch !important;
 }
 
 html[data-theme='light'] .topbar-profile-links a:hover {
@@ -446,7 +448,7 @@ html[data-theme='light'] .secondary {
 html[data-theme='light'] .hub-card,
 html[data-theme='light'] .hub-page .hub-card,
 html[data-theme='light'] .portal-page .hub-card,
-html[data-theme='light'] .content-card,
+html[data-theme='light'] .content-card:not(#admin),
 html[data-theme='light'] .price-card,
 html[data-theme='light'] .notice,
 html[data-theme='light'] .form-card,
@@ -1094,62 +1096,102 @@ html[data-theme='light'] body.admin-page.admin-console-page {
   --admin-stroke-muted: rgba(36, 52, 78, 0.08);
   --admin-fill: rgba(36, 52, 78, 0.04);
   --admin-fill-hover: rgba(107, 92, 231, 0.08);
-  --admin-header-fill: rgba(242, 245, 250, 0.96);
+  --admin-header-fill: #f5f7fb;
+  --admin-nav-item-height: 32px;
+  --admin-nav-item-gap: 4px;
+  --admin-nav-group-gap: 14px;
+  --admin-nav-group-to-item: 8px;
   --crm-line: rgba(36, 52, 78, 0.12);
   --crm-soft: rgba(36, 52, 78, 0.04);
   --crm-accent: #4f6bed;
-  background: var(--body-bg) !important;
+  /* Continuous surface with topbar/stage (no chopped white island) */
+  background: #f5f7fb !important;
   color: var(--text) !important;
 }
 
 html[data-theme='light'] body.admin-console-page > .orb {
-  opacity: 0.12 !important;
+  opacity: 0.08 !important;
 }
 
 html[data-theme='light'] .admin-console-page .topbar {
-  background: var(--admin-header-fill) !important;
-  border-bottom-color: var(--admin-stroke) !important;
-  box-shadow: 0 6px 18px rgba(40, 55, 85, 0.05) !important;
+  background: #f5f7fb !important;
+  border-bottom: 1px solid rgba(36, 52, 78, 0.1) !important;
+  box-shadow: none !important;
 }
 
-html[data-theme='light'] .admin-console-page .admin-sidebar {
-  background: #eef2f7 !important;
-  border-right-color: var(--admin-stroke) !important;
-  color: var(--text) !important;
+html[data-theme='light'] .admin-console-page .admin-console,
+html[data-theme='light'] .admin-console-page .admin-console-stage,
+html[data-theme='light'] .admin-console-page .admin-console-main {
+  background: transparent !important;
 }
 
-html[data-theme='light'] .admin-console-page .admin-sidebar-brand strong {
-  color: var(--heading) !important;
+html[data-theme='light'] body.admin-console-page .admin-sidebar,
+html[data-theme='light'] body.admin-console-page aside#adminSidebar,
+html[data-theme='light'] body.admin-console-page .admin-sidebar-nav {
+  background: #f5f7fb !important;
+  background-color: #f5f7fb !important;
+  border-right-color: rgba(36, 52, 78, 0.12) !important;
+  color: #152033 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
 }
 
-html[data-theme='light'] .admin-console-page .admin-sidebar-brand span,
-html[data-theme='light'] .admin-console-page .admin-nav-group {
-  color: var(--muted) !important;
+html[data-theme='light'] body.admin-console-page .admin-sidebar-brand strong {
+  color: #121a2b !important;
 }
 
-html[data-theme='light'] .admin-console-page .admin-nav-item {
-  color: var(--ink-soft) !important;
+html[data-theme='light'] body.admin-console-page .admin-sidebar-brand span,
+html[data-theme='light'] body.admin-console-page .admin-nav-group {
+  color: #5a6478 !important;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-html[data-theme='light'] .admin-console-page .admin-nav-item:hover {
+/* Flat rail items — never raised “card” pills (looks boxed when sidebar is narrow) */
+html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item,
+html[data-theme='light'] body.admin-console-page .admin-nav-item {
+  color: #243044 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 6px !important;
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item:hover,
+html[data-theme='light'] body.admin-console-page .admin-nav-item:hover {
   background: rgba(107, 92, 231, 0.08) !important;
-  color: var(--text) !important;
+  color: #121a2b !important;
+  box-shadow: none !important;
 }
 
-html[data-theme='light'] .admin-console-page .admin-nav-item.is-active,
-html[data-theme='light'] .admin-console-page .admin-nav-item.active {
+html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item.is-active,
+html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item.active,
+html[data-theme='light'] body.admin-console-page .admin-nav-item.is-active,
+html[data-theme='light'] body.admin-console-page .admin-nav-item.active {
   background: rgba(107, 92, 231, 0.12) !important;
-  color: var(--text) !important;
-  box-shadow: inset 2px 0 0 rgba(107, 92, 231, 0.85) !important;
+  color: #121a2b !important;
+  box-shadow: inset 3px 0 0 #6b5ce7 !important;
 }
 
-html[data-theme='light'] .admin-console-page .admin-sidebar-site {
-  color: var(--muted) !important;
+html[data-theme='light'] body.admin-console-page .admin-sidebar-site {
+  color: #5a6478 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
 }
 
-html[data-theme='light'] .admin-console-page .admin-sidebar-site:hover {
-  color: var(--text) !important;
+html[data-theme='light'] body.admin-console-page .admin-sidebar-site:hover {
+  color: #121a2b !important;
   background: rgba(36, 52, 78, 0.06) !important;
+  box-shadow: none !important;
 }
 
 html[data-theme='light'] .admin-console-page .admin-console-pagehead h1,
@@ -1272,35 +1314,124 @@ html[data-theme='light'] .admin-page .admin-chat-meta {
   color: var(--muted) !important;
 }
 
+/* Admin buttons — raised (convex) treatment matching site primary/secondary */
+html[data-theme='light'] .admin-page .primary,
+html[data-theme='light'] .admin-page button.primary,
+html[data-theme='light'] .admin-page a.primary,
+html[data-theme='light'] .admin-console-page .primary,
+html[data-theme='light'] .admin-console-page button.primary {
+  color: #fff !important;
+  background: linear-gradient(135deg, #6b5ce7 0%, #0891b2 100%) !important;
+  border: 1px solid rgba(8, 145, 178, 0.35) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.38) inset,
+    0 -1px 0 rgba(15, 40, 70, 0.12) inset,
+    0 3px 10px rgba(107, 92, 231, 0.22),
+    0 1px 2px rgba(8, 145, 178, 0.14) !important;
+}
+
+html[data-theme='light'] .admin-page .primary:hover,
+html[data-theme='light'] .admin-page button.primary:hover,
+html[data-theme='light'] .admin-console-page .primary:hover,
+html[data-theme='light'] .admin-console-page button.primary:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.42) inset,
+    0 -1px 0 rgba(15, 40, 70, 0.12) inset,
+    0 5px 14px rgba(107, 92, 231, 0.28),
+    0 2px 4px rgba(8, 145, 178, 0.16) !important;
+}
+
 html[data-theme='light'] .admin-page .secondary,
 html[data-theme='light'] .admin-page .ghost,
 html[data-theme='light'] .admin-page button.secondary,
 html[data-theme='light'] .admin-page button.ghost,
-html[data-theme='light'] .admin-page .mini-btn {
+html[data-theme='light'] .admin-page .mini-btn,
+html[data-theme='light'] .admin-console-page .secondary,
+html[data-theme='light'] .admin-console-page .ghost,
+html[data-theme='light'] .admin-console-page button.secondary,
+html[data-theme='light'] .admin-console-page button.ghost,
+html[data-theme='light'] .admin-console-page .mini-btn,
+html[data-theme='light'] .admin-console-page .admin-sidebar-toggle {
   color: var(--text) !important;
-  background: #fff !important;
-  border-color: var(--line) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f3f6fb 100%) !important;
+  border: 1px solid rgba(36, 52, 78, 0.16) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 -1px 0 rgba(36, 52, 78, 0.05) inset,
+    0 2px 6px rgba(40, 55, 85, 0.08),
+    0 1px 2px rgba(40, 55, 85, 0.04) !important;
 }
 
 html[data-theme='light'] .admin-page .secondary:hover,
 html[data-theme='light'] .admin-page .ghost:hover,
-html[data-theme='light'] .admin-page .mini-btn:hover {
+html[data-theme='light'] .admin-page .mini-btn:hover,
+html[data-theme='light'] .admin-console-page .secondary:hover,
+html[data-theme='light'] .admin-console-page .ghost:hover,
+html[data-theme='light'] .admin-console-page .mini-btn:hover,
+html[data-theme='light'] .admin-console-page .admin-sidebar-toggle:hover {
   color: var(--text) !important;
-  background: rgba(36, 52, 78, 0.05) !important;
-  border-color: rgba(107, 92, 231, 0.28) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #eef2f8 100%) !important;
+  border-color: rgba(36, 52, 78, 0.22) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 4px 10px rgba(40, 55, 85, 0.1) !important;
+  transform: translateY(-1px);
 }
 
 html[data-theme='light'] .admin-page .danger-btn,
 html[data-theme='light'] .admin-page button.danger-btn,
 html[data-theme='light'] .admin-page .secondary.danger-btn,
+html[data-theme='light'] .admin-console-page .danger-btn,
+html[data-theme='light'] .admin-console-page button.danger-btn,
+html[data-theme='light'] .admin-console-page .secondary.danger-btn,
 html[data-theme='light'] .danger-btn {
   color: #be123c !important;
-  border-color: rgba(244, 63, 94, 0.35) !important;
-  background: rgba(244, 63, 94, 0.08) !important;
+  background: linear-gradient(180deg, #fff5f7 0%, #ffe4e9 100%) !important;
+  border: 1px solid rgba(225, 29, 72, 0.28) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -1px 0 rgba(190, 18, 60, 0.06) inset,
+    0 2px 6px rgba(190, 18, 60, 0.1),
+    0 1px 2px rgba(40, 55, 85, 0.04) !important;
 }
 
-html[data-theme='light'] .admin-page .primary {
-  color: #fff !important;
+html[data-theme='light'] .admin-page .danger-btn:hover,
+html[data-theme='light'] .admin-console-page .danger-btn:hover,
+html[data-theme='light'] .admin-console-page button.danger-btn:hover,
+html[data-theme='light'] .admin-console-page .secondary.danger-btn:hover {
+  background: linear-gradient(180deg, #fff1f3 0%, #ffd6de 100%) !important;
+  border-color: rgba(225, 29, 72, 0.4) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 4px 10px rgba(190, 18, 60, 0.14) !important;
+  transform: translateY(-1px);
+}
+
+/* Filter chips / detail tabs — raised secondary surface */
+html[data-theme='light'] .admin-console-page .admin-crm-filter-btn,
+html[data-theme='light'] .admin-console-page .admin-crm-detail-tabs button,
+html[data-theme='light'] .admin-page .admin-crm-detail-tabs button,
+html[data-theme='light'] .admin-page .crm-chip {
+  color: var(--text) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #f3f6fb 100%) !important;
+  border: 1px solid rgba(36, 52, 78, 0.16) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 -1px 0 rgba(36, 52, 78, 0.05) inset,
+    0 2px 5px rgba(40, 55, 85, 0.07) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-filter-btn.is-active,
+html[data-theme='light'] .admin-console-page .admin-crm-detail-tabs button.is-active,
+html[data-theme='light'] .admin-page .admin-crm-detail-tabs button.is-active,
+html[data-theme='light'] .admin-page .crm-chip.is-active {
+  color: var(--text) !important;
+  background: linear-gradient(180deg, #f3f0ff 0%, #e8e4fc 100%) !important;
+  border-color: rgba(107, 92, 231, 0.38) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 6px rgba(107, 92, 231, 0.14) !important;
 }
 
 /* CRM */
@@ -1377,6 +1508,8 @@ html[data-theme='light'] .admin-page .admin-crm-menu button.is-danger {
 
 html[data-theme='light'] .admin-page .admin-crm-toolbar input,
 html[data-theme='light'] .admin-page .admin-crm-toolbar select,
+html[data-theme='light'] .admin-page .admin-crm-list-head .admin-crm-list-search,
+html[data-theme='light'] .admin-console-page .admin-crm-list-head .admin-crm-list-search,
 html[data-theme='light'] .admin-panel .admin-list-toolbar select,
 html[data-theme='light'] .admin-panel .search-input.compact,
 html[data-theme='light'] .admin-page .admin-crm-filter input,
@@ -1620,6 +1753,970 @@ html[data-theme='light'] .admin-console-page .admin-page-tab.is-active,
 html[data-theme='light'] .admin-console-page .admin-logs-tab.is-active {
   background: transparent !important;
   border-bottom-color: rgba(107, 92, 231, 0.85) !important;
+}
+
+/* ——— Admin console dark leftovers (tables / drawers / CRM / mobile cards) ——— */
+html[data-theme='light'] .admin-console-page .admin-sidebar-site:hover,
+html[data-theme='light'] .admin-console-page .admin-nav-item:hover {
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-member-user b,
+html[data-theme='light'] .admin-console-page .admin-ticket-table td.admin-ticket-title b,
+html[data-theme='light'] .admin-console-page .admin-ticket-table .admin-ticket-title-btn b,
+html[data-theme='light'] .admin-console-page .admin-home-link b,
+html[data-theme='light'] .admin-console-page .admin-cms-drawer-head h3,
+html[data-theme='light'] .admin-console-page .admin-license-credit-head h3,
+html[data-theme='light'] .admin-console-page .admin-crm-dash-head h3,
+html[data-theme='light'] .admin-console-page .admin-crm-dash-list b,
+html[data-theme='light'] .admin-console-page .admin-crm-dash-row dd,
+html[data-theme='light'] .admin-console-page .admin-crm-access-list dd {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .admin-preview-page .admin-dash-panel-head h3 {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-member-email,
+html[data-theme='light'] .admin-console-page .admin-member-joined,
+html[data-theme='light'] .admin-console-page .admin-order-buyer small,
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table .admin-payment-user-email,
+html[data-theme='light'] .admin-console-page .admin-order-caret,
+html[data-theme='light'] .admin-console-page .admin-license-expand-meta,
+html[data-theme='light'] .admin-console-page .admin-ticket-table td.admin-ticket-cat,
+html[data-theme='light'] .admin-console-page .admin-ticket-table td.admin-ticket-user,
+html[data-theme='light'] .admin-console-page .admin-ticket-table td.admin-ticket-date,
+html[data-theme='light'] .admin-console-page .admin-cms-table td small,
+html[data-theme='light'] .admin-console-page .admin-cms-view-meta,
+html[data-theme='light'] .admin-console-page .admin-crm-filter-row label,
+html[data-theme='light'] .admin-console-page .admin-crm-license-form label,
+html[data-theme='light'] .admin-console-page .admin-crm-dash-empty,
+html[data-theme='light'] .admin-console-page .admin-crm-dash-list span,
+html[data-theme='light'] .admin-console-page .admin-crm-dash-row dt,
+html[data-theme='light'] .admin-console-page .admin-crm-dash-row dd .muted,
+html[data-theme='light'] .admin-preview-page .crm-stat em,
+html[data-theme='light'] .admin-preview-page .admin-dash-empty,
+html[data-theme='light'] .admin-preview-page .admin-logs-identity small {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-cms-view-body,
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row > td:nth-child(3) {
+  color: var(--ink-soft) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-dash-sec {
+  background: #fff !important;
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-home-link {
+  background: var(--raised-card-bg) !important;
+  border: 1px solid var(--raised-card-border) !important;
+  box-shadow: var(--raised-card-shadow) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-filter-popover,
+html[data-theme='light'] .admin-console-page .admin-cms-drawer-panel,
+html[data-theme='light'] .admin-page .admin-crm-drawer-panel {
+  background: #f8fafc !important;
+  border-color: var(--line) !important;
+  color: var(--text) !important;
+  box-shadow: -12px 0 28px rgba(40, 55, 85, 0.12) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-filter-popover {
+  box-shadow: 0 10px 28px rgba(40, 55, 85, 0.14) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-cms-drawer-backdrop {
+  background: rgba(30, 42, 66, 0.32) !important;
+}
+
+html[data-theme='light'] .admin-console-page.admin-sidebar-open .admin-console-backdrop {
+  background: rgba(30, 42, 66, 0.35) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-ticket-table .badge.open {
+  color: #a16207 !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-ticket-table .badge.pending {
+  color: #0e7490 !important;
+  background: rgba(8, 145, 178, 0.12) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-ticket-table .badge.answered {
+  color: #047857 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-ticket-table .badge.closed {
+  color: #64748b !important;
+  background: rgba(100, 116, 139, 0.1) !important;
+}
+
+/* CMS status badges — same raised chrome as table action mini-btns (keep semantic colors) */
+html[data-theme='light'] .admin-console-page .admin-cms-table .badge,
+html[data-theme='light'] .admin-console-page .admin-cms-view-meta .badge {
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(36, 52, 78, 0.16) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 -1px 0 rgba(36, 52, 78, 0.05) inset,
+    0 2px 6px rgba(40, 55, 85, 0.08),
+    0 1px 2px rgba(40, 55, 85, 0.04) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-cms-table .badge.active,
+html[data-theme='light'] .admin-console-page .admin-cms-view-meta .badge.active {
+  color: #047857 !important;
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  border-color: rgba(5, 150, 105, 0.32) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -1px 0 rgba(4, 120, 87, 0.06) inset,
+    0 2px 6px rgba(4, 120, 87, 0.1),
+    0 1px 2px rgba(40, 55, 85, 0.04) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-cms-table .badge.closed,
+html[data-theme='light'] .admin-console-page .admin-cms-view-meta .badge.closed {
+  color: #64748b !important;
+  background: linear-gradient(180deg, #ffffff 0%, #eef2f7 100%) !important;
+  border-color: rgba(100, 116, 139, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-cms-table .badge.none,
+html[data-theme='light'] .admin-console-page .admin-cms-view-meta .badge.none {
+  color: #be123c !important;
+  background: linear-gradient(180deg, #fff5f7 0%, #ffe4e9 100%) !important;
+  border-color: rgba(225, 29, 72, 0.28) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -1px 0 rgba(190, 18, 60, 0.06) inset,
+    0 2px 6px rgba(190, 18, 60, 0.1),
+    0 1px 2px rgba(40, 55, 85, 0.04) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-cms-table .badge.pending,
+html[data-theme='light'] .admin-console-page .admin-cms-view-meta .badge.pending {
+  color: #a16207 !important;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 -1px 0 rgba(161, 98, 7, 0.06) inset,
+    0 2px 6px rgba(161, 98, 7, 0.1),
+    0 1px 2px rgba(40, 55, 85, 0.04) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-chat-bubble.is-admin {
+  background: rgba(8, 145, 178, 0.1) !important;
+  border-color: rgba(8, 145, 178, 0.28) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-chat-bubble.is-user {
+  background: linear-gradient(135deg, #6b5ce7 0%, #0891b2 100%) !important;
+  color: #fff !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-ticket-reply {
+  background: #fff !important;
+  border-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-ticket-reply.is-admin {
+  background: rgba(8, 145, 178, 0.08) !important;
+  border-color: rgba(8, 145, 178, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-ticket-reply b {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-ticket-reply-form textarea,
+html[data-theme='light'] .admin-console-page .admin-chat-composer textarea,
+html[data-theme='light'] .admin-console-page .admin-license-inline-form input,
+html[data-theme='light'] .admin-console-page .admin-license-inline-form select,
+html[data-theme='light'] .admin-console-page .admin-license-inline-form textarea,
+html[data-theme='light'] .admin-console-page .admin-crm-license-form select,
+html[data-theme='light'] .admin-console-page .admin-crm-license-form input,
+html[data-theme='light'] .admin-console-page .admin-crm-license-form textarea,
+html[data-theme='light'] .admin-console-page .admin-crm-head-memo textarea,
+html[data-theme='light'] .admin-console-page #adminCrmUserMemo,
+html[data-theme='light'] .admin-page #adminCrmUserMemo,
+html[data-theme='light'] .admin-console-page .admin-cms-form .edit-field input,
+html[data-theme='light'] .admin-console-page .admin-cms-form .edit-field textarea,
+html[data-theme='light'] .admin-console-page .admin-cms-form .edit-field select {
+  background: #ffffff !important;
+  color: #152033 !important;
+  border-color: rgba(36, 52, 78, 0.18) !important;
+}
+
+html[data-theme='light'] .admin-console-page #adminCrmUserMemo::placeholder,
+html[data-theme='light'] .admin-page #adminCrmUserMemo::placeholder,
+html[data-theme='light'] .admin-console-page .admin-crm-head-memo textarea::placeholder {
+  color: #6b7280 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-memo-hist-item,
+html[data-theme='light'] .admin-console-page .admin-crm-memo-hist-item span {
+  color: #243044 !important;
+  border-bottom-color: rgba(36, 52, 78, 0.08) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-memo-hist-item time {
+  color: #5a6478 !important;
+}
+
+html[data-theme='light'] body.admin-console-page .edit-modal-actions {
+  background: linear-gradient(180deg, transparent, rgba(248, 250, 252, 0.98) 28%) !important;
+}
+
+html[data-theme='light'] body.admin-console-page .dash-card,
+html[data-theme='light'] body.admin-console-page .admin-quick-card,
+html[data-theme='light'] body.admin-console-page .empty-card,
+html[data-theme='light'] body.admin-console-page .form-card {
+  background: var(--raised-card-bg) !important;
+  border: 1px solid var(--raised-card-border) !important;
+  box-shadow: var(--raised-card-shadow) !important;
+}
+
+html[data-theme='light'] body.admin-console-page .admin-block {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-users {
+  border-bottom-color: var(--line) !important;
+  border-right-color: var(--line) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-empty,
+html[data-theme='light'] .admin-console-page .admin-logs-empty-panel,
+html[data-theme='light'] .admin-console-page .admin-logs-td-muted,
+html[data-theme='light'] body.admin-console-page .admin-crm-empty {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-page-tab.is-active em,
+html[data-theme='light'] .admin-console-page .admin-logs-tab.is-active em {
+  color: #6b5ce7 !important;
+}
+
+html[data-theme='light'] .admin-preview-page .admin-preview-badge {
+  color: #a16207 !important;
+  background: rgba(245, 158, 11, 0.14) !important;
+  border-color: rgba(245, 158, 11, 0.35) !important;
+}
+
+/* ——— Admin console light polish (screenshots 1–8) ——— */
+
+/* 3 · Tables / KPI / shells → light surfaces + dark text */
+html[data-theme='light'] .admin-console-page .admin-table th,
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table th,
+html[data-theme='light'] .admin-console-page .admin-member-table th,
+html[data-theme='light'] .admin-console-page .admin-license-table th,
+html[data-theme='light'] .admin-console-page .admin-ticket-table th,
+html[data-theme='light'] .admin-console-page .admin-cms-table th,
+html[data-theme='light'] .admin-console-page .admin-logs-table th {
+  background: #eef2f7 !important;
+  color: #5a6478 !important;
+  border-bottom-color: rgba(36, 52, 78, 0.12) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-table td,
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table td,
+html[data-theme='light'] .admin-console-page .admin-member-table td,
+html[data-theme='light'] .admin-console-page .admin-license-table td,
+html[data-theme='light'] .admin-console-page .admin-ticket-table td,
+html[data-theme='light'] .admin-console-page .admin-cms-table td,
+html[data-theme='light'] .admin-console-page .admin-logs-table td {
+  color: #243044 !important;
+  border-bottom-color: rgba(36, 52, 78, 0.08) !important;
+}
+
+/* Payment flat: names used dark-theme --admin-text (#e8ecff) → invisible on light */
+html[data-theme='light'] body.admin-console-page {
+  --admin-text: #121a2b;
+}
+
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table .admin-payment-user-name,
+html[data-theme='light'] .admin-console-page .admin-order-buyer b {
+  color: #121a2b !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table .admin-payment-user-email {
+  color: #5a6478 !important;
+}
+
+/* td.mono { display:block } leaves a white gap between 주문번호 and 사용자 — keep table-cell, do NOT force bg (breaks hover) */
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table td.mono,
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table td.admin-order-id,
+html[data-theme='light'] .admin-console-page .admin-order-table td.mono,
+html[data-theme='light'] .admin-console-page .admin-order-nested td.mono {
+  display: table-cell !important;
+  max-width: 160px !important;
+  vertical-align: middle !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table tr:hover > td,
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row:hover > td {
+  background: rgba(107, 92, 231, 0.08) !important;
+}
+
+html[data-theme='light'] .admin-console-page .crm-stat,
+html[data-theme='light'] .admin-console-page .admin-crm-summary-card,
+html[data-theme='light'] .admin-console-page .admin-crm-stats .crm-stat {
+  background: var(--raised-card-bg) !important;
+  border: 1px solid var(--raised-card-border) !important;
+  box-shadow: var(--raised-card-shadow) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .crm-stat b,
+html[data-theme='light'] .admin-console-page .admin-crm-summary-card span b {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .admin-console-page .crm-stat span,
+html[data-theme='light'] .admin-preview-page .crm-stat em {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-points-form input,
+html[data-theme='light'] .admin-console-page .admin-license-credit-panel .admin-crm-points-form input,
+html[data-theme='light'] .admin-page .admin-crm-points-form input {
+  background: #fff !important;
+  color: var(--text) !important;
+  border: 1px solid rgba(36, 52, 78, 0.16) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-points-form input::placeholder,
+html[data-theme='light'] .admin-console-page .admin-license-credit-panel .admin-crm-points-form input::placeholder {
+  color: #8b95a8 !important;
+}
+
+/* 5 · Order detail row separators */
+html[data-theme='light'] .admin-page .admin-crm-order-dl > div,
+html[data-theme='light'] .admin-console-page .admin-crm-order-dl > div {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  border-bottom: 1px solid rgba(36, 52, 78, 0.12) !important;
+  padding: 10px 0 !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-order-dl > div:last-child,
+html[data-theme='light'] .admin-console-page .admin-crm-order-dl > div:last-child {
+  border-bottom: 0 !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-order-dl dt,
+html[data-theme='light'] .admin-console-page .admin-crm-order-dl dt {
+  color: #6b7388 !important;
+}
+
+html[data-theme='light'] .admin-page .admin-crm-order-dl dd,
+html[data-theme='light'] .admin-console-page .admin-crm-order-dl dd {
+  color: #152033 !important;
+}
+
+/* 6 · Logs member list + detail table contrast */
+html[data-theme='light'] .admin-console-page .admin-logs-user,
+html[data-theme='light'] .admin-logs-user {
+  color: #152033 !important;
+  background: transparent !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-user:hover,
+html[data-theme='light'] .admin-logs-user:hover {
+  background: rgba(36, 52, 78, 0.05) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-user.is-active,
+html[data-theme='light'] .admin-logs-user.is-active {
+  background: rgba(79, 107, 237, 0.1) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-user-email,
+html[data-theme='light'] .admin-logs-user-email {
+  color: #121a2b !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-user-sub,
+html[data-theme='light'] .admin-logs-user-sub,
+html[data-theme='light'] .admin-console-page .admin-logs-user-seen,
+html[data-theme='light'] .admin-logs-user-seen,
+html[data-theme='light'] .admin-console-page .admin-logs-user-plan-fallback,
+html[data-theme='light'] .admin-logs-user-plan-fallback {
+  color: #5a6478 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-user-count,
+html[data-theme='light'] .admin-logs-user-count {
+  color: #5a6478 !important;
+  background: rgba(36, 52, 78, 0.06) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-chip,
+html[data-theme='light'] .admin-logs-chip {
+  color: #5a6478 !important;
+  background: #fff !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-chip.is-active,
+html[data-theme='light'] .admin-logs-chip.is-active {
+  color: #121a2b !important;
+  background: rgba(107, 92, 231, 0.12) !important;
+  border-color: rgba(107, 92, 231, 0.32) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-identity-top strong,
+html[data-theme='light'] .admin-console-page .admin-logs-selected-main strong,
+html[data-theme='light'] .admin-logs-identity-top strong,
+html[data-theme='light'] .admin-logs-selected-main strong {
+  color: #121a2b !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-identity small,
+html[data-theme='light'] .admin-logs-identity small,
+html[data-theme='light'] .admin-console-page .admin-logs-selected-meta,
+html[data-theme='light'] .admin-logs-selected-meta,
+html[data-theme='light'] .admin-console-page .admin-logs-detail-head,
+html[data-theme='light'] .admin-logs-detail-head {
+  color: #5a6478 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-selected-meta code,
+html[data-theme='light'] .admin-logs-selected-meta code,
+html[data-theme='light'] .admin-console-page .admin-logs-time,
+html[data-theme='light'] .admin-logs-time {
+  color: #243044 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-table th,
+html[data-theme='light'] .admin-logs-table th {
+  background: #eef2f7 !important;
+  color: #5a6478 !important;
+  border-bottom-color: rgba(36, 52, 78, 0.12) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-table td,
+html[data-theme='light'] .admin-logs-table td {
+  color: #243044 !important;
+  border-bottom-color: rgba(36, 52, 78, 0.08) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-tr:hover td,
+html[data-theme='light'] .admin-logs-tr:hover td {
+  background: rgba(36, 52, 78, 0.04) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-tr.is-open td,
+html[data-theme='light'] .admin-logs-tr.is-open td {
+  background: rgba(79, 107, 237, 0.06) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-detail-row td,
+html[data-theme='light'] .admin-logs-detail-row td {
+  background: #f7f9fc !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-detail dd,
+html[data-theme='light'] .admin-logs-detail dd {
+  color: #152033 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-detail dt,
+html[data-theme='light'] .admin-logs-detail dt {
+  color: #5a6478 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge,
+html[data-theme='light'] .admin-logs-badge {
+  color: #243044 !important;
+  background: rgba(36, 52, 78, 0.06) !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-ok,
+html[data-theme='light'] .admin-logs-badge.is-ok {
+  color: #047857 !important;
+  background: rgba(5, 150, 105, 0.1) !important;
+  border-color: rgba(5, 150, 105, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-bad,
+html[data-theme='light'] .admin-logs-badge.is-bad {
+  color: #be123c !important;
+  background: rgba(225, 29, 72, 0.1) !important;
+  border-color: rgba(225, 29, 72, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-warn,
+html[data-theme='light'] .admin-logs-badge.is-warn {
+  color: #a16207 !important;
+  background: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-license,
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-cat,
+html[data-theme='light'] .admin-logs-badge.is-license,
+html[data-theme='light'] .admin-logs-badge.is-cat,
+html[data-theme='light'] .admin-console-page .admin-logs-badge-cat,
+html[data-theme='light'] .admin-logs-badge-cat {
+  color: #5b21b6 !important;
+  background: rgba(107, 92, 231, 0.1) !important;
+  border-color: rgba(107, 92, 231, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-payment,
+html[data-theme='light'] .admin-logs-badge.is-payment,
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-credit,
+html[data-theme='light'] .admin-logs-badge.is-credit {
+  color: #0e7490 !important;
+  background: rgba(8, 145, 178, 0.1) !important;
+  border-color: rgba(8, 145, 178, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-ticket,
+html[data-theme='light'] .admin-logs-badge.is-ticket {
+  color: #1d4ed8 !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(59, 130, 246, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-app,
+html[data-theme='light'] .admin-logs-badge.is-hwid,
+html[data-theme='light'] .admin-logs-badge.is-app,
+html[data-theme='light'] .admin-logs-badge.is-hwid {
+  color: #334155 !important;
+  background: rgba(36, 52, 78, 0.06) !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-badge.is-admin,
+html[data-theme='light'] .admin-logs-badge.is-message,
+html[data-theme='light'] .admin-logs-badge.is-admin,
+html[data-theme='light'] .admin-logs-badge.is-message {
+  color: #c2410c !important;
+  background: rgba(251, 146, 60, 0.12) !important;
+  border-color: rgba(251, 146, 60, 0.28) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-delta.is-plus,
+html[data-theme='light'] .admin-logs-delta.is-plus {
+  color: #047857 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-delta.is-minus,
+html[data-theme='light'] .admin-logs-delta.is-minus {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-pill,
+html[data-theme='light'] .admin-logs-pill {
+  color: #0e7490 !important;
+  border-color: rgba(8, 145, 178, 0.28) !important;
+  background: rgba(8, 145, 178, 0.08) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-users,
+html[data-theme='light'] .admin-logs-users {
+  background: transparent !important;
+  border-right-color: rgba(36, 52, 78, 0.1) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-users-head,
+html[data-theme='light'] .admin-logs-users-head,
+html[data-theme='light'] .admin-console-page .admin-logs-tabs,
+html[data-theme='light'] .admin-logs-tabs {
+  border-bottom-color: rgba(36, 52, 78, 0.1) !important;
+  background: transparent !important;
+}
+
+/* 7 · Filters on page bg; CRM/CMS sheets = content-style rounded card (no square white parent) */
+html[data-theme='light'] body.admin-console-page #admin.content-card,
+html[data-theme='light'] body.admin-console-page #admin,
+html[data-theme='light'] .admin-console-page .admin-panel,
+html[data-theme='light'] .admin-console-page .admin-shell,
+html[data-theme='light'] .admin-console-page .admin-workspace,
+html[data-theme='light'] .admin-console-page .admin-crm,
+html[data-theme='light'] .admin-console-page .admin-crm-list-pane,
+html[data-theme='light'] .admin-console-page .admin-crm-virtual,
+html[data-theme='light'] .admin-console-page .admin-crm-detail-pane,
+html[data-theme='light'] .admin-console-page .admin-tickets-section,
+html[data-theme='light'] .admin-console-page .admin-tickets-section:not([hidden]),
+html[data-theme='light'] .admin-console-page .admin-content-section,
+html[data-theme='light'] .admin-console-page .admin-content-section .admin-block,
+html[data-theme='light'] .admin-console-page .admin-payments-section {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-bulk-count,
+html[data-theme='light'] .admin-page .admin-crm-bulk-count {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-toolbar,
+html[data-theme='light'] .admin-console-page .admin-cms-toolbar,
+html[data-theme='light'] .admin-console-page .admin-list-toolbar,
+html[data-theme='light'] .admin-console-page .admin-logs-head,
+html[data-theme='light'] .admin-console-page .admin-crm-list-head,
+html[data-theme='light'] .admin-console-page .admin-crm-stats,
+html[data-theme='light'] .admin-console-page .admin-work-status-tabs,
+html[data-theme='light'] .admin-console-page .admin-page-tabs.admin-work-status-tabs,
+html[data-theme='light'] .admin-console-page .admin-cms-list-head {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Sheet card — match content page: rounded white on gray page bg */
+html[data-theme='light'] .admin-console-page .admin-table-wrap,
+html[data-theme='light'] .admin-console-page .admin-console-table-wrap,
+html[data-theme='light'] .admin-console-page .admin-tickets-section .admin-table-wrap,
+html[data-theme='light'] .admin-console-page .admin-logs-table-wrap,
+html[data-theme='light'] .admin-console-page .admin-crm-virtual > .admin-table-wrap,
+html[data-theme='light'] .admin-console-page .admin-crm-virtual > .admin-console-table-wrap,
+html[data-theme='light'] .admin-console-page #adminCmsList.admin-table-wrap,
+html[data-theme='light'] .admin-console-page #adminUserList .admin-table-wrap,
+html[data-theme='light'] .admin-console-page #adminPaymentsList.admin-table-wrap,
+html[data-theme='light'] .admin-console-page #adminTicketList.admin-table-wrap {
+  background: #ffffff !important;
+  border: 1px solid rgba(36, 52, 78, 0.12) !important;
+  border-radius: 18px !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.98) inset,
+    0 10px 28px rgba(40, 55, 85, 0.08) !important;
+  overflow: hidden !important;
+  margin-top: 8px !important;
+  padding: 0 !important;
+  isolation: isolate;
+}
+
+html[data-theme='light'] .admin-console-page .admin-table-wrap .admin-table,
+html[data-theme='light'] .admin-console-page .admin-console-table-wrap .admin-table {
+  background: transparent !important;
+  border-collapse: collapse !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-member-table th,
+html[data-theme='light'] .admin-console-page .admin-license-table th,
+html[data-theme='light'] .admin-console-page .admin-payment-flat-table th,
+html[data-theme='light'] .admin-console-page .admin-ticket-table th,
+html[data-theme='light'] .admin-console-page .admin-cms-table th,
+html[data-theme='light'] .admin-console-page .admin-order-table th {
+  background: #f3f5f9 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-member-user b,
+html[data-theme='light'] .admin-console-page .admin-member-table .admin-member-user b,
+html[data-theme='light'] .admin-console-page .admin-license-table .admin-member-user b {
+  color: #121a2b !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-cms-title b,
+html[data-theme='light'] .admin-console-page .admin-cms-table td b {
+  color: #121a2b !important;
+}
+
+/* 8 · Pricing · products light surfaces + readable text */
+html[data-theme='light'] .admin-console-page .pricing-summary > div,
+html[data-theme='light'] .pricing-summary > div {
+  background: var(--raised-card-bg) !important;
+  border: 1px solid var(--raised-card-border) !important;
+  box-shadow: var(--raised-card-shadow) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-summary strong,
+html[data-theme='light'] .pricing-summary strong {
+  color: var(--heading) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-list-pane,
+html[data-theme='light'] .admin-console-page .pricing-editor-pane,
+html[data-theme='light'] .pricing-list-pane,
+html[data-theme='light'] .pricing-editor-pane {
+  background: transparent !important;
+  border-color: rgba(36, 52, 78, 0.1) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-product-item,
+html[data-theme='light'] .pricing-product-item {
+  background: #fff !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  color: #152033 !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-product-item.is-active,
+html[data-theme='light'] .pricing-product-item.is-active {
+  background: rgba(79, 107, 237, 0.08) !important;
+  border-color: rgba(79, 107, 237, 0.35) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-product-item-main,
+html[data-theme='light'] .pricing-product-item-main {
+  color: #121a2b !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-product-item-id,
+html[data-theme='light'] .pricing-product-item-id,
+html[data-theme='light'] .admin-console-page .pricing-product-item .muted,
+html[data-theme='light'] .pricing-product-item .muted,
+html[data-theme='light'] .admin-console-page .pricing-product-item small,
+html[data-theme='light'] .pricing-product-item small {
+  color: #5a6478 !important;
+  opacity: 1 !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-drag-handle,
+html[data-theme='light'] .pricing-drag-handle,
+html[data-theme='light'] .admin-console-page .pricing-reorder-btn,
+html[data-theme='light'] .pricing-reorder-btn {
+  color: #6b7388 !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-form-grid input,
+html[data-theme='light'] .admin-console-page .pricing-form-grid select,
+html[data-theme='light'] .admin-console-page .pricing-lang-map input,
+html[data-theme='light'] .admin-console-page .pricing-promo-grid input,
+html[data-theme='light'] .admin-console-page .pricing-promo-grid textarea,
+html[data-theme='light'] .pricing-form-grid input,
+html[data-theme='light'] .pricing-form-grid select,
+html[data-theme='light'] .pricing-lang-map input,
+html[data-theme='light'] .pricing-promo-grid input[type='text'],
+html[data-theme='light'] .pricing-promo-grid input[type='date'],
+html[data-theme='light'] .pricing-promo-grid textarea {
+  background: #fff !important;
+  color: #152033 !important;
+  border-color: rgba(36, 52, 78, 0.16) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-section-title,
+html[data-theme='light'] .pricing-section-title {
+  color: #243044 !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-usd-preview,
+html[data-theme='light'] .pricing-usd-preview,
+html[data-theme='light'] .admin-console-page .pricing-disc-preview,
+html[data-theme='light'] .pricing-disc-preview,
+html[data-theme='light'] .admin-console-page .pricing-promo-card,
+html[data-theme='light'] .pricing-promo-card,
+html[data-theme='light'] .admin-console-page .pricing-active-promo-card,
+html[data-theme='light'] .pricing-active-promo-card {
+  background: #f7f9fc !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-usd-preview strong,
+html[data-theme='light'] .pricing-usd-preview strong {
+  color: #121a2b !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-disc-preview-meta,
+html[data-theme='light'] .pricing-disc-preview-meta,
+html[data-theme='light'] .admin-console-page .pricing-active-promo-disc,
+html[data-theme='light'] .pricing-active-promo-disc {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-live-preview,
+html[data-theme='light'] .pricing-live-preview {
+  background: #f7f9fc !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-live-preview-title-row h4,
+html[data-theme='light'] .pricing-live-preview-title-row h4 {
+  color: #121a2b !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-preview-seg,
+html[data-theme='light'] .pricing-preview-seg {
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  background: #fff !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-preview-seg button,
+html[data-theme='light'] .pricing-preview-seg button {
+  color: #5a6478 !important;
+  border-right-color: rgba(36, 52, 78, 0.1) !important;
+  background: transparent !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-preview-seg button.is-active,
+html[data-theme='light'] .pricing-preview-seg button.is-active {
+  color: #121a2b !important;
+  background: rgba(8, 145, 178, 0.1) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-preview-save-state,
+html[data-theme='light'] .pricing-preview-save-state {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-pane-tabs button,
+html[data-theme='light'] .pricing-pane-tabs button {
+  color: var(--text) !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  background: #fff !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-pane-tabs button.is-active,
+html[data-theme='light'] .pricing-pane-tabs button.is-active {
+  color: #121a2b !important;
+  border-color: rgba(8, 145, 178, 0.4) !important;
+  background: rgba(8, 145, 178, 0.1) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-product-item .badge,
+html[data-theme='light'] .pricing-product-item .badge,
+html[data-theme='light'] .admin-console-page .admin-pricing-section .badge {
+  color: #0e7490 !important;
+  background: rgba(8, 145, 178, 0.1) !important;
+  border: 1px solid rgba(8, 145, 178, 0.28) !important;
+}
+
+/* Tone down fluorescent % OFF pills in light (esp. pricing preview) */
+html[data-theme='light'] .purchase-plan-off-pill,
+html[data-theme='light'] article.purchase-plan-card .purchase-plan-off-pill,
+html[data-theme='light'] .admin-console-page .purchase-plan-off-pill,
+html[data-theme='light'] .pricing-preview-grid .purchase-plan-off-pill {
+  border-color: rgba(5, 150, 105, 0.28) !important;
+  background: rgba(5, 150, 105, 0.1) !important;
+  color: #047857 !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-edit-section,
+html[data-theme='light'] .pricing-edit-section,
+html[data-theme='light'] .admin-console-page .pricing-editor-actions,
+html[data-theme='light'] .pricing-editor-actions {
+  border-color: rgba(36, 52, 78, 0.1) !important;
+}
+
+html[data-theme='light'] .admin-console-page .pricing-modal-card,
+html[data-theme='light'] .pricing-modal-card {
+  background: #fff !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  color: var(--text) !important;
+}
+
+/* Mobile admin drawer cards / expand panels */
+@media (max-width: 1000px) {
+  /* Keep rail flush — no floating white menu card when width shrinks */
+  html[data-theme='light'] body.admin-console-page .admin-sidebar,
+  html[data-theme='light'] body.admin-console-page aside#adminSidebar,
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav {
+    background: #f5f7fb !important;
+    background-color: #f5f7fb !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item,
+  html[data-theme='light'] body.admin-console-page .admin-nav-item,
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item:hover,
+  html[data-theme='light'] body.admin-console-page .admin-nav-item:hover,
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item.is-active,
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item.active,
+  html[data-theme='light'] body.admin-console-page .admin-nav-item.is-active,
+  html[data-theme='light'] body.admin-console-page .admin-nav-item.active {
+    border: 0 !important;
+    border-radius: 6px !important;
+  }
+
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item.is-active,
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item.active,
+  html[data-theme='light'] body.admin-console-page .admin-nav-item.is-active,
+  html[data-theme='light'] body.admin-console-page .admin-nav-item.active {
+    background: rgba(107, 92, 231, 0.12) !important;
+    box-shadow: inset 3px 0 0 #6b5ce7 !important;
+  }
+
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav .admin-nav-item:hover,
+  html[data-theme='light'] body.admin-console-page .admin-nav-item:hover {
+    background: rgba(107, 92, 231, 0.08) !important;
+    box-shadow: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  html[data-theme='light'] body.admin-console-page .admin-sidebar,
+  html[data-theme='light'] body.admin-console-page aside#adminSidebar {
+    background: #f5f7fb !important;
+    background-color: #f5f7fb !important;
+    border-radius: 0 !important;
+    /* drawer only — shadow on the rail edge, not a floating card */
+    box-shadow: 12px 0 40px rgba(40, 55, 85, 0.18) !important;
+  }
+
+  html[data-theme='light'] body.admin-console-page .admin-sidebar-nav {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  html[data-theme='light'] .admin-console-page .admin-member-table tr.admin-crm-member-row,
+  html[data-theme='light'] .admin-console-page .admin-license-table tr.admin-license-row,
+  html[data-theme='light'] .admin-console-page .admin-payment-flat-table tr.admin-payment-menu-row,
+  html[data-theme='light'] .admin-console-page .admin-ticket-table tr.admin-ticket-row,
+  html[data-theme='light'] .admin-console-page .admin-order-group {
+    background: var(--raised-card-bg) !important;
+    border-color: var(--raised-card-border) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset, 0 4px 12px rgba(40, 55, 85, 0.06) !important;
+  }
+
+  html[data-theme='light'] .admin-console-page .admin-member-expand-inner,
+  html[data-theme='light'] .admin-console-page .admin-license-expand-inner,
+  html[data-theme='light'] .admin-console-page .admin-ticket-expand-inner {
+    background: #f7f9fc !important;
+    border-color: var(--line) !important;
+  }
+
+  html[data-theme='light'] .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(3),
+  html[data-theme='light'] .admin-console-page .admin-member-table tr.admin-crm-member-row td:nth-child(9) {
+    color: var(--muted) !important;
+  }
+}
+
+@media (max-width: 1000px) {
+  html[data-theme='light'] body.admin-console-page[data-admin-view='crm'] #adminCrm.admin-crm.is-detail-open:not(.is-row-expand) .admin-crm-list-pane {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-theme='light'] body.admin-console-page .edit-modal-actions {
+    background: linear-gradient(180deg, transparent, rgba(248, 250, 252, 0.98) 28%) !important;
+  }
 }
 
 /* Support chat */

@@ -621,20 +621,6 @@ function bindUi() {
   if (section && !section.dataset.bound) {
     section.dataset.bound = '1';
     section.addEventListener('click', (e) => {
-      const copyUid = e.target.closest('[data-logs-copy-uid]');
-      if (copyUid) {
-        e.preventDefault();
-        copyText(selectedUid).then((ok) => flashBtn(copyUid, ok ? '복사됨' : '실패'));
-        return;
-      }
-      const openMember = e.target.closest('[data-logs-open-member]');
-      if (openMember && selectedUid) {
-        e.preventDefault();
-        if (typeof window.__midiaiShowAdminView === 'function') {
-          window.__midiaiShowAdminView('crm', { uid: selectedUid, crmMode: 'members' });
-        }
-        return;
-      }
       const copyRaw = e.target.closest('[data-logs-copy-id]');
       if (copyRaw) {
         e.preventDefault();
@@ -853,38 +839,14 @@ function renderSelectedSummary() {
   const box = $('adminLogsSelected');
   if (!box) return;
   if (!selectedUid) {
+    box.hidden = false;
     box.innerHTML = `<p class="muted">왼쪽에서 회원을 선택하면 이력이 표시됩니다.</p>`;
     return;
   }
-  const u = findUser(selectedUid) || {};
-  const lic = api.getLicense(selectedUid);
-  const hwid = u.hwid || lic?.hwid || '';
-  const name = u.displayName || u.email || selectedUid;
-  const email = u.email && u.displayName ? u.email : '';
-  const initial = String(name).trim().slice(0, 1).toUpperCase() || '?';
-  const seen = fmtAgo(lastSeenMs(u));
-  box.innerHTML = `
-    <div class="admin-logs-identity">
-      <span class="admin-crm-card-avatar is-fallback">${esc(initial)}</span>
-      <div class="admin-logs-identity-main">
-        <div class="admin-logs-identity-top">
-          <strong>${esc(name)}</strong>
-          ${planBadgeHtml(lic?.plan)}${statusBadgeHtml(lic?.status)}
-        </div>
-        ${email ? `<small>${esc(email)}</small>` : ''}
-        <div class="admin-logs-selected-meta">
-          <span class="admin-id-pair">
-            <span class="admin-id-item">UID <code class="mono">${esc(selectedUid)}</code>
-              <button type="button" class="ghost mini-btn" data-logs-copy-uid>복사</button></span>
-            <span class="admin-id-item">HWID <code class="mono">${esc(maskHwid(hwid))}</code></span>
-          </span>
-          ${seen ? `<span>최근 접속 ${esc(seen)}</span>` : ''}
-        </div>
-      </div>
-      <div class="admin-logs-identity-actions">
-        <button type="button" class="secondary mini-btn" data-logs-open-member>회원 상세</button>
-      </div>
-    </div>`;
+  // Selected-user identity chrome (avatar / UID·HWID / copy / member link) removed —
+  // the left member list already shows who is selected.
+  box.hidden = true;
+  box.innerHTML = '';
 }
 
 async function loadSelectedLogs({ force = false } = {}) {
@@ -1404,7 +1366,7 @@ function renderTable() {
       empty.hidden = false;
       empty.textContent = lastError
         ? `로그를 불러오지 못했습니다. ${lastError}`
-        : '이 조건에 맞는 기록이 없습니다. 기간·검색·탭을 바꿔 보세요.';
+        : '이 조건에 맞는 기록이 없습니다. 탭을 바꿔 보세요.';
     }
     if (meta) meta.textContent = lastError ? '일부 소스 오류 가능' : '';
     if (more) more.hidden = true;
@@ -1413,9 +1375,7 @@ function renderTable() {
 
   if (empty) empty.hidden = true;
   if (meta) {
-    meta.textContent = lastError
-      ? `${slice.length} / ${rows.length}건 · 일부 소스 오류`
-      : `${slice.length} / ${rows.length}건`;
+    meta.textContent = lastError ? '일부 소스 오류' : '';
   }
   if (more) more.hidden = rows.length <= visibleLimit;
 

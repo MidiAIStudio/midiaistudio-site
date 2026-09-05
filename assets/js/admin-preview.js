@@ -503,34 +503,6 @@ function updatePreviewFilterButton() {
   btn.classList.toggle('is-active', n > 0);
 }
 
-function licenseStatsHtml() {
-  const card = (key, n, label) => `<button type="button" class="crm-stat${licenseTab === key ? ' is-selected' : ''}" data-license-stat="${key}"><b>${n}</b><span>${label}</span></button>`;
-  return [
-    card('all', MEMBERS.length, '전체 라이선스'),
-    card('trial', MEMBERS.filter((u) => u.plan === 'trial' && u.licenseStatus === 'active').length, '체험판'),
-    card('lifetime', MEMBERS.filter((u) => u.plan === 'lifetime' && u.licenseStatus === 'active').length, '평생'),
-    card('period', MEMBERS.filter((u) => u.plan === 'period' && u.licenseStatus === 'active').length, '기간제'),
-    card('expiring7', MEMBERS.filter((u) => isExpiring(u, 7)).length, '7일 내 만료'),
-    card('expiring', MEMBERS.filter((u) => isExpiring(u, 30)).length, '30일 내 만료')
-  ].join('');
-}
-
-function orderStatsHtml() {
-  const card = (key, n, label) => `<button type="button" class="crm-stat${orderTab === key ? ' is-selected' : ''}" data-order-stat="${key}"><b>${n}</b><span>${label}</span></button>`;
-  const paid = ORDERS.filter((o) => orderGroup(o.status) === 'paid');
-  const krw = paid.filter((o) => o.currency === 'KRW').reduce((s, o) => s + (o.amountKrw || 0), 0);
-  const usd = paid.filter((o) => o.currency === 'USD').reduce((s, o) => s + Number(String(o.amount).replace(/[^\d.]/g, '') || 0), 0);
-  const amount = [krw ? `${krw.toLocaleString('ko-KR')} KRW` : '', usd ? `${usd.toFixed(2)} USD` : ''].filter(Boolean).join(' · ');
-  return [
-    card('all', ORDERS.length, '전체 주문'),
-    card('paid', paid.length, '결제 완료'),
-    card('failed', ORDERS.filter((o) => orderGroup(o.status) === 'failed').length, '결제 실패'),
-    card('refund', ORDERS.filter((o) => orderGroup(o.status) === 'refund').length, '취소/환불'),
-    card('paid', ORDERS.filter((o) => o.isToday && orderGroup(o.status) === 'paid').length, '오늘 결제'),
-    amount ? `<div class="crm-stat is-amount"><b>${amount}</b><span>결제 금액</span></div>` : ''
-  ].join('');
-}
-
 function syncPreviewWorkChrome() {
   const search = $('adminUserSearch');
   if (search) {
@@ -546,19 +518,42 @@ function syncPreviewWorkChrome() {
   if (actions) actions.hidden = crmMode !== 'members';
   const sortSel = $('adminUserSort');
   if (sortSel) sortSel.hidden = crmMode !== 'members';
+  const toolbar = $('adminCrmToolbar');
+  if (toolbar) toolbar.hidden = crmMode !== 'members';
   const selectWrap = $('adminCrmSelectAllWrap');
-  if (selectWrap) selectWrap.hidden = crmMode !== 'members';
-  const bulk = $('adminCrmBulkbar');
-  if (bulk) {
-    if (crmMode !== 'members' && crmMode !== 'license') bulk.hidden = true;
-    else bulk.hidden = selected.size === 0;
+  if (selectWrap) selectWrap.hidden = crmMode !== 'members' && crmMode !== 'license';
+  // Payment (orders) list has no bulk selection — hide unused chrome.
+  const canBulkSelect = crmMode === 'members' || crmMode === 'license';
+  const filteredBtn = $('adminCrmSelectFiltered');
+  if (filteredBtn) filteredBtn.hidden = !canBulkSelect;
+  const everyoneBtn = $('adminCrmSelectEveryone');
+  if (everyoneBtn) everyoneBtn.hidden = !canBulkSelect;
+  const schedListBtn = $('adminScheduledEmailListBtn');
+  if (schedListBtn) schedListBtn.hidden = !canBulkSelect;
+  const listActions = document.querySelector('.admin-crm-list-actions');
+  if (listActions) listActions.hidden = !canBulkSelect;
+  const userCount = $('adminUserCount');
+  if (userCount) userCount.hidden = crmMode === 'orders';
+  const filterHintEl = $('adminCrmFilterHint');
+  if (filterHintEl) filterHintEl.hidden = crmMode === 'orders';
+  const bulkActions = $('adminCrmBulkActions');
+  const bulkCount = $('adminCrmBulkCount');
+  if (bulkCount) {
+    bulkCount.textContent = `${selected.size}명 선택됨`;
+    bulkCount.hidden = selected.size === 0;
+  }
+  if (bulkActions) {
+    if (crmMode !== 'members' && crmMode !== 'license') bulkActions.hidden = true;
+    else bulkActions.hidden = selected.size === 0;
+    bulkActions.querySelectorAll('[data-bulk]').forEach((btn) => {
+      const modes = String(btn.getAttribute('data-bulk-modes') || '').split(',').map((s) => s.trim()).filter(Boolean);
+      btn.hidden = modes.length ? !modes.includes(crmMode) : false;
+    });
   }
   const stats = $('adminCrmStats');
   const tabs = $('adminCrmWorkTabs');
   if (crmMode === 'license') {
-    stats && (stats.innerHTML = licenseStatsHtml());
-    stats?.classList.remove('is-cols-5');
-    stats?.classList.add('is-cols-6');
+    if (stats) { stats.hidden = true; stats.innerHTML = ''; }
     if (tabs) {
       tabs.hidden = false;
       const counts = {
@@ -574,9 +569,7 @@ function syncPreviewWorkChrome() {
       ].map(([id, label]) => `<button type="button" class="admin-page-tab${licenseTab === id ? ' is-active' : ''}" data-license-tab="${id}">${label} <em>${counts[id]}</em></button>`).join('');
     }
   } else if (crmMode === 'orders') {
-    stats && (stats.innerHTML = orderStatsHtml());
-    stats?.classList.remove('is-cols-5');
-    stats?.classList.add('is-cols-6');
+    if (stats) { stats.hidden = true; stats.innerHTML = ''; }
     if (tabs) {
       tabs.hidden = false;
       const counts = { all: ORDERS.length, paid: 0, failed: 0, refund: 0, pending: 0 };
@@ -586,11 +579,24 @@ function syncPreviewWorkChrome() {
       ].map(([id, label]) => `<button type="button" class="admin-page-tab${orderTab === id ? ' is-active' : ''}" data-order-tab="${id}">${label} <em>${counts[id] || 0}</em></button>`).join('');
     }
   } else {
-    stats && (stats.innerHTML = crmStatsHtml());
-    stats?.classList.remove('is-cols-5');
-    stats?.classList.add('is-cols-6');
+    if (stats) { stats.hidden = true; stats.innerHTML = ''; }
     updatePreviewFilterButton();
-    if (tabs) { tabs.hidden = true; tabs.innerHTML = ''; }
+    if (tabs) {
+      tabs.hidden = false;
+      const nowActive = MEMBERS.filter((u) => u.activity === 'online' || u.activity === 'active').length;
+      const counts = {
+        all: MEMBERS.length,
+        active: nowActive,
+        lifetime: MEMBERS.filter((u) => u.plan === 'lifetime').length,
+        period: MEMBERS.filter((u) => u.plan === 'period').length,
+        trial: MEMBERS.filter((u) => u.plan === 'trial').length,
+        today: MEMBERS.filter((u) => u.joined === '2026.08.19').length
+      };
+      const selected = ['idle7', 'idle30', 'filtered'].includes(memberStatKey) ? '' : (memberStatKey || 'all');
+      tabs.innerHTML = [
+        ['all', '전체'], ['active', '활성'], ['lifetime', '평생'], ['period', '기간제'], ['trial', '체험판'], ['today', '오늘 가입']
+      ].map(([id, label]) => `<button type="button" class="admin-page-tab${selected === id ? ' is-active' : ''}" data-member-tab="${id}">${label} <em>${counts[id] || 0}</em></button>`).join('');
+    }
   }
 }
 
@@ -688,7 +694,11 @@ function renderCrmWork() {
       map.get(key).items.push(o);
     });
     $('adminUserCount') && ($('adminUserCount').textContent = `${groups.length}명 · ${rows.length}건`);
-    if (hint) hint.textContent = rows.length === ORDERS.length ? '' : `필터 ${rows.length}건`;
+    if ($('adminUserCount')) $('adminUserCount').hidden = true;
+    if (hint) {
+      hint.textContent = rows.length === ORDERS.length ? '' : `필터 ${rows.length}건`;
+      hint.hidden = true;
+    }
     if (!rows.length) {
       emptyMsg(({
         all: '주문이 없습니다.',
@@ -772,12 +782,8 @@ function renderCrmWork() {
       <tr class="admin-license-expand"${open ? '' : ' hidden'}>
         <td colspan="9">
           <div class="admin-license-expand-inner" data-license-uid="${u.uid}">
-            <div class="admin-license-expand-col">
+            <div class="admin-license-expand-col admin-license-edit-panel">
             <div class="admin-license-expand-meta">
-              <span class="admin-license-expand-flags">
-                <span>상태 ${licenseStatusBadge(u)}</span>
-                <span>현재 ${planBadge(u.plan)}</span>
-              </span>
               ${idPairHtml(u.uid, u.hwid)}
             </div>
             <div class="admin-crm-license-form admin-license-inline-form">
@@ -796,9 +802,6 @@ function renderCrmWork() {
                   <input type="date" data-lic-expires value="${u.expiresAt || ''}">
                 </label>
               </div>
-              <label>메모
-                <textarea data-lic-memo rows="2" placeholder="라이선스 메모">${u.licenseMemo || ''}</textarea>
-              </label>
               <div class="admin-license-expand-toolbar">
                 <div class="admin-license-expand-actions">
                   <button type="button" class="primary mini-btn" data-license-save="${u.uid}">저장</button>
@@ -1124,16 +1127,13 @@ function renderLogs() {
   const u = memberByUid(logUid);
   const selectedBox = $('adminLogsSelected');
   if (selectedBox) {
-    selectedBox.innerHTML = u
-      ? `<div class="admin-logs-identity">
-          <span class="admin-crm-card-avatar is-fallback">${u.name.slice(0, 1)}</span>
-          <div>
-            <div class="admin-logs-identity-top"><b>${u.name}</b> ${roleBadge(u.role)} ${planBadge(u.plan)} ${activityBadge(u.activity)}</div>
-            <small>${u.email}</small>
-            <span class="muted small">${[u.country, u.seen ? `최근 접속 ${u.seen}` : ''].filter(Boolean).join(' · ')}</span>
-          </div>
-        </div>`
-      : `<p class="muted">사용자를 선택하면 로그가 표시됩니다.</p>`;
+    if (!u) {
+      selectedBox.hidden = false;
+      selectedBox.innerHTML = `<p class="muted">사용자를 선택하면 로그가 표시됩니다.</p>`;
+    } else {
+      selectedBox.hidden = true;
+      selectedBox.innerHTML = '';
+    }
   }
   const q = ($('adminLogsTableSearch')?.value || '').trim().toLowerCase();
   const range = $('adminLogsDateFilter')?.value || 'all';
@@ -1147,7 +1147,7 @@ function renderLogs() {
     const hay = [r.action, r.summary, r.cat, r.actor].join(' ').toLowerCase();
     return !q || hay.includes(q);
   });
-  $('adminLogsTableMeta') && ($('adminLogsTableMeta').textContent = logUid ? `${rows.length}건 · 미리보기` : '');
+  $('adminLogsTableMeta') && ($('adminLogsTableMeta').textContent = '');
   const creditHead = logTab === 'credit';
   $('adminLogsTableHead') && ($('adminLogsTableHead').innerHTML = creditHead
     ? '<tr><th>시각</th><th>내역</th><th>내용</th><th>수행자</th></tr>'
@@ -1562,8 +1562,6 @@ function renderCms() {
   const box = $('adminCmsList');
   if (!box) return;
   const rows = filteredCmsRows();
-  const q = ($('adminCmsSearch')?.value || '').trim();
-  $('adminCmsCount') && ($('adminCmsCount').textContent = (q || cmsStatusApplied !== 'all') ? `검색 결과 ${rows.length}건` : `${rows.length}건`);
   if (!rows.length) {
     box.innerHTML = '<div class="empty-card">해당하는 콘텐츠가 없습니다.</div>';
     return;
@@ -1847,7 +1845,6 @@ function bind() {
   window.__midiaiShowAdminViewCore = showView;
   window.__midiaiShowAdminView = showView;
   $('admin')?.classList.remove('admin-locked');
-  $('adminCrmStats') && ($('adminCrmStats').innerHTML = crmStatsHtml());
   bindPreviewFilterPopover();
   renderDashboard();
   renderMembers();
@@ -1910,6 +1907,12 @@ function bind() {
         applyPreviewMemberStat(['trial', 'lifetime', 'period', 'active', 'today'].includes(key) ? key : 'all');
       }
     }
+    const memberTab = e.target.closest('#adminCrmWorkTabs [data-member-tab]');
+    if (memberTab) {
+      showView('crm', { crmMode: 'members' });
+      applyPreviewMemberStat(memberTab.getAttribute('data-member-tab') || 'all');
+      return;
+    }
     const stat = e.target.closest('#adminCrmStats [data-crm-stat]');
     if (stat) {
       showView('crm', { crmMode: 'members' });
@@ -1951,10 +1954,12 @@ function bind() {
     if (licenseSave) {
       const uid = licenseSave.getAttribute('data-license-save');
       const wrap = licenseSave.closest('.admin-license-expand-inner');
+      const memoEl = wrap?.querySelector('[data-lic-memo]');
+      const existing = MEMBERS.find((m) => m.uid === uid);
       const patch = {
         startsAt: wrap?.querySelector('[data-lic-starts]')?.value || '',
         expiresAt: wrap?.querySelector('[data-lic-expires]')?.value || '',
-        licenseMemo: wrap?.querySelector('[data-lic-memo]')?.value || ''
+        licenseMemo: memoEl ? (memoEl.value || '') : (existing?.licenseMemo || '')
       };
       const plan = wrap?.querySelector('[data-lic-plan]')?.value;
       if (plan) patch.plan = plan;
@@ -1985,9 +1990,16 @@ function bind() {
     if (check) {
       const uid = check.getAttribute('data-crm-check');
       if (check.checked) selected.add(uid); else selected.delete(uid);
-      const bar = $('adminCrmBulkbar');
-      if (bar) bar.hidden = selected.size === 0;
-      $('adminCrmBulkCount') && ($('adminCrmBulkCount').textContent = `${selected.size}명 선택`);
+      const bulkActions = $('adminCrmBulkActions');
+      const bulkCount = $('adminCrmBulkCount');
+      if (bulkCount) {
+        bulkCount.textContent = `${selected.size}명 선택됨`;
+        bulkCount.hidden = selected.size === 0;
+      }
+      if (bulkActions) {
+        if (crmMode !== 'members' && crmMode !== 'license') bulkActions.hidden = true;
+        else bulkActions.hidden = selected.size === 0;
+      }
     }
     const tab = e.target.closest('[data-crm-detail-tab]');
     if (tab) setDetailTab(tab.getAttribute('data-crm-detail-tab'));
@@ -2099,19 +2111,17 @@ function bind() {
     }
   });
 
-  ['adminUserSearch', 'adminPaymentsSearch', 'adminTicketSearch', 'adminLogsTableSearch', 'adminLogsUserSearch'].forEach((id) => {
+  ['adminUserSearch', 'adminPaymentsSearch', 'adminTicketSearch', 'adminLogsUserSearch'].forEach((id) => {
     $(id)?.addEventListener('input', () => {
       if (id === 'adminUserSearch') renderMembers();
       if (id === 'adminPaymentsSearch') renderPayments();
       if (id === 'adminTicketSearch') renderTickets();
-      if (id === 'adminLogsTableSearch') renderLogs();
       if (id === 'adminLogsUserSearch') fillLogUserSelect($('adminLogsUserSearch').value);
     });
   });
-  ['adminUserSort', 'adminTicketStatus', 'adminTicketCategory', 'adminTicketDate', 'adminLogsDateFilter', 'adminLogsUserSelect', 'adminLicensePlan', 'adminUserRole', 'adminLicenseStartsAt', 'adminLicenseExpiresAt'].forEach((id) => {
+  ['adminUserSort', 'adminTicketStatus', 'adminTicketCategory', 'adminTicketDate', 'adminLogsUserSelect', 'adminLicensePlan', 'adminUserRole', 'adminLicenseStartsAt', 'adminLicenseExpiresAt'].forEach((id) => {
     $(id)?.addEventListener('change', () => {
       if (id === 'adminTicketStatus' || id === 'adminTicketCategory' || id === 'adminTicketDate') renderTickets();
-      else if (id === 'adminLogsDateFilter') renderLogs();
       else if (id === 'adminLogsUserSelect') {
         logUid = $('adminLogsUserSelect').value;
         renderLogs();
@@ -2146,9 +2156,16 @@ function bind() {
   $('adminCrmSelectAll')?.addEventListener('change', (e) => {
     if (e.target.checked) MEMBERS.forEach((u) => selected.add(u.uid));
     else selected.clear();
-    const bar = $('adminCrmBulkbar');
-    if (bar) bar.hidden = selected.size === 0;
-    $('adminCrmBulkCount') && ($('adminCrmBulkCount').textContent = `${selected.size}명 선택`);
+    const bulkActions = $('adminCrmBulkActions');
+    const bulkCount = $('adminCrmBulkCount');
+    if (bulkCount) {
+      bulkCount.textContent = `${selected.size}명 선택됨`;
+      bulkCount.hidden = selected.size === 0;
+    }
+    if (bulkActions) {
+      if (crmMode !== 'members' && crmMode !== 'license') bulkActions.hidden = true;
+      else bulkActions.hidden = selected.size === 0;
+    }
     renderMembers();
   });
 

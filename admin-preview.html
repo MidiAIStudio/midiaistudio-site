@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=nav-icons-1">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=theme-47">
+  <link rel="stylesheet" href="./assets/css/style.css?v=member-tabs-1">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=member-tabs-1">
 
 </head>
 <body class="admin-page admin-console-page admin-preview-page portal-page" data-admin-view="home">
@@ -409,8 +409,7 @@
               <aside class="admin-crm-list-pane">
                 <div class="admin-page-tabs admin-work-status-tabs" id="adminCrmWorkTabs" hidden role="tablist"></div>
                 <div class="admin-crm-stats" id="adminCrmStats" aria-label="업무 통계"></div>
-                <div class="admin-crm-toolbar">
-                  <input id="adminUserSearch" class="search-input compact" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
+                <div class="admin-crm-toolbar" id="adminCrmToolbar">
                   <div class="admin-crm-toolbar-actions" id="adminCrmToolbarActions">
                     <div class="admin-crm-filter-wrap" id="adminCrmFilterWrap">
                       <button type="button" class="secondary mini-btn admin-crm-filter-btn" id="adminCrmFilterBtn" aria-haspopup="true" aria-expanded="false">필터</button>
@@ -465,23 +464,25 @@
                     </select>
                   </div>
                 </div>
-                <div class="admin-crm-bulkbar" id="adminCrmBulkbar" hidden>
-                  <span id="adminCrmBulkCount">0명 선택됨</span>
-                  <div class="admin-crm-bulk-actions">
-                    <button type="button" class="secondary mini-btn" data-bulk="gmail" data-bulk-modes="members">일괄 메일 발송</button>
-                    <button type="button" class="secondary mini-btn" data-bulk="app-message" data-bulk-modes="members">일괄 앱 쪽지</button>
-                    <button type="button" class="secondary mini-btn danger-btn" data-bulk="ban" data-bulk-modes="members">일괄 차단</button>
-                    <button type="button" class="secondary mini-btn danger-btn" data-bulk="delete" data-bulk-modes="members">일괄 삭제</button>
-                    <button type="button" class="primary mini-btn" data-bulk="credits" data-bulk-modes="license">크레딧 일괄 지급/회수</button>
-                    <button type="button" class="ghost mini-btn" data-bulk="clear">선택 해제</button>
-                  </div>
-                </div>
                 <div class="admin-crm-list-head">
                   <label class="admin-crm-check" id="adminCrmSelectAllWrap"><input type="checkbox" id="adminCrmSelectAll" aria-label="현재 페이지 선택"> 현재 페이지 선택</label>
+                  <span id="adminCrmBulkCount" class="admin-crm-bulk-count" hidden>0명 선택됨</span>
                   <button type="button" class="ghost mini-btn" id="adminCrmSelectFiltered">검색 결과 전체 선택</button>
                   <button type="button" class="ghost mini-btn" id="adminCrmSelectEveryone">전체 사용자 선택</button>
                   <span id="adminUserCount" class="muted"></span>
                   <span id="adminCrmFilterHint" class="muted small"></span>
+                  <div class="admin-crm-list-actions" id="adminCrmListActions">
+                    <button type="button" class="ghost mini-btn" id="adminScheduledEmailListBtn">이메일</button>
+                    <div class="admin-crm-bulk-actions" id="adminCrmBulkActions" hidden>
+                      <button type="button" class="secondary mini-btn" data-bulk="gmail" data-bulk-modes="members">일괄 메일 발송</button>
+                      <button type="button" class="secondary mini-btn" data-bulk="app-message" data-bulk-modes="members">일괄 앱 쪽지</button>
+                      <button type="button" class="secondary mini-btn danger-btn" data-bulk="ban" data-bulk-modes="members">일괄 차단</button>
+                      <button type="button" class="secondary mini-btn danger-btn" data-bulk="delete" data-bulk-modes="members">일괄 삭제</button>
+                      <button type="button" class="primary mini-btn" data-bulk="credits" data-bulk-modes="license">크레딧 일괄 지급/회수</button>
+                      <button type="button" class="ghost mini-btn" data-bulk="clear">선택 해제</button>
+                    </div>
+                  </div>
+                  <input id="adminUserSearch" class="search-input compact admin-crm-list-search" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
                 </div>
                 <div id="adminUserList" class="admin-crm-virtual" tabindex="0"><p class="muted">회원 불러오는 중...</p></div>
                 <div class="admin-crm-pager" id="adminCrmPager" hidden></div>
@@ -691,9 +692,6 @@
                   <button type="button" class="primary mini-btn" id="adminCmsNewBtn">+ 새 글</button>
                 </div>
               </div>
-              <div class="admin-cms-list-head">
-                <span id="adminCmsCount" class="muted"></span>
-              </div>
               <div id="adminCmsList" class="admin-table-wrap admin-console-table-wrap"><p class="muted">콘텐츠 불러오는 중...</p></div>
               <div class="admin-cms-drawer" id="adminCmsDrawer" hidden>
                 <div class="admin-cms-drawer-backdrop" data-cms-close="1"></div>
@@ -714,18 +712,9 @@
                 <select id="adminLogsUserSelect" aria-label="사용자 선택">
                   <option value="">사용자 선택</option>
                 </select>
-                <input type="search" id="adminLogsTableSearch" class="search-input compact" placeholder="로그 내용 검색" aria-label="로그 검색">
-                <select id="adminLogsDateFilter" aria-label="기간">
-                  <option value="all">전체 기간</option>
-                  <option value="today">오늘</option>
-                  <option value="7d">7일</option>
-                  <option value="30d">30일</option>
-                </select>
-                <button type="button" class="secondary mini-btn" id="adminLogsRefreshBtn">새로고침</button>
               </div>
               <div id="adminLogsSelected" class="admin-logs-selected"><p class="muted">사용자를 선택하면 로그가 표시됩니다.</p></div>
               <div class="admin-logs-table-meta-row">
-                <span id="adminLogsTableMeta" class="muted small"></span>
                 <button type="button" class="secondary mini-btn" id="adminLogsLoadMore" hidden>더보기</button>
               </div>
               <div class="admin-logs-table-wrap admin-console-table-wrap">
@@ -789,6 +778,6 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script src="./assets/js/admin-nav.js?v=theme-5"></script>
-  <script type="module" src="./assets/js/admin-preview.js?v=credit-ledger-v2-3"></script>
+  <script type="module" src="./assets/js/admin-preview.js?v=member-tabs-1"></script>
 </body>
 </html>
