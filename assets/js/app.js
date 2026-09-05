@@ -4890,7 +4890,100 @@ function renderHomePatches(rows, err){
     return `<a class="home-update-item" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><span class="home-update-tag ${tagClass}">${tag}</span><b>${esc(x.title)}</b><em>${esc(fmtListDate(x.createdAt))}</em></a>`;
   }).join('')}</div>`;
 }
+function initStudioHeroVideo(){
+  document.querySelectorAll('.studio-hero-video').forEach(root=>{
+    if(root.dataset.bound==='1') return;
+    root.dataset.bound='1';
+    const video=root.querySelector('.studio-hero-video-el');
+    const muteBtn=root.querySelector('.studio-hero-mute');
+    const vol=root.querySelector('.studio-hero-volume');
+    if(!video || !muteBtn || !vol) return;
+
+    // Ensure policy-safe muted autoplay defaults (HTML already sets these).
+    video.muted=true;
+    video.defaultMuted=true;
+    video.playsInline=true;
+    video.loop=true;
+    video.removeAttribute('controls');
+    video.setAttribute('controlslist','nodownload noplaybackrate noremoteplayback');
+    video.disablePictureInPicture=true;
+
+    const DEFAULT_VOL=0.7;
+    let lastVol=DEFAULT_VOL;
+    const isSilent=()=>video.muted || video.volume===0;
+    const syncUi=()=>{
+      const silent=isSilent();
+      muteBtn.classList.toggle('is-muted', silent);
+      muteBtn.setAttribute('aria-pressed', silent ? 'true' : 'false');
+      if(!silent){
+        const v=Number(video.volume);
+        if(Math.abs(Number(vol.value)-v)>0.001) vol.value=String(v);
+        if(v>0) lastVol=v;
+      }else if(Number(vol.value)!==0){
+        vol.value='0';
+      }
+    };
+
+    muteBtn.addEventListener('click',()=>{
+      if(isSilent()){
+        video.muted=false;
+        video.volume=lastVol>0 ? lastVol : DEFAULT_VOL;
+        vol.value=String(video.volume);
+      }else{
+        if(video.volume>0) lastVol=video.volume;
+        video.muted=true;
+        vol.value='0';
+      }
+      syncUi();
+      video.play().catch(()=>{});
+    });
+
+    vol.addEventListener('input',()=>{
+      const v=Number(vol.value);
+      if(v>0){
+        video.muted=false;
+        video.volume=v;
+        lastVol=v;
+      }else{
+        video.volume=0;
+        video.muted=true;
+      }
+      syncUi();
+    });
+
+    video.addEventListener('volumechange', syncUi);
+
+    const tryPlay=()=>{
+      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+        video.removeAttribute('autoplay');
+        try{ video.pause(); }catch{}
+        return;
+      }
+      const p=video.play();
+      if(p && typeof p.catch==='function') p.catch((err)=>{
+        console.warn('[studio-hero-video] autoplay blocked or failed', err?.message||err);
+      });
+    };
+
+    if(video.readyState>=2) tryPlay();
+    else{
+      video.addEventListener('canplay', tryPlay, {once:true});
+      video.addEventListener('loadeddata', tryPlay, {once:true});
+    }
+
+    video.addEventListener('error',()=>{
+      const err=video.error;
+      console.warn('[studio-hero-video] load failed', err?.code, err?.message||'');
+      root.classList.add('is-failed');
+      const poster=video.getAttribute('poster');
+      if(poster) root.style.backgroundImage=`url("${poster}")`;
+    });
+
+    syncUi();
+  });
+}
 async function initHomePage(){
+  initStudioHeroVideo();
   if(!db) return;
   const updatesBox=$('homeUpdates');
   const patchesBox=$('homePatches');
@@ -15018,6 +15111,7 @@ initAuth();
 initPurchasePhone();
 initPayPal();
 initPurchasePoints();
+initStudioHeroVideo();
 
 initSupportChat({
   $,
