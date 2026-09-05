@@ -2017,6 +2017,9 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 }
 .account-page #accountHeroCta.is-status{background:rgba(167,139,250,.14)!important;border:1px solid rgba(167,139,250,.32);color:#ddd6fe;pointer-events:none;opacity:.95}
 .account-page .account-credit-kicker{margin:0;font-size:var(--account-label-size);font-weight:700;color:var(--account-label-color);letter-spacing:.02em;line-height:1.35}
+.account-page .account-credit-body{display:flex;align-items:center;justify-content:space-between;gap:12px 16px;flex-wrap:wrap}
+.account-page .account-credit-summary{min-width:0;flex:1 1 auto}
+.account-page .account-panel-credit .account-panel-actions{margin-top:0;flex:none}
 .account-page .account-credit-list{list-style:none;margin:0;padding:0;display:grid;gap:4px}
 .account-page .account-credit-list li{display:grid;grid-template-columns:72px minmax(0,1fr) 40px 28px;gap:4px 8px;align-items:center;padding:var(--account-row-pad-y) 0;border-bottom:1px solid var(--account-separator);font-size:var(--account-body-size)}
 .account-page .account-credit-list li:last-child{border-bottom:0}
@@ -2116,8 +2119,8 @@ html.credit-history-open body{overflow:hidden!important}
 .topbar-profile-credit-main span{color:var(--muted);font-size:10px;line-height:1.3}
 .topbar-profile-credit-buy{display:inline-flex;align-items:center;justify-content:center;min-height:26px;padding:4px 8px;border-radius:8px;border:1px solid rgba(139,92,246,.4);background:rgba(139,92,246,.14);color:#ddd6fe;font-size:11px;font-weight:800;text-decoration:none}
 .topbar-profile-credit-buy:hover{background:rgba(139,92,246,.22);color:#fff}
-.account-page .account-support-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start}
-.account-page .account-support-link{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);color:#e7e9fb;text-decoration:none;transition:border-color .15s ease,background .15s ease}
+.account-page .account-support-grid{display:grid;grid-template-columns:1fr;grid-auto-flow:row;gap:6px;align-content:start}
+.account-page .account-support-link{width:100%;display:flex;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035);color:#e7e9fb;text-decoration:none;transition:border-color .15s ease,background .15s ease}
 .account-page .account-support-link:hover{border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.12);transform:none}
 .account-page .account-dev-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
 .account-page .account-panel-developer{border-color:rgba(251,191,36,.28)!important;background:linear-gradient(180deg,rgba(251,191,36,.08),rgba(255,255,255,.03))!important}
@@ -2305,13 +2308,16 @@ body.sidebar-layout{background:radial-gradient(circle at 15% 0%,rgba(139,92,246,
 .home-flow-line i{color:rgba(34,211,238,.55);font-style:normal;font-weight:400}
 .home-flow-line span{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:#e8ebf8}
 .home-bottom{margin-bottom:8px}
-.home-bottom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.home-bottom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch}
+.home-bottom-grid > .home-panel{display:grid;grid-template-rows:auto 1fr;gap:10px;min-height:0;height:100%;align-content:stretch}
 .home-panel{display:grid;gap:10px}
-.home-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.home-panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:28px}
 .home-panel-head h2{margin:0;font-size:17px;letter-spacing:-.03em;color:#fff}
 .home-panel-link{font-size:12px;font-weight:800;color:var(--muted)}
 .home-panel-link:hover{color:#9af2ff}
 .home-panel-body{padding:14px 16px!important;border-radius:18px!important}
+.home-bottom-grid .portal-updates-card.home-panel-body{height:100%;min-height:0;display:flex;flex-direction:column;box-sizing:border-box}
+.home-bottom-grid .home-updates-list{flex:1;min-height:0}
 .home-update-tag.is-patch{background:rgba(54,211,153,.14);color:#8ff3c5}
 .home-update-tag.is-web{background:rgba(34,211,238,.08);color:#9ec8e8}
 .home-guides-panel{margin-bottom:32px}
@@ -4842,12 +4848,23 @@ body.sidebar-layout .sidebar-nav a .nav-unread-badge{margin-left:auto}
 .topbar-notify-mark:hover{background:rgba(34,211,238,.1)}
 .topbar-notify-clear{color:#ff9aac}
 .topbar-notify-clear:hover{background:rgba(251,113,133,.12)}
-.topbar-notify-filters{display:flex;flex-wrap:wrap;gap:4px;padding:0 10px 8px;border-bottom:1px solid rgba(255,255,255,.08)}
-.topbar-notify-filter{
-  border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--muted);
-  border-radius:999px;padding:4px 8px;font:inherit;font-size:11px;font-weight:700;cursor:pointer
+.topbar-notify-filters{
+  display:flex;flex-wrap:nowrap;gap:4px;
+  margin:0 10px 10px;padding:4px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:10px;
+  background:rgba(255,255,255,.06)
 }
-.topbar-notify-filter.is-active{color:#9af2ff;border-color:rgba(34,211,238,.35);background:rgba(34,211,238,.1)}
+.topbar-notify-filters.is-segmented{flex-wrap:nowrap}
+.topbar-notify-filter{
+  flex:1 1 0;min-width:0;border:0;background:transparent;color:var(--muted);
+  border-radius:8px;padding:6px 4px;font:inherit;font-size:11px;font-weight:700;
+  cursor:pointer;text-align:center;line-height:1.2;white-space:nowrap
+}
+.topbar-notify-filter.is-active{
+  color:#fff;background:rgba(255,255,255,.14);
+  box-shadow:0 2px 8px rgba(0,0,0,.28);border-color:transparent
+}
 .topbar-notify-list{max-height:min(420px,60vh);overflow:auto;display:grid}
 .topbar-notify-empty{padding:28px 16px;text-align:center;color:var(--muted);font-size:13px}
 .topbar-notify-item{

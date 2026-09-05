@@ -186,7 +186,8 @@ async function runResearchLoop({
   isWeakOrConflictingRetrieval,
   maxResearchActions = 3,
   callLlm = null,
-  hypotheses = []
+  hypotheses = [],
+  searchQueries = null
 } = {}) {
   const need = classifyNeed({ question, rawQuestion, intent, facts });
   const searched = new Set();
@@ -202,6 +203,17 @@ async function runResearchLoop({
     maxResearchActions,
     researchBudget({ need, weak, conflict, passages, searched, facts })
   );
+  const altQueries = (Array.isArray(searchQueries) ? searchQueries : [])
+    .map((q) => String(q || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  let altQueryIdx = 0;
+  const nextSearchQuery = (fallback) => {
+    if (!altQueries.length) return fallback;
+    // When weak, prefer rotating semantic rewrites over repeating the raw vague phrase.
+    const q = altQueries[altQueryIdx % altQueries.length];
+    altQueryIdx += 1;
+    return q || fallback;
+  };
   const searchQ = discoveryOn ? discoverySearchQuery(facts, question) : question;
   const llmPlannerState = {
     used: false,
@@ -320,13 +332,14 @@ async function runResearchLoop({
         budget -= 1;
         researchCount += 1;
         searched.add(alt);
-        debug.actions.push({ kind: 'search', sourceType: alt, q: searchQ, via: 'source_plan' });
+        const qNow = discoveryOn ? searchQ : nextSearchQuery(searchQ);
+        debug.actions.push({ kind: 'search', sourceType: alt, q: qNow, via: 'source_plan' });
         if (discoveryOn) debug.discoverySources.push(alt);
         const extraRaw =
           (await callSource(alt, adapters, {
             question,
             rawQuestion,
-            searchQuery: searchQ,
+            searchQuery: qNow,
             locale,
             facts,
             need,
@@ -367,13 +380,14 @@ async function runResearchLoop({
     researchCount += 1;
     searched.add(sourceType);
     pendingSourcePlan = (pendingSourcePlan || []).filter((s) => s !== sourceType);
-    debug.actions.push({ kind: 'search', sourceType, q: searchQ });
+    const qNow = discoveryOn ? searchQ : nextSearchQuery(searchQ);
+    debug.actions.push({ kind: 'search', sourceType, q: qNow });
     if (discoveryOn) debug.discoverySources.push(sourceType);
     const extraRaw =
       (await callSource(sourceType, adapters, {
         question,
         rawQuestion,
-        searchQuery: searchQ,
+        searchQuery: qNow,
         locale,
         facts,
         need,

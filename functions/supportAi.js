@@ -373,6 +373,17 @@ function isWeakOrConflictingRetrieval(passages) {
     // BUT: some dynamic passages (e.g. live FAQ) may not carry `category`.
     // Avoid treating "category missing" as a hard conflict — it leads to unnecessary lowConfidence fallback.
     if (s2 >= score - 2 && c1 && c2 && c1 !== c2) {
+      try {
+        const { CORE_WORKFLOW_DOC_IDS } = require('./supportAiAgent/coreWorkflowEvidence');
+        if (
+          CORE_WORKFLOW_DOC_IDS.has(String(top.id || '')) &&
+          CORE_WORKFLOW_DOC_IDS.has(String(second.id || ''))
+        ) {
+          return false;
+        }
+      } catch (_) {
+        /* ignore */
+      }
       if (score < 30) return true;
     }
   }

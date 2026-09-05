@@ -797,7 +797,8 @@ function tr(k){
     admin_reply_toast_title:'💬 문의에 새 덧글이 등록되었습니다.', admin_reply_toast_body:'기존 문의에 사용자 덧글이 추가되었습니다.', admin_reply_toast_action:'문의 보기',
     notify_title:'알림', notify_empty:'새 알림이 없습니다.', notify_mark_all:'모두 읽음', notify_clear_all:'모두 삭제', notify_clear_confirm:'알림을 모두 삭제할까요?', notify_delete_aria:'알림 삭제', notify_login:'로그인하면 알림을 확인할 수 있습니다.',
     notify_board_comment:'님이 회원님의 글에 댓글을 남겼습니다.', notify_ticket_reply:'상담사가 대화를 시작했습니다.', notify_license_change:'라이선스가 변경되었습니다.', notify_payment_complete:'결제가 완료되었습니다.', notify_payment_cancel:'결제가 취소되었습니다.', notify_payment_partial:'부분 환불이 적용되었습니다.', notify_refund_review:'환불 검토가 필요합니다.', notify_admin_message:'관리자 쪽지', notify_notice:'새 공지사항이 등록되었습니다.', notify_patch_note:'새 패치노트가 등록되었습니다.', notify_aria:'알림',
-    notify_filter_all:'전체', notify_filter_payment:'결제', notify_filter_license:'라이선스', notify_filter_inquiry:'문의', notify_filter_community:'커뮤니티', notify_filter_other:'기타',
+    notify_filter_all:'전체', notify_filter_notice:'공지', notify_filter_patch:'패치', notify_filter_inquiry:'문의', notify_filter_community:'커뮤니티',
+    notify_filter_payment:'결제', notify_filter_license:'라이선스', notify_filter_other:'기타',
     notify_credit_purchase:'크레딧 충전 완료', notify_credit_purchase_body:'{n} 크레딧이 지급되었습니다.', notify_credit_grant:'크레딧 지급', notify_credit_grant_body:'관리자가 {n} 크레딧을 지급했습니다.', notify_credit_deduct:'크레딧 조정', notify_credit_deduct_body:'{n} 크레딧이 회수되었습니다.', notify_reservation_complete:'예약 변환이 완료되었습니다.', notify_reservation_failed:'예약 변환이 실패했습니다.', notify_time_just_now:'방금', notify_time_minutes:'{n}분 전', notify_time_hours:'{n}시간 전', notify_time_yesterday:'어제',
     profile_menu_aria:'계정 메뉴', profile_my_account:'내 계정', profile_my_tickets:'나의 문의', profile_my_posts:'내 작성글', profile_notify_settings:'알림 설정', profile_admin:'관리자',
     theme_label:'테마', theme_system:'시스템 설정', theme_light:'라이트', theme_dark:'다크',
@@ -827,7 +828,8 @@ function tr(k){
     admin_reply_toast_title:'💬 A new reply was added to a ticket.', admin_reply_toast_body:'A user posted a follow-up on an existing ticket.', admin_reply_toast_action:'View ticket',
     notify_title:'Notifications', notify_empty:'No new notifications.', notify_mark_all:'Mark all read', notify_clear_all:'Clear all', notify_clear_confirm:'Delete all notifications?', notify_delete_aria:'Delete notification', notify_login:'Sign in to see notifications.',
     notify_board_comment:' commented on your post.', notify_ticket_reply:'A counselor started the chat.', notify_license_change:'Your license was updated.', notify_payment_complete:'Payment completed.', notify_payment_cancel:'Payment was cancelled.', notify_payment_partial:'Partial refund applied.', notify_refund_review:'Refund review required.', notify_admin_message:'Admin message', notify_notice:'A new notice was published.', notify_patch_note:'A new patch note was published.', notify_aria:'Notifications',
-    notify_filter_all:'All', notify_filter_payment:'Payment', notify_filter_license:'License', notify_filter_inquiry:'Support', notify_filter_community:'Community', notify_filter_other:'Other',
+    notify_filter_all:'All', notify_filter_notice:'Notices', notify_filter_patch:'Updates', notify_filter_inquiry:'Support', notify_filter_community:'Community',
+    notify_filter_payment:'Payment', notify_filter_license:'License', notify_filter_other:'Other',
     notify_credit_purchase:'Credit purchase complete', notify_credit_purchase_body:'{n} credits were added.', notify_credit_grant:'Credits granted', notify_credit_grant_body:'An admin granted {n} credits.', notify_credit_deduct:'Credit adjustment', notify_credit_deduct_body:'{n} credits were deducted.', notify_reservation_complete:'Scheduled conversion finished.', notify_reservation_failed:'Scheduled conversion failed.', notify_time_just_now:'Just now', notify_time_minutes:'{n} min ago', notify_time_hours:'{n} hr ago', notify_time_yesterday:'Yesterday',
     profile_menu_aria:'Account menu', profile_my_account:'Account', profile_my_tickets:'My tickets', profile_my_posts:'My posts', profile_notify_settings:'Notification settings', profile_admin:'Admin',
     theme_label:'Theme', theme_system:'System', theme_light:'Light', theme_dark:'Dark',
@@ -857,7 +859,8 @@ function tr(k){
     admin_reply_toast_title:'💬 お問い合わせに新しい返信が追加されました。', admin_reply_toast_body:'既存の問い合わせにユーザー返信が追加されました。', admin_reply_toast_action:'問い合わせを見る',
     notify_title:'通知', notify_empty:'新しい通知はありません。', notify_mark_all:'すべて既読', notify_clear_all:'すべて削除', notify_clear_confirm:'通知をすべて削除しますか？', notify_delete_aria:'通知を削除', notify_login:'ログインすると通知を確認できます。',
     notify_board_comment:'さんがあなたの投稿にコメントしました。', notify_ticket_reply:'相談員が会話を開始しました。', notify_license_change:'ライセンスが変更されました。', notify_payment_complete:'お支払いが完了しました。', notify_payment_cancel:'お支払いがキャンセルされました。', notify_payment_partial:'一部返金が適用されました。', notify_refund_review:'返金の確認が必要です。', notify_admin_message:'管理者メッセージ', notify_notice:'新しいお知らせが登録されました。', notify_patch_note:'新しいパッチノートが登録されました。', notify_aria:'通知',
-    notify_filter_all:'すべて', notify_filter_payment:'決済', notify_filter_license:'ライセンス', notify_filter_inquiry:'問い合わせ', notify_filter_community:'コミュニティ', notify_filter_other:'その他',
+    notify_filter_all:'すべて', notify_filter_notice:'お知らせ', notify_filter_patch:'パッチ', notify_filter_inquiry:'問い合わせ', notify_filter_community:'コミュニティ',
+    notify_filter_payment:'決済', notify_filter_license:'ライセンス', notify_filter_other:'その他',
     notify_credit_purchase:'クレジット購入完了', notify_credit_purchase_body:'{n} クレジットが付与されました。', notify_credit_grant:'クレジット付与', notify_credit_grant_body:'管理者が {n} クレジットを付与しました。', notify_credit_deduct:'クレジット調整', notify_credit_deduct_body:'{n} クレジットが回収されました。', notify_reservation_complete:'予約変換が完了しました。', notify_reservation_failed:'予約変換に失敗しました。', notify_time_just_now:'たった今', notify_time_minutes:'{n}分前', notify_time_hours:'{n}時間前', notify_time_yesterday:'昨日',
     profile_menu_aria:'アカウントメニュー', profile_my_account:'アカウント', profile_my_tickets:'マイ問い合わせ', profile_my_posts:'自分の投稿', profile_notify_settings:'通知設定', profile_admin:'管理者',
     theme_label:'テーマ', theme_system:'システム設定', theme_light:'ライト', theme_dark:'ダーク',
@@ -3903,17 +3906,23 @@ function paintProfileCreditStrip(){
 
 function accountCreditCardHtml(){
   const bal = creditAccountState.balance;
-  const showBal = bal != null && bal !== '' && Number.isFinite(Number(bal));
-  if(!showBal) return '';
+  const n = Number(bal);
+  const hasBal = bal != null && bal !== '' && Number.isFinite(n);
+  const display = hasBal ? n : 0;
   const kicker = lang==='en' ? 'Credits' : lang==='ja' ? 'クレジット' : '보유 크레딧';
   const historyLabel = lang==='en' ? 'Credit history' : lang==='ja' ? 'クレジット履歴' : '사용 내역';
-  return `<article class="hub-card account-panel account-panel-credit" id="accountCreditPanel">
+  const buyLabel = tr('credit_buy') || (lang==='en' ? 'Buy Credits' : lang==='ja' ? 'クレジット購入' : '크레딧 충전');
+  const buyHref = './purchase.html?mode=credits';
+  return `<article class="hub-card account-panel account-panel-credit account-panel-full" id="accountCreditPanel">
     <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">◆</span><h2>Credit</h2></header>
-    <div class="account-panel-body" id="accountCreditBody">
-      <p class="account-credit-kicker">${esc(kicker)}</p>
-      <p class="account-license-title">${esc(creditBalanceText(bal))}</p>
+    <div class="account-panel-body account-credit-body">
+      <div class="account-credit-summary">
+        <p class="account-credit-kicker">${esc(kicker)}</p>
+        <p class="account-license-title" id="accountCreditBalance">${esc(creditBalanceText(display))}</p>
+      </div>
       <div class="account-panel-actions">
         <button type="button" class="secondary mini-btn account-btn account-btn-secondary" id="accountCreditHistoryBtn">${esc(historyLabel)}</button>
+        <a class="primary mini-btn account-btn" href="${esc(buyHref)}">${esc(buyLabel)}</a>
       </div>
     </div>
   </article>`;
@@ -3924,10 +3933,6 @@ function paintAccountCreditPanel(){
   if(!grid) return;
   const html = accountCreditCardHtml();
   const existing = $('accountCreditPanel');
-  if(!html){
-    existing?.remove();
-    return;
-  }
   const wrap = document.createElement('div');
   wrap.innerHTML = html;
   const next = wrap.firstElementChild;
@@ -4173,7 +4178,6 @@ function renderAccountDashboard(uid, d, downloadData){
   const name = currentUser.displayName || 'Google User';
   const email = currentUser.email || '-';
   const loginMethod = accountLoginMethodLabel();
-  const discordHref = accountSupportDiscordHref();
 
   updateAccountCtas({plan, lifetime, downloadUrl});
   updateAccountProfileBadges(d);
@@ -4201,18 +4205,14 @@ function renderAccountDashboard(uid, d, downloadData){
     </div>
   </article>`;
 
-  const supportLabel = lang==='en'?'Support':lang==='ja'?'サポート':'고객센터';
   const contactLabel = lang==='en'?'Contact':lang==='ja'?'お問い合わせ':'문의하기';
-  const discordAttrs = discordHref.startsWith('http') ? ' target="_blank" rel="noopener"' : '';
 
   const ordersCard = accountOrdersCardHtml();
 
   const supportCard = `<article class="hub-card account-panel account-panel-support account-panel-full">
     <header class="account-panel-head"><span class="account-panel-icon" aria-hidden="true">💬</span><h2>Support</h2></header>
     <div class="account-panel-body account-support-grid">
-      <a class="account-support-link" href="./support.html">${esc(supportLabel)}</a>
       <a class="account-support-link" href="./faq.html">FAQ</a>
-      <a class="account-support-link" href="${esc(discordHref)}"${discordAttrs}>Discord</a>
       <a class="account-support-link" href="./support.html">${esc(contactLabel)}</a>
     </div>
   </article>`;
@@ -4237,10 +4237,11 @@ function renderAccountDashboard(uid, d, downloadData){
     </article>`;
   }
 
-  box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${ordersCard}${supportCard}${developerCard}</div>`;
+  box.innerHTML = `<div class="account-dashboard-grid">${licenseCard}${accountCard}${accountCreditCardHtml()}${ordersCard}${supportCard}${developerCard}</div>`;
   paintAccountCreditPanel();
   bindCreditAccountListeners();
   bindAccountThemePicker(box);
+  bindAccountCreditCard();
   loadAccountOrders(uid);
   if(location.hash === '#credit' || location.hash === '#plan'){
     queueMicrotask(()=> $('accountCreditPanel')?.scrollIntoView({behavior:'smooth', block:'start'}));
@@ -4925,7 +4926,7 @@ async function initHomePage(){
   }
 }
 const HUB_LIST_PAGE_SIZE = 10;
-const hubListPage = { board: 1, notices: 1 };
+const hubListPage = { board: 1, notices: 1, patches: 1 };
 
 function hubPaginate(rows, kind){
   const list = Array.isArray(rows) ? rows : [];
@@ -5069,13 +5070,38 @@ function listenNoticeDetail(){ const box=$('noticeDetail'); if(!box)return; cons
 function renderPatchNotes(rows,err){
   const list=$('patchList'); if(!list)return;
   if(err){ list.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
-  if(!rows.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
-  let no=rows.length;
-  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${rows.map(x=>`<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no--}</div><div class="hub-col-title"><b>${patchListTitleHtml(x)}</b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`).join('')}</div>`;
-  bindSearch(list);
+  if(rows) window.__patchRows = rows;
+  const q=($('boardSearch')?.value||'').trim().toLowerCase();
+  let filtered=(window.__patchRows || []).slice().sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  if(q){
+    filtered = filtered.filter(x=>{
+      const hay=[x.title,x.content,patchNoteType(x),patchNoteVersion(x),noticeAuthor(x)].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }
+  if(!filtered.length){ list.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  const { page, pages, start, slice, total } = hubPaginate(filtered, 'patches');
+  list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${slice.map((x,i)=>{
+    const no = filtered.length - (start + i);
+    return `<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no}</div><div class="hub-col-title"><b>${patchListTitleHtml(x)}</b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
+  }).join('')}</div>${hubPagerHtml('patches', page, pages, total)}`;
+  const pager = list.querySelector('[data-hub-pager="patches"]');
+  if(pager){ pager.dataset.total = String(total); pager.dataset.pages = String(pages); }
+  bindHubPager(list, 'patches', ()=>renderPatchNotes());
+  const search=$('boardSearch');
+  if(search && !search.dataset.patchBound){
+    search.dataset.patchBound='1';
+    search.addEventListener('input',()=>{ hubListPage.patches = 1; renderPatchNotes(); });
+  }
 }
-function listenPatchNotes(){ if($('patchList')) listenVisibleDocs('patchNotes',renderPatchNotes); }
+function listenPatchNotes(){
+  if(!$('patchList')) return;
+  listenVisibleDocs('patchNotes',(rows,err)=>{
+    window.__patchRows = rows || [];
+    hubListPage.patches = 1;
+    renderPatchNotes(window.__patchRows, err);
+  });
+}
 let patchNotesIndex = [];
 async function loadPatchNotesIndex(){
   if(patchNotesIndex.length || !db) return patchNotesIndex;
@@ -12732,15 +12758,37 @@ function isAdminMessageNotify(n){
 function notifyCategory(n){
   const type = String(n?.type || '');
   const src = String(n?.sourceType || n?.category || '');
-  if (n?.category) return String(n.category);
+  const rawCat = String(n?.category || '');
+  if (rawCat === 'notice' || rawCat === 'patch' || rawCat === 'inquiry' || rawCat === 'community' || rawCat === 'message') return rawCat;
+  if (rawCat === 'announcement') return type === 'patch_note' ? 'patch' : 'notice';
+  if (rawCat && !['payment','license','other','system'].includes(rawCat)) return rawCat;
   if (type === 'payment_complete' || src.startsWith('payment_') || src === 'refund_review' || src === 'payment_cancel' || src === 'payment_partial_refund') return 'payment';
   if (type === 'license_change') return src.startsWith('payment_') || src === 'refund_review' ? 'payment' : 'license';
   if (type === 'ticket_reply') return 'inquiry';
   if (type === 'admin_message') return 'message';
   if (type === 'board_comment') return 'community';
-  if (type === 'notice' || type === 'patch_note') return 'announcement';
+  if (type === 'notice') return 'notice';
+  if (type === 'patch_note') return 'patch';
   if (type.startsWith('credit_') || type.startsWith('reservation_') || type === 'queue_done') return 'system';
   return 'other';
+}
+function filteredUserNotifications(rows){
+  const visible = visibleUserNotifications(rows);
+  if(userNotifyFilter === 'all') return visible;
+  if(userNotifyFilter === 'inquiry'){
+    return visible.filter(n => {
+      const c = notifyCategory(n);
+      return c === 'inquiry' || c === 'message';
+    });
+  }
+  if(userNotifyFilter === 'notice') return visible.filter(n => notifyCategory(n) === 'notice');
+  if(userNotifyFilter === 'patch') return visible.filter(n => notifyCategory(n) === 'patch');
+  if(userNotifyFilter === 'community') return visible.filter(n => notifyCategory(n) === 'community');
+  if(userNotifyFilter === 'other'){
+    const main = new Set(['notice','patch','inquiry','message','community']);
+    return visible.filter(n => !main.has(notifyCategory(n)));
+  }
+  return visible.filter(n => notifyCategory(n) === userNotifyFilter);
 }
 function isNotifyTypeEnabled(n){
   const type = String(n?.type || n || '');
@@ -12766,21 +12814,6 @@ function visibleUserNotifications(rows){
     return isNotifyTypeEnabled(n);
   });
 }
-function filteredUserNotifications(rows){
-  const visible = visibleUserNotifications(rows);
-  if(userNotifyFilter === 'all') return visible;
-  if(userNotifyFilter === 'other'){
-    const main = new Set(['payment','license','inquiry','message','community','announcement']);
-    return visible.filter(n => !main.has(notifyCategory(n)));
-  }
-  if(userNotifyFilter === 'inquiry'){
-    return visible.filter(n => {
-      const c = notifyCategory(n);
-      return c === 'inquiry' || c === 'message';
-    });
-  }
-  return visible.filter(n => notifyCategory(n) === userNotifyFilter);
-}
 async function saveUserNotifyPrefs(next){
   if(!currentUser || !firestoreApi?.setDoc) return;
   userNotifyPrefs = normalizeNotifyPrefs(next);
@@ -12798,17 +12831,56 @@ function topbarLangInsertRef(){
   if(wrap) return wrap;
   return $('langBtn');
 }
+function notifyFiltersHtml(){
+  const tabs = [
+    ['all', 'notify_filter_all'],
+    ['notice', 'notify_filter_notice'],
+    ['patch', 'notify_filter_patch'],
+    ['inquiry', 'notify_filter_inquiry'],
+    ['community', 'notify_filter_community']
+  ];
+  return tabs.map(([id, key]) => {
+    const active = (userNotifyFilter || 'all') === id ? ' is-active' : '';
+    return `<button type="button" class="topbar-notify-filter${active}" data-notify-filter="${id}" role="tab" aria-selected="${active ? 'true' : 'false'}">${esc(tr(key))}</button>`;
+  }).join('');
+}
+function bindNotifyFilterButtons(root){
+  root?.querySelectorAll?.('[data-notify-filter]')?.forEach(btn=>{
+    if(btn.dataset.bound === '1') return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      userNotifyFilter = btn.dataset.notifyFilter || 'all';
+      root.querySelectorAll('[data-notify-filter]').forEach(b=>{
+        const on = b === btn;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      renderNotifyPanelList();
+    });
+  });
+}
 function ensureNotifyBell(){
   const actions = document.querySelector('.topbar .actions');
   if(!actions) return null;
   ensureTopbarLicensePeriod();
   let wrap = $('topbarNotify');
-  if(wrap) return wrap;
+  if(wrap){
+    const filters = $('notifyFilters');
+    if(filters && filters.dataset.seg !== '3'){
+      if(['payment','license','other','announcement'].includes(userNotifyFilter)) userNotifyFilter = 'all';
+      filters.dataset.seg = '3';
+      filters.classList.add('is-segmented');
+      filters.innerHTML = notifyFiltersHtml();
+      bindNotifyFilterButtons(wrap);
+    }
+    return wrap;
+  }
   wrap = document.createElement('div');
   wrap.className = 'topbar-notify';
   wrap.id = 'topbarNotify';
   wrap.hidden = true;
-  wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><div class="topbar-notify-head-actions"><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button><button type="button" class="topbar-notify-clear" id="notifyClearAll">${esc(tr('notify_clear_all'))}</button></div></div><div class="topbar-notify-filters" id="notifyFilters" role="tablist" aria-label="${esc(tr('notify_title'))}"><button type="button" class="topbar-notify-filter is-active" data-notify-filter="all" role="tab">${esc(tr('notify_filter_all'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="payment" role="tab">${esc(tr('notify_filter_payment'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="license" role="tab">${esc(tr('notify_filter_license'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="inquiry" role="tab">${esc(tr('notify_filter_inquiry'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="community" role="tab">${esc(tr('notify_filter_community'))}</button><button type="button" class="topbar-notify-filter" data-notify-filter="other" role="tab">${esc(tr('notify_filter_other'))}</button></div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
+  wrap.innerHTML = `<button type="button" class="topbar-notify-btn" id="notifyBellBtn" aria-label="${esc(tr('notify_aria'))}" aria-expanded="false">${NOTIFY_BELL_SVG}<span class="topbar-notify-badge" id="notifyBellBadge" hidden>0</span></button><div class="topbar-notify-panel" id="notifyPanel" hidden><div class="topbar-notify-head"><b>${esc(tr('notify_title'))}</b><div class="topbar-notify-head-actions"><button type="button" class="topbar-notify-mark" id="notifyMarkAllRead">${esc(tr('notify_mark_all'))}</button><button type="button" class="topbar-notify-clear" id="notifyClearAll">${esc(tr('notify_clear_all'))}</button></div></div><div class="topbar-notify-filters is-segmented" id="notifyFilters" data-seg="3" role="tablist" aria-label="${esc(tr('notify_title'))}">${notifyFiltersHtml()}</div><div class="topbar-notify-list" id="notifyList"><div class="topbar-notify-empty">${esc(tr('notify_empty'))}</div></div></div>`;
   const langRef = topbarLangInsertRef();
   const periodEl = $('topbarLicensePeriod');
   if(periodEl && periodEl.parentNode === actions){
@@ -12822,14 +12894,7 @@ function ensureNotifyBell(){
   bell?.addEventListener('click', (e)=>{ e.stopPropagation(); toggleNotifyPanel(); });
   $('notifyMarkAllRead')?.addEventListener('click', (e)=>{ e.stopPropagation(); markAllNotificationsRead(); });
   $('notifyClearAll')?.addEventListener('click', (e)=>{ e.stopPropagation(); clearAllNotifications(); });
-  wrap.querySelectorAll('[data-notify-filter]').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      userNotifyFilter = btn.dataset.notifyFilter || 'all';
-      wrap.querySelectorAll('[data-notify-filter]').forEach(b=>b.classList.toggle('is-active', b === btn));
-      renderNotifyPanelList();
-    });
-  });
+  bindNotifyFilterButtons(wrap);
   if(!document.body.dataset.notifyOutsideBound){
     document.body.dataset.notifyOutsideBound = '1';
     document.addEventListener('click', (e)=>{

@@ -1,0 +1,666 @@
+{
+  "restore": [
+    {
+      "file": "404.html",
+      "headKo": 152,
+      "workKo": 77,
+      "brokenWork": 0
+    },
+    {
+      "file": "about.html",
+      "headKo": 563,
+      "workKo": 300,
+      "brokenWork": 6
+    },
+    {
+      "file": "account.html",
+      "headKo": 279,
+      "workKo": 165,
+      "brokenWork": 3
+    },
+    {
+      "file": "admin-preview.html",
+      "headKo": 1536,
+      "workKo": 897,
+      "brokenWork": 20
+    },
+    {
+      "file": "admin.html",
+      "headKo": 1795,
+      "workKo": 1034,
+      "brokenWork": 21
+    },
+    {
+      "file": "board-post.html",
+      "headKo": 272,
+      "workKo": 166,
+      "brokenWork": 1
+    },
+    {
+      "file": "board-write.html",
+      "headKo": 353,
+      "workKo": 198,
+      "brokenWork": 2
+    },
+    {
+      "file": "board.html",
+      "headKo": 305,
+      "workKo": 172,
+      "brokenWork": 2
+    },
+    {
+      "file": "business-info.html",
+      "headKo": 447,
+      "workKo": 240,
+      "brokenWork": 3
+    },
+    {
+      "file": "downloads.html",
+      "headKo": 934,
+      "workKo": 525,
+      "brokenWork": 13
+    },
+    {
+      "file": "en/index.html",
+      "headKo": 744,
+      "workKo": 411,
+      "brokenWork": 4
+    },
+    {
+      "file": "en/purchase.html",
+      "headKo": 119,
+      "workKo": 65,
+      "brokenWork": 1
+    },
+    {
+      "file": "faq.html",
+      "headKo": 312,
+      "workKo": 175,
+      "brokenWork": 2
+    },
+    {
+      "file": "guide.html",
+      "headKo": 158,
+      "workKo": 91,
+      "brokenWork": 1
+    },
+    {
+      "file": "guide/ai-assistant/index.html",
+      "headKo": 555,
+      "workKo": 281,
+      "brokenWork": 7
+    },
+    {
+      "file": "guide/audio-to-midi/index.html",
+      "headKo": 657,
+      "workKo": 332,
+      "brokenWork": 6
+    },
+    {
+      "file": "guide/getting-started/index.html",
+      "headKo": 612,
+      "workKo": 324,
+      "brokenWork": 6
+    },
+    {
+      "file": "guide/index.html",
+      "headKo": 219,
+      "workKo": 127,
+      "brokenWork": 4
+    },
+    {
+      "file": "guide/library/index.html",
+      "headKo": 586,
+      "workKo": 326,
+      "brokenWork": 6
+    },
+    {
+      "file": "guide/license/index.html",
+      "headKo": 766,
+      "workKo": 417,
+      "brokenWork": 7
+    },
+    {
+      "file": "guide/midi-editor/index.html",
+      "headKo": 670,
+      "workKo": 356,
+      "brokenWork": 5
+    },
+    {
+      "file": "guide/pdf-to-midi/index.html",
+      "headKo": 574,
+      "workKo": 299,
+      "brokenWork": 6
+    },
+    {
+      "file": "guide/score-editor/index.html",
+      "headKo": 557,
+      "workKo": 267,
+      "brokenWork": 7
+    },
+    {
+      "file": "guide/troubleshooting/index.html",
+      "headKo": 710,
+      "workKo": 418,
+      "brokenWork": 6
+    },
+    {
+      "file": "guide/youtube-to-midi/index.html",
+      "headKo": 812,
+      "workKo": 423,
+      "brokenWork": 7
+    },
+    {
+      "file": "guides/ai-transcription.html",
+      "headKo": 599,
+      "workKo": 298,
+      "brokenWork": 8
+    },
+    {
+      "file": "guides/index.html",
+      "headKo": 128,
+      "workKo": 72,
+      "brokenWork": 1
+    },
+    {
+      "file": "guides/midi-editor.html",
+      "headKo": 716,
+      "workKo": 386,
+      "brokenWork": 9
+    },
+    {
+      "file": "guides/topical-map.html",
+      "headKo": 0,
+      "workKo": 0,
+      "brokenWork": 0
+    },
+    {
+      "file": "index.html",
+      "headKo": 939,
+      "workKo": 502,
+      "brokenWork": 5
+    },
+    {
+      "file": "ja/index.html",
+      "headKo": 744,
+      "workKo": 411,
+      "brokenWork": 4
+    },
+    {
+      "file": "ja/purchase.html",
+      "headKo": 119,
+      "workKo": 65,
+      "brokenWork": 1
+    },
+    {
+      "file": "my-tickets.html",
+      "headKo": 264,
+      "workKo": 151,
+      "brokenWork": 2
+    },
+    {
+      "file": "notice.html",
+      "headKo": 236,
+      "workKo": 135,
+      "brokenWork": 1
+    },
+    {
+      "file": "notices.html",
+      "headKo": 312,
+      "workKo": 169,
+      "brokenWork": 2
+    },
+    {
+      "file": "patch-note.html",
+      "headKo": 252,
+      "workKo": 146,
+      "brokenWork": 1
+    },
+    {
+      "file": "patch-notes.html",
+      "headKo": 291,
+      "workKo": 165,
+      "brokenWork": 2
+    },
+    {
+      "file": "privacy.html",
+      "headKo": 802,
+      "workKo": 456,
+      "brokenWork": 5
+    },
+    {
+      "file": "product.html",
+      "headKo": 1088,
+      "workKo": 568,
+      "brokenWork": 7
+    },
+    {
+      "file": "purchase.html",
+      "headKo": 392,
+      "workKo": 216,
+      "brokenWork": 2
+    },
+    {
+      "file": "refund.html",
+      "headKo": 2206,
+      "workKo": 1137,
+      "brokenWork": 13
+    },
+    {
+      "file": "support.html",
+      "headKo": 658,
+      "workKo": 397,
+      "brokenWork": 6
+    },
+    {
+      "file": "terms.html",
+      "headKo": 924,
+      "workKo": 460,
+      "brokenWork": 8
+    },
+    {
+      "file": "tests/patch-type-harness.html",
+      "headKo": 37,
+      "workKo": 24,
+      "brokenWork": 0
+    },
+    {
+      "file": "ticket.html",
+      "headKo": 242,
+      "workKo": 149,
+      "brokenWork": 1
+    }
+  ],
+  "already_bad": [
+    {
+      "file": "guides/articles/ai-music-transcription-guide.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/audio-to-midi-ai.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/beginner-guide-midi-files.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/best-practices-audio-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/cleaning-up-ai-generated-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/compare-ai-transcription-tools.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/convert-cover-songs-to-midi-legally.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/convert-youtube-piano-covers-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/copyright-and-youtube-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/daw-workflow-with-converted-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/drum-midi-extraction.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/flac-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/guitar-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/how-ai-midi-conversion-works.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/how-to-edit-sheet-music-digitally.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/improve-midi-accuracy.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/instrument-conversion-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/jazz-piano-to-midi-challenges.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/midi-editing-basics.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/midi-for-content-creators.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/midi-for-music-teachers.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/midi-to-musicxml.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/midi-to-pdf-sheet-music.html",
+      "headKo": 121,
+      "workKo": 68,
+      "brokenHead": 5,
+      "brokenWork": 7
+    },
+    {
+      "file": "guides/articles/midi-velocity-and-expression.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/midi-vs-audio-explained.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/midiai-studio-vs-manual-transcription.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/monophonic-vs-polyphonic-midi.html",
+      "headKo": 121,
+      "workKo": 68,
+      "brokenHead": 5,
+      "brokenWork": 7
+    },
+    {
+      "file": "guides/articles/mp3-piano-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/mp3-to-midi-conversion.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/musicxml-explained.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/musicxml-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/musicxml-vs-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 7,
+      "brokenWork": 7
+    },
+    {
+      "file": "guides/articles/offline-vs-online-midi-converters.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 7,
+      "brokenWork": 7
+    },
+    {
+      "file": "guides/articles/pdf-sheet-music-to-editable-midi.html",
+      "headKo": 121,
+      "workKo": 68,
+      "brokenHead": 5,
+      "brokenWork": 7
+    },
+    {
+      "file": "guides/articles/pdf-to-midi-complete-guide.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/pdf-to-musicxml.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/piano-learning-from-youtube-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/piano-midi-converter.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/polyphonic-piano-transcription.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/quantize-midi-after-conversion.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/score-editor-workflow.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/sheet-music-recognition-ocr.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/transcribe-classical-piano.html",
+      "headKo": 121,
+      "workKo": 68,
+      "brokenHead": 5,
+      "brokenWork": 7
+    },
+    {
+      "file": "guides/articles/using-midi-in-ableton.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/using-midi-in-fl-studio.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/using-midi-in-logic-pro.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/vocal-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/wav-to-midi.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/windows-midi-converter-software.html",
+      "headKo": 1,
+      "workKo": 1,
+      "brokenHead": 6,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/articles/youtube-to-midi-converter.html",
+      "headKo": 121,
+      "workKo": 68,
+      "brokenHead": 5,
+      "brokenWork": 7
+    },
+    {
+      "file": "guides/audio-to-midi.html",
+      "headKo": 115,
+      "workKo": 64,
+      "brokenHead": 5,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/midi-converter-faq.html",
+      "headKo": 0,
+      "workKo": 0,
+      "brokenHead": 33,
+      "brokenWork": 33
+    },
+    {
+      "file": "guides/musicxml.html",
+      "headKo": 115,
+      "workKo": 64,
+      "brokenHead": 5,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/pdf-to-midi.html",
+      "headKo": 115,
+      "workKo": 64,
+      "brokenHead": 5,
+      "brokenWork": 6
+    },
+    {
+      "file": "guides/youtube-to-midi.html",
+      "headKo": 115,
+      "workKo": 64,
+      "brokenHead": 5,
+      "brokenWork": 6
+    }
+  ],
+  "assets": [
+    "assets/css/style.css",
+    "assets/css/theme-light.css",
+    "assets/js/app.js"
+  ]
+}

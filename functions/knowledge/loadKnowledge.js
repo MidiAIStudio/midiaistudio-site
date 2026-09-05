@@ -91,6 +91,9 @@ const QUERY_SYNONYM_RULES = [
   [/예약\s*변환|예약변환|예액\s*변환|예액변환/gi, 'reservation 예약변환 schedule'],
   [/미디\s*편집|미디에디터|midi\s*edit/gi, 'midieditor'],
   [/악보\s*뽑|악보\s*내보내/gi, 'pdfexport scoreeditor'],
+  // Song / make-MIDI colloquial → conversion workflow tokens (not bare "변환" hardcodes)
+  [/노래(?:를)?\s*(?:를\s*)?(midi|미디)/gi, 'youtubetomidi audiotomidi'],
+  [/(midi|미디).{0,12}(만들|만들려|만들기)|(만들|만들려|만들기).{0,12}(midi|미디)/gi, 'youtubetomidi audiotomidi'],
   // Sound / playback quality colloquial → soundpack tokens
   [/소리(?:가|가\s*)?(?:별로|이상|안\s*좋|이상해|안좋)|음질\s*(?:별로|이상|안\s*좋)|소리가\s*안/gi, '사운드팩 고품질음원 음질'],
   [/음원\s*바꾸|소리\s*바꾸|사운드\s*바꾸/gi, '사운드팩 고품질음원'],

@@ -447,6 +447,17 @@ async function runSupportAgent({
     (understanding.plannedActions || []).includes('SEARCH_KNOWLEDGE') ||
     !(understanding.plannedActions || []).includes('ANSWER_DIRECTLY');
 
+  {
+    const { expandCoreWorkflowSearchQueries } = require('./coreWorkflowEvidence');
+    understanding.searchQueries = expandCoreWorkflowSearchQueries(
+      understanding.searchQueries || [],
+      understanding
+    );
+    if (debug && debug.understanding) {
+      debug.understanding.searchQueries = understanding.searchQueries;
+    }
+  }
+
   if (wantsSearch && understanding.searchQueries && understanding.searchQueries.length && retrieveStaticInitial) {
     const gated = retrieveWithSearchPlan(
       understanding.searchQueries,
@@ -542,7 +553,8 @@ async function runSupportAgent({
       isWeakOrConflictingRetrieval,
       maxResearchActions: 3,
       callLlm: fast && understanding.contradiction !== 'mode_label_mismatch' ? null : callLlm,
-      hypotheses
+      hypotheses,
+      searchQueries: understanding.searchQueries
     });
     passages = loop.passages;
     const gated2 = gatePassages(passages, understanding);
@@ -639,6 +651,35 @@ async function runSupportAgent({
   };
   debug.evidenceConfidence = evidence.confidence;
 
+  if (
+    understanding.contradiction === 'mode_label_mismatch' &&
+    (weak || evidence.confidence === CONFIDENCE.LOW || evidence.confidence === CONFIDENCE.NONE)
+  ) {
+    clarify = buildMismatchDiagnostic(understanding, locale);
+    lowConfidence = true;
+    debug.finalAction = ACTIONS.ASK_DIAGNOSTIC;
+    debug.diagnosticReason = 'mode_label_mismatch_insufficient_evidence';
+    debug.diagnosticMode = 'deterministic';
+    return { passages, clarify, lowConfidence, debug, understanding, toolSnapshot: toolResult.snapshot };
+  }
+
+  // HIGH/MEDIUM official evidence → answer. Do not treat multi-modality workflow
+  // clusters (YouTube + audio + getting-started) as conflicting no-evidence.
+  if (
+    passages.length &&
+    (evidence.confidence === CONFIDENCE.HIGH || evidence.confidence === CONFIDENCE.MEDIUM)
+  ) {
+    debug.finalAction = ACTIONS.ANSWER;
+    return {
+      passages: passages.slice(0, 4),
+      clarify: null,
+      lowConfidence: false,
+      debug,
+      understanding,
+      toolSnapshot: toolResult.snapshot
+    };
+  }
+
   const decision = decideNextAction({
     question: effectiveQuestion,
     rawQuestion,
@@ -652,18 +693,6 @@ async function runSupportAgent({
     personal: false
   });
   debug.plannerActions = [...(debug.plannerActions || []), decision];
-
-  if (
-    understanding.contradiction === 'mode_label_mismatch' &&
-    (weak || evidence.confidence === CONFIDENCE.LOW || evidence.confidence === CONFIDENCE.NONE)
-  ) {
-    clarify = buildMismatchDiagnostic(understanding, locale);
-    lowConfidence = true;
-    debug.finalAction = ACTIONS.ASK_DIAGNOSTIC;
-    debug.diagnosticReason = 'mode_label_mismatch_insufficient_evidence';
-    debug.diagnosticMode = 'deterministic';
-    return { passages, clarify, lowConfidence, debug, understanding, toolSnapshot: toolResult.snapshot };
-  }
 
   if (decision.action === ACTIONS.ASK_DIAGNOSTIC || (weak && decision.action !== ACTIONS.ANSWER)) {
     if (

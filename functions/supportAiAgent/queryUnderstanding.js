@@ -65,7 +65,10 @@ function hasExplainSignal(text) {
 
 function hasHowSignal(text) {
   const s = clean(text);
-  return /(어떻게|방법|사용법|쓰|해\s*줘|알려\s*줘)/i.test(s) && !hasFailureSignal(s);
+  return (
+    /(어떻게|방법|사용법|쓰|해\s*줘|알려\s*줘|만들려|만들고|만들어|바꾸|시작)/i.test(s) &&
+    !hasFailureSignal(s)
+  );
 }
 
 /**
@@ -238,7 +241,7 @@ function understandDeterministic({ rawQuestion, userTurns = [] } = {}) {
     if (selectedMode) pushQ(`${selectedMode} 변환 실패`);
     if (observedLabel) pushQ(`${observedLabel} 변환 실패`);
     pushQ('변환 실패 해결');
-  } else if (intent === INTENT.FEATURE || intent === INTENT.HOW) {
+  } else if (intent === INTENT.FEATURE || intent === INTENT.HOW || intent === INTENT.WHERE) {
     pushQ(latest);
     for (const m of latestModes) pushQ(`${m} 변환 기능`);
   } else {
@@ -295,6 +298,17 @@ function understandDeterministic({ rawQuestion, userTurns = [] } = {}) {
     intent !== INTENT.RELEASE &&
     intent !== INTENT.INSTALL;
 
+  const { expandCoreWorkflowSearchQueries } = require('./coreWorkflowEvidence');
+  const expandedQueries = expandCoreWorkflowSearchQueries(searchQueries.slice(0, 4), {
+    intent,
+    productArea,
+    selectedMode: selectedMode || (latestModes.length === 1 ? latestModes[0] : null),
+    contradiction,
+    userGoal: latest,
+    resolvedQuery: searchQueries[0] || latest,
+    searchQueries
+  });
+
   return {
     intent,
     topic,
@@ -311,7 +325,7 @@ function understandDeterministic({ rawQuestion, userTurns = [] } = {}) {
     searchNeeded: !securityIntents.has(intent),
     answerableWithoutSearch: false,
     missingInformation,
-    searchQueries: searchQueries.slice(0, 4),
+    searchQueries: expandedQueries,
     resolvedQuery: searchQueries[0] || latest,
     confidence: contradiction ? 'high' : failure ? 'medium' : 'medium',
     source: 'deterministic'
@@ -327,10 +341,11 @@ const UNDERSTAND_SYSTEM = [
   'missingInformation, requiresKnowledge, requiresAccountLookup, requiresPaymentLookup, requiresLicenseLookup,',
   'requiresClarification, searchQueries, resolvedQuery, selectedMode, observedLabel, contradiction, isUiFeatureAsk, intent, plannedActions.',
   'relation: CONTINUE | FOLLOW_UP | CORRECTION | TOPIC_SHIFT | AMBIGUOUS',
-  'productArea: company | commerce | security | product_ui | troubleshooting | release | account | general',
+  'productArea: company | commerce | security | product_ui | studio_conversion | troubleshooting | release | account | general',
   'plannedActions: subset of ANSWER_DIRECTLY | SEARCH_KNOWLEDGE | LOOKUP_ACCOUNT | LOOKUP_PAYMENT | LOOKUP_LICENSE | LOOKUP_ENTITLEMENT | LOOKUP_CREDITS | ASK_DIAGNOSTIC | HUMAN_HANDOFF',
   'isUiFeatureAsk=true ONLY for in-app UI feature/menu/button questions. False for company contact/phone, prices, refunds, payments, errors, downloads, versions.',
   'searchQueries: 2-4 semantic retrieval queries for the REAL meaning (paraphrase OK). Never keyword-bait.',
+  'If the user asks a vague Studio how-to (make/use MIDI or start in Studio) WITHOUT naming YouTube/audio/PDF/editor, searchQueries MUST cover YouTube→MIDI, audio→MIDI, and Studio getting-started — not only the raw vague phrase.',
   'intent is optional soft compatibility label; prefer userGoal + productArea + plannedActions.',
   'TOPIC_SHIFT when the user clearly changes subject (e.g. errors → company contact). CORRECTION when they reject prior AI assumption.',
   'FOLLOW_UP when pronouns/ellipsis continue the same goal (그거/그럼/그건/아니 전화 말고).',
@@ -488,8 +503,25 @@ function mergeUnderstanding(llmObj, fallback) {
     missingInformation: llmObj.missingInformation.length
       ? llmObj.missingInformation
       : fallback.missingInformation,
-    searchQueries:
-      llmObj.searchQueries && llmObj.searchQueries.length ? llmObj.searchQueries : fallback.searchQueries,
+    searchQueries: (() => {
+      const { expandCoreWorkflowSearchQueries } = require('./coreWorkflowEvidence');
+      const merged = [];
+      const push = (q) => {
+        const t = clean(q);
+        if (t && !merged.includes(t)) merged.push(t);
+      };
+      for (const q of llmObj.searchQueries || []) push(q);
+      for (const q of fallback.searchQueries || []) push(q);
+      return expandCoreWorkflowSearchQueries(merged.slice(0, 4), {
+        intent: llmObj.intent || fallback.intent,
+        productArea,
+        selectedMode: llmObj.selectedMode || fallback.selectedMode,
+        contradiction,
+        userGoal: llmObj.userGoal || fallback.userGoal,
+        resolvedQuery: clean(llmObj.resolvedQuery) || fallback.resolvedQuery,
+        searchQueries: merged
+      });
+    })(),
     resolvedQuery: clean(llmObj.resolvedQuery) || clean(llmObj.userGoal) || fallback.resolvedQuery,
     confidence: 'llm',
     source: 'llm'

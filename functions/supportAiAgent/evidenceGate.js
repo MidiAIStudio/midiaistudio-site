@@ -22,6 +22,17 @@ function gradePassageRelevance(passage, understanding) {
 
   if (!passage) return 'IRRELEVANT';
 
+  const intent = String((understanding && understanding.intent) || '');
+
+  // How-to / feature asks should not lead with failure/troubleshooting docs
+  if (
+    (intent === 'how_to' || intent === 'feature_explanation' || intent === 'where') &&
+    /(fetch-errors|generic-failure|timeout|troubleshooting)/i.test(id) &&
+    !/(실패|오류|에러|안\s*되|fail|error|403|timeout)/i.test(goal)
+  ) {
+    return 'IRRELEVANT';
+  }
+
   // Hard mismatches
   if (
     (area === 'company' || /연락|전화|사업자|문의\s*채널|고객지원/.test(goal)) &&
@@ -103,6 +114,9 @@ function assessEvidenceConfidence({
   else if (supporting.length >= 1 || accepted.length >= 2) confidence = CONFIDENCE.MEDIUM;
   else if (accepted.length === 1) confidence = CONFIDENCE.LOW;
   else confidence = CONFIDENCE.NONE;
+
+  const { applyCompositeWorkflowConfidence } = require('./coreWorkflowEvidence');
+  confidence = applyCompositeWorkflowConfidence(confidence, accepted);
 
   return {
     confidence,
