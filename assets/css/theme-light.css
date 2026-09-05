@@ -1650,6 +1650,22 @@ html[data-theme='light'] .bulk-preview-width .mini-btn.is-active {
   border-color: rgba(107, 92, 231, 0.35) !important;
 }
 
+html[data-theme='light'] .admin-console-page .admin-crm-order-total {
+  background: #fff !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 2px 6px rgba(40, 55, 85, 0.06) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-order-total-label {
+  color: #5a6478 !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-crm-order-total-value {
+  color: #121a2b !important;
+}
+
 html[data-theme='light'] .admin-console-backdrop {
   background: rgba(30, 42, 66, 0.28) !important;
 }
@@ -1658,11 +1674,14 @@ html[data-theme='light'] .admin-console-backdrop {
   display: grid;
   gap: 6px;
   margin: 10px 8px 0;
+  margin-top: auto;
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--admin-stroke, var(--line));
   background: var(--admin-fill, rgba(255, 255, 255, 0.03));
   flex: none;
+  position: relative;
+  z-index: 1;
 }
 
 .admin-sidebar-theme-label {
@@ -2338,6 +2357,21 @@ html[data-theme='light'] .admin-console-page .admin-logs-users,
 html[data-theme='light'] .admin-logs-users {
   background: transparent !important;
   border-right-color: rgba(36, 52, 78, 0.1) !important;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-user-list,
+html[data-theme='light'] .admin-logs-user-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(36, 52, 78, 0.35) transparent;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-user-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+html[data-theme='light'] .admin-console-page .admin-logs-user-list::-webkit-scrollbar-thumb {
+  background: rgba(36, 52, 78, 0.28);
+  border-radius: 999px;
 }
 
 html[data-theme='light'] .admin-console-page .admin-logs-users-head,

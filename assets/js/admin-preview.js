@@ -503,6 +503,36 @@ function updatePreviewFilterButton() {
   btn.classList.toggle('is-active', n > 0);
 }
 
+function updatePreviewOrderTotal(rows) {
+  const box = $('adminCrmOrderTotal');
+  const val = $('adminCrmOrderTotalValue');
+  if (!box || !val) return;
+  if (crmMode !== 'orders') {
+    box.hidden = true;
+    val.textContent = '-';
+    return;
+  }
+  box.hidden = false;
+  const map = {};
+  (rows || []).forEach((o) => {
+    // 합계는 결제완료만 — 취소/환불·실패·대기는 제외
+    if (orderGroup(o.status) !== 'paid') return;
+    const n = Number(o.amountKrw || 0);
+    const cur = String(o.currency || 'KRW').toUpperCase();
+    if (cur === 'USD') {
+      const usd = Number(String(o.amount || '').replace(/[^\d.]/g, ''));
+      if (Number.isFinite(usd) && usd > 0) map.USD = (map.USD || 0) + usd;
+      return;
+    }
+    if (Number.isFinite(n) && n > 0) map.KRW = (map.KRW || 0) + n;
+  });
+  const keys = Object.keys(map);
+  const text = keys.length
+    ? keys.map((c) => `${Number(map[c]).toLocaleString('ko-KR')} ${c}`).join(' · ')
+    : '';
+  val.textContent = text || '0 KRW';
+  box.title = text ? `결제완료 합계 · ${text}` : '결제완료 합계 없음';
+}
 function syncPreviewWorkChrome() {
   const search = $('adminUserSearch');
   if (search) {
@@ -512,6 +542,8 @@ function syncPreviewWorkChrome() {
         ? '사용자명, 이메일, UID'
         : '이메일, 이름, UID, HWID 검색';
   }
+  const listHead = document.querySelector('.admin-crm-list-head');
+  if (listHead) listHead.dataset.workMode = crmMode;
   const wrap = $('adminCrmFilterWrap');
   if (wrap) wrap.hidden = crmMode !== 'members';
   const actions = $('adminCrmToolbarActions');
@@ -536,6 +568,7 @@ function syncPreviewWorkChrome() {
   if (userCount) userCount.hidden = crmMode === 'orders';
   const filterHintEl = $('adminCrmFilterHint');
   if (filterHintEl) filterHintEl.hidden = crmMode === 'orders';
+  if (crmMode !== 'orders') updatePreviewOrderTotal([]);
   const bulkActions = $('adminCrmBulkActions');
   const bulkCount = $('adminCrmBulkCount');
   if (bulkCount) {
@@ -682,6 +715,7 @@ function renderCrmWork() {
       const hay = [o.id, o.uid, o.email, u?.name, o.product, o.status].join(' ').toLowerCase();
       return !q || hay.includes(q);
     });
+    updatePreviewOrderTotal(rows);
     const groups = [];
     const map = new Map();
     rows.forEach((o) => {

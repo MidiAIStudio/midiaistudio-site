@@ -8404,6 +8404,22 @@ function adminOrderAmountTotals(rows, groups){
   if(!keys.length) return '';
   return keys.map(c=>`${Number(map[c]).toLocaleString('ko-KR')} ${c}`).join(' · ');
 }
+function updateAdminCrmOrderTotal(rows){
+  const box=$('adminCrmOrderTotal');
+  const val=$('adminCrmOrderTotalValue');
+  if(!box || !val) return;
+  const mode=adminCrmMode();
+  if(mode!=='orders'){
+    box.hidden=true;
+    val.textContent='-';
+    return;
+  }
+  box.hidden=false;
+  // 합계는 결제완료만 — 취소/환불·실패·대기는 제외
+  const text=adminOrderAmountTotals(rows||[], ['paid']);
+  val.textContent=text || '0 KRW';
+  box.title=text ? `결제완료 합계 · ${text}` : '결제완료 합계 없음';
+}
 function adminOrderRefundText(o){
   const group=adminOrderStatusGroup(o?.status);
   const raw=String(o?.status||'').toLowerCase();
@@ -8614,6 +8630,9 @@ function syncAdminCrmWorkChrome(){
   const filterHint=$('adminCrmFilterHint');
   if(filterHint && mode==='orders') filterHint.hidden = true;
   else if(filterHint) filterHint.hidden = false;
+  const listHead=document.querySelector('.admin-crm-list-head');
+  if(listHead) listHead.dataset.workMode=mode;
+  if(mode!=='orders') updateAdminCrmOrderTotal([]);
   updateAdminCrmBulkbar();
   if(mode!=='members') closeAdminCrmFilterPopover({restore:true});
   else updateAdminCrmFilterButton();
@@ -8981,17 +9000,20 @@ function renderAdminUserTable(opts={}){
       box.innerHTML=`<div class="empty-card">주문 조회 오류 (${esc(adminOrdersListenError.code||'unknown')})</div>`;
       renderAdminCrmStats([]);
       renderAdminCrmFilterHint(0, (adminOrderRows||[]).length, '건');
+      updateAdminCrmOrderTotal([]);
       renderAdminPaymentsTable();
       return;
     }
     if(!adminOrdersLoaded){
       box.innerHTML=`<p class="muted">주문 불러오는 중...</p>`;
       renderAdminCrmStats([]);
+      updateAdminCrmOrderTotal([]);
       renderAdminPaymentsTable();
       return;
     }
     adminCrmFilteredRows = getAdminOrderRows();
     renderAdminCrmStats(adminCrmFilteredRows);
+    updateAdminCrmOrderTotal(adminCrmFilteredRows);
     const groupN = groupAdminOrdersByBuyer(adminCrmFilteredRows).length;
     const countEl=$('adminUserCount');
     if(countEl){

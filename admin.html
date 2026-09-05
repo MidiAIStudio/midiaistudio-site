@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=member-tabs-1">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=member-tabs-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=cms-clip-1">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=logs-7rows-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -506,7 +506,13 @@
                       <button type="button" class="ghost mini-btn" data-bulk="clear">선택 해제</button>
                     </div>
                   </div>
-                  <input id="adminUserSearch" class="search-input compact admin-crm-list-search" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
+                  <div class="admin-crm-list-search-row" id="adminCrmListSearchRow">
+                    <input id="adminUserSearch" class="search-input compact admin-crm-list-search" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
+                    <div class="admin-crm-order-total" id="adminCrmOrderTotal" hidden>
+                      <span class="admin-crm-order-total-label">합계</span>
+                      <strong class="admin-crm-order-total-value" id="adminCrmOrderTotalValue">-</strong>
+                    </div>
+                  </div>
                 </div>
                 <div id="adminUserList" class="admin-crm-virtual" tabindex="0"><p class="muted">회원 불러오는 중...</p></div>
                 <div class="admin-crm-pager" id="adminCrmPager" hidden></div>
@@ -557,7 +563,7 @@
                     </div>
                   </header>
 
-                  <nav class="admin-crm-detail-tabs" id="adminCrmDetailTabs" aria-label="회원 상세">
+                  <div class="admin-crm-detail-tabs" id="adminCrmDetailTabs" role="navigation" aria-label="회원 상세">
                     <button type="button" class="is-active" data-crm-detail-tab="overview">개요</button>
                     <button type="button" data-crm-detail-tab="access">접속 정보</button>
                     <button type="button" data-crm-detail-tab="device">기기/HWID</button>
@@ -566,7 +572,7 @@
                     <button type="button" data-crm-detail-tab="tickets">문의</button>
                     <button type="button" data-crm-detail-tab="posts">작성글</button>
                     <button type="button" data-crm-detail-tab="audit">관리자 기록</button>
-                  </nav>
+                  </div>
 
                   <div class="admin-crm-summary" id="adminCrmSummary" data-tab-panel="overview"></div>
 
@@ -839,7 +845,7 @@
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script src="./assets/js/admin-nav.js?v=theme-5"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
-  <script type="module" src="./assets/js/app.js?v=member-tabs-1"></script>
+  <script type="module" src="./assets/js/app.js?v=payment-total-paid-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=logs-toolbar-hide-1"></script>
   <script type="module" src="./assets/js/admin-console.js?v=logs-toolbar-hide-1"></script>
 </body>
