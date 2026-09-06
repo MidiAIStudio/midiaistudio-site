@@ -7676,3 +7676,84 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
   }
 }
 
+/* Admin Welcome Benefit — live email preview */
+.admin-welcome-layout{
+  margin-top:8px;
+  align-items:stretch
+}
+.admin-welcome-form-pane{
+  min-width:0;
+  max-width:none
+}
+.admin-welcome-preview-pane{
+  min-width:0;
+  position:sticky;
+  top:12px;
+  align-self:start
+}
+.admin-welcome-preview-card{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));
+  min-height:280px
+}
+.admin-welcome-preview-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap
+}
+.admin-welcome-preview-head strong{
+  font-size:13px;
+  letter-spacing:-.01em
+}
+.admin-welcome-preview-subject{
+  display:grid;
+  gap:4px;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(0,0,0,.18)
+}
+.admin-welcome-preview-subject-text{
+  font-size:14px;
+  font-weight:700;
+  line-height:1.4;
+  word-break:break-word;
+  color:var(--text)
+}
+.admin-welcome-preview-frame{
+  flex:1;
+  min-height:0;
+  border-radius:12px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:#eef1f7
+}
+.admin-welcome-preview-iframe{
+  display:block;
+  width:100%;
+  height:min(62vh,560px);
+  border:0;
+  background:#eef1f7
+}
+.admin-page .admin-flash.is-error{
+  border-color:rgba(251,113,133,.4);
+  background:rgba(251,113,133,.1);
+  color:#ffd0d7
+}
+.admin-page .admin-flash.is-ok{
+  border-color:rgba(52,211,153,.35);
+  background:rgba(52,211,153,.1);
+  color:#c6f6e4
+}
+@media(max-width:1100px){
+  .admin-welcome-preview-pane{position:static}
+  .admin-welcome-preview-iframe{height:min(48vh,420px)}
+}
+

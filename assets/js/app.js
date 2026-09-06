@@ -3114,6 +3114,8 @@ function setAdminGate(html){
 }
 function unlockAdminPanel(){
   $('admin')?.classList.remove('admin-locked');
+  // Re-export for admin panels that load before/after cache-busted app.js chunks.
+  try { window.__midiaiCallFunctionJson = callFunctionJson; } catch (_) {}
   try {
     window.__midiaiPricingAdmin?.setPricingAdminAuth({ db, firestoreApi, isAdmin: true });
   } catch (e) { console.warn('pricing-admin auth', e); }

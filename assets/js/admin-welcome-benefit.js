@@ -2,18 +2,39 @@
  * Admin Welcome Benefit (신규 가입 혜택) console panel.
  */
 
+import { buildAdminBrandedEmail, escapeHtml } from './admin-email-template.js?v=welcome-preview-1';
+
 const LARGE_CONFIRM = 1000;
 const MAX_CREDIT = 10000;
+const PRODUCT_NAME = 'MidiAI Studio';
+const PREVIEW_SAMPLE = {
+  name: '홍길동',
+  email: 'user@example.com'
+};
+const API_WAIT_MS = 20000;
+const API_POLL_MS = 120;
+const PREVIEW_DEBOUNCE_MS = 220;
 
 function $(id) {
   return document.getElementById(id);
 }
 
-async function callFn(name, payload) {
-  const fn = window.__midiaiCallFunctionJson;
-  if (typeof fn !== 'function') {
-    throw new Error('관리자 API가 아직 준비되지 않았습니다. 잠시 후 다시 시도하세요.');
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForCallFn(timeoutMs = API_WAIT_MS) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const fn = window.__midiaiCallFunctionJson;
+    if (typeof fn === 'function') return fn;
+    await sleep(API_POLL_MS);
   }
+  throw new Error('관리자 API가 아직 준비되지 않았습니다. 잠시 후 다시 시도하세요.');
+}
+
+async function callFn(name, payload) {
+  const fn = await waitForCallFn();
   return fn(name, payload);
 }
 
@@ -26,6 +47,33 @@ function flash(msg, ok) {
   el.classList.toggle('is-ok', !!ok && !!msg);
 }
 
+function displayNameFallback(name) {
+  const n = String(name || '').trim();
+  return n || '회원';
+}
+
+function applyTemplate(text, vars) {
+  const map = {
+    name: String(vars.name || ''),
+    email: String(vars.email || ''),
+    credits: String(vars.credits != null ? vars.credits : ''),
+    product_name: String(vars.product_name || PRODUCT_NAME)
+  };
+  return String(text || '').replace(/\{\{\s*(name|email|credits|product_name)\s*\}\}/gi, (_, key) => {
+    const k = String(key || '').toLowerCase();
+    return map[k] != null ? map[k] : '';
+  });
+}
+
+function previewVars(form) {
+  return {
+    name: displayNameFallback(PREVIEW_SAMPLE.name),
+    email: PREVIEW_SAMPLE.email,
+    credits: Number.isInteger(form.creditAmount) ? form.creditAmount : 0,
+    product_name: PRODUCT_NAME
+  };
+}
+
 function readForm() {
   const creditRaw = String($('welcomeCreditAmount')?.value ?? '').trim();
   const creditAmount = creditRaw === '' ? NaN : Number(creditRaw);
@@ -36,6 +84,38 @@ function readForm() {
     emailSubject: String($('welcomeEmailSubject')?.value || ''),
     emailBody: String($('welcomeEmailBody')?.value || '')
   };
+}
+
+function renderLivePreview() {
+  const form = readForm();
+  const vars = previewVars(form);
+  const subject = applyTemplate(form.emailSubject, vars);
+  const body = applyTemplate(form.emailBody, vars);
+  const subjectEl = $('welcomeEmailPreviewSubject');
+  const frame = $('welcomeEmailPreviewFrame');
+  const hint = $('welcomeEmailPreviewHint');
+  if (subjectEl) {
+    subjectEl.textContent = subject.trim() || '(제목 없음)';
+  }
+  if (hint) {
+    hint.textContent = form.emailEnabled
+      ? `샘플: ${vars.name} · ${vars.email} · ${vars.credits} Credits`
+      : '환영 메일 OFF — 미리보기만 표시됩니다';
+  }
+  if (frame) {
+    if (!String(form.emailSubject || '').trim() && !String(form.emailBody || '').trim()) {
+      frame.srcdoc = `<!DOCTYPE html><html><body style="margin:0;padding:24px;font:14px/1.6 system-ui,sans-serif;color:#64748b;background:#f8fafc;">메일 제목·본문을 입력하면 여기에 미리보기가 표시됩니다.</body></html>`;
+      return;
+    }
+    const rendered = buildAdminBrandedEmail({ subject, body });
+    frame.srcdoc = rendered.html || `<pre>${escapeHtml(rendered.text || body)}</pre>`;
+  }
+}
+
+let previewTimer = 0;
+function scheduleLivePreview() {
+  window.clearTimeout(previewTimer);
+  previewTimer = window.setTimeout(renderLivePreview, PREVIEW_DEBOUNCE_MS);
 }
 
 function applyForm(config, limits) {
@@ -54,6 +134,7 @@ function applyForm(config, limits) {
       .join(' · ');
   }
   syncEmailFields();
+  renderLivePreview();
 }
 
 function syncEmailFields() {
@@ -64,6 +145,7 @@ function syncEmailFields() {
     if (el.tagName === 'BUTTON') el.disabled = !on;
     else el.disabled = !on;
   });
+  scheduleLivePreview();
 }
 
 function validateLocal(form) {
@@ -90,6 +172,7 @@ async function loadWelcomeBenefitConfig() {
   } catch (err) {
     console.error('loadWelcomeBenefitConfig', err);
     flash(err.message || '설정을 불러오지 못했습니다.', false);
+    renderLivePreview();
   }
 }
 
@@ -125,24 +208,24 @@ async function previewWelcomeEmail() {
     flash('환영 메일을 켠 뒤 미리보기하세요.', false);
     return;
   }
+  renderLivePreview();
   try {
     const data = await callFn('previewWelcomeBenefitEmail', {
       emailSubject: form.emailSubject,
       emailBody: form.emailBody,
       credits: Number.isInteger(form.creditAmount) ? form.creditAmount : 0,
-      name: '홍길동',
-      email: 'user@example.com'
+      name: PREVIEW_SAMPLE.name,
+      email: PREVIEW_SAMPLE.email
     });
     if (!data || !data.ok) throw new Error((data && data.message) || '미리보기 실패');
-    const win = window.open('', '_blank', 'noopener,width=720,height=800');
-    if (win) {
-      win.document.write(data.html || `<pre>${data.text || ''}</pre>`);
-      win.document.close();
-    } else {
-      flash(`제목: ${data.subject || ''}`, true);
-    }
+    const subjectEl = $('welcomeEmailPreviewSubject');
+    const frame = $('welcomeEmailPreviewFrame');
+    if (subjectEl) subjectEl.textContent = data.subject || '(제목 없음)';
+    if (frame && data.html) frame.srcdoc = data.html;
+    flash('미리보기를 갱신했습니다.', true);
   } catch (e) {
-    flash(e.message || '미리보기에 실패했습니다.', false);
+    // Live panel already updated client-side; keep that visible if API fails.
+    flash(e.message || '서버 미리보기에 실패했습니다. 우측 로컬 미리보기를 확인하세요.', false);
   }
 }
 
@@ -150,7 +233,10 @@ export function showWelcomeBenefitPanel(visible) {
   const section = $('adminWelcomeBenefitSection');
   if (!section) return;
   section.hidden = !visible;
-  if (visible) loadWelcomeBenefitConfig();
+  if (visible) {
+    renderLivePreview();
+    loadWelcomeBenefitConfig();
+  }
 }
 
 export function bindWelcomeBenefitPanel() {
@@ -170,5 +256,12 @@ export function bindWelcomeBenefitPanel() {
     e.preventDefault();
     loadWelcomeBenefitConfig();
   });
+  ['welcomeEmailSubject', 'welcomeEmailBody', 'welcomeCreditAmount'].forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    el.addEventListener('input', scheduleLivePreview);
+    el.addEventListener('change', scheduleLivePreview);
+  });
   syncEmailFields();
+  renderLivePreview();
 }

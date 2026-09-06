@@ -170,7 +170,7 @@ function applyAdminView(next, opts = {}) {
     try { window.__midiaiOnAdminCrmMode?.(crmMode, opts); } catch (_) {}
   }
   if (next === 'welcome') {
-    import('./admin-welcome-benefit.js?v=welcome-benefit-1').then((m) => {
+    import('./admin-welcome-benefit.js?v=welcome-preview-1').then((m) => {
       m.bindWelcomeBenefitPanel?.();
       m.showWelcomeBenefitPanel?.(true);
     }).catch(console.error);
@@ -231,8 +231,18 @@ function bindConsole() {
   });
   syncAdminSidebarMode();
 
-  const params = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+  const hashParams = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+  const queryParams = new URLSearchParams(location.search || '');
+  // Prefer hash; allow ?view=welcome deep links used in bookmarks / screenshots.
+  const params = hashParams.get('view') ? hashParams : (queryParams.get('view') ? queryParams : hashParams);
   const initial = params.get('view') || 'home';
+  if (!hashParams.get('view') && queryParams.get('view')) {
+    try {
+      const nextHash = new URLSearchParams(hashParams);
+      nextHash.set('view', queryParams.get('view'));
+      history.replaceState(null, '', `${location.pathname}${location.search}#${nextHash.toString()}`);
+    } catch (_) {}
+  }
   showAdminView(initial, {
     logsTab: params.get('log') || undefined,
     uid: params.get('uid') || undefined,
