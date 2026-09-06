@@ -32,7 +32,7 @@ const VIEW_LEADS = {
   home: '운영 현황을 한눈에 보고 주요 관리 화면으로 이동합니다.',
   payments: '주문 [상세]에서 PortOne 상태 동기화·결제 취소를 처리합니다.',
   tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
-  welcome: '신규 가입 시 1회 크레딧·환영 메일 자동 지급 설정을 관리합니다.',
+  welcome: '신규 가입 시 1회 크레딧 지급과 환영 메일 발송을 설정합니다. 로그인·재설치·다른 PC에서는 다시 지급되지 않습니다.',
   logs: '회원별 라이선스·결제·문의·앱 사용 이력을 조회합니다.',
   pricing: 'Region별 정가·판매가와 할인·팝업을 관리합니다.',
   content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.'
@@ -170,7 +170,7 @@ function applyAdminView(next, opts = {}) {
     try { window.__midiaiOnAdminCrmMode?.(crmMode, opts); } catch (_) {}
   }
   if (next === 'welcome') {
-    import('./admin-welcome-benefit.js?v=welcome-preview-1').then((m) => {
+    import('./admin-welcome-benefit.js?v=welcome-ui-3').then((m) => {
       m.bindWelcomeBenefitPanel?.();
       m.showWelcomeBenefitPanel?.(true);
     }).catch(console.error);

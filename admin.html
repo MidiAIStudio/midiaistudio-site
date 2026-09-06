@@ -40,8 +40,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=welcome-preview-1">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=welcome-preview-1">
+  <link rel="stylesheet" href="./assets/css/style.css?v=welcome-ui-3">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=welcome-ui-3">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -708,51 +708,91 @@
             </section>
 
             <section class="admin-welcome-section" id="adminWelcomeBenefitSection" hidden>
-              <div class="admin-section-head">
-                <div>
-                  <h3>신규 가입 혜택</h3>
+              <div class="admin-section-head admin-welcome-head">
+                <div class="admin-welcome-head-copy">
                   <p class="admin-page-lead muted">처음 가입한 사용자에게 크레딧을 1회 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 로그인·재설치·다른 PC에서는 다시 지급되지 않습니다.</p>
+                  <p class="muted small admin-welcome-meta" id="welcomeBenefitMeta"></p>
                 </div>
-                <div class="admin-pricing-actions">
+                <div class="admin-pricing-actions admin-welcome-toolbar">
                   <button type="button" class="secondary mini-btn" id="welcomeBenefitReloadBtn">새로고침</button>
                   <button type="button" class="primary mini-btn" id="welcomeBenefitSaveBtn">저장</button>
                 </div>
               </div>
               <div id="welcomeBenefitMsg" class="admin-flash hidden"></div>
-              <p class="muted small" id="welcomeBenefitMeta"></p>
               <div class="admin-welcome-layout admin-split-grid">
-                <div class="admin-welcome-form-pane pricing-editor-pane">
-                  <div class="pricing-form-grid">
-                    <label class="edit-field-check" style="display:flex;align-items:center;gap:10px">
-                      <input id="welcomeBenefitEnabled" type="checkbox">
-                      <span>자동 혜택 ON/OFF</span>
+                <div class="admin-welcome-form-pane">
+                  <section class="admin-welcome-card" aria-labelledby="welcomeAutoTitle">
+                    <h4 class="admin-welcome-card-title" id="welcomeAutoTitle">자동 혜택</h4>
+                    <div class="admin-welcome-toggles">
+                      <label class="admin-welcome-switch" for="welcomeBenefitEnabled">
+                        <span class="admin-welcome-switch-copy">
+                          <strong>자동 혜택</strong>
+                          <small>신규 가입 시 크레딧 1회 자동 지급</small>
+                        </span>
+                        <input id="welcomeBenefitEnabled" type="checkbox" role="switch">
+                        <span class="admin-welcome-switch-track" aria-hidden="true"><span class="admin-welcome-switch-thumb"></span></span>
+                      </label>
+                      <label class="admin-welcome-switch" for="welcomeEmailEnabled">
+                        <span class="admin-welcome-switch-copy">
+                          <strong>환영 메일</strong>
+                          <small>가입 완료 후 환영 이메일 발송</small>
+                        </span>
+                        <input id="welcomeEmailEnabled" type="checkbox" role="switch">
+                        <span class="admin-welcome-switch-track" aria-hidden="true"><span class="admin-welcome-switch-thumb"></span></span>
+                      </label>
+                    </div>
+                  </section>
+
+                  <section class="admin-welcome-card" aria-labelledby="welcomeCreditTitle">
+                    <h4 class="admin-welcome-card-title" id="welcomeCreditTitle">크레딧</h4>
+                    <label class="admin-welcome-field" for="welcomeCreditAmount">
+                      <span class="admin-welcome-field-label">지급 크레딧</span>
+                      <div class="admin-welcome-credit-row">
+                        <input id="welcomeCreditAmount" type="number" min="0" step="1" value="0" inputmode="numeric" aria-describedby="welcomeCreditHint">
+                        <span class="admin-welcome-credit-unit">Credits</span>
+                      </div>
+                      <span class="admin-welcome-field-hint" id="welcomeCreditHint">최대 10000 · 0이면 크레딧은 지급하지 않습니다</span>
                     </label>
-                    <label>지급 크레딧
-                      <input id="welcomeCreditAmount" type="number" min="0" step="1" value="0" inputmode="numeric">
+                  </section>
+
+                  <section class="admin-welcome-card" id="welcomeEmailCard" aria-labelledby="welcomeEmailTitle">
+                    <div class="admin-welcome-card-head">
+                      <h4 class="admin-welcome-card-title" id="welcomeEmailTitle">환영 이메일</h4>
+                      <button type="button" class="secondary mini-btn" id="welcomeEmailPreviewBtn">미리보기</button>
+                    </div>
+                    <label class="admin-welcome-field" for="welcomeEmailSubject">
+                      <span class="admin-welcome-field-label">메일 제목</span>
+                      <input id="welcomeEmailSubject" type="text" maxlength="200" placeholder="예: {{name}}님, MidiAI Studio에 오신 것을 환영합니다" autocomplete="off">
                     </label>
-                    <label class="edit-field-check" style="display:flex;align-items:center;gap:10px">
-                      <input id="welcomeEmailEnabled" type="checkbox">
-                      <span>환영 메일 ON/OFF</span>
+                    <label class="admin-welcome-field" for="welcomeEmailBody">
+                      <span class="admin-welcome-field-label">메일 본문</span>
+                      <textarea id="welcomeEmailBody" rows="9" maxlength="20000" placeholder="환영 메일 본문을 입력하세요. 아래에서 변수를 클릭해 삽입할 수 있습니다."></textarea>
                     </label>
-                  </div>
-                  <div class="edit-field" style="margin-top:12px">
-                    <span>메일 제목</span>
-                    <input id="welcomeEmailSubject" type="text" maxlength="200" placeholder="예: {{name}}님, MidiAI Studio에 오신 것을 환영합니다" autocomplete="off">
-                  </div>
-                  <div class="edit-field" style="margin-top:12px">
-                    <span>메일 본문</span>
-                    <textarea id="welcomeEmailBody" rows="10" maxlength="20000" placeholder="사용 가능: {{name}} {{email}} {{credits}} {{product_name}}"></textarea>
-                    <p class="muted small">변수: {{name}} {{email}} {{credits}} {{product_name}} — 없으면 그대로 두거나 비워도 됩니다. 이름 없으면 「회원」으로 표시됩니다.</p>
-                  </div>
-                  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-                    <button type="button" class="secondary mini-btn" id="welcomeEmailPreviewBtn">미리보기</button>
-                  </div>
+                    <div class="admin-welcome-vars">
+                      <span class="admin-welcome-vars-label">변수 삽입</span>
+                      <div class="admin-welcome-var-chips" id="welcomeVarChips" role="group" aria-label="메일 변수">
+                        <button type="button" class="admin-welcome-var-chip" data-welcome-var="name" title="이름 (없으면 「회원」)">{{name}}</button>
+                        <button type="button" class="admin-welcome-var-chip" data-welcome-var="email" title="이메일">{{email}}</button>
+                        <button type="button" class="admin-welcome-var-chip" data-welcome-var="credits" title="지급 크레딧">{{credits}}</button>
+                        <button type="button" class="admin-welcome-var-chip" data-welcome-var="product_name" title="제품명">{{product_name}}</button>
+                      </div>
+                      <p class="muted small admin-welcome-vars-help">변수는 선택 사항입니다. 이름 값이 없으면 「회원」으로 표시됩니다.</p>
+                    </div>
+                  </section>
                 </div>
+
                 <aside class="admin-welcome-preview-pane" aria-label="환영 메일 미리보기">
                   <div class="admin-welcome-preview-card">
                     <div class="admin-welcome-preview-head">
-                      <strong>메일 미리보기</strong>
-                      <span class="muted small" id="welcomeEmailPreviewHint">샘플: 홍길동 · user@example.com</span>
+                      <div class="admin-welcome-preview-title-row">
+                        <strong>메일 미리보기</strong>
+                        <span class="admin-welcome-badge" id="welcomeEmailPreviewBadge" hidden>발송 안 함 · 미리보기만</span>
+                      </div>
+                      <span class="muted small" id="welcomeEmailPreviewHint">샘플 수신자</span>
+                    </div>
+                    <div class="admin-welcome-preview-envelope" aria-hidden="true">
+                      <div><span>From</span><b>MidiAI Studio &lt;noreply@midiaistudio.com&gt;</b></div>
+                      <div><span>To</span><b id="welcomeEmailPreviewTo">홍길동 &lt;user@example.com&gt;</b></div>
                     </div>
                     <div class="admin-welcome-preview-subject">
                       <span class="muted small">제목</span>
@@ -907,7 +947,7 @@
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
   <script type="module" src="./assets/js/app.js?v=welcome-preview-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=logs-toolbar-hide-1"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=welcome-preview-1"></script>
-  <script type="module" src="./assets/js/admin-welcome-benefit.js?v=welcome-preview-1"></script>
+  <script type="module" src="./assets/js/admin-console.js?v=welcome-ui-3"></script>
+  <script type="module" src="./assets/js/admin-welcome-benefit.js?v=welcome-ui-3"></script>
 </body>
 </html>

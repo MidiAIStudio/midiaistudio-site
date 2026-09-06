@@ -2,7 +2,7 @@
  * Admin Welcome Benefit (신규 가입 혜택) console panel.
  */
 
-import { buildAdminBrandedEmail, escapeHtml } from './admin-email-template.js?v=welcome-preview-1';
+import { buildAdminBrandedEmail, escapeHtml } from './admin-email-template.js?v=welcome-ui-3';
 
 const LARGE_CONFIRM = 1000;
 const MAX_CREDIT = 10000;
@@ -14,6 +14,28 @@ const PREVIEW_SAMPLE = {
 const API_WAIT_MS = 20000;
 const API_POLL_MS = 120;
 const PREVIEW_DEBOUNCE_MS = 220;
+const VAR_TOKEN = {
+  name: '{{name}}',
+  email: '{{email}}',
+  credits: '{{credits}}',
+  product_name: '{{product_name}}'
+};
+
+/** Preview-only typography: keep sent-mail template at production sizes. */
+const PREVIEW_EMAIL_STYLE = `<style id="welcome-preview-density">
+p,li{font-size:13.5px!important;line-height:1.6!important}
+td[style*="font-size:18px"]{font-size:15px!important}
+div[style*="font-size:14px"][style*="font-weight:700"]{font-size:13px!important}
+</style>`;
+
+function withPreviewEmailDensity(html) {
+  const src = String(html || '');
+  if (!src) return src;
+  if (/<\/head>/i.test(src)) {
+    return src.replace(/<\/head>/i, `${PREVIEW_EMAIL_STYLE}</head>`);
+  }
+  return `${PREVIEW_EMAIL_STYLE}${src}`;
+}
 
 function $(id) {
   return document.getElementById(id);
@@ -86,6 +108,23 @@ function readForm() {
   };
 }
 
+function emptyPreviewHtml() {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
+body{margin:0;min-height:100%;display:grid;place-items:center;padding:20px 16px;box-sizing:border-box;
+font:13px/1.5 "Noto Sans KR",system-ui,sans-serif;color:#64748b;background:
+radial-gradient(120% 80% at 50% 0%,#eef6ff 0%,#f8fafc 55%,#f1f5f9 100%)}
+.box{max-width:300px;text-align:center}
+.icon{width:36px;height:36px;margin:0 auto 10px;border-radius:10px;border:1px dashed #cbd5e1;
+display:grid;place-items:center;font-size:15px;color:#94a3b8;background:#fff}
+h1{margin:0 0 6px;font-size:14px;font-weight:600;color:#334155;letter-spacing:-.02em}
+p{margin:0;font-size:12.5px;color:#64748b;line-height:1.5}
+</style></head><body><div class="box">
+<div class="icon" aria-hidden="true">✉</div>
+<h1>미리보기 대기 중</h1>
+<p>왼쪽에서 메일 제목·본문을 입력하면 실제 발송 형식의 미리보기가 여기에 표시됩니다.</p>
+</div></body></html>`;
+}
+
 function renderLivePreview() {
   const form = readForm();
   const vars = previewVars(form);
@@ -94,21 +133,35 @@ function renderLivePreview() {
   const subjectEl = $('welcomeEmailPreviewSubject');
   const frame = $('welcomeEmailPreviewFrame');
   const hint = $('welcomeEmailPreviewHint');
+  const badge = $('welcomeEmailPreviewBadge');
+  const toEl = $('welcomeEmailPreviewTo');
+  const card = $('welcomeEmailCard');
   if (subjectEl) {
     subjectEl.textContent = subject.trim() || '(제목 없음)';
   }
+  if (toEl) {
+    toEl.textContent = `${vars.name} <${vars.email}>`;
+  }
   if (hint) {
-    hint.textContent = form.emailEnabled
-      ? `샘플: ${vars.name} · ${vars.email} · ${vars.credits} Credits`
-      : '환영 메일 OFF — 미리보기만 표시됩니다';
+    hint.textContent = `샘플 · ${vars.name} · ${vars.credits} Credits`;
+  }
+  if (badge) {
+    badge.hidden = !!form.emailEnabled;
+    badge.textContent = '발송 안 함 · 미리보기만';
+  }
+  if (card) {
+    card.classList.toggle('is-mail-off', !form.emailEnabled);
   }
   if (frame) {
     if (!String(form.emailSubject || '').trim() && !String(form.emailBody || '').trim()) {
-      frame.srcdoc = `<!DOCTYPE html><html><body style="margin:0;padding:24px;font:14px/1.6 system-ui,sans-serif;color:#64748b;background:#f8fafc;">메일 제목·본문을 입력하면 여기에 미리보기가 표시됩니다.</body></html>`;
+      frame.srcdoc = emptyPreviewHtml();
       return;
     }
     const rendered = buildAdminBrandedEmail({ subject, body });
-    frame.srcdoc = rendered.html || `<pre>${escapeHtml(rendered.text || body)}</pre>`;
+    const html = rendered.html
+      ? withPreviewEmailDensity(rendered.html)
+      : `<pre style="margin:0;padding:12px;font:13px/1.5 ui-monospace,Consolas,monospace">${escapeHtml(rendered.text || body)}</pre>`;
+    frame.srcdoc = html;
   }
 }
 
@@ -127,9 +180,14 @@ function applyForm(config, limits) {
   if ($('welcomeEmailBody')) $('welcomeEmailBody').value = c.emailBody || '';
   const meta = $('welcomeBenefitMeta');
   if (meta) {
-    const ver = c.configVersion != null ? `v${c.configVersion}` : '';
+    const ver = c.configVersion != null ? `설정 v${c.configVersion}` : '';
     const by = c.updatedByEmail || c.updatedBy || '';
-    meta.textContent = [ver, by ? `last: ${by}` : '', `max ${limits?.maxCredit || MAX_CREDIT}`]
+    const hint = $('welcomeCreditHint');
+    if (hint) {
+      const max = limits?.maxCredit || MAX_CREDIT;
+      hint.textContent = `최대 ${max} · 0이면 크레딧은 지급하지 않습니다`;
+    }
+    meta.textContent = [ver, by ? `최근 수정 ${by}` : '']
       .filter(Boolean)
       .join(' · ');
   }
@@ -142,9 +200,33 @@ function syncEmailFields() {
   ['welcomeEmailSubject', 'welcomeEmailBody', 'welcomeEmailPreviewBtn'].forEach((id) => {
     const el = $(id);
     if (!el) return;
-    if (el.tagName === 'BUTTON') el.disabled = !on;
-    else el.disabled = !on;
+    el.disabled = !on;
   });
+  document.querySelectorAll('[data-welcome-var]').forEach((btn) => {
+    btn.disabled = !on;
+  });
+  scheduleLivePreview();
+}
+
+function insertVariable(token) {
+  const subject = $('welcomeEmailSubject');
+  const body = $('welcomeEmailBody');
+  if (!subject || !body || subject.disabled) return;
+  const active = document.activeElement;
+  const target = active === subject || active === body
+    ? active
+    : body;
+  const start = typeof target.selectionStart === 'number' ? target.selectionStart : target.value.length;
+  const end = typeof target.selectionEnd === 'number' ? target.selectionEnd : start;
+  const before = target.value.slice(0, start);
+  const after = target.value.slice(end);
+  target.value = `${before}${token}${after}`;
+  const caret = start + token.length;
+  target.focus();
+  try {
+    target.setSelectionRange(caret, caret);
+  } catch (_) {}
+  target.dispatchEvent(new Event('input', { bubbles: true }));
   scheduleLivePreview();
 }
 
@@ -221,7 +303,7 @@ async function previewWelcomeEmail() {
     const subjectEl = $('welcomeEmailPreviewSubject');
     const frame = $('welcomeEmailPreviewFrame');
     if (subjectEl) subjectEl.textContent = data.subject || '(제목 없음)';
-    if (frame && data.html) frame.srcdoc = data.html;
+    if (frame && data.html) frame.srcdoc = withPreviewEmailDensity(data.html);
     flash('미리보기를 갱신했습니다.', true);
   } catch (e) {
     // Live panel already updated client-side; keep that visible if API fails.
@@ -255,6 +337,14 @@ export function bindWelcomeBenefitPanel() {
   $('welcomeBenefitReloadBtn')?.addEventListener('click', (e) => {
     e.preventDefault();
     loadWelcomeBenefitConfig();
+  });
+  document.querySelectorAll('[data-welcome-var]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const key = btn.getAttribute('data-welcome-var');
+      const token = VAR_TOKEN[key];
+      if (token) insertVariable(token);
+    });
   });
   ['welcomeEmailSubject', 'welcomeEmailBody', 'welcomeCreditAmount'].forEach((id) => {
     const el = $(id);
