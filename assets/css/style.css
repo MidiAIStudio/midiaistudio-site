@@ -4575,6 +4575,7 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .admin-page .admin-tickets-section[hidden],
 .admin-page .admin-pricing-section[hidden],
 .admin-page .admin-logs-section[hidden],
+.admin-page .admin-welcome-section[hidden],
 .admin-page .admin-crm[hidden]{display:none!important}
 .admin-page .admin-tickets-section:not([hidden]){
   min-height:min(720px,70vh)
@@ -5399,6 +5400,7 @@ body.admin-console-page > .orb{
 .admin-console-page .admin-pricing-section[hidden],
 .admin-console-page .admin-logs-section[hidden],
 .admin-console-page .admin-tickets-section[hidden],
+.admin-console-page .admin-welcome-section[hidden],
 .admin-console-page .admin-crm[hidden]{display:none!important}
 body.admin-console-page[data-admin-view="home"] #adminHomeSection,
 body.admin-console-page:not([data-admin-view]) #adminHomeSection{display:block!important}
@@ -7691,6 +7693,7 @@ body.admin-console-page .admin-crm-drawer[hidden]{display:none!important}
 
 /* Admin Welcome Benefit — settings + live email preview (compact, page-scoped) */
 .admin-welcome-section{display:flex;flex-direction:column;gap:10px}
+.admin-welcome-section[hidden]{display:none!important}
 .admin-welcome-section .mini-btn,
 .admin-welcome-section .primary.mini-btn,
 .admin-welcome-section .secondary.mini-btn{
