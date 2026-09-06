@@ -845,6 +845,16 @@ function createGmailSender() {
 
 const adminBulkEmail = require('./adminBulkEmail');
 const adminScheduledEmail = require('./adminScheduledEmail');
+const welcomeBenefit = require('./welcomeBenefit');
+const welcomeBenefitHandlers = welcomeBenefit.createHandlers({
+  db,
+  admin,
+  cors,
+  requireAdmin
+});
+exports.getWelcomeBenefitConfig = functions.https.onRequest(welcomeBenefitHandlers.getWelcomeBenefitConfig);
+exports.saveWelcomeBenefitConfig = functions.https.onRequest(welcomeBenefitHandlers.saveWelcomeBenefitConfig);
+exports.previewWelcomeBenefitEmail = functions.https.onRequest(welcomeBenefitHandlers.previewWelcomeBenefitEmail);
 exports.sendAdminBulkEmail = functionsV1Https
   .runWith({
     secrets: [gmailUser, gmailAppPassword],
@@ -2083,6 +2093,44 @@ exports.ensureTrialLicenseOnUserWrite = functionsV1
       });
     }
     return null;
+  });
+
+/**
+ * Welcome Benefit — Firebase Auth user creation only (never login).
+ * Idempotent grant via welcome_credit_grants/{uid}; email retry OK without re-grant.
+ */
+exports.onAuthUserCreatedWelcomeBenefit = functionsV1
+  .runWith({
+    secrets: [gmailUser, gmailAppPassword],
+    timeoutSeconds: 120,
+    memory: '256MB'
+  })
+  .auth.user()
+  .onCreate(async (user) => {
+    try {
+      const out = await welcomeBenefit.processWelcomeForAuthUser(
+        db,
+        admin,
+        user,
+        { sendMail: createGmailSender() }
+      );
+      console.info('onAuthUserCreatedWelcomeBenefit', {
+        uid: user && user.uid,
+        skipped: !!(out && out.skipped),
+        granted: !!(out && out.granted),
+        alreadyGranted: !!(out && out.alreadyGranted),
+        emailSent: !!(out && out.emailSent),
+        amount: out && out.amount,
+        code: out && out.code
+      });
+      return out;
+    } catch (err) {
+      console.error('onAuthUserCreatedWelcomeBenefit', {
+        uid: user && user.uid,
+        message: err && err.message ? err.message : String(err)
+      });
+      throw err;
+    }
   });
 
 /**

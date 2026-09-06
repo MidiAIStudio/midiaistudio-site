@@ -5,6 +5,7 @@ const VIEWS = {
   crm: 'adminCrm',
   payments: 'adminPaymentsSection',
   tickets: 'adminTicketsSection',
+  welcome: 'adminWelcomeBenefitSection',
   logs: 'adminLogsSection',
   pricing: 'adminPricingSection',
   content: 'adminContentSection'
@@ -14,6 +15,7 @@ const TITLES = {
   crm: '회원',
   payments: '결제',
   tickets: '문의 관리',
+  welcome: '신규 가입 혜택',
   logs: '로그',
   pricing: '가격·상품',
   content: '콘텐츠'
@@ -23,6 +25,7 @@ const VIEW_LEADS = {
   home: '운영 현황을 한눈에 보고 주요 관리 화면으로 이동합니다.',
   payments: '주문자별로 묶어 주문·결제를 확인하고 삭제합니다.',
   tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
+  welcome: '신규 가입 시 1회 크레딧·환영 메일 자동 지급 설정을 관리합니다.',
   logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
   pricing: '상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.',
   content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.'

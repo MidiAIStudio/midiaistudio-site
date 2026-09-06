@@ -360,6 +360,14 @@ Object.assign(I18N.en, {
   '설치 파일 받기':'Get the installer',
   '버전별 변경점':'Changes by version',
   '운영·이벤트 안내':'News & events',
+  '신규 가입 혜택':'Welcome Benefit',
+  '처음 가입한 사용자에게 크레딧을 1회 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 로그인·재설치·다른 PC에서는 다시 지급되지 않습니다.':'Automatically grant credits once on first signup, with an optional welcome email. Not granted again on login, reinstall, or another PC.',
+  '자동 혜택 ON/OFF':'Auto benefit ON/OFF',
+  '환영 메일 ON/OFF':'Welcome email ON/OFF',
+  '지급 크레딧':'Credit amount',
+  '메일 제목':'Email subject',
+  '메일 본문':'Email body',
+  '미리보기':'Preview',
   '회원 소통 공간':'Community board',
   '자주 묻는 질문':'Common questions',
   '비공개 상담':'Private support',
@@ -431,6 +439,14 @@ Object.assign(I18N.ja, {
   '설치 파일 받기':'インストーラー取得',
   '버전별 변경점':'バージョン別の変更',
   '운영·이벤트 안내':'運営・イベント案内',
+  '신규 가입 혜택':'新規登録特典',
+  '처음 가입한 사용자에게 크레딧을 1회 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 로그인·재설치·다른 PC에서는 다시 지급되지 않습니다.':'初回登録時にクレジットを1回自動付与し、任意で歓迎メールを送ります。ログイン・再インストール・別PCでは再付与されません。',
+  '자동 혜택 ON/OFF':'自動特典 ON/OFF',
+  '환영 메일 ON/OFF':'歓迎メール ON/OFF',
+  '지급 크레딧':'付与クレジット',
+  '메일 제목':'メール件名',
+  '메일 본문':'メール本文',
+  '미리보기':'プレビュー',
   '회원 소통 공간':'会員コミュニティ',
   '자주 묻는 질문':'よくある質問',
   '비공개 상담':'非公開サポート',
@@ -811,6 +827,12 @@ function tr(k){
     credit_using:'Lifetime 이용 중', credit_ledger_refund:'변환 실패 반환',
     credit_ledger_purchase:'크레딧 구매', credit_ledger_grant:'관리자 크레딧 지급',
     credit_ledger_deduct:'관리자 크레딧 회수', credit_ledger_conversion:'AI 변환',
+    credit_ledger_welcome:'신규 가입 혜택',
+    admin_nav_welcome_benefit:'신규 가입 혜택',
+    admin_welcome_title:'신규 가입 혜택',
+    admin_welcome_desc:'처음 가입한 사용자에게 크레딧을 1회 자동 지급하고, 선택적으로 환영 메일을 보냅니다.',
+    admin_welcome_auto:'자동 혜택 ON/OFF',
+    admin_welcome_email:'환영 메일 ON/OFF',
     credit_col_date:'날짜', credit_col_item:'내용', credit_col_delta:'증감', credit_col_balance:'잔액',
     board_mine_title:'내 작성글', board_mine_desc:'내가 작성한 자유게시판 글만 표시합니다.', board_mine_all:'전체 글 보기', board_mine_only:'내 글만',
     notify_settings_title:'알림 설정', notify_pref_inapp:'앱 알림', notify_pref_email:'이메일 알림', notify_pref_saved:'저장됨'
@@ -842,6 +864,12 @@ function tr(k){
     credit_using:'Lifetime active', credit_ledger_refund:'Conversion refund',
     credit_ledger_purchase:'Credit purchase', credit_ledger_grant:'Admin credit grant',
     credit_ledger_deduct:'Admin credit recovery', credit_ledger_conversion:'AI conversion',
+    credit_ledger_welcome:'Welcome benefit',
+    admin_nav_welcome_benefit:'Welcome Benefit',
+    admin_welcome_title:'Welcome Benefit',
+    admin_welcome_desc:'Automatically grant credits once on first signup, with an optional welcome email.',
+    admin_welcome_auto:'Auto benefit ON/OFF',
+    admin_welcome_email:'Welcome email ON/OFF',
     credit_col_date:'Date', credit_col_item:'Details', credit_col_delta:'Change', credit_col_balance:'Balance',
     board_mine_title:'My posts', board_mine_desc:'Showing only posts you wrote on the free board.', board_mine_all:'All posts', board_mine_only:'My posts',
     notify_settings_title:'Notifications', notify_pref_inapp:'App alerts', notify_pref_email:'Email alerts', notify_pref_saved:'Saved'
@@ -873,6 +901,12 @@ function tr(k){
     credit_using:'Lifetime利用中', credit_ledger_refund:'変換失敗の返還',
     credit_ledger_purchase:'クレジット購入', credit_ledger_grant:'管理者による付与',
     credit_ledger_deduct:'管理者による回収', credit_ledger_conversion:'AI変換',
+    credit_ledger_welcome:'新規登録特典',
+    admin_nav_welcome_benefit:'新規登録特典',
+    admin_welcome_title:'新規登録特典',
+    admin_welcome_desc:'初回登録時にクレジットを1回自動付与し、任意で歓迎メールを送ります。',
+    admin_welcome_auto:'自動特典 ON/OFF',
+    admin_welcome_email:'歓迎メール ON/OFF',
     credit_col_date:'日時', credit_col_item:'内容', credit_col_delta:'増減', credit_col_balance:'残高',
     board_mine_title:'自分の投稿', board_mine_desc:'自由掲示板で自分が書いた投稿だけを表示します。', board_mine_all:'すべての投稿', board_mine_only:'自分の投稿',
     notify_settings_title:'通知設定', notify_pref_inapp:'アプリ通知', notify_pref_email:'メール通知', notify_pref_saved:'保存しました'
@@ -3783,6 +3817,7 @@ function creditLedgerTitle(item){
   const type = String(item?.type || '').toLowerCase();
   const title = sanitizeCreditDisplayTitle(item?.displayTitle || '');
   if(type === 'refund') return tr('credit_ledger_refund');
+  if(type === 'welcome_signup') return title || tr('credit_ledger_welcome');
   if(type === 'admin_grant' || type === 'admin_bulk_credit') return title || tr('credit_ledger_grant');
   if(type === 'admin_deduct' || type === 'admin_bulk_deduct') return title || tr('credit_ledger_deduct');
   if(type === 'purchase') return title || tr('credit_ledger_purchase');
@@ -13701,6 +13736,7 @@ async function callFunctionJson(name, payload){
   }
   return result.data;
 }
+try { window.__midiaiCallFunctionJson = callFunctionJson; } catch (_) {}
 async function callFunctionJsonFallback(names, payload){
   let lastErr = null;
   for(const name of names){

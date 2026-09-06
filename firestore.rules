@@ -181,6 +181,19 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Welcome Benefit config — admin read via CF preferred; client write denied.
+    // Admin may read for console; mutations go through saveWelcomeBenefitConfig CF.
+    match /admin_config/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Once-per-UID welcome credit grants — Functions only.
+    match /welcome_credit_grants/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow write: if false;
+    }
+
     // Legacy Point collections — keep readable during migration; never client-writable.
     match /pointWallets/{userId} {
       allow read: if isOwner(userId) || isAdmin();

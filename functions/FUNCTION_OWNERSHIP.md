@@ -28,6 +28,12 @@ Do not export these names from `index.js`:
 
 Node-owned (this codebase) admin alerts:
 
+Welcome Benefit (신규 가입 혜택):
+- getWelcomeBenefitConfig / saveWelcomeBenefitConfig / previewWelcomeBenefitEmail
+- onAuthUserCreatedWelcomeBenefit (Auth onCreate — never login)
+
+Also owns: adminGrantCredits, sendAdminBulkEmail, license/PayPal/PortOne, …
+
 - `notifyAdminOnInquiryCreate` / `notifyAdminOnHumanRequest` / `notifyAdminOnOrderCompleted`
   — Kakao Talk admin alerts (replaces retired Discord notify* functions).
 - `kakaoOAuthCallback` / `testKakaoAdminNotification` — OAuth + connectivity test.

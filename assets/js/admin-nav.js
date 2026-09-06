@@ -8,6 +8,7 @@
     crm: 'adminCrm',
     payments: 'adminPaymentsSection',
     tickets: 'adminTicketsSection',
+    welcome: 'adminWelcomeBenefitSection',
     logs: 'adminLogsSection',
     pricing: 'adminPricingSection',
     content: 'adminContentSection'
@@ -17,6 +18,7 @@
     crm: '회원',
     payments: '결제',
     tickets: '문의 관리',
+    welcome: '신규 가입 혜택',
     logs: '로그',
     pricing: '가격·상품',
     content: '콘텐츠'

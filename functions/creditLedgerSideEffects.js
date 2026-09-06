@@ -9,9 +9,9 @@
  * so existing notify paths cannot double-fire.
  */
 
-const NOTIFY_TYPES = new Set(['admin_grant', 'admin_bulk_credit']);
-const AUDIT_TYPES = new Set(['admin_grant', 'admin_deduct']);
-const ORIGINS = new Set(['site_admin', 'site_admin_bulk']);
+const NOTIFY_TYPES = new Set(['admin_grant', 'admin_bulk_credit', 'welcome_signup']);
+const AUDIT_TYPES = new Set(['admin_grant', 'admin_deduct', 'welcome_signup']);
+const ORIGINS = new Set(['site_admin', 'site_admin_bulk', 'welcome_signup']);
 
 function toMillis(value) {
   if (value == null) return 0;
@@ -79,21 +79,27 @@ async function processCreditLedgerCreated({
         } catch (_) { /* optional */ }
       }
       const signLabel = amount > 0 ? '+' : '-';
+      const isWelcome = type === 'welcome_signup' || origin === 'welcome_signup';
       await auditRef.set({
         timestamp: FieldValue.serverTimestamp(),
         targetUserId: uid,
         category: 'credit',
-        action: amount > 0 ? 'CREDIT_GRANT' : 'CREDIT_DEDUCT',
-        actorId: adminUid || '',
+        action: isWelcome
+          ? 'WELCOME_SIGNUP_GRANT'
+          : (amount > 0 ? 'CREDIT_GRANT' : 'CREDIT_DEDUCT'),
+        actorId: adminUid || (isWelcome ? 'system' : ''),
         actorEmail,
-        actorType: 'admin',
+        actorType: isWelcome ? 'system' : 'admin',
         result: 'success',
-        summary: `${signLabel}${Math.abs(amount)} Credits`,
+        summary: isWelcome
+          ? `신규 가입 혜택 ${signLabel}${Math.abs(amount)} Credits`
+          : `${signLabel}${Math.abs(amount)} Credits`,
         after: {
           amount,
           reason: row.reason || '',
           balance: row.balanceAfter != null ? row.balanceAfter : null,
-          ledgerId
+          ledgerId,
+          source: isWelcome ? 'welcome_signup' : (row.source || '')
         },
         ledgerCreatedAtMs: toMillis(row.createdAt)
       });

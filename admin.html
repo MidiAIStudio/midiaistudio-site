@@ -87,6 +87,7 @@
         <p class="admin-nav-group">고객 지원</p>
         <button type="button" class="admin-nav-item" data-admin-nav="tickets" data-admin-tab="tickets">문의</button>
         <p class="admin-nav-group">운영</p>
+        <button type="button" class="admin-nav-item" data-admin-nav="welcome">신규 가입 혜택</button>
         <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs">로그</button>
         <button type="button" class="admin-nav-item" data-admin-nav="content">콘텐츠</button>
         <button type="button" class="admin-nav-item" data-admin-nav="pricing" data-admin-tab="pricing">가격·상품</button>
@@ -706,6 +707,48 @@
               <div id="adminPaymentsList" class="admin-table-wrap admin-console-table-wrap"><p class="muted">주문 불러오는 중...</p></div>
             </section>
 
+            <section class="admin-welcome-section" id="adminWelcomeBenefitSection" hidden>
+              <div class="admin-section-head">
+                <div>
+                  <h3>신규 가입 혜택</h3>
+                  <p class="admin-page-lead muted">처음 가입한 사용자에게 크레딧을 1회 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 로그인·재설치·다른 PC에서는 다시 지급되지 않습니다.</p>
+                </div>
+                <div class="admin-pricing-actions">
+                  <button type="button" class="secondary mini-btn" id="welcomeBenefitReloadBtn">새로고침</button>
+                  <button type="button" class="primary mini-btn" id="welcomeBenefitSaveBtn">저장</button>
+                </div>
+              </div>
+              <div id="welcomeBenefitMsg" class="admin-flash hidden"></div>
+              <p class="muted small" id="welcomeBenefitMeta"></p>
+              <div class="pricing-editor-pane" style="max-width:720px">
+                <div class="pricing-form-grid">
+                  <label class="edit-field-check" style="display:flex;align-items:center;gap:10px">
+                    <input id="welcomeBenefitEnabled" type="checkbox">
+                    <span>자동 혜택 ON/OFF</span>
+                  </label>
+                  <label>지급 크레딧
+                    <input id="welcomeCreditAmount" type="number" min="0" step="1" value="0" inputmode="numeric">
+                  </label>
+                  <label class="edit-field-check" style="display:flex;align-items:center;gap:10px">
+                    <input id="welcomeEmailEnabled" type="checkbox">
+                    <span>환영 메일 ON/OFF</span>
+                  </label>
+                </div>
+                <div class="edit-field" style="margin-top:12px">
+                  <span>메일 제목</span>
+                  <input id="welcomeEmailSubject" type="text" maxlength="200" placeholder="예: {{name}}님, MidiAI Studio에 오신 것을 환영합니다" autocomplete="off">
+                </div>
+                <div class="edit-field" style="margin-top:12px">
+                  <span>메일 본문</span>
+                  <textarea id="welcomeEmailBody" rows="10" maxlength="20000" placeholder="사용 가능: {{name}} {{email}} {{credits}} {{product_name}}"></textarea>
+                  <p class="muted small">변수: {{name}} {{email}} {{credits}} {{product_name}} — 없으면 그대로 두거나 비워도 됩니다. 이름 없으면 「회원」으로 표시됩니다.</p>
+                </div>
+                <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+                  <button type="button" class="secondary mini-btn" id="welcomeEmailPreviewBtn">미리보기</button>
+                </div>
+              </div>
+            </section>
+
             <section class="admin-content-section" id="adminContentSection" hidden>
               <div class="admin-page-tabs" id="adminCmsTabs" role="tablist" aria-label="콘텐츠 종류">
                 <button type="button" class="admin-page-tab is-active" data-cms-tab="notices">공지사항</button>
@@ -847,6 +890,7 @@
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
   <script type="module" src="./assets/js/app.js?v=payment-total-paid-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=logs-toolbar-hide-1"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=logs-toolbar-hide-1"></script>
+  <script type="module" src="./assets/js/admin-console.js?v=welcome-benefit-1"></script>
+  <script type="module" src="./assets/js/admin-welcome-benefit.js?v=welcome-benefit-1"></script>
 </body>
 </html>
