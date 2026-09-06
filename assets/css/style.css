@@ -3206,6 +3206,19 @@ body.topnav-layout #mainNav.top-nav .top-nav-item.active .top-nav-item-copy b{co
 .download-cta{display:inline-flex!important;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#22d3ee,#8b5cf6)!important;border:1px solid transparent!important;box-shadow:0 6px 18px rgba(34,211,238,.18);transition:transform .18s ease,box-shadow .18s ease;white-space:nowrap}
 .download-cta svg{width:14px;height:14px;flex:none}
 .download-cta:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(34,211,238,.24)}
+.download-login-gate{align-items:center!important}
+.download-login-gate .download-login-gate-copy{min-width:0}
+.download-login-gate .download-login-gate-copy h3{margin:0 0 4px;font-size:17px;letter-spacing:-.02em}
+.download-login-gate .download-login-gate-copy p{margin:0;font-size:13px;line-height:1.45}
+.download-login-gate .download-cta{
+  appearance:none;cursor:pointer;font:inherit;color:#fff;
+  min-height:42px;padding:0 16px!important;border-radius:12px!important
+}
+.download-login-gate .download-cta span{
+  display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;
+  background:rgba(255,255,255,.18);font-size:12px;font-weight:800
+}
+.download-login-gate .download-cta em{font-style:normal;font-weight:800}
 .download-card-pro .portal-download-actions .secondary{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);white-space:nowrap}
 @media(max-width:900px){.download-card-pro{grid-template-columns:auto 1fr;row-gap:8px}.download-card-pro .portal-download-actions{grid-column:1/-1;justify-content:flex-start}.download-card-main-row{align-items:flex-start}}
 @media(max-width:680px){.download-card-pro .portal-download-actions{flex-wrap:wrap}}

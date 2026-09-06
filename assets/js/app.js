@@ -686,7 +686,11 @@ function downloadLocaleText(){
     mandatory:'Required update',
     officialInstaller:'Official installer',
     buyLicense:'Buy license',
-    patchNotes:'Update history'
+    patchNotes:'Update history',
+    loginTitle:'Sign in to download',
+    loginDesc:'The MidiAI Studio installer is available after Google sign-in.',
+    loginBtn:'Sign in with Google',
+    loading:'Loading…'
   };
   if(lang === 'ja') return {
     title:'ダウンロード',
@@ -712,7 +716,11 @@ function downloadLocaleText(){
     mandatory:'必須アップデート',
     officialInstaller:'公式インストーラー',
     buyLicense:'ライセンス購入',
-    patchNotes:'アップデート履歴'
+    patchNotes:'アップデート履歴',
+    loginTitle:'ダウンロードにはログインが必要です',
+    loginDesc:'MidiAI StudioインストーラーはGoogleログイン後に表示されます。',
+    loginBtn:'Googleでログイン',
+    loading:'読み込み中…'
   };
   return {
     title:'다운로드',
@@ -738,7 +746,11 @@ function downloadLocaleText(){
     mandatory:'필수 업데이트',
     officialInstaller:'공식 설치 프로그램',
     buyLicense:'라이선스 구매',
-    patchNotes:'업데이트 내역'
+    patchNotes:'업데이트 내역',
+    loginTitle:'다운로드는 로그인 후 이용할 수 있습니다',
+    loginDesc:'MidiAI Studio 설치 파일은 Google 로그인한 회원에게만 표시됩니다.',
+    loginBtn:'Google 로그인',
+    loading:'불러오는 중...'
   };
 }
 function applyDownloadsI18n(){
@@ -769,6 +781,7 @@ function applyDownloadsI18n(){
     if(/업데이트 내역|Update history|アップデート履歴|패치노트|Patch notes|パッチノート/.test(a.textContent||'') || (a.getAttribute('href')||'').includes('patch-notes')) a.textContent = t.patchNotes;
     if(/라이선스|Buy license|ライセンス購入/.test(a.textContent||'') || (a.getAttribute('href')||'').includes('purchase')) a.textContent = t.buyLicense;
   });
+  refreshDownloadCard(true);
   refreshTopbarPageTitle();
 }
 function applyFooterI18n(){
@@ -4817,10 +4830,40 @@ function refreshDownloadCard(force=false){
   if(!$('downloadBox')) return;
   renderDownload(latestDownloadData, {force});
 }
+function renderDownloadLoginGate(box){
+  const t = downloadLocaleText();
+  downloadAdminExpanded = false;
+  box.innerHTML = `<div class="portal-download-inner download-card-pro download-login-gate">
+    <div class="download-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9.5 14.5 12 12l2.5 2.5"/></svg></div>
+    <div class="portal-download-meta download-login-gate-copy">
+      <h3>${esc(t.loginTitle)}</h3>
+      <p class="muted">${esc(t.loginDesc)}</p>
+    </div>
+    <div class="portal-download-actions">
+      <button type="button" class="primary download-cta" data-dl-login>
+        <span>G</span><em>${esc(t.loginBtn)}</em>
+      </button>
+    </div>
+  </div>`;
+  box.querySelector('[data-dl-login]')?.addEventListener('click', ()=>{
+    if(typeof topbarGoogleLogin === 'function') topbarGoogleLogin();
+    else $('loginBtn')?.click();
+  });
+}
 function renderDownload(d, opts={}){
   const box=$('downloadBox'); if(!box)return;
   // Keep raw Firestore snapshot (may be null/empty). Display uses coalesce when needed.
   if(!opts.optimistic) latestDownloadData = d || null;
+  if(!authStateResolved){
+    const t = downloadLocaleText();
+    box.innerHTML = `<p class="muted">${esc(t.loading || '불러오는 중...')}</p>`;
+    return;
+  }
+  // Web download is for signed-in Google users only — never expose installer URL to guests.
+  if(!currentUser){
+    renderDownloadLoginGate(box);
+    return;
+  }
   if(downloadAdminExpanded && !opts.force && box.querySelector('.download-admin-panel')) return;
   const t = downloadLocaleText();
   const firestoreMissing = !downloadPayloadUsable(d);
