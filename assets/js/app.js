@@ -4979,6 +4979,25 @@ function initStudioHeroVideo(){
     const vol=root.querySelector('.studio-hero-volume');
     if(!video || !muteBtn || !vol) return;
 
+    // Always use same-origin MP4. Cached HTML may still point at Dropbox
+    // (wrong Content-Type / nosniff breaks autoplay on some PCs).
+    const base = String(window.MIDIAI_BASE_PATH || './').replace(/\/?$/, '/');
+    const localSrc = `${base}assets/videos/MidiAI_Studio_HowTo.mp4`;
+    const sources = [...video.querySelectorAll('source')];
+    let needsReload = false;
+    if(sources.length){
+      sources.forEach(s=>{
+        const raw = String(s.getAttribute('src') || '');
+        if(/dropbox\.com/i.test(raw) || !raw){
+          s.setAttribute('src', localSrc);
+          needsReload = true;
+        }
+      });
+    }else if(!video.getAttribute('src') || /dropbox\.com/i.test(video.getAttribute('src')||'')){
+      video.setAttribute('src', localSrc);
+      needsReload = true;
+    }
+
     // Policy-safe muted autoplay: attribute + property (Safari/Chrome both need this).
     video.muted=true;
     video.defaultMuted=true;
@@ -4987,9 +5006,13 @@ function initStudioHeroVideo(){
     video.setAttribute('playsinline','');
     video.setAttribute('webkit-playsinline','');
     video.loop=true;
+    video.preload='auto';
     video.removeAttribute('controls');
     video.setAttribute('controlslist','nodownload noplaybackrate noremoteplayback');
     video.disablePictureInPicture=true;
+    if(needsReload){
+      try{ video.load(); }catch{}
+    }
 
     const DEFAULT_VOL=0.7;
     let lastVol=DEFAULT_VOL;
@@ -5023,8 +5046,10 @@ function initStudioHeroVideo(){
       const p=video.play();
       if(p && typeof p.catch==='function'){
         p.catch((err)=>{
-          if(playAttempts<=3){
-            console.warn('[studio-hero-video] autoplay retry', reason||'play', err?.message||err);
+          if(playAttempts<=4){
+            console.warn('[studio-hero-video] autoplay retry', reason||'play', err?.name||'', err?.message||err);
+            // Delayed retry helps when the first bytes are still arriving.
+            if(playAttempts<=3) setTimeout(()=>tryPlay('retry'), 400*playAttempts);
           }
         });
       }
@@ -5063,7 +5088,7 @@ function initStudioHeroVideo(){
 
     video.addEventListener('volumechange', syncUi);
 
-    // Retry when media becomes ready (not only once — Dropbox/slow nets miss the first event).
+    // Retry when media becomes ready (slow nets often miss a single canplay).
     video.addEventListener('loadeddata', ()=>tryPlay('loadeddata'));
     video.addEventListener('canplay', ()=>tryPlay('canplay'));
     video.addEventListener('canplaythrough', ()=>tryPlay('canplaythrough'), {once:true});
@@ -5073,7 +5098,7 @@ function initStudioHeroVideo(){
         entries.forEach(entry=>{
           if(entry.isIntersecting) tryPlay('visible');
         });
-      }, {threshold:0.2});
+      }, {threshold:0.15});
       io.observe(root);
     }
 
@@ -5095,10 +5120,7 @@ function initStudioHeroVideo(){
     document.addEventListener('touchstart', unlock, {capture:true, passive:true});
 
     if(video.readyState>=2) tryPlay('ready');
-    else{
-      try{ video.load(); }catch{}
-      tryPlay('init');
-    }
+    else tryPlay('init');
 
     video.addEventListener('error',()=>{
       const err=video.error;
