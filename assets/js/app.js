@@ -260,6 +260,8 @@ let likedActivePost = false;
 let latestDownloadData = null;
 let downloadAdminExpanded = false;
 let downloadAdminAutoOpenedForEmpty = false;
+/** Hero CTA: after Google sign-in, start installer download once. */
+let pendingHeroDownload = false;
 /** Last known production installer (display fallback + admin restore when Firestore doc is missing/empty). */
 const DOWNLOAD_RESTORE_DEFAULTS = {
   version: '1.6.3',
@@ -4363,6 +4365,7 @@ async function setAuthUiSignedIn(user){
     console.error('post-login bootstrap', e);
   }
   resumePendingPurchase();
+  resumePendingHeroDownload();
   listenTicketNotifications();
   listenAdminTicketNotifications();
   listenUserNotifications();
@@ -4979,39 +4982,31 @@ function initStudioHeroVideo(){
     const vol=root.querySelector('.studio-hero-volume');
     if(!video || !muteBtn || !vol) return;
 
-    // Prefer dl.dropbox.com (www can return HTML preview on some browsers).
+    // Same Dropbox master, hosted same-origin so Content-Type is video/mp4.
+    // Dropbox currently returns application/json + nosniff, which some devices reject.
+    const base = String(window.MIDIAI_BASE_PATH || './').replace(/\/?$/, '/');
+    const LOCAL_HERO = `${base}assets/videos/MidiAI_Studio_HowTo.mp4?v=dbx-mirror-1`;
     const DROPBOX_HERO = 'https://dl.dropbox.com/scl/fi/54jw00ddcvnlpqa8xk7g6/.mp4?rlkey=479kw3irxy71j4scipi1vxrig&dl=1';
-    const normalizeHeroSrc = (raw)=>{
-      const s = String(raw || '').trim();
-      if(!s) return DROPBOX_HERO;
-      try{
-        const u = new URL(s);
-        const host = String(u.hostname||'').toLowerCase();
-        if(host==='www.dropbox.com' || host==='dropbox.com'){
-          u.hostname = 'dl.dropbox.com';
-          u.searchParams.delete('raw');
-          u.searchParams.set('dl','1');
-          return u.toString();
-        }
-      }catch{}
-      return s;
-    };
     const sources = [...video.querySelectorAll('source')];
     let needsReload = false;
     if(sources.length){
-      sources.forEach(s=>{
-        const next = normalizeHeroSrc(s.getAttribute('src'));
-        if(next !== s.getAttribute('src')){
-          s.setAttribute('src', next);
-          needsReload = true;
-        }
-      });
-    }else{
-      const next = normalizeHeroSrc(video.getAttribute('src'));
-      if(next !== (video.getAttribute('src')||'')){
-        video.setAttribute('src', next);
+      const first = sources[0];
+      const firstSrc = String(first.getAttribute('src') || '');
+      if(/dropbox\.com/i.test(firstSrc) || !firstSrc.includes('MidiAI_Studio_HowTo.mp4')){
+        first.setAttribute('src', LOCAL_HERO);
+        first.setAttribute('type', 'video/mp4');
         needsReload = true;
       }
+      if(!sources.some(s=>/dropbox\.com/i.test(String(s.getAttribute('src')||'')))){
+        const fb = document.createElement('source');
+        fb.src = DROPBOX_HERO;
+        fb.type = 'video/mp4';
+        video.appendChild(fb);
+        needsReload = true;
+      }
+    }else{
+      video.setAttribute('src', LOCAL_HERO);
+      needsReload = true;
     }
 
     // Policy-safe muted autoplay: attribute + property (Safari/Chrome both need this).
@@ -5050,9 +5045,12 @@ function initStudioHeroVideo(){
 
     const tryPlay=(reason='')=>{
       if(reduceMotion()){
+        // Accessibility: don't autoplay; keep poster until a user gesture.
         video.removeAttribute('autoplay');
-        try{ video.pause(); }catch{}
-        return;
+        if(reason!=='gesture' && reason!=='mute-toggle'){
+          try{ video.pause(); }catch{}
+          return;
+        }
       }
       if(!video.paused && !video.ended) return;
       // Keep muted for autoplay policy; user unmute via controls.
@@ -5149,8 +5147,67 @@ function initStudioHeroVideo(){
     syncUi();
   });
 }
+async function resolveInstallerDownloadUrl(){
+  try{
+    const raw = await fetchAccountDownloadData();
+    const d = coalesceDownloadData(raw);
+    return normalizeDownloadUrl(d?.url || '') || normalizeDownloadUrl(DOWNLOAD_RESTORE_DEFAULTS.url);
+  }catch(_){
+    return normalizeDownloadUrl(DOWNLOAD_RESTORE_DEFAULTS.url);
+  }
+}
+function promptHeroDownloadLogin(){
+  pendingHeroDownload = true;
+  try{ adminFlash(tr('need_login') || '로그인이 필요합니다.'); }catch{}
+  if(typeof topbarGoogleLogin === 'function') topbarGoogleLogin();
+  else $('loginBtn')?.click();
+}
+async function startHeroInstallerDownload(){
+  const url = await resolveInstallerDownloadUrl();
+  if(!url){
+    const fallback = document.querySelector('[data-hero-download]')?.getAttribute('href') || './downloads.html';
+    location.href = fallback;
+    return;
+  }
+  location.href = url;
+}
+function bindPortalHeroDownload(){
+  document.querySelectorAll('[data-hero-download]').forEach(el=>{
+    if(el.dataset.bound==='1') return;
+    el.dataset.bound='1';
+    el.addEventListener('click', async (e)=>{
+      e.preventDefault();
+      if(el.dataset.busy==='1') return;
+      el.dataset.busy='1';
+      el.setAttribute('aria-busy','true');
+      try{
+        if(!authStateResolved){
+          // Wait briefly for auth bootstrap, then decide.
+          await new Promise(r=>setTimeout(r, 120));
+        }
+        if(!currentUser){
+          promptHeroDownloadLogin();
+          return;
+        }
+        await startHeroInstallerDownload();
+      }catch(_){
+        if(!currentUser) promptHeroDownloadLogin();
+        else location.href = el.getAttribute('href') || './downloads.html';
+      }finally{
+        el.dataset.busy='0';
+        el.removeAttribute('aria-busy');
+      }
+    });
+  });
+}
+async function resumePendingHeroDownload(){
+  if(!pendingHeroDownload || !currentUser) return;
+  pendingHeroDownload = false;
+  try{ await startHeroInstallerDownload(); }catch(_){}
+}
 async function initHomePage(){
   initStudioHeroVideo();
+  bindPortalHeroDownload();
   if(!db) return;
   const updatesBox=$('homeUpdates');
   const patchesBox=$('homePatches');
