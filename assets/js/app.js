@@ -4982,7 +4982,7 @@ function initStudioHeroVideo(){
     // Always use same-origin MP4. Cached HTML may still point at Dropbox
     // (wrong Content-Type / nosniff breaks autoplay on some PCs).
     const base = String(window.MIDIAI_BASE_PATH || './').replace(/\/?$/, '/');
-    const localSrc = `${base}assets/videos/MidiAI_Studio_HowTo.mp4`;
+    const localSrc = `${base}assets/videos/MidiAI_Studio_HowTo.mp4?v=v06-hq`;
     const sources = [...video.querySelectorAll('source')];
     let needsReload = false;
     if(sources.length){

@@ -358,10 +358,49 @@ html[data-theme='light'] .topbar-profile-theme-select {
 html[data-theme='light'] .topbar-notify-item {
   border-color: var(--line) !important;
   color: var(--text) !important;
+  background: #fff !important;
 }
 
 html[data-theme='light'] .topbar-notify-item:hover {
   background: rgba(36, 52, 78, 0.05) !important;
+}
+
+html[data-theme='light'] .topbar-notify-item.is-unread {
+  background: rgba(8, 145, 178, 0.08) !important;
+}
+
+html[data-theme='light'] .topbar-notify-item-main {
+  color: #1e293b !important;
+}
+
+/* Dark-theme rule sets main title <b> to #fff — override for light panels. */
+html[data-theme='light'] .topbar-notify-item-main b {
+  color: #0f172a !important;
+}
+
+html[data-theme='light'] .topbar-notify-item-title {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .topbar-notify-item-preview {
+  color: #475569 !important;
+}
+
+html[data-theme='light'] .topbar-notify-item-time {
+  color: #64748b !important;
+}
+
+html[data-theme='light'] .topbar-notify-empty {
+  color: var(--muted) !important;
+}
+
+html[data-theme='light'] .topbar-notify-item-del {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='light'] .topbar-notify-item-del:hover {
+  color: #e11d48 !important;
+  background: rgba(225, 29, 72, 0.1) !important;
 }
 
 html[data-theme='light'] .topbar-notify-filter {
