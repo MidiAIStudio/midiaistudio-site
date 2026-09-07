@@ -105,6 +105,8 @@ Firebase Auth를 Android device API에 쓰지 않는다.
 | `updateAdminDeviceSettings` | 필수 | **필수** | 없음 | category boolean whitelist만 |
 | `sendAdminDeviceTestPush` | 필수 | **필수** | 없음 | approved+enabled만 |
 | `unregisterAdminDevice` | 필수 | **필수** | 없음 | `revoked` |
+| `getAdminMobileDashboard` | 필수 | **필수** | 없음 | approved + enabled only |
+| `getAdminPaymentDetail` | 필수 | **필수** | 없음 | approved + enabled only. `paymentId` 필수 |
 
 서버 비교: `SHA-256(deviceSecret)` 와 `deviceSecretHash` 를 timing-safe 비교.
 
@@ -248,6 +250,198 @@ hard delete 없음. `status=revoked`, `enabled=false`.
 
 ---
 
+## Mobile Dashboard
+
+Android `HttpAdminApi` POST:
+
+`https://us-central1-midiaistudio.cloudfunctions.net/getAdminMobileDashboard`
+
+승인된 활성 기기만 (`status == approved` AND `enabled == true`).  
+revoked / disabled / 잘못된 `deviceSecret` → **403**. FCM token은 인증이 아니다.
+
+요청:
+
+```json
+{
+  "deviceId": "...",
+  "deviceSecret": "..."
+}
+```
+
+성공 (`HTTP 200`):
+
+```json
+{
+  "ok": true,
+  "today": {
+    "revenue": 168800,
+    "payments": 3,
+    "refundAmount": 0,
+    "refunds": 0,
+    "inquiries": 2,
+    "critical": 0
+  },
+  "month": {
+    "revenue": 1284600,
+    "payments": 27,
+    "refundAmount": 19900,
+    "refunds": 1
+  },
+  "currency": "KRW",
+  "generatedAt": "2026-09-08T00:42:00.000Z",
+  "netRevenue": {
+    "today": 168800,
+    "month": 1264700
+  },
+  "recentPayments": [],
+  "recentInquiries": [],
+  "recentCritical": []
+}
+```
+
+필드 계약 (Android `DashboardPayloads` canonical):
+
+| 영역 | 필드 |
+|---|---|
+| today | `revenue`, `payments`, `refundAmount`, `refunds`, `inquiries`, `critical` |
+| month | `revenue`, `payments`, `refundAmount`, `refunds` (inquiries/critical 없음) |
+| 시각 | `generatedAt` ISO-8601. today/month는 **Asia/Seoul** 캘린더 |
+| 목록 | 기본 20, 최대 50. summary + recent를 **한 요청**에 반환 |
+
+### Revenue Definition
+
+- **Source of truth:** Firestore `orders` (PortOne Lifetime/PASS + PayPal license/credit).
+- **추가 소스:** `creditPurchases` / `pointPurchases` — 동일 `paymentId` / `paypalOrderId`가 `orders`에 있으면 **제외** (PayPal credit 이중집계 방지).
+- `licenses` / `entitlementGrants` / `creditLedger*` 는 매출로 세지 않는다.
+- **revenue** = 기간 내 **성공 결제 총액 (gross)**. 상태 `completed` / `paid` / `verified` / `license_issued` / `credited` / 이후 환불된 `refunded` / `partially_refunded`.
+- **제외:** `pending`, `failed`, `created`, `duplicate_*`, `environment=test|sandbox`.
+- **refundAmount / refunds** 는 별도. `netRevenue = revenue - refundAmount` (참고 필드). 환불을 revenue에서 다시 빼지 않는다.
+- 대시보드 `currency` 는 `KRW`. USD(PayPal)는 주문의 `effectivePriceKrw` 또는 `fxRate`로 KRW 환산.
+- 이메일만 마스킹해서 반환 (`kan***@gmail.com`). 카드번호, token, secret, stack, FCM, `deviceSecret` 없음.
+
+### KST Boundaries
+
+`Intl` + `Asia/Seoul` (수동 +9/-9 없음). 저장된 Firestore timestamp는 변경하지 않는다.
+
+- today: 오늘 00:00 KST 포함 → 다음날 00:00 KST 미만
+- month: 해당 월 1일 00:00 KST 포함 → 다음 달 1일 00:00 KST 미만
+
+예: `2026-09-08 00:34 KST` 는 9/8 today에 포함. `2026-09-07 23:59 KST` 는 제외.
+
+---
+
+## Recent Payments
+
+`recentPayments[]` (별칭 `payments` 도 Android가 읽음):
+
+```json
+{
+  "paymentId": "pay_1",
+  "provider": "portone",
+  "product": "30일 PASS",
+  "amount": 19900,
+  "currency": "KRW",
+  "status": "completed",
+  "emailMasked": "kan***@gmail.com",
+  "paidAt": "2026-09-08T00:42:00.000Z",
+  "refundedAmount": 0,
+  "adminUrl": "https://midiaistudio.com/admin.html#view=crm&crm=orders"
+}
+```
+
+`paidAt` = `completedAt` || `issuedAt` || `verifiedAt` || `paidAt` || `createdAt`.  
+정렬: `paidAt` 최신순.
+
+---
+
+## Payment Detail
+
+`POST getAdminPaymentDetail`
+
+```json
+{
+  "deviceId": "...",
+  "deviceSecret": "...",
+  "paymentId": "pay_1"
+}
+```
+
+성공 — top-level + `payment` 중첩 (Android 둘 다 파싱):
+
+```json
+{
+  "ok": true,
+  "payment": {
+    "paymentId": "pay_1",
+    "product": "Lifetime",
+    "amount": 129000,
+    "currency": "KRW",
+    "status": "completed",
+    "provider": "portone",
+    "emailMasked": "abc***@gmail.com",
+    "paidAt": "2026-09-07T14:18:00.000Z",
+    "refundStatus": "none",
+    "refundedAmount": 0,
+    "adminUrl": "https://midiaistudio.com/admin.html#view=crm&crm=orders"
+  },
+  "paymentId": "pay_1",
+  "product": "Lifetime",
+  "amount": 129000,
+  "currency": "KRW",
+  "status": "completed",
+  "provider": "portone",
+  "emailMasked": "abc***@gmail.com",
+  "paidAt": "2026-09-07T14:18:00.000Z",
+  "refundStatus": "none",
+  "refundedAmount": 0,
+  "adminUrl": "https://midiaistudio.com/admin.html#view=crm&crm=orders"
+}
+```
+
+`refundStatus`: `none` | `partial` | `refunded`.  
+lookup: `orders/{id}` → `creditPurchases/{id}` → `paymentId` / `paypalOrderId` / `paypalCaptureId`.  
+없으면 **404**. 승인 기기 아니면 **403**.
+
+---
+
+## Recent Inquiries
+
+상담사 연결(`waiting_human` / `humanRequestedAt`) 티켓만. 컬렉션: `supportTickets`.
+
+```json
+{
+  "inquiryId": "inq_1",
+  "title": "설치·업데이트·실행 오류",
+  "category": "install",
+  "emailMasked": "kan***@gmail.com",
+  "status": "waiting_human",
+  "createdAt": "2026-09-08T00:34:00.000Z",
+  "adminUrl": "https://midiaistudio.com/admin.html#view=support"
+}
+```
+
+today `inquiries` = 오늘 KST에 `humanRequestedAt`(없으면 `createdAt`)이 있는 상담사 연결 건수.
+
+---
+
+## Recent Critical Events
+
+컬렉션: `adminPushLogs` (`type == critical`).
+
+```json
+{
+  "eventId": "log_1",
+  "title": "지급 실패",
+  "summary": "PASS 지급 실패",
+  "timestamp": "2026-09-08T00:15:00.000Z",
+  "adminUrl": "https://midiaistudio.com/admin.html#view=logs"
+}
+```
+
+Android는 `summary` / `body` / `message` 중 하나를 쓰고 180자로 자른다.
+
+---
+
 ## Device status
 
 ```
@@ -360,6 +554,18 @@ Admin URL:
 
 ```
 firebase deploy --only functions:web:requestAdminDeviceRegistration,functions:web:getAdminDeviceStatus,functions:web:updateAdminDeviceToken,functions:web:updateAdminDeviceSettings,functions:web:sendAdminDeviceTestPush,functions:web:unregisterAdminDevice,functions:web:manageAdminPush
+```
+
+Mobile dashboard (named only):
+
+```
+firebase deploy --only functions:web:getAdminMobileDashboard,functions:web:getAdminPaymentDetail
+```
+
+`assertDevice` secret 검사 수정을 기존 기기 API에 반영할 때:
+
+```
+firebase deploy --only functions:web:updateAdminDeviceToken,functions:web:updateAdminDeviceSettings,functions:web:sendAdminDeviceTestPush,functions:web:unregisterAdminDevice
 ```
 
 전체 Functions deploy 금지.

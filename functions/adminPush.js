@@ -219,7 +219,8 @@ async function assertDevice(db, body, opts) {
     throw httpError(404, '등록된 기기가 없습니다.');
   }
   const data = snap.data() || {};
-  if (opts && opts.requireProof !== false && !secretOk(body, data)) {
+  const requireProof = !(opts && opts.requireProof === false);
+  if (requireProof && !secretOk(body, data)) {
     throw httpError(403, '기기를 확인할 수 없습니다.');
   }
   return { deviceId, ref, snap, data };
@@ -292,6 +293,7 @@ async function writePushLog(db, entry) {
     success: Number(entry.success || 0),
     failed: Number(entry.failed || 0),
     title: String(entry.title || '').slice(0, 80),
+    summary: String(entry.summary || entry.body || '').slice(0, 180),
     createdAt: FieldValue().serverTimestamp()
   });
   try {
@@ -407,7 +409,11 @@ async function sendAdminNotification(input, deps) {
   }
 
   const out = { attempted: targets.length, success, failed };
-  await writePushLog(db, Object.assign({ type, title: input.title }, out));
+  await writePushLog(db, Object.assign({
+    type,
+    title: input.title,
+    summary: String((input && input.body) || '').slice(0, 180)
+  }, out));
   return out;
 }
 
@@ -851,6 +857,10 @@ function createHandlers({ cors, requireAdmin }) {
 module.exports = {
   DEVICES,
   GLOBAL_DEFAULTS,
+  httpError,
+  assertDevice,
+  wrapHttp,
+  adminUrlFor,
   hashSecret,
   maskEmail,
   formatAmount,

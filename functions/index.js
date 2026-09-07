@@ -18,11 +18,6 @@ const gmailAppPassword = defineSecret('GMAIL_APP_PASSWORD');
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
 /** Support AI private GitHub source — fine-grained read-only PAT (Contents+Metadata) */
 const githubSupportAiToken = defineSecret('GITHUB_SUPPORT_AI_TOKEN');
-/** Kakao OAuth / admin Talk notify — Secret Manager */
-const kakaoRestApiKey = defineSecret('KAKAO_REST_API_KEY');
-const kakaoClientSecret = defineSecret('KAKAO_CLIENT_SECRET');
-/** Optional CLI header for testKakaoAdminNotification when Firebase admin JWT is unavailable */
-const kakaoAdminTestKey = defineSecret('KAKAO_ADMIN_TEST_KEY');
 
 function cfg(name, fallback = '') {
   return process.env[name] || fallback;
@@ -2259,11 +2254,11 @@ exports.onAdminBulkCreditQueued = functionsV1
   });
 
 /**
- * New 1:1 support ticket → Kakao admin alert (counselor-request mode only).
+ * New 1:1 support ticket → MidiAI Admin FCM (counselor-request mode only).
  * Side-effect only — never blocks the client create path.
  */
 exports.notifyAdminOnInquiryCreate = functionsV1
-  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 60, memory: '256MB' })
+  .runWith({ timeoutSeconds: 60, memory: '256MB' })
   .firestore.document('supportTickets/{ticketId}')
   .onCreate(async (snap, context) => {
     const ticketId = context.params.ticketId;
@@ -2295,7 +2290,7 @@ exports.notifyAdminOnInquiryCreate = functionsV1
  * supportTickets/{ticketId}의 conversationMode가 waiting_human로 바뀔 때만 전송.
  */
 exports.notifyAdminOnHumanRequest = functionsV1
-  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 60, memory: '256MB' })
+  .runWith({ timeoutSeconds: 60, memory: '256MB' })
   .firestore.document('supportTickets/{ticketId}')
   .onUpdate(async (change, context) => {
     const ticketId = context.params.ticketId;
@@ -2317,7 +2312,6 @@ exports.notifyAdminOnHumanRequest = functionsV1
         return null;
       }
 
-      // Idempotency: kakaoAlertSent / legacy discordNotified (not CRM adminNotified).
       await notifyInquiryCreated(ticketId, after, change.after.ref);
     } catch (err) {
       console.error('notifyAdminOnHumanRequest', {
@@ -2329,28 +2323,18 @@ exports.notifyAdminOnHumanRequest = functionsV1
   });
 
 /**
- * Order completed + license issued → Kakao admin payment alert.
+ * Order completed + license issued → MidiAI Admin FCM payment alert.
  * Ignores created/cancelled/failed orders. Side-effect only.
  */
 exports.notifyAdminOnOrderCompleted = functionsV1
-  .runWith({ secrets: [kakaoRestApiKey, kakaoClientSecret], timeoutSeconds: 30, memory: '256MB' })
+  .runWith({ timeoutSeconds: 30, memory: '256MB' })
   .firestore.document('orders/{orderId}')
   .onWrite(async (change, context) => {
     const orderId = context.params.orderId;
     try {
       if (!change.after.exists) return null;
       const after = change.after.data() || {};
-      // kakaoAlertSent = Kakao idempotency; discordNotified = legacy Discord claim.
-      // Do not use adminNotified (CRM toast flag on tickets; unused on orders).
       if (!isLicenseGrantedOrder(after)) return null;
-      if (after.kakaoAlertSent === true || after.discordNotified === true) {
-        try {
-          await adminPush.maybeNotifyPaymentFcm(orderId, after, change.after.ref);
-        } catch (fcmErr) {
-          console.warn('notifyAdminOnOrderCompleted fcm', fcmErr && fcmErr.message);
-        }
-        return null;
-      }
       await notifyPaymentCompleted(orderId, after, change.after.ref);
     } catch (err) {
       console.error('notifyAdminOnOrderCompleted', {
@@ -2399,6 +2383,11 @@ exports.updateAdminDeviceSettings = functions.https.onRequest(adminPushHandlers.
 exports.sendAdminDeviceTestPush = functions.https.onRequest(adminPushHandlers.sendAdminDeviceTestPush);
 exports.unregisterAdminDevice = functions.https.onRequest(adminPushHandlers.unregisterAdminDevice);
 exports.manageAdminPush = functions.https.onRequest(adminPushHandlers.manageAdminPush);
+
+const adminMobileDashboard = require('./adminMobileDashboard');
+const adminDashboardHandlers = adminMobileDashboard.createHandlers({ cors });
+exports.getAdminMobileDashboard = functions.https.onRequest(adminDashboardHandlers.getAdminMobileDashboard);
+exports.getAdminPaymentDetail = functions.https.onRequest(adminDashboardHandlers.getAdminPaymentDetail);
 
 const { recordUserAccessInfo } = require('./accessInfo');
 
@@ -2459,44 +2448,6 @@ exports.supportCloseTicket = onRequestV2(
     invoker: 'public'
   },
   supportCloseHandlers.supportCloseTicket
-);
-
-/**
- * Kakao Login OAuth redirect callback for admin "나와의 채팅" notifications.
- * Secrets: KAKAO_REST_API_KEY (required), KAKAO_CLIENT_SECRET (when enabled in Kakao console).
- * Refresh token stored in Firestore systemPrivate/kakaoAdminOAuth (client read/write denied).
- */
-const { createKakaoOAuthCallbackHandler } = require('./kakaoOAuth');
-exports.kakaoOAuthCallback = onRequestV2(
-  {
-    region: 'us-central1',
-    secrets: [kakaoRestApiKey, kakaoClientSecret],
-    timeoutSeconds: 30,
-    memory: '256MiB'
-  },
-  createKakaoOAuthCallbackHandler({
-    db,
-    FieldValue: admin.firestore.FieldValue
-  })
-);
-
-/**
- * Admin-only Kakao Talk "나와의 채팅" connectivity test.
- */
-const { createTestKakaoAdminNotificationHandler } = require('./kakaoAdminNotify');
-exports.testKakaoAdminNotification = onRequestV2(
-  {
-    region: 'us-central1',
-    secrets: [kakaoRestApiKey, kakaoClientSecret, kakaoAdminTestKey],
-    timeoutSeconds: 30,
-    memory: '256MiB'
-  },
-  createTestKakaoAdminNotificationHandler({
-    db,
-    FieldValue: admin.firestore.FieldValue,
-    cors,
-    requireAdmin
-  })
 );
 
 /**

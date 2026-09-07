@@ -326,7 +326,6 @@ service cloud.firestore {
     }
 
     // Server-only integration secrets/tokens (Admin SDK write). Clients: no access.
-    // e.g. systemPrivate/kakaoAdminOAuth — Kakao admin Talk refresh token.
     match /systemPrivate/{docId} {
       allow read, write: if false;
     }

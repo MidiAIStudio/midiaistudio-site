@@ -1,11 +1,8 @@
 /**
- * Admin operational alerts → Kakao Talk "나와의 채팅".
+ * Admin operational alerts → MidiAI Admin FCM only.
  * Side-effect only: failures must never fail payment / inquiry business paths.
  * Never logs tokens, secrets, or webhook credentials.
  */
-
-const admin = require('firebase-admin');
-const { notifyAdmin } = require('./kakaoAdminNotify');
 
 const TICKET_CATEGORY_LABELS = {
   login: '로그인/계정',
@@ -115,129 +112,45 @@ function buildInquiryAlert(ticketId, data) {
   return { type: 'inquiry', title, message, ticketId: String(ticketId || '') };
 }
 
-/**
- * Claim after successful Kakao send.
- * IMPORTANT: Do NOT reuse supportTickets.adminNotified — that flag is for admin UI toasts
- * (client/supportAi set it false on handoff; admin console sets it true when toast shown).
- * Idempotency uses kakaoAlertSent (+ legacy discordNotified).
- */
-async function claimAdminNotify(ref) {
-  const db = admin.firestore();
-  return db.runTransaction(async (tx) => {
-    const snap = await tx.get(ref);
-    if (!snap.exists) return false;
-    const data = snap.data() || {};
-    if (data.kakaoAlertSent === true || data.discordNotified === true) return false;
-    tx.set(ref, {
-      kakaoAlertSent: true,
-      kakaoAlertSentAt: admin.firestore.FieldValue.serverTimestamp(),
-      adminNotifyChannel: 'kakao'
-    }, { merge: true });
-    return true;
-  });
-}
-
-async function alreadyNotified(ref) {
-  const snap = await ref.get();
-  if (!snap.exists) return false;
-  const data = snap.data() || {};
-  return data.kakaoAlertSent === true || data.discordNotified === true;
-}
-
 function logAdmin(stage, fields) {
   // console.log is reliably captured on Gen1 Firestore triggers.
   console.log(JSON.stringify({ tag: '[ADMIN_NOTIFY]', stage, ...fields }));
 }
 
 /**
- * Inquiry admin alert. Never throws to caller — returns false on failure.
+ * Inquiry admin alert (FCM). Never throws to caller — returns true after attempt.
  */
 async function notifyInquiryCreated(ticketId, data, ref, deps = {}) {
-  const send = deps.notifyAdmin || notifyAdmin;
-  const db = deps.db || admin.firestore();
-  const FieldValue = deps.FieldValue || admin.firestore.FieldValue;
-  let kakaoOk = true;
-  try {
-    if (await alreadyNotified(ref)) {
-      logAdmin('inquiry_skip_already_sent', { ticketId: String(ticketId || '') });
-    } else {
-      const alert = buildInquiryAlert(ticketId, data || {});
-      await send(db, FieldValue, {
-        type: alert.type,
-        title: alert.title,
-        message: alert.message
-      });
-      const claimed = await claimAdminNotify(ref);
-      logAdmin('inquiry_sent', {
-        ticketId: String(ticketId || ''),
-        claimed: !!claimed
-      });
-    }
-  } catch (err) {
-    kakaoOk = false;
-    logAdmin('inquiry_failed', {
-      ticketId: String(ticketId || ''),
-      message: err && err.message ? err.message : String(err),
-      kakaoStage: err && err.stage ? err.stage : null,
-      kakaoCode: err && err.kakaoCode != null ? err.kakaoCode : null
-    });
-  }
   try {
     const sendFcm = deps.sendFcmInquiry || defaultInquiryFcm;
     await sendFcm(ticketId, data || {}, ref);
+    logAdmin('inquiry_fcm_sent', { ticketId: String(ticketId || '') });
   } catch (fcmErr) {
     logAdmin('inquiry_fcm_failed', {
       ticketId: String(ticketId || ''),
       message: fcmErr && fcmErr.message ? fcmErr.message : String(fcmErr)
     });
   }
-  return kakaoOk;
+  return true;
 }
 
 /**
- * Payment admin alert. Never throws to caller — returns false on failure.
+ * Payment admin alert (FCM). Never throws to caller.
+ * Returns false when the order is not a granted license (business gate unchanged).
  */
 async function notifyPaymentCompleted(orderId, data, ref, deps = {}) {
   if (!isLicenseGrantedOrder(data)) return false;
-  const send = deps.notifyAdmin || notifyAdmin;
-  const db = deps.db || admin.firestore();
-  const FieldValue = deps.FieldValue || admin.firestore.FieldValue;
-  let kakaoOk = true;
-  try {
-    if (await alreadyNotified(ref)) {
-      logAdmin('payment_skip_already_sent', { orderId: String(orderId || '') });
-    } else {
-      const alert = buildPaymentAlert(orderId, data || {});
-      await send(db, FieldValue, {
-        type: alert.type,
-        title: alert.title,
-        message: alert.message
-      });
-      const claimed = await claimAdminNotify(ref);
-      logAdmin('payment_sent', {
-        orderId: String(orderId || ''),
-        claimed: !!claimed
-      });
-    }
-  } catch (err) {
-    kakaoOk = false;
-    logAdmin('payment_failed', {
-      orderId: String(orderId || ''),
-      message: err && err.message ? err.message : String(err),
-      kakaoStage: err && err.stage ? err.stage : null,
-      kakaoCode: err && err.kakaoCode != null ? err.kakaoCode : null
-    });
-  }
   try {
     const sendFcm = deps.sendFcmPayment || defaultPaymentFcm;
     await sendFcm(orderId, data || {}, ref);
+    logAdmin('payment_fcm_sent', { orderId: String(orderId || '') });
   } catch (fcmErr) {
     logAdmin('payment_fcm_failed', {
       orderId: String(orderId || ''),
       message: fcmErr && fcmErr.message ? fcmErr.message : String(fcmErr)
     });
   }
-  return kakaoOk;
+  return true;
 }
 
 function defaultInquiryFcm(ticketId, data, ref) {
@@ -252,8 +165,6 @@ module.exports = {
   notifyInquiryCreated,
   notifyPaymentCompleted,
   isLicenseGrantedOrder,
-  claimAdminNotify,
-  alreadyNotified,
   buildPaymentAlert,
   buildInquiryAlert,
   formatKst,

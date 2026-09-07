@@ -1,9 +1,14 @@
 /**
- * Admin Kakao notify unit tests (no network, no secrets printed).
+ * Admin notify unit tests — FCM only, no Kakao self-message.
  */
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 const adminNotify = require('./adminNotify');
-const kakaoAdminNotify = require('./kakaoAdminNotify');
+const adminPush = require('./adminPush');
+
+const KAKAO_MEMO_RE = /kapi\.kakao\.com|talk\/memo|나에게 보내기|나와의 채팅/;
+const KAKAO_ADMIN_MODULE_RE = /kakaoAdminNotify|kakaoOAuth|notifyAdminKakao|sendKakaoAdminNotification|getKakaoAdminAccessToken|testKakaoAdminNotification|kakaoOAuthCallback/;
 
 function testPayloadBuilders() {
   const payment = adminNotify.buildPaymentAlert('ord_1', {
@@ -51,34 +56,209 @@ function testLicenseGate() {
   console.log('ok license gate');
 }
 
-function testTruncate() {
-  const long = 'x'.repeat(250);
-  const out = kakaoAdminNotify.truncateText(long, 200);
-  assert.ok(out.length <= 200);
-  console.log('ok truncate');
+function countKakaoSelfMessage(src) {
+  const memoHits = src.match(/talk\/memo|kapi\.kakao\.com\/v2\/api\/talk\/memo/g) || [];
+  const oauthHits = src.match(/kakaoAdminNotify|createKakaoOAuthCallbackHandler|createTestKakaoAdminNotificationHandler|kakaoOAuthCallback|testKakaoAdminNotification/g) || [];
+  return memoHits.length + oauthHits.length;
 }
 
-async function testKakaoFailureIsolated() {
-  const failingNotify = async () => {
-    throw Object.assign(new Error('kakao down'), { stage: 'memo_send_failed' });
+async function testPaymentSuccessFcmOnly() {
+  let fcmCalls = 0;
+  let kakaoCalls = 0;
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (KAKAO_MEMO_RE.test(String(url))) kakaoCalls += 1;
+    throw new Error('unexpected fetch');
   };
-  const ref = {
-    async get() {
-      return { exists: true, data: () => ({}) };
+  try {
+    const ok = await adminNotify.notifyPaymentCompleted('o_ok', {
+      status: 'completed',
+      licenseIssued: true,
+      productName: 'Lifetime',
+      amount: 129000,
+      currency: 'KRW',
+      email: 'buyer@example.com'
+    }, { id: 'o_ok' }, {
+      sendFcmPayment: async () => {
+        fcmCalls += 1;
+        return { success: 1 };
+      }
+    });
+    assert.strictEqual(ok, true);
+    assert.strictEqual(fcmCalls, 1);
+    assert.strictEqual(kakaoCalls, 0);
+    console.log('ok payment success → FCM, Kakao 0');
+  } finally {
+    global.fetch = originalFetch;
+  }
+}
+
+async function testInquiryWaitingHumanFcmOnly() {
+  let fcmCalls = 0;
+  let kakaoCalls = 0;
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (KAKAO_MEMO_RE.test(String(url))) kakaoCalls += 1;
+    throw new Error('unexpected fetch');
+  };
+  try {
+    const ok = await adminNotify.notifyInquiryCreated('t_wait', {
+      title: '상담 요청',
+      email: 'user@example.com',
+      conversationMode: 'waiting_human'
+    }, { id: 't_wait' }, {
+      sendFcmInquiry: async () => {
+        fcmCalls += 1;
+        return { success: 1 };
+      }
+    });
+    assert.strictEqual(ok, true);
+    assert.strictEqual(fcmCalls, 1);
+    assert.strictEqual(kakaoCalls, 0);
+    console.log('ok inquiry waiting_human → FCM, Kakao 0');
+  } finally {
+    global.fetch = originalFetch;
+  }
+}
+
+function makeFcmFakeDb(store) {
+  return {
+    collection(name) {
+      const col = {
+        doc(id) {
+          const key = `${name}/${id}`;
+          return {
+            async get() {
+              return { exists: store[key] != null, data: () => store[key] || {} };
+            },
+            async set(patch, opts) {
+              if (opts && opts.merge) store[key] = Object.assign({}, store[key] || {}, patch);
+              else store[key] = Object.assign({}, patch);
+              return undefined;
+            }
+          };
+        },
+        async get() {
+          return {
+            docs: Object.keys(store)
+              .filter((k) => k.startsWith(`${name}/`))
+              .map((k) => ({
+                id: k.slice(name.length + 1),
+                data: () => store[k],
+                ref: col.doc(k.slice(name.length + 1))
+              }))
+          };
+        },
+        async add(doc) {
+          store[`${name}/log_${Object.keys(store).length}`] = doc;
+          return { id: 'log' };
+        },
+        orderBy() { return this; },
+        offset() { return this; },
+        limit() { return this; }
+      };
+      return col;
     }
   };
-  // claimAdminNotify uses real Firestore — stub alreadyNotified path via empty claim by
-  // injecting notifyAdmin failure before claim. Use deps.notifyAdmin.
+}
+
+async function testRefundFcmOnly() {
+  let fcmCalls = 0;
+  let kakaoCalls = 0;
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (KAKAO_MEMO_RE.test(String(url))) kakaoCalls += 1;
+    return { ok: false, status: 500, async json() { return {}; } };
+  };
+  const store = {
+    'adminDevices/dev1': {
+      status: 'approved',
+      enabled: true,
+      token: 'fcm-refund-token-value',
+      refundEnabled: true
+    }
+  };
+  try {
+    const out = await adminPush.sendAdminNotification({
+      type: 'refund',
+      title: '↩ 결제 취소',
+      body: 'Lifetime · 129,000 KRW',
+      entityId: 'pay_1'
+    }, {
+      db: makeFcmFakeDb(store),
+      messaging: {
+        async sendEach(messages) {
+          fcmCalls += messages.length;
+          return { responses: messages.map(() => ({ success: true })) };
+        }
+      }
+    });
+    assert.strictEqual(out.success, 1);
+    assert.strictEqual(fcmCalls, 1);
+    assert.strictEqual(kakaoCalls, 0);
+    const indexSrc = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
+    assert.ok(/maybeNotifyRefundFcm/.test(indexSrc));
+    assert.ok(!/notifyAdminKakao|sendKakaoAdminNotification/.test(indexSrc));
+    console.log('ok refund → FCM, Kakao 0');
+  } finally {
+    global.fetch = originalFetch;
+  }
+}
+
+async function testCriticalFcmOnly() {
+  let fcmCalls = 0;
+  let kakaoCalls = 0;
+  const originalFetch = global.fetch;
+  global.fetch = async (url) => {
+    if (KAKAO_MEMO_RE.test(String(url))) kakaoCalls += 1;
+    return { ok: false, status: 500, async json() { return {}; } };
+  };
+  const store = {
+    'adminDevices/dev1': {
+      status: 'approved',
+      enabled: true,
+      token: 'fcm-critical-token-value',
+      criticalEnabled: true
+    }
+  };
+  try {
+    const out = await adminPush.notifyCritical({
+      key: '',
+      title: '🚨 테스트',
+      body: 'critical',
+      entityId: 'x'
+    }, {
+      db: makeFcmFakeDb(store),
+      messaging: {
+        async sendEach(messages) {
+          fcmCalls += messages.length;
+          return { responses: messages.map(() => ({ success: true })) };
+        }
+      }
+    });
+    assert.strictEqual(out.success, 1);
+    assert.strictEqual(fcmCalls, 1);
+    assert.strictEqual(kakaoCalls, 0);
+    const indexSrc = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
+    assert.ok(/adminPush\.notifyCritical/.test(indexSrc));
+    console.log('ok critical → FCM, Kakao 0');
+  } finally {
+    global.fetch = originalFetch;
+  }
+}
+
+async function testFcmFailureIsolated() {
+  const failingFcm = async () => {
+    throw new Error('fcm down');
+  };
+  const ref = { id: 'iso' };
+
   const okInquiry = await adminNotify.notifyInquiryCreated('t_fail', {
     title: 'x',
-    email: 'a@b.c'
-  }, ref, {
-    notifyAdmin: failingNotify,
-    db: {},
-    FieldValue: {},
-    sendFcmInquiry: async () => ({ skipped: 'test' })
-  });
-  assert.strictEqual(okInquiry, false);
+    email: 'a@b.c',
+    conversationMode: 'waiting_human'
+  }, ref, { sendFcmInquiry: failingFcm });
+  assert.strictEqual(okInquiry, true);
 
   const okPayment = await adminNotify.notifyPaymentCompleted('o_fail', {
     status: 'completed',
@@ -87,77 +267,38 @@ async function testKakaoFailureIsolated() {
     amount: 1,
     currency: 'USD',
     email: 'a@b.c'
-  }, ref, {
-    notifyAdmin: failingNotify,
-    db: {},
-    FieldValue: {},
-    sendFcmPayment: async () => ({ skipped: 'test' })
-  });
-  assert.strictEqual(okPayment, false);
-  console.log('ok kakao failure isolated');
+  }, ref, { sendFcmPayment: failingFcm });
+  assert.strictEqual(okPayment, true);
+  console.log('ok FCM failure isolated (does not fail main handling)');
 }
 
-async function testTokenRefreshMock() {
-  const originalFetch = global.fetch;
-  let refreshBody = '';
-  global.fetch = async (url, opts) => {
-    if (String(url).includes('/oauth/token')) {
-      refreshBody = String(opts.body || '');
-      return {
-        ok: true,
-        status: 200,
-        async json() {
-          return {
-            access_token: 'access_mock_not_logged',
-            expires_in: 3600
-            // no new refresh_token
-          };
-        }
-      };
-    }
-    throw new Error('unexpected url');
-  };
-
-  process.env.KAKAO_REST_API_KEY = 'rest_key_mock';
-  process.env.KAKAO_CLIENT_SECRET = 'client_secret_mock';
-
-  const fakeDb = {
-    collection() {
-      return {
-        doc() {
-          return {
-            async get() {
-              return {
-                exists: true,
-                data: () => ({
-                  refreshToken: 'refresh_mock_not_logged',
-                  hasRefreshToken: true
-                })
-              };
-            },
-            async set() {
-              return undefined;
-            }
-          };
-        }
-      };
-    }
-  };
-  const FieldValue = { serverTimestamp: () => 'ts' };
-
-  try {
-    const token = await kakaoAdminNotify.getKakaoAdminAccessToken(fakeDb, FieldValue);
-    assert.strictEqual(token, 'access_mock_not_logged');
-    assert.ok(refreshBody.includes('grant_type=refresh_token'));
-    assert.ok(refreshBody.includes('client_id=rest_key_mock'));
-    assert.ok(refreshBody.includes('client_secret=client_secret_mock'));
-    assert.ok(refreshBody.includes('refresh_token=refresh_mock_not_logged'));
-    console.log('ok token refresh mock');
-  } finally {
-    global.fetch = originalFetch;
-    delete process.env.KAKAO_REST_API_KEY;
-    delete process.env.KAKAO_CLIENT_SECRET;
+function testKakaoSelfMessageGone() {
+  const files = [
+    'adminNotify.js',
+    'index.js',
+    'adminPush.js',
+    'creditPurchase.js'
+  ];
+  for (const file of files) {
+    const src = fs.readFileSync(path.join(__dirname, file), 'utf8');
+    assert.strictEqual(countKakaoSelfMessage(src), 0, `${file} still has Kakao self-message refs`);
+    assert.ok(!KAKAO_MEMO_RE.test(src) || file === 'adminNotify.test.js', `${file} mentions Kakao memo`);
   }
+  assert.strictEqual(fs.existsSync(path.join(__dirname, 'kakaoAdminNotify.js')), false);
+  assert.strictEqual(fs.existsSync(path.join(__dirname, 'kakaoOAuth.js')), false);
+  let threwAdmin = false;
+  let threwOauth = false;
+  try { require('./kakaoAdminNotify'); } catch (_) { threwAdmin = true; }
+  try { require('./kakaoOAuth'); } catch (_) { threwOauth = true; }
+  assert.strictEqual(threwAdmin, true);
+  assert.strictEqual(threwOauth, true);
+
+  const indexSrc = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
+  assert.ok(!KAKAO_ADMIN_MODULE_RE.test(indexSrc));
+  assert.ok(/notifyAdminOnInquiryCreate|notifyAdminOnOrderCompleted/.test(indexSrc));
+  assert.ok(/maybeNotifyPaymentFcm|notifyPaymentCompleted/.test(indexSrc));
+  assert.ok(/sendAdminNotification|notifyCritical|maybeNotifyRefundFcm/.test(indexSrc));
+  console.log('ok Kakao self-message modules and callsites removed');
 }
 
 async function testDiscordGone() {
@@ -168,8 +309,7 @@ async function testDiscordGone() {
     threw = true;
   }
   assert.strictEqual(threw, true);
-  const fs = require('fs');
-  const indexSrc = fs.readFileSync(require('path').join(__dirname, 'index.js'), 'utf8');
+  const indexSrc = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
   assert.ok(!/DISCORD_INQUIRY_WEBHOOK|DISCORD_PAYMENT_WEBHOOK|discordNotify|notifyDiscordOn/.test(indexSrc));
   assert.ok(/notifyAdminOnInquiryCreate|notifyAdminOnOrderCompleted/.test(indexSrc));
   console.log('ok discord executable refs removed from functions');
@@ -178,9 +318,12 @@ async function testDiscordGone() {
 (async () => {
   testPayloadBuilders();
   testLicenseGate();
-  testTruncate();
-  await testKakaoFailureIsolated();
-  await testTokenRefreshMock();
+  await testPaymentSuccessFcmOnly();
+  await testInquiryWaitingHumanFcmOnly();
+  await testRefundFcmOnly();
+  await testCriticalFcmOnly();
+  await testFcmFailureIsolated();
+  testKakaoSelfMessageGone();
   await testDiscordGone();
   console.log('all adminNotify tests passed');
 })().catch((err) => {

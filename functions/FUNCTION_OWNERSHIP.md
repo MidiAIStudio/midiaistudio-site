@@ -35,8 +35,7 @@ Welcome Benefit (신규 가입 혜택):
 Also owns: adminGrantCredits, sendAdminBulkEmail, license/PayPal/PortOne, …
 
 - `notifyAdminOnInquiryCreate` / `notifyAdminOnHumanRequest` / `notifyAdminOnOrderCompleted`
-  — Kakao Talk admin alerts (replaces retired Discord notify* functions).
-- `kakaoOAuthCallback` / `testKakaoAdminNotification` — OAuth + connectivity test.
+  — MidiAI Admin FCM alerts (Kakao "나에게 보내기" self-message removed).
   Named deploy example:
   `firebase deploy --only functions:web:notifyAdminOnInquiryCreate,functions:web:notifyAdminOnHumanRequest,functions:web:notifyAdminOnOrderCompleted`
 
