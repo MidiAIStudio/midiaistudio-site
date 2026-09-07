@@ -4979,23 +4979,39 @@ function initStudioHeroVideo(){
     const vol=root.querySelector('.studio-hero-volume');
     if(!video || !muteBtn || !vol) return;
 
-    // Always use same-origin MP4. Cached HTML may still point at Dropbox
-    // (wrong Content-Type / nosniff breaks autoplay on some PCs).
-    const base = String(window.MIDIAI_BASE_PATH || './').replace(/\/?$/, '/');
-    const localSrc = `${base}assets/videos/MidiAI_Studio_HowTo.mp4?v=v06-hq`;
+    // Prefer dl.dropbox.com (www can return HTML preview on some browsers).
+    const DROPBOX_HERO = 'https://dl.dropbox.com/scl/fi/54jw00ddcvnlpqa8xk7g6/.mp4?rlkey=479kw3irxy71j4scipi1vxrig&dl=1';
+    const normalizeHeroSrc = (raw)=>{
+      const s = String(raw || '').trim();
+      if(!s) return DROPBOX_HERO;
+      try{
+        const u = new URL(s);
+        const host = String(u.hostname||'').toLowerCase();
+        if(host==='www.dropbox.com' || host==='dropbox.com'){
+          u.hostname = 'dl.dropbox.com';
+          u.searchParams.delete('raw');
+          u.searchParams.set('dl','1');
+          return u.toString();
+        }
+      }catch{}
+      return s;
+    };
     const sources = [...video.querySelectorAll('source')];
     let needsReload = false;
     if(sources.length){
       sources.forEach(s=>{
-        const raw = String(s.getAttribute('src') || '');
-        if(/dropbox\.com/i.test(raw) || !raw){
-          s.setAttribute('src', localSrc);
+        const next = normalizeHeroSrc(s.getAttribute('src'));
+        if(next !== s.getAttribute('src')){
+          s.setAttribute('src', next);
           needsReload = true;
         }
       });
-    }else if(!video.getAttribute('src') || /dropbox\.com/i.test(video.getAttribute('src')||'')){
-      video.setAttribute('src', localSrc);
-      needsReload = true;
+    }else{
+      const next = normalizeHeroSrc(video.getAttribute('src'));
+      if(next !== (video.getAttribute('src')||'')){
+        video.setAttribute('src', next);
+        needsReload = true;
+      }
     }
 
     // Policy-safe muted autoplay: attribute + property (Safari/Chrome both need this).
