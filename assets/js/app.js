@@ -5009,10 +5009,11 @@ function initStudioHeroVideo(){
       needsReload = true;
     }
 
-    // Policy-safe muted autoplay: attribute + property (Safari/Chrome both need this).
+    // Policy-safe muted autoplay defaults.
     video.muted=true;
     video.defaultMuted=true;
     video.setAttribute('muted','');
+    video.setAttribute('autoplay','');
     video.playsInline=true;
     video.setAttribute('playsinline','');
     video.setAttribute('webkit-playsinline','');
@@ -5021,13 +5022,11 @@ function initStudioHeroVideo(){
     video.removeAttribute('controls');
     video.setAttribute('controlslist','nodownload noplaybackrate noremoteplayback');
     video.disablePictureInPicture=true;
-    if(needsReload){
-      try{ video.load(); }catch{}
-    }
 
     const DEFAULT_VOL=0.7;
     let lastVol=DEFAULT_VOL;
     let playAttempts=0;
+    let unlocked=false;
     const reduceMotion=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isSilent=()=>video.muted || video.volume===0;
     const syncUi=()=>{
@@ -5044,26 +5043,29 @@ function initStudioHeroVideo(){
     };
 
     const tryPlay=(reason='')=>{
-      if(reduceMotion()){
-        // Accessibility: don't autoplay; keep poster until a user gesture.
+      const userGesture = reason==='gesture' || reason==='mute-toggle' || reason==='volume';
+      if(reduceMotion() && !userGesture){
         video.removeAttribute('autoplay');
-        if(reason!=='gesture' && reason!=='mute-toggle'){
-          try{ video.pause(); }catch{}
-          return;
-        }
+        try{ video.pause(); }catch{}
+        return;
       }
       if(!video.paused && !video.ended) return;
-      // Keep muted for autoplay policy; user unmute via controls.
-      video.muted=true;
-      video.setAttribute('muted','');
+
+      // Autoplay must stay muted. User-gesture plays keep the current mute/volume choice
+      // (previously we forced mute here, so unmute only looked like it "started" playback).
+      if(!userGesture){
+        video.muted=true;
+        video.defaultMuted=true;
+        video.setAttribute('muted','');
+      }
+
       playAttempts+=1;
       const p=video.play();
-      if(p && typeof p.catch==='function'){
-        p.catch((err)=>{
-          if(playAttempts<=4){
+      if(p && typeof p.then==='function'){
+        p.then(()=>{ unlocked=true; }).catch((err)=>{
+          if(playAttempts<=6){
             console.warn('[studio-hero-video] autoplay retry', reason||'play', err?.name||'', err?.message||err);
-            // Delayed retry helps when the first bytes are still arriving.
-            if(playAttempts<=3) setTimeout(()=>tryPlay('retry'), 400*playAttempts);
+            if(playAttempts<=5) setTimeout(()=>tryPlay(reason||'retry'), 350*playAttempts);
           }
         });
       }
@@ -5082,7 +5084,9 @@ function initStudioHeroVideo(){
         vol.value='0';
       }
       syncUi();
-      tryPlay('mute-toggle');
+      // Direct play on gesture — do not remute.
+      const p=video.play();
+      if(p && typeof p.then==='function') p.then(()=>{ unlocked=true; }).catch(()=>{});
     });
 
     vol.addEventListener('input',()=>{
@@ -5098,11 +5102,15 @@ function initStudioHeroVideo(){
         video.setAttribute('muted','');
       }
       syncUi();
+      const p=video.play();
+      if(p && typeof p.then==='function') p.then(()=>{ unlocked=true; }).catch(()=>{});
     });
 
     video.addEventListener('volumechange', syncUi);
+    video.addEventListener('playing', ()=>{ unlocked=true; root.classList.add('is-playing'); });
+    video.addEventListener('pause', ()=>{ root.classList.remove('is-playing'); });
 
-    // Retry when media becomes ready (slow nets often miss a single canplay).
+    // Attach ready listeners BEFORE any load() so we never miss canplay.
     video.addEventListener('loadeddata', ()=>tryPlay('loadeddata'));
     video.addEventListener('canplay', ()=>tryPlay('canplay'));
     video.addEventListener('canplaythrough', ()=>tryPlay('canplaythrough'), {once:true});
@@ -5120,8 +5128,9 @@ function initStudioHeroVideo(){
       if(document.visibilityState==='visible') tryPlay('page-visible');
     });
 
-    // If autoplay was blocked, unlock on first user gesture anywhere on the page.
+    // If muted autoplay was blocked, unlock on first page gesture.
     const unlock=()=>{
+      if(unlocked && !video.paused) return;
       tryPlay('gesture');
       if(!video.paused){
         document.removeEventListener('pointerdown', unlock, true);
@@ -5133,8 +5142,12 @@ function initStudioHeroVideo(){
     document.addEventListener('keydown', unlock, true);
     document.addEventListener('touchstart', unlock, {capture:true, passive:true});
 
+    if(needsReload){
+      try{ video.load(); }catch{}
+    }
+    // Kick once now; ready events above cover the rest.
     if(video.readyState>=2) tryPlay('ready');
-    else tryPlay('init');
+    else queueMicrotask(()=>tryPlay('init'));
 
     video.addEventListener('error',()=>{
       const err=video.error;
