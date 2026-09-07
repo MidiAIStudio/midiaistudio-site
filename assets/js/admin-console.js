@@ -9,7 +9,8 @@ const VIEW_SECTIONS = {
   logs: 'adminLogsSection',
   pricing: 'adminPricingSection',
   content: 'adminContentSection',
-  push: 'adminPushSection'
+  push: 'adminPushSection',
+  settlement: 'adminSettlementSection'
 };
 
 const VIEW_TITLES = {
@@ -21,7 +22,8 @@ const VIEW_TITLES = {
   logs: '로그',
   pricing: '가격·상품',
   content: '콘텐츠',
-  push: '알림 전송 설정'
+  push: '알림 전송 설정',
+  settlement: '정산 설정'
 };
 
 const CRM_TITLES = {
@@ -38,7 +40,8 @@ const VIEW_LEADS = {
   logs: '회원별 라이선스·결제·문의·앱 사용 이력을 조회합니다.',
   pricing: 'Region별 정가·판매가와 할인·팝업을 관리합니다.',
   content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.',
-  push: '관리자 Android 기기 승인과 FCM 운영 알림을 관리합니다. APK 설치만으로는 알림이 가지 않습니다.'
+  push: '관리자 Android 기기 승인과 FCM 운영 알림을 관리합니다. APK 설치만으로는 알림이 가지 않습니다.',
+  settlement: '카카오페이 계약 조건으로 예상 정산일을 계산합니다. 실제 PG 정산 확정 데이터와 다를 수 있습니다.'
 };
 
 const CRM_LEADS = {
@@ -181,6 +184,11 @@ function applyAdminView(next, opts = {}) {
   if (next === 'push') {
     import('./admin-push.js?v=push-1').then((m) => {
       m.showAdminPushPanel?.(true);
+    }).catch(console.error);
+  }
+  if (next === 'settlement') {
+    import('./admin-settlement.js?v=settlement-1').then((m) => {
+      m.showAdminSettlementPanel?.(true);
     }).catch(console.error);
   }
   if (next === 'content') {

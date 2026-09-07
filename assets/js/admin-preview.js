@@ -9,7 +9,8 @@ const VIEWS = {
   logs: 'adminLogsSection',
   pricing: 'adminPricingSection',
   content: 'adminContentSection',
-  push: 'adminPushSection'
+  push: 'adminPushSection',
+  settlement: 'adminSettlementSection'
 };
 const TITLES = {
   home: '홈',
@@ -20,7 +21,8 @@ const TITLES = {
   logs: '로그',
   pricing: '가격·상품',
   content: '콘텐츠',
-  push: '알림 전송 설정'
+  push: '알림 전송 설정',
+  settlement: '정산 설정'
 };
 const CRM_TITLES = { members: '회원', license: '라이선스', orders: '결제' };
 const VIEW_LEADS = {
@@ -31,7 +33,8 @@ const VIEW_LEADS = {
   logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
   pricing: '상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.',
   content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.',
-  push: '관리자 Android 기기 승인과 FCM 운영 알림을 관리합니다.'
+  push: '관리자 Android 기기 승인과 FCM 운영 알림을 관리합니다.',
+  settlement: '카카오페이 계약 조건으로 예상 정산을 계산합니다.'
 };
 const CRM_LEADS = {
   members: '회원을 검색하고 계정 상태와 주요 정보를 확인합니다.',

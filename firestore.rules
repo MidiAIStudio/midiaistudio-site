@@ -388,6 +388,9 @@ service cloud.firestore {
     match /adminNotificationSettings/{id} {
       allow read, write: if false;
     }
+    match /adminSettlementSettings/{id} {
+      allow read, write: if false;
+    }
     match /adminPushLogs/{id} {
       allow read, write: if false;
     }

@@ -8,6 +8,7 @@
 'use strict';
 
 const adminPush = require('./adminPush');
+const adminSettlement = require('./adminSettlement');
 
 const TZ = 'Asia/Seoul';
 const CURRENCY = 'KRW';
@@ -220,12 +221,59 @@ function refundAmountOf(row) {
 }
 
 function refundStatusOf(row) {
-  const st = statusOf(row);
-  const refunded = refundAmountOf(row);
-  const paid = amountKrw(row);
-  if (st === 'partially_refunded' || (refunded > 0 && paid > 0 && refunded < paid)) return 'partial';
-  if (st === 'refunded' || st === 'cancelled' || st === 'canceled' || refunded > 0) return 'refunded';
+  const canonical = canonicalStatus(row);
+  if (canonical === 'partially_refunded') return 'partial';
+  if (canonical === 'refunded' || canonical === 'cancelled') return 'refunded';
   return 'none';
+}
+
+function canonicalStatus(row) {
+  const st = statusOf(row);
+  if (st === 'failed') return 'failed';
+  if (st === 'created' || st === 'pending' || st === 'pay_pending') return 'pending';
+  if (st === 'cancelled' || st === 'canceled') return 'cancelled';
+  const gross = amountKrw(row);
+  const refunded = refundAmountOf(row);
+  if (st === 'partially_refunded' || (refunded > 0 && gross > 0 && refunded < gross)) {
+    return 'partially_refunded';
+  }
+  if (st === 'refunded' || st === 'refund_review_required' || (refunded > 0 && refunded >= gross && gross > 0)) {
+    return 'refunded';
+  }
+  if (PAID_STATUS.has(st) || wasSuccessfulPayment(row)) return 'paid';
+  return 'pending';
+}
+
+function displayProduct(row) {
+  const id = String((row && (row.productId || row.productCanonicalId)) || '').toUpperCase();
+  const raw = String((row && (row.productName || row.orderName || row.product)) || '').trim();
+  const blob = `${id} ${raw}`.toLowerCase();
+  if (id === 'LIFETIME' || /lifetime/.test(blob)) return '평생 이용권';
+  if (id === 'PASS_90D' || /90\s*일/.test(blob) || /90\s*day/.test(blob)) return '90일 PASS';
+  if (id === 'PASS_30D' || /30\s*일/.test(blob) || /30\s*day/.test(blob) || /30일 full/.test(blob)) {
+    return '30일 PASS';
+  }
+  if (id === 'PASS_7D' || /7\s*일/.test(blob) || /7\s*day/.test(blob) || /7일 full/.test(blob)) {
+    return '7일 PASS';
+  }
+  if (id.indexOf('CREDIT') === 0 || /credit|크레딧|포인트/.test(blob)) {
+    return raw || '크레딧';
+  }
+  if (raw) return raw;
+  const plan = String((row && row.plan) || '').toLowerCase();
+  if (plan === 'lifetime') return '평생 이용권';
+  if (plan === 'period') return 'PASS';
+  if (plan === 'credits') return '크레딧';
+  return String((row && row.productId) || 'MidiAI Studio');
+}
+
+function matchesPaymentFilter(status, filter) {
+  const f = String(filter || 'paid').toLowerCase();
+  if (f === 'all') return status === 'paid' || status === 'partially_refunded' || status === 'refunded' || status === 'cancelled';
+  if (f === 'refund' || f === 'refunds') {
+    return status === 'partially_refunded' || status === 'refunded' || status === 'cancelled';
+  }
+  return status === 'paid';
 }
 
 function paymentIdOf(id, row) {
@@ -245,21 +293,19 @@ function dedupKeys(id, row) {
 }
 
 function providerOf(row) {
-  const p = String((row && row.provider) || '').trim();
+  const method = String((row && (row.paymentMethod || row.method || row.pgProvider)) || '').toLowerCase();
+  if (method.indexOf('kakao') >= 0) return 'kakaopay';
+  const p = String((row && row.provider) || '').trim().toLowerCase();
+  if (p.indexOf('kakao') >= 0) return 'kakaopay';
+  if (p === 'paypal' || (row && (row.paypalOrderId || row.paypalCaptureId))) return 'paypal';
+  if (p === 'portone' || p === 'iamport') return 'portone';
   if (p) return p;
-  if (row && (row.paypalOrderId || row.paypalCaptureId)) return 'paypal';
-  if (row && (row.portonePaymentId || row.portoneTransactionId || row.paymentMethod === 'kakaopay')) return 'portone';
-  return '';
+  if (row && (row.portonePaymentId || row.portoneTransactionId)) return 'portone';
+  return 'portone';
 }
 
 function productOf(row) {
-  const name = String((row && (row.productName || row.orderName || row.product)) || '').trim();
-  if (name) return name;
-  const plan = String((row && row.plan) || '').toLowerCase();
-  if (plan === 'lifetime') return 'Lifetime';
-  if (plan === 'period') return 'PASS';
-  if (plan === 'credits') return 'Credits';
-  return String((row && row.productId) || 'MidiAI Studio');
+  return displayProduct(row);
 }
 
 function emailOf(row) {
@@ -270,21 +316,31 @@ function mapPayment(id, row, opts) {
   const data = row || {};
   const paymentId = paymentIdOf(id, data);
   const paidAt = paidAtOf(data);
+  const refundAt = refundAtOf(data);
   const currency = String(data.currency || CURRENCY).toUpperCase() || CURRENCY;
+  const gross = amountKrw(data);
+  const refunded = refundAmountOf(data);
+  const net = Math.max(0, gross - refunded);
+  const status = canonicalStatus(data);
   const out = {
     paymentId,
     provider: providerOf(data),
     product: productOf(data),
-    amount: Math.round(amountRaw(data)),
+    status,
+    grossAmount: gross,
+    refundAmount: refunded,
+    netAmount: net,
+    amount: gross,
     currency,
-    status: String(data.status || ''),
     emailMasked: adminPush.maskEmail(emailOf(data)),
     paidAt: toIso(paidAt) || undefined,
-    refundedAmount: Math.round(num(data.refundedAmount != null ? data.refundedAmount : data.cancelledAmount, 0)),
+    refundedAt: toIso(refundAt) || undefined,
+    refundedAmount: refunded,
     adminUrl: PAYMENT_URL
   };
   if (opts && opts.detail) {
     out.refundStatus = refundStatusOf(data);
+    if (opts.events) out.events = opts.events;
   }
   return out;
 }
@@ -437,6 +493,8 @@ function summarize(paidRows, refundRows, extras) {
   for (const item of refundRows) refundAmount += item.refundedAmount;
   const out = {
     revenue,
+    grossRevenue: revenue,
+    netRevenue: revenue - refundAmount,
     payments: paidRows.length,
     refundAmount,
     refunds: refundRows.length
@@ -444,6 +502,131 @@ function summarize(paidRows, refundRows, extras) {
   if (extras && extras.inquiries != null) out.inquiries = extras.inquiries;
   if (extras && extras.critical != null) out.critical = extras.critical;
   return out;
+}
+
+function settlementUnavailable() {
+  return {
+    settlementDataAvailable: false,
+    reason: 'PG 정산 데이터 연동 필요',
+    nextSettlement: null,
+    recentSettlements: []
+  };
+}
+
+function settlementHelpers() {
+  return {
+    tsMs,
+    kstParts,
+    addCalendarDay,
+    formatYmd,
+    paidAtOf,
+    refundAtOf,
+    mapPayment,
+    wasSuccessfulPayment,
+    isTestPayment,
+    canonicalStatus,
+    paymentIdOf
+  };
+}
+
+function lookbackStart(now) {
+  const parts = kstParts(now);
+  const start = addCalendarDay(parts.year, parts.month, parts.day, -adminSettlement.LOOKBACK_DAYS);
+  return new Date(zonedLocalToUtcMs(start.year, start.month, start.day, 0, 0, 0, TZ));
+}
+
+async function loadSettlementRows(db, now) {
+  const start = lookbackStart(now);
+  const endParts = addCalendarDay(kstParts(now).year, kstParts(now).month, kstParts(now).day, 1);
+  const end = new Date(zonedLocalToUtcMs(endParts.year, endParts.month, endParts.day, 0, 0, 0, TZ));
+  const [paidRows, refundRows] = await Promise.all([
+    loadPaidInRange(db, start, end),
+    loadRefundsInRange(db, start, end)
+  ]);
+  return mergeRefundParents(db, paidRows, refundRows);
+}
+
+async function buildSettlementPayload(db, now) {
+  const loaded = await adminSettlement.loadSettings(db);
+  const rows = await loadSettlementRows(db, now);
+  return adminSettlement.buildSettlementDashboard({
+    rows,
+    settings: loaded.settings,
+    settingsSource: loaded.settingsSource,
+    now,
+    helpers: settlementHelpers()
+  });
+}
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function formatYmd(year, month, day) {
+  return `${year}-${pad2(month)}-${pad2(day)}`;
+}
+
+function parseYmd(raw) {
+  const m = String(raw || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (!year || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { year, month, day };
+}
+
+function kstInclusiveRange(fromYmd, toYmd) {
+  const from = parseYmd(fromYmd);
+  const to = parseYmd(toYmd);
+  if (!from || !to) throw httpError(400, 'from/to는 YYYY-MM-DD 형식이어야 합니다.');
+  const start = new Date(zonedLocalToUtcMs(from.year, from.month, from.day, 0, 0, 0, TZ));
+  const nxt = addCalendarDay(to.year, to.month, to.day, 1);
+  const end = new Date(zonedLocalToUtcMs(nxt.year, nxt.month, nxt.day, 0, 0, 0, TZ));
+  if (end.getTime() <= start.getTime()) throw httpError(400, '날짜 범위가 올바르지 않습니다.');
+  const maxMs = 400 * 24 * 60 * 60 * 1000;
+  if (end.getTime() - start.getTime() > maxMs) throw httpError(400, '조회 기간이 너무 깁니다.');
+  return {
+    start,
+    end,
+    from: formatYmd(from.year, from.month, from.day),
+    to: formatYmd(to.year, to.month, to.day)
+  };
+}
+
+function encodeCursor(ms, id) {
+  return Buffer.from(JSON.stringify({ t: ms, id: String(id || '') }), 'utf8').toString('base64url');
+}
+
+function decodeCursor(raw) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(String(raw), 'base64url').toString('utf8'));
+    const t = num(parsed && parsed.t, 0);
+    const id = String((parsed && parsed.id) || '');
+    if (!t) return null;
+    return { t, id };
+  } catch (_) {
+    return null;
+  }
+}
+
+function applyCursor(list, cursor, limit) {
+  let rows = list.slice();
+  if (cursor) {
+    rows = rows.filter((item) => {
+      const ms = tsMs(paidAtOf(item.row)) || tsMs(refundAtOf(item.row));
+      if (ms < cursor.t) return true;
+      if (ms > cursor.t) return false;
+      return String(paymentIdOf(item.id, item.row)) < cursor.id;
+    });
+  }
+  const slice = rows.slice(0, limit);
+  const last = slice[slice.length - 1];
+  const nextCursor = slice.length === limit && last
+    ? encodeCursor(tsMs(paidAtOf(last.row)) || tsMs(refundAtOf(last.row)), paymentIdOf(last.id, last.row))
+    : null;
+  return { items: slice, nextCursor };
 }
 
 function isHumanInquiry(row) {
@@ -556,6 +739,65 @@ function redactPaymentJson(payload) {
   return payload;
 }
 
+async function loadPaymentEvents(db, paymentId, row) {
+  const events = [];
+  const paidAt = paidAtOf(row);
+  if (paidAt) {
+    events.push({
+      type: 'paid',
+      at: toIso(paidAt),
+      amount: amountKrw(row)
+    });
+  }
+  const snap = await safeQuery(() => db.collection('portoneRefundEvents')
+    .where('paymentId', '==', String(paymentId || ''))
+    .limit(20)
+    .get());
+  const related = docsOf(snap).slice().sort((a, b) => (
+    tsMs((a.data() || {}).createdAt) - tsMs((b.data() || {}).createdAt)
+  ));
+  if (related.length) {
+    related.forEach((doc) => {
+      const data = doc.data() || {};
+      const amt = refundAmountOf(data) || amountKrw(data);
+      events.push({
+        type: amt > 0 && amt < amountKrw(row) ? 'partially_refunded' : 'refunded',
+        at: toIso(data.createdAt || data.refundAt) || undefined,
+        amount: amt
+      });
+    });
+  } else {
+    const refundAt = refundAtOf(row);
+    const refunded = refundAmountOf(row);
+    if (refundAt && refunded > 0) {
+      events.push({
+        type: canonicalStatus(row) === 'partially_refunded' ? 'partially_refunded' : 'refunded',
+        at: toIso(refundAt),
+        amount: refunded
+      });
+    }
+  }
+  return events;
+}
+
+async function mergeRefundParents(db, paidRows, refundRows) {
+  const byId = new Map();
+  for (const item of paidRows) {
+    byId.set(paymentIdOf(item.id, item.row), item);
+  }
+  for (const item of refundRows) {
+    const pid = paymentIdOf(item.id, item.row);
+    if (!pid || byId.has(pid)) continue;
+    const found = await findPaymentRecord(db, pid);
+    if (found && wasSuccessfulPayment(found.row)) {
+      byId.set(pid, found);
+    } else {
+      byId.set(pid, { id: pid, row: item.row });
+    }
+  }
+  return Array.from(byId.values());
+}
+
 async function getAdminMobileDashboard(body, deps) {
   const firestore = (deps && deps.db) || require('firebase-admin').firestore();
   await assertApprovedDevice(firestore, body);
@@ -578,7 +820,8 @@ async function getAdminMobileDashboard(body, deps) {
     critical: critical.todayCount
   });
   const month = summarize(monthPaid, monthRefunds);
-
+  const settlementFull = await buildSettlementPayload(firestore, now);
+  const settlement = adminSettlement.homeSettlementPreview(settlementFull);
   const generatedAt = now.toISOString();
   return redactPaymentJson({
     today,
@@ -586,13 +829,65 @@ async function getAdminMobileDashboard(body, deps) {
     currency: CURRENCY,
     generatedAt,
     netRevenue: {
-      today: today.revenue - today.refundAmount,
-      month: month.revenue - month.refundAmount
+      today: today.netRevenue,
+      month: month.netRevenue
     },
+    settlement,
+    settlementDataAvailable: true,
+    isEstimate: true,
     recentPayments,
     recentInquiries: inquiries.recent,
     recentCritical: critical.recent
   });
+}
+
+async function getAdminSalesReport(body, deps) {
+  const db = (deps && deps.db) || require('firebase-admin').firestore();
+  await assertApprovedDevice(db, body);
+  const now = (deps && deps.now) || new Date();
+  const bounds = kstBounds(now);
+  const from = (body && body.from) || formatYmd(bounds.year, bounds.month, bounds.day);
+  const to = (body && body.to) || from;
+  const range = kstInclusiveRange(from, to);
+  const statusFilter = String((body && body.status) || 'paid').toLowerCase();
+  const limit = clampLimit(body && body.limit);
+  const cursor = decodeCursor(body && body.cursor);
+
+  const [paidRows, refundRows] = await Promise.all([
+    loadPaidInRange(db, range.start, range.end),
+    loadRefundsInRange(db, range.start, range.end)
+  ]);
+  const summary = summarize(paidRows, refundRows);
+  const merged = await mergeRefundParents(db, paidRows, refundRows);
+  const filtered = merged
+    .filter((item) => matchesPaymentFilter(canonicalStatus(item.row), statusFilter))
+    .sort((a, b) => {
+      const d = (tsMs(paidAtOf(b.row)) || tsMs(refundAtOf(b.row))) - (tsMs(paidAtOf(a.row)) || tsMs(refundAtOf(a.row)));
+      if (d) return d;
+      return String(paymentIdOf(b.id, b.row)).localeCompare(String(paymentIdOf(a.id, a.row)));
+    });
+  const page = applyCursor(filtered, cursor, limit);
+  return redactPaymentJson({
+    period: { from: range.from, to: range.to },
+    summary: {
+      grossRevenue: summary.grossRevenue,
+      refundAmount: summary.refundAmount,
+      netRevenue: summary.netRevenue,
+      paidCount: summary.payments,
+      refundCount: summary.refunds,
+      currency: CURRENCY
+    },
+    status: statusFilter === 'refund' || statusFilter === 'refunds' ? 'refund' : (statusFilter === 'all' ? 'all' : 'paid'),
+    payments: page.items.map((item) => mapPayment(item.id, item.row)),
+    nextCursor: page.nextCursor
+  });
+}
+
+async function getAdminSettlementDashboard(body, deps) {
+  const db = (deps && deps.db) || require('firebase-admin').firestore();
+  await assertApprovedDevice(db, body);
+  const now = (deps && deps.now) || new Date();
+  return redactPaymentJson(await buildSettlementPayload(db, now));
 }
 
 async function getAdminPaymentDetail(body, deps) {
@@ -602,14 +897,27 @@ async function getAdminPaymentDetail(body, deps) {
   if (!paymentId) throw httpError(400, 'paymentId가 없습니다.');
   const found = await findPaymentRecord(db, paymentId);
   if (!found) throw httpError(404, '결제 정보를 찾을 수 없습니다.');
-  const payment = mapPayment(found.id, found.row, { detail: true });
-  return redactPaymentJson(Object.assign({ payment }, payment));
+  const events = await loadPaymentEvents(db, paymentIdOf(found.id, found.row), found.row);
+  const payment = mapPayment(found.id, found.row, { detail: true, events });
+  const now = (deps && deps.now) || new Date();
+  const loaded = await adminSettlement.loadSettings(db);
+  const estimatedSettlement = adminSettlement.estimateForPayment(
+    found.id,
+    found.row,
+    loaded.settings,
+    settlementHelpers(),
+    now
+  );
+  payment.estimatedSettlement = estimatedSettlement;
+  return redactPaymentJson(Object.assign({ payment, estimatedSettlement }, payment));
 }
 
 function createHandlers({ cors }) {
   return {
     getAdminMobileDashboard: adminPush.wrapHttp(cors, (body) => getAdminMobileDashboard(body)),
-    getAdminPaymentDetail: adminPush.wrapHttp(cors, (body) => getAdminPaymentDetail(body))
+    getAdminPaymentDetail: adminPush.wrapHttp(cors, (body) => getAdminPaymentDetail(body)),
+    getAdminSalesReport: adminPush.wrapHttp(cors, (body) => getAdminSalesReport(body)),
+    getAdminSettlementDashboard: adminPush.wrapHttp(cors, (body) => getAdminSettlementDashboard(body))
   };
 }
 
@@ -635,8 +943,21 @@ module.exports = {
   mapInquiry,
   mapCritical,
   summarize,
+  canonicalStatus,
+  displayProduct,
+  matchesPaymentFilter,
+  kstInclusiveRange,
+  formatYmd,
+  parseYmd,
+  addCalendarDay,
+  paidAtOf,
+  refundAtOf,
+  settlementUnavailable,
+  buildSettlementPayload,
   getAdminMobileDashboard,
   getAdminPaymentDetail,
+  getAdminSalesReport,
+  getAdminSettlementDashboard,
   findPaymentRecord,
   createHandlers,
   clampLimit

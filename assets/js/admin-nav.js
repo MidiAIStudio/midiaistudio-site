@@ -12,7 +12,8 @@
     logs: 'adminLogsSection',
     pricing: 'adminPricingSection',
     content: 'adminContentSection',
-    push: 'adminPushSection'
+    push: 'adminPushSection',
+    settlement: 'adminSettlementSection'
   };
   var TITLES = {
     home: '홈',
@@ -23,7 +24,8 @@
     logs: '로그',
     pricing: '가격·상품',
     content: '콘텐츠',
-    push: '알림 전송 설정'
+    push: '알림 전송 설정',
+    settlement: '정산 설정'
   };
   var CRM_TITLES = { members: '회원', license: '라이선스', orders: '결제' };
 

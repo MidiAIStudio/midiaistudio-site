@@ -2388,6 +2388,12 @@ const adminMobileDashboard = require('./adminMobileDashboard');
 const adminDashboardHandlers = adminMobileDashboard.createHandlers({ cors });
 exports.getAdminMobileDashboard = functions.https.onRequest(adminDashboardHandlers.getAdminMobileDashboard);
 exports.getAdminPaymentDetail = functions.https.onRequest(adminDashboardHandlers.getAdminPaymentDetail);
+exports.getAdminSalesReport = functions.https.onRequest(adminDashboardHandlers.getAdminSalesReport);
+exports.getAdminSettlementDashboard = functions.https.onRequest(adminDashboardHandlers.getAdminSettlementDashboard);
+
+const adminSettlement = require('./adminSettlement');
+const adminSettlementHandlers = adminSettlement.createHandlers({ cors, requireAdmin });
+exports.manageAdminSettlementSettings = functions.https.onRequest(adminSettlementHandlers.manageAdminSettlementSettings);
 
 const { recordUserAccessInfo } = require('./accessInfo');
 

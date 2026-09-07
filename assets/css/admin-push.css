@@ -38,6 +38,25 @@
 .admin-page .admin-push-inline input,.admin-page .admin-push-inline select{
   height:26px;font-size:12px;padding:0 8px;border-radius:6px;min-width:0
 }
+.admin-page .admin-settlement-form{display:grid;gap:8px;max-width:420px}
+.admin-page .admin-settlement-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px}
+.admin-page .admin-settlement-row>span{color:var(--muted,#9CA7B3)}
+.admin-page .admin-settlement-inline{display:inline-flex;align-items:center;gap:6px}
+.admin-page .admin-settlement-inline input[type="number"],
+.admin-page .admin-settlement-inline input[type="date"]{
+  height:28px;width:88px;font-size:13px;padding:0 8px;border-radius:6px
+}
+.admin-page .admin-settlement-inline em{font-style:normal;font-size:12px;color:var(--muted,#9CA7B3)}
+.admin-page .admin-settlement-dates{align-items:flex-start}
+.admin-page .admin-settlement-dates-body{display:grid;gap:6px;justify-items:end}
+.admin-page .admin-settlement-chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.admin-page .admin-settlement-chip{
+  border:1px solid var(--line, rgba(255,255,255,.12));
+  background:rgba(255,255,255,.04);
+  color:inherit;font-size:11px;border-radius:999px;padding:3px 8px;cursor:pointer
+}
+.admin-page .admin-settlement-foot{margin:12px 0 0;line-height:1.5}
+
 @media (max-width: 800px){
   .admin-page .admin-push-grid{grid-template-columns:1fr}
   .admin-page .admin-push-log{grid-template-columns:46px 1fr auto}

@@ -107,6 +107,8 @@ Firebase Auth를 Android device API에 쓰지 않는다.
 | `unregisterAdminDevice` | 필수 | **필수** | 없음 | `revoked` |
 | `getAdminMobileDashboard` | 필수 | **필수** | 없음 | approved + enabled only |
 | `getAdminPaymentDetail` | 필수 | **필수** | 없음 | approved + enabled only. `paymentId` 필수 |
+| `getAdminSalesReport` | 필수 | **필수** | 없음 | approved + enabled only |
+| `getAdminSettlementDashboard` | 필수 | **필수** | 없음 | approved + enabled only. 원장 기반 예상 정산 |
 
 서버 비교: `SHA-256(deviceSecret)` 와 `deviceSecretHash` 를 timing-safe 비교.
 
@@ -442,6 +444,219 @@ Android는 `summary` / `body` / `message` 중 하나를 쓰고 180자로 자른�
 
 ---
 
+## Payments V2
+
+모바일 결제 한 건은 **하나의 canonical payment**이다. 승인 후 환불되어도 목록에 두 줄로 나누지 않는다.
+
+### Canonical status
+
+| status | 표시 |
+|---|---|
+| `paid` | 결제완료 |
+| `partially_refunded` | 부분환불 |
+| `refunded` | 전액환불 |
+| `cancelled` | 취소 |
+| `failed` | 결제실패 |
+| `pending` | 처리중 |
+
+원장 `completed` / `paid` / `verified` / `license_issued` / `credited` → `paid`.  
+`failed` / `pending` / `created` 는 운영 매출 목록 기본에서 제외.
+
+### Payment item
+
+```json
+{
+  "paymentId": "pay_a",
+  "product": "평생 이용권",
+  "provider": "kakaopay",
+  "status": "refunded",
+  "grossAmount": 130000,
+  "refundAmount": 130000,
+  "netAmount": 0,
+  "amount": 130000,
+  "currency": "KRW",
+  "emailMasked": "abc***@gmail.com",
+  "paidAt": "2026-09-01T05:46:00.000Z",
+  "refundedAt": "2026-09-02T02:00:00.000Z",
+  "refundedAmount": 130000,
+  "adminUrl": "https://midiaistudio.com/admin.html#view=crm&crm=orders"
+}
+```
+
+`amount` / `refundedAmount` 는 기존 Android 호환 alias (`grossAmount` / `refundAmount`).
+
+상품 표시 매퍼 (원장 원문 변경 없음): Lifetime → 평생 이용권, 7일 Full → 7일 PASS, 30일 Full → 30일 PASS, 90일 → 90일 PASS.
+
+`today` / `month` 에 `grossRevenue`, `netRevenue` 를 추가한다. 기존 `revenue` 는 **gross**.
+
+---
+
+## Sales Report
+
+`POST getAdminSalesReport`
+
+```json
+{
+  "deviceId": "...",
+  "deviceSecret": "...",
+  "from": "2026-09-01",
+  "to": "2026-09-08",
+  "status": "paid",
+  "limit": 20,
+  "cursor": null
+}
+```
+
+- `from` / `to`: 사용자 캘린더 날짜, **양쪽 inclusive**. 서버는 Asia/Seoul `from 00:00` 이상 ~ `to+1일 00:00` 미만.
+- `status`: `paid` (기본) | `refund` (`partially_refunded`/`refunded`/`cancelled`) | `all`
+- `limit` 기본 20, 최대 50. `nextCursor` 있으면 [더 보기].
+
+성공:
+
+```json
+{
+  "ok": true,
+  "period": { "from": "2026-09-01", "to": "2026-09-08" },
+  "summary": {
+    "grossRevenue": 428800,
+    "refundAmount": 149900,
+    "netRevenue": 278900,
+    "paidCount": 7,
+    "refundCount": 2,
+    "currency": "KRW"
+  },
+  "status": "paid",
+  "payments": [],
+  "nextCursor": null
+}
+```
+
+집계 (목록 필터와 무관하게 summary는 기간 전체):
+
+- **grossRevenue / paidCount** = `paidAt` (`completedAt`…) 가 기간 안인 성공 결제 총액/건수. 이후 환불된 건도 **원 승인액**으로 포함.
+- **refundAmount / refundCount** = `refundedAt`/`refundAt`/`cancelledAt`(없으면 `updatedAt`) 가 기간 안인 환불. 8월 결제·9월 환불이면 9월 보고서에 환불만 잡힌다.
+- **netRevenue** = grossRevenue − refundAmount. 동일 결제를 두 번 빼지 않는다.
+
+---
+
+## Settlement estimate contract
+
+PortOne PG settlement / payout API는 **사용하지 않는다.** 스크래핑·역공학 없음.
+
+Source of truth: Firestore `orders` (+ credit/point 원장, 기존 canonical payment/refund/cancel 정규화).
+
+계산은 **읽기 시점 투영**이다. 주문 문서에 예상 정산일을 영구 스탬프하지 않는다.
+
+`POST getAdminSettlementDashboard`
+
+```json
+{
+  "ok": true,
+  "settlementDataAvailable": true,
+  "isEstimate": true,
+  "calculationMethod": "contract_projection",
+  "settings": {
+    "provider": "kakaopay",
+    "settlementType": "business_days",
+    "businessDays": 7,
+    "feeRatePercent": 3.2,
+    "feeVatRatePercent": 10,
+    "excludeWeekends": true,
+    "excludeKoreanHolidays": true,
+    "excludedDates": [],
+    "label": "카카오페이"
+  },
+  "settingsSource": "configured",
+  "nextSettlement": {
+    "date": "2026-09-15",
+    "paymentCount": 2,
+    "grossAmount": 260000,
+    "fee": 8320,
+    "feeVat": 832,
+    "expectedSettlementAmount": 250848
+  },
+  "upcoming": [
+    {
+      "date": "2026-09-15",
+      "status": "UPCOMING",
+      "label": "예상 정산",
+      "paymentCount": 2,
+      "grossAmount": 260000,
+      "fee": 8320,
+      "feeVat": 832,
+      "expectedSettlementAmount": 250848,
+      "isEstimate": true,
+      "payments": [
+        {
+          "paymentId": "pay_a",
+          "product": "평생 이용권",
+          "grossAmount": 130000,
+          "settlementBase": 130000,
+          "fee": 4160,
+          "feeVat": 416,
+          "expectedSettlementAmount": 125424,
+          "estimateStatus": "UPCOMING",
+          "label": "예상 정산",
+          "expectedSettlementDate": "2026-09-15",
+          "isEstimate": true
+        }
+      ]
+    }
+  ],
+  "pastExpected": [],
+  "adjustments": [],
+  "generatedAt": "2026-09-08T00:34:00.000Z"
+}
+```
+
+`settingsSource`: `configured` | `default` (문서 없으면 서버 기본 D+7 / 3.2% / VAT 10% / 주말 제외).
+
+### Calculation
+
+- Timezone: Asia/Seoul. `addBusinessDaysKst`는 **paidAt의 KST 달력일 다음 영업일부터** 센다.
+- 예: 2026-09-05(토) D+7 → 09/07=1 … 09/15=7 → `expectedSettlementDate = 2026-09-15`.
+- 주말/한국 공휴일/`excludedDates`는 영업일이 아니다. 공휴일 소스: `functions/koreanHolidays.js` 정적 목록 (관공서의 공휴일에 관한 규정, 2024–2028). **런타임 외부 공휴일 API 없음.**
+- KRW 정수: `fee = round(base * feeRate)`, `feeVat = round(fee * vatRate)`.
+- 예: `130000 * 3.2% = 4160`, VAT `416`, 예상 정산 `125424`.
+- 동일 예상일 그룹: 두 건 130000 → `260000 / 8320 / 832 / 250848`.
+- `feeRate`는 `effectiveFrom` + `rateHistory`로 paidAt 기준 해석. 이후 요율 변경이 과거 결제에 소급되지 않는다.
+
+### Refund rules
+
+| 상황 | settlementBase | status / 표시 |
+|---|---|---|
+| 정상 결제 | `grossAmount` | `UPCOMING` 예상 정산 / `PAST_EXPECTED` 예상일 경과 |
+| 예상일 **이전** 전액 환불·취소 | `0` | `CANCELLED_BEFORE_SETTLEMENT` 정산 제외 예상 |
+| 예상일 **이전** 부분 환불 | `grossAmount - refundAmount` | 위와 동일 일정 그룹 |
+| 예상일 **이후** 환불 | 원래 예상 정산 유지 | `ADJUSTMENT` 정산 조정 예상. 회수일 추정 금지. UI: `PG 정산 반영일 확인 필요` |
+
+서버는 실제 입금을 모르므로 **「정산 완료」를 자동 표시하지 않는다.** `isEstimate`는 항상 true.
+
+failed / pending / test 는 제외. 매출 리포트의 `grossRevenue` / `netRevenue` 와 `expectedSettlementAmount` 를 섞지 않는다.
+
+### Dashboard / payment detail
+
+`getAdminMobileDashboard.settlement.nextSettlement` 는 **upcoming 그룹이 있을 때만** 넣는다. 없으면 `null` (홈 빈 카드 금지).
+
+`getAdminPaymentDetail` 에 `estimatedSettlement` 블록을 추가한다.
+
+### Admin settings
+
+Firestore `adminSettlementSettings/default`. client write 금지 (Functions / `manageAdminSettlementSettings` + `requireAdmin` 만). Android는 읽기만.
+
+웹 관리자: **운영 > 정산 설정** (`#view=settlement`).
+
+### `manageAdminSettlementSettings`
+
+`requireAdmin`. Android 인증 불가.
+
+```json
+{ "action": "get" }
+{ "action": "save", "businessDays": 7, "feeRatePercent": 3.2, "feeVatRatePercent": 10, "excludeWeekends": true, "excludeKoreanHolidays": true, "excludedDates": [] }
+```
+
+---
+
 ## Device status
 
 ```
@@ -495,6 +710,12 @@ disabledReason = invalid_token
 
 `paymentEnabled`, `inquiryEnabled`, `refundEnabled`, `criticalEnabled`
 
+### `adminSettlementSettings/default`
+
+`enabled`, `provider`, `settlementType`, `businessDays`, `feeRatePercent`, `feeVatRatePercent`, `excludeWeekends`, `excludeKoreanHolidays`, `excludedDates`, `label`, `notes`, `effectiveFrom`, `rateHistory`, `updatedAt`, `updatedBy`
+
+client `read, write: if false`. Admin SDK / `manageAdminSettlementSettings` only.
+
 ### `adminPushLogs/{autoId}`
 
 `type`, `attempted`, `success`, `failed`, `title`(80자), `createdAt`. body/token 장기 저장 없음.
@@ -533,7 +754,7 @@ Admin URL:
 
 `overview` | `updateGlobal` | `testAll` | `approve` | `reject` | `disable` | `enable` | `revoke` | `updateDevice` | `testDevice`
 
-메뉴: **운영 > 알림 전송 설정** (`#view=push`)
+메뉴: **운영 > 알림 전송 설정** (`#view=push`), **운영 > 정산 설정** (`#view=settlement`)
 
 ---
 
@@ -556,10 +777,10 @@ Admin URL:
 firebase deploy --only functions:web:requestAdminDeviceRegistration,functions:web:getAdminDeviceStatus,functions:web:updateAdminDeviceToken,functions:web:updateAdminDeviceSettings,functions:web:sendAdminDeviceTestPush,functions:web:unregisterAdminDevice,functions:web:manageAdminPush
 ```
 
-Mobile dashboard (named only):
+Mobile dashboard + settlement estimate (named only):
 
 ```
-firebase deploy --only functions:web:getAdminMobileDashboard,functions:web:getAdminPaymentDetail
+firebase deploy --only functions:web:getAdminMobileDashboard,functions:web:getAdminPaymentDetail,functions:web:getAdminSalesReport,functions:web:getAdminSettlementDashboard,functions:web:manageAdminSettlementSettings
 ```
 
 `assertDevice` secret 검사 수정을 기존 기기 API에 반영할 때:

@@ -41,7 +41,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/css/style.css?v=nav-fit-1">
-  <link rel="stylesheet" href="./assets/css/admin-push.css?v=push-1">
+  <link rel="stylesheet" href="./assets/css/admin-push.css?v=settlement-1">
   <link rel="stylesheet" href="assets/css/theme-light.css?v=notify-contrast-1">
   <script defer src="./assets/js/analytics.js"></script>
 
@@ -93,6 +93,7 @@
         <button type="button" class="admin-nav-item" data-admin-nav="content">콘텐츠</button>
         <button type="button" class="admin-nav-item" data-admin-nav="pricing" data-admin-tab="pricing">가격·상품</button>
         <button type="button" class="admin-nav-item" data-admin-nav="push">알림 전송 설정</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="settlement">정산 설정</button>
       </nav>
       <div class="admin-sidebar-theme" data-i18n-skip>
         <label class="admin-sidebar-theme-label" for="adminThemeSelect">테마</label>
@@ -861,6 +862,69 @@
               </section>
             </section>
 
+            <section class="admin-push-section" id="adminSettlementSection" hidden>
+              <div class="admin-section-head">
+                <div>
+                  <h3>정산 설정</h3>
+                  <p class="admin-page-lead muted">카카오페이 계약 조건으로 MidiAI Admin 예상 정산을 계산합니다. PortOne 정산 API는 사용하지 않습니다.</p>
+                </div>
+                <div class="admin-pricing-actions">
+                  <button type="button" class="secondary mini-btn" id="adminSettlementReloadBtn">새로고침</button>
+                  <button type="button" class="primary mini-btn" id="adminSettlementSaveBtn">저장</button>
+                </div>
+              </div>
+              <div id="adminSettlementMsg" class="admin-flash hidden"></div>
+              <section class="admin-push-card" aria-labelledby="adminSettlementFormTitle">
+                <h4 id="adminSettlementFormTitle">카카오페이</h4>
+                <div class="admin-settlement-form">
+                  <label class="admin-settlement-row">
+                    <span>정산 방식</span>
+                    <strong>영업일 기준</strong>
+                  </label>
+                  <label class="admin-settlement-row" for="adminSettlementBusinessDays">
+                    <span>결제 후 D +</span>
+                    <span class="admin-settlement-inline">
+                      <input id="adminSettlementBusinessDays" type="number" min="1" max="60" step="1" value="7">
+                      <em>영업일</em>
+                    </span>
+                  </label>
+                  <label class="admin-settlement-row" for="adminSettlementFeeRate">
+                    <span>PG 수수료</span>
+                    <span class="admin-settlement-inline">
+                      <input id="adminSettlementFeeRate" type="number" min="0" max="100" step="0.01" value="3.20">
+                      <em>%</em>
+                    </span>
+                  </label>
+                  <label class="admin-settlement-row" for="adminSettlementFeeVat">
+                    <span>수수료 VAT</span>
+                    <span class="admin-settlement-inline">
+                      <input id="adminSettlementFeeVat" type="number" min="0" max="100" step="0.01" value="10.00">
+                      <em>%</em>
+                    </span>
+                  </label>
+                  <label class="admin-settlement-row" for="adminSettlementExcludeWeekends">
+                    <span>주말 제외</span>
+                    <input type="checkbox" id="adminSettlementExcludeWeekends" checked>
+                  </label>
+                  <label class="admin-settlement-row" for="adminSettlementExcludeHolidays">
+                    <span>한국 공휴일 제외</span>
+                    <input type="checkbox" id="adminSettlementExcludeHolidays" checked>
+                  </label>
+                  <div class="admin-settlement-row admin-settlement-dates">
+                    <span>추가 제외일</span>
+                    <div class="admin-settlement-dates-body">
+                      <div class="admin-settlement-inline">
+                        <input id="adminSettlementExcludeDate" type="date">
+                        <button type="button" class="secondary mini-btn" id="adminSettlementAddDateBtn">추가</button>
+                      </div>
+                      <div id="adminSettlementExcludedList" class="admin-settlement-chips"><span class="muted small">없음</span></div>
+                    </div>
+                  </div>
+                </div>
+                <p class="muted small admin-settlement-foot">이 설정은 MidiAI Admin의 예상 정산 계산에 사용됩니다. 실제 PG 정산 확정 데이터와 차이가 있을 수 있습니다.</p>
+              </section>
+            </section>
+
             <section class="admin-content-section" id="adminContentSection" hidden>
               <div class="admin-page-tabs" id="adminCmsTabs" role="tablist" aria-label="콘텐츠 종류">
                 <button type="button" class="admin-page-tab is-active" data-cms-tab="notices">공지사항</button>
@@ -998,12 +1062,13 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script src="./assets/js/admin-nav.js?v=push-1"></script>
+  <script src="./assets/js/admin-nav.js?v=settlement-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
   <script type="module" src="./assets/js/app.js?v=welcome-preview-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=logs-toolbar-hide-1"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=push-1"></script>
+  <script type="module" src="./assets/js/admin-console.js?v=settlement-1"></script>
   <script type="module" src="./assets/js/admin-welcome-benefit.js?v=welcome-ui-3"></script>
   <script type="module" src="./assets/js/admin-push.js?v=push-1"></script>
+  <script type="module" src="./assets/js/admin-settlement.js?v=settlement-1"></script>
 </body>
 </html>
