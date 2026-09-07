@@ -41,6 +41,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/css/style.css?v=nav-fit-1">
+  <link rel="stylesheet" href="./assets/css/admin-push.css?v=push-1">
   <link rel="stylesheet" href="assets/css/theme-light.css?v=notify-contrast-1">
   <script defer src="./assets/js/analytics.js"></script>
 
@@ -91,6 +92,7 @@
         <button type="button" class="admin-nav-item" data-admin-nav="logs" data-admin-tab="logs">로그</button>
         <button type="button" class="admin-nav-item" data-admin-nav="content">콘텐츠</button>
         <button type="button" class="admin-nav-item" data-admin-nav="pricing" data-admin-tab="pricing">가격·상품</button>
+        <button type="button" class="admin-nav-item" data-admin-nav="push">알림 전송 설정</button>
       </nav>
       <div class="admin-sidebar-theme" data-i18n-skip>
         <label class="admin-sidebar-theme-label" for="adminThemeSelect">테마</label>
@@ -806,6 +808,59 @@
               </div>
             </section>
 
+            <section class="admin-push-section" id="adminPushSection" hidden>
+              <div class="admin-section-head">
+                <div>
+                  <h3>알림 전송 설정</h3>
+                  <p class="admin-page-lead muted">관리자 Android 기기 승인과 FCM 운영 알림을 관리합니다. APK 설치만으로는 알림이 가지 않습니다.</p>
+                </div>
+                <div class="admin-pricing-actions">
+                  <button type="button" class="secondary mini-btn" id="adminPushReloadBtn">새로고침</button>
+                  <button type="button" class="primary mini-btn" id="adminPushTestAllBtn">전체 테스트 전송</button>
+                </div>
+              </div>
+              <div id="adminPushMsg" class="admin-flash hidden"></div>
+
+              <div class="admin-push-grid">
+                <section class="admin-push-card" aria-labelledby="adminPushStatusTitle">
+                  <h4 id="adminPushStatusTitle">알림 시스템</h4>
+                  <p class="admin-push-status-line"><span class="admin-push-dot is-ok" id="adminPushFcmDot"></span><span id="adminPushFcmLabel">FCM 확인 중</span></p>
+                  <dl class="admin-push-kvs">
+                    <dt>등록 기기</dt><dd id="adminPushCountRegistered">-</dd>
+                    <dt>활성 기기</dt><dd id="adminPushCountActive">-</dd>
+                    <dt>승인 대기</dt><dd id="adminPushCountPending">-</dd>
+                    <dt>최근 발송 성공률</dt><dd id="adminPushSuccessRate">-</dd>
+                  </dl>
+                </section>
+
+                <section class="admin-push-card" aria-labelledby="adminPushGlobalTitle">
+                  <h4 id="adminPushGlobalTitle">전체 알림 설정</h4>
+                  <div class="admin-push-toggles" id="adminPushGlobalToggles">
+                    <label><span>신규 결제</span><input type="checkbox" id="adminPushGlobalPayment" checked></label>
+                    <label><span>신규 문의</span><input type="checkbox" id="adminPushGlobalInquiry" checked></label>
+                    <label><span>환불 / 취소</span><input type="checkbox" id="adminPushGlobalRefund" checked></label>
+                    <label><span>중요 시스템 오류</span><input type="checkbox" id="adminPushGlobalCritical" checked></label>
+                  </div>
+                  <button type="button" class="secondary mini-btn" id="adminPushGlobalSaveBtn">전역 설정 저장</button>
+                </section>
+              </div>
+
+              <section class="admin-push-card" aria-labelledby="adminPushPendingTitle">
+                <h4 id="adminPushPendingTitle">승인 대기</h4>
+                <div id="adminPushPendingList" class="admin-push-list"><p class="muted small">대기 기기가 없습니다.</p></div>
+              </section>
+
+              <section class="admin-push-card" aria-labelledby="adminPushDevicesTitle">
+                <h4 id="adminPushDevicesTitle">등록된 기기</h4>
+                <div id="adminPushDeviceList" class="admin-push-list"><p class="muted small">등록된 기기가 없습니다.</p></div>
+              </section>
+
+              <section class="admin-push-card" aria-labelledby="adminPushLogsTitle">
+                <h4 id="adminPushLogsTitle">최근 발송</h4>
+                <div id="adminPushLogList" class="admin-push-logs"><p class="muted small">기록이 없습니다.</p></div>
+              </section>
+            </section>
+
             <section class="admin-content-section" id="adminContentSection" hidden>
               <div class="admin-page-tabs" id="adminCmsTabs" role="tablist" aria-label="콘텐츠 종류">
                 <button type="button" class="admin-page-tab is-active" data-cms-tab="notices">공지사항</button>
@@ -943,11 +998,12 @@
     <div class="footer-copy">© <span id="year"></span> MidiAI Studio</div>
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
-  <script src="./assets/js/admin-nav.js?v=theme-5"></script>
+  <script src="./assets/js/admin-nav.js?v=push-1"></script>
   <script type="module" src="./assets/js/config.js?v=admin-access-1"></script>
   <script type="module" src="./assets/js/app.js?v=welcome-preview-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=logs-toolbar-hide-1"></script>
-  <script type="module" src="./assets/js/admin-console.js?v=welcome-ui-3"></script>
+  <script type="module" src="./assets/js/admin-console.js?v=push-1"></script>
   <script type="module" src="./assets/js/admin-welcome-benefit.js?v=welcome-ui-3"></script>
+  <script type="module" src="./assets/js/admin-push.js?v=push-1"></script>
 </body>
 </html>

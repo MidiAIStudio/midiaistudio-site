@@ -156,32 +156,42 @@ async function notifyInquiryCreated(ticketId, data, ref, deps = {}) {
   const send = deps.notifyAdmin || notifyAdmin;
   const db = deps.db || admin.firestore();
   const FieldValue = deps.FieldValue || admin.firestore.FieldValue;
+  let kakaoOk = true;
   try {
     if (await alreadyNotified(ref)) {
       logAdmin('inquiry_skip_already_sent', { ticketId: String(ticketId || '') });
-      return true;
+    } else {
+      const alert = buildInquiryAlert(ticketId, data || {});
+      await send(db, FieldValue, {
+        type: alert.type,
+        title: alert.title,
+        message: alert.message
+      });
+      const claimed = await claimAdminNotify(ref);
+      logAdmin('inquiry_sent', {
+        ticketId: String(ticketId || ''),
+        claimed: !!claimed
+      });
     }
-    const alert = buildInquiryAlert(ticketId, data || {});
-    await send(db, FieldValue, {
-      type: alert.type,
-      title: alert.title,
-      message: alert.message
-    });
-    const claimed = await claimAdminNotify(ref);
-    logAdmin('inquiry_sent', {
-      ticketId: String(ticketId || ''),
-      claimed: !!claimed
-    });
-    return true;
   } catch (err) {
+    kakaoOk = false;
     logAdmin('inquiry_failed', {
       ticketId: String(ticketId || ''),
       message: err && err.message ? err.message : String(err),
       kakaoStage: err && err.stage ? err.stage : null,
       kakaoCode: err && err.kakaoCode != null ? err.kakaoCode : null
     });
-    return false;
   }
+  try {
+    const sendFcm = deps.sendFcmInquiry || defaultInquiryFcm;
+    await sendFcm(ticketId, data || {}, ref);
+  } catch (fcmErr) {
+    logAdmin('inquiry_fcm_failed', {
+      ticketId: String(ticketId || ''),
+      message: fcmErr && fcmErr.message ? fcmErr.message : String(fcmErr)
+    });
+  }
+  return kakaoOk;
 }
 
 /**
@@ -192,32 +202,50 @@ async function notifyPaymentCompleted(orderId, data, ref, deps = {}) {
   const send = deps.notifyAdmin || notifyAdmin;
   const db = deps.db || admin.firestore();
   const FieldValue = deps.FieldValue || admin.firestore.FieldValue;
+  let kakaoOk = true;
   try {
     if (await alreadyNotified(ref)) {
       logAdmin('payment_skip_already_sent', { orderId: String(orderId || '') });
-      return true;
+    } else {
+      const alert = buildPaymentAlert(orderId, data || {});
+      await send(db, FieldValue, {
+        type: alert.type,
+        title: alert.title,
+        message: alert.message
+      });
+      const claimed = await claimAdminNotify(ref);
+      logAdmin('payment_sent', {
+        orderId: String(orderId || ''),
+        claimed: !!claimed
+      });
     }
-    const alert = buildPaymentAlert(orderId, data || {});
-    await send(db, FieldValue, {
-      type: alert.type,
-      title: alert.title,
-      message: alert.message
-    });
-    const claimed = await claimAdminNotify(ref);
-    logAdmin('payment_sent', {
-      orderId: String(orderId || ''),
-      claimed: !!claimed
-    });
-    return true;
   } catch (err) {
+    kakaoOk = false;
     logAdmin('payment_failed', {
       orderId: String(orderId || ''),
       message: err && err.message ? err.message : String(err),
       kakaoStage: err && err.stage ? err.stage : null,
       kakaoCode: err && err.kakaoCode != null ? err.kakaoCode : null
     });
-    return false;
   }
+  try {
+    const sendFcm = deps.sendFcmPayment || defaultPaymentFcm;
+    await sendFcm(orderId, data || {}, ref);
+  } catch (fcmErr) {
+    logAdmin('payment_fcm_failed', {
+      orderId: String(orderId || ''),
+      message: fcmErr && fcmErr.message ? fcmErr.message : String(fcmErr)
+    });
+  }
+  return kakaoOk;
+}
+
+function defaultInquiryFcm(ticketId, data, ref) {
+  return require('./adminPush').maybeNotifyInquiryFcm(ticketId, data, ref);
+}
+
+function defaultPaymentFcm(orderId, data, ref) {
+  return require('./adminPush').maybeNotifyPaymentFcm(orderId, data, ref);
 }
 
 module.exports = {

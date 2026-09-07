@@ -376,6 +376,18 @@ function createHandlers({
         } catch (notifyErr) {
           console.warn('credit grant notify', notifyErr && notifyErr.message);
         }
+        try {
+          const push = require('./adminPush');
+          await push.sendAdminNotification({
+            type: 'payment',
+            title: '💰 신규 결제',
+            body: `${creditAmount} Credits · ${push.formatAmount(expectedAmount, 'KRW')}`,
+            entityId: paymentId,
+            adminUrl: 'https://midiaistudio.com/admin.html#view=crm&crm=orders'
+          });
+        } catch (fcmErr) {
+          console.warn('credit grant fcm', fcmErr && fcmErr.message);
+        }
       }
 
       return res.json({

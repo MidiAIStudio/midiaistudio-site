@@ -11,7 +11,8 @@
     welcome: 'adminWelcomeBenefitSection',
     logs: 'adminLogsSection',
     pricing: 'adminPricingSection',
-    content: 'adminContentSection'
+    content: 'adminContentSection',
+    push: 'adminPushSection'
   };
   var TITLES = {
     home: '홈',
@@ -21,7 +22,8 @@
     welcome: '신규 가입 혜택',
     logs: '로그',
     pricing: '가격·상품',
-    content: '콘텐츠'
+    content: '콘텐츠',
+    push: '알림 전송 설정'
   };
   var CRM_TITLES = { members: '회원', license: '라이선스', orders: '결제' };
 

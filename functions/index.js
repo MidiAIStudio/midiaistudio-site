@@ -10,6 +10,7 @@ const passEntitlement = require('./passEntitlement');
 const portoneRefundSync = require('./portoneRefundSync');
 const userNotify = require('./userNotify');
 const paypalCurrency = require('./paypalCurrency');
+const adminPush = require('./adminPush');
 
 const gmailUser = defineSecret('GMAIL_USER');
 const gmailAppPassword = defineSecret('GMAIL_APP_PASSWORD');
@@ -100,6 +101,24 @@ async function applyPortOneRefundSync(paymentId, source, actorUid) {
       await userNotify.maybeNotifyFromRefundSync(db, admin.firestore.FieldValue, result);
     } catch (notifErr) {
       console.warn('applyPortOneRefundSync notify', notifErr && notifErr.message);
+    }
+    try {
+      const cancelled = Number(result.cancelledAmount || 0);
+      const st = String(result.status || '').toLowerCase();
+      if (cancelled > 0 || ['refunded', 'cancelled', 'canceled', 'partially_refunded'].includes(st)) {
+        await adminPush.maybeNotifyRefundFcm(result);
+      }
+      const ent = result.entitlement || {};
+      if (ent.licenseAction === 'refund_review_required' || ent.action === 'review') {
+        await adminPush.notifyCritical({
+          key: `refund-review:${result.paymentId}`,
+          title: '🚨 환불 후 라이선스 확인 필요',
+          body: '환불은 반영됐지만 라이선스 재계산에 관리자 확인이 필요합니다.',
+          entityId: result.paymentId
+        });
+      }
+    } catch (fcmErr) {
+      console.warn('applyPortOneRefundSync fcm', fcmErr && fcmErr.message);
     }
   }
   return result;
@@ -1835,6 +1854,14 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
           message: '이미 Lifetime 라이선스를 보유하고 있어 중복 결제가 자동 취소(전액 환불)되었습니다.'
         });
       }
+      try {
+        await adminPush.notifyCritical({
+          key: `dup-refund-fail:${racePaymentId}`,
+          title: '🚨 중복 결제 자동환불 실패',
+          body: 'Lifetime 중복 결제 자동 취소에 실패했습니다. 관리자 확인이 필요합니다.',
+          entityId: racePaymentId
+        });
+      } catch (_) { /* never fail the HTTP response */ }
       return res.status(409).json({
         ok: false,
         duplicate: true,
@@ -1854,6 +1881,16 @@ exports.verifyPortOnePaymentAndIssueLicense = functions.https.onRequest(async (r
           : status === 404
             ? '결제 확인 중 오류가 발생했습니다.'
             : '결제는 완료되었으나 라이선스 확인이 필요합니다.';
+    if (status >= 500) {
+      try {
+        await adminPush.notifyCritical({
+          key: `license-issue:${String((req.body && req.body.paymentId) || '')}`,
+          title: '🚨 결제 후 라이선스 지급 실패',
+          body: '결제는 확인됐지만 PASS/Lifetime 지급에 실패했습니다. 관리자 확인이 필요합니다.',
+          entityId: String((req.body && req.body.paymentId) || '')
+        });
+      } catch (_) { /* never fail the HTTP response */ }
+    }
     return res.status(status).json({
       ok: false,
       message: userMessage,
@@ -1906,6 +1943,15 @@ exports.paypalWebhook = functions.https.onRequest(async (req, res) => {
           tx.set(order.ref, { status: 'refunded', refundEventType: type, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
           if (uid) tx.set(db.collection('licenses').doc(uid), { status: 'refunded', licensed: false, updatedAt: admin.firestore.FieldValue.serverTimestamp(), memo: `PayPal ${type}` }, { merge: true });
         });
+        try {
+          await adminPush.maybeNotifyRefundFcm({
+            paymentId: order.id,
+            status: 'refunded',
+            cancelledAmount: 1
+          });
+        } catch (fcmErr) {
+          console.warn('paypalWebhook fcm', fcmErr && fcmErr.message);
+        }
       }
     }
     return res.status(200).send('ok');
@@ -2296,8 +2342,15 @@ exports.notifyAdminOnOrderCompleted = functionsV1
       const after = change.after.data() || {};
       // kakaoAlertSent = Kakao idempotency; discordNotified = legacy Discord claim.
       // Do not use adminNotified (CRM toast flag on tickets; unused on orders).
-      if (after.kakaoAlertSent === true || after.discordNotified === true) return null;
       if (!isLicenseGrantedOrder(after)) return null;
+      if (after.kakaoAlertSent === true || after.discordNotified === true) {
+        try {
+          await adminPush.maybeNotifyPaymentFcm(orderId, after, change.after.ref);
+        } catch (fcmErr) {
+          console.warn('notifyAdminOnOrderCompleted fcm', fcmErr && fcmErr.message);
+        }
+        return null;
+      }
       await notifyPaymentCompleted(orderId, after, change.after.ref);
     } catch (err) {
       console.error('notifyAdminOnOrderCompleted', {
@@ -2337,6 +2390,15 @@ exports.notifyUsersOnPatchNote = functionsV1
   .runWith({ timeoutSeconds: 300, memory: '512MB' })
   .firestore.document('patchNotes/{postId}')
   .onWrite((change, context) => onPublishedContentWrite('patch_note', change, context));
+
+const adminPushHandlers = adminPush.createHandlers({ cors, requireAdmin });
+exports.requestAdminDeviceRegistration = functions.https.onRequest(adminPushHandlers.requestAdminDeviceRegistration);
+exports.getAdminDeviceStatus = functions.https.onRequest(adminPushHandlers.getAdminDeviceStatus);
+exports.updateAdminDeviceToken = functions.https.onRequest(adminPushHandlers.updateAdminDeviceToken);
+exports.updateAdminDeviceSettings = functions.https.onRequest(adminPushHandlers.updateAdminDeviceSettings);
+exports.sendAdminDeviceTestPush = functions.https.onRequest(adminPushHandlers.sendAdminDeviceTestPush);
+exports.unregisterAdminDevice = functions.https.onRequest(adminPushHandlers.unregisterAdminDevice);
+exports.manageAdminPush = functions.https.onRequest(adminPushHandlers.manageAdminPush);
 
 const { recordUserAccessInfo } = require('./accessInfo');
 

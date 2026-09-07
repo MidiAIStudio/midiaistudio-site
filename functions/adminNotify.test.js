@@ -72,7 +72,12 @@ async function testKakaoFailureIsolated() {
   const okInquiry = await adminNotify.notifyInquiryCreated('t_fail', {
     title: 'x',
     email: 'a@b.c'
-  }, ref, { notifyAdmin: failingNotify, db: {}, FieldValue: {} });
+  }, ref, {
+    notifyAdmin: failingNotify,
+    db: {},
+    FieldValue: {},
+    sendFcmInquiry: async () => ({ skipped: 'test' })
+  });
   assert.strictEqual(okInquiry, false);
 
   const okPayment = await adminNotify.notifyPaymentCompleted('o_fail', {
@@ -82,7 +87,12 @@ async function testKakaoFailureIsolated() {
     amount: 1,
     currency: 'USD',
     email: 'a@b.c'
-  }, ref, { notifyAdmin: failingNotify, db: {}, FieldValue: {} });
+  }, ref, {
+    notifyAdmin: failingNotify,
+    db: {},
+    FieldValue: {},
+    sendFcmPayment: async () => ({ skipped: 'test' })
+  });
   assert.strictEqual(okPayment, false);
   console.log('ok kakao failure isolated');
 }

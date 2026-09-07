@@ -8,7 +8,8 @@ const VIEWS = {
   welcome: 'adminWelcomeBenefitSection',
   logs: 'adminLogsSection',
   pricing: 'adminPricingSection',
-  content: 'adminContentSection'
+  content: 'adminContentSection',
+  push: 'adminPushSection'
 };
 const TITLES = {
   home: '홈',
@@ -18,7 +19,8 @@ const TITLES = {
   welcome: '신규 가입 혜택',
   logs: '로그',
   pricing: '가격·상품',
-  content: '콘텐츠'
+  content: '콘텐츠',
+  push: '알림 전송 설정'
 };
 const CRM_TITLES = { members: '회원', license: '라이선스', orders: '결제' };
 const VIEW_LEADS = {
@@ -28,7 +30,8 @@ const VIEW_LEADS = {
   welcome: '신규 가입 시 1회 크레딧·환영 메일 자동 지급 설정을 관리합니다.',
   logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
   pricing: '상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.',
-  content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.'
+  content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.',
+  push: '관리자 Android 기기 승인과 FCM 운영 알림을 관리합니다.'
 };
 const CRM_LEADS = {
   members: '회원을 검색하고 계정 상태와 주요 정보를 확인합니다.',

@@ -380,5 +380,23 @@ service cloud.firestore {
         allow update: if false;
       }
     }
+
+    // Admin FCM device registry — Cloud Functions (Admin SDK) only.
+    // Android clients must never self-approve (status/role/enabled).
+    match /adminDevices/{deviceId} {
+      allow read, write: if false;
+    }
+    match /adminNotificationSettings/{id} {
+      allow read, write: if false;
+    }
+    match /adminPushLogs/{id} {
+      allow read, write: if false;
+    }
+    match /adminPushAbuse/{id} {
+      allow read, write: if false;
+    }
+    match /adminPushDedup/{id} {
+      allow read, write: if false;
+    }
   }
 }

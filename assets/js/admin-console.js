@@ -8,7 +8,8 @@ const VIEW_SECTIONS = {
   welcome: 'adminWelcomeBenefitSection',
   logs: 'adminLogsSection',
   pricing: 'adminPricingSection',
-  content: 'adminContentSection'
+  content: 'adminContentSection',
+  push: 'adminPushSection'
 };
 
 const VIEW_TITLES = {
@@ -19,7 +20,8 @@ const VIEW_TITLES = {
   welcome: '신규 가입 혜택',
   logs: '로그',
   pricing: '가격·상품',
-  content: '콘텐츠'
+  content: '콘텐츠',
+  push: '알림 전송 설정'
 };
 
 const CRM_TITLES = {
@@ -35,7 +37,8 @@ const VIEW_LEADS = {
   welcome: '신규 가입 시 1회 크레딧 지급과 환영 메일 발송을 설정합니다. 로그인·재설치·다른 PC에서는 다시 지급되지 않습니다.',
   logs: '회원별 라이선스·결제·문의·앱 사용 이력을 조회합니다.',
   pricing: 'Region별 정가·판매가와 할인·팝업을 관리합니다.',
-  content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.'
+  content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.',
+  push: '관리자 Android 기기 승인과 FCM 운영 알림을 관리합니다. APK 설치만으로는 알림이 가지 않습니다.'
 };
 
 const CRM_LEADS = {
@@ -173,6 +176,11 @@ function applyAdminView(next, opts = {}) {
     import('./admin-welcome-benefit.js?v=welcome-ui-3').then((m) => {
       m.bindWelcomeBenefitPanel?.();
       m.showWelcomeBenefitPanel?.(true);
+    }).catch(console.error);
+  }
+  if (next === 'push') {
+    import('./admin-push.js?v=push-1').then((m) => {
+      m.showAdminPushPanel?.(true);
     }).catch(console.error);
   }
   if (next === 'content') {
