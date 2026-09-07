@@ -4979,10 +4979,13 @@ function initStudioHeroVideo(){
     const vol=root.querySelector('.studio-hero-volume');
     if(!video || !muteBtn || !vol) return;
 
-    // Ensure policy-safe muted autoplay defaults (HTML already sets these).
+    // Policy-safe muted autoplay: attribute + property (Safari/Chrome both need this).
     video.muted=true;
     video.defaultMuted=true;
+    video.setAttribute('muted','');
     video.playsInline=true;
+    video.setAttribute('playsinline','');
+    video.setAttribute('webkit-playsinline','');
     video.loop=true;
     video.removeAttribute('controls');
     video.setAttribute('controlslist','nodownload noplaybackrate noremoteplayback');
@@ -4990,6 +4993,8 @@ function initStudioHeroVideo(){
 
     const DEFAULT_VOL=0.7;
     let lastVol=DEFAULT_VOL;
+    let playAttempts=0;
+    const reduceMotion=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isSilent=()=>video.muted || video.volume===0;
     const syncUi=()=>{
       const silent=isSilent();
@@ -5004,51 +5009,95 @@ function initStudioHeroVideo(){
       }
     };
 
+    const tryPlay=(reason='')=>{
+      if(reduceMotion()){
+        video.removeAttribute('autoplay');
+        try{ video.pause(); }catch{}
+        return;
+      }
+      if(!video.paused && !video.ended) return;
+      // Keep muted for autoplay policy; user unmute via controls.
+      video.muted=true;
+      video.setAttribute('muted','');
+      playAttempts+=1;
+      const p=video.play();
+      if(p && typeof p.catch==='function'){
+        p.catch((err)=>{
+          if(playAttempts<=3){
+            console.warn('[studio-hero-video] autoplay retry', reason||'play', err?.message||err);
+          }
+        });
+      }
+    };
+
     muteBtn.addEventListener('click',()=>{
       if(isSilent()){
         video.muted=false;
+        video.removeAttribute('muted');
         video.volume=lastVol>0 ? lastVol : DEFAULT_VOL;
         vol.value=String(video.volume);
       }else{
         if(video.volume>0) lastVol=video.volume;
         video.muted=true;
+        video.setAttribute('muted','');
         vol.value='0';
       }
       syncUi();
-      video.play().catch(()=>{});
+      tryPlay('mute-toggle');
     });
 
     vol.addEventListener('input',()=>{
       const v=Number(vol.value);
       if(v>0){
         video.muted=false;
+        video.removeAttribute('muted');
         video.volume=v;
         lastVol=v;
       }else{
         video.volume=0;
         video.muted=true;
+        video.setAttribute('muted','');
       }
       syncUi();
     });
 
     video.addEventListener('volumechange', syncUi);
 
-    const tryPlay=()=>{
-      if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-        video.removeAttribute('autoplay');
-        try{ video.pause(); }catch{}
-        return;
-      }
-      const p=video.play();
-      if(p && typeof p.catch==='function') p.catch((err)=>{
-        console.warn('[studio-hero-video] autoplay blocked or failed', err?.message||err);
-      });
-    };
+    // Retry when media becomes ready (not only once — Dropbox/slow nets miss the first event).
+    video.addEventListener('loadeddata', ()=>tryPlay('loadeddata'));
+    video.addEventListener('canplay', ()=>tryPlay('canplay'));
+    video.addEventListener('canplaythrough', ()=>tryPlay('canplaythrough'), {once:true});
 
-    if(video.readyState>=2) tryPlay();
+    if(typeof IntersectionObserver==='function'){
+      const io=new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting) tryPlay('visible');
+        });
+      }, {threshold:0.2});
+      io.observe(root);
+    }
+
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='visible') tryPlay('page-visible');
+    });
+
+    // If autoplay was blocked, unlock on first user gesture anywhere on the page.
+    const unlock=()=>{
+      tryPlay('gesture');
+      if(!video.paused){
+        document.removeEventListener('pointerdown', unlock, true);
+        document.removeEventListener('keydown', unlock, true);
+        document.removeEventListener('touchstart', unlock, true);
+      }
+    };
+    document.addEventListener('pointerdown', unlock, true);
+    document.addEventListener('keydown', unlock, true);
+    document.addEventListener('touchstart', unlock, {capture:true, passive:true});
+
+    if(video.readyState>=2) tryPlay('ready');
     else{
-      video.addEventListener('canplay', tryPlay, {once:true});
-      video.addEventListener('loadeddata', tryPlay, {once:true});
+      try{ video.load(); }catch{}
+      tryPlay('init');
     }
 
     video.addEventListener('error',()=>{
