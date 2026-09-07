@@ -4982,52 +4982,43 @@ function initStudioHeroVideo(){
     const vol=root.querySelector('.studio-hero-volume');
     if(!video || !muteBtn || !vol) return;
 
-    // Same Dropbox master, hosted same-origin so Content-Type is video/mp4.
-    // Dropbox currently returns application/json + nosniff, which some devices reject.
+    // Prefer same-origin MP4 (correct MIME). Dropbox may return application/json+nosniff.
     const base = String(window.MIDIAI_BASE_PATH || './').replace(/\/?$/, '/');
     const LOCAL_HERO = `${base}assets/videos/MidiAI_Studio_HowTo.mp4?v=dbx-mirror-1`;
-    const DROPBOX_HERO = 'https://dl.dropbox.com/scl/fi/54jw00ddcvnlpqa8xk7g6/.mp4?rlkey=479kw3irxy71j4scipi1vxrig&dl=1';
-    const sources = [...video.querySelectorAll('source')];
-    let needsReload = false;
-    if(sources.length){
-      const first = sources[0];
-      const firstSrc = String(first.getAttribute('src') || '');
-      if(/dropbox\.com/i.test(firstSrc) || !firstSrc.includes('MidiAI_Studio_HowTo.mp4')){
-        first.setAttribute('src', LOCAL_HERO);
-        first.setAttribute('type', 'video/mp4');
-        needsReload = true;
-      }
-      if(!sources.some(s=>/dropbox\.com/i.test(String(s.getAttribute('src')||'')))){
-        const fb = document.createElement('source');
-        fb.src = DROPBOX_HERO;
-        fb.type = 'video/mp4';
-        video.appendChild(fb);
-        needsReload = true;
-      }
-    }else{
-      video.setAttribute('src', LOCAL_HERO);
-      needsReload = true;
+    const wantLocal = LOCAL_HERO;
+    // Single source avoids multi-source + load() races that cancel native autoplay.
+    const existing = [...video.querySelectorAll('source')];
+    const alreadyLocal = existing.some(s => String(s.getAttribute('src')||'').includes('MidiAI_Studio_HowTo.mp4'));
+    if(!alreadyLocal || existing.length !== 1){
+      video.querySelectorAll('source').forEach(s=>s.remove());
+      video.removeAttribute('src');
+      const s = document.createElement('source');
+      s.src = wantLocal;
+      s.type = 'video/mp4';
+      video.appendChild(s);
     }
 
-    // Policy-safe muted autoplay defaults.
-    video.muted=true;
-    video.defaultMuted=true;
-    video.setAttribute('muted','');
-    video.setAttribute('autoplay','');
-    video.playsInline=true;
-    video.setAttribute('playsinline','');
-    video.setAttribute('webkit-playsinline','');
-    video.loop=true;
-    video.preload='auto';
-    video.removeAttribute('controls');
-    video.setAttribute('controlslist','nodownload noplaybackrate noremoteplayback');
-    video.disablePictureInPicture=true;
-
+    // Hard mute BEFORE any play() — required for autoplay policies.
+    // Keep volume > 0 while muted; volume===0 can confuse some browsers.
     const DEFAULT_VOL=0.7;
     let lastVol=DEFAULT_VOL;
+    video.volume = DEFAULT_VOL;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute('muted', '');
+    video.setAttribute('autoplay', '');
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.loop = true;
+    video.preload = 'auto';
+    video.removeAttribute('controls');
+    video.setAttribute('controlslist', 'nodownload noplaybackrate noremoteplayback');
+    video.disablePictureInPicture = true;
+
     let playAttempts=0;
     let unlocked=false;
-    const reduceMotion=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let watchdog=null;
     const isSilent=()=>video.muted || video.volume===0;
     const syncUi=()=>{
       const silent=isSilent();
@@ -5044,28 +5035,34 @@ function initStudioHeroVideo(){
 
     const tryPlay=(reason='')=>{
       const userGesture = reason==='gesture' || reason==='mute-toggle' || reason==='volume';
-      if(reduceMotion() && !userGesture){
-        video.removeAttribute('autoplay');
-        try{ video.pause(); }catch{}
+      if(!video.paused && !video.ended){
+        unlocked=true;
         return;
       }
-      if(!video.paused && !video.ended) return;
 
-      // Autoplay must stay muted. User-gesture plays keep the current mute/volume choice
-      // (previously we forced mute here, so unmute only looked like it "started" playback).
+      // Autoplay path: force muted + non-zero volume.
+      // Gesture path: keep the user's mute/volume choice.
       if(!userGesture){
-        video.muted=true;
-        video.defaultMuted=true;
-        video.setAttribute('muted','');
+        video.muted = true;
+        video.defaultMuted = true;
+        video.setAttribute('muted', '');
+        if(!(video.volume > 0)) video.volume = DEFAULT_VOL;
       }
 
-      playAttempts+=1;
-      const p=video.play();
+      playAttempts += 1;
+      let p;
+      try{ p = video.play(); }catch(err){
+        console.warn('[studio-hero-video] play threw', reason, err);
+        return;
+      }
       if(p && typeof p.then==='function'){
-        p.then(()=>{ unlocked=true; }).catch((err)=>{
-          if(playAttempts<=6){
+        p.then(()=>{
+          unlocked=true;
+          if(watchdog){ clearInterval(watchdog); watchdog=null; }
+        }).catch((err)=>{
+          if(playAttempts <= 8){
             console.warn('[studio-hero-video] autoplay retry', reason||'play', err?.name||'', err?.message||err);
-            if(playAttempts<=5) setTimeout(()=>tryPlay(reason||'retry'), 350*playAttempts);
+            setTimeout(()=>tryPlay(reason||'retry'), Math.min(1200, 250*playAttempts));
           }
         });
       }
@@ -5084,7 +5081,6 @@ function initStudioHeroVideo(){
         vol.value='0';
       }
       syncUi();
-      // Direct play on gesture — do not remute.
       const p=video.play();
       if(p && typeof p.then==='function') p.then(()=>{ unlocked=true; }).catch(()=>{});
     });
@@ -5097,9 +5093,10 @@ function initStudioHeroVideo(){
         video.volume=v;
         lastVol=v;
       }else{
-        video.volume=0;
+        // UI at 0 = mute, but keep lastVol for unmute restore
         video.muted=true;
         video.setAttribute('muted','');
+        if(!(lastVol>0)) lastVol=DEFAULT_VOL;
       }
       syncUi();
       const p=video.play();
@@ -5107,20 +5104,24 @@ function initStudioHeroVideo(){
     });
 
     video.addEventListener('volumechange', syncUi);
-    video.addEventListener('playing', ()=>{ unlocked=true; root.classList.add('is-playing'); });
+    video.addEventListener('playing', ()=>{
+      unlocked=true;
+      root.classList.add('is-playing');
+      if(watchdog){ clearInterval(watchdog); watchdog=null; }
+    });
     video.addEventListener('pause', ()=>{ root.classList.remove('is-playing'); });
 
-    // Attach ready listeners BEFORE any load() so we never miss canplay.
-    video.addEventListener('loadeddata', ()=>tryPlay('loadeddata'));
-    video.addEventListener('canplay', ()=>tryPlay('canplay'));
-    video.addEventListener('canplaythrough', ()=>tryPlay('canplaythrough'), {once:true});
+    const onReady=()=>tryPlay('ready-event');
+    video.addEventListener('loadeddata', onReady);
+    video.addEventListener('canplay', onReady);
+    video.addEventListener('canplaythrough', onReady, {once:true});
 
     if(typeof IntersectionObserver==='function'){
       const io=new IntersectionObserver((entries)=>{
         entries.forEach(entry=>{
           if(entry.isIntersecting) tryPlay('visible');
         });
-      }, {threshold:0.15});
+      }, {threshold:0.1});
       io.observe(root);
     }
 
@@ -5128,9 +5129,14 @@ function initStudioHeroVideo(){
       if(document.visibilityState==='visible') tryPlay('page-visible');
     });
 
-    // If muted autoplay was blocked, unlock on first page gesture.
     const unlock=()=>{
       if(unlocked && !video.paused) return;
+      // Gesture unlock stays muted unless user already unmuted.
+      if(isSilent()){
+        video.muted=true;
+        video.setAttribute('muted','');
+        if(!(video.volume>0)) video.volume=DEFAULT_VOL;
+      }
       tryPlay('gesture');
       if(!video.paused){
         document.removeEventListener('pointerdown', unlock, true);
@@ -5142,10 +5148,20 @@ function initStudioHeroVideo(){
     document.addEventListener('keydown', unlock, true);
     document.addEventListener('touchstart', unlock, {capture:true, passive:true});
 
-    if(needsReload){
+    // Watchdog: keep trying muted autoplay for a few seconds after load.
+    watchdog = setInterval(()=>{
+      if(unlocked || !video.paused){
+        clearInterval(watchdog);
+        watchdog=null;
+        return;
+      }
+      tryPlay('watchdog');
+    }, 700);
+    setTimeout(()=>{ if(watchdog){ clearInterval(watchdog); watchdog=null; } }, 12000);
+
+    if(!alreadyLocal || existing.length !== 1){
       try{ video.load(); }catch{}
     }
-    // Kick once now; ready events above cover the rest.
     if(video.readyState>=2) tryPlay('ready');
     else queueMicrotask(()=>tryPlay('init'));
 
