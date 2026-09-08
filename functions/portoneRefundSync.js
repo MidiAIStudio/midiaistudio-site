@@ -776,6 +776,7 @@ async function syncPortOnePayment({
       entitlement,
       ordersUpdated: present.length,
       eventsApplied: newEvents.length,
+      refundEventIds: newEvents.map((ev) => ev.id),
       duplicateEvent: newEvents.length === 0 && eventIds.length > 0,
       uid,
       productId: String(primary.productId || ''),

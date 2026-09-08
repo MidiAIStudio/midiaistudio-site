@@ -269,10 +269,15 @@ function displayProduct(row) {
 
 function matchesPaymentFilter(status, filter) {
   const f = String(filter || 'paid').toLowerCase();
-  if (f === 'all') return status === 'paid' || status === 'partially_refunded' || status === 'refunded' || status === 'cancelled';
-  if (f === 'refund' || f === 'refunds') {
-    return status === 'partially_refunded' || status === 'refunded' || status === 'cancelled';
+  if (f === 'all') {
+    return status === 'paid' || status === 'partially_refunded' || status === 'refunded'
+      || status === 'cancelled' || status === 'failed';
   }
+  if (f === 'refund' || f === 'refunds') {
+    return status === 'partially_refunded' || status === 'refunded';
+  }
+  if (f === 'failed') return status === 'failed';
+  if (f === 'cancelled' || f === 'canceled' || f === 'cancel') return status === 'cancelled';
   return status === 'paid';
 }
 
@@ -814,6 +819,20 @@ async function getAdminMobileDashboard(body, deps) {
     loadCritical(firestore, bounds.todayStart, bounds.todayEnd, limit),
     loadRecentPayments(firestore, limit)
   ]);
+  let homeExtras = {
+    todaySignups: 0,
+    activeLicenses: 0,
+    attention: [],
+    activity: []
+  };
+  try {
+    homeExtras = await require('./adminMobileOps').attachHomeExtras(firestore, bounds, {
+      recentPayments,
+      recentInquiries: inquiries.recent,
+      recentCritical: critical.recent,
+      todayRefunds: todayRefunds.length
+    });
+  } catch (_) { /* extras are best-effort */ }
 
   const today = summarize(todayPaid, todayRefunds, {
     inquiries: inquiries.todayCount,
@@ -837,7 +856,11 @@ async function getAdminMobileDashboard(body, deps) {
     isEstimate: true,
     recentPayments,
     recentInquiries: inquiries.recent,
-    recentCritical: critical.recent
+    recentCritical: critical.recent,
+    todaySignups: homeExtras.todaySignups || 0,
+    activeLicenses: homeExtras.activeLicenses || 0,
+    attention: homeExtras.attention || [],
+    activity: homeExtras.activity || []
   });
 }
 
@@ -853,20 +876,43 @@ async function getAdminSalesReport(body, deps) {
   const limit = clampLimit(body && body.limit);
   const cursor = decodeCursor(body && body.cursor);
 
-  const [paidRows, refundRows] = await Promise.all([
+  const [paidRows, refundRows, failedSnap] = await Promise.all([
     loadPaidInRange(db, range.start, range.end),
-    loadRefundsInRange(db, range.start, range.end)
+    loadRefundsInRange(db, range.start, range.end),
+    statusFilter === 'failed' || statusFilter === 'all'
+      ? safeQuery(() => db.collection('orders').where('status', '==', 'failed').limit(80).get())
+      : Promise.resolve({ docs: [] })
   ]);
   const summary = summarize(paidRows, refundRows);
   const merged = await mergeRefundParents(db, paidRows, refundRows);
-  const filtered = merged
+  const failedRows = docsOf(failedSnap).map((doc) => ({ id: doc.id, row: doc.data() || {} }))
+    .filter((item) => inRange(paidAtOf(item.row) || item.row.createdAt || item.row.updatedAt, range.start, range.end));
+  const listSource = statusFilter === 'failed' ? failedRows : merged.concat(statusFilter === 'all' ? failedRows : []);
+  const productFilter = String((body && (body.product || body.productId)) || '').trim().toLowerCase();
+  const sort = String((body && body.sort) || 'newest').toLowerCase();
+  const filtered = listSource
     .filter((item) => matchesPaymentFilter(canonicalStatus(item.row), statusFilter))
+    .filter((item) => {
+      if (!productFilter || productFilter === 'all') return true;
+      const label = displayProduct(item.row).toLowerCase();
+      const pid = String((item.row && item.row.productId) || '').toLowerCase();
+      return label.indexOf(productFilter) >= 0 || pid.indexOf(productFilter) >= 0;
+    })
     .sort((a, b) => {
+      const amountA = amountKrw(a.row);
+      const amountB = amountKrw(b.row);
+      if (sort === 'oldest') {
+        return (tsMs(paidAtOf(a.row)) || tsMs(refundAtOf(a.row))) - (tsMs(paidAtOf(b.row)) || tsMs(refundAtOf(b.row)));
+      }
+      if (sort === 'amount_desc') return amountB - amountA;
+      if (sort === 'amount_asc') return amountA - amountB;
       const d = (tsMs(paidAtOf(b.row)) || tsMs(refundAtOf(b.row))) - (tsMs(paidAtOf(a.row)) || tsMs(refundAtOf(a.row)));
       if (d) return d;
       return String(paymentIdOf(b.id, b.row)).localeCompare(String(paymentIdOf(a.id, a.row)));
     });
   const page = applyCursor(filtered, cursor, limit);
+  const statusOut = statusFilter === 'refund' || statusFilter === 'refunds' ? 'refund'
+    : (statusFilter === 'failed' ? 'failed' : (statusFilter === 'all' ? 'all' : 'paid'));
   return redactPaymentJson({
     period: { from: range.from, to: range.to },
     summary: {
@@ -877,7 +923,7 @@ async function getAdminSalesReport(body, deps) {
       refundCount: summary.refunds,
       currency: CURRENCY
     },
-    status: statusFilter === 'refund' || statusFilter === 'refunds' ? 'refund' : (statusFilter === 'all' ? 'all' : 'paid'),
+    status: statusOut,
     payments: page.items.map((item) => mapPayment(item.id, item.row)),
     nextCursor: page.nextCursor
   });

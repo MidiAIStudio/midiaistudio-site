@@ -15,6 +15,7 @@ const SETTINGS_DOC = 'default';
 const LOGS = 'adminPushLogs';
 const ABUSE = 'adminPushAbuse';
 const DEDUP = 'adminPushDedup';
+const CLAIMS = 'adminPushClaims';
 const LOG_KEEP = 80;
 const ADMIN_ORIGIN = 'https://midiaistudio.com/admin.html';
 
@@ -264,6 +265,56 @@ async function claimFlag(ref, field) {
   });
 }
 
+function paymentPaidEventKey(paymentId) {
+  return `payment:${String(paymentId || '').trim()}:paid`;
+}
+
+function paymentRefundEventKey(paymentId, refundEventId) {
+  return `payment:${String(paymentId || '').trim()}:refund:${String(refundEventId || '').trim()}`;
+}
+
+function claimDocId(eventKey) {
+  return String(eventKey || '').replace(/\//g, '_').slice(0, 700);
+}
+
+function isAlreadyExistsError(err) {
+  const code = String((err && (err.code || (err.errorInfo && err.errorInfo.code))) || '').toLowerCase();
+  const msg = String((err && err.message) || '').toLowerCase();
+  return code === 'already-exists' || code === '6' || msg.includes('already exists') || msg.includes('already-exists');
+}
+
+/**
+ * Atomic create-if-absent. Do not claim by writing orders — that retriggers onWrite.
+ * adminPushLogs is a send log, not a lock.
+ */
+async function claimPushEvent(eventKey, deps) {
+  const key = String(eventKey || '').trim();
+  if (!key) return false;
+  const db = (deps && deps.db) || dbRef();
+  const ref = db.collection(CLAIMS).doc(claimDocId(key));
+  if (typeof ref.create === 'function') {
+    try {
+      await ref.create({
+        eventKey: key,
+        createdAt: FieldValue().serverTimestamp()
+      });
+      return true;
+    } catch (err) {
+      if (isAlreadyExistsError(err)) return false;
+      throw err;
+    }
+  }
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (snap.exists) return false;
+    tx.set(ref, {
+      eventKey: key,
+      createdAt: FieldValue().serverTimestamp()
+    });
+    return true;
+  });
+}
+
 function isInvalidTokenError(err) {
   const code = String((err && (err.code || err.errorInfo && err.errorInfo.code)) || '').toLowerCase();
   if (INVALID_TOKEN_CODES.has(code)) return true;
@@ -343,7 +394,10 @@ async function sendAdminNotification(input, deps) {
   const type = String((input && input.type) || '').trim();
   if (!type) return { attempted: 0, success: 0, failed: 0, skipped: 'no_type' };
 
-  if (input && input.claimRef && input.claimField) {
+  if (input && input.eventKey) {
+    const claimed = await claimPushEvent(input.eventKey, deps);
+    if (!claimed) return { attempted: 0, success: 0, failed: 0, skipped: 'already_sent' };
+  } else if (input && input.claimRef && input.claimField) {
     const claimed = await claimFlag(input.claimRef, input.claimField);
     if (!claimed) return { attempted: 0, success: 0, failed: 0, skipped: 'already_sent' };
   }
@@ -419,6 +473,7 @@ async function sendAdminNotification(input, deps) {
 
 async function maybeNotifyPaymentFcm(orderId, data, ref, deps) {
   const order = data || {};
+  const paymentId = String(order.paymentId || orderId || '').trim();
   const product = String(order.productName || order.orderName || (order.plan === 'lifetime' ? 'Lifetime' : order.plan) || 'MidiAI Studio').trim();
   const amount = formatAmount(order.amount ?? order.paidAmount, order.currency);
   const email = maskEmail(order.email || order.payerEmail);
@@ -427,10 +482,9 @@ async function maybeNotifyPaymentFcm(orderId, data, ref, deps) {
     type: 'payment',
     title: '💰 신규 결제',
     body: body || product,
-    entityId: String(orderId || ''),
+    entityId: paymentId || String(orderId || ''),
     adminUrl: adminUrlFor('payment'),
-    claimRef: ref,
-    claimField: 'fcmAlertSent'
+    eventKey: paymentPaidEventKey(paymentId)
   }, deps);
 }
 
@@ -450,10 +504,24 @@ async function maybeNotifyInquiryFcm(ticketId, data, ref, deps) {
   }, deps);
 }
 
+function refundEventIdOf(result) {
+  if (!result || typeof result !== 'object') return '';
+  if (result.refundEventId) return String(result.refundEventId).trim();
+  if (Array.isArray(result.refundEventIds) && result.refundEventIds[0]) {
+    return String(result.refundEventIds[0]).trim();
+  }
+  if (result.refundEventType) return String(result.refundEventType).trim();
+  return '';
+}
+
 async function maybeNotifyRefundFcm(result, deps) {
-  const db = (deps && deps.db) || dbRef();
+  if (result && result.duplicateEvent) return { skipped: 'duplicate_event' };
   const paymentId = String((result && result.paymentId) || '').trim();
   if (!paymentId) return { skipped: 'no_payment' };
+  const newEvents = Number((result && result.eventsApplied) || 0);
+  const eventId = refundEventIdOf(result);
+  if (newEvents <= 0 && !eventId) return { skipped: 'no_new_refund_event' };
+  const db = (deps && deps.db) || dbRef();
   const ref = db.collection('orders').doc(paymentId);
   const snap = await ref.get();
   const order = snap.exists ? (snap.data() || {}) : {};
@@ -468,8 +536,7 @@ async function maybeNotifyRefundFcm(result, deps) {
     body: [product, amount].filter(Boolean).join(' · '),
     entityId: paymentId,
     adminUrl: adminUrlFor('refund'),
-    claimRef: ref,
-    claimField: 'fcmRefundSent'
+    eventKey: paymentRefundEventKey(paymentId, eventId || 'refund')
   }, deps);
 }
 
@@ -873,6 +940,10 @@ module.exports = {
   maybeNotifyPaymentFcm,
   maybeNotifyInquiryFcm,
   maybeNotifyRefundFcm,
+  notifyCritical,
+  claimPushEvent,
+  paymentPaidEventKey,
+  paymentRefundEventKey,
   notifyCritical,
   requestAdminDeviceRegistration,
   getAdminDeviceStatus,

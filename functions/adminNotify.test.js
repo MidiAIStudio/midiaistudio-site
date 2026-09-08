@@ -53,7 +53,109 @@ function testLicenseGate() {
     provider: 'paypal',
     paypalCaptureId: 'cap_1'
   }), true);
+  assert.strictEqual(adminNotify.shouldSendPaymentPushOnOrderWrite(false, {}, {
+    status: 'completed',
+    licenseIssued: true
+  }), true);
+  assert.strictEqual(adminNotify.shouldSendPaymentPushOnOrderWrite(true, {
+    status: 'created'
+  }, {
+    status: 'completed',
+    licenseIssued: true
+  }), true);
+  assert.strictEqual(adminNotify.shouldSendPaymentPushOnOrderWrite(true, {
+    status: 'completed',
+    licenseIssued: true
+  }, {
+    status: 'completed',
+    licenseIssued: true,
+    lastSyncedAt: '2026-09-08'
+  }), false);
   console.log('ok license gate');
+}
+
+function grantedOrder(extra) {
+  return Object.assign({
+    status: 'completed',
+    licenseIssued: true,
+    productName: 'Lifetime',
+    amount: 130000,
+    currency: 'KRW',
+    email: 'buyer@example.com'
+  }, extra || {});
+}
+
+function orderChange(before, after) {
+  return {
+    before: { exists: !!before, data: () => before || {} },
+    after: { exists: !!after, data: () => after || {} }
+  };
+}
+
+async function testHistoricalPaidOrdersDoNotPush() {
+  let fcmCalls = 0;
+  const deps = {
+    sendFcmPayment: async () => {
+      fcmCalls += 1;
+      return { success: 1 };
+    }
+  };
+  const ids = ['hist_1', 'hist_2', 'hist_3', 'hist_4'];
+  for (const id of ids) {
+    const paid = grantedOrder({ paymentId: id });
+    const out = await adminNotify.handleOrderWrite(
+      id,
+      orderChange(paid, Object.assign({}, paid, { lastSyncedAt: 'reconcile' })),
+      { id },
+      deps
+    );
+    assert.strictEqual(out.sent, false);
+  }
+  assert.strictEqual(fcmCalls, 0);
+  console.log('ok historical paid orders 4건 → FCM 0');
+}
+
+async function testPendingToPaidPushesOnce() {
+  let fcmCalls = 0;
+  const deps = {
+    sendFcmPayment: async () => {
+      fcmCalls += 1;
+      return { success: 1 };
+    }
+  };
+  const pending = { status: 'created', licenseIssued: false, paymentId: 'new_1' };
+  const paid = grantedOrder({ paymentId: 'new_1' });
+  const first = await adminNotify.handleOrderWrite('new_1', orderChange(pending, paid), { id: 'new_1' }, deps);
+  const retry = await adminNotify.handleOrderWrite('new_1', orderChange(paid, paid), { id: 'new_1' }, deps);
+  assert.strictEqual(first.sent, true);
+  assert.strictEqual(retry.sent, false);
+  assert.strictEqual(fcmCalls, 1);
+  console.log('ok pending → paid FCM 1회, retry 0');
+}
+
+async function testSameCanonicalDifferentProductName() {
+  assert.strictEqual(
+    adminPush.paymentPaidEventKey('pay_life'),
+    adminPush.paymentPaidEventKey('pay_life')
+  );
+  const a = adminPush.paymentPaidEventKey('pay_life');
+  const lifetime = grantedOrder({ paymentId: 'pay_life', productName: 'Lifetime' });
+  const license = grantedOrder({ paymentId: 'pay_life', productName: 'Lifetime License' });
+  assert.strictEqual(adminNotify.shouldSendPaymentPushOnOrderWrite(true, lifetime, license), false);
+  assert.strictEqual(a, 'payment:pay_life:paid');
+  console.log('ok canonical paymentId aliases share one paid event key');
+}
+
+function testReadApisAreSideEffectFree() {
+  const files = [
+    'adminMobileDashboard.js',
+    'adminSettlement.js'
+  ];
+  for (const file of files) {
+    const src = fs.readFileSync(path.join(__dirname, file), 'utf8');
+    assert.ok(!/sendAdminNotification|maybeNotifyPaymentFcm|maybeNotifyRefundFcm|notifyPaymentCompleted/.test(src), file);
+  }
+  console.log('ok dashboard/sales/settlement source has no FCM send');
 }
 
 function countKakaoSelfMessage(src) {
@@ -135,6 +237,14 @@ function makeFcmFakeDb(store) {
               if (opts && opts.merge) store[key] = Object.assign({}, store[key] || {}, patch);
               else store[key] = Object.assign({}, patch);
               return undefined;
+            },
+            async create(doc) {
+              if (store[key] != null) {
+                const err = new Error('ALREADY_EXISTS');
+                err.code = 'already-exists';
+                throw err;
+              }
+              store[key] = Object.assign({}, doc);
             }
           };
         },
@@ -296,7 +406,7 @@ function testKakaoSelfMessageGone() {
   const indexSrc = fs.readFileSync(path.join(__dirname, 'index.js'), 'utf8');
   assert.ok(!KAKAO_ADMIN_MODULE_RE.test(indexSrc));
   assert.ok(/notifyAdminOnInquiryCreate|notifyAdminOnOrderCompleted/.test(indexSrc));
-  assert.ok(/maybeNotifyPaymentFcm|notifyPaymentCompleted/.test(indexSrc));
+  assert.ok(/handleOrderWrite|maybeNotifyPaymentFcm|notifyPaymentCompleted/.test(indexSrc));
   assert.ok(/sendAdminNotification|notifyCritical|maybeNotifyRefundFcm/.test(indexSrc));
   console.log('ok Kakao self-message modules and callsites removed');
 }
@@ -318,6 +428,10 @@ async function testDiscordGone() {
 (async () => {
   testPayloadBuilders();
   testLicenseGate();
+  await testHistoricalPaidOrdersDoNotPush();
+  await testPendingToPaidPushesOnce();
+  await testSameCanonicalDifferentProductName();
+  testReadApisAreSideEffectFree();
   await testPaymentSuccessFcmOnly();
   await testInquiryWaitingHumanFcmOnly();
   await testRefundFcmOnly();

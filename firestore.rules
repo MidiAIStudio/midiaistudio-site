@@ -400,5 +400,8 @@ service cloud.firestore {
     match /adminPushDedup/{id} {
       allow read, write: if false;
     }
+    match /adminPushClaims/{id} {
+      allow read, write: if false;
+    }
   }
 }

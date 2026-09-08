@@ -87,6 +87,16 @@ function isLicenseGrantedOrder(data) {
   return false;
 }
 
+/**
+ * Payment FCM only on first non-paid → paid/granted transition.
+ * Reading or patching an already-granted historical order must not notify.
+ */
+function shouldSendPaymentPushOnOrderWrite(beforeExists, before, after) {
+  if (!isLicenseGrantedOrder(after)) return false;
+  if (beforeExists && isLicenseGrantedOrder(before)) return false;
+  return true;
+}
+
 function buildPaymentAlert(orderId, data) {
   const order = data || {};
   const title = '💳 MidiAI Studio 결제 완료';
@@ -138,6 +148,17 @@ async function notifyInquiryCreated(ticketId, data, ref, deps = {}) {
  * Payment admin alert (FCM). Never throws to caller.
  * Returns false when the order is not a granted license (business gate unchanged).
  */
+async function handleOrderWrite(orderId, change, ref, deps = {}) {
+  const beforeExists = !!(change && change.before && change.before.exists);
+  const before = beforeExists ? ((change.before.data && change.before.data()) || {}) : {};
+  const after = (change && change.after && change.after.data && change.after.data()) || {};
+  if (!shouldSendPaymentPushOnOrderWrite(beforeExists, before, after)) {
+    return { sent: false, skipped: 'not_new_paid' };
+  }
+  await notifyPaymentCompleted(orderId, after, ref, deps);
+  return { sent: true };
+}
+
 async function notifyPaymentCompleted(orderId, data, ref, deps = {}) {
   if (!isLicenseGrantedOrder(data)) return false;
   try {
@@ -164,6 +185,8 @@ function defaultPaymentFcm(orderId, data, ref) {
 module.exports = {
   notifyInquiryCreated,
   notifyPaymentCompleted,
+  handleOrderWrite,
+  shouldSendPaymentPushOnOrderWrite,
   isLicenseGrantedOrder,
   buildPaymentAlert,
   buildInquiryAlert,

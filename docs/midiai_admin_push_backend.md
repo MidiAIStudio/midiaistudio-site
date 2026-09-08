@@ -109,6 +109,16 @@ Firebase Auth를 Android device API에 쓰지 않는다.
 | `getAdminPaymentDetail` | 필수 | **필수** | 없음 | approved + enabled only. `paymentId` 필수 |
 | `getAdminSalesReport` | 필수 | **필수** | 없음 | approved + enabled only |
 | `getAdminSettlementDashboard` | 필수 | **필수** | 없음 | approved + enabled only. 원장 기반 예상 정산 |
+| `getAdminMembers` | 필수 | **필수** | 없음 | 회원 검색 |
+| `getAdminMemberDetail` | 필수 | **필수** | 없음 | 회원 상세 |
+| `postAdminMemberAction` | 필수 | **필수** | 없음 | `block` / `unblock` only |
+| `getAdminTickets` | 필수 | **필수** | 없음 | 문의 목록 |
+| `getAdminTicketDetail` | 필수 | **필수** | 없음 | 문의 상세 |
+| `postAdminTicketReply` | 필수 | **필수** | 없음 | 기존 supportTickets replies |
+| `getAdminAppVersion` | 필수 | **필수** | 없음 | `downloads/latest` 읽기 |
+| `getAdminNotices` | 필수 | **필수** | 없음 | `announcements` |
+| `getAdminAuditLogs` | 필수 | **필수** | 없음 | `adminAuditLogs` 최근 |
+| `getAdminLicenseStats` | 필수 | **필수** | 없음 | 라이선스 집계 (scan cap) |
 
 서버 비교: `SHA-256(deviceSecret)` 와 `deviceSecretHash` 를 timing-safe 비교.
 
@@ -760,13 +770,29 @@ Admin URL:
 
 ## Event integration
 
-기존 결제/PASS/문의/환불 로직은 rewrite하지 않음. FCM은 성공 이후 try/catch 격리. Kakao 유지.
+기존 결제/PASS/문의/환불 로직은 rewrite하지 않음. FCM은 성공 이후 try/catch 격리.
+
+**신규 결제 Push는 `orders/{orderId}` onWrite에서 non-paid → granted 전환일 때만 발생한다.**
+이미 `status=completed` + license issued 인 historical order를 읽거나, reconcile/sync가 같은 문서를 다시 쓰는 것은 Push를 만들지 않는다.
+
+`getAdminMobileDashboard` / `getAdminSalesReport` / `getAdminPaymentDetail` / `getAdminSettlementDashboard` / settlement projection / canonical normalization은 **side-effect free** (FCM 없음).
+
+Idempotency는 `adminPushClaims` create-if-absent:
+
+| eventKey | 의미 |
+|---|---|
+| `payment:{canonicalPaymentId}:paid` | 결제 성공 알림 최대 1회 |
+| `payment:{canonicalPaymentId}:refund:{refundEventId}` | 환불 이벤트당 1회 |
+
+`adminPushLogs`는 발송 로그일 뿐 lock이 아니다. 클레임은 **orders 문서에 fcmAlertSent를 쓰지 않는다** (그 write가 onWrite를 재발화했음).
+
+historical paid order는 전환 가드 때문에 알림 candidate에서 제외한다. 과거 건에 실제 FCM backfill을 하지 않는다.
 
 | type | 연결 |
 |---|---|
-| payment | 라이선스 지급 완료 / credit grant 성공 후 |
+| payment | 라이선스 지급 완료(최초 전환) / credit grant 성공 후 (`eventKey` 필수) |
 | inquiry | 상담사 연결(`waiting_human`) 이후 |
-| refund | PortOne 실제 취소 성공 / PayPal refund webhook |
+| refund | PortOne **새** 취소 이벤트 / PayPal refund webhook (`refundEventId`) |
 | critical | PASS/Lifetime 지급 실패, 중복 자동환불 실패, 환불 후 라이선스 재검토 |
 
 ---
@@ -774,13 +800,19 @@ Admin URL:
 ## Named deploy
 
 ```
-firebase deploy --only functions:web:requestAdminDeviceRegistration,functions:web:getAdminDeviceStatus,functions:web:updateAdminDeviceToken,functions:web:updateAdminDeviceSettings,functions:web:sendAdminDeviceTestPush,functions:web:unregisterAdminDevice,functions:web:manageAdminPush
+firebase deploy --only functions:web:notifyAdminOnOrderCompleted,functions:web:creditPortOnePurchase,functions:web:creditPortOnePointPurchase,functions:web:paypalWebhook,functions:web:portoneWebhook,functions:web:syncPortOnePaymentStatus,functions:web:adminCancelPortOnePayment,functions:web:reconcilePortOnePayments
 ```
 
 Mobile dashboard + settlement estimate (named only):
 
 ```
 firebase deploy --only functions:web:getAdminMobileDashboard,functions:web:getAdminPaymentDetail,functions:web:getAdminSalesReport,functions:web:getAdminSettlementDashboard,functions:web:manageAdminSettlementSettings
+```
+
+Mobile ops (members / tickets / version / notices / audit / license stats):
+
+```
+firebase deploy --only functions:web:getAdminMobileDashboard,functions:web:getAdminSalesReport,functions:web:getAdminMembers,functions:web:getAdminMemberDetail,functions:web:postAdminMemberAction,functions:web:getAdminTickets,functions:web:getAdminTicketDetail,functions:web:postAdminTicketReply,functions:web:getAdminAppVersion,functions:web:getAdminNotices,functions:web:getAdminAuditLogs,functions:web:getAdminLicenseStats
 ```
 
 `assertDevice` secret 검사 수정을 기존 기기 API에 반영할 때:

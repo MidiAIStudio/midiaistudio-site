@@ -521,6 +521,9 @@ async function testCanonicalPaymentAndFilters() {
 
   assert.strictEqual(dash.displayProduct({ productId: 'PASS_7D', productName: '7일 Full' }), '7일 PASS');
   assert.strictEqual(dash.canonicalStatus({ status: 'cancelled', refundedAmount: 19900, amount: 19900 }), 'cancelled');
+  assert.strictEqual(dash.matchesPaymentFilter('cancelled', 'cancelled'), true);
+  assert.strictEqual(dash.matchesPaymentFilter('cancelled', 'refund'), false);
+  assert.strictEqual(dash.matchesPaymentFilter('refunded', 'refund'), true);
   console.log('ok canonical status / product mapping / net amounts');
 }
 
@@ -957,6 +960,55 @@ async function testPartialRefundDetail() {
   console.log('ok partial refund detail + timeline');
 }
 
+async function testHistoricalReadsDoNotPush() {
+  let fcmCalls = 0;
+  const originalSend = adminPush.sendAdminNotification;
+  const originalPay = adminPush.maybeNotifyPaymentFcm;
+  const originalRefund = adminPush.maybeNotifyRefundFcm;
+  adminPush.sendAdminNotification = async function () {
+    fcmCalls += 1;
+    return { attempted: 1, success: 1, failed: 0 };
+  };
+  adminPush.maybeNotifyPaymentFcm = async function () {
+    fcmCalls += 1;
+    return { attempted: 1, success: 1, failed: 0 };
+  };
+  adminPush.maybeNotifyRefundFcm = async function () {
+    fcmCalls += 1;
+    return { attempted: 1, success: 1, failed: 0 };
+  };
+  try {
+    const extra = {};
+    for (let i = 1; i <= 4; i += 1) {
+      extra[`orders/hist_${i}`] = {
+        paymentId: `hist_${i}`,
+        status: 'completed',
+        amount: 130000,
+        currency: 'KRW',
+        paymentMethod: 'kakaopay',
+        productName: i % 2 ? 'Lifetime' : 'Lifetime License',
+        completedAt: kst(2026, 9, 5, 10, i, 0),
+        environment: 'live'
+      };
+    }
+    const store = approvedStore(extra);
+    const db = makeFakeDb(store);
+    await dash.getAdminMobileDashboard(auth(), { db, now: NOW });
+    await dash.getAdminSalesReport(Object.assign({
+      from: '2026-09-01',
+      to: '2026-09-08'
+    }, auth()), { db, now: NOW });
+    await dash.getAdminSettlementDashboard(auth(), { db, now: NOW });
+    await dash.getAdminPaymentDetail(Object.assign({ paymentId: 'hist_1' }, auth()), { db, now: NOW });
+    assert.strictEqual(fcmCalls, 0);
+  } finally {
+    adminPush.sendAdminNotification = originalSend;
+    adminPush.maybeNotifyPaymentFcm = originalPay;
+    adminPush.maybeNotifyRefundFcm = originalRefund;
+  }
+  console.log('ok historical 4건 dashboard/sales/settlement/detail → FCM 0');
+}
+
 (async () => {
   testKstTodayIncludes0034();
   testKstMonthBoundary();
@@ -987,6 +1039,7 @@ async function testPartialRefundDetail() {
   await testSettlementRevoked403();
   await testSettlementEstimateContractAndHomePreview();
   await testPartialRefundDetail();
+  await testHistoricalReadsDoNotPush();
   console.log('all adminMobileDashboard tests passed');
 })().catch((err) => {
   console.error(err);

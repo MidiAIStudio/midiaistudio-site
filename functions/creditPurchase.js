@@ -383,7 +383,8 @@ function createHandlers({
             title: '💰 신규 결제',
             body: `${creditAmount} Credits · ${push.formatAmount(expectedAmount, 'KRW')}`,
             entityId: paymentId,
-            adminUrl: 'https://midiaistudio.com/admin.html#view=crm&crm=orders'
+            adminUrl: 'https://midiaistudio.com/admin.html#view=crm&crm=orders',
+            eventKey: push.paymentPaidEventKey(paymentId)
           });
         } catch (fcmErr) {
           console.warn('credit grant fcm', fcmErr && fcmErr.message);

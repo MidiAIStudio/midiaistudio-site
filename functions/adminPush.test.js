@@ -525,6 +525,148 @@ async function testTokenRefreshAndRevokedPush() {
   console.log('ok token refresh immutability + revoked skip + hash not sent');
 }
 
+function makePushDb(store) {
+  const db = {
+    collection(name) {
+      const col = {
+        doc(id) {
+          const path = `${name}/${id}`;
+          return {
+            async get() {
+              if (name === 'adminNotificationSettings') {
+                return {
+                  exists: true,
+                  data: () => ({
+                    paymentEnabled: true,
+                    inquiryEnabled: true,
+                    refundEnabled: true,
+                    criticalEnabled: true
+                  })
+                };
+              }
+              return { exists: store[path] != null, data: () => store[path] || {} };
+            },
+            async set(patch, opts) {
+              if (opts && opts.merge) store[path] = Object.assign({}, store[path] || {}, patch);
+              else store[path] = Object.assign({}, patch);
+            },
+            async create(doc) {
+              if (store[path] != null) {
+                const err = new Error('ALREADY_EXISTS');
+                err.code = 'already-exists';
+                throw err;
+              }
+              store[path] = Object.assign({}, doc);
+            }
+          };
+        },
+        async get() {
+          if (name !== 'adminDevices') return { docs: [] };
+          return {
+            docs: Object.keys(store)
+              .filter((k) => k.startsWith('adminDevices/'))
+              .map((k) => ({
+                id: k.slice('adminDevices/'.length),
+                ref: col.doc(k.slice('adminDevices/'.length)),
+                data: () => store[k]
+              }))
+          };
+        },
+        async add(entry) {
+          store[`adminPushLogs/${Object.keys(store).length}`] = entry;
+          return { id: 'log' };
+        },
+        orderBy() { return this; },
+        offset() { return this; },
+        limit() { return this; }
+      };
+      return col;
+    }
+  };
+  return db;
+}
+
+async function testAtomicPaidClaim() {
+  const store = {
+    'adminDevices/dev1': {
+      status: 'approved',
+      enabled: true,
+      token: 'fcm-paid-token-value',
+      paymentEnabled: true
+    }
+  };
+  const db = makePushDb(store);
+  let fcmCalls = 0;
+  const messaging = {
+    async sendEach(messages) {
+      fcmCalls += messages.length;
+      return { responses: messages.map(() => ({ success: true })) };
+    }
+  };
+  const payload = {
+    type: 'payment',
+    title: '💰 신규 결제',
+    body: 'Lifetime License · ₩130,000',
+    entityId: 'pay_life',
+    eventKey: adminPush.paymentPaidEventKey('pay_life')
+  };
+  const first = await adminPush.sendAdminNotification(payload, { db, messaging });
+  const second = await adminPush.sendAdminNotification(payload, { db, messaging });
+  const alias = await adminPush.sendAdminNotification(Object.assign({}, payload, {
+    body: 'Lifetime · ₩130,000'
+  }), { db, messaging });
+  assert.strictEqual(first.success, 1);
+  assert.strictEqual(second.skipped, 'already_sent');
+  assert.strictEqual(alias.skipped, 'already_sent');
+  assert.strictEqual(fcmCalls, 1);
+  console.log('ok paid eventKey webhook/retry/alias → FCM 1');
+}
+
+async function testRefundEventClaim() {
+  const store = {
+    'adminDevices/dev1': {
+      status: 'approved',
+      enabled: true,
+      token: 'fcm-refund-token-value',
+      refundEnabled: true
+    },
+    'orders/pay_r': {
+      productName: 'Lifetime',
+      amount: 130000,
+      currency: 'KRW'
+    }
+  };
+  const db = makePushDb(store);
+  let fcmCalls = 0;
+  const messaging = {
+    async sendEach(messages) {
+      fcmCalls += messages.length;
+      return { responses: messages.map(() => ({ success: true })) };
+    }
+  };
+  const result = {
+    paymentId: 'pay_r',
+    status: 'refunded',
+    cancelledAmount: 130000,
+    eventsApplied: 1,
+    refundEventIds: ['ev_1']
+  };
+  const first = await adminPush.maybeNotifyRefundFcm(result, { db, messaging });
+  const retry = await adminPush.maybeNotifyRefundFcm(result, { db, messaging });
+  const historical = await adminPush.maybeNotifyRefundFcm({
+    paymentId: 'pay_r',
+    status: 'refunded',
+    cancelledAmount: 130000,
+    eventsApplied: 0,
+    duplicateEvent: true
+  }, { db, messaging });
+  assert.strictEqual(first.success, 1);
+  assert.strictEqual(retry.skipped, 'already_sent');
+  assert.strictEqual(historical.skipped, 'duplicate_event');
+  assert.strictEqual(fcmCalls, 1);
+  console.log('ok refund event retry → FCM 1, historical duplicate 0');
+}
+
 (async () => {
   testHelpers();
   testPushTargetAndFilters();
@@ -537,6 +679,8 @@ async function testTokenRefreshAndRevokedPush() {
   await testDeviceLifecycle();
   await testCategoryFilter();
   await testTokenRefreshAndRevokedPush();
+  await testAtomicPaidClaim();
+  await testRefundEventClaim();
   console.log('all adminPush tests passed');
 })().catch((err) => {
   console.error(err);

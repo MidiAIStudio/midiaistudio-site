@@ -1942,7 +1942,8 @@ exports.paypalWebhook = functions.https.onRequest(async (req, res) => {
           await adminPush.maybeNotifyRefundFcm({
             paymentId: order.id,
             status: 'refunded',
-            cancelledAmount: 1
+            cancelledAmount: 1,
+            refundEventId: type
           });
         } catch (fcmErr) {
           console.warn('paypalWebhook fcm', fcmErr && fcmErr.message);
@@ -2101,8 +2102,7 @@ exports.processAdminBulkCredits = onSchedule({
 
 const {
   notifyInquiryCreated,
-  notifyPaymentCompleted,
-  isLicenseGrantedOrder
+  handleOrderWrite
 } = require('./adminNotify');
 const SUPPORT_AI_WAITING_MODE = 'waiting_human';
 const { broadcastPublishedContent } = require('./broadcastNotify');
@@ -2324,7 +2324,8 @@ exports.notifyAdminOnHumanRequest = functionsV1
 
 /**
  * Order completed + license issued → MidiAI Admin FCM payment alert.
- * Ignores created/cancelled/failed orders. Side-effect only.
+ * Only the first non-paid → granted transition. Historical order reads/patches
+ * and reconcile writes on already-paid docs must not send "신규 결제".
  */
 exports.notifyAdminOnOrderCompleted = functionsV1
   .runWith({ timeoutSeconds: 30, memory: '256MB' })
@@ -2333,9 +2334,7 @@ exports.notifyAdminOnOrderCompleted = functionsV1
     const orderId = context.params.orderId;
     try {
       if (!change.after.exists) return null;
-      const after = change.after.data() || {};
-      if (!isLicenseGrantedOrder(after)) return null;
-      await notifyPaymentCompleted(orderId, after, change.after.ref);
+      await handleOrderWrite(orderId, change, change.after.ref);
     } catch (err) {
       console.error('notifyAdminOnOrderCompleted', {
         orderId,
@@ -2390,6 +2389,19 @@ exports.getAdminMobileDashboard = functions.https.onRequest(adminDashboardHandle
 exports.getAdminPaymentDetail = functions.https.onRequest(adminDashboardHandlers.getAdminPaymentDetail);
 exports.getAdminSalesReport = functions.https.onRequest(adminDashboardHandlers.getAdminSalesReport);
 exports.getAdminSettlementDashboard = functions.https.onRequest(adminDashboardHandlers.getAdminSettlementDashboard);
+
+const adminOps = require('./adminMobileOps');
+const adminOpsHandlers = adminOps.createHandlers({ cors });
+exports.getAdminMembers = functions.https.onRequest(adminOpsHandlers.getAdminMembers);
+exports.getAdminMemberDetail = functions.https.onRequest(adminOpsHandlers.getAdminMemberDetail);
+exports.postAdminMemberAction = functions.https.onRequest(adminOpsHandlers.postAdminMemberAction);
+exports.getAdminTickets = functions.https.onRequest(adminOpsHandlers.getAdminTickets);
+exports.getAdminTicketDetail = functions.https.onRequest(adminOpsHandlers.getAdminTicketDetail);
+exports.postAdminTicketReply = functions.https.onRequest(adminOpsHandlers.postAdminTicketReply);
+exports.getAdminAppVersion = functions.https.onRequest(adminOpsHandlers.getAdminAppVersion);
+exports.getAdminNotices = functions.https.onRequest(adminOpsHandlers.getAdminNotices);
+exports.getAdminAuditLogs = functions.https.onRequest(adminOpsHandlers.getAdminAuditLogs);
+exports.getAdminLicenseStats = functions.https.onRequest(adminOpsHandlers.getAdminLicenseStats);
 
 const adminSettlement = require('./adminSettlement');
 const adminSettlementHandlers = adminSettlement.createHandlers({ cors, requireAdmin });
