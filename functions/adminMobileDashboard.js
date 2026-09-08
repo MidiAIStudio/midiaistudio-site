@@ -338,6 +338,7 @@ function mapPayment(id, row, opts) {
     amount: gross,
     currency,
     emailMasked: adminPush.maskEmail(emailOf(data)),
+    displayName: adminPush.personName(data, data.uid),
     paidAt: toIso(paidAt) || undefined,
     refundedAt: toIso(refundAt) || undefined,
     refundedAmount: refunded,
@@ -357,6 +358,7 @@ function mapInquiry(id, row) {
     title: String(data.title || data.subject || '').trim() || '(제목 없음)',
     category: String(data.category || '').trim(),
     emailMasked: adminPush.maskEmail(data.email || data.payerEmail),
+    displayName: adminPush.personName(data, data.uid),
     status: String(data.conversationMode || data.status || ''),
     createdAt: toIso(data.humanRequestedAt || data.createdAt) || undefined,
     adminUrl: INQUIRY_URL
@@ -810,14 +812,18 @@ async function getAdminMobileDashboard(body, deps) {
   const bounds = kstBounds(now);
   const limit = clampLimit(body && body.limit);
 
-  const [todayPaid, monthPaid, todayRefunds, monthRefunds, inquiries, critical, recentPayments] = await Promise.all([
+  const extraSnapsP = require('./adminMobileOps').fetchHomeExtraSnaps(firestore, bounds, now);
+  const settlementP = buildSettlementPayload(firestore, now);
+  const [todayPaid, monthPaid, todayRefunds, monthRefunds, inquiries, critical, recentPayments, extraSnaps, settlementFull] = await Promise.all([
     loadPaidInRange(firestore, bounds.todayStart, bounds.todayEnd),
     loadPaidInRange(firestore, bounds.monthStart, bounds.monthEnd),
     loadRefundsInRange(firestore, bounds.todayStart, bounds.todayEnd),
     loadRefundsInRange(firestore, bounds.monthStart, bounds.monthEnd),
     loadInquiries(firestore, bounds.todayStart, bounds.todayEnd, limit),
     loadCritical(firestore, bounds.todayStart, bounds.todayEnd, limit),
-    loadRecentPayments(firestore, limit)
+    loadRecentPayments(firestore, limit),
+    extraSnapsP,
+    settlementP
   ]);
   let homeExtras = {
     todaySignups: 0,
@@ -826,7 +832,7 @@ async function getAdminMobileDashboard(body, deps) {
     activity: []
   };
   try {
-    homeExtras = await require('./adminMobileOps').attachHomeExtras(firestore, bounds, {
+    homeExtras = require('./adminMobileOps').assembleHomeExtras(extraSnaps, {
       recentPayments,
       recentInquiries: inquiries.recent,
       recentCritical: critical.recent,
@@ -839,7 +845,6 @@ async function getAdminMobileDashboard(body, deps) {
     critical: critical.todayCount
   });
   const month = summarize(monthPaid, monthRefunds);
-  const settlementFull = await buildSettlementPayload(firestore, now);
   const settlement = adminSettlement.homeSettlementPreview(settlementFull);
   const generatedAt = now.toISOString();
   return redactPaymentJson({
@@ -859,6 +864,8 @@ async function getAdminMobileDashboard(body, deps) {
     recentCritical: critical.recent,
     todaySignups: homeExtras.todaySignups || 0,
     activeLicenses: homeExtras.activeLicenses || 0,
+    licenseStats: homeExtras.licenseStats || null,
+    activeLicensesCapped: false,
     attention: homeExtras.attention || [],
     activity: homeExtras.activity || []
   });

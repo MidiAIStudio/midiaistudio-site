@@ -113,6 +113,27 @@ function maskEmail(email) {
   return `${local.slice(0, keep)}***${domain}`;
 }
 
+/**
+ * Display name from users/orders/tickets docs. Never Auth.getUser (N+1).
+ * Priority: displayName/name → email local-part → uid prefix.
+ */
+function personName(row, uid) {
+  const name = String((row && (row.displayName || row.name || row.payerName || row.googleName)) || '').trim();
+  if (name) return name.slice(0, 80);
+  const email = String((row && (row.email || row.payerEmail)) || '').trim();
+  const local = email.split('@')[0];
+  if (local) return local.slice(0, 40);
+  const id = String(uid || (row && row.uid) || '').trim();
+  return id ? id.slice(0, 8) : '회원';
+}
+
+function photoUrlOf(row) {
+  const url = String((row && row.photoURL) || '').trim();
+  if (!url || url.length > 500) return '';
+  if (url.indexOf('http://') !== 0 && url.indexOf('https://') !== 0) return '';
+  return url;
+}
+
 function formatAmount(amount, currency) {
   if (amount == null || amount === '') return '';
   const num = Number(amount);
@@ -930,6 +951,8 @@ module.exports = {
   adminUrlFor,
   hashSecret,
   maskEmail,
+  personName,
+  photoUrlOf,
   formatAmount,
   isPushTarget,
   categoryEnabledOnDevice,

@@ -4397,7 +4397,14 @@ async function upsertUser(user){
     const ref=doc(db,'users',user.uid);
     const snap=await getDoc(ref);
     const old=snap.exists()?snap.data():{};
-    const data={uid:user.uid,email:user.email||'',displayName:user.displayName||'',photoURL:user.photoURL||'',lastLogin:serverTimestamp(),lastSeenAt:serverTimestamp()};
+    const data={uid:user.uid,email:user.email||'',lastLogin:serverTimestamp(),lastLoginAt:serverTimestamp(),lastSeenAt:serverTimestamp()};
+    const google=(Array.isArray(user.providerData)?user.providerData:[]).find((p)=>p && p.providerId==='google.com') || {};
+    const name=String(user.displayName || google.displayName || '').trim();
+    const photo=String(user.photoURL || google.photoURL || '').trim();
+    if(name) data.displayName=name;
+    else if(!snap.exists()) data.displayName='';
+    if(photo) data.photoURL=photo;
+    else if(!snap.exists()) data.photoURL='';
     if(!snap.exists()){
       data.createdAt=serverTimestamp();
       data.role='user';

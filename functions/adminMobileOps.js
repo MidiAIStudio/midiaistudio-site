@@ -11,7 +11,7 @@ const adminPush = require('./adminPush');
 const MEMBER_LIMIT = 20;
 const TICKET_LIMIT = 30;
 const AUDIT_LIMIT = 40;
-const LICENSE_SCAN = 400;
+const LICENSE_ITEMS = 30;
 const CRM_URL = 'https://midiaistudio.com/admin.html#view=crm';
 const TICKET_URL = 'https://midiaistudio.com/admin.html#view=support';
 const NOTICE_URL = 'https://midiaistudio.com/admin.html#view=notices';
@@ -59,11 +59,15 @@ async function safeQuery(fn) {
   }
 }
 
-function planLabel(plan) {
+function planLabel(plan, productId) {
+  const pid = String(productId || '').toUpperCase();
+  if (pid.includes('90')) return '90일';
+  if (pid.includes('7D') || pid === 'PASS_7' || pid.includes('PASS_7D')) return '7일';
+  if (pid.includes('30')) return '30일';
   const p = String(plan || '').toLowerCase();
-  if (p === 'lifetime') return '평생 이용권';
+  if (p === 'lifetime') return 'Lifetime';
+  if (p === 'trial') return 'Trial';
   if (p === 'period') return 'PASS';
-  if (p === 'trial') return '체험판';
   return plan || '—';
 }
 
@@ -90,16 +94,19 @@ function licenseState(lic) {
 
 function mapMember(uid, user, lic) {
   const state = licenseState(lic);
+  const row = user || {};
   return {
     uid: String(uid || ''),
-    emailMasked: adminPush.maskEmail(user && (user.email || user.payerEmail)),
-    displayName: String((user && (user.displayName || user.name)) || '').slice(0, 80),
+    emailMasked: adminPush.maskEmail(row.email || row.payerEmail),
+    displayName: adminPush.personName(row, uid),
+    photoURL: adminPush.photoUrlOf(row) || undefined,
     joinedAt: toIso(user && (user.createdAt || user.joinedAt)) || undefined,
-    lastLoginAt: toIso(user && (user.lastLoginAt || user.lastSeenAt)) || undefined,
+    lastLoginAt: toIso(user && (user.lastLogin || user.lastLoginAt || user.lastSeenAt)) || undefined,
     plan: String((lic && lic.plan) || 'trial'),
-    planLabel: planLabel(lic && lic.plan),
+    planLabel: planLabel(lic && lic.plan, lic && (lic.passProductId || lic.productId)),
     licenseStatus: state.status,
     licenseLabel: state.label,
+    expiresAt: toIso(lic && lic.expiresAt) || undefined,
     adminUrl: CRM_URL
   };
 }
@@ -116,6 +123,7 @@ function mapTicket(id, row) {
     inquiryId: String(id || ''),
     title: String((row && (row.title || row.subject)) || '(제목 없음)').slice(0, 120),
     emailMasked: adminPush.maskEmail(row && (row.email || row.payerEmail)),
+    displayName: adminPush.personName(row, (row && row.uid) || ''),
     uid: String((row && row.uid) || ''),
     status,
     conversationMode: mode,
@@ -127,37 +135,72 @@ function mapTicket(id, row) {
   };
 }
 
-async function countQuery(db, col, field, value, limit) {
-  const snap = await safeQuery(() => db.collection(col).where(field, '==', value).limit(limit).get());
-  return docsOf(snap).length;
+async function aggregationCount(query) {
+  try {
+    if (!query || typeof query.count !== 'function') return 0;
+    const snap = await query.count().get();
+    const data = snap && typeof snap.data === 'function' ? snap.data() : null;
+    const n = data && data.count;
+    return Number.isFinite(Number(n)) ? Number(n) : 0;
+  } catch (_) {
+    return 0;
+  }
 }
 
-async function attachHomeExtras(db, bounds, seed) {
-  const [signupSnap, licenseSnap, waitingSnap] = await Promise.all([
+async function countLicenseStats(db, now) {
+  const at = now instanceof Date ? now : new Date();
+  const [active, trial, lifetime, banned, expiredStatus, pendingExpire, d7, d30, d90] = await Promise.all([
+    aggregationCount(db.collection('licenses').where('licensed', '==', true)),
+    aggregationCount(db.collection('licenses').where('plan', '==', 'trial')),
+    aggregationCount(db.collection('licenses').where('plan', '==', 'lifetime')),
+    aggregationCount(db.collection('licenses').where('status', '==', 'banned')),
+    aggregationCount(db.collection('licenses').where('status', '==', 'expired')),
+    aggregationCount(db.collection('licenses').where('status', '==', 'active').where('expiresAt', '<=', at)),
+    aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_7D')),
+    aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_30D')),
+    aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_90D'))
+  ]);
+  return {
+    active,
+    trial,
+    lifetime,
+    banned,
+    expired: expiredStatus + pendingExpire,
+    d7,
+    d30,
+    d90,
+    capped: false
+  };
+}
+
+async function fetchHomeExtraSnaps(db, bounds, now) {
+  const signupCountQuery = db.collection('users')
+    .where('createdAt', '>=', bounds.todayStart)
+    .where('createdAt', '<', bounds.todayEnd);
+  const [signupSnap, waitingSnap, signupCount, licenseCounts] = await Promise.all([
     safeQuery(() => db.collection('users')
       .where('createdAt', '>=', bounds.todayStart)
       .where('createdAt', '<', bounds.todayEnd)
       .orderBy('createdAt', 'desc')
-      .limit(200)
-      .get()),
-    safeQuery(() => db.collection('licenses')
-      .where('licensed', '==', true)
-      .limit(LICENSE_SCAN)
+      .limit(8)
       .get()),
     safeQuery(() => db.collection('supportTickets')
       .where('conversationMode', '==', 'waiting_human')
       .orderBy('humanRequestedAt', 'desc')
       .limit(20)
-      .get())
+      .get()),
+    aggregationCount(signupCountQuery),
+    countLicenseStats(db, now)
   ]);
+  return { signupSnap, waitingSnap, signupCount, licenseCounts };
+}
 
-  const signupsToday = docsOf(signupSnap).length;
-  let activeLicenses = 0;
-  const licenseDocs = docsOf(licenseSnap);
-  for (const doc of licenseDocs) {
-    const st = licenseState(doc.data() || {});
-    if (st.active) activeLicenses += 1;
-  }
+function assembleHomeExtras(bundle, seed) {
+  const signupSnap = bundle && bundle.signupSnap;
+  const waitingSnap = bundle && bundle.waitingSnap;
+  const signupsToday = Number((bundle && bundle.signupCount) || 0);
+  const licenseCounts = (bundle && bundle.licenseCounts) || {};
+  const activeLicenses = Number(licenseCounts.active || 0);
 
   const activity = [];
   (seed.recentPayments || []).forEach((p) => {
@@ -165,7 +208,7 @@ async function attachHomeExtras(db, bounds, seed) {
       type: 'payment',
       at: p.paidAt || p.paidAtMs,
       title: p.product || '결제',
-      summary: `${p.emailMasked || ''} · ${p.grossAmount || p.amount || 0}`,
+      summary: `${p.displayName || p.emailMasked || ''} · ${p.grossAmount || p.amount || 0}`,
       entityId: p.paymentId
     });
   });
@@ -174,7 +217,7 @@ async function attachHomeExtras(db, bounds, seed) {
       type: 'inquiry',
       at: q.createdAt,
       title: q.title || '문의',
-      summary: q.emailMasked || '',
+      summary: q.displayName || q.emailMasked || '',
       entityId: q.inquiryId
     });
   });
@@ -184,7 +227,7 @@ async function attachHomeExtras(db, bounds, seed) {
       type: 'signup',
       at: toIso(row.createdAt),
       title: '신규 가입',
-      summary: adminPush.maskEmail(row.email),
+      summary: adminPush.personName(row, doc.id),
       entityId: doc.id
     });
   });
@@ -226,10 +269,41 @@ async function attachHomeExtras(db, bounds, seed) {
   return {
     todaySignups: signupsToday,
     activeLicenses,
-    activeLicensesCapped: licenseDocs.length >= LICENSE_SCAN,
+    licenseStats: licenseCounts,
+    activeLicensesCapped: false,
     attention: attention.slice(0, 8),
     activity: activity.slice(0, 12)
   };
+}
+
+async function attachHomeExtras(db, bounds, seed, now) {
+  const snaps = await fetchHomeExtraSnaps(db, bounds, now);
+  return assembleHomeExtras(snaps, seed || {});
+}
+
+async function getDocsByIds(db, col, ids) {
+  const unique = [];
+  const seen = new Set();
+  for (const raw of ids || []) {
+    const id = String(raw || '').trim();
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    unique.push(id);
+  }
+  const map = new Map();
+  if (!unique.length) return map;
+  if (typeof db.getAll === 'function') {
+    const snaps = await db.getAll(...unique.map((id) => db.collection(col).doc(id)));
+    for (const snap of snaps) {
+      map.set(snap.id, snap.exists ? (snap.data() || {}) : {});
+    }
+    return map;
+  }
+  await Promise.all(unique.map(async (id) => {
+    const snap = await db.collection(col).doc(id).get();
+    map.set(id, snap.exists ? (snap.data() || {}) : {});
+  }));
+  return map;
 }
 
 async function getAdminMembers(body, deps) {
@@ -237,49 +311,44 @@ async function getAdminMembers(body, deps) {
   await assertApprovedDevice(db, body);
   const q = String((body && body.q) || '').trim();
   const limit = clamp(body && body.limit, MEMBER_LIMIT, 40);
-  const ids = new Set();
-  const rows = [];
-
-  async function addUid(uid) {
-    const id = String(uid || '').trim();
-    if (!id || ids.has(id)) return;
-    ids.add(id);
-    const [userSnap, licSnap] = await Promise.all([
-      db.collection('users').doc(id).get(),
-      db.collection('licenses').doc(id).get()
-    ]);
-    const user = userSnap.exists ? (userSnap.data() || {}) : {};
-    rows.push(mapMember(id, user, licSnap.exists ? (licSnap.data() || {}) : null));
-  }
+  let userDocs = [];
 
   if (q.includes('@')) {
     const snap = await safeQuery(() => db.collection('users').where('email', '==', q).limit(5).get());
-    for (const doc of docsOf(snap)) await addUid(doc.id);
+    userDocs = docsOf(snap);
   } else if (q.length >= 16 && !/\s/.test(q)) {
-    await addUid(q);
+    const ids = [q];
     const order = await db.collection('orders').doc(q).get();
-    if (order.exists) await addUid((order.data() || {}).uid);
+    if (order.exists) ids.push((order.data() || {}).uid);
     const byPay = await safeQuery(() => db.collection('orders').where('paymentId', '==', q).limit(1).get());
     const payDoc = docsOf(byPay)[0];
-    if (payDoc) await addUid((payDoc.data() || {}).uid);
+    if (payDoc) ids.push((payDoc.data() || {}).uid);
     const hw = await safeQuery(() => db.collection('licenses').where('hwid', '==', q).limit(5).get());
-    for (const doc of docsOf(hw)) await addUid(doc.id);
+    for (const doc of docsOf(hw)) ids.push(doc.id);
+    const [userMap, licMap] = await Promise.all([
+      getDocsByIds(db, 'users', ids),
+      getDocsByIds(db, 'licenses', ids)
+    ]);
+    const members = [...userMap.keys()].map((id) => mapMember(id, userMap.get(id), licMap.get(id) || null));
+    return { members: members.slice(0, limit), q };
   }
 
-  if (!rows.length) {
+  if (!userDocs.length) {
     const snap = await safeQuery(() => db.collection('users').orderBy('createdAt', 'desc').limit(limit).get());
-    for (const doc of docsOf(snap)) {
-      if (q) {
+    userDocs = docsOf(snap);
+    if (q) {
+      const needle = q.toLowerCase();
+      userDocs = userDocs.filter((doc) => {
         const row = doc.data() || {};
-        const hay = `${row.email || ''} ${row.displayName || ''} ${doc.id}`.toLowerCase();
-        if (hay.indexOf(q.toLowerCase()) < 0) continue;
-      }
-      await addUid(doc.id);
-      if (rows.length >= limit) break;
+        const hay = `${row.email || ''} ${row.displayName || ''} ${row.name || ''} ${doc.id}`.toLowerCase();
+        return hay.indexOf(needle) >= 0;
+      });
     }
   }
 
-  return { members: rows.slice(0, limit), q };
+  const licMap = await getDocsByIds(db, 'licenses', userDocs.map((doc) => doc.id));
+  const members = userDocs.map((doc) => mapMember(doc.id, doc.data() || {}, licMap.get(doc.id) || null));
+  return { members: members.slice(0, limit), q };
 }
 
 async function getAdminMemberDetail(body, deps) {
@@ -309,7 +378,8 @@ async function getAdminMemberDetail(body, deps) {
       startsAt: toIso(lic && lic.startsAt) || undefined,
       expiresAt: toIso(lic && lic.expiresAt) || undefined,
       lastVerifiedAt: toIso(lic && (lic.lastVerifiedAt || lic.updatedAt)) || undefined,
-      appVersion: String((lic && (lic.appVersion || lic.clientVersion)) || (user && user.appVersion) || '')
+      appVersion: String((lic && (lic.appVersion || lic.clientVersion)) || (user && user.appVersion) || ''),
+      photoURL: adminPush.photoUrlOf(user) || member.photoURL || undefined
     }),
     license: lic ? {
       plan: String(lic.plan || ''),
@@ -374,7 +444,16 @@ async function getAdminTickets(body, deps) {
   if (status === 'open') rows = rows.filter((r) => r.status === 'open');
   else if (status === 'pending') rows = rows.filter((r) => r.status === 'pending');
   else if (status === 'closed') rows = rows.filter((r) => r.status === 'closed');
-  return { tickets: rows.slice(0, limit), status };
+  rows = rows.slice(0, limit);
+  const userMap = await getDocsByIds(db, 'users', rows.map((r) => r.uid));
+  rows = rows.map((t) => {
+    const user = t.uid ? userMap.get(t.uid) : null;
+    if (!user) return t;
+    return Object.assign({}, t, {
+      displayName: adminPush.personName(Object.assign({}, user, { email: user.email || t.emailMasked }), t.uid)
+    });
+  });
+  return { tickets: rows, status };
 }
 
 async function getAdminTicketDetail(body, deps) {
@@ -506,20 +585,23 @@ async function getAdminAuditLogs(body, deps) {
 async function getAdminLicenseStats(body, deps) {
   const db = (deps && deps.db) || require('firebase-admin').firestore();
   await assertApprovedDevice(db, body);
-  const snap = await safeQuery(() => db.collection('licenses').limit(LICENSE_SCAN).get());
-  const counts = { active: 0, expired: 0, banned: 0, trial: 0, lifetime: 0, scanned: 0 };
+  const now = (deps && deps.now) || new Date();
+  const counts = await countLicenseStats(db, now);
+  const snap = await safeQuery(() => db.collection('licenses').where('licensed', '==', true).limit(LICENSE_ITEMS).get());
+  const items = [];
   for (const doc of docsOf(snap)) {
-    counts.scanned += 1;
     const lic = doc.data() || {};
     const st = licenseState(lic);
-    const plan = String(lic.plan || '').toLowerCase();
-    if (st.status === 'banned') counts.banned += 1;
-    else if (st.status === 'expired') counts.expired += 1;
-    else if (st.active) counts.active += 1;
-    if (plan === 'lifetime') counts.lifetime += 1;
-    if (plan === 'trial') counts.trial += 1;
+    items.push({
+      uid: doc.id,
+      planLabel: planLabel(lic.plan, lic.passProductId || lic.productId),
+      hwid: lic.hwid ? String(lic.hwid).slice(0, 8) + '…' : '',
+      lastVerifiedAt: toIso(lic.lastVerifiedAt || lic.updatedAt) || undefined,
+      licenseLabel: st.label,
+      status: st.status
+    });
   }
-  return { stats: counts, capped: counts.scanned >= LICENSE_SCAN };
+  return { stats: counts, items, capped: false };
 }
 
 function createHandlers({ cors }) {
@@ -539,6 +621,8 @@ function createHandlers({ cors }) {
 
 module.exports = {
   attachHomeExtras,
+  fetchHomeExtraSnaps,
+  assembleHomeExtras,
   getAdminMembers,
   getAdminMemberDetail,
   postAdminMemberAction,
@@ -549,6 +633,7 @@ module.exports = {
   getAdminNotices,
   getAdminAuditLogs,
   getAdminLicenseStats,
+  countLicenseStats,
   licenseState,
   mapMember,
   mapTicket,

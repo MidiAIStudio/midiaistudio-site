@@ -71,6 +71,17 @@ function makeFakeDb(store) {
         }
         if (state.lim != null) rows = rows.slice(0, state.lim);
         return { docs: rows, empty: rows.length === 0 };
+      },
+      count() {
+        return {
+          get: async () => {
+            const saved = state.lim;
+            state.lim = null;
+            const snap = await query.get();
+            state.lim = saved;
+            return { data: () => ({ count: (snap.docs || []).length }) };
+          }
+        };
       }
     };
     return query;

@@ -57,6 +57,17 @@ function makeFakeDb(store) {
         if (state.lim != null) rows = rows.slice(0, state.lim);
         return { docs: rows, empty: rows.length === 0 };
       },
+      count() {
+        return {
+          get: async () => {
+            const saved = state.lim;
+            state.lim = null;
+            const snap = await query.get();
+            state.lim = saved;
+            return { data: () => ({ count: (snap.docs || []).length }) };
+          }
+        };
+      },
       async add(doc) {
         store[`${name}/log_${Object.keys(store).length}`] = doc;
         return { id: 'log' };
@@ -81,7 +92,12 @@ function makeFakeDb(store) {
     };
     return query;
   }
-  return { collection: (name) => createQuery(name) };
+  return {
+    collection: (name) => createQuery(name),
+    async getAll(...refs) {
+      return Promise.all(refs.map((r) => r.get()));
+    }
+  };
 }
 
 function auth() {
@@ -108,6 +124,26 @@ async function testMemberSearchAndBlock() {
   assert.strictEqual(found.members.length, 1);
   assert.strictEqual(found.members[0].uid, 'u1');
   assert.ok(found.members[0].emailMasked.includes('***'));
+  assert.strictEqual(found.members[0].displayName, 'Kim');
+  const nameless = await ops.getAdminMembers(Object.assign({ q: 'u2' }, auth()), { db: makeFakeDb(storeBase({
+    'users/u2': { email: 'hong@gmail.com', createdAt: '2026-09-08T01:00:00.000Z' },
+    'licenses/u2': { plan: 'trial', status: 'active', licensed: true }
+  })) });
+  // q=u2 is too short for uid path; email-local fallback is covered by mapMember
+  assert.strictEqual(ops.mapMember('u9', { email: 'hong@gmail.com' }, null).displayName, 'hong');
+  assert.strictEqual(ops.mapMember('u9', { displayName: '홍길동', email: 'hong@gmail.com' }, null).displayName, '홍길동');
+  assert.strictEqual(ops.mapMember('abcdefghij', {}, null).displayName, 'abcdefgh');
+  assert.strictEqual(found.members[0].lastLoginAt, undefined);
+  const withLogin = storeBase({
+    'users/u1': {
+      email: 'kim@gmail.com',
+      lastLogin: '2026-09-08T12:42:00.000Z',
+      lastSeenAt: '2026-09-01T00:00:00.000Z'
+    },
+    'licenses/u1': { plan: 'lifetime', status: 'active', licensed: true }
+  });
+  const loginHit = await ops.getAdminMembers(Object.assign({ q: 'kim@gmail.com' }, auth()), { db: makeFakeDb(withLogin) });
+  assert.ok(String(loginHit.members[0].lastLoginAt).startsWith('2026-09-08'));
   const detail = await ops.getAdminMemberDetail(Object.assign({ uid: 'u1' }, auth()), { db });
   assert.strictEqual(detail.license.state.status, 'lifetime');
   const fv = { serverTimestamp: () => new Date() };
@@ -120,6 +156,78 @@ async function testMemberSearchAndBlock() {
     assert.strictEqual(err.status, 400);
   }
   console.log('ok member search + block + grant rejected on mobile');
+}
+
+async function testMembersBatchNotNPlusOne() {
+  const extra = {};
+  for (let i = 0; i < 20; i += 1) {
+    extra[`users/u${i}`] = {
+      email: `user${i}@gmail.com`,
+      displayName: `User${i}`,
+      createdAt: '2026-09-08T01:00:00.000Z'
+    };
+    extra[`licenses/u${i}`] = { plan: 'period', status: 'active', licensed: true };
+  }
+  const db = makeFakeDb(storeBase(extra));
+  let getAllCalls = 0;
+  const orig = db.getAll.bind(db);
+  db.getAll = async (...refs) => {
+    getAllCalls += 1;
+    return orig(...refs);
+  };
+  const out = await ops.getAdminMembers(auth(), { db });
+  assert.ok(out.members.length >= 8);
+  assert.strictEqual(out.members[0].displayName.indexOf('User') === 0, true);
+  assert.strictEqual(getAllCalls, 1);
+  console.log('ok members list uses one license batch getAll');
+}
+
+async function testGoogleNameFromUsersDoc() {
+  const db = makeFakeDb(storeBase({
+    'users/u_kr': {
+      email: 'hong@gmail.com',
+      displayName: '홍길동',
+      photoURL: 'https://example.com/hong.png',
+      createdAt: '2026-09-08T01:00:00.000Z'
+    },
+    'licenses/u_kr': { plan: 'period', passProductId: 'PASS_30D', licensed: true, status: 'active' }
+  }));
+  const out = await ops.getAdminMembers(auth(), { db });
+  const row = out.members.find((m) => m.uid === 'u_kr') || out.members[0];
+  assert.strictEqual(row.displayName, '홍길동');
+  assert.notStrictEqual(row.displayName, 'hong');
+  console.log('ok users.displayName is source of truth (홍길동, not email local)');
+}
+
+async function testLicenseCountsNotCappedAt80() {
+  const extra = {};
+  for (let i = 0; i < 90; i += 1) {
+    extra[`licenses/u${i}`] = {
+      licensed: true,
+      plan: i < 10 ? 'lifetime' : (i < 20 ? 'trial' : 'period'),
+      status: 'active',
+      passProductId: i >= 20 && i < 50 ? 'PASS_30D' : (i >= 50 && i < 60 ? 'PASS_7D' : (i >= 60 && i < 70 ? 'PASS_90D' : undefined))
+    };
+  }
+  extra['licenses/ban1'] = { licensed: false, status: 'banned', plan: 'period' };
+  const db = makeFakeDb(storeBase(extra));
+  const stats = await ops.getAdminLicenseStats(auth(), { db });
+  assert.strictEqual(stats.stats.active, 90);
+  assert.strictEqual(stats.stats.lifetime, 10);
+  assert.strictEqual(stats.stats.trial, 10);
+  assert.strictEqual(stats.stats.d30, 30);
+  assert.strictEqual(stats.stats.d7, 10);
+  assert.strictEqual(stats.stats.d90, 10);
+  assert.strictEqual(stats.stats.banned, 1);
+  assert.strictEqual(stats.capped, false);
+  const dashOut = await dash.getAdminMobileDashboard(auth(), {
+    db,
+    now: new Date(dash.zonedLocalToUtcMs(2026, 9, 8, 12, 0, 0, dash.TZ))
+  });
+  assert.strictEqual(dashOut.activeLicenses, 90);
+  assert.strictEqual(dashOut.licenseStats.d30, 30);
+  assert.strictEqual(dashOut.activeLicensesCapped, false);
+  console.log('ok license counts use aggregation past 80 docs');
 }
 
 async function testTicketsAndVersion() {
@@ -212,6 +320,9 @@ async function testDashboardHomeExtrasNoPush() {
 
 (async () => {
   await testMemberSearchAndBlock();
+  await testMembersBatchNotNPlusOne();
+  await testGoogleNameFromUsersDoc();
+  await testLicenseCountsNotCappedAt80();
   await testTicketsAndVersion();
   await testRevoked403();
   await testDashboardHomeExtrasNoPush();
