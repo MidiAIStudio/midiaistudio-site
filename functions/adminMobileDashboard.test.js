@@ -161,6 +161,8 @@ function testKstMonthBoundary() {
 
 function testPaidFilterAndEmailMask() {
   assert.strictEqual(dash.wasSuccessfulPayment({ status: 'completed', amount: 19900, currency: 'KRW' }), true);
+  assert.strictEqual(dash.wasSuccessfulPayment({ status: 'approved', amount: 130000, currency: 'KRW' }), true);
+  assert.strictEqual(dash.wasSuccessfulPayment({ status: 'success', amount: 130000, currency: 'KRW' }), true);
   assert.strictEqual(dash.wasSuccessfulPayment({ status: 'failed', amount: 19900 }), false);
   assert.strictEqual(dash.wasSuccessfulPayment({ status: 'pending', amount: 19900 }), false);
   assert.strictEqual(dash.wasSuccessfulPayment({ status: 'created', amount: 19900 }), false);
@@ -701,7 +703,7 @@ async function testFullRefundBeforeSettlement() {
   assert.ok(row);
   assert.strictEqual(row.settlementBase, 0);
   assert.strictEqual(row.estimateStatus, 'CANCELLED_BEFORE_SETTLEMENT');
-  assert.strictEqual(row.label, '정산 제외 예상');
+  assert.strictEqual(row.label, '정산 제외');
   assert.strictEqual(row.expectedSettlementAmount, 0);
   console.log('ok full refund before settlement → base 0');
 }
@@ -760,7 +762,7 @@ async function testRefundAfterExpectedCreatesAdjustment() {
   assert.notStrictEqual(row.estimateStatus, 'CANCELLED_BEFORE_SETTLEMENT');
   assert.ok(out.adjustments.length);
   assert.strictEqual(out.adjustments[0].status, 'ADJUSTMENT');
-  assert.strictEqual(out.adjustments[0].label, '정산 조정 예상');
+  assert.strictEqual(out.adjustments[0].label, '정산 조정');
   assert.ok(out.adjustments[0].expectedSettlementAmount < 0);
   assert.strictEqual(out.adjustments[0].note, 'PG 정산 반영일 확인 필요');
   console.log('ok refund after expected date → no retroactive 0, adjustment created');
@@ -904,7 +906,7 @@ async function testSettlementEstimateContractAndHomePreview() {
   assert.strictEqual(empty.settings.feeRatePercent, 3.2);
   assert.strictEqual(empty.nextSettlement, null);
   const raw = JSON.stringify(empty);
-  assert.ok(!raw.includes('정산 완료'));
+  assert.ok(!raw.includes('예상 정산'));
 
   const store = approvedStore({
     'adminSettlementSettings/default': {
@@ -969,6 +971,224 @@ async function testPartialRefundDetail() {
   assert.ok(Array.isArray(out.events));
   assert.ok(out.events.some((e) => e.type === 'paid'));
   console.log('ok partial refund detail + timeline');
+}
+
+function sep5Order(extra) {
+  return Object.assign({
+    paymentId: 'pay_sep5',
+    status: 'completed',
+    amount: 130000,
+    currency: 'KRW',
+    paymentMethod: 'kakaopay',
+    productName: 'Lifetime',
+    environment: 'live',
+    completedAt: kst(2026, 9, 5, 14, 0, 0)
+  }, extra || {});
+}
+
+function testSep5KstBounds() {
+  const range = dash.kstInclusiveRange('2026-09-05', '2026-09-05');
+  assert.strictEqual(range.start.toISOString(), '2026-09-04T15:00:00.000Z');
+  assert.strictEqual(range.end.toISOString(), '2026-09-05T15:00:00.000Z');
+  const midnight = kst(2026, 9, 5, 0, 0, 0);
+  const morning = kst(2026, 9, 5, 10, 0, 0);
+  const afternoon = kst(2026, 9, 5, 14, 0, 0);
+  const almostEnd = kst(2026, 9, 5, 23, 59, 59);
+  const nextMidnight = kst(2026, 9, 6, 0, 0, 0);
+  assert.ok(midnight.getTime() >= range.start.getTime() && midnight.getTime() < range.end.getTime());
+  assert.ok(morning.getTime() >= range.start.getTime() && morning.getTime() < range.end.getTime());
+  assert.ok(afternoon.getTime() >= range.start.getTime() && afternoon.getTime() < range.end.getTime());
+  assert.ok(almostEnd.getTime() >= range.start.getTime() && almostEnd.getTime() < range.end.getTime());
+  assert.ok(nextMidnight.getTime() >= range.end.getTime());
+  console.log('ok 09/05 KST bounds 00:00 inclusive / 09/06 00:00 exclusive');
+}
+
+async function testSep5PaidAppearsInSettlementByPaidAt() {
+  const store = approvedStore({
+    'orders/pay_sep5': sep5Order()
+  });
+  const sales = await dash.getAdminSalesReport(Object.assign({
+    from: '2026-09-05',
+    to: '2026-09-05'
+  }, auth()), { db: makeFakeDb(store), now: NOW });
+  assert.strictEqual(sales.summary.paidCount, 1);
+  assert.strictEqual(sales.payments[0].paymentId, 'pay_sep5');
+
+  const settle = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-05',
+    to: '2026-09-05'
+  }, auth()), { db: makeFakeDb(store), now: NOW });
+  const row = settle.payments.find((p) => p.paymentId === 'pay_sep5');
+  assert.ok(row, '9/5 paid payment must appear in settlement when filtering by paidAt');
+  assert.strictEqual(row.settlementDate, '2026-09-15');
+  assert.strictEqual(row.expectedSettlementDate, '2026-09-15');
+  assert.strictEqual(row.settlementDateSource, 'calculated');
+  assert.strictEqual(row.expectedSettlementAmount, 125424);
+  assert.ok(!String(row.label).includes('예상'));
+  console.log('ok 09/05 paidAt filter includes settlement row with 09/15 date');
+}
+
+async function testPaidAtWithoutCompletedAtIncluded() {
+  const store = approvedStore({
+    'orders/pay_paidat_only': {
+      paymentId: 'pay_paidat_only',
+      status: 'approved',
+      amount: 130000,
+      currency: 'KRW',
+      paymentMethod: 'kakaopay',
+      productName: 'Lifetime',
+      environment: 'live',
+      paidAt: kst(2026, 9, 5, 0, 5, 0)
+    }
+  });
+  const sales = await dash.getAdminSalesReport(Object.assign({
+    from: '2026-09-05',
+    to: '2026-09-05'
+  }, auth()), { db: makeFakeDb(store), now: NOW });
+  assert.ok(sales.payments.some((p) => p.paymentId === 'pay_paidat_only'));
+  const settle = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-05',
+    to: '2026-09-05'
+  }, auth()), { db: makeFakeDb(store), now: NOW });
+  assert.ok(settle.payments.some((p) => p.paymentId === 'pay_paidat_only'));
+  console.log('ok approved + paidAt-only (no completedAt) included in both lists');
+}
+
+async function testFailedCancelFullRefundNotInNormalSettlementAmount() {
+  const store = approvedStore({
+    'orders/ok': sep5Order(),
+    'orders/fail': sep5Order({ paymentId: 'pay_fail', status: 'failed', amount: 19900, completedAt: kst(2026, 9, 5, 11, 0, 0) }),
+    'orders/cancel': sep5Order({
+      paymentId: 'pay_cancel',
+      status: 'cancelled',
+      refundedAmount: 130000,
+      cancelledAt: kst(2026, 9, 5, 16, 0, 0),
+      completedAt: kst(2026, 9, 5, 12, 0, 0)
+    }),
+    'orders/full': sep5Order({
+      paymentId: 'pay_fullref',
+      status: 'refunded',
+      refundedAmount: 130000,
+      refundAt: kst(2026, 9, 5, 18, 0, 0)
+    }),
+    'orders/part': sep5Order({
+      paymentId: 'pay_partref',
+      status: 'partially_refunded',
+      refundedAmount: 30000,
+      refundAt: kst(2026, 9, 5, 19, 0, 0),
+      completedAt: kst(2026, 9, 5, 13, 0, 0)
+    })
+  });
+  const settle = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-05',
+    to: '2026-09-05'
+  }, auth()), { db: makeFakeDb(store), now: NOW });
+  const ids = settle.payments.map((p) => p.paymentId);
+  assert.ok(!ids.includes('pay_fail'));
+  assert.ok(ids.includes('pay_sep5'));
+  assert.ok(ids.includes('pay_partref'));
+  const cancelled = settle.payments.find((p) => p.paymentId === 'pay_cancel');
+  const full = settle.payments.find((p) => p.paymentId === 'pay_fullref');
+  assert.ok(cancelled);
+  assert.strictEqual(cancelled.expectedSettlementAmount, 0);
+  assert.ok(full);
+  assert.strictEqual(full.expectedSettlementAmount, 0);
+  assert.ok(settle.recon.settlementAmount < settle.recon.paidAmount);
+  console.log('ok fail excluded; cancel/full-refund settlement amount 0; partial remains');
+}
+
+async function testSettlementDdayAndHolidays() {
+  const store = approvedStore({
+    'orders/pay_mon': sep5Order({
+      paymentId: 'pay_mon',
+      completedAt: kst(2026, 9, 4, 10, 0, 0),
+      portoneSettlementDate: '2026-09-14'
+    })
+  });
+  const fri = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-04',
+    to: '2026-09-04'
+  }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 11, 12, 0, 0) });
+  assert.strictEqual(fri.payments[0].settlementDate, '2026-09-14');
+  assert.strictEqual(fri.payments[0].settlementDateSource, 'portone');
+  assert.strictEqual(fri.payments[0].label, '정산 D-1');
+  const sat = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-04',
+    to: '2026-09-04'
+  }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 12, 12, 0, 0) });
+  assert.strictEqual(sat.payments[0].label, '정산 D-1');
+  const mon = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-04',
+    to: '2026-09-04'
+  }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 14, 0, 0, 0) });
+  assert.strictEqual(mon.payments[0].label, '정산 D-Day');
+  const tue = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-04',
+    to: '2026-09-04'
+  }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 15, 0, 0, 0) });
+  assert.strictEqual(tue.payments[0].label, '정산 완료');
+  const d4 = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-05',
+    to: '2026-09-05'
+  }, auth()), {
+    db: makeFakeDb(approvedStore({ 'orders/pay_sep5': sep5Order() })),
+    now: kst(2026, 9, 9, 12, 0, 0)
+  });
+  const row = d4.payments.find((p) => p.paymentId === 'pay_sep5');
+  assert.strictEqual(row.label, '정산 D-4');
+  assert.strictEqual(row.tone, 'accent');
+  console.log('ok D-1 weekend, D-Day, settled next day, D-4 on 09/09');
+}
+
+async function testPortoneDateNotShiftedForWeekend() {
+  const store = approvedStore({
+    'orders/pay_portone_sat': sep5Order({
+      paymentId: 'pay_portone_sat',
+      portoneSettlementDate: '2026-09-05'
+    })
+  });
+  const out = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-05',
+    to: '2026-09-05'
+  }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 4, 12, 0, 0) });
+  const row = out.payments.find((p) => p.paymentId === 'pay_portone_sat');
+  assert.strictEqual(row.settlementDate, '2026-09-05');
+  assert.strictEqual(row.settlementDateSource, 'portone');
+  console.log('ok PortOne Saturday settlementDate kept as 09/05');
+}
+
+async function testSeptemberReconNoMissingPaid() {
+  const extra = {
+    'orders/s1': sep5Order({ paymentId: 's1', completedAt: kst(2026, 9, 1, 10, 0, 0), amount: 19900, productName: '7일' }),
+    'orders/s2': sep5Order({ paymentId: 's2', completedAt: kst(2026, 9, 5, 10, 0, 0) }),
+    'orders/s3': sep5Order({ paymentId: 's3', completedAt: kst(2026, 9, 8, 10, 0, 0), amount: 49000, productName: '30일' }),
+    'orders/fail': sep5Order({ paymentId: 'sx', status: 'failed', completedAt: kst(2026, 9, 5, 12, 0, 0) }),
+    'orders/ref': sep5Order({
+      paymentId: 'sr',
+      status: 'refunded',
+      refundedAmount: 130000,
+      completedAt: kst(2026, 9, 3, 10, 0, 0),
+      refundAt: kst(2026, 9, 4, 10, 0, 0)
+    })
+  };
+  const store = approvedStore(extra);
+  const from = '2026-09-01';
+  const to = '2026-09-30';
+  const sales = await dash.getAdminSalesReport(Object.assign({ from, to }, auth()), {
+    db: makeFakeDb(store),
+    now: NOW
+  });
+  const settle = await dash.getAdminSettlementDashboard(Object.assign({ from, to }, auth()), {
+    db: makeFakeDb(store),
+    now: NOW
+  });
+  const salesIds = sales.payments.map((p) => p.paymentId).sort();
+  const settleIds = settle.payments.map((p) => p.paymentId).sort();
+  const missing = salesIds.filter((id) => !settleIds.includes(id));
+  assert.deepStrictEqual(missing, []);
+  assert.strictEqual(sales.summary.paidCount, 4);
+  assert.ok(settle.recon.settlementCount >= 3);
+  console.log('ok September recon: every successful sales row has a settlement row');
 }
 
 async function testHistoricalReadsDoNotPush() {
@@ -1050,6 +1270,13 @@ async function testHistoricalReadsDoNotPush() {
   await testSettlementRevoked403();
   await testSettlementEstimateContractAndHomePreview();
   await testPartialRefundDetail();
+  testSep5KstBounds();
+  await testSep5PaidAppearsInSettlementByPaidAt();
+  await testPaidAtWithoutCompletedAtIncluded();
+  await testFailedCancelFullRefundNotInNormalSettlementAmount();
+  await testSettlementDdayAndHolidays();
+  await testPortoneDateNotShiftedForWeekend();
+  await testSeptemberReconNoMissingPaid();
   await testHistoricalReadsDoNotPush();
   console.log('all adminMobileDashboard tests passed');
 })().catch((err) => {

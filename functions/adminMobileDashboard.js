@@ -23,13 +23,18 @@ const CRITICAL_URL = 'https://midiaistudio.com/admin.html#view=logs';
 
 const PAID_STATUS = new Set([
   'completed',
+  'complete',
   'paid',
   'verified',
   'license_issued',
   'partially_refunded',
   'refunded',
   'refund_review_required',
-  'credited'
+  'credited',
+  'success',
+  'succeeded',
+  'successful',
+  'approved'
 ]);
 
 const EXCLUDE_STATUS = new Set([
@@ -187,7 +192,7 @@ function wasSuccessfulPayment(row) {
 }
 
 function paidAtOf(row) {
-  return row.completedAt || row.issuedAt || row.verifiedAt || row.paidAt || row.createdAt || null;
+  return row.completedAt || row.issuedAt || row.verifiedAt || row.paidAt || row.approvedAt || row.createdAt || null;
 }
 
 function refundAtOf(row) {
@@ -439,12 +444,15 @@ function collectFromSnap(snap, seen, out) {
 async function loadPaidInRange(db, start, end) {
   const seen = new Set();
   const out = [];
-  const orderSnap = await queryTimeRange(db, 'orders', 'completedAt', start, end, AGG_LIMIT);
-  collectFromSnap(orderSnap, seen, out);
-  const creditSnap = await queryTimeRange(db, 'creditPurchases', 'createdAt', start, end, AGG_LIMIT);
-  collectFromSnap(creditSnap, seen, out);
-  const pointSnap = await queryTimeRange(db, 'pointPurchases', 'createdAt', start, end, AGG_LIMIT);
-  collectFromSnap(pointSnap, seen, out);
+  const snaps = await Promise.all([
+    queryTimeRange(db, 'orders', 'completedAt', start, end, AGG_LIMIT),
+    queryTimeRange(db, 'orders', 'paidAt', start, end, AGG_LIMIT),
+    queryTimeRange(db, 'orders', 'approvedAt', start, end, AGG_LIMIT),
+    queryTimeRange(db, 'orders', 'createdAt', start, end, AGG_LIMIT),
+    queryTimeRange(db, 'creditPurchases', 'createdAt', start, end, AGG_LIMIT),
+    queryTimeRange(db, 'pointPurchases', 'createdAt', start, end, AGG_LIMIT)
+  ]);
+  snaps.forEach((snap) => collectFromSnap(snap, seen, out));
   return out.filter((item) => wasSuccessfulPayment(item.row) && inRange(paidAtOf(item.row), start, end));
 }
 
@@ -936,11 +944,87 @@ async function getAdminSalesReport(body, deps) {
   });
 }
 
+function flattenSettlementPayments(full) {
+  const out = [];
+  const seen = new Set();
+  const groups = [].concat((full && full.upcoming) || [], (full && full.pastExpected) || []);
+  groups.forEach((group) => {
+    (group.payments || []).forEach((payment) => {
+      const id = String((payment && payment.paymentId) || '');
+      if (id && seen.has(id)) return;
+      if (id) seen.add(id);
+      out.push(payment);
+    });
+  });
+  out.sort((a, b) => String((b && b.paidAt) || '').localeCompare(String((a && a.paidAt) || '')));
+  return out;
+}
+
+function settlementRecon(paidRows, refundRows, payments) {
+  let paidAmount = 0;
+  (paidRows || []).forEach((item) => {
+    paidAmount += amountKrw(item.row);
+  });
+  let refundAmount = 0;
+  (refundRows || []).forEach((item) => {
+    refundAmount += num(item.refundedAmount);
+  });
+  let settlementCount = 0;
+  let settlementAmount = 0;
+  let cancelledCount = 0;
+  (payments || []).forEach((p) => {
+    if (p.estimateStatus === 'CANCELLED_BEFORE_SETTLEMENT' || p.status === 'cancelled' || p.status === 'refunded') {
+      if (p.estimateStatus === 'CANCELLED_BEFORE_SETTLEMENT' || p.status === 'cancelled') cancelledCount += 1;
+    }
+    if (p.estimateStatus === 'CANCELLED_BEFORE_SETTLEMENT') return;
+    if (num(p.settlementBase) <= 0) return;
+    settlementCount += 1;
+    settlementAmount += num(p.expectedSettlementAmount);
+  });
+  return {
+    paidCount: (paidRows || []).length,
+    paidAmount,
+    refundCount: (refundRows || []).length,
+    refundAmount,
+    cancelledCount,
+    settlementCount,
+    settlementAmount
+  };
+}
+
 async function getAdminSettlementDashboard(body, deps) {
   const db = (deps && deps.db) || require('firebase-admin').firestore();
   await assertApprovedDevice(db, body);
   const now = (deps && deps.now) || new Date();
-  return redactPaymentJson(await buildSettlementPayload(db, now));
+  const loaded = await adminSettlement.loadSettings(db);
+  let start;
+  let end;
+  let period = null;
+  if (body && body.from && body.to) {
+    const range = kstInclusiveRange(body.from, body.to);
+    start = range.start;
+    end = range.end;
+    period = { from: range.from, to: range.to };
+  } else {
+    start = lookbackStart(now);
+    const endParts = addCalendarDay(kstParts(now).year, kstParts(now).month, kstParts(now).day, 1);
+    end = new Date(zonedLocalToUtcMs(endParts.year, endParts.month, endParts.day, 0, 0, 0, TZ));
+  }
+  const [paidRows, refundRows] = await Promise.all([
+    loadPaidInRange(db, start, end),
+    loadRefundsInRange(db, start, end)
+  ]);
+  const rows = await mergeRefundParents(db, paidRows, refundRows);
+  const full = adminSettlement.buildSettlementDashboard({
+    rows,
+    settings: loaded.settings,
+    settingsSource: loaded.settingsSource,
+    now,
+    helpers: settlementHelpers()
+  });
+  const payments = flattenSettlementPayments(full);
+  const recon = settlementRecon(paidRows, refundRows, payments);
+  return redactPaymentJson(Object.assign({}, full, { period, payments, recon }));
 }
 
 async function getAdminPaymentDetail(body, deps) {
@@ -1011,6 +1095,8 @@ module.exports = {
   getAdminPaymentDetail,
   getAdminSalesReport,
   getAdminSettlementDashboard,
+  flattenSettlementPayments,
+  loadPaidInRange,
   findPaymentRecord,
   createHandlers,
   clampLimit

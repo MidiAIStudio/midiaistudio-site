@@ -8,6 +8,7 @@
 
 const adminPush = require('./adminPush');
 const holidays = require('./koreanHolidays');
+const businessDays = require('./businessDays');
 
 const SETTINGS_COL = 'adminSettlementSettings';
 const SETTINGS_DOC = 'default';
@@ -37,10 +38,10 @@ const STATUS = {
 };
 
 const LABELS = {
-  UPCOMING: '예상 정산',
-  PAST_EXPECTED: '예상일 경과',
-  ADJUSTMENT: '정산 조정 예상',
-  CANCELLED_BEFORE_SETTLEMENT: '정산 제외 예상'
+  UPCOMING: '정산 예정',
+  PAST_EXPECTED: '정산 완료',
+  ADJUSTMENT: '정산 조정',
+  CANCELLED_BEFORE_SETTLEMENT: '정산 제외'
 };
 
 const ADJUSTMENT_NOTE = 'PG 정산 반영일 확인 필요';
@@ -178,40 +179,74 @@ function weekdayUtc(year, month, day) {
 }
 
 function isWeekendYmd(year, month, day) {
-  const dow = weekdayUtc(year, month, day);
-  return dow === 0 || dow === 6;
+  return businessDays.isWeekendYmd(year, month, day);
 }
 
 function isExcludedDay(year, month, day, settings) {
   const ymd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  const cfg = normalizeSettings(settings);
-  if (cfg.excludeWeekends && isWeekendYmd(year, month, day)) return true;
-  if (cfg.excludeKoreanHolidays && holidays.isKoreanHoliday(ymd)) return true;
-  if (cfg.excludedDates.indexOf(ymd) >= 0) return true;
-  return false;
+  return businessDays.isNonBusinessDay(ymd, settings);
 }
 
 /**
  * Count starts the NEXT KST calendar day after paidAt's KST date.
  * Uses calendar-day increments, not +24h timestamp loops.
+ * Only used when PortOne has not provided an actual settlementDate.
  */
-function addBusinessDaysKst(date, businessDays, settings, helpers) {
-  const days = clampInt(businessDays, 1, 60, DEFAULT_SETTINGS.businessDays);
-  const ms = helpers.tsMs(date);
-  if (!ms) return '';
-  let cursor = helpers.kstParts(new Date(ms));
-  cursor = helpers.addCalendarDay(cursor.year, cursor.month, cursor.day, 1);
-  let counted = 0;
-  let guard = 0;
-  while (counted < days && guard < 800) {
-    if (!isExcludedDay(cursor.year, cursor.month, cursor.day, settings)) {
-      counted += 1;
-      if (counted >= days) break;
-    }
-    cursor = helpers.addCalendarDay(cursor.year, cursor.month, cursor.day, 1);
-    guard += 1;
+function addBusinessDaysKst(date, days, settings, helpers) {
+  const ymd = paidAtYmd(date, helpers);
+  if (!ymd) return '';
+  return businessDays.addBusinessDays(ymd, days, settings, DEFAULT_SETTINGS.businessDays);
+}
+
+function ymdFromRaw(raw, helpers) {
+  if (raw == null || raw === '') return '';
+  if (typeof raw === 'string') {
+    const text = raw.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+    const m = text.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (m) return m[1];
   }
-  return helpers.formatYmd(cursor.year, cursor.month, cursor.day);
+  return ymdOf(raw, helpers);
+}
+
+/**
+ * PortOne-imported actual settlement date wins. Calculated dates never overwrite it.
+ */
+function portoneSettlementDateOf(row, helpers) {
+  if (!row || typeof row !== 'object') return '';
+  const source = String(row.settlementDateSource || '').toLowerCase();
+  const fromNamed = ymdFromRaw(
+    row.portoneSettlementDate || row.pgSettlementDate || row.actualSettlementDate,
+    helpers
+  );
+  if (fromNamed) return fromNamed;
+  if (source === 'portone' || source === 'pg') {
+    return ymdFromRaw(row.settlementDate, helpers);
+  }
+  if (!source && row.settlementDate && !row.expectedSettlementDate) {
+    return ymdFromRaw(row.settlementDate, helpers);
+  }
+  return '';
+}
+
+function settlementUiOf(settlementYmd, todayYmd, settings) {
+  if (!settlementYmd) {
+    return { code: 'UNKNOWN', label: '', dDay: null, tone: 'neutral' };
+  }
+  const cmp = businessDays.compareYmd(settlementYmd, todayYmd);
+  if (cmp < 0) {
+    return { code: 'SETTLED', label: '정산 완료', dDay: 0, tone: 'success' };
+  }
+  if (cmp === 0) {
+    return { code: 'DDAY', label: '정산 D-Day', dDay: 0, tone: 'dday' };
+  }
+  const n = Math.max(1, businessDays.countBusinessDaysExclusiveStart(todayYmd, settlementYmd, settings));
+  return {
+    code: 'DN',
+    label: `정산 D-${n}`,
+    dDay: n,
+    tone: n >= 4 ? 'accent' : 'warning'
+  };
 }
 
 /** KRW integer. percent is applied with milli-percent integers to avoid float residue. */
@@ -258,7 +293,9 @@ function projectPayment(id, row, settings, helpers, todayYmd) {
   const paidYmd = ymdOf(paidAt, helpers);
   if (!paidYmd) return null;
   const rates = resolveFeeRates(settings, paidAt, helpers);
-  const expectedDate = addBusinessDaysKst(paidAt, settings.businessDays, settings, helpers);
+  const portoneDate = portoneSettlementDateOf(row, helpers);
+  const settlementDateSource = portoneDate ? 'portone' : 'calculated';
+  const expectedDate = portoneDate || addBusinessDaysKst(paidAt, settings.businessDays, settings, helpers);
   if (!expectedDate) return null;
 
   const mapped = helpers.mapPayment(id, row);
@@ -281,6 +318,9 @@ function projectPayment(id, row, settings, helpers, todayYmd) {
     settlementBase = Math.max(0, gross - refundAmount);
   }
 
+  const ui = lineStatus === STATUS.CANCELLED_BEFORE_SETTLEMENT
+    ? { code: 'CANCELLED', label: LABELS.CANCELLED_BEFORE_SETTLEMENT, dDay: null, tone: 'neutral' }
+    : settlementUiOf(expectedDate, todayYmd, settings);
   const fees = computeFees(settlementBase, rates.feeRatePercent, rates.feeVatRatePercent);
   const payment = {
     paymentId: mapped.paymentId,
@@ -288,7 +328,10 @@ function projectPayment(id, row, settings, helpers, todayYmd) {
     provider: mapped.provider,
     status: paymentStatus,
     estimateStatus: lineStatus,
-    label: labelOf(lineStatus),
+    uiStatus: ui.code,
+    label: ui.label,
+    dDay: ui.dDay,
+    tone: ui.tone,
     paidAt: mapped.paidAt,
     refundedAt: mapped.refundedAt,
     grossAmount: gross,
@@ -299,7 +342,9 @@ function projectPayment(id, row, settings, helpers, todayYmd) {
     feeVat: fees.feeVat,
     expectedSettlementAmount: fees.expectedSettlementAmount,
     expectedSettlementDate: expectedDate,
-    isEstimate: true
+    settlementDate: expectedDate,
+    settlementDateSource,
+    isEstimate: settlementDateSource !== 'portone'
   };
 
   let adjustment = null;
@@ -322,6 +367,8 @@ function projectPayment(id, row, settings, helpers, todayYmd) {
       feeVat: -adjFees.feeVat,
       expectedSettlementAmount: -adjFees.expectedSettlementAmount,
       expectedSettlementDate: null,
+      settlementDate: null,
+      settlementDateSource: settlementDateSource,
       isEstimate: true
     };
   }
@@ -353,7 +400,7 @@ function addToGroup(group, payment) {
   group.payments.push(payment);
 }
 
-function summarizeGroup(group) {
+function summarizeGroup(group, todayYmd, settings) {
   const out = {
     date: group.date,
     status: group.status,
@@ -369,8 +416,15 @@ function summarizeGroup(group) {
   if (group.status === STATUS.ADJUSTMENT) {
     out.date = null;
     out.note = ADJUSTMENT_NOTE;
+    out.label = LABELS.ADJUSTMENT;
+    out.uiStatus = 'ADJUSTMENT';
+  } else if (group.date) {
+    const ui = settlementUiOf(group.date, todayYmd, settings);
+    out.label = ui.label;
+    out.uiStatus = ui.code;
+    out.dDay = ui.dDay;
+    out.tone = ui.tone;
   }
-  if (group.status === STATUS.PAST_EXPECTED) out.label = LABELS.PAST_EXPECTED;
   return out;
 }
 
@@ -418,16 +472,16 @@ function buildSettlementDashboard({ rows, settings, settingsSource, now, helpers
   });
 
   const upcoming = Array.from(upcomingMap.values())
-    .map(summarizeGroup)
+    .map((group) => summarizeGroup(group, todayYmd, settings))
     .sort((a, b) => compareYmd(a.date, b.date));
   const pastExpected = Array.from(pastMap.values())
-    .map(summarizeGroup)
+    .map((group) => summarizeGroup(group, todayYmd, settings))
     .sort((a, b) => compareYmd(b.date, a.date));
   const adjustmentGroup = adjustments.length
     ? summarizeGroup(adjustments.reduce((group, row) => {
       addToGroup(group, row);
       return group;
-    }, emptyGroup(null, STATUS.ADJUSTMENT)))
+    }, emptyGroup(null, STATUS.ADJUSTMENT)), todayYmd, settings)
     : null;
 
   const nextGroup = upcoming.find((g) => g.expectedSettlementAmount > 0 || g.payments.some((p) => p.estimateStatus === STATUS.UPCOMING))
@@ -480,10 +534,15 @@ function estimateForPayment(id, row, settings, helpers, now) {
   }
   const p = projected.payment;
   return {
-    isEstimate: true,
+    isEstimate: p.isEstimate !== false,
     status: p.estimateStatus,
+    uiStatus: p.uiStatus,
     label: p.label,
+    dDay: p.dDay,
+    tone: p.tone,
+    settlementDateSource: p.settlementDateSource,
     expectedSettlementDate: p.expectedSettlementDate,
+    settlementDate: p.settlementDate,
     settlementBase: p.settlementBase,
     fee: p.fee,
     feeVat: p.feeVat,
@@ -615,6 +674,8 @@ module.exports = {
   publicSettings,
   resolveFeeRates,
   addBusinessDaysKst,
+  portoneSettlementDateOf,
+  settlementUiOf,
   isExcludedDay,
   isWeekendYmd,
   roundCurrency,
