@@ -1111,12 +1111,18 @@ async function testSettlementDdayAndHolidays() {
   }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 11, 12, 0, 0) });
   assert.strictEqual(fri.payments[0].settlementDate, '2026-09-14');
   assert.strictEqual(fri.payments[0].settlementDateSource, 'portone');
-  assert.strictEqual(fri.payments[0].label, '정산 D-1');
+  assert.strictEqual(fri.payments[0].label, '정산 D-3');
+  assert.strictEqual(fri.payments[0].dDay, 3);
   const sat = await dash.getAdminSettlementDashboard(Object.assign({
     from: '2026-09-04',
     to: '2026-09-04'
   }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 12, 12, 0, 0) });
-  assert.strictEqual(sat.payments[0].label, '정산 D-1');
+  assert.strictEqual(sat.payments[0].label, '정산 D-2');
+  const sun = await dash.getAdminSettlementDashboard(Object.assign({
+    from: '2026-09-04',
+    to: '2026-09-04'
+  }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 13, 12, 0, 0) });
+  assert.strictEqual(sun.payments[0].label, '정산 D-1');
   const mon = await dash.getAdminSettlementDashboard(Object.assign({
     from: '2026-09-04',
     to: '2026-09-04'
@@ -1127,17 +1133,26 @@ async function testSettlementDdayAndHolidays() {
     to: '2026-09-04'
   }, auth()), { db: makeFakeDb(store), now: kst(2026, 9, 15, 0, 0, 0) });
   assert.strictEqual(tue.payments[0].label, '정산 완료');
-  const d4 = await dash.getAdminSettlementDashboard(Object.assign({
-    from: '2026-09-05',
-    to: '2026-09-05'
-  }, auth()), {
-    db: makeFakeDb(approvedStore({ 'orders/pay_sep5': sep5Order() })),
-    now: kst(2026, 9, 9, 12, 0, 0)
-  });
-  const row = d4.payments.find((p) => p.paymentId === 'pay_sep5');
-  assert.strictEqual(row.label, '정산 D-4');
-  assert.strictEqual(row.tone, 'accent');
-  console.log('ok D-1 weekend, D-Day, settled next day, D-4 on 09/09');
+  const sep5Store = approvedStore({ 'orders/pay_sep5': sep5Order() });
+  const calendar = [
+    ['2026-09-09', '정산 D-6', 6],
+    ['2026-09-12', '정산 D-3', 3],
+    ['2026-09-14', '정산 D-1', 1],
+    ['2026-09-15', '정산 D-Day', 0],
+    ['2026-09-16', '정산 완료', 0]
+  ];
+  for (const [ymd, label, dDay] of calendar) {
+    const [y, m, d] = ymd.split('-').map(Number);
+    const out = await dash.getAdminSettlementDashboard(Object.assign({
+      from: '2026-09-05',
+      to: '2026-09-05'
+    }, auth()), { db: makeFakeDb(sep5Store), now: kst(y, m, d, 12, 0, 0) });
+    const row = out.payments.find((p) => p.paymentId === 'pay_sep5');
+    assert.strictEqual(row.settlementDate, '2026-09-15');
+    assert.strictEqual(row.label, label);
+    assert.strictEqual(row.dDay, dDay);
+  }
+  console.log('ok calendar D-N including weekend, D-Day, settled next day');
 }
 
 async function testPortoneDateNotShiftedForWeekend() {

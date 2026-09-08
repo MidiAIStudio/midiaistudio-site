@@ -80,8 +80,13 @@ function makeFakeDb(store) {
             return { exists: store[path] != null, id, data: () => store[path] || {}, ref };
           },
           async set(patch, opts) {
-            if (opts && opts.merge) store[path] = Object.assign({}, store[path] || {}, patch);
-            else store[path] = Object.assign({}, patch);
+            const base = opts && opts.merge ? Object.assign({}, store[path] || {}) : {};
+            Object.keys(patch || {}).forEach((key) => {
+              const value = patch[key];
+              if (value && value.__delete) delete base[key];
+              else base[key] = value;
+            });
+            store[path] = base;
           },
           collection(sub) {
             return createQuery(`${name}/${id}/${sub}`);
@@ -146,16 +151,47 @@ async function testMemberSearchAndBlock() {
   assert.ok(String(loginHit.members[0].lastLoginAt).startsWith('2026-09-08'));
   const detail = await ops.getAdminMemberDetail(Object.assign({ uid: 'u1' }, auth()), { db });
   assert.strictEqual(detail.license.state.status, 'lifetime');
-  const fv = { serverTimestamp: () => new Date() };
+  const fv = { serverTimestamp: () => new Date(), delete: () => ({ __delete: true }) };
   await ops.postAdminMemberAction(Object.assign({ uid: 'u1', action: 'block' }, auth()), { db, FieldValue: fv });
   assert.strictEqual(store['licenses/u1'].status, 'banned');
+  await ops.postAdminMemberAction(Object.assign({
+    uid: 'u1',
+    action: 'grant',
+    plan: 'period',
+    passProductId: 'PASS_30D',
+    startsAt: '2026-09-09',
+    expiresAt: '2026-10-09'
+  }, auth()), { db, FieldValue: fv });
+  assert.strictEqual(store['licenses/u1'].plan, 'period');
+  assert.strictEqual(store['licenses/u1'].passProductId, 'PASS_30D');
+  assert.strictEqual(store['licenses/u1'].method, 'manual');
+  assert.strictEqual(store['licenses/u1'].licensed, true);
+  await ops.postAdminMemberAction(Object.assign({ uid: 'u1', action: 'grant', plan: 'lifetime' }, auth()), { db, FieldValue: fv });
+  assert.strictEqual(store['licenses/u1'].plan, 'lifetime');
+  assert.ok(!store['licenses/u1'].startsAt);
+  assert.ok(!store['licenses/u1'].expiresAt);
+  assert.ok(!store['licenses/u1'].passProductId);
+  await ops.postAdminMemberAction(Object.assign({
+    uid: 'u1',
+    action: 'grant',
+    plan: 'period',
+    startsAt: '2026-09-05',
+    expiresAt: '2026-11-20'
+  }, auth()), { db, FieldValue: fv });
+  assert.strictEqual(store['licenses/u1'].plan, 'period');
+  assert.ok(!store['licenses/u1'].passProductId);
+  const listed = await ops.getAdminMembers(Object.assign({ q: 'kim@gmail.com' }, auth()), { db });
+  assert.ok(String(listed.members[0].planLabel).indexOf('기간제') >= 0);
+  assert.strictEqual(ops.planLabel('period', 'PASS_30D'), '기간제 · 30일');
+  assert.strictEqual(ops.planLabel('period', ''), '기간제');
+  await ops.postAdminMemberAction(Object.assign({ uid: 'u1', action: 'reset_hwid' }, auth()), { db, FieldValue: fv });
   try {
-    await ops.postAdminMemberAction(Object.assign({ uid: 'u1', action: 'grant' }, auth()), { db, FieldValue: fv });
-    assert.fail('grant should be rejected');
+    await ops.postAdminMemberAction(Object.assign({ uid: 'u1', action: 'explode' }, auth()), { db, FieldValue: fv });
+    assert.fail('unknown action should be rejected');
   } catch (err) {
     assert.strictEqual(err.status, 400);
   }
-  console.log('ok member search + block + grant rejected on mobile');
+  console.log('ok member search + block + grant + custom period + hwid reset');
 }
 
 async function testMembersBatchNotNPlusOne() {
@@ -218,6 +254,7 @@ async function testLicenseCountsNotCappedAt80() {
   assert.strictEqual(stats.stats.d30, 30);
   assert.strictEqual(stats.stats.d7, 10);
   assert.strictEqual(stats.stats.d90, 10);
+  assert.strictEqual(stats.stats.period, 71);
   assert.strictEqual(stats.stats.banned, 1);
   assert.strictEqual(stats.capped, false);
   const dashOut = await dash.getAdminMobileDashboard(auth(), {

@@ -1,6 +1,7 @@
 /**
  * MidiAI Admin mobile ops — members, tickets, notices, version, audit.
- * Auth: approved + enabled adminDevices (deviceSecret). No payment/license grant rewrite.
+ * Auth: approved + enabled adminDevices (deviceSecret).
+ * License grant/block/HWID writes match web admin fields via Admin SDK + adminAuditLogs.
  * Writes go through Admin SDK and adminAuditLogs. Clients cannot self-authorize.
  */
 
@@ -60,14 +61,14 @@ async function safeQuery(fn) {
 }
 
 function planLabel(plan, productId) {
-  const pid = String(productId || '').toUpperCase();
-  if (pid.includes('90')) return '90일';
-  if (pid.includes('7D') || pid === 'PASS_7' || pid.includes('PASS_7D')) return '7일';
-  if (pid.includes('30')) return '30일';
   const p = String(plan || '').toLowerCase();
   if (p === 'lifetime') return 'Lifetime';
   if (p === 'trial') return 'Trial';
-  if (p === 'period') return 'PASS';
+  const pid = String(productId || '').toUpperCase();
+  if (pid.includes('90') || pid === 'PASS_90' || pid.includes('PASS_90D')) return '기간제 · 90일';
+  if (pid.includes('7D') || pid === 'PASS_7' || pid.includes('PASS_7D')) return '기간제 · 7일';
+  if (pid.includes('30') || pid === 'PASS_30' || pid.includes('PASS_30D')) return '기간제 · 30일';
+  if (p === 'period') return '기간제';
   return plan || '—';
 }
 
@@ -104,8 +105,11 @@ function mapMember(uid, user, lic) {
     lastLoginAt: toIso(user && (user.lastLogin || user.lastLoginAt || user.lastSeenAt)) || undefined,
     plan: String((lic && lic.plan) || 'trial'),
     planLabel: planLabel(lic && lic.plan, lic && (lic.passProductId || lic.productId)),
+    passProductId: String((lic && (lic.passProductId || lic.productId)) || ''),
+    method: String((lic && lic.method) || ''),
     licenseStatus: state.status,
     licenseLabel: state.label,
+    startsAt: toIso(lic && lic.startsAt) || undefined,
     expiresAt: toIso(lic && lic.expiresAt) || undefined,
     adminUrl: CRM_URL
   };
@@ -149,10 +153,11 @@ async function aggregationCount(query) {
 
 async function countLicenseStats(db, now) {
   const at = now instanceof Date ? now : new Date();
-  const [active, trial, lifetime, banned, expiredStatus, pendingExpire, d7, d30, d90] = await Promise.all([
+  const [active, trial, lifetime, period, banned, expiredStatus, pendingExpire, d7, d30, d90] = await Promise.all([
     aggregationCount(db.collection('licenses').where('licensed', '==', true)),
     aggregationCount(db.collection('licenses').where('plan', '==', 'trial')),
     aggregationCount(db.collection('licenses').where('plan', '==', 'lifetime')),
+    aggregationCount(db.collection('licenses').where('plan', '==', 'period')),
     aggregationCount(db.collection('licenses').where('status', '==', 'banned')),
     aggregationCount(db.collection('licenses').where('status', '==', 'expired')),
     aggregationCount(db.collection('licenses').where('status', '==', 'active').where('expiresAt', '<=', at)),
@@ -164,6 +169,7 @@ async function countLicenseStats(db, now) {
     active,
     trial,
     lifetime,
+    period,
     banned,
     expired: expiredStatus + pendingExpire,
     d7,
@@ -379,7 +385,10 @@ async function getAdminMemberDetail(body, deps) {
       expiresAt: toIso(lic && lic.expiresAt) || undefined,
       lastVerifiedAt: toIso(lic && (lic.lastVerifiedAt || lic.updatedAt)) || undefined,
       appVersion: String((lic && (lic.appVersion || lic.clientVersion)) || (user && user.appVersion) || ''),
-      photoURL: adminPush.photoUrlOf(user) || member.photoURL || undefined
+      photoURL: adminPush.photoUrlOf(user) || member.photoURL || undefined,
+      passProductId: String((lic && (lic.passProductId || lic.productId)) || ''),
+      method: String((lic && lic.method) || ''),
+      plan: String((lic && lic.plan) || member.plan || '')
     }),
     license: lic ? {
       plan: String(lic.plan || ''),
@@ -398,37 +407,162 @@ async function getAdminMemberDetail(body, deps) {
   };
 }
 
+function ymdStartKst(ymd) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ''))) return null;
+  const d = new Date(`${ymd}T00:00:00+09:00`);
+  return Number.isFinite(d.getTime()) ? d : null;
+}
+
+function ymdEndKst(ymd) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ''))) return null;
+  const d = new Date(`${ymd}T23:59:59.999+09:00`);
+  return Number.isFinite(d.getTime()) ? d : null;
+}
+
+function isoDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate().toISOString();
+  if (value instanceof Date) return value.toISOString();
+  return toIso(value) || null;
+}
+
+async function grantLicenseLikeWeb(db, uid, body, FieldValue, before) {
+  let savePlan = String((body && body.plan) || 'trial').toLowerCase();
+  if (savePlan === 'monthly') savePlan = 'period';
+  if (!['trial', 'lifetime', 'period'].includes(savePlan)) savePlan = 'trial';
+  const memo = String((body && body.memo) || '').slice(0, 500);
+  const passProductId = String((body && body.passProductId) || '').trim().toUpperCase();
+  const clearDates = savePlan === 'lifetime' || savePlan === 'trial';
+  let startsAt = String((body && body.startsAt) || '').trim();
+  let expiresAt = String((body && body.expiresAt) || '').trim();
+  if (clearDates) {
+    startsAt = '';
+    expiresAt = '';
+  }
+  if (savePlan === 'period') {
+    if (!startsAt || !expiresAt) throw httpError(400, '기간제의 시작일과 만료일이 필요합니다.');
+    if (startsAt > expiresAt) throw httpError(400, '시작일이 만료일보다 늦을 수 없습니다.');
+  }
+  const payload = {
+    licensed: true,
+    plan: savePlan,
+    status: 'active',
+    method: 'manual',
+    memo: memo,
+    updatedAt: FieldValue.serverTimestamp()
+  };
+  if (savePlan === 'period' && passProductId) {
+    payload.passProductId = passProductId;
+  } else {
+    payload.passProductId = FieldValue.delete();
+  }
+  if (clearDates) {
+    payload.startsAt = FieldValue.delete();
+    payload.expiresAt = FieldValue.delete();
+  } else {
+    const startTs = ymdStartKst(startsAt);
+    const endTs = ymdEndKst(expiresAt);
+    payload.startsAt = startTs || FieldValue.delete();
+    payload.expiresAt = expiresAtTsSafe(endTs, FieldValue);
+  }
+  await db.collection('licenses').doc(uid).set(payload, { merge: true });
+  return {
+    savePlan,
+    passProductId: savePlan === 'period' ? passProductId : '',
+    startsAt: clearDates ? null : startsAt,
+    expiresAt: clearDates ? null : expiresAt,
+    memo,
+    before: {
+      plan: before.plan || '',
+      startsAt: isoDate(before.startsAt),
+      expiresAt: isoDate(before.expiresAt),
+      memo: before.memo || '',
+      passProductId: before.passProductId || ''
+    }
+  };
+}
+
+function expiresAtTsSafe(endTs, FieldValue) {
+  return endTs || FieldValue.delete();
+}
+
 async function postAdminMemberAction(body, deps) {
   const db = (deps && deps.db) || require('firebase-admin').firestore();
   const device = await assertApprovedDevice(db, body);
   const uid = String((body && body.uid) || '').trim();
   const action = String((body && body.action) || '').trim();
   if (!uid) throw httpError(400, 'uid가 없습니다.');
-  if (action !== 'block' && action !== 'unblock') {
-    throw httpError(400, '모바일에서는 차단/해제만 가능합니다. 지급·연장은 웹 관리자를 사용하세요.');
+  const allowed = ['block', 'unblock', 'grant', 'reset_hwid'];
+  if (allowed.indexOf(action) < 0) {
+    throw httpError(400, '지원하지 않는 관리자 작업입니다.');
   }
   const licRef = db.collection('licenses').doc(uid);
   const beforeSnap = await licRef.get();
   const before = beforeSnap.exists ? (beforeSnap.data() || {}) : {};
   const FieldValue = (deps && deps.FieldValue) || require('firebase-admin').firestore.FieldValue;
-  const patch = action === 'block'
-    ? { licensed: false, status: 'banned', updatedAt: FieldValue.serverTimestamp(), method: 'admin_mobile' }
-    : { licensed: true, status: 'active', updatedAt: FieldValue.serverTimestamp(), method: 'admin_mobile' };
-  await licRef.set(patch, { merge: true });
   const actor = String(device.deviceId || body.deviceId || '');
+  let after = {};
+  let auditAction = action;
+  let summary = action;
+  let auditBefore = String(before.status || before.hwid || '');
+  if (action === 'block' || action === 'unblock') {
+    const patch = action === 'block'
+      ? { licensed: false, status: 'banned', updatedAt: FieldValue.serverTimestamp(), method: 'admin' }
+      : { licensed: true, status: 'active', updatedAt: FieldValue.serverTimestamp(), method: 'admin' };
+    await licRef.set(patch, { merge: true });
+    after = { status: patch.status };
+    auditAction = action === 'block' ? '라이선스 차단' : '차단 해제';
+  } else if (action === 'reset_hwid') {
+    await db.collection('users').doc(uid).set({ hwid: '', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    await licRef.set({ hwid: '', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    after = { hwid: '' };
+    auditAction = 'HWID 초기화';
+    summary = before.hwid ? 'hwid cleared' : '(없음)';
+  } else {
+    const granted = await grantLicenseLikeWeb(db, uid, body, FieldValue, before);
+    after = {
+      plan: granted.savePlan,
+      status: 'active',
+      startsAt: granted.startsAt,
+      expiresAt: granted.expiresAt,
+      memo: granted.memo,
+      method: 'manual',
+      passProductId: granted.passProductId
+    };
+    auditBefore = granted.before;
+    auditAction = granted.savePlan === 'period' ? 'PASS_ADMIN_GRANTED' : '라이선스 변경';
+    summary = `${before.plan || '-'} → ${granted.savePlan}${granted.passProductId ? ' · ' + granted.passProductId : ''}`;
+    try {
+      await db.collection('users').doc(uid).collection('notifications').add({
+        type: 'license_change',
+        sourceType: 'admin_license',
+        category: 'license',
+        targetUrl: '/account.html',
+        plan: granted.savePlan,
+        status: 'active',
+        actorUid: 'device:' + actor,
+        actorName: 'MidiAI Admin',
+        postTitle: granted.savePlan,
+        preview: `${granted.savePlan} · active`,
+        read: false,
+        createdAt: FieldValue.serverTimestamp()
+      });
+    } catch (_) { /* notification is best-effort, matching web try/catch */ }
+  }
   await db.collection('adminAuditLogs').add({
     timestamp: FieldValue.serverTimestamp(),
     targetUserId: uid,
-    category: 'license',
-    action: action === 'block' ? '라이선스 차단' : '차단 해제',
+    category: action === 'reset_hwid' ? 'hwid' : 'license',
+    action: auditAction,
     actorId: 'device:' + actor,
     actorDeviceId: actor,
-    before: String(before.status || ''),
-    after: patch.status,
+    source: 'android_admin',
+    before: auditBefore,
+    after: after,
     result: 'success',
-    summary: action
+    summary: summary
   });
-  return { ok: true, uid, action };
+  return { ok: true, uid, action, after };
 }
 
 async function getAdminTickets(body, deps) {
@@ -635,6 +769,7 @@ module.exports = {
   getAdminLicenseStats,
   countLicenseStats,
   licenseState,
+  planLabel,
   mapMember,
   mapTicket,
   createHandlers

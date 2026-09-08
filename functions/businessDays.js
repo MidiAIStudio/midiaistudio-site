@@ -1,7 +1,8 @@
 /**
- * Korea business-day calculator for settlement D-Day / D+N.
+ * Korea business-day calculator for settlementDate (D+N).
  * Weekends + 대한민국 법정공휴일/대체공휴일 (koreanHolidays.js).
  * Does not move an already-provided PortOne settlementDate.
+ * UI D-N after a date is fixed uses countCalendarDays, not this skip logic.
  */
 
 'use strict';
@@ -89,7 +90,7 @@ function addBusinessDays(startYmd, businessDays, options, fallbackDays) {
 }
 
 /**
- * Business days in (fromYmd, toYmd] — used for D-N.
+ * Business days in (fromYmd, toYmd]. Used when producing settlementDate.
  * Does not rewrite toYmd even if it falls on a weekend/holiday.
  */
 function countBusinessDaysExclusiveStart(fromYmd, toYmd, options) {
@@ -109,6 +110,19 @@ function countBusinessDaysExclusiveStart(fromYmd, toYmd, options) {
   return counted;
 }
 
+/**
+ * Calendar day difference, equivalent to ChronoUnit.DAYS.between(from, to).
+ * Does not skip weekends or holidays. Use for UI D-N after settlementDate is final.
+ */
+function countCalendarDays(fromYmd, toYmd) {
+  const from = parseYmd(fromYmd);
+  const to = parseYmd(toYmd);
+  if (!from || !to) return 0;
+  const a = Date.UTC(from.year, from.month - 1, from.day);
+  const b = Date.UTC(to.year, to.month - 1, to.day);
+  return Math.round((b - a) / 86400000);
+}
+
 function compareYmd(a, b) {
   return String(a || '').localeCompare(String(b || ''));
 }
@@ -122,5 +136,6 @@ module.exports = {
   isNonBusinessDay,
   addBusinessDays,
   countBusinessDaysExclusiveStart,
+  countCalendarDays,
   compareYmd
 };

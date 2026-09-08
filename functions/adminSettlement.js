@@ -229,18 +229,17 @@ function portoneSettlementDateOf(row, helpers) {
   return '';
 }
 
-function settlementUiOf(settlementYmd, todayYmd, settings) {
+function settlementUiOf(settlementYmd, todayYmd) {
   if (!settlementYmd) {
     return { code: 'UNKNOWN', label: '', dDay: null, tone: 'neutral' };
   }
-  const cmp = businessDays.compareYmd(settlementYmd, todayYmd);
-  if (cmp < 0) {
+  const n = businessDays.countCalendarDays(todayYmd, settlementYmd);
+  if (n < 0) {
     return { code: 'SETTLED', label: '정산 완료', dDay: 0, tone: 'success' };
   }
-  if (cmp === 0) {
+  if (n === 0) {
     return { code: 'DDAY', label: '정산 D-Day', dDay: 0, tone: 'dday' };
   }
-  const n = Math.max(1, businessDays.countBusinessDaysExclusiveStart(todayYmd, settlementYmd, settings));
   return {
     code: 'DN',
     label: `정산 D-${n}`,
@@ -320,7 +319,7 @@ function projectPayment(id, row, settings, helpers, todayYmd) {
 
   const ui = lineStatus === STATUS.CANCELLED_BEFORE_SETTLEMENT
     ? { code: 'CANCELLED', label: LABELS.CANCELLED_BEFORE_SETTLEMENT, dDay: null, tone: 'neutral' }
-    : settlementUiOf(expectedDate, todayYmd, settings);
+    : settlementUiOf(expectedDate, todayYmd);
   const fees = computeFees(settlementBase, rates.feeRatePercent, rates.feeVatRatePercent);
   const payment = {
     paymentId: mapped.paymentId,
@@ -419,7 +418,7 @@ function summarizeGroup(group, todayYmd, settings) {
     out.label = LABELS.ADJUSTMENT;
     out.uiStatus = 'ADJUSTMENT';
   } else if (group.date) {
-    const ui = settlementUiOf(group.date, todayYmd, settings);
+    const ui = settlementUiOf(group.date, todayYmd);
     out.label = ui.label;
     out.uiStatus = ui.code;
     out.dDay = ui.dDay;
