@@ -13,6 +13,8 @@ const creditWalletV2 = require('./creditWalletV2');
 
 const MEMBER_PAGE_SIZE = 10;
 const MEMBER_LIMIT = MEMBER_PAGE_SIZE;
+const USER_SCAN_CAP = 2000;
+const RECENT_MEMBER_LIMIT = 5;
 const TICKET_LIMIT = 30;
 const AUDIT_LIMIT = 40;
 const LICENSE_ITEMS = 30;
@@ -111,12 +113,42 @@ function isLicenseDoc(lic) {
   );
 }
 
+function normalizePlan(lic) {
+  if (!lic || !isLicenseDoc(lic)) return 'trial';
+  const plan = String(lic.plan || '').toLowerCase().trim();
+  if (plan === 'lifetime') return 'lifetime';
+  if (lic.revokedAt && (plan === 'period' || plan === 'monthly')) return 'trial';
+  if (plan === 'monthly') return 'period';
+  if (!plan && tsMs(lic.expiresAt) && !lic.revokedAt) return 'period';
+  if (plan === 'trial' || plan === 'period') return plan;
+  return 'trial';
+}
+
+function normalizeStatus(lic) {
+  if (!lic || !isLicenseDoc(lic)) return 'active';
+  const status = String(lic.status || '').toLowerCase().trim();
+  const plan = String(lic.plan || '').toLowerCase().trim();
+  if (status === 'banned' || status === 'suspended') return 'banned';
+  if (status === 'expired' || status === 'refunded' || status === 'revoked') return 'expired';
+  if (lic.revokedAt && (plan === 'period' || plan === 'lifetime' || plan === 'monthly')) return 'expired';
+  const exp = tsMs(lic.expiresAt);
+  if ((status === 'active' || !status || status === 'none' || status === 'inactive') && exp && exp < Date.now()) {
+    return 'expired';
+  }
+  return 'active';
+}
+
+function lastSeenMs(row) {
+  return tsMs(row && (row.lastLogin || row.lastLoginAt || row.lastSeenAt || row.lastActiveAt)) || 0;
+}
+
 function mapMember(uid, user, lic, credits, extra) {
   const licenseDoc = isLicenseDoc(lic) ? lic : null;
   const state = licenseState(licenseDoc);
   const row = user || {};
   const creditN = Number(credits);
   const creditBalance = Number.isFinite(creditN) ? Math.max(0, Math.floor(creditN)) : 0;
+  const normPlan = licenseDoc ? normalizePlan(licenseDoc) : '';
   return {
     uid: String(uid || ''),
     emailMasked: adminPush.maskEmail(row.email || row.payerEmail),
@@ -126,8 +158,8 @@ function mapMember(uid, user, lic, credits, extra) {
       || toIso(extra && extra.createTime)
       || undefined,
     lastLoginAt: toIso(user && (user.lastLogin || user.lastLoginAt || user.lastSeenAt)) || undefined,
-    plan: licenseDoc && licenseDoc.plan ? String(licenseDoc.plan) : '',
-    planLabel: licenseDoc ? planLabel(licenseDoc.plan, licenseDoc.passProductId || licenseDoc.productId) : '없음',
+    plan: normPlan,
+    planLabel: licenseDoc ? planLabel(normPlan || licenseDoc.plan, licenseDoc.passProductId || licenseDoc.productId) : '없음',
     passProductId: String((licenseDoc && (licenseDoc.passProductId || licenseDoc.productId)) || ''),
     method: String((licenseDoc && licenseDoc.method) || ''),
     licenseStatus: state.status,
@@ -203,11 +235,36 @@ async function countLicenseStats(db, now) {
   };
 }
 
+async function tryUserOrder(db, field, limit) {
+  try {
+    const snap = await db.collection('users').orderBy(field, 'desc').limit(limit).get();
+    return docsOf(snap);
+  } catch (_) {
+    return [];
+  }
+}
+
+async function loadRecentMemberDocs(db) {
+  const merged = new Map();
+  const fields = ['lastLogin', 'lastSeenAt', 'lastLoginAt'];
+  for (const field of fields) {
+    const rows = await tryUserOrder(db, field, RECENT_MEMBER_LIMIT);
+    for (const doc of rows) {
+      if (!merged.has(doc.id) && lastSeenMs(doc.data ? doc.data() : {}) > 0) {
+        merged.set(doc.id, doc);
+      }
+    }
+  }
+  return [...merged.values()]
+    .sort((a, b) => lastSeenMs(b.data ? b.data() : {}) - lastSeenMs(a.data ? a.data() : {}))
+    .slice(0, RECENT_MEMBER_LIMIT);
+}
+
 async function fetchHomeExtraSnaps(db, bounds, now) {
   const signupCountQuery = db.collection('users')
     .where('createdAt', '>=', bounds.todayStart)
     .where('createdAt', '<', bounds.todayEnd);
-  const [signupSnap, waitingSnap, signupCount, licenseCounts] = await Promise.all([
+  const [signupSnap, waitingSnap, signupCount, licenseCounts, recentMemberDocs] = await Promise.all([
     safeQuery(() => db.collection('users')
       .where('createdAt', '>=', bounds.todayStart)
       .where('createdAt', '<', bounds.todayEnd)
@@ -220,9 +277,19 @@ async function fetchHomeExtraSnaps(db, bounds, now) {
       .limit(20)
       .get()),
     aggregationCount(signupCountQuery),
-    countLicenseStats(db, now)
+    countLicenseStats(db, now),
+    loadRecentMemberDocs(db)
   ]);
-  return { signupSnap, waitingSnap, signupCount, licenseCounts };
+  const { licMap, walletMap } = await attachLicensesAndCredits(db, recentMemberDocs);
+  return {
+    signupSnap,
+    waitingSnap,
+    signupCount,
+    licenseCounts,
+    recentMemberDocs,
+    recentLicMap: licMap,
+    recentWalletMap: walletMap
+  };
 }
 
 function assembleHomeExtras(bundle, seed) {
@@ -296,13 +363,20 @@ function assembleHomeExtras(bundle, seed) {
     });
   }
 
+  const recentMembers = mapUserDocs(
+    bundle && bundle.recentMemberDocs,
+    bundle && bundle.recentLicMap,
+    bundle && bundle.recentWalletMap
+  ).slice(0, RECENT_MEMBER_LIMIT);
+
   return {
     todaySignups: signupsToday,
     activeLicenses,
     licenseStats: licenseCounts,
     activeLicensesCapped: false,
     attention: attention.slice(0, 8),
-    activity: activity.slice(0, 12)
+    activity: activity.slice(0, 12),
+    recentMembers
   };
 }
 
@@ -347,7 +421,8 @@ function docIdField() {
 }
 
 function encodeCursor(payload) {
-  if (!payload || !payload.id) return '';
+  if (!payload) return '';
+  if (payload.o == null && !payload.id) return '';
   return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
 }
 
@@ -356,7 +431,8 @@ function decodeCursor(raw) {
   if (!s) return null;
   try {
     const parsed = JSON.parse(Buffer.from(s, 'base64').toString('utf8'));
-    if (!parsed || !parsed.id) return null;
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.o == null && !parsed.id) return null;
     return parsed;
   } catch (_) {
     return null;
@@ -390,9 +466,9 @@ function timedKindOf(member) {
   return 'custom';
 }
 
-function memberMatchesFilters(member, filter, timedFilter, statusFilter) {
-  const plan = String((member && member.plan) || '').toLowerCase();
-  const st = String((member && member.licenseStatus) || '');
+function memberMatchesFilters(member, lic, filter, timedFilter, statusFilter) {
+  const plan = normalizePlan(lic);
+  const st = normalizeStatus(lic);
   if (filter === 'trial' && plan !== 'trial') return false;
   if (filter === 'lifetime' && plan !== 'lifetime') return false;
   if (filter === 'period' || filter === 'timed') {
@@ -401,7 +477,7 @@ function memberMatchesFilters(member, filter, timedFilter, statusFilter) {
   }
   if (statusFilter === 'banned' && st !== 'banned') return false;
   if (statusFilter === 'expired' && st !== 'expired') return false;
-  if (statusFilter === 'active' && (st === 'banned' || st === 'expired' || st === 'none')) return false;
+  if (statusFilter === 'active' && st !== 'active') return false;
   return true;
 }
 
@@ -529,21 +605,63 @@ async function countUsers(db) {
   return aggregationCount(db.collection('users'));
 }
 
-async function countFiltered(db, filter, timedFilter, statusFilter, q) {
-  if (q) return null;
-  if (statusFilter === 'banned') {
-    return aggregationCount(db.collection('licenses').where('status', '==', 'banned'));
+async function scanAllUsers(db) {
+  const idField = docIdField();
+  const snap = await db.collection('users').orderBy(idField).limit(USER_SCAN_CAP).get();
+  return docsOf(snap);
+}
+
+function userDocMatchesQuery(doc, q) {
+  const needle = String(q || '').trim().toLowerCase();
+  if (!needle) return true;
+  const row = doc.data ? (doc.data() || {}) : {};
+  const hay = `${row.displayName || ''} ${row.name || ''} ${row.email || ''} ${doc.id || ''}`.toLowerCase();
+  return hay.indexOf(needle) >= 0;
+}
+
+async function collectUserDocs(db, q, pageSize) {
+  const needle = String(q || '').trim();
+  if (needle.includes('@')) {
+    let snap = await db.collection('users').where('email', '==', needle).limit(pageSize + 1).get();
+    let rows = docsOf(snap);
+    if (!rows.length) {
+      snap = await db.collection('users').where('emailLower', '==', needle.toLowerCase()).limit(pageSize + 1).get();
+      rows = docsOf(snap);
+    }
+    return rows;
   }
-  if (filter === 'trial') return aggregationCount(db.collection('licenses').where('plan', '==', 'trial'));
-  if (filter === 'lifetime') return aggregationCount(db.collection('licenses').where('plan', '==', 'lifetime'));
-  if (filter === 'period' || filter === 'timed') {
-    if (timedFilter === 'd30') return aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_30D'));
-    if (timedFilter === 'd90') return aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_90D'));
-    if (timedFilter === 'd7') return aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_7D'));
-    return aggregationCount(db.collection('licenses').where('plan', '==', 'period'));
+  if (needle.length >= 16 && !/\s/.test(needle)) {
+    const ids = [needle];
+    const order = await db.collection('orders').doc(needle).get();
+    if (order.exists) ids.push((order.data() || {}).uid);
+    const byPay = await db.collection('orders').where('paymentId', '==', needle).limit(1).get();
+    const payDoc = docsOf(byPay)[0];
+    if (payDoc) ids.push((payDoc.data() || {}).uid);
+    const hw = await db.collection('licenses').where('hwid', '==', needle).limit(5).get();
+    for (const doc of docsOf(hw)) ids.push(doc.id);
+    const userMap = await getDocsByIds(db, 'users', ids);
+    return [...userMap.keys()].map((id) => syntheticUserDoc(id, userMap.get(id) || {}));
   }
-  if (statusFilter === 'all' && filter === 'all') return countUsers(db);
-  return countUsers(db);
+  const all = await scanAllUsers(db);
+  if (!needle) return all;
+  return all.filter((doc) => userDocMatchesQuery(doc, needle));
+}
+
+function joinedSortMs(member) {
+  const ms = tsMs(member && member.joinedAt);
+  return ms || Number.MAX_SAFE_INTEGER;
+}
+
+function pageOffset(cursor, members) {
+  if (!cursor) return 0;
+  if (cursor.o != null && Number.isFinite(Number(cursor.o))) {
+    return Math.max(0, Math.floor(Number(cursor.o)));
+  }
+  if (cursor.id) {
+    const idx = (members || []).findIndex((m) => m.uid === cursor.id);
+    return idx >= 0 ? idx + 1 : 0;
+  }
+  return 0;
 }
 
 async function getAdminMembers(body, deps) {
@@ -555,68 +673,31 @@ async function getAdminMembers(body, deps) {
   const statusFilter = String((body && (body.statusFilter || body.status)) || 'all').toLowerCase();
   const pageSize = clamp(body && (body.pageSize || body.limit), MEMBER_PAGE_SIZE, MEMBER_PAGE_SIZE);
   const cursor = decodeCursor(body && body.cursor);
-  const needsLicenseSource = (filter === 'trial' || filter === 'lifetime' || filter === 'period' || filter === 'timed')
-    && !q;
   const totalUsers = await countUsers(db);
-  let total = await countFiltered(db, filter, timedFilter, statusFilter, q);
-  let userDocs = [];
-  let sourceKind = 'createdAt';
+  const userDocs = await collectUserDocs(db, q, pageSize);
+  const { licMap, walletMap } = await attachLicensesAndCredits(db, userDocs);
+  let members = mapUserDocs(userDocs, licMap, walletMap);
+  members = members.filter((m) => {
+    const lic = licMap.get(m.uid);
+    return memberMatchesFilters(m, lic, filter, timedFilter, statusFilter) && matchesQuery(m, q);
+  });
+  members.sort((a, b) => {
+    const tb = joinedSortMs(b);
+    const ta = joinedSortMs(a);
+    if (tb !== ta) return tb - ta;
+    return String(b.uid || '').localeCompare(String(a.uid || ''));
+  });
 
-  if (q.includes('@')) {
-    const snap = await safeQuery(() => db.collection('users').where('email', '==', q).limit(pageSize + 1).get());
-    userDocs = docsOf(snap);
-    if (!userDocs.length) {
-      const lower = await safeQuery(() => db.collection('users').where('emailLower', '==', q.toLowerCase()).limit(pageSize + 1).get());
-      userDocs = docsOf(lower);
-    }
-    total = userDocs.length;
-  } else if (q.length >= 16 && !/\s/.test(q)) {
-    const ids = [q];
-    const order = await db.collection('orders').doc(q).get();
-    if (order.exists) ids.push((order.data() || {}).uid);
-    const byPay = await safeQuery(() => db.collection('orders').where('paymentId', '==', q).limit(1).get());
-    const payDoc = docsOf(byPay)[0];
-    if (payDoc) ids.push((payDoc.data() || {}).uid);
-    const hw = await safeQuery(() => db.collection('licenses').where('hwid', '==', q).limit(5).get());
-    for (const doc of docsOf(hw)) ids.push(doc.id);
-    const userMap = await getDocsByIds(db, 'users', ids);
-    userDocs = [...userMap.keys()].map((id) => syntheticUserDoc(id, userMap.get(id) || {}));
-    total = userDocs.length;
-  } else if (q) {
-    userDocs = await queryUserPage(db, { pageSize, cursor, namePrefix: q });
-    sourceKind = 'displayName';
-  } else if (needsLicenseSource) {
-    sourceKind = 'license';
-    const plan = filter === 'timed' ? 'period' : filter;
-    const passProductId = timedFilter === 'd30' ? 'PASS_30D'
-      : timedFilter === 'd90' ? 'PASS_90D'
-        : timedFilter === 'd7' ? 'PASS_7D'
-          : '';
-    const licenseDocs = await queryLicensePage(db, {
-      plan,
-      passProductId: timedFilter === 'custom' ? '' : passProductId,
-      status: statusFilter === 'banned' ? 'banned' : '',
-      pageSize,
-      cursor
-    });
-    const userMap = await getDocsByIds(db, 'users', licenseDocs.slice(0, pageSize + 1).map((d) => d.id));
-    userDocs = licenseDocs.map((doc) => syntheticUserDoc(doc.id, userMap.get(doc.id) || {}));
-    if (licenseDocs.length > pageSize) {
-      userDocs = userDocs.slice(0, pageSize + 1);
-    }
-  } else {
-    userDocs = await queryUserPage(db, { pageSize, cursor, namePrefix: '' });
-  }
-
-  const pageDocs = userDocs.slice(0, pageSize);
-  const { licMap, walletMap } = await attachLicensesAndCredits(db, pageDocs);
-  let members = mapUserDocs(pageDocs, licMap, walletMap);
-  members = members.filter((m) => memberMatchesFilters(m, filter, timedFilter, statusFilter) && matchesQuery(m, q));
-
-  const nextCursor = nextCursorFromDocs(userDocs, pageSize, sourceKind);
-  if (total == null) total = typeof totalUsers === 'number' ? totalUsers : members.length;
+  const offset = pageOffset(cursor, members);
+  const total = members.length;
+  const page = members.slice(offset, offset + pageSize);
+  const hasMore = offset + pageSize < members.length;
+  const last = page[page.length - 1];
+  const nextCursor = hasMore
+    ? encodeCursor({ o: offset + pageSize, id: last && last.uid })
+    : '';
   return {
-    members,
+    members: page,
     q,
     filter,
     timedFilter,
@@ -624,7 +705,7 @@ async function getAdminMembers(body, deps) {
     pageSize,
     total: Number(total || 0),
     totalUsers: Number(totalUsers || 0),
-    hasMore: !!nextCursor,
+    hasMore,
     nextCursor,
     source: 'users'
   };
@@ -1146,7 +1227,10 @@ module.exports = {
   mapMember,
   mapTicket,
   createHandlers,
+  normalizePlan,
+  normalizeStatus,
   MEMBER_PAGE_SIZE,
+  RECENT_MEMBER_LIMIT,
   ymdKst,
   extendFromCurrent
 };

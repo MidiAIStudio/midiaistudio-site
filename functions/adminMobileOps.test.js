@@ -452,7 +452,8 @@ async function testMemberPaginationCreditsAndNewcomer() {
   const page3 = await ops.getAdminMembers(Object.assign({ cursor: page2.nextCursor }, auth()), { db });
   const all = page1.members.concat(page2.members, page3.members).map((m) => m.uid);
   assert.strictEqual(new Set(all).size, all.length);
-  assert.ok(all.length >= 25);
+  assert.strictEqual(all.length, 26);
+  assert.ok(all.includes('newcomer'));
   const named = await ops.getAdminMembers(Object.assign({ q: '신규회원' }, auth()), { db });
   assert.ok(named.members.some((m) => m.uid === 'newcomer'));
   assert.strictEqual(named.members.find((m) => m.uid === 'newcomer').credits, 0);
@@ -508,6 +509,140 @@ async function testCreditGrantDeductAndExtend() {
   console.log('ok credit grant/deduct ledger + extend');
 }
 
+async function testMissingCreatedAtAndSameTimestampCursor() {
+  const extra = {};
+  for (let i = 0; i < 48; i += 1) {
+    extra[`users/u${String(i).padStart(2, '0')}`] = {
+      email: `user${i}@gmail.com`,
+      displayName: `User${i}`,
+      createdAt: new Date(Date.parse('2026-09-07T00:00:00.000Z') - i * 60000).toISOString()
+    };
+  }
+  extra['users/signup_noid'] = {
+    email: 'signup@gmail.com',
+    displayName: '신규가입',
+    method: 'signup'
+  };
+  extra['licenses/signup_noid'] = { plan: 'none', status: 'active', licensed: true, method: 'signup' };
+  const db = makeFakeDb(storeBase(extra));
+  const seen = [];
+  let cursor = '';
+  for (let page = 0; page < 8; page += 1) {
+    const out = await ops.getAdminMembers(Object.assign(cursor ? { cursor } : {}, auth()), { db });
+    assert.ok(out.members.length <= 10);
+    assert.strictEqual(out.pageSize, 10);
+    assert.strictEqual(out.totalUsers, 49);
+    seen.push(...out.members.map((m) => m.uid));
+    if (!out.hasMore) break;
+    cursor = out.nextCursor;
+  }
+  assert.strictEqual(new Set(seen).size, seen.length);
+  assert.strictEqual(seen.length, 49);
+  assert.ok(seen.includes('signup_noid'));
+
+  const sameTs = {};
+  const stamp = '2026-09-08T01:00:00.000Z';
+  for (let i = 0; i < 12; i += 1) {
+    sameTs[`users/same${String(i).padStart(2, '0')}`] = {
+      email: `same${i}@gmail.com`,
+      displayName: `Same${i}`,
+      createdAt: stamp
+    };
+  }
+  const sameDb = makeFakeDb(storeBase(sameTs));
+  const p1 = await ops.getAdminMembers(auth(), { db: sameDb });
+  const p2 = await ops.getAdminMembers(Object.assign({ cursor: p1.nextCursor }, auth()), { db: sameDb });
+  const ids = p1.members.concat(p2.members).map((m) => m.uid);
+  assert.strictEqual(p1.members.length, 10);
+  assert.strictEqual(p2.members.length, 2);
+  assert.strictEqual(new Set(ids).size, 12);
+  console.log('ok missing createdAt included + same timestamp cursor has no skip');
+}
+
+async function testLicenseFiltersMatchWebNormalize() {
+  const extra = {
+    'users/t_trial': { email: 't@x.com', displayName: 'TrialUser', createdAt: '2026-09-08T01:00:00.000Z' },
+    'licenses/t_trial': { plan: 'trial', status: 'active', licensed: true },
+    'users/t_none': { email: 'n@x.com', displayName: 'NonePlan', createdAt: '2026-09-08T01:01:00.000Z' },
+    'licenses/t_none': { plan: 'none', status: 'active', licensed: true, method: 'signup' },
+    'users/t_missing': { email: 'm@x.com', displayName: 'MissingPlan', createdAt: '2026-09-08T01:02:00.000Z' },
+    'licenses/t_missing': { status: 'active', licensed: true, method: 'signup', hwid: 'abc' },
+    'users/t_nolic': { email: 'z@x.com', displayName: 'NoLic', createdAt: '2026-09-08T01:03:00.000Z' },
+    'users/p_period': { email: 'p@x.com', displayName: 'PeriodUser', createdAt: '2026-09-08T01:04:00.000Z' },
+    'licenses/p_period': { plan: 'period', status: 'active', licensed: true, passProductId: 'PASS_30D' },
+    'users/p_monthly': { email: 'mo@x.com', displayName: 'MonthlyUser', createdAt: '2026-09-08T01:05:00.000Z' },
+    'licenses/p_monthly': { plan: 'monthly', status: 'active', licensed: true, expiresAt: '2026-10-01T00:00:00.000Z' },
+    'users/l_life': { email: 'l@x.com', displayName: 'LifeUser', createdAt: '2026-09-08T01:06:00.000Z' },
+    'licenses/l_life': { plan: 'lifetime', status: 'active', licensed: true },
+    'users/b_ban': { email: 'b@x.com', displayName: 'BannedUser', createdAt: '2026-09-08T01:07:00.000Z' },
+    'licenses/b_ban': { plan: 'period', status: 'banned', licensed: false },
+    'users/e_exp': { email: 'e@x.com', displayName: 'ExpiredUser', createdAt: '2026-09-08T01:08:00.000Z' },
+    'licenses/e_exp': { plan: 'period', status: 'active', licensed: true, expiresAt: '2026-01-01T00:00:00.000Z' }
+  };
+  const db = makeFakeDb(storeBase(extra));
+  const trial = await ops.getAdminMembers(Object.assign({ filter: 'trial' }, auth()), { db });
+  const trialIds = trial.members.map((m) => m.uid).sort();
+  assert.ok(trial.members.length <= 10);
+  assert.deepStrictEqual(trialIds, ['t_missing', 't_none', 't_nolic', 't_trial'].sort());
+  ['t_trial', 't_none', 't_missing'].forEach((id) => {
+    const row = trial.members.find((m) => m.uid === id);
+    assert.ok(row);
+    assert.strictEqual(row.plan, 'trial');
+  });
+
+  const period = await ops.getAdminMembers(Object.assign({ filter: 'period' }, auth()), { db });
+  const periodIds = period.members.map((m) => m.uid).sort();
+  assert.ok(periodIds.includes('p_period'));
+  assert.ok(periodIds.includes('p_monthly'));
+  assert.ok(!periodIds.includes('t_trial'));
+
+  const life = await ops.getAdminMembers(Object.assign({ filter: 'lifetime' }, auth()), { db });
+  assert.strictEqual(life.members.length, 1);
+  assert.strictEqual(life.members[0].uid, 'l_life');
+
+  const banned = await ops.getAdminMembers(Object.assign({ statusFilter: 'banned' }, auth()), { db });
+  assert.ok(banned.members.some((m) => m.uid === 'b_ban'));
+  assert.ok(banned.members.every((m) => m.uid === 'b_ban' || ops.normalizeStatus({ status: 'banned' }) === 'banned'));
+
+  const expired = await ops.getAdminMembers(Object.assign({ statusFilter: 'expired' }, auth()), { db });
+  assert.ok(expired.members.some((m) => m.uid === 'e_exp'));
+
+  const active = await ops.getAdminMembers(Object.assign({ statusFilter: 'active' }, auth()), { db });
+  assert.ok(active.members.some((m) => m.uid === 't_trial'));
+  assert.ok(active.members.some((m) => m.uid === 't_none'));
+  assert.ok(!active.members.some((m) => m.uid === 'b_ban'));
+  assert.ok(!active.members.some((m) => m.uid === 'e_exp'));
+  assert.strictEqual(ops.normalizePlan({ plan: 'none' }), 'trial');
+  assert.strictEqual(ops.normalizePlan({ plan: '' }), 'trial');
+  console.log('ok license filters match web normalizePlan/status');
+}
+
+async function testRecentMembersHomeExtras() {
+  const extra = {};
+  for (let i = 0; i < 8; i += 1) {
+    extra[`users/act${i}`] = {
+      email: `act${i}@gmail.com`,
+      displayName: `Act${i}`,
+      createdAt: '2026-09-01T00:00:00.000Z',
+      lastLogin: `2026-09-08T0${i}:00:00.000Z`
+    };
+    extra[`licenses/act${i}`] = { plan: i === 0 ? 'lifetime' : 'trial', status: 'active', licensed: true };
+  }
+  const db = makeFakeDb(storeBase(extra));
+  const out = await dash.getAdminMobileDashboard(auth(), {
+    db,
+    now: new Date(dash.zonedLocalToUtcMs(2026, 9, 8, 12, 0, 0, dash.TZ))
+  });
+  assert.ok(Array.isArray(out.recentMembers));
+  assert.ok(out.recentMembers.length <= 5);
+  assert.strictEqual(out.recentMembers.length, 5);
+  assert.strictEqual(out.recentMembers[0].uid, 'act7');
+  assert.ok(out.recentMembers[0].displayName);
+  assert.ok(out.recentMembers[0].lastLoginAt);
+  assert.ok(!out.recentMembers.some((m) => m.uid === 'act0') || out.recentMembers.length === 5);
+  console.log('ok home recentMembers capped at 5');
+}
+
 (async () => {
   await testMemberSearchAndBlock();
   await testMembersBatchNotNPlusOne();
@@ -518,6 +653,9 @@ async function testCreditGrantDeductAndExtend() {
   await testDashboardHomeExtrasNoPush();
   await testMemberPaginationCreditsAndNewcomer();
   await testCreditGrantDeductAndExtend();
+  await testMissingCreatedAtAndSameTimestampCursor();
+  await testLicenseFiltersMatchWebNormalize();
+  await testRecentMembersHomeExtras();
   console.log('all adminMobileOps tests passed');
 })().catch((err) => {
   console.error(err);

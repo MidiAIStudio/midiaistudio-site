@@ -875,7 +875,10 @@ async function getAdminMobileDashboard(body, deps) {
     licenseStats: homeExtras.licenseStats || null,
     activeLicensesCapped: false,
     attention: homeExtras.attention || [],
-    activity: homeExtras.activity || []
+    activity: homeExtras.activity || [],
+    recentMembers: Array.isArray(homeExtras.recentMembers)
+      ? homeExtras.recentMembers.slice(0, 5)
+      : []
   });
 }
 
