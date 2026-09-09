@@ -2254,6 +2254,26 @@ exports.onAdminBulkCreditQueued = functionsV1
   });
 
 /**
+ * New users/{uid} document → MidiAI Admin FCM.
+ * onCreate only — historical user reads, dashboard, and user updates never fire this.
+ */
+exports.notifyAdminOnUserCreate = functionsV1
+  .runWith({ timeoutSeconds: 30, memory: '256MB' })
+  .firestore.document('users/{uid}')
+  .onCreate(async (snap, context) => {
+    const uid = context.params.uid;
+    try {
+      await adminPush.maybeNotifySignupFcm(uid, snap.data() || {});
+    } catch (err) {
+      console.error('notifyAdminOnUserCreate', {
+        uid,
+        message: err && err.message ? err.message : String(err)
+      });
+    }
+    return null;
+  });
+
+/**
  * New 1:1 support ticket → MidiAI Admin FCM (counselor-request mode only).
  * Side-effect only — never blocks the client create path.
  */

@@ -813,6 +813,18 @@ async function mergeRefundParents(db, paidRows, refundRows) {
   return Array.from(byId.values());
 }
 
+function countFirstPurchases(todayPaid, signupSnap) {
+  const signupIds = new Set(docsOf(signupSnap).map((doc) => doc.id));
+  if (!signupIds.size) return 0;
+  const buyers = new Set();
+  for (const item of todayPaid || []) {
+    const row = item && item.row ? item.row : {};
+    const uid = String(row.uid || row.userId || '').trim();
+    if (uid && signupIds.has(uid)) buyers.add(uid);
+  }
+  return buyers.size;
+}
+
 async function getAdminMobileDashboard(body, deps) {
   const firestore = (deps && deps.db) || require('firebase-admin').firestore();
   await assertApprovedDevice(firestore, body);
@@ -844,7 +856,8 @@ async function getAdminMobileDashboard(body, deps) {
       recentPayments,
       recentInquiries: inquiries.recent,
       recentCritical: critical.recent,
-      todayRefunds: todayRefunds.length
+      todayRefunds: todayRefunds.length,
+      firstPurchasesToday: countFirstPurchases(todayPaid, extraSnaps && extraSnaps.signupSnap)
     });
   } catch (_) { /* extras are best-effort */ }
 
@@ -854,6 +867,19 @@ async function getAdminMobileDashboard(body, deps) {
   });
   const month = summarize(monthPaid, monthRefunds);
   const settlement = adminSettlement.homeSettlementPreview(settlementFull);
+  const next = settlement && settlement.nextSettlement;
+  const command = {
+    netRevenueToday: today.netRevenue || 0,
+    paymentsToday: today.payments || 0,
+    refundsToday: today.refunds || 0,
+    newMembersToday: homeExtras.todaySignups || 0,
+    firstPurchasesToday: homeExtras.firstPurchasesToday || 0,
+    waitingInquiryCount: homeExtras.waitingInquiryCount || 0,
+    criticalOpenCount: homeExtras.criticalOpenCount || 0,
+    actionRequiredCount: homeExtras.actionRequiredCount || 0,
+    nextSettlementDate: (next && next.date) || '',
+    nextSettlementAmount: next ? Number(next.expectedSettlementAmount || 0) : 0
+  };
   const generatedAt = now.toISOString();
   return redactPaymentJson({
     today,
@@ -878,7 +904,8 @@ async function getAdminMobileDashboard(body, deps) {
     activity: homeExtras.activity || [],
     recentMembers: Array.isArray(homeExtras.recentMembers)
       ? homeExtras.recentMembers.slice(0, 5)
-      : []
+      : [],
+    command
   });
 }
 

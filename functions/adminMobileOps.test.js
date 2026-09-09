@@ -415,6 +415,9 @@ async function testDashboardHomeExtrasNoPush() {
     assert.ok(out.todaySignups >= 0);
     assert.ok(Array.isArray(out.attention));
     assert.ok(Array.isArray(out.activity));
+    assert.ok(out.command);
+    assert.ok(Number.isFinite(Number(out.command.actionRequiredCount)));
+    assert.ok(Number.isFinite(Number(out.command.waitingInquiryCount)));
     assert.ok(!out.activity.some((a) => /정산 완료/.test(String(a.title || ''))));
     assert.strictEqual(fcm, 0);
   } finally {
@@ -439,6 +442,8 @@ async function testMemberPaginationCreditsAndNewcomer() {
   assert.strictEqual(page1.pageSize, 10);
   assert.strictEqual(page1.members.length, 10);
   assert.strictEqual(page1.totalUsers, 26);
+  assert.strictEqual(page1.total, 26);
+  assert.strictEqual(page1.pageCount, 3);
   assert.ok(page1.hasMore);
   assert.ok(page1.nextCursor);
   page1.members.forEach((m) => {
@@ -532,6 +537,8 @@ async function testMissingCreatedAtAndSameTimestampCursor() {
     assert.ok(out.members.length <= 10);
     assert.strictEqual(out.pageSize, 10);
     assert.strictEqual(out.totalUsers, 49);
+    assert.strictEqual(out.total, 49);
+    assert.strictEqual(out.pageCount, 5);
     seen.push(...out.members.map((m) => m.uid));
     if (!out.hasMore) break;
     cursor = out.nextCursor;

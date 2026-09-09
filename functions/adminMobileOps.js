@@ -369,6 +369,18 @@ function assembleHomeExtras(bundle, seed) {
     bundle && bundle.recentWalletMap
   ).slice(0, RECENT_MEMBER_LIMIT);
 
+  const waitingInquiryCount = docsOf(waitingSnap).length;
+  const criticalOpenCount = Array.isArray(seed.recentCritical) ? seed.recentCritical.length : 0;
+  const firstPurchasesToday = Number(seed.firstPurchasesToday || 0);
+  const actionRequiredCount = waitingInquiryCount + criticalOpenCount;
+  const command = {
+    newMembersToday: signupsToday,
+    firstPurchasesToday,
+    waitingInquiryCount,
+    criticalOpenCount,
+    actionRequiredCount
+  };
+
   return {
     todaySignups: signupsToday,
     activeLicenses,
@@ -376,7 +388,12 @@ function assembleHomeExtras(bundle, seed) {
     activeLicensesCapped: false,
     attention: attention.slice(0, 8),
     activity: activity.slice(0, 12),
-    recentMembers
+    recentMembers,
+    waitingInquiryCount,
+    criticalOpenCount,
+    actionRequiredCount,
+    firstPurchasesToday,
+    command
   };
 }
 
@@ -607,7 +624,12 @@ async function countUsers(db) {
 
 async function scanAllUsers(db) {
   const idField = docIdField();
-  const snap = await db.collection('users').orderBy(idField).limit(USER_SCAN_CAP).get();
+  try {
+    const snap = await db.collection('users').orderBy(idField).limit(USER_SCAN_CAP).get();
+    const rows = docsOf(snap);
+    if (rows.length) return rows;
+  } catch (_) { /* fall through to unordered scan */ }
+  const snap = await db.collection('users').limit(USER_SCAN_CAP).get();
   return docsOf(snap);
 }
 
@@ -673,7 +695,7 @@ async function getAdminMembers(body, deps) {
   const statusFilter = String((body && (body.statusFilter || body.status)) || 'all').toLowerCase();
   const pageSize = clamp(body && (body.pageSize || body.limit), MEMBER_PAGE_SIZE, MEMBER_PAGE_SIZE);
   const cursor = decodeCursor(body && body.cursor);
-  const totalUsers = await countUsers(db);
+  const counted = await countUsers(db);
   const userDocs = await collectUserDocs(db, q, pageSize);
   const { licMap, walletMap } = await attachLicensesAndCredits(db, userDocs);
   let members = mapUserDocs(userDocs, licMap, walletMap);
@@ -690,12 +712,17 @@ async function getAdminMembers(body, deps) {
 
   const offset = pageOffset(cursor, members);
   const total = members.length;
+  const scanned = userDocs.length;
+  const totalUsers = Number(counted || 0) > 0
+    ? Number(counted)
+    : Number(q ? total : scanned);
   const page = members.slice(offset, offset + pageSize);
-  const hasMore = offset + pageSize < members.length;
+  const hasMore = offset + page.length < total;
   const last = page[page.length - 1];
   const nextCursor = hasMore
     ? encodeCursor({ o: offset + pageSize, id: last && last.uid })
     : '';
+  const pageCount = total > 0 ? Math.ceil(total / pageSize) : (hasMore ? 2 : 1);
   return {
     members: page,
     q,
@@ -705,6 +732,7 @@ async function getAdminMembers(body, deps) {
     pageSize,
     total: Number(total || 0),
     totalUsers: Number(totalUsers || 0),
+    pageCount,
     hasMore,
     nextCursor,
     source: 'users'

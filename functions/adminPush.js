@@ -23,7 +23,8 @@ const GLOBAL_DEFAULTS = {
   paymentEnabled: true,
   inquiryEnabled: true,
   refundEnabled: true,
-  criticalEnabled: true
+  criticalEnabled: true,
+  signupEnabled: true
 };
 
 const CHANNEL_BY_TYPE = {
@@ -31,6 +32,7 @@ const CHANNEL_BY_TYPE = {
   inquiry: 'inquiry',
   refund: 'refund',
   critical: 'critical',
+  signup: 'system',
   system: 'system',
   test: 'system'
 };
@@ -154,6 +156,7 @@ function adminUrlFor(type, entityId) {
     return `${ADMIN_ORIGIN}#view=crm&crm=orders`;
   }
   if (type === 'critical') return `${ADMIN_ORIGIN}#view=logs`;
+  if (type === 'signup') return `${ADMIN_ORIGIN}#view=crm`;
   return `${ADMIN_ORIGIN}#view=push`;
 }
 
@@ -168,6 +171,7 @@ function categoryEnabledOnDevice(data, type) {
   if (type === 'inquiry') return d.inquiryEnabled !== false;
   if (type === 'refund') return d.refundEnabled !== false;
   if (type === 'critical') return d.criticalEnabled !== false;
+  if (type === 'signup') return d.signupEnabled !== false;
   return true;
 }
 
@@ -186,6 +190,7 @@ function deviceSnapshot(id, data, extra) {
     inquiryEnabled: d.inquiryEnabled !== false,
     refundEnabled: d.refundEnabled !== false,
     criticalEnabled: d.criticalEnabled !== false,
+    signupEnabled: d.signupEnabled !== false,
     tokenInvalid: d.tokenInvalid === true,
     requestedAt: d.requestedAt || null,
     approvedAt: d.approvedAt || null
@@ -207,7 +212,8 @@ async function loadGlobalSettings(db) {
     paymentEnabled: data.paymentEnabled !== false,
     inquiryEnabled: data.inquiryEnabled !== false,
     refundEnabled: data.refundEnabled !== false,
-    criticalEnabled: data.criticalEnabled !== false
+    criticalEnabled: data.criticalEnabled !== false,
+    signupEnabled: data.signupEnabled !== false
   };
 }
 
@@ -217,6 +223,7 @@ function globalAllows(settings, type) {
   if (type === 'inquiry') return settings.inquiryEnabled !== false;
   if (type === 'refund') return settings.refundEnabled !== false;
   if (type === 'critical') return settings.criticalEnabled !== false;
+  if (type === 'signup') return settings.signupEnabled !== false;
   return false;
 }
 
@@ -509,6 +516,27 @@ async function maybeNotifyPaymentFcm(orderId, data, ref, deps) {
   }, deps);
 }
 
+function signupEventKey(uid) {
+  return `signup:${String(uid || '').trim()}`;
+}
+
+async function maybeNotifySignupFcm(uid, data, deps) {
+  const id = String(uid || '').trim();
+  if (!id) return { skipped: 'no_uid' };
+  const row = data || {};
+  const name = personName(row, id);
+  const email = maskEmail(row.email || row.payerEmail);
+  const body = [name, email].filter(Boolean).join(' · ') || id.slice(0, 8);
+  return sendAdminNotification({
+    type: 'signup',
+    title: '👤 신규 회원',
+    body,
+    entityId: id,
+    adminUrl: adminUrlFor('signup', id),
+    eventKey: signupEventKey(id)
+  }, deps);
+}
+
 async function maybeNotifyInquiryFcm(ticketId, data, ref, deps) {
   const ticket = data || {};
   const subject = String(ticket.title || '(제목 없음)').trim().slice(0, 60);
@@ -706,6 +734,7 @@ async function updateAdminDeviceSettings(body, deps) {
     inquiryEnabled: bool(body.inquiryEnabled, found.data.inquiryEnabled !== false),
     refundEnabled: bool(body.refundEnabled, found.data.refundEnabled !== false),
     criticalEnabled: bool(body.criticalEnabled, found.data.criticalEnabled !== false),
+    signupEnabled: bool(body.signupEnabled, found.data.signupEnabled !== false),
     lastSeenAt: FieldValue().serverTimestamp(),
     updatedAt: FieldValue().serverTimestamp()
   };
@@ -963,6 +992,8 @@ module.exports = {
   maybeNotifyPaymentFcm,
   maybeNotifyInquiryFcm,
   maybeNotifyRefundFcm,
+  maybeNotifySignupFcm,
+  signupEventKey,
   notifyCritical,
   claimPushEvent,
   paymentPaidEventKey,

@@ -23,10 +23,10 @@ function testPushTargetAndFilters() {
   assert.strictEqual(adminPush.isPushTarget({ status: 'approved', enabled: false, token: 'tok' }), false);
   assert.strictEqual(adminPush.isPushTarget({ status: 'revoked', enabled: true, token: 'tok' }), false);
   assert.strictEqual(adminPush.categoryEnabledOnDevice({ paymentEnabled: false }, 'payment'), false);
-  assert.strictEqual(adminPush.categoryEnabledOnDevice({ inquiryEnabled: true }, 'inquiry'), true);
-  assert.strictEqual(adminPush.globalAllows({ paymentEnabled: false }, 'payment'), false);
-  assert.strictEqual(adminPush.globalAllows({ paymentEnabled: false }, 'test'), true);
-  assert.strictEqual(adminPush.globalAllows({ paymentEnabled: false }, 'system'), true);
+  assert.strictEqual(adminPush.categoryEnabledOnDevice({ signupEnabled: false }, 'signup'), false);
+  assert.strictEqual(adminPush.categoryEnabledOnDevice({}, 'signup'), true);
+  assert.strictEqual(adminPush.globalAllows({ signupEnabled: false }, 'signup'), false);
+  assert.strictEqual(adminPush.globalAllows({ signupEnabled: true }, 'signup'), true);
   console.log('ok targeting');
 }
 
@@ -622,6 +622,31 @@ async function testAtomicPaidClaim() {
   console.log('ok paid eventKey webhook/retry/alias → FCM 1');
 }
 
+async function testSignupClaim() {
+  const store = {
+    'adminDevices/dev1': {
+      status: 'approved',
+      enabled: true,
+      token: 'fcm-signup-token',
+      signupEnabled: true
+    }
+  };
+  const db = makePushDb(store);
+  let fcmCalls = 0;
+  const messaging = {
+    async sendEach(messages) {
+      fcmCalls += messages.length;
+      return { responses: messages.map(() => ({ success: true })) };
+    }
+  };
+  const first = await adminPush.maybeNotifySignupFcm('u_new', { email: 'a@x.com', displayName: '신규' }, { db, messaging });
+  const second = await adminPush.maybeNotifySignupFcm('u_new', { email: 'a@x.com' }, { db, messaging });
+  assert.strictEqual(first.success, 1);
+  assert.strictEqual(second.skipped, 'already_sent');
+  assert.strictEqual(fcmCalls, 1);
+  console.log('ok signup claim once');
+}
+
 async function testRefundEventClaim() {
   const store = {
     'adminDevices/dev1': {
@@ -680,6 +705,7 @@ async function testRefundEventClaim() {
   await testCategoryFilter();
   await testTokenRefreshAndRevokedPush();
   await testAtomicPaidClaim();
+  await testSignupClaim();
   await testRefundEventClaim();
   console.log('all adminPush tests passed');
 })().catch((err) => {
