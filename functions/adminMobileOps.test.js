@@ -19,7 +19,44 @@ function cmpValue(value) {
 
 function makeFakeDb(store) {
   function createQuery(name) {
-    const state = { filters: [], orders: [], lim: null };
+    const state = { filters: [], orders: [], lim: null, startAfter: null, startAt: null, endAt: null };
+    function fieldName(field) {
+      if (field && typeof field === 'object') return '__name__';
+      return String(field || '');
+    }
+    function rowValue(row, field) {
+      const f = fieldName(field);
+      if (f === '__name__') return row.id;
+      return row.data()[f];
+    }
+    function compareRows(a, b) {
+      for (const o of state.orders) {
+        const dir = String(o.dir || 'asc').toLowerCase() === 'desc' ? -1 : 1;
+        const av = cmpValue(rowValue(a, o.field));
+        const bv = cmpValue(rowValue(b, o.field));
+        if (av == null && bv == null) continue;
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        if (av < bv) return -1 * dir;
+        if (av > bv) return 1 * dir;
+      }
+      if (a.id < b.id) return -1;
+      if (a.id > b.id) return 1;
+      return 0;
+    }
+    function isAfterCursor(row) {
+      const vals = state.startAfter;
+      if (!vals || !vals.length) return true;
+      for (let i = 0; i < state.orders.length && i < vals.length; i += 1) {
+        const dir = String(state.orders[i].dir || 'asc').toLowerCase();
+        const rv = cmpValue(rowValue(row, state.orders[i].field));
+        const cv = cmpValue(vals[i]);
+        if (rv === cv) continue;
+        if (dir === 'desc') return rv < cv;
+        return rv > cv;
+      }
+      return false;
+    }
     const query = {
       where(field, op, value) {
         state.filters.push({ field, op, value });
@@ -33,13 +70,25 @@ function makeFakeDb(store) {
         state.lim = n;
         return query;
       },
+      startAfter(...vals) {
+        state.startAfter = vals;
+        return query;
+      },
+      startAt(value) {
+        state.startAt = value;
+        return query;
+      },
+      endAt(value) {
+        state.endAt = value;
+        return query;
+      },
       async get() {
         const prefix = `${name}/`;
         let rows = Object.keys(store)
           .filter((k) => k.startsWith(prefix) && !k.slice(prefix.length).includes('/'))
           .map((k) => {
             const id = k.slice(prefix.length);
-            return { id, data: () => store[k] || {} };
+            return { id, exists: true, data: () => store[k] || {} };
           });
         rows = rows.filter((row) => {
           const data = row.data();
@@ -51,9 +100,20 @@ function makeFakeDb(store) {
             const rv = cmpValue(f.value);
             if (f.op === '>=') return lv >= rv;
             if (f.op === '<') return lv < rv;
+            if (f.op === '<=') return lv <= rv;
             return false;
           });
         });
+        if (state.orders.length) rows.sort(compareRows);
+        if (state.startAt != null) {
+          const first = state.orders[0] ? state.orders[0].field : 'displayName';
+          rows = rows.filter((row) => cmpValue(rowValue(row, first)) >= cmpValue(state.startAt));
+        }
+        if (state.endAt != null) {
+          const first = state.orders[0] ? state.orders[0].field : 'displayName';
+          rows = rows.filter((row) => cmpValue(rowValue(row, first)) <= cmpValue(state.endAt));
+        }
+        if (state.startAfter) rows = rows.filter((row) => isAfterCursor(row));
         if (state.lim != null) rows = rows.slice(0, state.lim);
         return { docs: rows, empty: rows.length === 0 };
       },
@@ -73,11 +133,12 @@ function makeFakeDb(store) {
         return { id: 'log' };
       },
       doc(id) {
-        const path = `${name}/${id}`;
+        const docId = id == null || id === '' ? `auto_${Object.keys(store).length}` : String(id);
+        const path = `${name}/${docId}`;
         const ref = {
-          id,
+          id: docId,
           async get() {
-            return { exists: store[path] != null, id, data: () => store[path] || {}, ref };
+            return { exists: store[path] != null, id: docId, data: () => store[path] || {}, ref };
           },
           async set(patch, opts) {
             const base = opts && opts.merge ? Object.assign({}, store[path] || {}) : {};
@@ -89,7 +150,7 @@ function makeFakeDb(store) {
             store[path] = base;
           },
           collection(sub) {
-            return createQuery(`${name}/${id}/${sub}`);
+            return createQuery(`${name}/${docId}/${sub}`);
           }
         };
         return ref;
@@ -101,6 +162,13 @@ function makeFakeDb(store) {
     collection: (name) => createQuery(name),
     async getAll(...refs) {
       return Promise.all(refs.map((r) => r.get()));
+    },
+    async runTransaction(fn) {
+      const tx = {
+        get: (ref) => ref.get(),
+        set: (ref, data, opts) => ref.set(data, opts)
+      };
+      return fn(tx);
     }
   };
 }
@@ -355,6 +423,91 @@ async function testDashboardHomeExtrasNoPush() {
   console.log('ok dashboard extras + no FCM on home read');
 }
 
+async function testMemberPaginationCreditsAndNewcomer() {
+  const extra = {};
+  for (let i = 0; i < 25; i += 1) {
+    extra[`users/u${String(i).padStart(2, '0')}`] = {
+      email: `user${i}@gmail.com`,
+      displayName: `User${i}`,
+      createdAt: new Date(Date.parse('2026-09-08T00:00:00.000Z') - i * 60000).toISOString()
+    };
+  }
+  extra['users/newcomer'] = { email: 'newbie@gmail.com', displayName: '신규회원' };
+  extra['creditWalletsV2/u00'] = { balance: 12, schemaVersion: 2, creditSystemVersion: 2 };
+  const db = makeFakeDb(storeBase(extra));
+  const page1 = await ops.getAdminMembers(auth(), { db });
+  assert.strictEqual(page1.pageSize, 10);
+  assert.strictEqual(page1.members.length, 10);
+  assert.strictEqual(page1.totalUsers, 26);
+  assert.ok(page1.hasMore);
+  assert.ok(page1.nextCursor);
+  page1.members.forEach((m) => {
+    assert.strictEqual(typeof m.credits, 'number');
+    assert.ok(m.credits >= 0);
+  });
+  const page2 = await ops.getAdminMembers(Object.assign({ cursor: page1.nextCursor }, auth()), { db });
+  assert.strictEqual(page2.members.length, 10);
+  const overlap = page1.members.map((m) => m.uid).filter((id) => page2.members.some((m) => m.uid === id));
+  assert.strictEqual(overlap.length, 0);
+  const page3 = await ops.getAdminMembers(Object.assign({ cursor: page2.nextCursor }, auth()), { db });
+  const all = page1.members.concat(page2.members, page3.members).map((m) => m.uid);
+  assert.strictEqual(new Set(all).size, all.length);
+  assert.ok(all.length >= 25);
+  const named = await ops.getAdminMembers(Object.assign({ q: '신규회원' }, auth()), { db });
+  assert.ok(named.members.some((m) => m.uid === 'newcomer'));
+  assert.strictEqual(named.members.find((m) => m.uid === 'newcomer').credits, 0);
+  assert.strictEqual(ops.mapMember('x', { displayName: 'X' }, null).planLabel, '없음');
+  assert.strictEqual(ops.mapMember('x', { displayName: 'X' }, null).credits, 0);
+  const u00 = all.includes('u00')
+    ? page1.members.concat(page2.members, page3.members).find((m) => m.uid === 'u00')
+    : null;
+  if (u00) assert.strictEqual(u00.credits, 12);
+  console.log('ok member pagination + credits + newcomer without createdAt');
+}
+
+async function testCreditGrantDeductAndExtend() {
+  const store = storeBase({
+    'users/u1': { email: 'kim@gmail.com', displayName: 'Kim', createdAt: '2026-09-08T01:00:00.000Z' },
+    'licenses/u1': {
+      plan: 'period',
+      status: 'active',
+      licensed: true,
+      passProductId: 'PASS_30D',
+      startsAt: '2026-09-01T00:00:00+09:00',
+      expiresAt: '2026-10-01T23:59:59.999+09:00'
+    },
+    'creditWalletsV2/u1': { balance: 12, schemaVersion: 2, creditSystemVersion: 2 }
+  });
+  const db = makeFakeDb(store);
+  const fv = { serverTimestamp: () => new Date(), delete: () => ({ __delete: true }) };
+  const granted = await ops.postAdminMemberAction(Object.assign({
+    uid: 'u1', action: 'credit_grant', amount: '5', reason: '관리자 수동 지급'
+  }, auth()), { db, FieldValue: fv });
+  assert.strictEqual(granted.balance, 17);
+  assert.strictEqual(store['creditWalletsV2/u1'].balance, 17);
+  try {
+    await ops.postAdminMemberAction(Object.assign({
+      uid: 'u1', action: 'credit_deduct', amount: '20'
+    }, auth()), { db, FieldValue: fv });
+    assert.fail('overdraft should fail');
+  } catch (err) {
+    assert.ok(err.status === 400);
+  }
+  const deducted = await ops.postAdminMemberAction(Object.assign({
+    uid: 'u1', action: 'credit_deduct', amount: '17', reason: '관리자 조정'
+  }, auth()), { db, FieldValue: fv });
+  assert.strictEqual(deducted.balance, 0);
+  const ledger = Object.keys(store).filter((k) => k.startsWith('creditLedgerV2/'));
+  assert.ok(ledger.length >= 2);
+  assert.ok(Object.keys(store).some((k) => k.startsWith('adminAuditLogs/') && store[k].source === 'android_admin'));
+  const extended = await ops.postAdminMemberAction(Object.assign({
+    uid: 'u1', action: 'extend', days: '30'
+  }, auth()), { db, FieldValue: fv });
+  assert.strictEqual(extended.after.plan, 'period');
+  assert.ok(String(extended.after.expiresAt) > '2026-10-01');
+  console.log('ok credit grant/deduct ledger + extend');
+}
+
 (async () => {
   await testMemberSearchAndBlock();
   await testMembersBatchNotNPlusOne();
@@ -363,6 +516,8 @@ async function testDashboardHomeExtrasNoPush() {
   await testTicketsAndVersion();
   await testRevoked403();
   await testDashboardHomeExtrasNoPush();
+  await testMemberPaginationCreditsAndNewcomer();
+  await testCreditGrantDeductAndExtend();
   console.log('all adminMobileOps tests passed');
 })().catch((err) => {
   console.error(err);

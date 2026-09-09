@@ -8,8 +8,11 @@
 'use strict';
 
 const adminPush = require('./adminPush');
+const adminCredits = require('./adminCredits');
+const creditWalletV2 = require('./creditWalletV2');
 
-const MEMBER_LIMIT = 20;
+const MEMBER_PAGE_SIZE = 10;
+const MEMBER_LIMIT = MEMBER_PAGE_SIZE;
 const TICKET_LIMIT = 30;
 const AUDIT_LIMIT = 40;
 const LICENSE_ITEMS = 30;
@@ -93,24 +96,45 @@ function licenseState(lic) {
   return { status: st || 'unknown', label: st || '확인 필요', active: !!lic.licensed };
 }
 
-function mapMember(uid, user, lic) {
-  const state = licenseState(lic);
+function isLicenseDoc(lic) {
+  if (!lic || typeof lic !== 'object') return false;
+  return !!(
+    lic.plan ||
+    lic.status ||
+    lic.licensed === true ||
+    lic.licensed === false ||
+    lic.expiresAt ||
+    lic.startsAt ||
+    lic.passProductId ||
+    lic.productId ||
+    lic.hwid
+  );
+}
+
+function mapMember(uid, user, lic, credits, extra) {
+  const licenseDoc = isLicenseDoc(lic) ? lic : null;
+  const state = licenseState(licenseDoc);
   const row = user || {};
+  const creditN = Number(credits);
+  const creditBalance = Number.isFinite(creditN) ? Math.max(0, Math.floor(creditN)) : 0;
   return {
     uid: String(uid || ''),
     emailMasked: adminPush.maskEmail(row.email || row.payerEmail),
     displayName: adminPush.personName(row, uid),
     photoURL: adminPush.photoUrlOf(row) || undefined,
-    joinedAt: toIso(user && (user.createdAt || user.joinedAt)) || undefined,
+    joinedAt: toIso(user && (user.createdAt || user.joinedAt))
+      || toIso(extra && extra.createTime)
+      || undefined,
     lastLoginAt: toIso(user && (user.lastLogin || user.lastLoginAt || user.lastSeenAt)) || undefined,
-    plan: String((lic && lic.plan) || 'trial'),
-    planLabel: planLabel(lic && lic.plan, lic && (lic.passProductId || lic.productId)),
-    passProductId: String((lic && (lic.passProductId || lic.productId)) || ''),
-    method: String((lic && lic.method) || ''),
+    plan: licenseDoc && licenseDoc.plan ? String(licenseDoc.plan) : '',
+    planLabel: licenseDoc ? planLabel(licenseDoc.plan, licenseDoc.passProductId || licenseDoc.productId) : '없음',
+    passProductId: String((licenseDoc && (licenseDoc.passProductId || licenseDoc.productId)) || ''),
+    method: String((licenseDoc && licenseDoc.method) || ''),
     licenseStatus: state.status,
     licenseLabel: state.label,
-    startsAt: toIso(lic && lic.startsAt) || undefined,
-    expiresAt: toIso(lic && lic.expiresAt) || undefined,
+    startsAt: toIso(licenseDoc && licenseDoc.startsAt) || undefined,
+    expiresAt: toIso(licenseDoc && licenseDoc.expiresAt) || undefined,
+    credits: creditBalance,
     adminUrl: CRM_URL
   };
 }
@@ -312,16 +336,240 @@ async function getDocsByIds(db, col, ids) {
   return map;
 }
 
+function docIdField() {
+  try {
+    const admin = require('firebase-admin');
+    if (admin.firestore && admin.firestore.FieldPath && typeof admin.firestore.FieldPath.documentId === 'function') {
+      return admin.firestore.FieldPath.documentId();
+    }
+  } catch (_) { /* unit tests without Admin SDK FieldPath */ }
+  return '__name__';
+}
+
+function encodeCursor(payload) {
+  if (!payload || !payload.id) return '';
+  return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
+}
+
+function decodeCursor(raw) {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  try {
+    const parsed = JSON.parse(Buffer.from(s, 'base64').toString('utf8'));
+    if (!parsed || !parsed.id) return null;
+    return parsed;
+  } catch (_) {
+    return null;
+  }
+}
+
+function cursorTime(value) {
+  if (value == null || value === '') return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  const d = new Date(value);
+  return Number.isFinite(d.getTime()) ? d : value;
+}
+
+function ymdKst(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n <= 0) return '';
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: 'numeric'
+  }).format(new Date(n));
+}
+
+function timedKindOf(member) {
+  const pid = String((member && member.passProductId) || '').toUpperCase();
+  const label = String((member && member.planLabel) || '');
+  if (pid.includes('90') || label.includes('90')) return 'd90';
+  if (pid.includes('7D') || pid === 'PASS_7' || label.includes('7일')) return 'd7';
+  if (pid.includes('30')) return 'd30';
+  return 'custom';
+}
+
+function memberMatchesFilters(member, filter, timedFilter, statusFilter) {
+  const plan = String((member && member.plan) || '').toLowerCase();
+  const st = String((member && member.licenseStatus) || '');
+  if (filter === 'trial' && plan !== 'trial') return false;
+  if (filter === 'lifetime' && plan !== 'lifetime') return false;
+  if (filter === 'period' || filter === 'timed') {
+    if (plan !== 'period') return false;
+    if (timedFilter && timedFilter !== 'all' && timedKindOf(member) !== timedFilter) return false;
+  }
+  if (statusFilter === 'banned' && st !== 'banned') return false;
+  if (statusFilter === 'expired' && st !== 'expired') return false;
+  if (statusFilter === 'active' && (st === 'banned' || st === 'expired' || st === 'none')) return false;
+  return true;
+}
+
+function syntheticUserDoc(id, data) {
+  return {
+    id: String(id),
+    data: () => data || {},
+    createTime: null
+  };
+}
+
+async function attachLicensesAndCredits(db, userDocs) {
+  const ids = (userDocs || []).map((d) => d.id).filter(Boolean);
+  const licMap = new Map();
+  const walletMap = new Map();
+  if (!ids.length) return { licMap, walletMap };
+  if (typeof db.getAll === 'function') {
+    const refs = ids.map((id) => db.collection('licenses').doc(id))
+      .concat(ids.map((id) => db.collection('creditWalletsV2').doc(id)));
+    const snaps = await db.getAll(...refs);
+    ids.forEach((id, i) => {
+      const licSnap = snaps[i];
+      const walSnap = snaps[ids.length + i];
+      licMap.set(id, licSnap && licSnap.exists ? (licSnap.data() || {}) : {});
+      walletMap.set(id, walSnap && walSnap.exists ? (walSnap.data() || {}) : {});
+    });
+    return { licMap, walletMap };
+  }
+  const [licenses, wallets] = await Promise.all([
+    getDocsByIds(db, 'licenses', ids),
+    getDocsByIds(db, 'creditWalletsV2', ids)
+  ]);
+  return { licMap: licenses, walletMap: wallets };
+}
+
+function mapUserDocs(userDocs, licMap, walletMap) {
+  return (userDocs || []).map((doc) => mapMember(
+    doc.id,
+    doc.data ? (doc.data() || {}) : {},
+    (licMap && licMap.get(doc.id)) || null,
+    creditWalletV2.readBalanceV2((walletMap && walletMap.get(doc.id)) || {}),
+    { createTime: doc.createTime }
+  ));
+}
+
+async function queryUserPage(db, { pageSize, cursor, namePrefix }) {
+  const take = pageSize + 1;
+  const idField = docIdField();
+  if (namePrefix) {
+    const prefixSnap = await safeQuery(() => {
+      let query = db.collection('users').orderBy('displayName').orderBy(idField)
+        .startAt(namePrefix).endAt(namePrefix + '\uf8ff');
+      if (cursor && cursor.id) query = query.startAfter(cursor.n || namePrefix, cursor.id);
+      return query.limit(take).get();
+    });
+    const prefixed = docsOf(prefixSnap);
+    if (prefixed.length) return prefixed;
+    const nameEq = await safeQuery(() => db.collection('users').where('displayName', '==', namePrefix).limit(take).get());
+    const named = docsOf(nameEq);
+    if (named.length) return named;
+    const alt = await safeQuery(() => db.collection('users').where('name', '==', namePrefix).limit(take).get());
+    return docsOf(alt);
+  }
+  let snap = await safeQuery(() => {
+    let query = db.collection('users').orderBy('createdAt', 'desc').orderBy(idField, 'desc');
+    if (cursor && cursor.id) {
+      const t = cursorTime(cursor.t);
+      query = t ? query.startAfter(t, cursor.id) : query.startAfter(cursor.id);
+    }
+    return query.limit(take).get();
+  });
+  let rows = docsOf(snap);
+  if (rows.length) return rows;
+  snap = await safeQuery(() => {
+    let query = db.collection('users').orderBy('createdAt', 'desc');
+    if (cursor && cursor.id) {
+      const t = cursorTime(cursor.t);
+      query = t ? query.startAfter(t) : query;
+    }
+    return query.limit(take).get();
+  });
+  rows = docsOf(snap);
+  if (rows.length) return rows;
+  snap = await safeQuery(() => {
+    let query = db.collection('users').orderBy(idField);
+    if (cursor && cursor.id) query = query.startAfter(cursor.id);
+    return query.limit(take).get();
+  });
+  return docsOf(snap);
+}
+
+async function queryLicensePage(db, { plan, passProductId, status, pageSize, cursor }) {
+  const take = pageSize + 1;
+  const idField = docIdField();
+  const snap = await safeQuery(() => {
+    let query = db.collection('licenses');
+    if (plan) query = query.where('plan', '==', plan);
+    if (passProductId) query = query.where('passProductId', '==', passProductId);
+    if (status === 'banned') query = query.where('status', '==', 'banned');
+    query = query.orderBy(idField);
+    if (cursor && cursor.id) query = query.startAfter(cursor.id);
+    return query.limit(take).get();
+  });
+  return docsOf(snap);
+}
+
+function nextCursorFromDocs(docs, pageSize, kind) {
+  if (!docs || docs.length <= pageSize) return '';
+  const last = docs[pageSize - 1];
+  if (!last) return '';
+  const row = last.data ? (last.data() || {}) : {};
+  return encodeCursor({
+    id: last.id,
+    t: toIso(rowTime(row)) || '',
+    n: String(row.displayName || ''),
+    k: kind || 'createdAt'
+  });
+}
+
+function rowTime(row) {
+  return (row && (row.createdAt || row.joinedAt)) || null;
+}
+
+async function countUsers(db) {
+  return aggregationCount(db.collection('users'));
+}
+
+async function countFiltered(db, filter, timedFilter, statusFilter, q) {
+  if (q) return null;
+  if (statusFilter === 'banned') {
+    return aggregationCount(db.collection('licenses').where('status', '==', 'banned'));
+  }
+  if (filter === 'trial') return aggregationCount(db.collection('licenses').where('plan', '==', 'trial'));
+  if (filter === 'lifetime') return aggregationCount(db.collection('licenses').where('plan', '==', 'lifetime'));
+  if (filter === 'period' || filter === 'timed') {
+    if (timedFilter === 'd30') return aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_30D'));
+    if (timedFilter === 'd90') return aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_90D'));
+    if (timedFilter === 'd7') return aggregationCount(db.collection('licenses').where('passProductId', '==', 'PASS_7D'));
+    return aggregationCount(db.collection('licenses').where('plan', '==', 'period'));
+  }
+  if (statusFilter === 'all' && filter === 'all') return countUsers(db);
+  return countUsers(db);
+}
+
 async function getAdminMembers(body, deps) {
   const db = (deps && deps.db) || require('firebase-admin').firestore();
   await assertApprovedDevice(db, body);
   const q = String((body && body.q) || '').trim();
-  const limit = clamp(body && body.limit, MEMBER_LIMIT, 40);
+  const filter = String((body && (body.filter || body.planFilter)) || 'all').toLowerCase();
+  const timedFilter = String((body && (body.timedFilter || body.timed)) || 'all').toLowerCase();
+  const statusFilter = String((body && (body.statusFilter || body.status)) || 'all').toLowerCase();
+  const pageSize = clamp(body && (body.pageSize || body.limit), MEMBER_PAGE_SIZE, MEMBER_PAGE_SIZE);
+  const cursor = decodeCursor(body && body.cursor);
+  const needsLicenseSource = (filter === 'trial' || filter === 'lifetime' || filter === 'period' || filter === 'timed')
+    && !q;
+  const totalUsers = await countUsers(db);
+  let total = await countFiltered(db, filter, timedFilter, statusFilter, q);
   let userDocs = [];
+  let sourceKind = 'createdAt';
 
   if (q.includes('@')) {
-    const snap = await safeQuery(() => db.collection('users').where('email', '==', q).limit(5).get());
+    const snap = await safeQuery(() => db.collection('users').where('email', '==', q).limit(pageSize + 1).get());
     userDocs = docsOf(snap);
+    if (!userDocs.length) {
+      const lower = await safeQuery(() => db.collection('users').where('emailLower', '==', q.toLowerCase()).limit(pageSize + 1).get());
+      userDocs = docsOf(lower);
+    }
+    total = userDocs.length;
   } else if (q.length >= 16 && !/\s/.test(q)) {
     const ids = [q];
     const order = await db.collection('orders').doc(q).get();
@@ -331,30 +579,64 @@ async function getAdminMembers(body, deps) {
     if (payDoc) ids.push((payDoc.data() || {}).uid);
     const hw = await safeQuery(() => db.collection('licenses').where('hwid', '==', q).limit(5).get());
     for (const doc of docsOf(hw)) ids.push(doc.id);
-    const [userMap, licMap] = await Promise.all([
-      getDocsByIds(db, 'users', ids),
-      getDocsByIds(db, 'licenses', ids)
-    ]);
-    const members = [...userMap.keys()].map((id) => mapMember(id, userMap.get(id), licMap.get(id) || null));
-    return { members: members.slice(0, limit), q };
-  }
-
-  if (!userDocs.length) {
-    const snap = await safeQuery(() => db.collection('users').orderBy('createdAt', 'desc').limit(limit).get());
-    userDocs = docsOf(snap);
-    if (q) {
-      const needle = q.toLowerCase();
-      userDocs = userDocs.filter((doc) => {
-        const row = doc.data() || {};
-        const hay = `${row.email || ''} ${row.displayName || ''} ${row.name || ''} ${doc.id}`.toLowerCase();
-        return hay.indexOf(needle) >= 0;
-      });
+    const userMap = await getDocsByIds(db, 'users', ids);
+    userDocs = [...userMap.keys()].map((id) => syntheticUserDoc(id, userMap.get(id) || {}));
+    total = userDocs.length;
+  } else if (q) {
+    userDocs = await queryUserPage(db, { pageSize, cursor, namePrefix: q });
+    sourceKind = 'displayName';
+  } else if (needsLicenseSource) {
+    sourceKind = 'license';
+    const plan = filter === 'timed' ? 'period' : filter;
+    const passProductId = timedFilter === 'd30' ? 'PASS_30D'
+      : timedFilter === 'd90' ? 'PASS_90D'
+        : timedFilter === 'd7' ? 'PASS_7D'
+          : '';
+    const licenseDocs = await queryLicensePage(db, {
+      plan,
+      passProductId: timedFilter === 'custom' ? '' : passProductId,
+      status: statusFilter === 'banned' ? 'banned' : '',
+      pageSize,
+      cursor
+    });
+    const userMap = await getDocsByIds(db, 'users', licenseDocs.slice(0, pageSize + 1).map((d) => d.id));
+    userDocs = licenseDocs.map((doc) => syntheticUserDoc(doc.id, userMap.get(doc.id) || {}));
+    if (licenseDocs.length > pageSize) {
+      userDocs = userDocs.slice(0, pageSize + 1);
     }
+  } else {
+    userDocs = await queryUserPage(db, { pageSize, cursor, namePrefix: '' });
   }
 
-  const licMap = await getDocsByIds(db, 'licenses', userDocs.map((doc) => doc.id));
-  const members = userDocs.map((doc) => mapMember(doc.id, doc.data() || {}, licMap.get(doc.id) || null));
-  return { members: members.slice(0, limit), q };
+  const pageDocs = userDocs.slice(0, pageSize);
+  const { licMap, walletMap } = await attachLicensesAndCredits(db, pageDocs);
+  let members = mapUserDocs(pageDocs, licMap, walletMap);
+  members = members.filter((m) => memberMatchesFilters(m, filter, timedFilter, statusFilter) && matchesQuery(m, q));
+
+  const nextCursor = nextCursorFromDocs(userDocs, pageSize, sourceKind);
+  if (total == null) total = typeof totalUsers === 'number' ? totalUsers : members.length;
+  return {
+    members,
+    q,
+    filter,
+    timedFilter,
+    statusFilter,
+    pageSize,
+    total: Number(total || 0),
+    totalUsers: Number(totalUsers || 0),
+    hasMore: !!nextCursor,
+    nextCursor,
+    source: 'users'
+  };
+}
+
+function matchesQuery(member, q) {
+  const needle = String(q || '').trim();
+  if (!needle) return true;
+  if (needle.includes('@') || needle.length >= 16) return true;
+  const hay = `${member.displayName || ''} ${member.uid || ''}`.toLowerCase();
+  if (hay.indexOf(needle.toLowerCase()) >= 0) return true;
+  return String(member.displayName || '').indexOf(needle) >= 0;
 }
 
 async function getAdminMemberDetail(body, deps) {
@@ -362,15 +644,17 @@ async function getAdminMemberDetail(body, deps) {
   await assertApprovedDevice(db, body);
   const uid = String((body && (body.uid || body.userId)) || '').trim();
   if (!uid) throw httpError(400, 'uid가 없습니다.');
-  const [userSnap, licSnap, orderSnap, ticketSnap] = await Promise.all([
+  const [userSnap, licSnap, walletSnap, orderSnap, ticketSnap] = await Promise.all([
     db.collection('users').doc(uid).get(),
     db.collection('licenses').doc(uid).get(),
+    db.collection('creditWalletsV2').doc(uid).get(),
     safeQuery(() => db.collection('orders').where('uid', '==', uid).limit(20).get()),
     safeQuery(() => db.collection('supportTickets').where('uid', '==', uid).limit(10).get())
   ]);
   const user = userSnap.exists ? (userSnap.data() || {}) : {};
   const lic = licSnap.exists ? (licSnap.data() || {}) : null;
-  const member = mapMember(uid, user, lic);
+  const credits = creditWalletV2.readBalanceV2(walletSnap.exists ? (walletSnap.data() || {}) : {});
+  const member = mapMember(uid, user, lic, credits, { createTime: userSnap.createTime });
   const dash = require('./adminMobileDashboard');
   const payments = docsOf(orderSnap)
     .map((doc) => dash.mapPayment(doc.id, doc.data() || {}))
@@ -388,7 +672,8 @@ async function getAdminMemberDetail(body, deps) {
       photoURL: adminPush.photoUrlOf(user) || member.photoURL || undefined,
       passProductId: String((lic && (lic.passProductId || lic.productId)) || ''),
       method: String((lic && lic.method) || ''),
-      plan: String((lic && lic.plan) || member.plan || '')
+      plan: String((lic && lic.plan) || member.plan || ''),
+      credits: credits
     }),
     license: lic ? {
       plan: String(lic.plan || ''),
@@ -482,6 +767,36 @@ async function grantLicenseLikeWeb(db, uid, body, FieldValue, before) {
   };
 }
 
+function extendFromCurrent(before, body) {
+  const days = Number(body && body.days);
+  const customExpires = String((body && body.expiresAt) || '').trim();
+  const nowMs = Date.now();
+  const currentExp = tsMs(before && before.expiresAt);
+  const baseMs = currentExp > nowMs ? currentExp : nowMs;
+  let expiresAt = customExpires;
+  if (!expiresAt) {
+    if (!Number.isFinite(days) || days <= 0) {
+      throw httpError(400, '연장 일수 또는 만료일이 필요합니다.');
+    }
+    expiresAt = ymdKst(baseMs + days * 24 * 60 * 60 * 1000);
+  }
+  let startsAt = String((body && body.startsAt) || '').trim();
+  if (!startsAt) {
+    const currentStart = tsMs(before && before.startsAt);
+    startsAt = currentStart && currentStart <= nowMs ? ymdKst(currentStart) : ymdKst(nowMs);
+    if (!currentExp || currentExp < nowMs) startsAt = ymdKst(nowMs);
+  }
+  if (startsAt > expiresAt) throw httpError(400, '시작일이 만료일보다 늦을 수 없습니다.');
+  const passProductId = String((body && body.passProductId) || (before && before.passProductId) || '').trim();
+  return {
+    plan: 'period',
+    startsAt,
+    expiresAt,
+    passProductId,
+    memo: String((body && body.memo) || '').slice(0, 500)
+  };
+}
+
 function expiresAtTsSafe(endTs, FieldValue) {
   return endTs || FieldValue.delete();
 }
@@ -492,7 +807,7 @@ async function postAdminMemberAction(body, deps) {
   const uid = String((body && body.uid) || '').trim();
   const action = String((body && body.action) || '').trim();
   if (!uid) throw httpError(400, 'uid가 없습니다.');
-  const allowed = ['block', 'unblock', 'grant', 'reset_hwid'];
+  const allowed = ['block', 'unblock', 'grant', 'reset_hwid', 'credit_grant', 'credit_deduct', 'extend'];
   if (allowed.indexOf(action) < 0) {
     throw httpError(400, '지원하지 않는 관리자 작업입니다.');
   }
@@ -505,21 +820,76 @@ async function postAdminMemberAction(body, deps) {
   let auditAction = action;
   let summary = action;
   let auditBefore = String(before.status || before.hwid || '');
+  let category = action === 'reset_hwid' ? 'hwid' : 'license';
+  if (action === 'credit_grant' || action === 'credit_deduct') {
+    const amount = adminCredits.parsePositiveInt(body && body.amount);
+    if (amount == null) throw httpError(400, '지급/회수 수량은 1 이상의 정수여야 합니다.');
+    if (amount > adminCredits.MAX_GRANT) {
+      throw httpError(400, `최대 ${adminCredits.MAX_GRANT} Credits까지 가능합니다.`);
+    }
+    const sign = action === 'credit_grant' ? 1 : -1;
+    const reason = String((body && body.reason) || '').trim().slice(0, 200)
+      || (sign > 0 ? '관리자 수동 지급' : '관리자 조정');
+    const result = await adminCredits.applyCreditDelta(db, FieldValue, {
+      uid,
+      amount: sign * amount,
+      type: sign > 0 ? 'admin_grant' : 'admin_deduct',
+      reason,
+      adminUid: 'device:' + actor,
+      origin: 'android_admin'
+    });
+    after = {
+      balance: result.balance,
+      prev: result.prev,
+      amount: sign * amount,
+      ledgerId: result.ledgerId || '',
+      type: sign > 0 ? 'admin_grant' : 'admin_deduct'
+    };
+    auditBefore = String(result.prev);
+    auditAction = sign > 0 ? 'credit_grant' : 'credit_remove';
+    summary = `${result.prev} → ${result.balance}`;
+    category = 'credit';
+    await db.collection('adminAuditLogs').add({
+      timestamp: FieldValue.serverTimestamp(),
+      targetUserId: uid,
+      category,
+      action: auditAction,
+      actorId: 'device:' + actor,
+      actorDeviceId: actor,
+      source: 'android_admin',
+      before: { balance: result.prev },
+      after: { balance: result.balance, amount: sign * amount, reason },
+      result: 'success',
+      summary,
+      reason
+    });
+    return {
+      ok: true,
+      uid,
+      action,
+      after,
+      balance: result.balance,
+      prev: result.prev,
+      ledgerId: result.ledgerId || ''
+    };
+  }
   if (action === 'block' || action === 'unblock') {
     const patch = action === 'block'
       ? { licensed: false, status: 'banned', updatedAt: FieldValue.serverTimestamp(), method: 'admin' }
       : { licensed: true, status: 'active', updatedAt: FieldValue.serverTimestamp(), method: 'admin' };
     await licRef.set(patch, { merge: true });
     after = { status: patch.status };
-    auditAction = action === 'block' ? '라이선스 차단' : '차단 해제';
+    auditAction = action === 'block' ? 'license_block' : 'license_unblock';
+    summary = action === 'block' ? '차단' : '차단 해제';
   } else if (action === 'reset_hwid') {
     await db.collection('users').doc(uid).set({ hwid: '', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     await licRef.set({ hwid: '', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     after = { hwid: '' };
-    auditAction = 'HWID 초기화';
+    auditAction = 'hwid_reset';
     summary = before.hwid ? 'hwid cleared' : '(없음)';
   } else {
-    const granted = await grantLicenseLikeWeb(db, uid, body, FieldValue, before);
+    const grantBody = action === 'extend' ? extendFromCurrent(before, body) : body;
+    const granted = await grantLicenseLikeWeb(db, uid, grantBody, FieldValue, before);
     after = {
       plan: granted.savePlan,
       status: 'active',
@@ -530,7 +900,10 @@ async function postAdminMemberAction(body, deps) {
       passProductId: granted.passProductId
     };
     auditBefore = granted.before;
-    auditAction = granted.savePlan === 'period' ? 'PASS_ADMIN_GRANTED' : '라이선스 변경';
+    if (action === 'extend') auditAction = 'pass_extend';
+    else if (granted.savePlan === 'lifetime') auditAction = 'lifetime_grant';
+    else if (granted.savePlan === 'period' && !granted.passProductId) auditAction = 'pass_custom_grant';
+    else auditAction = 'license_change';
     summary = `${before.plan || '-'} → ${granted.savePlan}${granted.passProductId ? ' · ' + granted.passProductId : ''}`;
     try {
       await db.collection('users').doc(uid).collection('notifications').add({
@@ -552,7 +925,7 @@ async function postAdminMemberAction(body, deps) {
   await db.collection('adminAuditLogs').add({
     timestamp: FieldValue.serverTimestamp(),
     targetUserId: uid,
-    category: action === 'reset_hwid' ? 'hwid' : 'license',
+    category: category,
     action: auditAction,
     actorId: 'device:' + actor,
     actorDeviceId: actor,
@@ -772,5 +1145,8 @@ module.exports = {
   planLabel,
   mapMember,
   mapTicket,
-  createHandlers
+  createHandlers,
+  MEMBER_PAGE_SIZE,
+  ymdKst,
+  extendFromCurrent
 };
