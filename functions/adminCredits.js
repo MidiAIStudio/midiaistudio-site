@@ -315,6 +315,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       }
       const ledger = ledgerSnap.docs.map((d) => {
         const row = d.data() || {};
+        const createdAtMs = toMillis(row.createdAt) || 0;
         return {
           id: d.id,
           type: row.type || '',
@@ -328,7 +329,8 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
           productId: row.productId || '',
           paymentId: row.paymentId || '',
           jobId: row.jobId || '',
-          createdAt: row.createdAt || null
+          createdAtMs,
+          createdAt: createdAtMs || null
         };
       });
       let purchases = [];

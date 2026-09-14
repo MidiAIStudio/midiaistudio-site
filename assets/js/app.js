@@ -220,6 +220,8 @@ let adminOrdersListenError = null;
 let adminTicketsListenError = null;
 let adminUsersListenError = null;
 let adminOrderRows = [];
+let adminRawOrderRows = [];
+let adminCreditPurchaseRows = [];
 let adminOrdersLoaded = false;
 let adminBoardRows = [];
 let adminCmsTab = 'notices';
@@ -8103,7 +8105,20 @@ function listenAdminDashboard(){
   });
   watch('announcements', rows => { adminStat('dashNotices', countVisible(rows)); });
   watch('patchNotes', rows => { adminStat('dashPatches', countVisible(rows)); });
-  watch('orders', rows => { adminOrderRows = rows; adminStat('dashOrders', rows.length); renderAdminUserTable(); refreshAdminCrmDetail(); });
+  watch('orders', rows => {
+    adminRawOrderRows = rows;
+    publishAdminOrderRows();
+    adminStat('dashOrders', adminOrderRows.length);
+    renderAdminUserTable();
+    refreshAdminCrmDetail();
+  });
+  watch('creditPurchases', rows => {
+    adminCreditPurchaseRows = rows.map(normalizeAdminCreditPurchaseRow);
+    publishAdminOrderRows();
+    adminStat('dashOrders', adminOrderRows.length);
+    renderAdminUserTable();
+    refreshAdminCrmDetail();
+  });
   if($('adminBoardList')) addUnsub(onSnapshot(collection(db,'boardPosts'), snap=>{ adminBoardRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminBoardTable(); }));
 }
 
@@ -8203,6 +8218,61 @@ function adminUidAliases(uid){
     if(idn.fieldUid) set.add(idn.fieldUid);
   }
   return set;
+}
+
+function normalizeAdminCreditPurchaseRow(row){
+  const d = row && typeof row === 'object' ? row : {};
+  const id = String(d.id || d.paymentId || '').trim();
+  const status = String(d.status || '').toLowerCase();
+  const credited = status === 'credited' || status === 'granted' || d.granted === true || d.creditsGranted === true;
+  const cur = String(d.currency || 'KRW').toUpperCase();
+  const inferredMethod = d.paymentMethod || d.provider || (cur === 'USD' ? 'paypal' : 'kakaopay');
+  const inferredProvider = d.provider || (cur === 'USD' ? 'paypal' : 'portone');
+  return {
+    ...d,
+    id: id || d.id,
+    paymentId: d.paymentId || id,
+    uid: d.uid || d.userId || '',
+    email: d.email || '',
+    amount: d.amount,
+    currency: cur,
+    productId: d.productId || '',
+    productName: d.productName || d.orderName || (d.creditAmount ? `Credit ${d.creditAmount}` : 'Credit'),
+    orderName: d.orderName || d.productName || '',
+    paymentMethod: d.paymentMethod || inferredMethod,
+    provider: inferredProvider,
+    plan: d.plan || 'credits',
+    status: credited ? 'completed' : (d.status || 'pending'),
+    creditsGranted: d.creditsGranted !== false,
+    creditAmount: d.creditAmount || d.credits,
+    completedAt: d.completedAt || d.createdAt,
+    sourceCollection: 'creditPurchases'
+  };
+}
+
+function adminPaymentDedupKeys(o){
+  return [o?.paymentId, o?.paypalOrderId, o?.paypalCaptureId, o?.portonePaymentId, o?.id]
+    .map((x) => String(x || '').trim())
+    .filter(Boolean);
+}
+
+function mergeAdminPaymentSources(orderRows, creditRows){
+  const seen = new Set();
+  const out = [];
+  const take = (o) => {
+    const keys = adminPaymentDedupKeys(o);
+    if (!keys.length) return;
+    if (keys.some((k) => seen.has(k))) return;
+    keys.forEach((k) => seen.add(k));
+    out.push(o);
+  };
+  (orderRows || []).forEach(take);
+  (creditRows || []).forEach(take);
+  return out;
+}
+
+function publishAdminOrderRows(){
+  adminOrderRows = mergeAdminPaymentSources(adminRawOrderRows, adminCreditPurchaseRows);
 }
 
 function adminOrdersForUid(uid){
@@ -8365,6 +8435,7 @@ const ADMIN_ACTIVITY_LABELS = {
   offline: '오프라인'
 };
 const ADMIN_PAYMENT_STATUS_LABELS = {
+  credited: '결제완료',
   completed: '결제완료',
   paid: '결제완료',
   pending: '결제대기',
@@ -8621,7 +8692,7 @@ function adminLicenseWorkMatch(row, tab){
 }
 function adminOrderStatusGroup(status){
   const s=String(status||'').toLowerCase();
-  if(s==='completed' || s==='paid' || s==='verified' || s==='license_issued') return 'paid';
+  if(s==='completed' || s==='paid' || s==='verified' || s==='license_issued' || s==='credited') return 'paid';
   if(s==='failed') return 'failed';
   if(s==='cancelled' || s==='canceled' || s==='refunded' || s==='partially_refunded' || s==='refund_review_required' || s==='duplicate_refunded' || s==='duplicate_refund_failed') return 'refund';
   if(s==='pending' || s==='open') return 'pending';
@@ -8641,6 +8712,9 @@ function adminOrderProductName(o){
   if(pid === 'PASS_7D') return o?.productName || o?.orderName || '7일 Full';
   if(pid === 'PASS_30D') return o?.productName || o?.orderName || '30일 Full';
   if(pid === 'PASS_90D') return o?.productName || o?.orderName || '90일 Full';
+  if(pid.indexOf('CREDIT_') === 0) {
+    return o?.productName || o?.orderName || (o?.creditAmount ? `Credit ${o.creditAmount}` : pid);
+  }
   const v=o?.productName || o?.orderName || o?.plan || o?.productId;
   return v ? String(v) : '-';
 }
@@ -12273,6 +12347,8 @@ function listenAdminUsers(){
   adminOrdersListenError = null;
   adminTicketsListenError = null;
   adminUsersListenError = null;
+  adminRawOrderRows = [];
+  adminCreditPurchaseRows = [];
   const {collection,onSnapshot}=firestoreApi;
   const onSnapErr = (label, setter)=>{
     return (err)=>{
@@ -12319,11 +12395,22 @@ function listenAdminUsers(){
     snap=>{
       adminOrdersListenError = null;
       adminOrdersLoaded = true;
-      adminOrderRows=snap.docs.map(d=>({id:d.id,...d.data()}));
+      adminRawOrderRows=snap.docs.map(d=>({id:d.id,...d.data()}));
+      publishAdminOrderRows();
       renderAdminUserTable();
       refreshAdminCrmDetail();
     },
     onSnapErr('orders', m=>{ adminOrdersListenError=m; adminOrdersLoaded=true; })
+  ));
+  addUnsub(onSnapshot(
+    collection(db,'creditPurchases'),
+    snap=>{
+      adminCreditPurchaseRows=snap.docs.map(d=>normalizeAdminCreditPurchaseRow({id:d.id,...d.data()}));
+      publishAdminOrderRows();
+      renderAdminUserTable();
+      refreshAdminCrmDetail();
+    },
+    err=>console.error('admin creditPurchases snapshot error', err)
   ));
   addUnsub(onSnapshot(
     collection(db,'supportTickets'),

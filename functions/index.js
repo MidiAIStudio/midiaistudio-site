@@ -1140,7 +1140,9 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
         currency: 'USD',
         quoteId,
         email: user.email || existing.email || '',
-        orderName: existing.productName || pid
+        orderName: existing.productName || pid,
+        paymentMethod: 'paypal',
+        provider: 'paypal'
       });
       try {
         await userNotify.notifyCreditGranted(db, admin.firestore.FieldValue, {

@@ -43,7 +43,19 @@ function createHandlers({
     };
   }
 
-  async function grantCredits({ uid, paymentId, productId, creditAmount, amount, currency, quoteId, email, orderName }) {
+  async function grantCredits({
+    uid,
+    paymentId,
+    productId,
+    creditAmount,
+    amount,
+    currency,
+    quoteId,
+    email,
+    orderName,
+    paymentMethod,
+    provider
+  }) {
     const purchaseRef = db.collection('creditPurchases').doc(paymentId);
     const walletRef = db.collection('creditWalletsV2').doc(uid);
     const quoteRef = quoteId ? db.collection('purchaseQuotes').doc(quoteId) : null;
@@ -98,6 +110,11 @@ function createHandlers({
           displayTitle: `Credit 구매 +${creditAmount}`
         }
       });
+      const cur = String(currency || 'KRW').toUpperCase();
+      const method = String(paymentMethod || '').trim()
+        || (cur === 'USD' ? 'paypal' : 'kakaopay');
+      const payProvider = String(provider || '').trim()
+        || (cur === 'USD' ? 'paypal' : 'portone');
       tx.set(purchaseRef, {
         uid,
         paymentId,
@@ -105,11 +122,17 @@ function createHandlers({
         quoteId: quoteId || '',
         creditAmount,
         amount,
-        currency,
+        currency: cur,
         email: email || '',
         orderName: orderName || '',
+        productName: orderName || `Credit ${creditAmount}`,
+        paymentMethod: method,
+        provider: payProvider,
+        plan: 'credits',
+        productType: 'credit_pack',
         status: 'credited',
         granted: true,
+        creditsGranted: true,
         creditSystemVersion: 2,
         balanceAfter: next,
         createdAt: FieldValue.serverTimestamp(),
@@ -348,7 +371,9 @@ function createHandlers({
         currency: 'KRW',
         quoteId,
         email: user.email || '',
-        orderName: quote.orderName || pid
+        orderName: quote.orderName || pid,
+        paymentMethod: 'kakaopay',
+        provider: 'portone'
       });
 
       if (!granted.alreadyCompleted) {
@@ -459,6 +484,14 @@ function createHandlers({
       }
       const items = snap.docs.map((d) => {
         const row = d.data() || {};
+        const createdAtMs = (() => {
+          const v = row.createdAt;
+          if (!v) return 0;
+          if (typeof v.toMillis === 'function') return Number(v.toMillis()) || 0;
+          if (typeof v._seconds === 'number') return v._seconds * 1000;
+          if (typeof v.seconds === 'number') return v.seconds * 1000;
+          return 0;
+        })();
         return {
           id: d.id,
           type: row.type || 'purchase',
@@ -466,7 +499,8 @@ function createHandlers({
           displayTitle: row.displayTitle || '',
           productId: row.productId || '',
           paymentId: row.paymentId || '',
-          createdAt: row.createdAt || null
+          createdAtMs,
+          createdAt: createdAtMs || null
         };
       });
       return res.json({ ok: true, uid: user.uid, items, nextPageToken: '' });

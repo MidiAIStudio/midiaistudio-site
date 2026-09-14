@@ -163,10 +163,23 @@ let loading = false;
 let lastError = '';
 
 function tsMs(v) {
-  if (!v) return 0;
+  if (v == null || v === '') return 0;
   if (typeof v === 'number') return v < 1e12 ? v * 1000 : v;
-  if (typeof v?.toMillis === 'function') return v.toMillis();
+  if (typeof v === 'string') {
+    const n = Number(v);
+    if (Number.isFinite(n) && String(v).trim() !== '') return tsMs(n);
+    const d = new Date(v);
+    const t = d.getTime();
+    return Number.isFinite(t) ? t : 0;
+  }
+  if (typeof v?.toMillis === 'function') return Number(v.toMillis()) || 0;
+  if (typeof v?.toDate === 'function') {
+    const d = v.toDate();
+    const t = d instanceof Date ? d.getTime() : 0;
+    return Number.isFinite(t) ? t : 0;
+  }
   if (typeof v?.seconds === 'number') return v.seconds * 1000;
+  if (typeof v?._seconds === 'number') return v._seconds * 1000;
   if (v?.atMs) return Number(v.atMs) || 0;
   const d = v instanceof Date ? v : new Date(v);
   const n = d.getTime();
@@ -265,7 +278,9 @@ function sanitizeCreditTitle(raw) {
 function creditKindLabel(type) {
   const t = String(type || '').toLowerCase();
   if (t === 'purchase') return '구매';
-  if (t === 'admin_grant' || t === 'admin_bulk_credit') return '지급';
+  if (t === 'welcome_signup' || t === 'welcome_signup_grant' || t === 'admin_grant' || t === 'admin_bulk_credit') {
+    return '지급';
+  }
   if (t === 'admin_deduct' || t === 'admin_bulk_deduct') return '회수';
   if (t === 'refund') return '반환';
   if (t === 'conversion') return '사용';
@@ -276,6 +291,7 @@ function creditLedgerTitle(row) {
   const type = String(row?.type || '').toLowerCase();
   const title = sanitizeCreditTitle(row?.displayTitle || '');
   if (type === 'refund') return '변환 실패 반환';
+  if (type === 'welcome_signup') return title || '신규 가입 혜택';
   if (type === 'admin_grant' || type === 'admin_bulk_credit') return title || '관리자 크레딧 지급';
   if (type === 'admin_deduct' || type === 'admin_bulk_deduct') return title || '관리자 크레딧 회수';
   if (type === 'purchase') return title || '크레딧 구매';
@@ -296,6 +312,7 @@ function creditActor(row) {
     const admin = users.find((u) => u.uid === adminUid);
     return admin?.email || admin?.displayName || adminUid;
   }
+  if (type === 'welcome_signup' || type === 'welcome_signup_grant') return '시스템';
   if (type === 'admin_grant' || type === 'admin_bulk_credit' || type === 'admin_deduct' || type === 'admin_bulk_deduct') {
     return '관리자';
   }
@@ -312,7 +329,7 @@ function mapCreditLedgerApiRow(row) {
     creditAmount: row?.creditAmount ?? row?.amount,
     displayTitle: row?.displayTitle,
     reason: row?.reason,
-    createdAt: row?.createdAt,
+    createdAt: row?.createdAtMs || row?.createdAt,
     balanceBefore: row?.balanceBefore,
     balanceAfter: row?.balanceAfter,
     adminUid: row?.adminUid,
@@ -858,7 +875,14 @@ async function loadSelectedLogs({ force = false } = {}) {
   try {
     const rows = await collectLogsForUser(selectedUid);
     if (token !== loadToken) return;
-    allRows = rows.sort((a, b) => b.timestamp - a.timestamp);
+    allRows = rows.sort((a, b) => {
+      const dt = (b.timestamp || 0) - (a.timestamp || 0);
+      if (dt) return dt;
+      const bb = Number(b.columns?.balance ?? b.after);
+      const ba = Number(a.columns?.balance ?? a.after);
+      if (Number.isFinite(bb) && Number.isFinite(ba) && bb !== ba) return bb - ba;
+      return 0;
+    });
     loading = false;
     renderTabs();
     renderTable();
@@ -952,29 +976,47 @@ async function collectLogsForUser(uid) {
     }));
   });
 
-  // Orders (reuse CRM cache first)
+  // Orders (reuse CRM cache first) + creditPurchases not already in orders.
   const orders = (api.getOrders(uid) || []).slice();
-  orders.forEach((o) => {
+  const seenPaymentIds = new Set();
+  function pushPaymentRow(o, source) {
+    const paymentId = String(o.paymentId || o.paypalOrderId || o.id || '').trim();
+    const rowId = `order_${o.id || paymentId}`;
+    if (paymentId && seenPaymentIds.has(paymentId)) return;
+    if (paymentId) seenPaymentIds.add(paymentId);
+    if (seenPaymentIds.has(rowId)) return;
+    seenPaymentIds.add(rowId);
+    const status = String(o.status || '').toLowerCase() === 'credited' ? 'completed' : o.status;
     const t = tsMs(o.completedAt || o.verifiedAt || o.issuedAt || o.updatedAt || o.createdAt);
     rows.push(makeRow({
-      id: `order_${o.id}`,
+      id: rowId,
       timestamp: t,
       category: 'payment',
-      action: statusLabel(o.status),
-      summary: `${o.productName || o.orderName || o.plan || '상품'} · ${o.provider || o.paymentMethod || '-'}`,
+      action: statusLabel(status),
+      summary: `${o.productName || o.orderName || o.plan || o.productId || '상품'} · ${o.provider || o.paymentMethod || '-'}`,
       actor: '사용자',
-      result: statusLabel(o.status),
-      source: 'orders',
+      result: statusLabel(status),
+      source,
       raw: o,
       columns: {
-        product: o.productName || o.orderName || o.plan || '-',
-        method: o.provider || o.paymentMethod || '-',
+        product: o.productName || o.orderName || o.plan || o.productId || '-',
+        method: o.paymentMethod || o.provider || '-',
         amount: formatAmount(o),
-        status: statusLabel(o.status),
-        paymentId: o.paymentId || o.paypalOrderId || o.id || '-'
+        status: statusLabel(status),
+        paymentId: paymentId || '-'
       }
     }));
+  }
+  orders.forEach((o) => pushPaymentRow(o, o.sourceCollection || 'orders'));
+  const creditPayRows = await safeQuery('creditPurchases', async () => {
+    const snap = await getDocs(query(
+      collection(api.db, 'creditPurchases'),
+      where('uid', '==', uid),
+      limit(40)
+    ));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   });
+  creditPayRows.forEach((o) => pushPaymentRow(o, 'creditPurchases'));
 
   // Tickets (reuse CRM cache)
   const tickets = (api.getTickets(uid) || []).slice();
@@ -1194,10 +1236,12 @@ function mapAuditDoc(id, data) {
   const creditAmount = (afterObj && typeof afterObj === 'object' && afterObj.amount != null)
     ? Number(afterObj.amount)
     : null;
+  const isWelcomeAudit = String(data.action || '') === 'WELCOME_SIGNUP_GRANT'
+    || String(afterObj && afterObj.source || '') === 'welcome_signup';
   const creditColumns = (cat === 'credit' && creditAmount != null && Number.isFinite(creditAmount))
     ? {
-      kind: creditKindLabel(creditAmount > 0 ? 'admin_grant' : 'admin_deduct'),
-      type: String(data.action || '').toLowerCase(),
+      kind: creditKindLabel(isWelcomeAudit ? 'welcome_signup' : (creditAmount > 0 ? 'admin_grant' : 'admin_deduct')),
+      type: isWelcomeAudit ? 'welcome_signup' : String(data.action || '').toLowerCase(),
       title: summary,
       delta: formatCreditDelta(creditAmount),
       amount: creditAmount,
@@ -1209,11 +1253,11 @@ function mapAuditDoc(id, data) {
     : null;
   return makeRow({
     id: `audit_${id}`,
-    timestamp: tsMs(data.timestamp),
+    timestamp: tsMs(data.ledgerCreatedAtMs || data.timestamp),
     category: cat === 'user' ? 'admin' : cat,
     action: data.action || '관리자 작업',
     summary,
-    actor: data.actorEmail || data.actorId || '관리자',
+    actor: isWelcomeAudit ? '시스템' : (data.actorEmail || data.actorId || '관리자'),
     result: data.result || 'success',
     before: data.before,
     after: data.after,
@@ -1268,14 +1312,47 @@ function formatAmount(o) {
   return `${cur} ${n.toLocaleString('en-US')}`;
 }
 
+function creditDedupeKey(r) {
+  if (!r || r.category !== 'credit') return '';
+  const type = String(r.columns?.type || r.raw?.type || r.action || '').toLowerCase();
+  const after = (r.raw && r.raw.after && typeof r.raw.after === 'object') ? r.raw.after : {};
+  const origin = String(after.source || r.raw?.origin || r.raw?.source || '');
+  const isWelcome = type === 'welcome_signup'
+    || type === 'welcome_signup_grant'
+    || String(r.action || '') === 'WELCOME_SIGNUP_GRANT'
+    || origin === 'welcome_signup';
+  if (isWelcome) return 'welcome';
+  const ledgerId = String(after.ledgerId || r.raw?.ledgerId || r.raw?.id || '').trim();
+  if (ledgerId) return `ledger:${ledgerId}`;
+  const paymentId = String(r.columns?.paymentId || r.raw?.paymentId || '').trim();
+  if (paymentId && (type === 'purchase' || r.columns?.kind === '구매')) return `purchase:${paymentId}`;
+  return '';
+}
+
+function sourceRank(r) {
+  const s = String(r.source || '');
+  if (s === 'creditLedgerV2' || s === 'creditLedger') return 0;
+  if (s === 'adminAuditLogs') return 3;
+  return 1;
+}
+
 function dedupeRows(rows) {
-  const seen = new Set();
+  const byKey = new Map();
   const out = [];
-  for (const r of rows) {
-    const key = r.id || `${r.source}|${r.timestamp}|${r.action}|${r.summary}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(r);
+  for (const r of rows || []) {
+    const ident = creditDedupeKey(r);
+    const key = ident || r.id || `${r.source}|${r.timestamp}|${r.action}|${r.summary}`;
+    const prev = byKey.get(key);
+    if (!prev) {
+      byKey.set(key, r);
+      out.push(r);
+      continue;
+    }
+    if (ident && sourceRank(r) < sourceRank(prev)) {
+      const idx = out.indexOf(prev);
+      if (idx >= 0) out[idx] = r;
+      byKey.set(key, r);
+    }
   }
   return out;
 }
