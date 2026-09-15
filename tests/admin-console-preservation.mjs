@@ -50,7 +50,7 @@ const requiredActions = [
   'data-crm-action="orders-more"', 'data-crm-action="tickets-tab"', 'data-crm-action="open-logs"',
   'data-crm-action="back-list"', 'data-crm-action="toggle-fav"',
   'data-crm-action="posts-delete-selected"', 'data-crm-action="posts-delete-all"',
-  'data-crm-action="close-order-drawer"'
+  'data-crm-action="close-order-drawer"', 'data-crm-action="order-add"'
 ];
 for (const a of requiredActions) mustInclude(html, a, 'admin.html action');
 
@@ -88,6 +88,8 @@ mustInclude(app, 'adminDeleteUser', 'delete handler');
 mustInclude(app, 'notifyAdminAppMessage', 'app message handler');
 mustInclude(app, 'saveAdminCrmAllChanges', 'license save handler');
 mustInclude(app, 'openAdminCrmOrderDrawer', 'order drawer handler');
+mustInclude(app, 'openAdminManualPaymentDrawer', 'manual payment drawer');
+mustInclude(app, 'saveAdminManualPayment', 'manual payment save');
 mustInclude(app, 'adminDeleteOrder', 'order delete handler');
 mustInclude(app, 'groupAdminOrdersByBuyer', 'order grouping');
 mustInclude(app, 'adminQuickLicense', 'license grant handler');

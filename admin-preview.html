@@ -487,6 +487,7 @@
                   </div>
                   <div class="admin-crm-list-search-row" id="adminCrmListSearchRow">
                     <input id="adminUserSearch" class="search-input compact admin-crm-list-search" type="search" placeholder="이메일, 이름, UID, HWID 검색" autocomplete="off">
+                    <button type="button" class="primary mini-btn" id="adminCrmOrderAddBtn" data-crm-action="order-add" hidden>수기 추가</button>
                     <div class="admin-crm-order-total" id="adminCrmOrderTotal" hidden>
                       <span class="admin-crm-order-total-label">합계</span>
                       <strong class="admin-crm-order-total-value" id="adminCrmOrderTotalValue">-</strong>
@@ -606,7 +607,13 @@
 
                   <div class="admin-crm-split-cards">
                     <div class="admin-crm-card admin-crm-card-dense" id="adminCrmOrdersCard" data-tab-panel="payments">
-                      <div class="admin-crm-card-head"><h3>주문</h3><button type="button" class="ghost mini-btn" data-crm-action="orders-more">더보기</button></div>
+                      <div class="admin-crm-card-head">
+                        <h3>주문</h3>
+                        <div class="admin-crm-card-head-actions">
+                          <button type="button" class="primary mini-btn" data-crm-action="order-add">수기 추가</button>
+                          <button type="button" class="ghost mini-btn" data-crm-action="orders-more">더보기</button>
+                        </div>
+                      </div>
                       <div id="adminCrmOrders" class="admin-crm-table-wrap"></div>
                     </div>
                     <div class="admin-crm-card admin-crm-card-dense" id="adminCrmTicketsCard" data-tab-panel="tickets">

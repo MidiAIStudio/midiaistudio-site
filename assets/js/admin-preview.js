@@ -575,6 +575,8 @@ function syncPreviewWorkChrome() {
   if (listActions) listActions.hidden = !canBulkSelect;
   const userCount = $('adminUserCount');
   if (userCount) userCount.hidden = crmMode === 'orders';
+  const orderAddBtn = $('adminCrmOrderAddBtn');
+  if (orderAddBtn) orderAddBtn.hidden = crmMode !== 'orders';
   const filterHintEl = $('adminCrmFilterHint');
   if (filterHintEl) filterHintEl.hidden = crmMode === 'orders';
   if (crmMode !== 'orders') updatePreviewOrderTotal([]);
@@ -1083,6 +1085,47 @@ function openDetail(uid, opts = {}) {
 function closePreviewOrderDrawer() {
   const drawer = $('adminCrmOrderDrawer');
   if (drawer) drawer.hidden = true;
+  const title = drawer?.querySelector('.admin-crm-drawer-head h3');
+  if (title) title.textContent = '주문 상세';
+}
+function openPreviewManualPaymentDrawer() {
+  const drawer = $('adminCrmOrderDrawer');
+  const body = $('adminCrmOrderDrawerBody');
+  if (!drawer || !body) return;
+  const title = drawer.querySelector('.admin-crm-drawer-head h3');
+  if (title) title.textContent = '수기 결제 추가';
+  const user = memberByUid(selectedUid) || MEMBERS[0] || {};
+  body.innerHTML = `
+    <dl class="admin-crm-order-dl is-manual">
+      <div><dt>상품</dt><dd><select><option>30일 Full</option><option>Lifetime</option><option>직접 입력</option></select></dd></div>
+      <div><dt>사용자</dt><dd><input type="text" value="${user.email || ''}" placeholder="이메일, 이름, UID"></dd></div>
+      <div><dt>UID / HWID</dt><dd><input type="text" value="${user.uid || ''}" placeholder="회원 UID"></dd></div>
+      <div><dt>결제금액</dt><dd><input type="number" value="19900" placeholder="원"></dd></div>
+      <div><dt>결제수단</dt><dd><select><option selected>계좌입금</option></select></dd></div>
+      <div><dt>결제상태</dt><dd><select><option selected>결제완료</option></select></dd></div>
+      <div><dt>PortOne 상태</dt><dd>-</dd></div>
+      <div><dt>실결제</dt><dd><input type="number" value="19900" placeholder="원"></dd></div>
+      <div><dt>환불금액</dt><dd><input type="number" placeholder="없음"></dd></div>
+      <div><dt>결제일</dt><dd><input type="datetime-local"></dd></div>
+      <div><dt>환불일</dt><dd><input type="datetime-local"></dd></div>
+      <div><dt>지급 라이선스</dt><dd>30일</dd></div>
+      <div><dt>라이선스 상태</dt><dd>기록만 저장 · 지급은 라이선스 탭</dd></div>
+      <div><dt>주문번호</dt><dd><input type="text" class="mono" placeholder="비우면 자동 생성"></dd></div>
+      <div><dt>마지막 동기화</dt><dd>-</dd></div>
+      <div><dt>관리 메모</dt><dd><textarea rows="2" placeholder="입금자명, 확인 메모"></textarea></dd></div>
+      <div><dt>영수증</dt><dd><input type="url" placeholder="없음"></dd></div>
+    </dl>
+    <div class="admin-crm-order-sync">
+      <div class="admin-crm-order-actions">
+        <button type="button" class="primary mini-btn" data-preview-manual-save>수기 결제 저장</button>
+      </div>
+      <p class="muted small">미리보기 — 실제 데이터는 저장되지 않습니다.</p>
+    </div>`;
+  body.querySelector('[data-preview-manual-save]')?.addEventListener('click', () => {
+    closePreviewOrderDrawer();
+    previewNotice('미리보기 — 수기 결제 저장 (실제 데이터 변경 없음)');
+  });
+  drawer.hidden = false;
 }
 function closeDetail() {
   selectedUid = '';
@@ -2059,6 +2102,7 @@ function bind() {
         $('adminCrmUsageHint') && ($('adminCrmUsageHint').textContent = '접기');
       }
       else if (act === 'orders' || act === 'orders-more') setDetailTab('payments');
+      else if (act === 'order-add') openPreviewManualPaymentDrawer();
       else if (act === 'tickets') setDetailTab('tickets');
       else if (act === 'tickets-tab') showView('tickets');
       else if (act === 'open-logs') showView('logs', { logsTab: 'all', uid: selectedUid });

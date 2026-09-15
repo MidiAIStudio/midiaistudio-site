@@ -3468,6 +3468,7 @@ function accountOrderMethodLabel(o){
   if(raw.includes('kakao')) return lang==='en'?'Kakao Pay':lang==='ja'?'Kakao Pay':'카카오페이';
   if(raw.includes('paypal')) return 'PayPal';
   if(raw.includes('inicis') || raw==='card') return lang==='en'?'Card':lang==='ja'?'カード':'카드';
+  if(raw.includes('bank') || raw.includes('계좌')) return lang==='en'?'Bank transfer':lang==='ja'?'銀行振込':'계좌입금';
   if(raw==='admin' || raw==='manual') return lang==='en'?'Admin grant':lang==='ja'?'管理者付与':'관리자 지급';
   if(raw==='portone') return lang==='en'?'Kakao Pay':lang==='ja'?'Kakao Pay':'카카오페이';
   const fallback=o?.paymentMethod || o?.provider || o?.method;
@@ -8454,6 +8455,9 @@ const ADMIN_PAYMENT_STATUS_LABELS = {
 const ADMIN_PAYMENT_METHOD_LABELS = {
   admin: '관리자 지급',
   manual: '수동 저장',
+  bank: '계좌입금',
+  bank_transfer: '계좌입금',
+  '계좌입금': '계좌입금',
   kakao: '카카오페이',
   kakaopay: '카카오페이',
   inicis: '카드 결제',
@@ -8961,6 +8965,8 @@ function syncAdminCrmWorkChrome(){
   if(listActions) listActions.hidden = !canBulkSelect;
   const userCount=$('adminUserCount');
   if(userCount) userCount.hidden = mode==='orders';
+  const orderAddBtn=$('adminCrmOrderAddBtn');
+  if(orderAddBtn) orderAddBtn.hidden = mode!=='orders';
   const filterHint=$('adminCrmFilterHint');
   if(filterHint && mode==='orders') filterHint.hidden = true;
   else if(filterHint) filterHint.hidden = false;
@@ -11137,6 +11143,9 @@ function isAdminPortOneOrder(o){
   const provider=String(o?.provider||o?.pg||'').toLowerCase();
   const method=String(o?.paymentMethod||o?.method||'').toLowerCase();
   if(o?.paypalOrderId || o?.paypalCaptureId) return false;
+  if(provider==='manual' || provider==='admin' || provider==='bank' || provider==='bank_transfer') return false;
+  if(method.includes('bank') || method.includes('계좌') || method==='manual' || method==='admin') return false;
+  if(o?.source==='admin_manual') return false;
   return provider==='portone' || method.includes('kakao') || method.includes('inicis') || !!o?.paymentId;
 }
 function adminOrderMoneyText(amount, currency){
@@ -11145,7 +11154,384 @@ function adminOrderMoneyText(amount, currency){
   if(!Number.isFinite(n)) return String(amount);
   return `${n.toLocaleString('ko-KR')} ${currency||'KRW'}`;
 }
+function isAdminManualPaymentDraft(){
+  return !!(adminCrmOrderDrawerOpen && adminCrmOrderDrawerOpen.create);
+}
+function adminManualPaymentDatetimeValue(v){
+  const ms=licenseTsMs(v) || Date.now();
+  const d=new Date(ms);
+  if(!Number.isFinite(d.getTime())) return '';
+  const pad=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function adminManualPaymentDatetimeToTimestamp(val){
+  const text=String(val||'').trim();
+  if(!text || !firestoreApi?.Timestamp) return null;
+  const d=new Date(text);
+  if(!Number.isFinite(d.getTime())) return null;
+  return firestoreApi.Timestamp.fromDate(d);
+}
+function findAdminUserByQuery(q){
+  const s=String(q||'').trim();
+  if(!s) return null;
+  const byUid=findAdminUserRow(s);
+  if(byUid) return byUid;
+  const lower=s.toLowerCase();
+  const emailHits=(adminUserRows||[]).filter(u=>String(u.email||'').trim().toLowerCase()===lower);
+  if(emailHits.length===1) return emailHits[0];
+  const nameHits=(adminUserRows||[]).filter(u=>String(u.displayName||'').trim()===s);
+  if(nameHits.length===1) return nameHits[0];
+  return null;
+}
+function adminManualPaymentCatalogItems(){
+  const items=[];
+  const seen=new Set();
+  const add=(pid, name, amount, extra={})=>{
+    const id=String(pid||'').trim();
+    if(!id) return;
+    const key=id.toUpperCase();
+    if(seen.has(key)){
+      const cur=items.find(x=>String(x.productId).toUpperCase()===key);
+      if(cur && (cur.amount==null || cur.amount==='') && amount!=null && amount!=='') cur.amount=amount;
+      if(cur && extra.name && (!cur.name || cur.name===cur.productId)) cur.name=extra.name;
+      return;
+    }
+    seen.add(key);
+    const num=Number(amount);
+    items.push({
+      productId: id,
+      name: String(name||id),
+      amount: Number.isFinite(num) ? num : '',
+      plan: extra.plan || (isCreditProductId(id) ? 'credits' : (isPassProductId(id) ? 'period' : (String(id).toUpperCase()==='LIFETIME' ? 'lifetime' : 'period'))),
+      durationDays: extra.durationDays || 0,
+      creditAmount: extra.creditAmount || 0
+    });
+  };
+  add('PASS_7D', '7일 Full', '', { plan:'period', durationDays:7 });
+  add('PASS_30D', '30일 Full', '', { plan:'period', durationDays:30 });
+  add('PASS_90D', '90일 Full', '', { plan:'period', durationDays:90 });
+  add('LIFETIME', 'Lifetime', '', { plan:'lifetime' });
+  try{
+    (getPricingCache()?.products || []).forEach(p=>{
+      const pid=p.productId || p.id;
+      const kr=(p.regions && p.regions.KR) || {};
+      const amount=p.listPriceKrw ?? kr.salePrice ?? kr.listPrice;
+      add(pid, p.nameKo || p.name || pid, amount, {
+        plan: isCreditProductId(pid) ? 'credits' : (isPassProductId(pid) ? 'period' : (String(pid).toUpperCase()==='LIFETIME' ? 'lifetime' : p.plan)),
+        durationDays: p.durationDays,
+        creditAmount: p.creditAmount
+      });
+    });
+  }catch(_){}
+  try{
+    (getPassProducts()||[]).forEach(p=>{
+      add(p.productId, p.nameKo || p.name || p.orderNameKo || p.productId, p.salePrice ?? p.priceKrw ?? p.amount, {
+        plan:'period', durationDays: p.durationDays
+      });
+    });
+  }catch(_){}
+  try{
+    (getCreditProducts()||[]).forEach(p=>{
+      add(p.productId, p.nameKo || p.name || p.orderNameKo || p.productId, p.salePrice ?? p.priceKrw ?? p.amount, {
+        plan:'credits', creditAmount: p.creditAmount || p.credits
+      });
+    });
+  }catch(_){}
+  return items;
+}
+function adminManualPaymentLicenseLabel(productId, durationDays){
+  const pid=String(productId||'').toUpperCase();
+  if(pid==='PASS_7D') return '7일';
+  if(pid==='PASS_30D') return '30일';
+  if(pid==='PASS_90D') return '90일';
+  if(pid==='LIFETIME') return 'Lifetime';
+  if(isCreditProductId(pid)) return '크레딧';
+  if(durationDays) return `${durationDays}일`;
+  if(isPassProductId(pid)) return '기간제';
+  return '-';
+}
+function adminManualPaymentUserOptionsHtml(){
+  return (adminUserRows||[]).map(u=>{
+    const uid=adminUserUid(u);
+    const email=String(u.email||'').trim();
+    const name=String(u.displayName||'').trim();
+    const label=[name, email, uid].filter(Boolean).join(' · ');
+    const value=email || uid;
+    if(!value) return '';
+    return `<option value="${esc(value)}">${esc(label)}</option>`;
+  }).join('');
+}
+function setAdminCrmOrderDrawerTitle(text){
+  const title=$('adminCrmOrderDrawer')?.querySelector('.admin-crm-drawer-head h3');
+  if(title) title.textContent=text || '주문 상세';
+}
+function paintAdminManualPaymentDrawer(){
+  const drawer=$('adminCrmOrderDrawer');
+  const body=$('adminCrmOrderDrawerBody');
+  if(!drawer||!body || !isAdminManualPaymentDraft()) return;
+  const presetUid=String(adminCrmOrderDrawerOpen.uid||'');
+  const user=presetUid ? findAdminUserRow(presetUid) : null;
+  const products=adminManualPaymentCatalogItems();
+  const defaultPid=products.some(p=>p.productId==='PASS_30D') ? 'PASS_30D' : (products[0]?.productId || 'LIFETIME');
+  const defaultProduct=products.find(p=>p.productId===defaultPid) || products[0] || { productId:defaultPid, name:defaultPid, amount:'' };
+  const userLabel=user ? (user.email || user.displayName || presetUid) : '';
+  const hwid=user ? adminHwidOf(user, user.license || licenseForUid(presetUid)) : '';
+  const productOpts=products.map(p=>{
+    const price=p.amount!=='' && p.amount!=null ? ` · ${Number(p.amount).toLocaleString('ko-KR')}원` : '';
+    return `<option value="${esc(p.productId)}"${p.productId===defaultPid?' selected':''}>${esc(p.name)}${esc(price)}</option>`;
+  }).join('');
+  body.innerHTML = `
+    <dl class="admin-crm-order-dl is-manual" id="adminManualPaymentForm">
+      <div><dt>상품</dt><dd>
+        <select data-manual-product>
+          ${productOpts}
+          <option value="__custom__">직접 입력</option>
+        </select>
+        <input type="text" class="admin-manual-product-name" data-manual-product-name hidden placeholder="상품명" autocomplete="off">
+      </dd></div>
+      <div><dt>사용자</dt><dd>
+        <input type="text" data-manual-user list="adminManualUserList" value="${esc(userLabel)}" placeholder="이메일, 이름, UID" autocomplete="off">
+        <datalist id="adminManualUserList">${adminManualPaymentUserOptionsHtml()}</datalist>
+      </dd></div>
+      <div><dt>UID / HWID</dt><dd>
+        <input type="text" data-manual-uid value="${esc(presetUid)}" placeholder="회원 UID" autocomplete="off">
+        <span class="admin-manual-hwid" data-manual-hwid>${esc(hwid || '-')}</span>
+      </dd></div>
+      <div><dt>결제금액</dt><dd>
+        <input type="number" data-manual-amount min="0" step="1" value="${esc(defaultProduct.amount===''?'':String(defaultProduct.amount))}" placeholder="원">
+      </dd></div>
+      <div><dt>결제수단</dt><dd>
+        <select data-manual-method>
+          <option value="bank_transfer" selected>계좌입금</option>
+          <option value="card">카드 결제</option>
+          <option value="kakaopay">카카오페이</option>
+          <option value="paypal">PayPal</option>
+          <option value="admin">관리자 지급</option>
+        </select>
+      </dd></div>
+      <div><dt>결제상태</dt><dd>
+        <select data-manual-status>
+          <option value="completed" selected>결제완료</option>
+          <option value="pending">결제대기</option>
+          <option value="failed">결제실패</option>
+          <option value="cancelled">취소</option>
+          <option value="refunded">전액환불</option>
+        </select>
+      </dd></div>
+      <div><dt>PortOne 상태</dt><dd>-</dd></div>
+      <div><dt>실결제</dt><dd>
+        <input type="number" data-manual-paid min="0" step="1" value="${esc(defaultProduct.amount===''?'':String(defaultProduct.amount))}" placeholder="원">
+      </dd></div>
+      <div><dt>환불금액</dt><dd>
+        <input type="number" data-manual-refund min="0" step="1" value="" placeholder="없음">
+      </dd></div>
+      <div><dt>결제일</dt><dd>
+        <input type="datetime-local" data-manual-paid-at value="${esc(adminManualPaymentDatetimeValue(new Date()))}">
+      </dd></div>
+      <div><dt>환불일</dt><dd>
+        <input type="datetime-local" data-manual-refund-at value="">
+      </dd></div>
+      <div><dt>지급 라이선스</dt><dd data-manual-license-label>${esc(adminManualPaymentLicenseLabel(defaultPid, defaultProduct.durationDays))}</dd></div>
+      <div><dt>라이선스 상태</dt><dd>기록만 저장 · 지급은 라이선스 탭</dd></div>
+      <div><dt>주문번호</dt><dd>
+        <input type="text" class="mono" data-manual-order-id value="" placeholder="비우면 자동 생성" autocomplete="off">
+      </dd></div>
+      <div><dt>마지막 동기화</dt><dd>-</dd></div>
+      <div><dt>관리 메모</dt><dd>
+        <textarea data-manual-memo rows="2" placeholder="입금자명, 확인 메모"></textarea>
+      </dd></div>
+      <div><dt>영수증</dt><dd>
+        <input type="url" data-manual-receipt value="" placeholder="없음" autocomplete="off">
+      </dd></div>
+    </dl>
+    <div class="admin-crm-order-sync">
+      <div class="admin-crm-order-actions">
+        <button type="button" class="primary mini-btn" data-manual-save>수기 결제 저장</button>
+      </div>
+      <p class="muted small">계좌입금처럼 PG에 없는 결제를 같은 정보칸에 기록합니다. 라이선스·크레딧은 자동 지급되지 않습니다.</p>
+    </div>`;
+  setAdminCrmOrderDrawerTitle('수기 결제 추가');
+  delete body.dataset.manualBound;
+  bindAdminManualPaymentForm(body);
+  drawer.hidden=false;
+}
+function bindAdminManualPaymentForm(body){
+  if(!body || body.dataset.manualBound==='1') return;
+  const productSel=body.querySelector('[data-manual-product]');
+  const productName=body.querySelector('[data-manual-product-name]');
+  const amountEl=body.querySelector('[data-manual-amount]');
+  const paidEl=body.querySelector('[data-manual-paid]');
+  const licenseEl=body.querySelector('[data-manual-license-label]');
+  const userEl=body.querySelector('[data-manual-user]');
+  const uidEl=body.querySelector('[data-manual-uid]');
+  const hwidEl=body.querySelector('[data-manual-hwid]');
+  const applyProduct=()=>{
+    const pid=productSel?.value || '';
+    const custom=pid==='__custom__';
+    if(productName) productName.hidden=!custom;
+    if(custom){
+      if(licenseEl) licenseEl.textContent='-';
+      return;
+    }
+    const item=adminManualPaymentCatalogItems().find(p=>p.productId===pid);
+    if(item && amountEl && (amountEl.value==='' || amountEl.dataset.autofill!=='0')){
+      amountEl.value = item.amount==='' ? '' : String(item.amount);
+      amountEl.dataset.autofill='1';
+    }
+    if(item && paidEl && (paidEl.value==='' || paidEl.dataset.autofill!=='0')){
+      paidEl.value = item.amount==='' ? '' : String(item.amount);
+      paidEl.dataset.autofill='1';
+    }
+    if(licenseEl) licenseEl.textContent=adminManualPaymentLicenseLabel(pid, item?.durationDays);
+  };
+  const applyUserFromQuery=(q, preferUid)=>{
+    const found=preferUid ? (findAdminUserRow(preferUid) || findAdminUserByQuery(q)) : findAdminUserByQuery(q);
+    if(!found){
+      if(hwidEl && !preferUid) hwidEl.textContent='-';
+      return found;
+    }
+    const uid=adminUserUid(found);
+    if(uidEl && uid) uidEl.value=uid;
+    if(userEl){
+      const label=found.email || found.displayName || uid;
+      if(label) userEl.value=label;
+    }
+    if(hwidEl) hwidEl.textContent=adminHwidOf(found, found.license || licenseForUid(uid)) || '-';
+    if(adminCrmOrderDrawerOpen?.create) adminCrmOrderDrawerOpen.uid=uid;
+    return found;
+  };
+  productSel?.addEventListener('change', applyProduct);
+  amountEl?.addEventListener('input', ()=>{ amountEl.dataset.autofill='0'; });
+  paidEl?.addEventListener('input', ()=>{ paidEl.dataset.autofill='0'; });
+  userEl?.addEventListener('change', ()=>applyUserFromQuery(userEl.value));
+  userEl?.addEventListener('blur', ()=>applyUserFromQuery(userEl.value));
+  uidEl?.addEventListener('change', ()=>applyUserFromQuery(uidEl.value, uidEl.value));
+  uidEl?.addEventListener('blur', ()=>applyUserFromQuery(uidEl.value, uidEl.value));
+  body.querySelector('[data-manual-save]')?.addEventListener('click', ()=>saveAdminManualPayment(body));
+  body.dataset.manualBound='1';
+  applyProduct();
+}
+function newAdminManualPaymentId(){
+  const t=Date.now().toString(36);
+  const r=Math.random().toString(36).slice(2, 8);
+  return `bank_${t}_${r}`;
+}
+function sanitizeAdminManualOrderId(raw){
+  return String(raw||'').trim().replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80);
+}
+function adminManualPaymentPlan(productId, catalogItem){
+  if(catalogItem?.plan) return catalogItem.plan;
+  const pid=String(productId||'').toUpperCase();
+  if(isCreditProductId(pid)) return 'credits';
+  if(pid==='LIFETIME') return 'lifetime';
+  if(isPassProductId(pid)) return 'period';
+  return 'period';
+}
+async function saveAdminManualPayment(formRoot){
+  if(!isAdminUser) return alert(tr('no_permission'));
+  const root=formRoot || $('adminManualPaymentForm')?.closest('#adminCrmOrderDrawerBody');
+  if(!root) return;
+  const uidRaw=String(root.querySelector('[data-manual-uid]')?.value||'').trim();
+  const userQuery=String(root.querySelector('[data-manual-user]')?.value||'').trim();
+  const user=findAdminUserRow(uidRaw) || findAdminUserByQuery(userQuery) || findAdminUserByQuery(uidRaw);
+  const uid=adminUserUid(user) || uidRaw;
+  if(!uid) return alert('사용자를 이메일, 이름 또는 UID로 지정해 주세요.');
+  let productId=String(root.querySelector('[data-manual-product]')?.value||'').trim();
+  const customName=String(root.querySelector('[data-manual-product-name]')?.value||'').trim();
+  if(productId==='__custom__'){
+    productId = customName ? customName.replace(/\s+/g,'_').slice(0,40) : 'CUSTOM';
+  }
+  const catalogItem=adminManualPaymentCatalogItems().find(p=>p.productId===productId);
+  const productName=productId==='CUSTOM' || !catalogItem
+    ? (customName || productId)
+    : (catalogItem.name || productId);
+  const amount=Number(root.querySelector('[data-manual-amount]')?.value);
+  if(!Number.isFinite(amount) || amount<0) return alert('결제금액을 입력해 주세요.');
+  const paidRaw=root.querySelector('[data-manual-paid]')?.value;
+  const paidAmount=paidRaw==='' || paidRaw==null ? amount : Number(paidRaw);
+  if(!Number.isFinite(paidAmount) || paidAmount<0) return alert('실결제 금액이 올바르지 않습니다.');
+  const refundRaw=root.querySelector('[data-manual-refund]')?.value;
+  const refundedAmount=refundRaw==='' || refundRaw==null ? 0 : Number(refundRaw);
+  if(!Number.isFinite(refundedAmount) || refundedAmount<0) return alert('환불금액이 올바르지 않습니다.');
+  const method=String(root.querySelector('[data-manual-method]')?.value||'bank_transfer').trim() || 'bank_transfer';
+  const status=String(root.querySelector('[data-manual-status]')?.value||'completed').trim() || 'completed';
+  const paidAt=adminManualPaymentDatetimeToTimestamp(root.querySelector('[data-manual-paid-at]')?.value) || firestoreApi.Timestamp?.fromDate(new Date());
+  const refundAt=adminManualPaymentDatetimeToTimestamp(root.querySelector('[data-manual-refund-at]')?.value);
+  const memo=String(root.querySelector('[data-manual-memo]')?.value||'').trim();
+  const receiptUrl=String(root.querySelector('[data-manual-receipt]')?.value||'').trim();
+  let orderId=sanitizeAdminManualOrderId(root.querySelector('[data-manual-order-id]')?.value);
+  if(!orderId) orderId=newAdminManualPaymentId();
+  const btn=root.querySelector('[data-manual-save]');
+  if(btn){ btn.disabled=true; btn.textContent='저장 중...'; }
+  try{
+    const {doc,getDoc,setDoc,serverTimestamp}=firestoreApi;
+    const ref=doc(db,'orders', orderId);
+    const existing=await getDoc(ref);
+    if(existing.exists()){
+      throw new Error('같은 주문번호가 이미 있습니다. 주문번호를 바꿔 주세요.');
+    }
+    const plan=adminManualPaymentPlan(productId, catalogItem);
+    const payload={
+      uid,
+      email: user?.email || '',
+      displayName: user?.displayName || '',
+      productId,
+      productCanonicalId: productId,
+      productName,
+      plan,
+      amount,
+      paidAmount,
+      refundedAmount,
+      currency: 'KRW',
+      paymentMethod: method,
+      method,
+      provider: 'manual',
+      status,
+      verificationStatus: 'admin_manual',
+      licenseIssued: false,
+      source: 'admin_manual',
+      memo,
+      adminMemo: memo,
+      receiptUrl,
+      completedAt: paidAt,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      createdBy: currentUser?.uid || '',
+      createdByEmail: currentUser?.email || ''
+    };
+    if(catalogItem?.durationDays) payload.durationDays=Number(catalogItem.durationDays);
+    if(catalogItem?.creditAmount) payload.creditAmount=Number(catalogItem.creditAmount);
+    if(refundAt) payload.refundedAt=refundAt;
+    await setDoc(ref, payload);
+    writeAdminAuditLog({
+      targetUserId: uid,
+      targetEmail: user?.email || '',
+      category: 'payment',
+      action: '수기 결제 추가',
+      before: null,
+      after: { id: orderId, productId, amount, method, status },
+      result: 'success',
+      summary: `${productName} · ${amount.toLocaleString('ko-KR')} KRW · ${adminPaymentMethodLabel(method)}`
+    });
+    closeAdminCrmOrderDrawer();
+    adminFlash(`수기 결제 저장 · ${orderId}`);
+    pushAdminCrmFeed('수기 결제 추가', `${productName} · ${amount.toLocaleString('ko-KR')}원`, uid);
+    if(selectedAdminUid===uid){
+      try{ renderAdminCrmOrders(uid, true); }catch(_){}
+    }
+  }catch(err){
+    alert(err?.message || '수기 결제를 저장하지 못했습니다.');
+    if(btn){ btn.disabled=false; btn.textContent='수기 결제 저장'; }
+  }
+}
+function openAdminManualPaymentDrawer(uid){
+  if(!isAdminUser) return alert(tr('no_permission'));
+  const resolvedUid=String(uid || selectedAdminUid || '').trim();
+  adminCrmOrderDrawerOpen = { uid: resolvedUid, key: '__create__', create: true };
+  paintAdminManualPaymentDrawer();
+}
 function isAdminCrmOrderDrawerOpen(uid, orderKey){
+  if(isAdminManualPaymentDraft()) return false;
   return !!(adminCrmOrderDrawerOpen
     && adminCrmOrderDrawerOpen.uid === String(uid || '')
     && adminCrmOrderDrawerOpen.key === String(orderKey || ''));
@@ -11154,6 +11540,7 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
   const drawer=$('adminCrmOrderDrawer');
   const body=$('adminCrmOrderDrawerBody');
   if(!drawer||!body) return;
+  if(isAdminManualPaymentDraft()) return;
   if(!isAdminCrmOrderDrawerOpen(uid, orderKey)) return;
   const found = adminOrdersForUid(uid).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey)
     || (adminOrderRows||[]).find(x=>(x.id||x.paymentId||x.paypalOrderId)===orderKey);
@@ -11200,6 +11587,7 @@ function paintAdminCrmOrderDrawer(uid, orderKey, overlay){
       : (o.licenseRefundReview || o.status==='refund_review_required'
         ? '환불 검토 필요'
         : (licIssued ? '활성' : '-'));
+  setAdminCrmOrderDrawerTitle('주문 상세');
   body.innerHTML = `
     <dl class="admin-crm-order-dl">
       <div><dt>상품</dt><dd>${esc(productLabel)}</dd></div>
@@ -11426,6 +11814,9 @@ function closeAdminCrmOrderDrawer(){
   adminCrmOrderDrawerOpen = null;
   const drawer=$('adminCrmOrderDrawer');
   if(drawer) drawer.hidden=true;
+  const body=$('adminCrmOrderDrawerBody');
+  if(body) delete body.dataset.manualBound;
+  setAdminCrmOrderDrawerTitle('주문 상세');
 }
 if(typeof window!=='undefined') window.__midiaiCloseAdminCrmOrderDrawer = closeAdminCrmOrderDrawer;
 if(typeof window!=='undefined' && !window.__adminCrmEscBound){
@@ -11826,6 +12217,7 @@ function bindAdminCrmDetailActions(){
     const btn=e.target.closest('[data-crm-action]'); if(!btn) return;
     const action=btn.getAttribute('data-crm-action');
     if(action==='close-order-drawer'){ closeAdminCrmOrderDrawer(); return; }
+    if(action==='order-add'){ openAdminManualPaymentDrawer(selectedAdminUid); return; }
     if(action==='back-list'){
       closeAdminCrmMemberExpand();
       return;
