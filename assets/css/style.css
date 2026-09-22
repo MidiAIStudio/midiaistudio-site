@@ -4802,6 +4802,29 @@ body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing
 .pricing-list-pane,.pricing-editor-pane{padding:14px;border:1px solid var(--site-stroke);border-radius:16px;background:rgba(0,0,0,.2)}
 .pricing-product-list{display:grid;gap:8px;margin:10px 0 18px;position:relative}
 .pricing-product-item{display:grid;grid-template-columns:20px minmax(0,1fr) auto;align-items:stretch;gap:4px 6px;text-align:left;padding:8px 8px 8px 6px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:inherit;font:inherit;cursor:default}
+/* Promo rows reuse the product card but have no drag handle, so a 20px first track stacks each character. */
+#pricingPromoList > .pricing-product-item,
+.pricing-product-item[data-promo-id],
+.pricing-product-item[data-preview-promo]{
+  grid-template-columns:minmax(0,1fr);
+  align-items:start;
+  gap:2px;
+  width:100%;
+  cursor:pointer
+}
+#pricingPromoList > .pricing-product-item .pricing-product-item-top,
+.pricing-product-item[data-promo-id] .pricing-product-item-top,
+.pricing-product-item[data-preview-promo] .pricing-product-item-top{
+  min-width:0
+}
+#pricingPromoList > .pricing-product-item strong,
+.pricing-product-item[data-promo-id] strong,
+.pricing-product-item[data-preview-promo] strong{
+  min-width:0;
+  white-space:normal;
+  word-break:keep-all;
+  overflow-wrap:break-word
+}
 .pricing-product-item.is-active{border-color:rgba(34,211,238,.45);background:rgba(34,211,238,.1)}
 .pricing-product-item.is-dragging,.pricing-product-item.is-dragging{opacity:.4}
 .pricing-product-item-body,.pricing-product-item-body{display:grid;gap:2px;min-width:0;margin:0;padding:2px 0;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}

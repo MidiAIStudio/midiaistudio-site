@@ -4612,6 +4612,123 @@ html[data-theme='light'] .product-license-list li.is-soon span {
   color: #b45309 !important;
 }
 
+/* Post actions and the same pastel chip colors (cyan / lavender / pink on pale fills) */
+html[data-theme='light'] #postLikeBtn.like-btn,
+html[data-theme='light'] .community-post-actions #postLikeBtn,
+html[data-theme='light'] .post-actions #postLikeBtn,
+html[data-theme='light'] .like-btn.liked {
+  color: #0f766e !important;
+  background: rgba(8, 145, 178, 0.12) !important;
+  border-color: rgba(8, 145, 178, 0.45) !important;
+}
+
+html[data-theme='light'] #postLikeBtn.like-btn:hover,
+html[data-theme='light'] .community-post-actions #postLikeBtn:hover,
+html[data-theme='light'] .post-actions #postLikeBtn:hover,
+html[data-theme='light'] #postLikeBtn.like-btn.liked,
+html[data-theme='light'] .community-post-actions #postLikeBtn.liked,
+html[data-theme='light'] .post-actions #postLikeBtn.liked {
+  color: #115e59 !important;
+  background: rgba(8, 145, 178, 0.2) !important;
+  border-color: rgba(8, 145, 178, 0.55) !important;
+}
+
+html[data-theme='light'] #postLikeBtn.liked .like-btn-icon {
+  fill: rgba(15, 118, 110, 0.2) !important;
+}
+
+html[data-theme='light'] .community-post-actions .post-edit-btn,
+html[data-theme='light'] .post-actions .post-edit-btn,
+html[data-theme='light'] .community-post-actions a.post-edit-btn {
+  color: #152033 !important;
+  background: #ffffff !important;
+  border-color: rgba(36, 52, 78, 0.22) !important;
+}
+
+html[data-theme='light'] .community-post-actions .post-edit-btn:hover,
+html[data-theme='light'] .post-actions .post-edit-btn:hover {
+  color: #121a2b !important;
+  background: #f3f6fb !important;
+  border-color: rgba(36, 52, 78, 0.32) !important;
+}
+
+html[data-theme='light'] .community-post-actions .post-delete-btn,
+html[data-theme='light'] .post-actions .post-delete-btn,
+html[data-theme='light'] .community-post-actions button.post-delete-btn {
+  color: #be123c !important;
+  background: rgba(225, 29, 72, 0.08) !important;
+  border-color: rgba(225, 29, 72, 0.35) !important;
+}
+
+html[data-theme='light'] .community-post-actions .post-delete-btn:hover,
+html[data-theme='light'] .post-actions .post-delete-btn:hover {
+  color: #9f1239 !important;
+  background: rgba(225, 29, 72, 0.14) !important;
+  border-color: rgba(225, 29, 72, 0.5) !important;
+}
+
+html[data-theme='light'] .badge.active,
+html[data-theme='light'] .author-badge.is-buyer,
+html[data-theme='light'] .hub-page .author-badge.is-buyer,
+html[data-theme='light'] .badge.mode-human {
+  color: #047857 !important;
+}
+
+html[data-theme='light'] .badge.none,
+html[data-theme='light'] .portal-mandatory-pill,
+html[data-theme='light'] .portal-page .portal-mandatory-pill,
+html[data-theme='light'] .download-card-pro .portal-mandatory-pill {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .badge.pending,
+html[data-theme='light'] .badge.open,
+html[data-theme='light'] .guide-draft-badge,
+html[data-theme='light'] .badge.mode-waiting {
+  color: #b45309 !important;
+}
+
+html[data-theme='light'] .badge.answered,
+html[data-theme='light'] .board-midi-badge,
+html[data-theme='light'] .purchase-sale-pill,
+html[data-theme='light'] .checkout-order-kicker,
+html[data-theme='light'] .board-midi-play-btn {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .board-midi-play-btn {
+  background: rgba(8, 145, 178, 0.12) !important;
+  border-color: rgba(8, 145, 178, 0.4) !important;
+}
+
+html[data-theme='light'] .board-midi-play-btn:hover,
+html[data-theme='light'] .board-midi-dl:hover {
+  color: #155e75 !important;
+}
+
+html[data-theme='light'] .badge.mode-ai,
+html[data-theme='light'] .purchase-badge.sale {
+  color: #5b21b6 !important;
+}
+
+html[data-theme='light'] .checkout-pay-chip {
+  color: #152033 !important;
+  background: #f4f7fb !important;
+  border-color: rgba(36, 52, 78, 0.16) !important;
+}
+
+html[data-theme='light'] .checkout-pay-chip.is-kakao {
+  color: #92400e !important;
+  background: rgba(251, 191, 36, 0.16) !important;
+  border-color: rgba(217, 119, 6, 0.35) !important;
+}
+
+html[data-theme='light'] .checkout-pay-chip.is-paypal {
+  color: #1d4ed8 !important;
+  background: rgba(59, 130, 246, 0.1) !important;
+  border-color: rgba(37, 99, 235, 0.28) !important;
+}
+
 
 
 
