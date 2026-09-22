@@ -4418,6 +4418,200 @@ html[data-theme='light'] .admin-page .admin-flash.is-ok {
   color: #065f46;
 }
 
+/* ——— Light surfaces: hardcoded near-white text ——— */
+html[data-theme='light'] .comment-body,
+html[data-theme='light'] .community-comment-card .comment-body,
+html[data-theme='light'] .post-body-content,
+html[data-theme='light'] .community-post-author,
+html[data-theme='light'] .reply b,
+html[data-theme='light'] .review-row strong,
+html[data-theme='light'] .form-card label,
+html[data-theme='light'] .product-card h3,
+html[data-theme='light'] .product-license-list li,
+html[data-theme='light'] .product-license-list li.is-soon,
+html[data-theme='light'] .purchase-checkout-row strong,
+html[data-theme='light'] .purchase-success-meta strong,
+html[data-theme='light'] .purchase-spec-item strong,
+html[data-theme='light'] .purchase-modal-rows dd,
+html[data-theme='light'] .purchase-usage-details b,
+html[data-theme='light'] .checkout-order-head h3,
+html[data-theme='light'] .checkout-order-value,
+html[data-theme='light'] .checkout-order-input,
+html[data-theme='light'] .account-credit-table td,
+html[data-theme='light'] .credit-history-title,
+html[data-theme='light'] .credit-history-balance-value,
+html[data-theme='light'] .file-attach-copy b,
+html[data-theme='light'] .board-attachments .board-attach-name,
+html[data-theme='light'] .board-attachments .board-attachment-item figcaption b,
+html[data-theme='light'] .community-post-detail .board-attachment-item figcaption b,
+html[data-theme='light'] article .board-attachment-item figcaption b,
+html[data-theme='light'] .board-attachment-item figcaption b {
+  color: #152033 !important;
+}
+
+html[data-theme='light'] .purchase-modal-lead,
+html[data-theme='light'] .account-credit-table th,
+html[data-theme='light'] .credit-history-balance-label,
+html[data-theme='light'] .credit-history-when,
+html[data-theme='light'] .file-attach-copy small,
+html[data-theme='light'] .file-attach-kind,
+html[data-theme='light'] .file-attach-action,
+html[data-theme='light'] .file-attach-link,
+html[data-theme='light'] .board-attachments .board-attach-badge,
+html[data-theme='light'] .board-attachments .board-attachment-item figcaption span,
+html[data-theme='light'] .community-post-detail .board-attachment-item figcaption span,
+html[data-theme='light'] article .board-attachment-item figcaption span,
+html[data-theme='light'] .sidebar-label,
+html[data-theme='light'] .sidebar-user-meta #sidebarUserEmail {
+  color: #5a6478 !important;
+}
+
+html[data-theme='light'] .comment-card,
+html[data-theme='light'] .community-comment-card {
+  background: #f7f9fc !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+  color: #152033 !important;
+}
+
+html[data-theme='light'] .comment-card.reply-child {
+  background: #eef2f7 !important;
+}
+
+html[data-theme='light'] .comment-head {
+  color: #5a6478 !important;
+}
+
+html[data-theme='light'] .comment-head span:first-child {
+  color: #152033 !important;
+}
+
+html[data-theme='light'] .comment-form textarea,
+html[data-theme='light'] .community-comment-form textarea,
+html[data-theme='light'] .inline-reply textarea {
+  background: #ffffff !important;
+  color: #152033 !important;
+  border-color: rgba(36, 52, 78, 0.16) !important;
+}
+
+html[data-theme='light'] .comment-form textarea::placeholder,
+html[data-theme='light'] .community-comment-form textarea::placeholder,
+html[data-theme='light'] .inline-reply textarea::placeholder,
+html[data-theme='light'] .support-chat-composer textarea::placeholder,
+html[data-theme='light'] .checkout-order-input::placeholder {
+  color: #5a6478 !important;
+}
+
+html[data-theme='light'] .purchase-success-card h3,
+html[data-theme='light'] .paypal-status.ok,
+html[data-theme='light'] .account-page .account-credit-delta.is-plus,
+html[data-theme='light'] .account-credit-table td.is-plus,
+html[data-theme='light'] .credit-history-delta.is-plus,
+html[data-theme='light'] .account-page .account-order-status.is-paid,
+html[data-theme='light'] .portal-preview-tag {
+  color: #047857 !important;
+}
+
+html[data-theme='light'] .paypal-status.err,
+html[data-theme='light'] .account-page .account-credit-delta.is-minus,
+html[data-theme='light'] .account-credit-table td.is-minus,
+html[data-theme='light'] .credit-history-delta.is-minus,
+html[data-theme='light'] .account-page .account-order-status.is-failed,
+html[data-theme='light'] .account-page .account-chip.is-status-banned,
+html[data-theme='light'] .support-chat-end,
+html[data-theme='light'] .topbar-license-period.is-expired {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .account-page .account-order-status.is-pending,
+html[data-theme='light'] .account-page .account-order-status.is-other,
+html[data-theme='light'] .account-page .account-order-status.is-review,
+html[data-theme='light'] .account-page .account-chip.is-plan-trial,
+html[data-theme='light'] .oauth-browser-notice,
+html[data-theme='light'] .oauth-browser-notice span,
+html[data-theme='light'] .purchase-paused-note,
+html[data-theme='light'] .pricing-preview-banner,
+html[data-theme='light'] .topbar-license-period {
+  color: #92400e !important;
+}
+
+html[data-theme='light'] .account-page .account-order-status.is-refund,
+html[data-theme='light'] .account-page .account-chip.is-pending,
+html[data-theme='light'] .account-page .account-chip.is-status-expired {
+  color: #475569 !important;
+}
+
+html[data-theme='light'] .account-page .account-chip.is-plan-period {
+  color: #c2410c !important;
+}
+
+html[data-theme='light'] .guide-card-cat,
+html[data-theme='light'] .hub-page .hub-col-no.is-pinned-no,
+html[data-theme='light'] .purchase-point-notes li:before,
+html[data-theme='light'] .purchase-usage-more summary:before,
+html[data-theme='light'] .board-midi-dl,
+html[data-theme='light'] .file-attach-link:hover,
+html[data-theme='light'] .file-attach-card:hover .file-attach-action,
+html[data-theme='light'] .home-flow-line i,
+html[data-theme='light'] .timeline-item:before {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .portal-page .portal-trust span {
+  color: #243044 !important;
+  background: rgba(36, 52, 78, 0.06) !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+}
+
+html[data-theme='light'] .file-attach-icon {
+  color: #334155 !important;
+}
+
+html[data-theme='light'] .file-attach-icon.is-archive {
+  color: #b45309 !important;
+}
+
+html[data-theme='light'] .file-attach-icon.is-pdf {
+  color: #be123c !important;
+}
+
+html[data-theme='light'] .file-attach-icon.is-text {
+  color: #0e7490 !important;
+}
+
+html[data-theme='light'] .file-attach-icon.is-audio {
+  color: #6d28d9 !important;
+}
+
+html[data-theme='light'] .file-attach-icon.is-image,
+html[data-theme='light'] .file-attach-kind.is-image {
+  color: #047857 !important;
+}
+
+html[data-theme='light'] .file-attach-icon.is-video,
+html[data-theme='light'] .file-attach-kind.is-video {
+  color: #1d4ed8 !important;
+}
+
+html[data-theme='light'] .file-attach-icon.is-file {
+  color: #475569 !important;
+}
+
+html[data-theme='light'] .credit-history-x,
+html[data-theme='light'] .account-page .account-credit-refresh {
+  color: #152033 !important;
+  background: #ffffff !important;
+  border-color: rgba(36, 52, 78, 0.16) !important;
+}
+
+html[data-theme='light'] .topbar-profile-credit-buy,
+html[data-theme='light'] .support-chat-human {
+  color: #5b21b6 !important;
+}
+
+html[data-theme='light'] .product-license-list li.is-soon span {
+  color: #b45309 !important;
+}
+
 
 
 
