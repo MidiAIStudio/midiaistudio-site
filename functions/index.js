@@ -860,15 +860,31 @@ function createGmailSender() {
 const adminBulkEmail = require('./adminBulkEmail');
 const adminScheduledEmail = require('./adminScheduledEmail');
 const welcomeBenefit = require('./welcomeBenefit');
-const welcomeBenefitHandlers = welcomeBenefit.createHandlers({
-  db,
-  admin,
-  cors,
-  requireAdmin
-});
+function createWelcomeBenefitHandlers(extra) {
+  return welcomeBenefit.createHandlers({
+    db,
+    admin,
+    cors,
+    requireAdmin,
+    requireUser,
+    ...(extra || {})
+  });
+}
+const welcomeBenefitHandlers = createWelcomeBenefitHandlers();
 exports.getWelcomeBenefitConfig = functions.https.onRequest(welcomeBenefitHandlers.getWelcomeBenefitConfig);
 exports.saveWelcomeBenefitConfig = functions.https.onRequest(welcomeBenefitHandlers.saveWelcomeBenefitConfig);
 exports.previewWelcomeBenefitEmail = functions.https.onRequest(welcomeBenefitHandlers.previewWelcomeBenefitEmail);
+/** App submits HWID; server decides device-once signup bonus (never trusts client grant flags). */
+exports.claimSignupBonus = functionsV1Https
+  .runWith({
+    secrets: [gmailUser, gmailAppPassword],
+    timeoutSeconds: 120,
+    memory: '256MB'
+  })
+  .https.onRequest((req, res) => {
+    const handlers = createWelcomeBenefitHandlers({ sendMail: createGmailSender() });
+    return handlers.claimSignupBonus(req, res);
+  });
 exports.sendAdminBulkEmail = functionsV1Https
   .runWith({
     secrets: [gmailUser, gmailAppPassword],
@@ -2139,8 +2155,8 @@ exports.ensureTrialLicenseOnUserWrite = functionsV1
   });
 
 /**
- * Welcome Benefit — Firebase Auth user creation only (never login).
- * Idempotent grant via welcome_credit_grants/{uid}; email retry OK without re-grant.
+ * Welcome Benefit — Auth onCreate no longer grants credits (HWID unknown).
+ * Device-once grant runs on licenses/{uid} HWID bind or claimSignupBonus.
  */
 exports.onAuthUserCreatedWelcomeBenefit = functionsV1
   .runWith({
@@ -2160,8 +2176,10 @@ exports.onAuthUserCreatedWelcomeBenefit = functionsV1
       console.info('onAuthUserCreatedWelcomeBenefit', {
         uid: user && user.uid,
         skipped: !!(out && out.skipped),
+        reason: out && out.reason,
         granted: !!(out && out.granted),
         alreadyGranted: !!(out && out.alreadyGranted),
+        skippedDeviceClaimed: !!(out && out.skippedDeviceClaimed),
         emailSent: !!(out && out.emailSent),
         amount: out && out.amount,
         code: out && out.code
@@ -2170,6 +2188,48 @@ exports.onAuthUserCreatedWelcomeBenefit = functionsV1
     } catch (err) {
       console.error('onAuthUserCreatedWelcomeBenefit', {
         uid: user && user.uid,
+        message: err && err.message ? err.message : String(err)
+      });
+      throw err;
+    }
+  });
+
+/**
+ * Welcome Benefit — first licenses/{uid}.hwid bind (bindDeviceHwid / app).
+ * Server hashes HWID → deviceFingerprint; transaction claims once per device.
+ */
+exports.onLicenseHwidWelcomeBenefit = functionsV1
+  .runWith({
+    secrets: [gmailUser, gmailAppPassword],
+    timeoutSeconds: 120,
+    memory: '256MB'
+  })
+  .firestore.document('licenses/{uid}')
+  .onWrite(async (change, context) => {
+    const uid = context.params.uid;
+    try {
+      const out = await welcomeBenefit.processWelcomeOnLicenseHwidWrite(db, admin, {
+        uid,
+        beforeData: change.before.exists ? change.before.data() : null,
+        afterData: change.after.exists ? change.after.data() : null,
+        sendMail: createGmailSender()
+      });
+      if (out && !out.skipped) {
+        console.info('onLicenseHwidWelcomeBenefit', {
+          uid,
+          granted: !!(out && out.granted),
+          alreadyGranted: !!(out && out.alreadyGranted),
+          skippedDeviceClaimed: !!(out && out.skippedDeviceClaimed),
+          amount: out && out.amount,
+          deviceFingerprint: out && out.deviceFingerprint
+            ? String(out.deviceFingerprint).slice(0, 12) + '…'
+            : ''
+        });
+      }
+      return out;
+    } catch (err) {
+      console.error('onLicenseHwidWelcomeBenefit', {
+        uid,
         message: err && err.message ? err.message : String(err)
       });
       throw err;

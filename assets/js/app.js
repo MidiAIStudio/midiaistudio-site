@@ -365,7 +365,7 @@ Object.assign(I18N.en, {
   '버전별 변경점':'Changes by version',
   '운영·이벤트 안내':'News & events',
   '신규 가입 혜택':'Welcome Benefit',
-  '처음 가입한 사용자에게 크레딧을 1회 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 로그인·재설치·다른 PC에서는 다시 지급되지 않습니다.':'Automatically grant credits once on first signup, with an optional welcome email. Not granted again on login, reinstall, or another PC.',
+  '물리 기기(HWID)당 1회 크레딧을 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 동일 PC에서 여러 계정을 만들어도 무료 크레딧은 한 번만 지급됩니다. 다른 PC의 신규 계정은 정상 지급됩니다.':'Automatically grant credits once per physical device (HWID), with an optional welcome email. Extra accounts on the same PC do not receive free credits again. A new account on another PC still receives them.',
   '자동 혜택 ON/OFF':'Auto benefit ON/OFF',
   '환영 메일 ON/OFF':'Welcome email ON/OFF',
   '지급 크레딧':'Credit amount',
@@ -444,7 +444,7 @@ Object.assign(I18N.ja, {
   '버전별 변경점':'バージョン別の変更',
   '운영·이벤트 안내':'運営・イベント案内',
   '신규 가입 혜택':'新規登録特典',
-  '처음 가입한 사용자에게 크레딧을 1회 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 로그인·재설치·다른 PC에서는 다시 지급되지 않습니다.':'初回登録時にクレジットを1回自動付与し、任意で歓迎メールを送ります。ログイン・再インストール・別PCでは再付与されません。',
+  '물리 기기(HWID)당 1회 크레딧을 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 동일 PC에서 여러 계정을 만들어도 무료 크레딧은 한 번만 지급됩니다. 다른 PC의 신규 계정은 정상 지급됩니다.':'物理デバイス(HWID)ごとにクレジットを1回自動付与し、任意で歓迎メールを送ります。同一PCの複数アカウントには無料クレジットは重複付与されません。別PCの新規アカウントには付与されます。',
   '자동 혜택 ON/OFF':'自動特典 ON/OFF',
   '환영 메일 ON/OFF':'歓迎メール ON/OFF',
   '지급 크레딧':'付与クレジット',
@@ -847,7 +847,7 @@ function tr(k){
     credit_ledger_welcome:'신규 가입 혜택',
     admin_nav_welcome_benefit:'신규 가입 혜택',
     admin_welcome_title:'신규 가입 혜택',
-    admin_welcome_desc:'처음 가입한 사용자에게 크레딧을 1회 자동 지급하고, 선택적으로 환영 메일을 보냅니다.',
+    admin_welcome_desc:'물리 기기(HWID)당 1회 크레딧을 자동 지급하고, 선택적으로 환영 메일을 보냅니다.',
     admin_welcome_auto:'자동 혜택 ON/OFF',
     admin_welcome_email:'환영 메일 ON/OFF',
     credit_col_date:'날짜', credit_col_item:'내용', credit_col_delta:'증감', credit_col_balance:'잔액',
@@ -884,7 +884,7 @@ function tr(k){
     credit_ledger_welcome:'Welcome benefit',
     admin_nav_welcome_benefit:'Welcome Benefit',
     admin_welcome_title:'Welcome Benefit',
-    admin_welcome_desc:'Automatically grant credits once on first signup, with an optional welcome email.',
+    admin_welcome_desc:'Automatically grant credits once per physical device (HWID), with an optional welcome email.',
     admin_welcome_auto:'Auto benefit ON/OFF',
     admin_welcome_email:'Welcome email ON/OFF',
     credit_col_date:'Date', credit_col_item:'Details', credit_col_delta:'Change', credit_col_balance:'Balance',
@@ -921,7 +921,7 @@ function tr(k){
     credit_ledger_welcome:'新規登録特典',
     admin_nav_welcome_benefit:'新規登録特典',
     admin_welcome_title:'新規登録特典',
-    admin_welcome_desc:'初回登録時にクレジットを1回自動付与し、任意で歓迎メールを送ります。',
+    admin_welcome_desc:'物理デバイス(HWID)ごとにクレジットを1回自動付与し、任意で歓迎メールを送ります。',
     admin_welcome_auto:'自動特典 ON/OFF',
     admin_welcome_email:'歓迎メール ON/OFF',
     credit_col_date:'日時', credit_col_item:'内容', credit_col_delta:'増減', credit_col_balance:'残高',
@@ -8622,6 +8622,69 @@ function maskAdminHwid(hwid){
 function adminHwidOf(user, lic){
   return String(user?.hwid || lic?.hwid || user?.license?.hwid || '').trim();
 }
+/** Group key for same physical device (HWID preferred for admin sibling detection). */
+function adminDeviceGroupKey(user, lic){
+  const hwid = String(adminHwidOf(user, lic || user?.license) || '').trim().toUpperCase();
+  if(hwid.length >= 16) return `hw:${hwid}`;
+  const fp = String(user?.deviceFingerprint || '').trim().toLowerCase();
+  if(fp) return `fp:${fp}`;
+  return '';
+}
+function adminSameDeviceAccounts(user){
+  const uid = adminUserUid(user);
+  const key = adminDeviceGroupKey(user, user?.license || licenseForUid(uid));
+  if(!key) return [];
+  return (adminUserRows || []).filter((u)=>{
+    const otherUid = adminUserUid(u);
+    if(!otherUid) return false;
+    const otherKey = adminDeviceGroupKey(u, u.license || licenseForUid(otherUid));
+    return otherKey && otherKey === key;
+  }).sort((a,b)=>{
+    const ta = adminTsSec(a.createdAt) || 0;
+    const tb = adminTsSec(b.createdAt) || 0;
+    return ta - tb;
+  });
+}
+function adminSignupBonusGrantedLabel(user){
+  if(user?.signupBonusGranted === true || user?.signupBonusStatus === 'granted') return '지급됨';
+  if(user?.signupBonusStatus === 'skipped_device_claimed' || user?.signupBonusGranted === false){
+    if(user?.signupBonusStatus === 'skipped_device_claimed') return '미지급 (동일 기기)';
+    if(user?.signupBonusCheckedAt) return '미지급';
+  }
+  // Legacy welcome grant may exist without new fields — unknown until checked.
+  if(user?.signupBonusStatus === 'granted_zero') return '지급(0)';
+  return '미확인';
+}
+function adminSameDeviceBadgeHtml(user){
+  const peers = adminSameDeviceAccounts(user);
+  if(peers.length < 2) return '';
+  return `<span class="admin-same-device-badge" title="동일 기기 fingerprint를 사용하는 계정">동일 기기 계정 ${peers.length}개</span>`;
+}
+function adminSameDevicePeersHtml(user){
+  const peers = adminSameDeviceAccounts(user);
+  if(peers.length < 2) return '';
+  const rows = peers.map((p)=>{
+    const pUid = adminUserUid(p) || '-';
+    const bonus = adminSignupBonusGrantedLabel(p);
+    const bonusClass = bonus.indexOf('지급됨') === 0 ? 'is-granted' : (bonus.indexOf('미지급') === 0 ? 'is-skipped' : '');
+    return `<tr>
+      <td><code class="mono">${esc(pUid)}</code></td>
+      <td title="${esc(p.email||'')}">${esc(p.email||'-')}</td>
+      <td>${esc(fmtListDate(p.createdAt))}</td>
+      <td><span class="admin-same-device-bonus ${bonusClass}">${esc(bonus)}</span></td>
+    </tr>`;
+  }).join('');
+  return `<section class="admin-crm-dash-sec admin-same-device-sec">
+    <header class="admin-crm-dash-head"><h3>동일 기기 계정 ${peers.length}개</h3></header>
+    <p class="muted small admin-same-device-hint">관리자 전용 · 무료 가입 보너스 기기 중복 여부 확인용 (자동 차단 없음)</p>
+    <div class="admin-table-wrap admin-same-device-table-wrap">
+      <table class="admin-table admin-same-device-table">
+        <thead><tr><th>UID</th><th>이메일</th><th>가입일</th><th>무료 크레딧</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </section>`;
+}
 function adminUidHwidHtml(uid, hwid, { maskHwid=false }={}){
   const id = String(uid || '').trim() || '-';
   const raw = String(hwid || '').trim();
@@ -9487,11 +9550,12 @@ function adminCrmMemberRowHtml(u){
   const selected = open ? ' is-selected is-open' : '';
   const checked = adminCrmSelected.has(uid) ? 'checked' : '';
   const fav = u.isFav ? '<span class="crm-fav-mark" aria-hidden="true">★</span>' : '';
+  const sameDevice = adminSameDeviceBadgeHtml(u);
   const country = adminAccessCountryLine(u) || '-';
   const seen = fmtRelative(u.lastLogin||u.lastSeenAt);
   return `<tr class="admin-crm-member-row${selected}" data-admin-uid="${esc(uid)}">
     <td><label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-check="${esc(uid)}" ${checked}></label></td>
-    <td class="admin-member-user"><span class="admin-order-caret" aria-hidden="true">▸</span>${adminCrmAvatarHtml(u)}<span><b>${fav}${esc(u.displayName||'Google User')}</b></span></td>
+    <td class="admin-member-user"><span class="admin-order-caret" aria-hidden="true">▸</span>${adminCrmAvatarHtml(u)}<span><b>${fav}${esc(u.displayName||'Google User')}</b>${sameDevice}</span></td>
     <td class="admin-member-email" title="${esc(u.email||'')}">${esc(u.email||'-')}</td>
     <td class="admin-member-joined">${esc(fmtListDate(u.createdAt))}</td>
     <td>${adminRoleBadgeHtml(u.role)}</td>
@@ -10595,7 +10659,8 @@ function renderAdminCrmOverview(user, view, lic, orders, tickets, posts){
   const ticketList = recentTickets.length
     ? `<ul class="admin-crm-dash-list">${recentTickets.map(t=>`<li><b title="${esc(t.title||'(제목 없음)')}">${esc(t.title||'(제목 없음)')}</b><span>${esc(adminPaymentStatusLabel(t.status||'open'))} · ${esc(fmtListDate(t.createdAt||t.updatedAt))}</span></li>`).join('')}</ul>`
     : '';
-  box.innerHTML = `<div class="admin-crm-dash-grid">
+  const sameDeviceBlock = adminSameDevicePeersHtml(user);
+  box.innerHTML = `${sameDeviceBlock}<div class="admin-crm-dash-grid">
     <section class="admin-crm-dash-sec">
       <header class="admin-crm-dash-head"><h3>라이선스</h3><div class="admin-crm-dash-actions">${adminCrmDashBtn('관리','license')}</div></header>
       <dl class="admin-crm-dash-dl">

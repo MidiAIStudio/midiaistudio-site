@@ -1237,6 +1237,8 @@ function mapAuditDoc(id, data) {
     ? Number(afterObj.amount)
     : null;
   const isWelcomeAudit = String(data.action || '') === 'WELCOME_SIGNUP_GRANT'
+    || String(data.action || '') === 'SIGNUP_BONUS_GRANTED'
+    || String(data.action || '') === 'SIGNUP_BONUS_SKIPPED_DEVICE_ALREADY_CLAIMED'
     || String(afterObj && afterObj.source || '') === 'welcome_signup';
   const creditColumns = (cat === 'credit' && creditAmount != null && Number.isFinite(creditAmount))
     ? {
@@ -1320,6 +1322,8 @@ function creditDedupeKey(r) {
   const isWelcome = type === 'welcome_signup'
     || type === 'welcome_signup_grant'
     || String(r.action || '') === 'WELCOME_SIGNUP_GRANT'
+    || String(r.action || '') === 'SIGNUP_BONUS_GRANTED'
+    || String(r.action || '') === 'SIGNUP_BONUS_SKIPPED_DEVICE_ALREADY_CLAIMED'
     || origin === 'welcome_signup';
   if (isWelcome) return 'welcome';
   const ledgerId = String(after.ledgerId || r.raw?.ledgerId || r.raw?.id || '').trim();

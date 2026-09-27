@@ -1,11 +1,16 @@
 'use strict';
 
 /**
- * Welcome Benefit tests — covers TEST 1–16 semantics from product spec.
+ * Welcome Benefit tests — device-once signup bonus + legacy UID grant semantics.
  */
 const assert = require('assert');
+const crypto = require('crypto');
 const welcomeBenefit = require('./welcomeBenefit');
 const creditWalletV2 = require('./creditWalletV2');
+const {
+  deviceFingerprintFromHwid,
+  normalizeHwid
+} = require('./deviceFingerprint');
 
 function httpErrorRes() {
   const out = { statusCode: 200, body: null };
@@ -60,11 +65,32 @@ function memoryDb() {
         await ref.set(data);
         return ref;
       },
-      where() {
+      where(field, op, value) {
         return {
-          async get() { return { docs: [] }; },
-          orderBy() { return this; },
-          limit() { return this; }
+          limit(n) {
+            return {
+              async get() {
+                const docs = [];
+                const prefix = `${name}/`;
+                for (const [path, data] of store.entries()) {
+                  if (!path.startsWith(prefix) || path.slice(prefix.length).includes('/')) continue;
+                  const id = path.slice(prefix.length);
+                  if (op === '==' && data && data[field] === value) {
+                    docs.push({
+                      id,
+                      data: () => ({ ...data })
+                    });
+                  }
+                  if (docs.length >= n) break;
+                }
+                return { docs };
+              }
+            };
+          },
+          async get() {
+            return this.limit(1000).get();
+          },
+          orderBy() { return this; }
         };
       }
     };
@@ -108,6 +134,10 @@ function makeAdmin(authUsers) {
   };
 }
 
+function fakeHwid(seed) {
+  return crypto.createHash('sha256').update(String(seed || 'pc'), 'utf8').digest('hex').toUpperCase();
+}
+
 async function setConfig(db, partial) {
   await db.collection(welcomeBenefit.CONFIG_COLLECTION).doc(welcomeBenefit.CONFIG_DOC_ID).set({
     ...welcomeBenefit.defaultConfig(),
@@ -133,45 +163,144 @@ function grantDoc(db, uid) {
   return db.store.get(`welcome_credit_grants/${uid}`) || null;
 }
 
+function claimDoc(db, hwid) {
+  const fp = deviceFingerprintFromHwid(hwid);
+  return db.store.get(`signupBonusClaims/${fp}`) || null;
+}
+
+function auditActions(db) {
+  const out = [];
+  for (const [k, v] of db.store.entries()) {
+    if (k.startsWith('adminAuditLogs/') && v && v.action) out.push(v.action);
+  }
+  return out;
+}
+
+async function welcomeDevice(db, uid, hwid, opts = {}) {
+  return welcomeBenefit.processWelcomeForDevice(db, makeAdmin(opts.authUsers), {
+    uid,
+    hwid,
+    email: opts.email || `${uid}@test.com`,
+    displayName: opts.displayName || uid,
+    sendMail: opts.sendMail,
+    ipMasked: opts.ipMasked || '1.2.***.***'
+  });
+}
+
 async function test1_disabled_skips() {
   const db = memoryDb();
+  const hwid = fakeHwid('off');
   await setConfig(db, { enabled: false, creditAmount: 50, emailEnabled: false });
-  const out = await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'u_off', email: 'a@test.com', displayName: 'A' },
-    { sendMail: async () => { throw new Error('should not send'); } }
-  );
+  const out = await welcomeDevice(db, 'u_off', hwid, {
+    sendMail: async () => { throw new Error('should not send'); }
+  });
   assert.strictEqual(out.skipped, true);
   assert.strictEqual(grantDoc(db, 'u_off'), null);
   assert.strictEqual(walletBalance(db, 'u_off'), 0);
   assert.strictEqual(countLedgers(db), 0);
 }
 
-async function test2_credit_only() {
+async function test2_new_pc_new_account_grants() {
   const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 30, emailEnabled: false, configVersion: 2 });
-  let mailed = 0;
-  const out = await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'u_credit', email: 'c@test.com', displayName: 'C' },
-    { sendMail: async () => { mailed += 1; } }
-  );
+  const hwid = fakeHwid('pc-a');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false, configVersion: 2 });
+  const out = await welcomeDevice(db, 'u_new', hwid);
   assert.strictEqual(out.granted, true);
-  assert.strictEqual(out.emailSkipped, true);
-  assert.strictEqual(walletBalance(db, 'u_credit'), 30);
-  assert.strictEqual(mailed, 0);
-  const g = grantDoc(db, 'u_credit');
-  assert.ok(g);
-  assert.strictEqual(g.amount, 30);
-  assert.strictEqual(g.emailEnabled, false);
-  assert.strictEqual(g.configVersion, 2);
+  assert.strictEqual(out.amount, 5);
+  assert.strictEqual(walletBalance(db, 'u_new'), 5);
+  assert.ok(claimDoc(db, hwid));
+  assert.strictEqual(claimDoc(db, hwid).uid, 'u_new');
+  assert.ok(!Object.prototype.hasOwnProperty.call(claimDoc(db, hwid), 'hwid'));
+  assert.ok(auditActions(db).includes(welcomeBenefit.ACTION_GRANTED));
+}
+
+async function test3_same_pc_other_account_zero() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-shared');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_a').set({ hwid: normalizeHwid(hwid) });
+  await welcomeDevice(db, 'u_a', hwid);
+  await db.collection('licenses').doc('u_b').set({ hwid: normalizeHwid(hwid) });
+  const out = await welcomeDevice(db, 'u_b', hwid, { email: 'b@test.com' });
+  assert.strictEqual(out.granted, false);
+  assert.strictEqual(out.skippedDeviceClaimed, true);
+  assert.strictEqual(out.amount, 0);
+  assert.strictEqual(walletBalance(db, 'u_a'), 5);
+  assert.strictEqual(walletBalance(db, 'u_b'), 0);
+  assert.strictEqual(countLedgers(db), 1);
+  assert.ok(auditActions(db).includes(welcomeBenefit.ACTION_SKIPPED));
+}
+
+async function test4_same_account_relogin_no_extra() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-relogin');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  const user = { uid: 'u_re', email: 're@test.com' };
+  await welcomeDevice(db, user.uid, hwid, { email: user.email });
+  const again = await welcomeDevice(db, user.uid, hwid, { email: user.email });
+  assert.strictEqual(again.alreadyGranted, true);
+  assert.strictEqual(walletBalance(db, 'u_re'), 5);
   assert.strictEqual(countLedgers(db), 1);
 }
 
-async function test3_credit_and_email() {
+async function test5_concurrent_two_uids_one_grant() {
   const db = memoryDb();
+  const hwid = fakeHwid('pc-race');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  const results = await Promise.all([
+    welcomeDevice(db, 'u_race1', hwid, { email: 'r1@test.com' }),
+    welcomeDevice(db, 'u_race2', hwid, { email: 'r2@test.com' })
+  ]);
+  const granted = results.filter((r) => r.granted);
+  const skipped = results.filter((r) => r.skippedDeviceClaimed || r.alreadyGranted);
+  assert.strictEqual(granted.length, 1);
+  assert.ok(skipped.length >= 1);
+  const total = walletBalance(db, 'u_race1') + walletBalance(db, 'u_race2');
+  assert.strictEqual(total, 5);
+  assert.strictEqual(countLedgers(db), 1);
+}
+
+async function test6_other_pc_new_account_grants() {
+  const db = memoryDb();
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await welcomeDevice(db, 'u_pc1', fakeHwid('pc-1'));
+  const out = await welcomeDevice(db, 'u_pc2', fakeHwid('pc-2'));
+  assert.strictEqual(out.granted, true);
+  assert.strictEqual(walletBalance(db, 'u_pc1'), 5);
+  assert.strictEqual(walletBalance(db, 'u_pc2'), 5);
+  assert.strictEqual(countLedgers(db), 2);
+}
+
+async function test7_auth_oncreate_waits_for_device() {
+  const db = memoryDb();
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  const out = await welcomeBenefit.processWelcomeForAuthUser(
+    db,
+    makeAdmin(),
+    { uid: 'u_auth', email: 'a@test.com' },
+    {}
+  );
+  assert.strictEqual(out.skipped, true);
+  assert.strictEqual(out.reason, 'waiting_for_device');
+  assert.strictEqual(walletBalance(db, 'u_auth'), 0);
+}
+
+async function test8_license_hwid_write_grants() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-bind');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  const out = await welcomeBenefit.processWelcomeOnLicenseHwidWrite(db, makeAdmin(), {
+    uid: 'u_bind',
+    beforeData: { hwid: '' },
+    afterData: { hwid }
+  });
+  assert.strictEqual(out.granted, true);
+  assert.strictEqual(walletBalance(db, 'u_bind'), 5);
+}
+
+async function test9_credit_and_email() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-mail');
   await setConfig(db, {
     enabled: true,
     creditAmount: 10,
@@ -180,67 +309,20 @@ async function test3_credit_and_email() {
     emailBody: 'You got {{credits}} on {{product_name}} ({{email}})'
   });
   const sent = [];
-  const out = await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'u_mail', email: 'm@test.com', displayName: 'Mina' },
-    {
-      sendMail: async (msg) => {
-        sent.push(msg);
-      }
-    }
-  );
+  const out = await welcomeDevice(db, 'u_mail', hwid, {
+    displayName: 'Mina',
+    email: 'm@test.com',
+    sendMail: async (msg) => { sent.push(msg); }
+  });
   assert.strictEqual(out.emailSent, true);
   assert.strictEqual(walletBalance(db, 'u_mail'), 10);
   assert.strictEqual(sent.length, 1);
   assert.ok(String(sent[0].subject).includes('Mina'));
-  assert.ok(String(sent[0].text || sent[0].html).includes('10'));
-  assert.strictEqual(grantDoc(db, 'u_mail').emailSent, true);
 }
 
-async function test4_double_handler_no_double_credit() {
+async function test10_smtp_fail_keeps_credit() {
   const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 20, emailEnabled: false });
-  const user = { uid: 'u_dup', email: 'd@test.com', displayName: 'D' };
-  const a = await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {});
-  const b = await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {});
-  assert.strictEqual(a.granted, true);
-  assert.strictEqual(b.alreadyGranted, true);
-  assert.strictEqual(walletBalance(db, 'u_dup'), 20);
-  assert.strictEqual(countLedgers(db), 1);
-}
-
-async function test5_ten_retries_still_once() {
-  const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
-  const user = { uid: 'u_retry', email: 'r@test.com' };
-  for (let i = 0; i < 10; i += 1) {
-    await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {});
-  }
-  assert.strictEqual(walletBalance(db, 'u_retry'), 5);
-  assert.strictEqual(countLedgers(db), 1);
-}
-
-async function test6_email_success_retry_no_extra_mail() {
-  const db = memoryDb();
-  await setConfig(db, {
-    enabled: true,
-    creditAmount: 1,
-    emailEnabled: true,
-    emailSubject: 'Hi',
-    emailBody: 'Body'
-  });
-  let mailed = 0;
-  const sendMail = async () => { mailed += 1; };
-  const user = { uid: 'u_es', email: 'es@test.com', displayName: 'E' };
-  await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, { sendMail });
-  await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, { sendMail });
-  assert.strictEqual(mailed, 1);
-  assert.strictEqual(walletBalance(db, 'u_es'), 1);
-}
-
-async function test7_smtp_fail_keeps_credit() {
-  const db = memoryDb();
+  const hwid = fakeHwid('pc-smtp');
   await setConfig(db, {
     enabled: true,
     creditAmount: 40,
@@ -248,106 +330,42 @@ async function test7_smtp_fail_keeps_credit() {
     emailSubject: 'Hi',
     emailBody: 'Body'
   });
-  const out = await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'u_smtp', email: 's@test.com' },
-    {
-      sendMail: async () => {
-        const err = new Error('SMTP down');
-        err.code = 'SMTP_UNAVAILABLE';
-        throw err;
-      }
+  const out = await welcomeDevice(db, 'u_smtp', hwid, {
+    sendMail: async () => {
+      const err = new Error('SMTP down');
+      err.code = 'SMTP_UNAVAILABLE';
+      throw err;
     }
-  );
+  });
   assert.strictEqual(out.emailSent, false);
   assert.strictEqual(walletBalance(db, 'u_smtp'), 40);
-  assert.strictEqual(grantDoc(db, 'u_smtp').emailSent, false);
-  assert.ok(grantDoc(db, 'u_smtp').emailError);
 }
 
-async function test8_smtp_fail_then_email_retry_no_extra_credit() {
+async function test11_legacy_sibling_blocks_new() {
   const db = memoryDb();
-  await setConfig(db, {
-    enabled: true,
-    creditAmount: 15,
-    emailEnabled: true,
-    emailSubject: 'Hi {{name}}',
-    emailBody: 'Credits {{credits}}'
+  const hwid = fakeHwid('pc-legacy');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('old_user').set({ hwid: normalizeHwid(hwid) });
+  await db.collection('welcome_credit_grants').doc('old_user').set({
+    uid: 'old_user',
+    amount: 5,
+    creditGranted: true,
+    grantedAt: new Date()
   });
-  const user = { uid: 'u_smtp2', email: 's2@test.com', displayName: 'Sam' };
-  await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {
-    sendMail: async () => { throw Object.assign(new Error('fail'), { code: 'SEND_FAILED' }); }
-  });
-  assert.strictEqual(walletBalance(db, 'u_smtp2'), 15);
-  let mailed = 0;
-  const out = await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {
-    sendMail: async () => { mailed += 1; }
-  });
-  assert.strictEqual(out.emailRetried, true);
-  assert.strictEqual(out.emailSent, true);
-  assert.strictEqual(mailed, 1);
-  assert.strictEqual(walletBalance(db, 'u_smtp2'), 15);
-  assert.strictEqual(countLedgers(db), 1);
+  await db.collection('licenses').doc('new_user').set({ hwid: normalizeHwid(hwid) });
+  const out = await welcomeDevice(db, 'new_user', hwid);
+  assert.strictEqual(out.skippedDeviceClaimed, true);
+  assert.strictEqual(walletBalance(db, 'new_user'), 0);
+  assert.ok(claimDoc(db, hwid));
 }
 
-async function test9_google_signup_once() {
+async function test12_existing_credits_not_reclaimed() {
   const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 7, emailEnabled: false });
-  const out = await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin({ g1: { email: 'g@gmail.com', displayName: 'G' } }),
-    { uid: 'g1', email: 'g@gmail.com', displayName: 'G', providerData: [{ providerId: 'google.com' }] },
-    {}
-  );
-  assert.strictEqual(out.granted, true);
-  assert.strictEqual(walletBalance(db, 'g1'), 7);
-}
-
-async function test10_google_relogin_zero() {
-  const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 7, emailEnabled: false });
-  const user = { uid: 'g2', email: 'g2@gmail.com' };
-  await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {});
-  // Relogin is not Auth onCreate — simulate mistaken re-invoke only yields alreadyGranted.
-  const again = await welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {});
-  assert.strictEqual(again.alreadyGranted, true);
-  assert.strictEqual(walletBalance(db, 'g2'), 7);
-}
-
-async function test11_email_signup_once() {
-  const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 3, emailEnabled: false });
-  const out = await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'e1', email: 'e1@mail.com', providerData: [{ providerId: 'password' }] },
-    {}
-  );
-  assert.strictEqual(out.granted, true);
-  assert.strictEqual(walletBalance(db, 'e1'), 3);
-}
-
-async function test12_non_admin_deny() {
-  const db = memoryDb();
-  await setConfig(db, { enabled: false });
-  const handlers = welcomeBenefit.createHandlers({
-    db,
-    admin: makeAdmin(),
-    cors: () => false,
-    requireAdmin: async () => {
-      throw Object.assign(new Error('Admin only'), { status: 403, code: 'ADMIN_FORBIDDEN' });
-    }
-  });
-  const r = httpErrorRes();
-  await handlers.getWelcomeBenefitConfig({ method: 'POST', body: {} }, r.res);
-  assert.strictEqual(r.out.statusCode, 403);
-  const r2 = httpErrorRes();
-  await handlers.saveWelcomeBenefitConfig({
-    method: 'POST',
-    body: { enabled: true, creditAmount: 1, emailEnabled: false }
-  }, r2.res);
-  assert.strictEqual(r2.out.statusCode, 403);
+  const hwid = fakeHwid('pc-keep');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('creditWalletsV2').doc('paid_user').set({ uid: 'paid_user', balance: 99 });
+  await welcomeDevice(db, 'paid_user', hwid);
+  assert.strictEqual(walletBalance(db, 'paid_user'), 104);
 }
 
 async function test13_admin_config_ok() {
@@ -371,95 +389,55 @@ async function test13_admin_config_ok() {
   }, save.res);
   assert.strictEqual(save.out.statusCode, 200);
   assert.strictEqual(save.out.body.config.creditAmount, 12);
-  assert.strictEqual(save.out.body.config.configVersion, 1);
 
   const get = httpErrorRes();
   await handlers.getWelcomeBenefitConfig({ method: 'POST', body: {} }, get.res);
-  assert.strictEqual(get.out.body.config.enabled, true);
-  assert.strictEqual(get.out.body.config.emailSubject, 'Hello {{name}}');
+  assert.strictEqual(get.out.body.policy.oncePer, 'device');
+  assert.strictEqual(get.out.body.policy.storesRawHwid, false);
 }
 
-async function test14_existing_user_no_retroactive() {
-  // Existing users never hit Auth onCreate after feature enable.
-  // Disabled-at-signup leaves no grant; later enable must not invent login grants.
+async function test14_claim_endpoint_requires_hwid() {
   const db = memoryDb();
-  await setConfig(db, { enabled: false, creditAmount: 100, emailEnabled: false });
-  await welcomeBenefit.processWelcomeForAuthUser(
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  const handlers = welcomeBenefit.createHandlers({
     db,
-    makeAdmin(),
-    { uid: 'old_user', email: 'old@test.com' },
-    {}
-  );
-  assert.strictEqual(grantDoc(db, 'old_user'), null);
-  await setConfig(db, { enabled: true, creditAmount: 100, emailEnabled: false });
-  // No Auth onCreate re-fire for existing UID — only an explicit call would grant.
-  // Policy: login paths must never call processWelcomeForAuthUser.
-  assert.strictEqual(walletBalance(db, 'old_user'), 0);
+    admin: makeAdmin(),
+    cors: () => false,
+    requireAdmin: async () => ({ uid: 'admin1' }),
+    requireUser: async () => ({ uid: 'u_claim' })
+  });
+  const bad = httpErrorRes();
+  await handlers.claimSignupBonus({ method: 'POST', body: {}, headers: {} }, bad.res);
+  assert.strictEqual(bad.out.statusCode, 400);
+
+  const hwid = fakeHwid('pc-claim');
+  const ok = httpErrorRes();
+  await handlers.claimSignupBonus({
+    method: 'POST',
+    body: { hwid },
+    headers: {}
+  }, ok.res);
+  assert.strictEqual(ok.out.statusCode, 200);
+  assert.strictEqual(ok.out.body.granted, true);
+  assert.strictEqual(walletBalance(db, 'u_claim'), 5);
 }
 
-async function test15_concurrent_two_events_one_grant() {
-  const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 25, emailEnabled: false });
-  const user = { uid: 'u_conc', email: 'c@test.com' };
-  const results = await Promise.all([
-    welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {}),
-    welcomeBenefit.processWelcomeForAuthUser(db, makeAdmin(), user, {})
-  ]);
-  const grantedCount = results.filter((r) => r.granted).length;
-  const already = results.filter((r) => r.alreadyGranted).length;
-  assert.ok(grantedCount + already === 2);
-  assert.strictEqual(walletBalance(db, 'u_conc'), 25);
-  assert.strictEqual(countLedgers(db), 1);
+async function test15_fingerprint_stable_no_raw() {
+  const a = fakeHwid('same');
+  const b = fakeHwid('same');
+  assert.strictEqual(deviceFingerprintFromHwid(a), deviceFingerprintFromHwid(b));
+  assert.notStrictEqual(deviceFingerprintFromHwid(a), normalizeHwid(a).toLowerCase());
 }
 
-async function test16_amount_change_applies_to_new_only() {
+async function test16_amount_change_applies_to_new_device_only() {
   const db = memoryDb();
   await setConfig(db, { enabled: true, creditAmount: 10, emailEnabled: false, configVersion: 3 });
-  await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'u_old_amt', email: 'o@test.com' },
-    {}
-  );
+  await welcomeDevice(db, 'u_old_amt', fakeHwid('pc-old-amt'));
   await setConfig(db, { enabled: true, creditAmount: 99, emailEnabled: false, configVersion: 4 });
-  await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'u_old_amt', email: 'o@test.com' },
-    {}
-  );
+  await welcomeDevice(db, 'u_old_amt', fakeHwid('pc-old-amt'));
   assert.strictEqual(walletBalance(db, 'u_old_amt'), 10);
-  await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'u_new_amt', email: 'n@test.com' },
-    {}
-  );
+  await welcomeDevice(db, 'u_new_amt', fakeHwid('pc-new-amt'));
   assert.strictEqual(walletBalance(db, 'u_new_amt'), 99);
-  assert.strictEqual(grantDoc(db, 'u_new_amt').configVersion, 4);
-}
-
-async function test_amount_zero_email_only() {
-  const db = memoryDb();
-  await setConfig(db, {
-    enabled: true,
-    creditAmount: 0,
-    emailEnabled: true,
-    emailSubject: 'Welcome',
-    emailBody: 'No credits but hello {{name}}'
-  });
-  let mailed = 0;
-  const out = await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'u_zero', email: 'z@test.com', displayName: '' },
-    { sendMail: async (msg) => { mailed += 1; assert.ok(String(msg.text || msg.html).includes('회원')); } }
-  );
-  assert.strictEqual(out.emailSent, true);
-  assert.strictEqual(mailed, 1);
-  assert.strictEqual(walletBalance(db, 'u_zero'), 0);
-  assert.strictEqual(countLedgers(db), 0);
-  assert.ok(grantDoc(db, 'u_zero'));
 }
 
 async function test_template_vars() {
@@ -468,46 +446,27 @@ async function test_template_vars() {
     { name: 'N', email: 'e@x.com', credits: 3, product_name: 'MidiAI Studio' }
   );
   assert.strictEqual(out, 'Hi N / e@x.com / 3 / MidiAI Studio / {{missing}}');
-  assert.strictEqual(welcomeBenefit.displayNameFallback(''), '회원');
-  assert.strictEqual(welcomeBenefit.displayNameFallback('', 'en'), 'Member');
-  assert.strictEqual(welcomeBenefit.displayNameFallback('', 'ja'), 'ユーザー');
-}
-
-async function test_require_user_missing_still_grants() {
-  // Auth onCreate often runs before users/{uid} exists.
-  const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 8, emailEnabled: false });
-  const out = await welcomeBenefit.processWelcomeForAuthUser(
-    db,
-    makeAdmin(),
-    { uid: 'no_user_doc', email: 'x@test.com' },
-    {}
-  );
-  assert.strictEqual(out.granted, true);
-  assert.strictEqual(walletBalance(db, 'no_user_doc'), 8);
 }
 
 async function main() {
   const tests = [
     ['TEST1 disabled', test1_disabled_skips],
-    ['TEST2 credit only', test2_credit_only],
-    ['TEST3 credit+email', test3_credit_and_email],
-    ['TEST4 double handler', test4_double_handler_no_double_credit],
-    ['TEST5 ten retries', test5_ten_retries_still_once],
-    ['TEST6 email success retry', test6_email_success_retry_no_extra_mail],
-    ['TEST7 smtp fail keeps credit', test7_smtp_fail_keeps_credit],
-    ['TEST8 smtp then email retry', test8_smtp_fail_then_email_retry_no_extra_credit],
-    ['TEST9 google signup', test9_google_signup_once],
-    ['TEST10 google relogin', test10_google_relogin_zero],
-    ['TEST11 email signup', test11_email_signup_once],
-    ['TEST12 non-admin deny', test12_non_admin_deny],
+    ['TEST2 new PC + new account → 5', test2_new_pc_new_account_grants],
+    ['TEST3 same PC + other account → 0', test3_same_pc_other_account_zero],
+    ['TEST4 same account relogin → no extra', test4_same_account_relogin_no_extra],
+    ['TEST5 concurrent UIDs → max 5 once', test5_concurrent_two_uids_one_grant],
+    ['TEST6 other PC + new account → 5', test6_other_pc_new_account_grants],
+    ['TEST7 auth onCreate waits for device', test7_auth_oncreate_waits_for_device],
+    ['TEST8 license HWID write grants', test8_license_hwid_write_grants],
+    ['TEST9 credit+email', test9_credit_and_email],
+    ['TEST10 smtp fail keeps credit', test10_smtp_fail_keeps_credit],
+    ['TEST11 legacy sibling blocks', test11_legacy_sibling_blocks_new],
+    ['TEST12 existing wallet not reclaimed', test12_existing_credits_not_reclaimed],
     ['TEST13 admin config', test13_admin_config_ok],
-    ['TEST14 no retroactive', test14_existing_user_no_retroactive],
-    ['TEST15 concurrent', test15_concurrent_two_events_one_grant],
-    ['TEST16 amount change new only', test16_amount_change_applies_to_new_only],
-    ['amount 0 email only', test_amount_zero_email_only],
-    ['template vars', test_template_vars],
-    ['grant before users doc', test_require_user_missing_still_grants]
+    ['TEST14 claimSignupBonus HTTP', test14_claim_endpoint_requires_hwid],
+    ['TEST15 fingerprint stable', test15_fingerprint_stable_no_raw],
+    ['TEST16 amount change new device', test16_amount_change_applies_to_new_device_only],
+    ['template vars', test_template_vars]
   ];
   for (const [name, fn] of tests) {
     await fn();

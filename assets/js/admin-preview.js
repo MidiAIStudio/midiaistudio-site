@@ -29,7 +29,7 @@ const VIEW_LEADS = {
   home: '운영 현황을 한눈에 보고 주요 관리 화면으로 이동합니다.',
   payments: '주문자별로 묶어 주문·결제를 확인하고 삭제합니다.',
   tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
-  welcome: '신규 가입 시 1회 크레딧·환영 메일 자동 지급 설정을 관리합니다.',
+  welcome: '물리 기기(HWID)당 1회 크레딧·환영 메일 자동 지급 설정을 관리합니다.',
   logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
   pricing: '상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.',
   content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.',
@@ -58,11 +58,11 @@ const ADMIN_LOG_CATS = new Set(['license', 'admin', 'message', 'hwid']);
 /** Preview mock adapter — derived only from this file, not production schema. */
 const MEMBERS = [
   { uid: 'u_preview_01', name: 'M44 Praesepe', email: 'praesepe@example.com', role: 'admin', plan: 'lifetime', licenseStatus: 'active', activity: 'online', country: '🇰🇷 대한민국', seen: '방금', orders: 3, tickets: 1, fav: true, joined: '2026.03.12', startsAt: '2026-03-12', expiresAt: '', licenseMemo: 'VIP / 원격지원 완료', issuedBy: '관리자', changedAt: '2026.08.18', credits: 12, hwid: 'A91C-77E2-91C0-12F9' },
-  { uid: 'u_preview_02', name: 'Nova Lyrae', email: 'nova.lyrae@example.com', role: 'user', plan: 'trial', licenseStatus: 'active', activity: 'active', country: '🇯🇵 일본', seen: '12분 전', orders: 0, tickets: 2, fav: false, joined: '2026.08.01', startsAt: '2026-08-01', expiresAt: '', licenseMemo: '', issuedBy: '시스템', changedAt: '2026.08.01', credits: 3, hwid: 'B204-11AA-44B1-90C2' },
+  { uid: 'u_preview_02', name: 'Nova Lyrae', email: 'nova.lyrae@example.com', role: 'user', plan: 'trial', licenseStatus: 'active', activity: 'active', country: '🇯🇵 일본', seen: '12분 전', orders: 0, tickets: 2, fav: false, joined: '2026.08.01', startsAt: '2026-08-01', expiresAt: '', licenseMemo: '', issuedBy: '시스템', changedAt: '2026.08.01', credits: 3, hwid: 'B204-11AA-44B1-90C2', deviceFingerprint: 'fp_shared_preview', signupBonusStatus: 'granted', signupBonusGranted: true },
   { uid: 'u_preview_03', name: 'Orion Belt', email: 'orion.belt@example.net', role: 'user', plan: 'period', licenseStatus: 'active', activity: 'idle', country: '🇺🇸 미국', seen: '3일 전', orders: 2, tickets: 0, fav: false, joined: '2026.07.18', startsAt: '2026-07-18', expiresAt: '2026-09-18', licenseMemo: 'PayPal 기간제 30일', issuedBy: '결제', changedAt: '2026.08.09', credits: 8, hwid: 'C8F0-33D1-78E4-21AB' },
   { uid: 'u_preview_04', name: 'Vega Prime', email: 'vega.prime@example.com', role: 'user', plan: 'lifetime', licenseStatus: 'active', activity: 'offline', country: '🇰🇷 대한민국', seen: '18일 전', orders: 1, tickets: 0, fav: true, joined: '2026.05.04', startsAt: '2026-05-04', expiresAt: '', licenseMemo: '', issuedBy: 'PayPal', changedAt: '2026.05.04', credits: 20, hwid: 'D17B-90C8-12A0-55E1' },
-  { uid: 'u_preview_05', name: 'Altair Note', email: 'altair.note@example.org', role: 'user', plan: 'period', licenseStatus: 'expired', activity: 'offline', country: '', seen: '32일 전', orders: 0, tickets: 1, fav: false, joined: '2026.06.22', startsAt: '2026-06-22', expiresAt: '2026-08-10', licenseMemo: '', issuedBy: '시스템', changedAt: '2026.08.10', credits: 0, hwid: '' },
-  { uid: 'u_preview_06', name: 'Deneb Keys', email: 'deneb.keys@example.com', role: 'user', plan: 'period', licenseStatus: 'active', activity: 'active', country: '🇩🇪 독일', seen: '1시간 전', orders: 4, tickets: 3, fav: false, joined: '2026.08.14', startsAt: '2026-08-14', expiresAt: '2026-09-13', licenseMemo: '체험판 업그레이드 대기', issuedBy: '관리자', changedAt: '2026.08.14', credits: 5, hwid: 'E44A-62B9-03F7-88D0' }
+  { uid: 'u_preview_05', name: 'Altair Note', email: 'altair.note@example.org', role: 'user', plan: 'period', licenseStatus: 'expired', activity: 'offline', country: '', seen: '32일 전', orders: 0, tickets: 1, fav: false, joined: '2026.06.22', startsAt: '2026-06-22', expiresAt: '2026-08-10', licenseMemo: '', issuedBy: '시스템', changedAt: '2026.08.10', credits: 0, hwid: 'B204-11AA-44B1-90C2', deviceFingerprint: 'fp_shared_preview', signupBonusStatus: 'skipped_device_claimed', signupBonusGranted: false },
+  { uid: 'u_preview_06', name: 'Deneb Keys', email: 'deneb.keys@example.com', role: 'user', plan: 'period', licenseStatus: 'active', activity: 'active', country: '🇩🇪 독일', seen: '1시간 전', orders: 4, tickets: 3, fav: false, joined: '2026.08.14', startsAt: '2026-08-14', expiresAt: '2026-09-13', licenseMemo: '체험판 업그레이드 대기', issuedBy: '관리자', changedAt: '2026.08.14', credits: 5, hwid: 'E44A-62B9-03F7-88D0', signupBonusStatus: 'granted', signupBonusGranted: true }
 ];
 
 const ORDERS = [
@@ -140,6 +140,33 @@ function memberByEmail(email) {
 function idPairHtml(uid, hwid) {
   return `<span class="admin-id-pair"><span class="admin-id-item">UID <code class="mono">${uid || '-'}</code></span><span class="admin-id-item">HWID <code class="mono">${hwid || '(없음)'}</code></span></span>`;
 }
+function previewSameDevicePeers(u) {
+  const key = String(u.deviceFingerprint || u.hwid || '').trim();
+  if (!key) return [];
+  return MEMBERS.filter((m) => String(m.deviceFingerprint || m.hwid || '').trim() === key);
+}
+function previewSameDeviceBadge(u) {
+  const peers = previewSameDevicePeers(u);
+  if (peers.length < 2) return '';
+  return `<span class="admin-same-device-badge">동일 기기 계정 ${peers.length}개</span>`;
+}
+function previewSameDeviceBlock(u) {
+  const peers = previewSameDevicePeers(u);
+  if (peers.length < 2) return '';
+  const rows = peers.map((p) => {
+    const bonus = p.signupBonusGranted === true ? '지급됨'
+      : (p.signupBonusStatus === 'skipped_device_claimed' ? '미지급 (동일 기기)' : '미확인');
+    return `<tr><td><code class="mono">${p.uid}</code></td><td>${p.email}</td><td>${p.joined}</td><td>${bonus}</td></tr>`;
+  }).join('');
+  return `<section class="admin-crm-dash-sec admin-same-device-sec">
+    <header class="admin-crm-dash-head"><h3>동일 기기 계정 ${peers.length}개</h3></header>
+    <div class="admin-table-wrap admin-same-device-table-wrap"><table class="admin-table admin-same-device-table">
+      <thead><tr><th>UID</th><th>이메일</th><th>가입일</th><th>무료 크레딧</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </section>`;
+}
+
 function previewNotice(msg) {
   const el = $('adminSaveMsg');
   if (!el) return alert(msg);
@@ -931,7 +958,7 @@ function renderCrmWork() {
     return `
     <tr class="admin-crm-member-row${open ? ' is-selected is-open' : ''}" data-admin-uid="${u.uid}">
       <td><label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-check="${u.uid}" ${selected.has(u.uid) ? 'checked' : ''}></label></td>
-      <td class="admin-member-user"><span class="admin-order-caret" aria-hidden="true">▸</span><span class="admin-crm-card-avatar is-fallback">${u.name.slice(0, 1)}</span><span><b>${u.fav ? '<span class="crm-fav-mark">★</span>' : ''}${u.name}</b></span></td>
+      <td class="admin-member-user"><span class="admin-order-caret" aria-hidden="true">▸</span><span class="admin-crm-card-avatar is-fallback">${u.name.slice(0, 1)}</span><span><b>${u.fav ? '<span class="crm-fav-mark">★</span>' : ''}${u.name}</b>${previewSameDeviceBadge(u)}</span></td>
       <td class="admin-member-email" title="${u.email}">${u.email}</td>
       <td class="admin-member-joined">${u.joined || '-'}</td>
       <td>${roleBadge(u.role)}</td>
@@ -1013,7 +1040,7 @@ function openDetail(uid, opts = {}) {
   const paid = orders.filter((o) => o.status === '결제완료');
   const ticketList = tickets.slice(0, 3).map((t) => `<li><b>${t.title}</b><span>${t.status} · ${t.when}</span></li>`).join('');
   const dashBtn = (label, tab) => `<button type="button" class="ghost mini-btn" data-crm-action="goto-tab" data-crm-tab="${tab}">${label}</button>`;
-  $('adminCrmSummary') && ($('adminCrmSummary').innerHTML = `<div class="admin-crm-dash-grid">
+  $('adminCrmSummary') && ($('adminCrmSummary').innerHTML = `${previewSameDeviceBlock(u)}<div class="admin-crm-dash-grid">
     <section class="admin-crm-dash-sec">
       <header class="admin-crm-dash-head"><h3>라이선스</h3><div class="admin-crm-dash-actions">${dashBtn('관리','license')}</div></header>
       <dl class="admin-crm-dash-dl">

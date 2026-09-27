@@ -1119,6 +1119,18 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 }
 .admin-page .crm-meta-login{font-variant-numeric:tabular-nums}
 .admin-page .crm-fav-mark{color:#fbbf24;margin-right:4px;font-size:11px}
+.admin-console-page .admin-same-device-badge{
+  display:inline-flex;align-items:center;margin-left:8px;padding:2px 7px;border-radius:6px;
+  font-size:10px;font-weight:700;letter-spacing:.01em;line-height:1.3;white-space:nowrap;
+  color:#fbbf24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.28)
+}
+.admin-console-page .admin-same-device-sec{margin:0 0 10px}
+.admin-console-page .admin-same-device-hint{margin:0 0 8px}
+.admin-console-page .admin-same-device-table-wrap{max-width:100%;overflow:auto}
+.admin-console-page .admin-same-device-table{width:100%;font-size:12px}
+.admin-console-page .admin-same-device-bonus.is-granted{color:#6ee7b7}
+.admin-console-page .admin-same-device-bonus.is-skipped{color:#fdba74}
+.admin-console-page .admin-member-user>span{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px;min-width:0}
 .admin-page .crm-badge,.admin-page .crm-activity,.admin-page .crm-role{
   display:inline-flex;align-items:center;gap:5px;padding:2px 7px 2px 6px;border-radius:6px;
   font-size:10px;font-weight:700;letter-spacing:.02em;border:1px solid transparent;white-space:nowrap;line-height:1.3
