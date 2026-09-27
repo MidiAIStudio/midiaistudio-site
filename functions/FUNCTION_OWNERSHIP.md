@@ -30,9 +30,10 @@ Node-owned (this codebase) admin alerts:
 
 Welcome Benefit (신규 가입 혜택):
 - getWelcomeBenefitConfig / saveWelcomeBenefitConfig / previewWelcomeBenefitEmail
-- claimSignupBonus (authenticated; HWID → device fingerprint; server decides grant)
+- claimSignupBonus (auth UID==target; server-bound licenses.hwid; HMAC fingerprint)
 - onAuthUserCreatedWelcomeBenefit (Auth onCreate — waits for device; never login grant)
 - onLicenseHwidWelcomeBenefit (licenses/{uid} HWID first-bind → device-once grant)
+- migrateSignupBonusClaims.js (one-shot licenses.hwid → signupBonusClaims backfill; no credit changes)
 
 Also owns: adminGrantCredits, sendAdminBulkEmail, license/PayPal/PortOne, …
 

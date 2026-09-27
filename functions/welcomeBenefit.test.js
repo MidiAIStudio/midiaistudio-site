@@ -1,16 +1,21 @@
 'use strict';
 
 /**
- * Welcome Benefit tests — device-once signup bonus + legacy UID grant semantics.
+ * Welcome Benefit tests — device-once signup bonus + HMAC fingerprint + migration.
  */
 const assert = require('assert');
 const crypto = require('crypto');
 const welcomeBenefit = require('./welcomeBenefit');
 const creditWalletV2 = require('./creditWalletV2');
+const migrateSignupBonusClaims = require('./migrateSignupBonusClaims');
 const {
   deviceFingerprintFromHwid,
-  normalizeHwid
+  normalizeHwid,
+  configureDeviceFingerprint,
+  getFingerprintSecret
 } = require('./deviceFingerprint');
+
+const TEST_HMAC = 'unit-test-signup-bonus-hmac-secret';
 
 function httpErrorRes() {
   const out = { statusCode: 200, body: null };
@@ -52,6 +57,20 @@ function memoryDb() {
     };
     return ref;
   }
+  function listDocs(prefix) {
+    const docs = [];
+    const base = `${prefix}/`;
+    for (const [path, data] of store.entries()) {
+      if (!path.startsWith(base)) continue;
+      const rest = path.slice(base.length);
+      if (!rest || rest.includes('/')) continue;
+      docs.push({
+        id: rest,
+        data: () => ({ ...data })
+      });
+    }
+    return docs;
+  }
   function col(name) {
     let auto = 0;
     return {
@@ -65,21 +84,19 @@ function memoryDb() {
         await ref.set(data);
         return ref;
       },
+      async get() {
+        return { docs: listDocs(name) };
+      },
       where(field, op, value) {
         return {
           limit(n) {
             return {
               async get() {
                 const docs = [];
-                const prefix = `${name}/`;
-                for (const [path, data] of store.entries()) {
-                  if (!path.startsWith(prefix) || path.slice(prefix.length).includes('/')) continue;
-                  const id = path.slice(prefix.length);
+                for (const doc of listDocs(name)) {
+                  const data = doc.data();
                   if (op === '==' && data && data[field] === value) {
-                    docs.push({
-                      id,
-                      data: () => ({ ...data })
-                    });
+                    docs.push(doc);
                   }
                   if (docs.length >= n) break;
                 }
@@ -98,6 +115,9 @@ function memoryDb() {
   return {
     store,
     collection: col,
+    doc(path) {
+      return docRef(path);
+    },
     _txLock: Promise.resolve(),
     async runTransaction(fn) {
       const run = this._txLock.then(() => {
@@ -184,6 +204,16 @@ async function welcomeDevice(db, uid, hwid, opts = {}) {
     displayName: opts.displayName || uid,
     sendMail: opts.sendMail,
     ipMasked: opts.ipMasked || '1.2.***.***'
+  });
+}
+
+function claimHandlers(db, uid) {
+  return welcomeBenefit.createHandlers({
+    db,
+    admin: makeAdmin(),
+    cors: () => false,
+    requireAdmin: async () => ({ uid: 'admin1' }),
+    requireUser: async () => ({ uid })
   });
 }
 
@@ -396,37 +426,31 @@ async function test13_admin_config_ok() {
   assert.strictEqual(get.out.body.policy.storesRawHwid, false);
 }
 
-async function test14_claim_endpoint_requires_hwid() {
+async function test14_claim_uses_bound_hwid() {
   const db = memoryDb();
-  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
-  const handlers = welcomeBenefit.createHandlers({
-    db,
-    admin: makeAdmin(),
-    cors: () => false,
-    requireAdmin: async () => ({ uid: 'admin1' }),
-    requireUser: async () => ({ uid: 'u_claim' })
-  });
-  const bad = httpErrorRes();
-  await handlers.claimSignupBonus({ method: 'POST', body: {}, headers: {} }, bad.res);
-  assert.strictEqual(bad.out.statusCode, 400);
-
   const hwid = fakeHwid('pc-claim');
-  const ok = httpErrorRes();
-  await handlers.claimSignupBonus({
-    method: 'POST',
-    body: { hwid },
-    headers: {}
-  }, ok.res);
-  assert.strictEqual(ok.out.statusCode, 200);
-  assert.strictEqual(ok.out.body.granted, true);
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_claim').set({ hwid: normalizeHwid(hwid) });
+  const handlers = claimHandlers(db, 'u_claim');
+  const missing = httpErrorRes();
+  await handlers.claimSignupBonus({ method: 'POST', body: {}, headers: {} }, missing.res);
+  // Bound HWID exists — empty body is OK (server uses licenses.hwid).
+  assert.strictEqual(missing.out.statusCode, 200);
+  assert.strictEqual(missing.out.body.granted, true);
   assert.strictEqual(walletBalance(db, 'u_claim'), 5);
 }
 
-async function test15_fingerprint_stable_no_raw() {
+async function test15_fingerprint_hmac_stable_no_raw() {
   const a = fakeHwid('same');
   const b = fakeHwid('same');
   assert.strictEqual(deviceFingerprintFromHwid(a), deviceFingerprintFromHwid(b));
   assert.notStrictEqual(deviceFingerprintFromHwid(a), normalizeHwid(a).toLowerCase());
+  // Not plain SHA-256 of namespace+hwid
+  const plain = crypto.createHash('sha256')
+    .update('midiai:signup_bonus:v1:' + normalizeHwid(a), 'utf8')
+    .digest('hex');
+  assert.notStrictEqual(deviceFingerprintFromHwid(a), plain);
+  assert.ok(getFingerprintSecret());
 }
 
 async function test16_amount_change_applies_to_new_device_only() {
@@ -440,7 +464,7 @@ async function test16_amount_change_applies_to_new_device_only() {
   assert.strictEqual(walletBalance(db, 'u_new_amt'), 99);
 }
 
-async function test_template_vars() {
+async function test17_template_vars() {
   const out = welcomeBenefit.applyTemplate(
     'Hi {{name}} / {{email}} / {{credits}} / {{product_name}} / {{missing}}',
     { name: 'N', email: 'e@x.com', credits: 3, product_name: 'MidiAI Studio' }
@@ -448,7 +472,360 @@ async function test_template_vars() {
   assert.strictEqual(out, 'Hi N / e@x.com / 3 / MidiAI Studio / {{missing}}');
 }
 
+async function test18_migration_existing_welcome_user() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-mig-one');
+  await db.collection('licenses').doc('legacy1').set({
+    hwid: normalizeHwid(hwid),
+    plan: 'lifetime',
+    status: 'active',
+    startsAt: '2025-01-01',
+    expiresAt: ''
+  });
+  await db.collection('welcome_credit_grants').doc('legacy1').set({
+    uid: 'legacy1',
+    amount: 5,
+    creditGranted: true,
+    email: 'legacy1@test.com',
+    grantedAt: new Date('2026-01-01T00:00:00.000Z')
+  });
+  await db.collection('creditWalletsV2').doc('legacy1').set({ uid: 'legacy1', balance: 5 });
+  const beforeLic = { ...db.store.get('licenses/legacy1') };
+  const before = walletBalance(db, 'legacy1');
+  const out = await migrateSignupBonusClaims.migrateSignupBonusClaims(db, {
+    FieldValue,
+    dryRun: false,
+    force: true,
+    secret: TEST_HMAC,
+    logger: { info() {} }
+  });
+  assert.strictEqual(out.created, 1);
+  assert.strictEqual(out.creditsChangedUsers, 0);
+  assert.strictEqual(out.licensesChangedUsers, 0);
+  assert.strictEqual(walletBalance(db, 'legacy1'), before);
+  assert.deepStrictEqual(db.store.get('licenses/legacy1'), beforeLic);
+  const claim = claimDoc(db, hwid);
+  assert.ok(claim);
+  assert.strictEqual(claim.uid, 'legacy1');
+  assert.strictEqual(claim.migrated, true);
+  assert.strictEqual(claim.claimed, true);
+  assert.strictEqual(claim.creditGranted, false);
+  assert.strictEqual(claim.amount, 0);
+  assert.ok(!Object.prototype.hasOwnProperty.call(claim, 'hwid'));
+}
+
+async function test19_migration_multi_uid_one_claim() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-mig-multi');
+  await db.collection('licenses').doc('m1').set({ hwid: normalizeHwid(hwid), plan: 'period' });
+  await db.collection('licenses').doc('m2').set({ hwid: normalizeHwid(hwid), plan: 'trial' });
+  await db.collection('licenses').doc('m3').set({ hwid: normalizeHwid(hwid), plan: 'trial' });
+  await db.collection('welcome_credit_grants').doc('m1').set({
+    uid: 'm1', amount: 5, creditGranted: true, grantedAt: new Date('2026-01-02')
+  });
+  await db.collection('creditWalletsV2').doc('m1').set({ balance: 5 });
+  await db.collection('creditWalletsV2').doc('m2').set({ balance: 0 });
+  const beforeM1Lic = { ...db.store.get('licenses/m1') };
+  const logs = [];
+  const out = await migrateSignupBonusClaims.migrateSignupBonusClaims(db, {
+    FieldValue,
+    force: true,
+    secret: TEST_HMAC,
+    logger: { info: (...a) => logs.push(a) }
+  });
+  assert.strictEqual(out.created, 1);
+  assert.strictEqual(out.multiUidFingerprints, 1);
+  assert.strictEqual(out.creditsChangedUsers, 0);
+  const claim = claimDoc(db, hwid);
+  assert.strictEqual(claim.uid, 'm1');
+  assert.strictEqual(claim.relatedUidCount, 3);
+  assert.strictEqual(walletBalance(db, 'm1'), 5);
+  assert.strictEqual(walletBalance(db, 'm2'), 0);
+  assert.deepStrictEqual(db.store.get('licenses/m1'), beforeM1Lic);
+}
+
+async function test20_after_migration_new_email_zero() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-mig-block');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('old').set({ hwid: normalizeHwid(hwid), plan: 'lifetime' });
+  await db.collection('welcome_credit_grants').doc('old').set({
+    uid: 'old', amount: 5, creditGranted: true, grantedAt: new Date()
+  });
+  await migrateSignupBonusClaims.migrateSignupBonusClaims(db, {
+    FieldValue,
+    force: true,
+    secret: TEST_HMAC,
+    logger: { info() {} }
+  });
+  await db.collection('licenses').doc('newbie').set({ hwid: normalizeHwid(hwid), plan: 'trial' });
+  const out = await welcomeDevice(db, 'newbie', hwid, { email: 'new@test.com' });
+  assert.strictEqual(out.skippedDeviceClaimed, true);
+  assert.strictEqual(out.amount, 0);
+  assert.strictEqual(walletBalance(db, 'newbie'), 0);
+}
+
+async function test21_forged_fingerprint_rejected() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-forge');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_forge').set({ hwid: normalizeHwid(hwid) });
+  const handlers = claimHandlers(db, 'u_forge');
+  const r = httpErrorRes();
+  await handlers.claimSignupBonus({
+    method: 'POST',
+    body: { deviceFingerprint: 'deadbeef'.repeat(8) },
+    headers: {}
+  }, r.res);
+  assert.strictEqual(r.out.statusCode, 400);
+  assert.strictEqual(r.out.body.code, 'FORGED_FINGERPRINT');
+  assert.strictEqual(walletBalance(db, 'u_forge'), 0);
+}
+
+async function test22_uid_mismatch_rejected() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-uid');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_real').set({ hwid: normalizeHwid(hwid) });
+  const handlers = claimHandlers(db, 'u_real');
+  const r = httpErrorRes();
+  await handlers.claimSignupBonus({
+    method: 'POST',
+    body: { uid: 'u_other' },
+    headers: {}
+  }, r.res);
+  assert.strictEqual(r.out.statusCode, 403);
+  assert.strictEqual(r.out.body.code, 'UID_MISMATCH');
+  assert.strictEqual(walletBalance(db, 'u_real'), 0);
+  assert.strictEqual(walletBalance(db, 'u_other'), 0);
+}
+
+async function test23_license_and_claim_race_plus_five_once() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-dual-path');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_dual').set({ hwid: normalizeHwid(hwid) });
+  const handlers = claimHandlers(db, 'u_dual');
+  const claimRes = httpErrorRes();
+  const results = await Promise.all([
+    welcomeBenefit.processWelcomeOnLicenseHwidWrite(db, makeAdmin(), {
+      uid: 'u_dual',
+      beforeData: { hwid: '' },
+      afterData: { hwid: normalizeHwid(hwid) }
+    }),
+    handlers.claimSignupBonus({ method: 'POST', body: {}, headers: {} }, claimRes.res)
+  ]);
+  const licenseOut = results[0];
+  assert.strictEqual(claimRes.out.statusCode, 200);
+  const grantedFlags = [
+    !!(licenseOut && licenseOut.granted),
+    !!claimRes.out.body.granted
+  ].filter(Boolean);
+  assert.ok(grantedFlags.length <= 1);
+  assert.strictEqual(walletBalance(db, 'u_dual'), 5);
+  assert.strictEqual(countLedgers(db), 1);
+}
+
+async function test24_txn_fail_then_retry_no_double() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-txn-retry');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  let attempts = 0;
+  const orig = db.runTransaction.bind(db);
+  db.runTransaction = async (fn) => {
+    attempts += 1;
+    if (attempts === 1) {
+      throw Object.assign(new Error('simulated txn failure'), { code: 'TXN_FAIL' });
+    }
+    return orig(fn);
+  };
+  let firstErr = null;
+  try {
+    await welcomeDevice(db, 'u_retry', hwid);
+  } catch (err) {
+    firstErr = err;
+  }
+  assert.ok(firstErr);
+  assert.strictEqual(walletBalance(db, 'u_retry'), 0);
+  assert.strictEqual(claimDoc(db, hwid), null);
+
+  const second = await welcomeDevice(db, 'u_retry', hwid);
+  assert.strictEqual(second.granted, true);
+  assert.strictEqual(walletBalance(db, 'u_retry'), 5);
+
+  const third = await welcomeDevice(db, 'u_retry', hwid);
+  assert.strictEqual(third.alreadyGranted, true);
+  assert.strictEqual(walletBalance(db, 'u_retry'), 5);
+  assert.strictEqual(countLedgers(db), 1);
+}
+
+async function test25_lifetime_login_claim_no_credit_license_intact() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-life');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  const lic = {
+    plan: 'lifetime',
+    status: 'active',
+    licensed: true,
+    method: 'paypal',
+    startsAt: '2025-03-01',
+    expiresAt: '',
+    hwid: normalizeHwid(hwid)
+  };
+  await db.collection('licenses').doc('u_life').set(lic);
+  await db.collection('creditWalletsV2').doc('u_life').set({ uid: 'u_life', balance: 23 });
+  const beforeLic = { ...db.store.get('licenses/u_life') };
+  const out = await welcomeDevice(db, 'u_life', hwid);
+  assert.strictEqual(out.granted, false);
+  assert.strictEqual(out.skippedExistingPaid, true);
+  assert.strictEqual(out.amount, 0);
+  assert.strictEqual(walletBalance(db, 'u_life'), 23);
+  assert.deepStrictEqual(db.store.get('licenses/u_life'), beforeLic);
+  assert.strictEqual(db.store.get('licenses/u_life').plan, 'lifetime');
+  assert.ok(claimDoc(db, hwid));
+  assert.strictEqual(claimDoc(db, hwid).creditGranted, false);
+}
+
+async function test26_lifetime_bonus_fail_still_ok() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-life-fail');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_life2').set({
+    plan: 'lifetime', status: 'active', licensed: true, hwid: normalizeHwid(hwid)
+  });
+  // Force HMAC miss mid-path: still must not alter license.
+  configureDeviceFingerprint({ secret: '' });
+  const beforeLic = { ...db.store.get('licenses/u_life2') };
+  const out = await welcomeDevice(db, 'u_life2', hwid);
+  assert.strictEqual(out.skipped, true);
+  assert.strictEqual(out.reason, 'hmac_secret_missing');
+  assert.deepStrictEqual(db.store.get('licenses/u_life2'), beforeLic);
+  configureDeviceFingerprint({ secret: TEST_HMAC });
+}
+
+async function test27_period_dates_unchanged() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-period');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_per').set({
+    plan: 'period',
+    status: 'active',
+    licensed: true,
+    startsAt: '2026-09-20',
+    expiresAt: '2026-10-20',
+    hwid: normalizeHwid(hwid)
+  });
+  await db.collection('creditWalletsV2').doc('u_per').set({ balance: 7 });
+  const out = await welcomeDevice(db, 'u_per', hwid);
+  assert.strictEqual(out.skippedExistingPaid, true);
+  assert.strictEqual(walletBalance(db, 'u_per'), 7);
+  const lic = db.store.get('licenses/u_per');
+  assert.strictEqual(lic.startsAt, '2026-09-20');
+  assert.strictEqual(lic.expiresAt, '2026-10-20');
+  assert.strictEqual(lic.plan, 'period');
+}
+
+async function test28_period_claim_fail_license_ok() {
+  const db = memoryDb();
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_per2').set({
+    plan: 'period',
+    status: 'active',
+    startsAt: '2026-09-20',
+    expiresAt: '2026-10-20',
+    hwid: ''
+  });
+  const handlers = claimHandlers(db, 'u_per2');
+  const r = httpErrorRes();
+  await handlers.claimSignupBonus({ method: 'POST', body: {}, headers: {} }, r.res);
+  assert.strictEqual(r.out.statusCode, 400);
+  assert.strictEqual(r.out.body.code, 'HWID_NOT_BOUND');
+  const lic = db.store.get('licenses/u_per2');
+  assert.strictEqual(lic.startsAt, '2026-09-20');
+  assert.strictEqual(lic.expiresAt, '2026-10-20');
+  assert.strictEqual(lic.plan, 'period');
+}
+
+async function test29_migration_trial_credits_unchanged() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-trial-mig');
+  await db.collection('licenses').doc('u_tr').set({
+    plan: 'trial', status: 'active', hwid: normalizeHwid(hwid)
+  });
+  await db.collection('creditWalletsV2').doc('u_tr').set({ balance: 2 });
+  const beforeLic = { ...db.store.get('licenses/u_tr') };
+  const out = await migrateSignupBonusClaims.migrateSignupBonusClaims(db, {
+    FieldValue,
+    force: true,
+    secret: TEST_HMAC,
+    logger: { info() {} }
+  });
+  assert.strictEqual(out.creditsChangedUsers, 0);
+  assert.strictEqual(walletBalance(db, 'u_tr'), 2);
+  assert.deepStrictEqual(db.store.get('licenses/u_tr'), beforeLic);
+}
+
+async function test30_migration_idempotent() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-idem');
+  await db.collection('licenses').doc('u_id').set({
+    plan: 'lifetime', hwid: normalizeHwid(hwid)
+  });
+  const a = await migrateSignupBonusClaims.migrateSignupBonusClaims(db, {
+    FieldValue, force: true, secret: TEST_HMAC, logger: { info() {} }
+  });
+  const b = await migrateSignupBonusClaims.migrateSignupBonusClaims(db, {
+    FieldValue, force: true, secret: TEST_HMAC, logger: { info() {} }
+  });
+  assert.strictEqual(a.created, 1);
+  assert.strictEqual(b.created, 0);
+  assert.strictEqual(b.alreadyExisted, 1);
+  assert.strictEqual(walletBalance(db, 'u_id'), 0);
+}
+
+async function test31_dry_run_no_writes_and_stats() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-dry');
+  await db.collection('licenses').doc('d1').set({ plan: 'lifetime', hwid: normalizeHwid(hwid) });
+  await db.collection('licenses').doc('d2').set({ plan: 'period', hwid: '' });
+  await db.collection('licenses').doc('d3').set({ plan: 'trial', hwid: normalizeHwid(fakeHwid('pc-dry-2')) });
+  const out = await migrateSignupBonusClaims.migrateSignupBonusClaims(db, {
+    FieldValue,
+    dryRun: true,
+    force: true,
+    secret: TEST_HMAC,
+    logger: { info() {} }
+  });
+  assert.strictEqual(out.dryRun, true);
+  assert.strictEqual(out.totalLicenses, 3);
+  assert.strictEqual(out.withHwid, 2);
+  assert.strictEqual(out.lifetime, 1);
+  assert.strictEqual(out.period, 1);
+  assert.strictEqual(out.trial, 1);
+  assert.strictEqual(out.creditsChangedUsers, 0);
+  assert.strictEqual(out.licensesChangedUsers, 0);
+  assert.ok(out.claimsToCreate >= 1);
+  assert.strictEqual(claimDoc(db, hwid), null);
+}
+
+async function test32_welcome_never_writes_license_keys() {
+  const db = memoryDb();
+  const hwid = fakeHwid('pc-keys');
+  await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
+  await db.collection('licenses').doc('u_t').set({
+    plan: 'trial', status: 'active', method: 'signup', hwid: normalizeHwid(hwid)
+  });
+  await welcomeDevice(db, 'u_t', hwid);
+  const lic = db.store.get('licenses/u_t');
+  assert.strictEqual(lic.plan, 'trial');
+  assert.strictEqual(lic.method, 'signup');
+  assert.strictEqual(lic.status, 'active');
+  // Only hwid was pre-set; welcome must not add plan/expires fields via overwrite.
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(lic, 'expiresAt'), false);
+}
+
 async function main() {
+  configureDeviceFingerprint({ secret: TEST_HMAC });
   const tests = [
     ['TEST1 disabled', test1_disabled_skips],
     ['TEST2 new PC + new account → 5', test2_new_pc_new_account_grants],
@@ -463,12 +840,28 @@ async function main() {
     ['TEST11 legacy sibling blocks', test11_legacy_sibling_blocks_new],
     ['TEST12 existing wallet not reclaimed', test12_existing_credits_not_reclaimed],
     ['TEST13 admin config', test13_admin_config_ok],
-    ['TEST14 claimSignupBonus HTTP', test14_claim_endpoint_requires_hwid],
-    ['TEST15 fingerprint stable', test15_fingerprint_stable_no_raw],
+    ['TEST14 claimSignupBonus uses bound HWID', test14_claim_uses_bound_hwid],
+    ['TEST15 HMAC fingerprint stable', test15_fingerprint_hmac_stable_no_raw],
     ['TEST16 amount change new device', test16_amount_change_applies_to_new_device_only],
-    ['template vars', test_template_vars]
+    ['TEST17 template vars', test17_template_vars],
+    ['TEST18 migration existing welcome user', test18_migration_existing_welcome_user],
+    ['TEST19 migration multi UID one claim', test19_migration_multi_uid_one_claim],
+    ['TEST20 after migration new email → 0', test20_after_migration_new_email_zero],
+    ['TEST21 forged fingerprint rejected', test21_forged_fingerprint_rejected],
+    ['TEST22 other UID claim rejected', test22_uid_mismatch_rejected],
+    ['TEST23 license+claim race → +5 once', test23_license_and_claim_race_plus_five_once],
+    ['TEST24 txn fail retry → no double', test24_txn_fail_then_retry_no_double],
+    ['TEST25 Lifetime claim → +0 license intact', test25_lifetime_login_claim_no_credit_license_intact],
+    ['TEST26 Lifetime bonus fail → license OK', test26_lifetime_bonus_fail_still_ok],
+    ['TEST27 period dates unchanged', test27_period_dates_unchanged],
+    ['TEST28 period claim fail → license OK', test28_period_claim_fail_license_ok],
+    ['TEST29 trial migration credits unchanged', test29_migration_trial_credits_unchanged],
+    ['TEST30 migration idempotent', test30_migration_idempotent],
+    ['TEST31 dry-run stats no writes', test31_dry_run_no_writes_and_stats],
+    ['TEST32 welcome never mutates license fields', test32_welcome_never_writes_license_keys]
   ];
   for (const [name, fn] of tests) {
+    configureDeviceFingerprint({ secret: TEST_HMAC });
     await fn();
     console.log('PASS', name);
   }

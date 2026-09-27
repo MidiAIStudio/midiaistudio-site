@@ -14,6 +14,8 @@ const adminPush = require('./adminPush');
 
 const gmailUser = defineSecret('GMAIL_USER');
 const gmailAppPassword = defineSecret('GMAIL_APP_PASSWORD');
+/** Signup-bonus device fingerprint HMAC key (server-only; never client-derived). */
+const signupBonusHmacSecret = defineSecret('SIGNUP_BONUS_HMAC_SECRET');
 /** Support AI LLM — Secret Manager; bound only on supportAi* HTTPS functions */
 const openaiApiKey = defineSecret('OPENAI_API_KEY');
 /** Support AI private GitHub source — fine-grained read-only PAT (Contents+Metadata) */
@@ -860,7 +862,14 @@ function createGmailSender() {
 const adminBulkEmail = require('./adminBulkEmail');
 const adminScheduledEmail = require('./adminScheduledEmail');
 const welcomeBenefit = require('./welcomeBenefit');
+const deviceFingerprint = require('./deviceFingerprint');
+function ensureSignupBonusHmacConfigured() {
+  deviceFingerprint.configureDeviceFingerprint({
+    secret: process.env.SIGNUP_BONUS_HMAC_SECRET || ''
+  });
+}
 function createWelcomeBenefitHandlers(extra) {
+  ensureSignupBonusHmacConfigured();
   return welcomeBenefit.createHandlers({
     db,
     admin,
@@ -874,14 +883,15 @@ const welcomeBenefitHandlers = createWelcomeBenefitHandlers();
 exports.getWelcomeBenefitConfig = functions.https.onRequest(welcomeBenefitHandlers.getWelcomeBenefitConfig);
 exports.saveWelcomeBenefitConfig = functions.https.onRequest(welcomeBenefitHandlers.saveWelcomeBenefitConfig);
 exports.previewWelcomeBenefitEmail = functions.https.onRequest(welcomeBenefitHandlers.previewWelcomeBenefitEmail);
-/** App submits HWID; server decides device-once signup bonus (never trusts client grant flags). */
+/** Auth UID must match target; uses server-bound licenses.hwid only. */
 exports.claimSignupBonus = functionsV1Https
   .runWith({
-    secrets: [gmailUser, gmailAppPassword],
+    secrets: [gmailUser, gmailAppPassword, signupBonusHmacSecret],
     timeoutSeconds: 120,
     memory: '256MB'
   })
   .https.onRequest((req, res) => {
+    ensureSignupBonusHmacConfigured();
     const handlers = createWelcomeBenefitHandlers({ sendMail: createGmailSender() });
     return handlers.claimSignupBonus(req, res);
   });
@@ -2160,13 +2170,14 @@ exports.ensureTrialLicenseOnUserWrite = functionsV1
  */
 exports.onAuthUserCreatedWelcomeBenefit = functionsV1
   .runWith({
-    secrets: [gmailUser, gmailAppPassword],
+    secrets: [gmailUser, gmailAppPassword, signupBonusHmacSecret],
     timeoutSeconds: 120,
     memory: '256MB'
   })
   .auth.user()
   .onCreate(async (user) => {
     try {
+      ensureSignupBonusHmacConfigured();
       const out = await welcomeBenefit.processWelcomeForAuthUser(
         db,
         admin,
@@ -2200,7 +2211,7 @@ exports.onAuthUserCreatedWelcomeBenefit = functionsV1
  */
 exports.onLicenseHwidWelcomeBenefit = functionsV1
   .runWith({
-    secrets: [gmailUser, gmailAppPassword],
+    secrets: [gmailUser, gmailAppPassword, signupBonusHmacSecret],
     timeoutSeconds: 120,
     memory: '256MB'
   })
@@ -2208,6 +2219,7 @@ exports.onLicenseHwidWelcomeBenefit = functionsV1
   .onWrite(async (change, context) => {
     const uid = context.params.uid;
     try {
+      ensureSignupBonusHmacConfigured();
       const out = await welcomeBenefit.processWelcomeOnLicenseHwidWrite(db, admin, {
         uid,
         beforeData: change.before.exists ? change.before.data() : null,

@@ -4,10 +4,12 @@
  * Welcome Benefit (신규 가입 혜택) — device-once abuse prevention
  *
  * - Config: admin_config/welcome_benefit (admin HTTPS only)
- * - Device claim: signupBonusClaims/{deviceFingerprint} (HWID hash, never raw HWID)
+ * - Device claim: signupBonusClaims/{deviceFingerprint}
+ *   fingerprint = HMAC-SHA256(SIGNUP_BONUS_HMAC_SECRET, namespace+HWID) — never raw HWID,
+ *   never client-supplied fingerprint
  * - Per-UID record: welcome_credit_grants/{uid} (email retry / idempotency)
  * - Authoritative credit: creditWalletsV2 + creditLedgerV2 (type=welcome_signup)
- * - Grant path: first usable device HWID (license bind / claimSignupBonus) — not Auth login
+ * - Grant path: licenses/{uid}.hwid bind / claimSignupBonus (bound HWID only)
  * - Auth onCreate alone never grants credits (no HWID yet)
  * - Email failure never rolls back credit; CF retry may email-only
  */
@@ -16,7 +18,8 @@ const creditWalletV2 = require('./creditWalletV2');
 const {
   normalizeHwid,
   isUsableHwid,
-  deviceFingerprintFromHwid
+  deviceFingerprintFromHwid,
+  getFingerprintSecret
 } = require('./deviceFingerprint');
 const { buildAdminBrandedEmail, normalizeBrandInput } = require('./adminEmailTemplate');
 const { maskIp, pickClientIp } = require('./accessInfo');
@@ -34,6 +37,7 @@ const BODY_MAX = 20000;
 const LARGE_AMOUNT_UI = 1000;
 const ACTION_GRANTED = 'SIGNUP_BONUS_GRANTED';
 const ACTION_SKIPPED = 'SIGNUP_BONUS_SKIPPED_DEVICE_ALREADY_CLAIMED';
+const ACTION_SKIPPED_EXISTING_PAID = 'SIGNUP_BONUS_SKIPPED_EXISTING_PAID';
 
 function httpError(status, code, message) {
   const err = new Error(message);
@@ -138,6 +142,12 @@ function ledgerIdForUid(uid) {
   return `welcome_${String(uid || '').trim()}`;
 }
 
+/** Paid plans must never receive signup-bonus credits via this path. */
+function isPaidLicensePlan(plan) {
+  const p = String(plan || '').toLowerCase().trim();
+  return p === 'lifetime' || p === 'period';
+}
+
 function auditIdFor(action, uid, fingerprint) {
   const fp = String(fingerprint || '').slice(0, 24);
   return `signup_bonus_${action}_${String(uid || '').slice(0, 40)}_${fp}`.slice(0, 140);
@@ -240,15 +250,18 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
   const grantRef = db.collection(GRANT_COLLECTION).doc(uidKey);
   const claimRef = db.collection(CLAIM_COLLECTION).doc(fingerprint);
   const userRef = db.collection('users').doc(uidKey);
+  const licRef = db.collection('licenses').doc(uidKey);
   const amount = Math.max(0, Number(config.creditAmount || 0) || 0);
   const emailEnabled = !!config.emailEnabled;
   const configVersion = Math.max(1, Number(config.configVersion || 1) || 1);
   const legacyUid = legacyClaimant && legacyClaimant.uid ? String(legacyClaimant.uid) : '';
 
   return db.runTransaction(async (tx) => {
-    const [grantSnap, claimSnap] = await Promise.all([
+    // Read license for paid-plan guard only — never write licenses from this path.
+    const [grantSnap, claimSnap, licSnap] = await Promise.all([
       tx.get(grantRef),
-      tx.get(claimRef)
+      tx.get(claimRef),
+      tx.get(licRef)
     ]);
 
     if (grantSnap.exists) {
@@ -257,6 +270,7 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
         granted: false,
         alreadyGranted: true,
         skippedDeviceClaimed: false,
+        skippedExistingPaid: !!g.skippedExistingPaid,
         amount: Number(g.amount || 0) || 0,
         emailEnabled: !!g.emailEnabled,
         emailSent: !!g.emailSent,
@@ -269,6 +283,10 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
         claimedByUid: String(g.deviceClaimUid || g.uid || uidKey)
       };
     }
+
+    const licData = licSnap.exists ? (licSnap.data() || {}) : {};
+    const licensePlan = String(licData.plan || '').toLowerCase();
+    const existingPaid = isPaidLicensePlan(licensePlan);
 
     const existingClaim = claimSnap.exists ? (claimSnap.data() || {}) : null;
     const claimedByOther = !!(
@@ -284,6 +302,8 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
       if (!claimSnap.exists && legacyUid) {
         tx.set(claimRef, {
           uid: legacyUid,
+          claimedUid: legacyUid,
+          claimed: true,
           deviceFingerprint: fingerprint,
           grantedAt: FieldValue.serverTimestamp(),
           amount: Number((legacyClaimant && legacyClaimant.amount) || 0) || 0,
@@ -299,6 +319,7 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
         amount: 0,
         creditGranted: false,
         skippedDeviceClaimed: true,
+        skippedExistingPaid: false,
         deviceFingerprint: fingerprint,
         deviceClaimUid: claimedByUid,
         grantedAt: FieldValue.serverTimestamp(),
@@ -328,6 +349,7 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
         granted: false,
         alreadyGranted: false,
         skippedDeviceClaimed: true,
+        skippedExistingPaid: false,
         amount: 0,
         emailEnabled,
         emailSent: false,
@@ -338,6 +360,79 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
         balance: null,
         deviceFingerprint: fingerprint,
         claimedByUid
+      };
+    }
+
+    // Existing Lifetime / period: claim fingerprint only — never +Credits, never touch license.
+    if (existingPaid) {
+      if (!claimSnap.exists) {
+        tx.set(claimRef, {
+          uid: uidKey,
+          claimedUid: uidKey,
+          claimed: true,
+          email: String(email || ''),
+          deviceFingerprint: fingerprint,
+          grantedAt: FieldValue.serverTimestamp(),
+          amount: 0,
+          creditGranted: false,
+          skippedExistingPaid: true,
+          licensePlan,
+          source: LEDGER_ORIGIN,
+          configVersion,
+          creditSystemVersion: creditWalletV2.CREDIT_SYSTEM_VERSION,
+          ipMasked: String(ipMasked || '')
+        });
+      }
+      tx.set(grantRef, {
+        uid: uidKey,
+        email: String(email || ''),
+        displayName: String(displayName || ''),
+        amount: 0,
+        creditGranted: false,
+        skippedDeviceClaimed: false,
+        skippedExistingPaid: true,
+        deviceFingerprint: fingerprint,
+        deviceClaimUid: uidKey,
+        grantedAt: FieldValue.serverTimestamp(),
+        source: LEDGER_ORIGIN,
+        configVersion,
+        emailEnabled,
+        emailSubject: emailEnabled ? String(config.emailSubject || '').slice(0, SUBJECT_MAX) : '',
+        emailBody: emailEnabled ? String(config.emailBody || '').slice(0, BODY_MAX) : '',
+        emailSent: false,
+        emailSentAt: null,
+        emailError: '',
+        ledgerId: '',
+        creditSystemVersion: creditWalletV2.CREDIT_SYSTEM_VERSION,
+        ipMasked: String(ipMasked || ''),
+        licensePlan
+      });
+      tx.set(userRef, {
+        uid: uidKey,
+        deviceFingerprint: fingerprint,
+        signupBonusStatus: 'skipped_existing_paid',
+        signupBonusGranted: false,
+        signupBonusClaimedBy: uidKey,
+        signupBonusCheckedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      return {
+        granted: false,
+        alreadyGranted: false,
+        skippedDeviceClaimed: false,
+        skippedExistingPaid: true,
+        amount: 0,
+        emailEnabled,
+        emailSent: false,
+        emailSubject: emailEnabled ? String(config.emailSubject || '') : '',
+        emailBody: emailEnabled ? String(config.emailBody || '') : '',
+        configVersion,
+        ledgerId: '',
+        balance: null,
+        deviceFingerprint: fingerprint,
+        claimedByUid: uidKey,
+        licensePlan
       };
     }
 
@@ -379,6 +474,8 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
     if (!claimSnap.exists) {
       tx.set(claimRef, {
         uid: uidKey,
+        claimedUid: uidKey,
+        claimed: true,
         email: String(email || ''),
         deviceFingerprint: fingerprint,
         grantedAt: FieldValue.serverTimestamp(),
@@ -399,6 +496,7 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
       amount: creditGranted ? amount : 0,
       creditGranted,
       skippedDeviceClaimed: false,
+      skippedExistingPaid: false,
       deviceFingerprint: fingerprint,
       deviceClaimUid: uidKey,
       grantedAt: FieldValue.serverTimestamp(),
@@ -429,6 +527,7 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
       granted: true,
       alreadyGranted: false,
       skippedDeviceClaimed: false,
+      skippedExistingPaid: false,
       amount: creditGranted ? amount : 0,
       emailEnabled,
       emailSent: false,
@@ -574,6 +673,9 @@ async function processWelcomeForDevice(db, admin, {
   const normalized = normalizeHwid(hwid);
   const fingerprint = deviceFingerprintFromHwid(normalized);
   if (!fingerprint) {
+    if (isUsableHwid(normalized) && !getFingerprintSecret()) {
+      return { ok: true, skipped: true, reason: 'hmac_secret_missing', uid: uidKey };
+    }
     return { ok: true, skipped: true, reason: 'invalid_hwid', uid: uidKey };
   }
 
@@ -698,6 +800,16 @@ async function processWelcomeForDevice(db, admin, {
       ipMasked: masked,
       summary: `동일 기기 보너스 이미 지급됨 (claimedBy=${grant.claimedByUid || '-'})`
     });
+  } else if (grant.skippedExistingPaid) {
+    await writeSignupBonusAudit(db, FieldValue, {
+      action: ACTION_SKIPPED_EXISTING_PAID,
+      uid: uidKey,
+      fingerprint,
+      amount: 0,
+      claimedByUid: grant.claimedByUid || uidKey,
+      ipMasked: masked,
+      summary: `기존 유료 라이선스(${grant.licensePlan || 'paid'}) — claim만, Credits +0`
+    });
   }
 
   if (!grant.emailEnabled) {
@@ -706,6 +818,7 @@ async function processWelcomeForDevice(db, admin, {
       granted: grant.granted,
       alreadyGranted: grant.alreadyGranted,
       skippedDeviceClaimed: !!grant.skippedDeviceClaimed,
+      skippedExistingPaid: !!grant.skippedExistingPaid,
       amount: grant.amount,
       emailSkipped: true,
       uid: uidKey,
@@ -917,8 +1030,8 @@ function createHandlers({ db, admin, cors, requireAdmin, requireUser, sendMail }
   }
 
   /**
-   * Authenticated app/client may submit HWID; server decides grant vs skip.
-   * Does not trust client "shouldGrant" flags.
+   * Authenticated claim — auth UID must equal target UID.
+   * Uses server-bound licenses/{uid}.hwid only (ignores/rejects client fingerprint).
    */
   async function claimSignupBonus(req, res) {
     if (cors(req, res)) return;
@@ -928,18 +1041,52 @@ function createHandlers({ db, admin, cors, requireAdmin, requireUser, sendMail }
         throw httpError(500, 'AUTH_NOT_CONFIGURED', 'requireUser missing');
       }
       const user = await requireUser(req);
-      const body = req.body || {};
-      const hwid = String(body.hwid || body.deviceId || body.deviceHwid || '').trim();
-      if (!isUsableHwid(hwid)) {
+      const body = req.body && typeof req.body === 'object' ? req.body : {};
+
+      // Clients must never supply or forge the claim document id.
+      if (
+        body.deviceFingerprint != null
+        || body.fingerprint != null
+        || body.signupBonusFingerprint != null
+      ) {
         return res.status(400).json({
           ok: false,
-          code: 'HWID_REQUIRED',
-          message: '유효한 기기 HWID가 필요합니다.'
+          code: 'FORGED_FINGERPRINT',
+          message: 'device fingerprint는 클라이언트가 지정할 수 없습니다.'
         });
       }
+
+      const targetUid = String(body.uid != null ? body.uid : user.uid).trim();
+      if (!targetUid || targetUid !== String(user.uid)) {
+        return res.status(403).json({
+          ok: false,
+          code: 'UID_MISMATCH',
+          message: '인증된 UID와 대상 UID가 일치해야 합니다.'
+        });
+      }
+
+      const licSnap = await db.collection('licenses').doc(user.uid).get();
+      const boundHwid = normalizeHwid(licSnap.exists ? (licSnap.data() || {}).hwid : '');
+      if (!isUsableHwid(boundHwid)) {
+        return res.status(400).json({
+          ok: false,
+          code: 'HWID_NOT_BOUND',
+          message: '서버에 바인딩된 기기 HWID가 없습니다.'
+        });
+      }
+
+      const clientHwid = String(body.hwid || body.deviceId || body.deviceHwid || '').trim();
+      if (clientHwid && normalizeHwid(clientHwid) !== boundHwid) {
+        return res.status(403).json({
+          ok: false,
+          code: 'HWID_MISMATCH',
+          message: '요청 HWID가 서버 바인딩 기기와 일치하지 않습니다.'
+        });
+      }
+
       const out = await processWelcomeForDevice(db, admin, {
         uid: user.uid,
-        hwid,
+        hwid: boundHwid,
         sendMail: mailFn || undefined,
         req
       });
@@ -948,10 +1095,11 @@ function createHandlers({ db, admin, cors, requireAdmin, requireUser, sendMail }
         granted: !!out.granted,
         alreadyGranted: !!out.alreadyGranted,
         skippedDeviceClaimed: !!out.skippedDeviceClaimed,
+        skippedExistingPaid: !!out.skippedExistingPaid,
         skipped: !!out.skipped,
         reason: out.reason || '',
         amount: Number(out.amount || 0) || 0,
-        deviceFingerprint: out.deviceFingerprint || deviceFingerprintFromHwid(hwid),
+        deviceFingerprint: out.deviceFingerprint || '',
         claimedByUid: out.claimedByUid || '',
         balance: out.balance
       });
@@ -984,12 +1132,14 @@ module.exports = {
   PRODUCT_NAME,
   ACTION_GRANTED,
   ACTION_SKIPPED,
+  ACTION_SKIPPED_EXISTING_PAID,
   defaultConfig,
   publicConfig,
   normalizeConfigInput,
   applyTemplate,
   displayNameFallback,
   ledgerIdForUid,
+  isPaidLicensePlan,
   loadConfig,
   grantWelcomeCreditOnce,
   markEmailResult,

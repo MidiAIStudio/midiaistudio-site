@@ -150,6 +150,21 @@ describe('users accessInfo rules', () => {
     await assertSucceeds(db.doc('users/user1').set({ lastLogin: new Date() }, { merge: true }));
   });
 
+  it('owner cannot write signup bonus / deviceFingerprint fields', async () => {
+    await seedUser('user1');
+    const db = testEnv.authenticatedContext('user1').firestore();
+    await assertFails(db.doc('users/user1').set({ deviceFingerprint: 'abc' }, { merge: true }));
+    await assertFails(db.doc('users/user1').set({ signupBonusGranted: true }, { merge: true }));
+    await assertFails(db.doc('users/user1').set({ signupBonusStatus: 'granted' }, { merge: true }));
+  });
+
+  it('owner cannot write signupBonusClaims or creditWalletsV2', async () => {
+    await seedUser('user1');
+    const db = testEnv.authenticatedContext('user1').firestore();
+    await assertFails(db.doc('signupBonusClaims/fp1').set({ uid: 'user1', amount: 5 }));
+    await assertFails(db.doc('creditWalletsV2/user1').set({ balance: 999 }));
+  });
+
   it('owner can still update lastLogin without touching accessInfo', async () => {
     await seedUser('user1');
     const db = testEnv.authenticatedContext('user1').firestore();

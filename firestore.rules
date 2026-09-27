@@ -39,12 +39,19 @@ service cloud.firestore {
       // role is not client-assignable to admin/developer/staff on create.
       allow create: if isAdmin()
         || (isOwner(userId)
-          && !request.resource.data.keys().hasAny(['accessInfo'])
+          && !request.resource.data.keys().hasAny([
+            'accessInfo',
+            'creditBalance', 'balance', 'pointBalance', 'points',
+            'deviceFingerprint', 'signupBonusGranted', 'signupBonusStatus',
+            'signupBonusClaimedBy', 'signupBonusCheckedAt'
+          ])
           && !isPrivilegedRole(request.resource.data.get('role', 'user')));
       allow update: if isAdmin()
         || (isOwner(userId)
           && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-            'accessInfo', 'creditBalance', 'balance', 'pointBalance', 'points'
+            'accessInfo', 'creditBalance', 'balance', 'pointBalance', 'points',
+            'deviceFingerprint', 'signupBonusGranted', 'signupBonusStatus',
+            'signupBonusClaimedBy', 'signupBonusCheckedAt'
           ])
           && ownerRoleUpdateOk());
       allow delete: if isOwner(userId) || isAdmin();
