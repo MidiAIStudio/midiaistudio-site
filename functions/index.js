@@ -2165,8 +2165,8 @@ exports.ensureTrialLicenseOnUserWrite = functionsV1
   });
 
 /**
- * Welcome Benefit — Auth onCreate no longer grants credits (HWID unknown).
- * Device-once grant runs on licenses/{uid} HWID bind or claimSignupBonus.
+ * Welcome Benefit — grant on account create, before the app is opened.
+ * A later HWID bind does not grant the same account again.
  */
 exports.onAuthUserCreatedWelcomeBenefit = functionsV1
   .runWith({

@@ -301,18 +301,34 @@ async function test6_other_pc_new_account_grants() {
   assert.strictEqual(countLedgers(db), 2);
 }
 
-async function test7_auth_oncreate_waits_for_device() {
+async function test7_auth_oncreate_grants_without_app() {
   const db = memoryDb();
   await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
   const out = await welcomeBenefit.processWelcomeForAuthUser(
     db,
     makeAdmin(),
+    { uid: 'u_auth', email: 'a@test.com', displayName: 'Auth' },
+    {}
+  );
+  assert.strictEqual(out.granted, true);
+  assert.strictEqual(out.amount, 5);
+  assert.strictEqual(walletBalance(db, 'u_auth'), 5);
+  const again = await welcomeBenefit.processWelcomeForAuthUser(
+    db,
+    makeAdmin(),
     { uid: 'u_auth', email: 'a@test.com' },
     {}
   );
-  assert.strictEqual(out.skipped, true);
-  assert.strictEqual(out.reason, 'waiting_for_device');
-  assert.strictEqual(walletBalance(db, 'u_auth'), 0);
+  assert.strictEqual(again.alreadyGranted, true);
+  assert.strictEqual(walletBalance(db, 'u_auth'), 5);
+  const bound = await welcomeBenefit.processWelcomeOnLicenseHwidWrite(db, makeAdmin(), {
+    uid: 'u_auth',
+    beforeData: { plan: 'trial', hwid: '' },
+    afterData: { plan: 'trial', hwid: fakeHwid('pc-after-signup') }
+  });
+  assert.strictEqual(bound.alreadyGranted, true);
+  assert.strictEqual(walletBalance(db, 'u_auth'), 5);
+  assert.strictEqual(countLedgers(db), 1);
 }
 
 async function test8_license_hwid_write_grants() {
@@ -833,7 +849,7 @@ async function main() {
     ['TEST4 same account relogin → no extra', test4_same_account_relogin_no_extra],
     ['TEST5 concurrent UIDs → max 5 once', test5_concurrent_two_uids_one_grant],
     ['TEST6 other PC + new account → 5', test6_other_pc_new_account_grants],
-    ['TEST7 auth onCreate waits for device', test7_auth_oncreate_waits_for_device],
+    ['TEST7 auth onCreate grants without app', test7_auth_oncreate_grants_without_app],
     ['TEST8 license HWID write grants', test8_license_hwid_write_grants],
     ['TEST9 credit+email', test9_credit_and_email],
     ['TEST10 smtp fail keeps credit', test10_smtp_fail_keeps_credit],

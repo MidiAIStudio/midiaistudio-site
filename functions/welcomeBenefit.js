@@ -9,8 +9,9 @@
  *   never client-supplied fingerprint
  * - Per-UID record: welcome_credit_grants/{uid} (email retry / idempotency)
  * - Authoritative credit: creditWalletsV2 + creditLedgerV2 (type=welcome_signup)
- * - Grant path: licenses/{uid}.hwid bind / claimSignupBonus (bound HWID only)
- * - Auth onCreate alone never grants credits (no HWID yet)
+ * - Grant path: Auth onCreate writes the wallet immediately (no app open).
+ *   A later HWID bind does not add a second grant for the same account.
+ * - Same-PC blocking still applies only when the app has already bound that PC.
  * - Email failure never rolls back credit; CF retry may email-only
  */
 
@@ -624,14 +625,14 @@ async function resolveUserProfile(db, admin, uid, fallback = {}) {
 }
 
 /**
- * Auth onCreate entry — never grants credits (device HWID unknown).
- * Kept so CF retries / email-only paths remain stable; device path owns grants.
+ * Auth onCreate — grant the configured welcome credits as soon as the
+ * account exists. Opening the app is not required. If this PC was already
+ * bound on another account, the device path still blocks a second grant.
  */
 async function processWelcomeForAuthUser(db, admin, user, { sendMail } = {}) {
   const uid = String((user && user.uid) || '').trim();
   if (!uid) return { ok: false, code: 'UID_REQUIRED' };
 
-  // Prefer device path if HWID already bound (rare race with bindDeviceHwid).
   try {
     const licSnap = await db.collection('licenses').doc(uid).get();
     const hwid = licSnap.exists ? String((licSnap.data() || {}).hwid || '') : '';
@@ -644,14 +645,15 @@ async function processWelcomeForAuthUser(db, admin, user, { sendMail } = {}) {
         sendMail
       });
     }
-  } catch (_) { /* fall through */ }
+  } catch (_) { /* fall through to account grant */ }
 
-  return {
-    ok: true,
-    skipped: true,
-    reason: 'waiting_for_device',
-    uid
-  };
+  return processWelcomeForDevice(db, admin, {
+    uid,
+    accountGrant: true,
+    email: user && user.email,
+    displayName: user && (user.displayName || user.name),
+    sendMail
+  });
 }
 
 /**
@@ -664,14 +666,18 @@ async function processWelcomeForDevice(db, admin, {
   displayName: nameIn,
   sendMail,
   ipMasked,
-  req
+  req,
+  accountGrant
 } = {}) {
   const uidKey = String(uid || '').trim();
   if (!uidKey) return { ok: false, code: 'UID_REQUIRED' };
 
   const FieldValue = admin.firestore.FieldValue;
-  const normalized = normalizeHwid(hwid);
-  const fingerprint = deviceFingerprintFromHwid(normalized);
+  const accountOnly = !!accountGrant && !isUsableHwid(hwid);
+  const normalized = accountOnly ? '' : normalizeHwid(hwid);
+  const fingerprint = accountOnly
+    ? `acct:${uidKey}`
+    : deviceFingerprintFromHwid(normalized);
   if (!fingerprint) {
     if (isUsableHwid(normalized) && !getFingerprintSecret()) {
       return { ok: true, skipped: true, reason: 'hmac_secret_missing', uid: uidKey };
@@ -767,7 +773,9 @@ async function processWelcomeForDevice(db, admin, {
     }
   }
 
-  const legacyClaimant = await findLegacyDeviceClaimant(db, normalized, uidKey);
+  const legacyClaimant = accountOnly
+    ? null
+    : await findLegacyDeviceClaimant(db, normalized, uidKey);
 
   const grant = await grantWelcomeCreditOnce(db, FieldValue, {
     uid: uidKey,
@@ -788,7 +796,9 @@ async function processWelcomeForDevice(db, admin, {
       amount: grant.amount,
       claimedByUid: uidKey,
       ipMasked: masked,
-      summary: `신규 가입 혜택 +${grant.amount} Credits (device)`
+      summary: accountOnly
+        ? `신규 가입 혜택 +${grant.amount} Credits (account)`
+        : `신규 가입 혜택 +${grant.amount} Credits (device)`
     });
   } else if (grant.skippedDeviceClaimed) {
     await writeSignupBonusAudit(db, FieldValue, {
