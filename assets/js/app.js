@@ -978,6 +978,37 @@ function licenseTsMs(v){
   const d=new Date(v);
   return Number.isFinite(d.getTime()) ? d.getTime() : 0;
 }
+/** Granted period length in days. Prefer durationDays, then calendar span, then passProductId. */
+function licenseGrantedPeriodDays(lic){
+  const fromField = Math.floor(Number(lic?.durationDays) || 0);
+  if(fromField > 0) return fromField;
+  const startMs = licenseTsMs(lic?.startsAt);
+  const endMs = licenseTsMs(lic?.expiresAt);
+  if(startMs && endMs && endMs > startMs){
+    const s = new Date(startMs);
+    const e = new Date(endMs);
+    const utcStart = Date.UTC(s.getFullYear(), s.getMonth(), s.getDate());
+    const utcEnd = Date.UTC(e.getFullYear(), e.getMonth(), e.getDate());
+    const days = Math.round((utcEnd - utcStart) / 86400000);
+    if(days >= 1) return days;
+  }
+  const pid = String(lic?.passProductId || '').trim().toUpperCase();
+  if(pid === 'PASS_3D') return 3;
+  if(pid === 'PASS_7D') return 7;
+  if(pid === 'PASS_30D') return 30;
+  if(pid === 'PASS_90D') return 90;
+  const m = pid.match(/^PASS_(\d+)D$/);
+  if(m) return Math.max(1, Math.floor(Number(m[1]) || 0));
+  return 0;
+}
+function periodFullLabelForDays(days, locale){
+  const n = Math.max(0, Math.floor(Number(days) || 0));
+  if(!n) return '';
+  const loc = locale || lang;
+  if(loc === 'en') return `${n}-Day Full`;
+  if(loc === 'ja') return `${n}日 Full`;
+  return `${n}일 Full`;
+}
 function fmtListDate(v){
   try{
     const ms=licenseTsMs(v);
@@ -1190,6 +1221,7 @@ function patchAdminLicenseCache(uid, patch){
   if(Object.prototype.hasOwnProperty.call(patch, 'startsAt') && !patch.startsAt) delete next.startsAt;
   if(Object.prototype.hasOwnProperty.call(patch, 'expiresAt') && !patch.expiresAt) delete next.expiresAt;
   if(Object.prototype.hasOwnProperty.call(patch, 'passProductId') && !patch.passProductId) delete next.passProductId;
+  if(Object.prototype.hasOwnProperty.call(patch, 'durationDays') && (patch.durationDays == null || patch.durationDays === '')) delete next.durationDays;
   adminLicenseCache[s] = next;
   Object.values(adminIdentityCache).forEach(idn=>{
     if(!idn) return;
@@ -3625,10 +3657,9 @@ function accountLicensePlanLabel(d){
   const plan=normalizePlan(d);
   if(plan==='lifetime') return lang==='en' ? 'Lifetime Full' : lang==='ja' ? 'Lifetime Full' : 'Lifetime Full';
   if(plan==='period'){
-    const pid = String(d?.passProductId || '').toUpperCase();
-    if(pid === 'PASS_7D') return lang==='en' ? '7-Day Full' : lang==='ja' ? '7日 Full' : '7일 Full';
-    if(pid === 'PASS_30D') return lang==='en' ? '30-Day Full' : lang==='ja' ? '30日 Full' : '30일 Full';
-    if(pid === 'PASS_90D') return lang==='en' ? '90-Day Full' : lang==='ja' ? '90日 Full' : '90일 Full';
+    const days = licenseGrantedPeriodDays(d);
+    const fromDays = periodFullLabelForDays(days, lang);
+    if(fromDays) return fromDays;
     return lang==='en' ? 'Full Pass' : lang==='ja' ? '期間 Full' : '기간 Full';
   }
   return lang==='en' ? 'Free trial' : lang==='ja' ? '無料体験' : '무료 체험';
@@ -8550,11 +8581,8 @@ function adminPlanBadgeHtml(lic){
   const plan = normalizePlan(lic);
   if(plan==='lifetime') return `<span class="crm-badge is-lifetime"><i></i>${esc(adminLicenseTypeLabel('lifetime'))}</span>`;
   if(plan==='period'){
-    const pid = String(lic?.passProductId || '').trim().toUpperCase();
-    let label = adminLicenseTypeLabel('period');
-    if(pid === 'PASS_7D') label = '7일 Full';
-    else if(pid === 'PASS_30D') label = '30일 Full';
-    else if(pid === 'PASS_90D') label = '90일 Full';
+    const days = licenseGrantedPeriodDays(lic);
+    const label = periodFullLabelForDays(days, 'ko') || adminLicenseTypeLabel('period');
     return `<span class="crm-badge is-period"><i></i>${esc(label)}</span>`;
   }
   return `<span class="crm-badge is-trial"><i></i>${esc(adminLicenseTypeLabel('trial'))}</span>`;
@@ -10305,11 +10333,13 @@ async function runAdminBulkAppMessage(){
   });
 }
 function adminBulkPassProductForDays(days){
-  const n = Math.max(1, Number(days) || 1);
-  if(n <= 7) return 'PASS_7D';
-  if(n <= 30) return 'PASS_30D';
-  if(n <= 90) return 'PASS_90D';
-  return 'PASS_90D';
+  // Exact product ids only — never snap 3→PASS_7D (label would say 7일 while dates are 3일).
+  const n = Math.max(1, Math.floor(Number(days) || 1));
+  if(n === 3) return 'PASS_3D';
+  if(n === 7) return 'PASS_7D';
+  if(n === 30) return 'PASS_30D';
+  if(n === 90) return 'PASS_90D';
+  return `PASS_${n}D`;
 }
 async function adminBulkApplyLicenseToUid(uid, { plan, days=null, passProductId='', memo='' }){
   const {doc,setDoc,serverTimestamp,Timestamp,deleteField}=firestoreApi;
@@ -10329,12 +10359,14 @@ async function adminBulkApplyLicenseToUid(uid, { plan, days=null, passProductId=
     payload.startsAt = deleteField();
     payload.expiresAt = deleteField();
     payload.passProductId = deleteField();
+    payload.durationDays = deleteField();
   } else {
     const n = Math.max(1, Number(days) || (savePlan === 'trial' ? 7 : 30));
     const start = new Date(); start.setHours(0,0,0,0);
     const end = new Date(start); end.setDate(end.getDate() + n); end.setHours(23,59,59,999);
     payload.startsAt = Timestamp.fromDate(start);
     payload.expiresAt = Timestamp.fromDate(end);
+    payload.durationDays = n;
     if(savePlan === 'period'){
       const pid = String(passProductId || adminBulkPassProductForDays(n)).trim().toUpperCase();
       payload.passProductId = pid || deleteField();
@@ -10355,11 +10387,14 @@ async function adminBulkApplyLicenseToUid(uid, { plan, days=null, passProductId=
     cachePatch.startsAt = null;
     cachePatch.expiresAt = null;
     cachePatch.passProductId = '';
+    cachePatch.durationDays = null;
   } else {
+    const n = Math.max(1, Number(days) || (savePlan === 'trial' ? 7 : 30));
     cachePatch.startsAt = payload.startsAt;
     cachePatch.expiresAt = payload.expiresAt;
+    cachePatch.durationDays = n;
     cachePatch.passProductId = savePlan === 'period'
-      ? String(passProductId || adminBulkPassProductForDays(days)).trim().toUpperCase()
+      ? String(passProductId || adminBulkPassProductForDays(n)).trim().toUpperCase()
       : '';
   }
   patchAdminLicenseCache(uid, cachePatch);
