@@ -1,11 +1,13 @@
 /**
  * Admin Welcome Benefit (신규 가입 혜택) console panel.
+ * Grants Full pass for admin-configured days (not credits).
  */
 
-import { buildAdminBrandedEmail, escapeHtml } from './admin-email-template.js?v=welcome-ui-3';
+import { buildAdminBrandedEmail, escapeHtml } from './admin-email-template.js?v=welcome-ui-4';
 
-const LARGE_CONFIRM = 1000;
-const MAX_CREDIT = 10000;
+const MAX_PASS_DAYS = 90;
+const MIN_PASS_DAYS = 1;
+const DEFAULT_PASS_DAYS = 3;
 const PRODUCT_NAME = 'MidiAI Studio';
 const PREVIEW_SAMPLE = {
   name: '홍길동',
@@ -17,9 +19,18 @@ const PREVIEW_DEBOUNCE_MS = 220;
 const VAR_TOKEN = {
   name: '{{name}}',
   email: '{{email}}',
-  credits: '{{credits}}',
+  days: '{{days}}',
   product_name: '{{product_name}}'
 };
+
+const DEFAULT_EMAIL_BODY = `{{name}}님, MidiAI Studio에 가입해주셔서 감사합니다.
+
+신규 가입 혜택으로
+{{days}}일 Full 이용권이 계정에 지급되었습니다.
+
+이용권 기간 동안 MidiAI Studio의 Full 기능을 이용할 수 있습니다.
+
+문의가 있으시면 앱 내 고객지원으로 연락해 주세요.`;
 
 /** Preview-only typography: keep sent-mail template at production sizes. */
 const PREVIEW_EMAIL_STYLE = `<style id="welcome-preview-density">
@@ -75,34 +86,54 @@ function displayNameFallback(name) {
 }
 
 function applyTemplate(text, vars) {
+  const days = String(vars.days != null ? vars.days : '');
   const map = {
     name: String(vars.name || ''),
     email: String(vars.email || ''),
-    credits: String(vars.credits != null ? vars.credits : ''),
+    days,
+    pass_days: days,
+    credits: days,
     product_name: String(vars.product_name || PRODUCT_NAME)
   };
-  return String(text || '').replace(/\{\{\s*(name|email|credits|product_name)\s*\}\}/gi, (_, key) => {
-    const k = String(key || '').toLowerCase();
-    return map[k] != null ? map[k] : '';
-  });
+  return String(text || '').replace(
+    /\{\{\s*(name|email|days|pass_days|credits|product_name)\s*\}\}/gi,
+    (_, key) => {
+      const k = String(key || '').toLowerCase();
+      return map[k] != null ? map[k] : '';
+    }
+  );
+}
+
+function migrateCreditEmailBody(body) {
+  let text = String(body || '');
+  if (!text) return DEFAULT_EMAIL_BODY;
+  const looksLikeCredits =
+    /\{\{\s*credits\s*\}\}\s*Credits/i.test(text)
+    || /Credits가 계정에 지급/i.test(text)
+    || /지급된 Credits/i.test(text);
+  if (!looksLikeCredits) return text;
+  text = text.replace(/\{\{\s*credits\s*\}\}\s*Credits가 계정에 지급되었습니다\.?/gi, '{{days}}일 Full 이용권이 계정에 지급되었습니다.');
+  text = text.replace(/지급된 Credits는 MidiAI Studio의 지원되는 변환 기능에서 사용할 수 있습니다\.?/gi, '이용권 기간 동안 MidiAI Studio의 Full 기능을 이용할 수 있습니다.');
+  text = text.replace(/\{\{\s*credits\s*\}\}/gi, '{{days}}');
+  return text;
 }
 
 function previewVars(form) {
   return {
     name: displayNameFallback(PREVIEW_SAMPLE.name),
     email: PREVIEW_SAMPLE.email,
-    credits: Number.isInteger(form.creditAmount) ? form.creditAmount : 0,
+    days: Number.isInteger(form.passDurationDays) ? form.passDurationDays : DEFAULT_PASS_DAYS,
     product_name: PRODUCT_NAME
   };
 }
 
 function readForm() {
+  const raw = String($('welcomePassDays')?.value ?? '').trim();
+  const days = raw === '' ? NaN : Number(raw);
   return {
     enabled: !!$('welcomeBenefitEnabled')?.checked,
-    // Credits retired — always 0; server grants PASS_3D when enabled.
     creditAmount: 0,
-    passProductId: 'PASS_3D',
-    passDurationDays: 3,
+    passDurationDays: days,
     emailEnabled: !!$('welcomeEmailEnabled')?.checked,
     emailSubject: String($('welcomeEmailSubject')?.value || ''),
     emailBody: String($('welcomeEmailBody')?.value || '')
@@ -144,7 +175,7 @@ function renderLivePreview() {
     toEl.textContent = `${vars.name} <${vars.email}>`;
   }
   if (hint) {
-    hint.textContent = `샘플 · ${vars.name} · ${vars.credits} Credits`;
+    hint.textContent = `샘플 · ${vars.name} · ${vars.days}일 Full`;
   }
   if (badge) {
     badge.hidden = !!form.emailEnabled;
@@ -174,23 +205,42 @@ function scheduleLivePreview() {
 
 function applyForm(config, limits) {
   const c = config || {};
+  const minD = Number(limits?.minPassDays) || MIN_PASS_DAYS;
+  const maxD = Number(limits?.maxPassDays) || MAX_PASS_DAYS;
+  let days = Number(c.passDurationDays);
+  if (!Number.isInteger(days) || days < minD) days = DEFAULT_PASS_DAYS;
+  if (days > maxD) days = maxD;
+
   if ($('welcomeBenefitEnabled')) $('welcomeBenefitEnabled').checked = !!c.enabled;
+  if ($('welcomePassDays')) {
+    $('welcomePassDays').min = String(minD);
+    $('welcomePassDays').max = String(maxD);
+    $('welcomePassDays').value = String(days);
+  }
   if ($('welcomeCreditAmount')) $('welcomeCreditAmount').value = '0';
   if ($('welcomeEmailEnabled')) $('welcomeEmailEnabled').checked = !!c.emailEnabled;
   if ($('welcomeEmailSubject')) $('welcomeEmailSubject').value = c.emailSubject || '';
-  if ($('welcomeEmailBody')) $('welcomeEmailBody').value = c.emailBody || '';
+  if ($('welcomeEmailBody')) {
+    const migrated = migrateCreditEmailBody(c.emailBody || '');
+    $('welcomeEmailBody').value = migrated;
+  }
   const meta = $('welcomeBenefitMeta');
   if (meta) {
     const ver = c.configVersion != null ? `설정 v${c.configVersion}` : '';
     const by = c.updatedByEmail || c.updatedBy || '';
-    const hint = $('welcomeCreditHint');
+    const hint = $('welcomePassDaysHint');
     if (hint) {
-      hint.textContent = '레거시 필드 · 서버는 PASS_3D(3일 Full)만 지급합니다';
+      hint.textContent = `${minD} = ${minD}일 Full · 최대 ${maxD}일 · 예: 3이면 72시간`;
     }
-    void limits;
-    meta.textContent = [ver, '혜택: 3일 Full (PASS_3D)', by ? `최근 수정 ${by}` : '']
+    meta.textContent = [ver, `혜택: ${days}일 Full`, by ? `최근 수정 ${by}` : '']
       .filter(Boolean)
       .join(' · ');
+  }
+  const policy = $('welcomePassPolicy');
+  if (policy) {
+    policy.innerHTML =
+      `활성화 시 신규 가입자에게 관리자가 지정한 일수(<strong>현재 ${days}일</strong>)의 Full 기간제 이용권을 지급합니다. `
+      + '무료 크레딧은 지급하지 않습니다. 동일 기기 중복 수령은 기존과 같이 차단됩니다.';
   }
   syncEmailFields();
   renderLivePreview();
@@ -232,6 +282,12 @@ function insertVariable(token) {
 }
 
 function validateLocal(form) {
+  if (!Number.isInteger(form.passDurationDays) || form.passDurationDays < MIN_PASS_DAYS) {
+    return `이용권 일수는 ${MIN_PASS_DAYS} 이상의 정수여야 합니다.`;
+  }
+  if (form.passDurationDays > MAX_PASS_DAYS) {
+    return `이용권 일수는 최대 ${MAX_PASS_DAYS}일까지 설정할 수 있습니다.`;
+  }
   if (form.emailEnabled) {
     if (!String(form.emailSubject || '').trim()) return '환영 메일 제목을 입력하세요.';
     if (!String(form.emailBody || '').trim()) return '환영 메일 본문을 입력하세요.';
@@ -262,7 +318,7 @@ async function saveWelcomeBenefitConfig() {
   }
   if (form.enabled) {
     const ok = window.confirm(
-      '신규 가입자에게 3일 Full 이용권(PASS_3D · 72시간)을 자동 지급합니다.\n무료 크레딧은 지급하지 않습니다.\n계속할까요?'
+      `신규 가입자에게 ${form.passDurationDays}일 Full 이용권을 자동 지급합니다.\n무료 크레딧은 지급하지 않습니다.\n계속할까요?`
     );
     if (!ok) return;
   }
@@ -270,7 +326,10 @@ async function saveWelcomeBenefitConfig() {
   try {
     const data = await callFn('saveWelcomeBenefitConfig', form);
     if (!data || !data.ok) throw new Error((data && data.message) || '저장 실패');
-    applyForm(data.config, { maxCredit: MAX_CREDIT, largeAmountConfirm: LARGE_CONFIRM });
+    applyForm(data.config, {
+      minPassDays: MIN_PASS_DAYS,
+      maxPassDays: MAX_PASS_DAYS
+    });
     flash('저장되었습니다. 새로고침 후에도 유지됩니다.', true);
   } catch (e) {
     console.error('saveWelcomeBenefitConfig', e);
@@ -289,7 +348,8 @@ async function previewWelcomeEmail() {
     const data = await callFn('previewWelcomeBenefitEmail', {
       emailSubject: form.emailSubject,
       emailBody: form.emailBody,
-      credits: Number.isInteger(form.creditAmount) ? form.creditAmount : 0,
+      days: Number.isInteger(form.passDurationDays) ? form.passDurationDays : DEFAULT_PASS_DAYS,
+      passDurationDays: Number.isInteger(form.passDurationDays) ? form.passDurationDays : DEFAULT_PASS_DAYS,
       name: PREVIEW_SAMPLE.name,
       email: PREVIEW_SAMPLE.email
     });
@@ -300,7 +360,6 @@ async function previewWelcomeEmail() {
     if (frame && data.html) frame.srcdoc = withPreviewEmailDensity(data.html);
     flash('미리보기를 갱신했습니다.', true);
   } catch (e) {
-    // Live panel already updated client-side; keep that visible if API fails.
     flash(e.message || '서버 미리보기에 실패했습니다. 우측 로컬 미리보기를 확인하세요.', false);
   }
 }
@@ -340,7 +399,7 @@ export function bindWelcomeBenefitPanel() {
       if (token) insertVariable(token);
     });
   });
-  ['welcomeEmailSubject', 'welcomeEmailBody', 'welcomeCreditAmount'].forEach((id) => {
+  ['welcomeEmailSubject', 'welcomeEmailBody', 'welcomePassDays'].forEach((id) => {
     const el = $(id);
     if (!el) return;
     el.addEventListener('input', scheduleLivePreview);

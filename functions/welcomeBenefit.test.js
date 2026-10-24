@@ -176,7 +176,8 @@ function assertWelcomePass(db, uid) {
   const g = grantDoc(db, uid);
   assert.ok(g, 'welcome grant missing');
   assert.strictEqual(g.passGranted, true);
-  assert.strictEqual(g.passProductId, 'PASS_3D');
+  assert.ok(String(g.passProductId || '').startsWith('PASS_'));
+  assert.ok(Number(g.passDurationDays || 0) >= 1);
   assert.strictEqual(g.creditGranted, false);
   assert.strictEqual(g.amount, 0);
   assert.strictEqual(licensePlan(db, uid), 'period');
@@ -458,14 +459,15 @@ async function test13_admin_config_ok() {
     method: 'POST',
     body: {
       enabled: true,
-      creditAmount: 12,
+      passDurationDays: 5,
       emailEnabled: true,
       emailSubject: 'Hello {{name}}',
-      emailBody: 'Credits {{credits}}'
+      emailBody: '{{days}}일 Full 이용권이 지급되었습니다.'
     }
   }, save.res);
   assert.strictEqual(save.out.statusCode, 200);
-  assert.strictEqual(save.out.body.config.creditAmount, 12);
+  assert.strictEqual(save.out.body.config.passDurationDays, 5);
+  assert.strictEqual(save.out.body.config.creditAmount, 0);
 
   const get = httpErrorRes();
   await handlers.getWelcomeBenefitConfig({ method: 'POST', body: {} }, get.res);
@@ -866,7 +868,7 @@ async function test32_welcome_never_writes_license_keys() {
   await welcomeDevice(db, 'u_t', hwid);
   const lic = db.store.get('licenses/u_t');
   assert.strictEqual(lic.plan, 'period');
-  assert.strictEqual(lic.passProductId, 'PASS_3D');
+  assert.ok(String(lic.passProductId || '').startsWith('PASS_'));
   assert.strictEqual(lic.method, 'welcome_signup');
   assert.strictEqual(lic.status, 'active');
   assert.ok(lic.expiresAt);

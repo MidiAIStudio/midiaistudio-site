@@ -720,7 +720,7 @@
             <section class="admin-welcome-section" id="adminWelcomeBenefitSection" hidden>
               <div class="admin-section-head admin-welcome-head">
                 <div class="admin-welcome-head-copy">
-                  <p class="admin-page-lead muted">물리 기기(HWID)당 1회 크레딧을 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 동일 PC에서 여러 계정을 만들어도 무료 크레딧은 한 번만 지급됩니다. 다른 PC의 신규 계정은 정상 지급됩니다.</p>
+                  <p class="admin-page-lead muted">물리 기기(HWID)당 1회 Full 기간제 이용권을 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 동일 PC에서 여러 계정을 만들어도 가입 혜택은 한 번만 지급됩니다. 다른 PC의 신규 계정은 정상 지급됩니다.</p>
                   <p class="muted small admin-welcome-meta" id="welcomeBenefitMeta"></p>
                 </div>
                 <div class="admin-pricing-actions admin-welcome-toolbar">
@@ -737,7 +737,7 @@
                       <label class="admin-welcome-switch" for="welcomeBenefitEnabled">
                         <span class="admin-welcome-switch-copy">
                           <strong>자동 혜택</strong>
-                          <small>기기당 크레딧 1회 자동 지급</small>
+                          <small>기기당 Full 이용권 1회 자동 지급</small>
                         </span>
                         <input id="welcomeBenefitEnabled" type="checkbox" role="switch">
                         <span class="admin-welcome-switch-track" aria-hidden="true"><span class="admin-welcome-switch-thumb"></span></span>
@@ -756,17 +756,18 @@
                   <section class="admin-welcome-card" aria-labelledby="welcomeCreditTitle">
                     <h4 class="admin-welcome-card-title" id="welcomeCreditTitle">가입 혜택</h4>
                     <p class="muted small" id="welcomePassPolicy">
-                      활성화 시 신규 가입자에게 <strong>3일 Full 이용권(PASS_3D · 72시간)</strong>을 지급합니다.
+                      활성화 시 신규 가입자에게 관리자가 지정한 일수의 <strong>Full 기간제 이용권</strong>을 지급합니다.
                       무료 크레딧은 지급하지 않습니다. 동일 기기 중복 수령은 기존과 같이 차단됩니다.
                     </p>
-                    <label class="admin-welcome-field" for="welcomeCreditAmount" hidden>
-                      <span class="admin-welcome-field-label">지급 크레딧 (사용 안 함)</span>
+                    <label class="admin-welcome-field" for="welcomePassDays">
+                      <span class="admin-welcome-field-label">지급 기간</span>
                       <div class="admin-welcome-credit-row">
-                        <input id="welcomeCreditAmount" type="number" min="0" step="1" value="0" inputmode="numeric" aria-describedby="welcomeCreditHint">
-                        <span class="admin-welcome-credit-unit">Credits</span>
+                        <input id="welcomePassDays" type="number" min="1" max="90" step="1" value="3" inputmode="numeric" aria-describedby="welcomePassDaysHint">
+                        <span class="admin-welcome-credit-unit">일</span>
                       </div>
-                      <span class="admin-welcome-field-hint" id="welcomeCreditHint">레거시 필드 · 서버는 PASS_3D만 지급합니다</span>
+                      <span class="admin-welcome-field-hint" id="welcomePassDaysHint">1 = 1일 Full · 최대 90일 · 예: 3이면 72시간</span>
                     </label>
+                    <input id="welcomeCreditAmount" type="hidden" value="0">
                   </section>
 
                   <section class="admin-welcome-card" id="welcomeEmailCard" aria-labelledby="welcomeEmailTitle">
@@ -787,10 +788,10 @@
                       <div class="admin-welcome-var-chips" id="welcomeVarChips" role="group" aria-label="메일 변수">
                         <button type="button" class="admin-welcome-var-chip" data-welcome-var="name" title="이름 (없으면 「회원」)">{{name}}</button>
                         <button type="button" class="admin-welcome-var-chip" data-welcome-var="email" title="이메일">{{email}}</button>
-                        <button type="button" class="admin-welcome-var-chip" data-welcome-var="credits" title="지급 크레딧">{{credits}}</button>
+                        <button type="button" class="admin-welcome-var-chip" data-welcome-var="days" title="지급 일수">{{days}}</button>
                         <button type="button" class="admin-welcome-var-chip" data-welcome-var="product_name" title="제품명">{{product_name}}</button>
                       </div>
-                      <p class="muted small admin-welcome-vars-help">변수는 선택 사항입니다. 이름 값이 없으면 「회원」으로 표시됩니다.</p>
+                      <p class="muted small admin-welcome-vars-help">변수는 선택 사항입니다. 이름 값이 없으면 「회원」으로 표시됩니다. 기간은 {{days}}를 사용하세요.</p>
                     </div>
                   </section>
                 </div>
@@ -1078,7 +1079,7 @@
   <script type="module" src="./assets/js/app.js?v=welcome-preview-1"></script>
   <script type="module" src="./assets/js/pricing-admin.js?v=logs-toolbar-hide-1"></script>
   <script type="module" src="./assets/js/admin-console.js?v=settlement-1"></script>
-  <script type="module" src="./assets/js/admin-welcome-benefit.js?v=welcome-ui-3"></script>
+  <script type="module" src="./assets/js/admin-welcome-benefit.js?v=welcome-ui-4"></script>
   <script type="module" src="./assets/js/admin-push.js?v=push-1"></script>
   <script type="module" src="./assets/js/admin-settlement.js?v=settlement-1"></script>
 </body>

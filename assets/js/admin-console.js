@@ -176,7 +176,7 @@ function applyAdminView(next, opts = {}) {
     try { window.__midiaiOnAdminCrmMode?.(crmMode, opts); } catch (_) {}
   }
   if (next === 'welcome') {
-    import('./admin-welcome-benefit.js?v=welcome-ui-3').then((m) => {
+    import('./admin-welcome-benefit.js?v=welcome-ui-4').then((m) => {
       m.bindWelcomeBenefitPanel?.();
       m.showWelcomeBenefitPanel?.(true);
     }).catch(console.error);

@@ -32,9 +32,26 @@ const CLAIM_COLLECTION = 'signupBonusClaims';
 const LEDGER_TYPE = 'welcome_signup';
 const LEDGER_ORIGIN = 'welcome_signup';
 const PRODUCT_NAME = 'MidiAI Studio';
-const WELCOME_PASS_PRODUCT_ID = 'PASS_3D';
-const WELCOME_PASS_DURATION_DAYS = 3;
+const WELCOME_PASS_PRODUCT_ID = 'PASS_WELCOME';
+const WELCOME_PASS_DURATION_DAYS_DEFAULT = 3;
+const MIN_PASS_DAYS = 1;
+const MAX_PASS_DAYS = 90;
 const MAX_CREDIT = 10000;
+
+function resolvePassDurationDays(raw) {
+  const n = parseNonNegInt(raw);
+  if (n == null || n < MIN_PASS_DAYS) return WELCOME_PASS_DURATION_DAYS_DEFAULT;
+  return Math.min(MAX_PASS_DAYS, n);
+}
+
+function passProductIdForDays(days) {
+  const d = resolvePassDurationDays(days);
+  if (d === 3) return 'PASS_3D';
+  if (d === 7) return 'PASS_7D';
+  if (d === 30) return 'PASS_30D';
+  if (d === 90) return 'PASS_90D';
+  return WELCOME_PASS_PRODUCT_ID;
+}
 const SUBJECT_MAX = 200;
 const BODY_MAX = 20000;
 const LARGE_AMOUNT_UI = 1000;
@@ -52,10 +69,10 @@ function httpError(status, code, message) {
 function defaultConfig() {
   return {
     enabled: false,
-    // Legacy field (unused for grants). Welcome benefit grants PASS_3D.
+    // Legacy field (unused for grants).
     creditAmount: 0,
-    passProductId: WELCOME_PASS_PRODUCT_ID,
-    passDurationDays: WELCOME_PASS_DURATION_DAYS,
+    passProductId: passProductIdForDays(WELCOME_PASS_DURATION_DAYS_DEFAULT),
+    passDurationDays: WELCOME_PASS_DURATION_DAYS_DEFAULT,
     emailEnabled: false,
     emailSubject: '',
     emailBody: '',
@@ -93,12 +110,24 @@ function normalizeConfigInput(body, { bumpVersion, prevVersion } = {}) {
   const nextVersion = bumpVersion
     ? Math.max(1, Number(prevVersion || 0) + 1)
     : Math.max(1, Number(src.configVersion || prevVersion || 1) || 1);
+  const passDurationDays = resolvePassDurationDays(
+    src.passDurationDays != null ? src.passDurationDays : src.days
+  );
+  if (parseNonNegInt(src.passDurationDays != null ? src.passDurationDays : src.days) != null) {
+    const rawDays = parseNonNegInt(src.passDurationDays != null ? src.passDurationDays : src.days);
+    if (rawDays < MIN_PASS_DAYS || rawDays > MAX_PASS_DAYS) {
+      throw httpError(
+        400,
+        'PASS_DAYS_INVALID',
+        `이용권 일수는 ${MIN_PASS_DAYS}~${MAX_PASS_DAYS}일 사이여야 합니다.`
+      );
+    }
+  }
   return {
     enabled,
-    // Credits no longer granted; keep field for admin/email backward compat.
-    creditAmount: creditAmount == null ? 0 : creditAmount,
-    passProductId: WELCOME_PASS_PRODUCT_ID,
-    passDurationDays: WELCOME_PASS_DURATION_DAYS,
+    creditAmount: 0,
+    passProductId: passProductIdForDays(passDurationDays),
+    passDurationDays,
     emailEnabled,
     emailSubject: brand.subject.slice(0, SUBJECT_MAX),
     emailBody: brand.body.slice(0, BODY_MAX),
@@ -109,13 +138,15 @@ function normalizeConfigInput(body, { bumpVersion, prevVersion } = {}) {
 function publicConfig(raw) {
   const base = defaultConfig();
   const d = raw && typeof raw === 'object' ? raw : {};
-  const creditAmount = parseNonNegInt(d.creditAmount);
+  const passDurationDays = resolvePassDurationDays(
+    d.passDurationDays != null ? d.passDurationDays : WELCOME_PASS_DURATION_DAYS_DEFAULT
+  );
   return {
     ...base,
     enabled: !!d.enabled,
-    creditAmount: creditAmount == null ? 0 : creditAmount,
-    passProductId: WELCOME_PASS_PRODUCT_ID,
-    passDurationDays: WELCOME_PASS_DURATION_DAYS,
+    creditAmount: 0,
+    passProductId: passProductIdForDays(passDurationDays),
+    passDurationDays,
     emailEnabled: !!d.emailEnabled,
     emailSubject: String(d.emailSubject || '').slice(0, SUBJECT_MAX),
     emailBody: String(d.emailBody || '').slice(0, BODY_MAX),
@@ -136,16 +167,27 @@ function displayNameFallback(name, langHint) {
 }
 
 function applyTemplate(text, vars) {
+  const days = String(
+    vars.days != null
+      ? vars.days
+      : (vars.passDurationDays != null ? vars.passDurationDays : (vars.credits != null ? vars.credits : ''))
+  );
   const map = {
     name: String(vars.name || ''),
     email: String(vars.email || ''),
-    credits: String(vars.credits != null ? vars.credits : ''),
+    days,
+    pass_days: days,
+    // Legacy alias: old templates using {{credits}} now show days.
+    credits: days,
     product_name: String(vars.product_name || PRODUCT_NAME)
   };
-  return String(text || '').replace(/\{\{\s*(name|email|credits|product_name)\s*\}\}/gi, (_, key) => {
-    const k = String(key || '').toLowerCase();
-    return map[k] != null ? map[k] : '';
-  });
+  return String(text || '').replace(
+    /\{\{\s*(name|email|days|pass_days|credits|product_name)\s*\}\}/gi,
+    (_, key) => {
+      const k = String(key || '').toLowerCase();
+      return map[k] != null ? map[k] : '';
+    }
+  );
 }
 
 function ledgerIdForUid(uid) {
@@ -262,10 +304,14 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
   const claimRef = db.collection(CLAIM_COLLECTION).doc(fingerprint);
   const userRef = db.collection('users').doc(uidKey);
   const licRef = db.collection('licenses').doc(uidKey);
-  // Policy: welcome benefit = PASS_3D (72h). Free credits are no longer granted.
+  // Policy: welcome benefit = Full pass for admin-configured days. No free credits.
   const amount = 0;
-  const passProductId = WELCOME_PASS_PRODUCT_ID;
-  const passDurationDays = WELCOME_PASS_DURATION_DAYS;
+  const passDurationDays = resolvePassDurationDays(
+    config && config.passDurationDays != null
+      ? config.passDurationDays
+      : WELCOME_PASS_DURATION_DAYS_DEFAULT
+  );
+  const passProductId = passProductIdForDays(passDurationDays);
   const emailEnabled = !!config.emailEnabled;
   const configVersion = Math.max(1, Number(config.configVersion || 1) || 1);
   const legacyUid = legacyClaimant && legacyClaimant.uid ? String(legacyClaimant.uid) : '';
@@ -461,7 +507,7 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
       durationDays: passDurationDays,
       existingLicense: licData,
       method: 'welcome_signup',
-      memo: '신규 가입 3일 Full 이용권',
+      memo: `신규 가입 ${passDurationDays}일 Full 이용권`,
       FieldValue,
       Timestamp: TimestampIn,
       extra: {
@@ -575,15 +621,21 @@ async function sendWelcomeEmail({
   bodyTemplate,
   name,
   email,
+  days,
   credits
 }) {
   if (typeof sendMail !== 'function') {
     throw httpError(503, 'MAIL_NOT_CONFIGURED', '메일 발송 설정이 완료되지 않았습니다.');
   }
+  const dayCount = resolvePassDurationDays(
+    days != null ? days : (credits != null ? credits : WELCOME_PASS_DURATION_DAYS_DEFAULT)
+  );
   const vars = {
     name: displayNameFallback(name),
     email: String(email || to || ''),
-    credits: Number(credits || 0) || 0,
+    days: dayCount,
+    passDurationDays: dayCount,
+    credits: dayCount,
     product_name: PRODUCT_NAME
   };
   const subject = applyTemplate(subjectTemplate, vars).slice(0, SUBJECT_MAX);
@@ -755,7 +807,7 @@ async function processWelcomeForDevice(db, admin, {
         bodyTemplate: g.emailBody || config.emailBody,
         name: g.displayName || displayName,
         email: to,
-        credits: Number(g.amount || 0) || 0
+        days: Number(g.passDurationDays || config.passDurationDays || WELCOME_PASS_DURATION_DAYS_DEFAULT) || WELCOME_PASS_DURATION_DAYS_DEFAULT
       });
       await markEmailResult(db, FieldValue, uidKey, { ok: true });
       return {
@@ -808,8 +860,8 @@ async function processWelcomeForDevice(db, admin, {
       claimedByUid: uidKey,
       ipMasked: masked,
       summary: accountOnly
-        ? `신규 가입 혜택 PASS_3D (account)`
-        : `신규 가입 혜택 PASS_3D (device)`
+        ? `신규 가입 혜택 ${grant.passDurationDays || 0}일 Full (account)`
+        : `신규 가입 혜택 ${grant.passDurationDays || 0}일 Full (device)`
     });
   } else if (grant.skippedDeviceClaimed) {
     await writeSignupBonusAudit(db, FieldValue, {
@@ -877,7 +929,8 @@ async function processWelcomeForDevice(db, admin, {
       bodyTemplate: grant.emailBody || config.emailBody,
       name: displayName,
       email: to,
-      credits: grant.amount
+      days: Number(grant.passDurationDays || config.passDurationDays || WELCOME_PASS_DURATION_DAYS_DEFAULT)
+        || WELCOME_PASS_DURATION_DAYS_DEFAULT
     });
     await markEmailResult(db, FieldValue, uidKey, { ok: true });
     return {
@@ -959,7 +1012,13 @@ function createHandlers({ db, admin, cors, requireAdmin, requireUser, sendMail }
       return res.json({
         ok: true,
         config,
-        limits: { maxCredit: MAX_CREDIT, largeAmountConfirm: LARGE_AMOUNT_UI },
+        limits: {
+          maxCredit: MAX_CREDIT,
+          largeAmountConfirm: LARGE_AMOUNT_UI,
+          minPassDays: MIN_PASS_DAYS,
+          maxPassDays: MAX_PASS_DAYS,
+          defaultPassDays: WELCOME_PASS_DURATION_DAYS_DEFAULT
+        },
         policy: {
           oncePer: 'device',
           claimCollection: CLAIM_COLLECTION,
@@ -1003,10 +1062,11 @@ function createHandlers({ db, admin, cors, requireAdmin, requireUser, sendMail }
           actorEmail: String(adminUser.email || ''),
           actorType: 'admin',
           result: 'success',
-          summary: `welcome benefit v${normalized.configVersion} enabled=${normalized.enabled} credits=${normalized.creditAmount} email=${normalized.emailEnabled} oncePer=device`,
+          summary: `welcome benefit v${normalized.configVersion} enabled=${normalized.enabled} passDays=${normalized.passDurationDays} email=${normalized.emailEnabled} oncePer=device`,
           after: {
             enabled: normalized.enabled,
-            creditAmount: normalized.creditAmount,
+            passDurationDays: normalized.passDurationDays,
+            passProductId: normalized.passProductId,
             emailEnabled: normalized.emailEnabled,
             configVersion: normalized.configVersion,
             oncePer: 'device'
@@ -1033,11 +1093,19 @@ function createHandlers({ db, admin, cors, requireAdmin, requireUser, sendMail }
       const body = req.body || {};
       const name = displayNameFallback(body.name);
       const email = String(body.email || 'user@example.com');
-      const credits = parseNonNegInt(body.credits != null ? body.credits : body.creditAmount);
+      const days = resolvePassDurationDays(
+        body.days != null
+          ? body.days
+          : (body.passDurationDays != null
+            ? body.passDurationDays
+            : (body.credits != null ? body.credits : body.creditAmount))
+      );
       const vars = {
         name,
         email,
-        credits: credits == null ? 0 : credits,
+        days,
+        passDurationDays: days,
+        credits: days,
         product_name: PRODUCT_NAME
       };
       const subject = applyTemplate(body.emailSubject || body.subject || '', vars);
@@ -1158,7 +1226,12 @@ module.exports = {
   LEDGER_TYPE,
   LEDGER_ORIGIN,
   WELCOME_PASS_PRODUCT_ID,
-  WELCOME_PASS_DURATION_DAYS,
+  WELCOME_PASS_DURATION_DAYS_DEFAULT,
+  WELCOME_PASS_DURATION_DAYS: WELCOME_PASS_DURATION_DAYS_DEFAULT,
+  MIN_PASS_DAYS,
+  MAX_PASS_DAYS,
+  resolvePassDurationDays,
+  passProductIdForDays,
   MAX_CREDIT,
   LARGE_AMOUNT_UI,
   PRODUCT_NAME,
