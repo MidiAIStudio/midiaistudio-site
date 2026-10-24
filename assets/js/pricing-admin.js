@@ -61,7 +61,7 @@ import {
   forcePromoWindowForPreview,
   storefrontUiCopy,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=promo-meta-row-1';
+} from './storefront-render.js?v=purchase-license-orchestra-1';
 import { writeAdminAuditLog } from './admin-user-logs.js?v=logs-toolbar-hide-1';
 import { getFirebase, waitForAdmin } from './visual-cms.js?v=pricing-cms-2';
 

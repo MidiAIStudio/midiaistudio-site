@@ -63,7 +63,7 @@ import {
   resolvePromotionProducts,
   storefrontUiCopy,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=promo-meta-row-1';
+} from './storefront-render.js?v=purchase-license-orchestra-1';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -1567,7 +1567,6 @@ function purchaseCheckout(){
   return checkoutContext(uiLang, isKoreanCheckout());
 }
 function isPointCheckout(){
-  if(purchaseActionsLocked()) return false;
   const id = normalizeCreditProductId(selectedPurchaseId);
   return isPurchasePage && (
     String(id || '').startsWith('CREDIT_') || String(id || '').startsWith('MIRELO_CREDIT_')
@@ -1604,12 +1603,12 @@ function pointCopy(){
     perUseApprox:(price)=>price,
     save:(n)=>`About ${n}% off`,
     unlimitedTitle:'Lifetime Full',
-    unlimitedUses:'Unlimited AI conversion · Full features',
+    unlimitedUses:'Unlimited piano conversion · Orchestra uses credits',
     unlimitedUnit:'Lifetime · one-time · no auto-renewal',
-    lifetimeOwnedHint:'You already have a Lifetime Full license. Extra Pass purchases are not required.',
+    lifetimeOwnedHint:'You already have a Lifetime Full license. Piano conversion is unlimited. Orchestra conversion still requires a credit payment.',
     notes:[
-      'Period Pass: unlimited conversions · Full features · no auto-renewal',
-      'Lifetime Full: permanent Full access after purchase',
+      'Period Pass: unlimited piano conversion · Orchestra uses credits · no auto-renewal',
+      'Lifetime Full: permanent piano conversion. Orchestra still requires credits',
       'No recurring billing'
     ],
     accountTitle:'Sign in with Google before purchasing.',
@@ -1618,8 +1617,8 @@ function pointCopy(){
     serviceValue:'License activated immediately after payment',
     noteTitle:'Pass guide',
     licenseGuide:[
-      {title:'Period Full Pass',desc:'Unlimited AI conversions and Full features for the selected period. No auto-renewal.'},
-      {title:'Lifetime Full',desc:'Permanent Full access after purchase. Extra Pass purchases are not required.'},
+      {title:'Period Full Pass',desc:'Unlimited piano conversion and Full features for the selected period. Orchestra conversion requires a credit payment. No auto-renewal.'},
+      {title:'Lifetime Full',desc:'Permanent piano conversion after purchase. Orchestra conversion still requires a credit payment.'},
       {title:'MIDI Editor PRO',desc:'Edit multi-track piano rolls with velocity and CC.'},
       {title:'AI Assistant',desc:'Tidy and arrange MIDI with correction tools, not generative transcription.'},
       {title:'Score features',desc:'Edit scores and export MusicXML/PDF. PDF score import is Beta.'}
@@ -1638,14 +1637,14 @@ function pointCopy(){
     heroLead:'Choose a Full Pass / Lifetime license, or top up Credits separately below.',
     heroLeadOwned:'You are using a Lifetime Full license.',
     sectionLicenseTitle:'Full Pass · License',
-    sectionLicenseLead:'Period Full Pass and Lifetime. Unlimited conversion while the license is active.',
+    sectionLicenseLead:'Piano conversion is unlimited while the license is active. Orchestra conversion still requires a credit payment.',
     sectionCreditsTitle:'Credit top-up',
-    sectionCreditsLead:'Credits are separate from licenses. Use them for usage that bills per second.',
+    sectionCreditsLead:'Piano is 2 credits per second, and a Full pass is not charged. Orchestra (Mirelo Business) is 4 credits per second and is not waived by Full or Lifetime.',
     comingSoon:'This product is not available for purchase.',
     ownedBannerTitle:'Lifetime Full active',
-    ownedBannerBody:'You can use all AI conversions and Full features without limits.',
-    ownedBanner:'Lifetime Full active. You can use all AI conversions and Full features without limits.',
-    btnNoNeed:'No extra purchase needed',
+    ownedBannerBody:'Piano and Full features have no limit. Orchestra (Mirelo Business) still uses credits.',
+    ownedBanner:'Lifetime Full active. Piano and Full features have no limit. Orchestra (Mirelo Business) still uses credits.',
+    btnNoNeed:'License active',
     btnCurrentPlan:'Currently using',
     ownedBadge:'Current plan',
     usageTitle:'Pass guide',
@@ -1656,7 +1655,7 @@ function pointCopy(){
       {title:'Auto-renewal', value:'None', desc:'One-time payment'}
     ],
     usageLifetime:[
-      {title:'AI conversion', value:'Unlimited', desc:'YouTube, Audio, Piano, PDF, and other AI conversions'},
+      {title:'AI conversion', value:'Piano unlimited', desc:'Piano, YouTube, Audio, and PDF are included. Orchestra (Mirelo Business) requires a credit payment.'},
       {title:'Band / Orchestra Preview', value:'Included', desc:'Stem separation, then MIDI transcription per stem. Quality varies by source.'},
       {title:'Full features', value:'Included', desc:'Editors, Assistant, and score tools'},
       {title:'Term', value:'No time limit', desc:'Permanent use after purchase'},
@@ -1695,10 +1694,10 @@ function pointCopy(){
     trialTitle:'Free trial',
     trialPrice:'Free · Start without payment',
     trialItems:[
-      'MIDI editing available',
-      'AI conversion trial',
-      'Convert & export up to 1 minute',
-      'Full conversion after buying a Full Pass'
+      'MIDI editing is available',
+      'Piano convert and export up to 1 minute',
+      'Songs longer than 5 minutes cannot use the free 1-minute convert',
+      'A Full pass converts the full piano length. Orchestra uses credits'
     ],
     trialBtnStart:'Sign in to start',
     trialBtnCurrent:'Current plan',
@@ -1708,25 +1707,25 @@ function pointCopy(){
       ['Auto-renewal','None']
     ],
     cardFeaturesPass:[
-      ['Conversions','Unlimited'],
-      ['Full features','Included'],
+      ['Piano conversion','Unlimited'],
+      ['Orchestra','Credit payment'],
       ['Auto-renewal','None']
     ],
     cardFeaturesLife:[
-      ['Conversions','Unlimited'],
-      ['Full features','Included'],
+      ['Piano conversion','Unlimited'],
+      ['Orchestra','Credit payment'],
       ['Time limit','None'],
       ['Auto-renewal','None']
     ],
     compactNote:'',
     detailsToggle:'Pass details',
     detailsItems:[
-      {title:'Period Full Pass', desc:'Unlimited conversions and Full features for the selected period shown on the purchase page. No auto-renewal.'},
-      {title:'Lifetime Full', desc:'Permanent Full access after purchase'},
+      {title:'Period Full Pass', desc:'Unlimited piano conversion for the selected period. Orchestra conversion requires a credit payment. No auto-renewal.'},
+      {title:'Lifetime Full', desc:'Permanent piano conversion. Orchestra conversion still requires a credit payment'},
       {title:'MIDI editing / playback', desc:'Included with Full access'},
       {title:'AI Assistant', desc:'Included with Full access'},
       {title:'Score conversion & editing', desc:'Included with Full access'},
-      {title:'Lifetime owners', desc:'Extra Pass purchases are not required'}
+      {title:'Lifetime owners', desc:'Another pass is not required. Orchestra conversion still requires a credit payment'}
     ]
   };
   if(lang === 'ja') return {
@@ -1737,12 +1736,12 @@ function pointCopy(){
     perUseApprox:(price)=>price,
     save:(n)=>`約${n}%お得`,
     unlimitedTitle:'Lifetime Full',
-    unlimitedUses:'AI変換 無制限 · Full機能',
+    unlimitedUses:'ピアノ変換は無制限 · オーケストラはクレジット',
     unlimitedUnit:'永久利用 · 1回払い · 自動更新なし',
-    lifetimeOwnedHint:'Lifetime Fullを保有中です。追加の期間利用権購入は不要です。',
+    lifetimeOwnedHint:'Lifetime Fullを保有中です。ピアノ変換は無制限です。オーケストラ変換はクレジット決済が必要です。',
     notes:[
-      '期間Full利用権: 変換回数制限なし · Full機能 · 自動更新なし',
-      'Lifetime Full: 購入後ずっとFull利用',
+      '期間Full利用権: ピアノ変換は無制限 · オーケストラはクレジット · 自動更新なし',
+      'Lifetime Full: ピアノ変換は永続。オーケストラはクレジット決済',
       '自動課金はありません'
     ],
     accountTitle:'Googleログイン後に購入できます。',
@@ -1751,8 +1750,8 @@ function pointCopy(){
     serviceValue:'決済完了後すぐにライセンス付与',
     noteTitle:'利用権のご案内',
     licenseGuide:[
-      {title:'期間Full利用権',desc:'選択した期間中、AI変換回数制限なしでFull機能を利用できます。自動更新はありません。'},
-      {title:'Lifetime Full',desc:'購入後ずっとFull利用できます。追加の期間利用権購入は不要です。'},
+      {title:'期間Full利用権',desc:'選択期間中、ピアノ変換は回数制限なしです。オーケストラ変換はクレジット決済が必要です。自動更新はありません。'},
+      {title:'Lifetime Full',desc:'購入後、ピアノ変換はずっと利用できます。オーケストラ変換はクレジット決済が必要です。'},
       {title:'MIDI編集 PRO',desc:'マルチトラックのピアノロールでベロシティやCCを編集します。'},
       {title:'AIアシスタント',desc:'生成採譜ではなく、MIDIを整える補正・編曲ツールです。'},
       {title:'楽譜機能',desc:'楽譜を編集しMusicXML/PDFに書き出します。PDF楽譜の取り込みはBetaです。'}
@@ -1771,25 +1770,25 @@ function pointCopy(){
     heroLead:'利用券・Lifetimeと、クレジットチャージは別ラインです。用途に合わせて選んでください。',
     heroLeadOwned:'Lifetime Fullをご利用中です。',
     sectionLicenseTitle:'利用券 · ライセンス',
-    sectionLicenseLead:'期間 Full と Lifetime。有効期間中は変換回数の制限がありません。',
+    sectionLicenseLead:'ピアノ変換は有効期間中、回数制限がありません。オーケストラ変換はライセンスがあってもクレジット決済が必要です。',
     sectionCreditsTitle:'クレジットチャージ',
-    sectionCreditsLead:'クレジットはライセンスと別です。秒単位課金の機能に使います。',
+    sectionCreditsLead:'ピアノは秒2クレジットで、Full利用権なら減りません。オーケストラ（Mireloビジネス）は秒4クレジットで、Full・Lifetimeでも免除されません。',
     comingSoon:'この商品は現在購入できません。',
     ownedBannerTitle:'Lifetime Full保有中',
-    ownedBannerBody:'すべてのAI変換とFull機能を制限なく利用できます。',
-    ownedBanner:'Lifetime Full保有中。すべてのAI変換とFull機能を制限なく利用できます。',
-    btnNoNeed:'追加購入は不要',
+    ownedBannerBody:'ピアノとFull機能は制限なく利用できます。オーケストラ（Mireloビジネス）はクレジットが必要です。',
+    ownedBanner:'Lifetime Full保有中。ピアノとFull機能は制限なし。オーケストラ（Mireloビジネス）はクレジットが必要です。',
+    btnNoNeed:'利用権を保有中',
     btnCurrentPlan:'現在利用中',
     ownedBadge:'現在のプラン',
     usageTitle:'利用権のご案内',
     lifetimeUsageTitle:'Lifetime Full利用案内',
     usageCredit:[
-      {title:'期間Full利用権', value:'利用可能', desc:'選択期間中、変換回数制限なしでFull機能を利用'},
-      {title:'Lifetime Full', value:'利用可能', desc:'購入後ずっとFull利用'},
+      {title:'期間Full利用権', value:'利用可能', desc:'選択期間中、ピアノ変換は回数制限なし。オーケストラはクレジット決済'},
+      {title:'Lifetime Full', value:'利用可能', desc:'ピアノ変換は永続。オーケストラはクレジット決済'},
       {title:'自動更新', value:'なし', desc:'1回払い'}
     ],
     usageLifetime:[
-      {title:'AI変換', value:'無制限', desc:'YouTube・Audio・Piano・PDFなどのAI変換'},
+      {title:'AI変換', value:'ピアノ無制限', desc:'ピアノ・YouTube・Audio・PDFは利用権に含まれます。オーケストラ（Mireloビジネス）はクレジット決済が必要です。'},
       {title:'Band / Orchestra Preview', value:'含む', desc:'ステム分離のあと、各ステムをMIDIに採譜します。曲によって品質は変わります。'},
       {title:'Full機能', value:'利用可能', desc:'編集・Assistant・楽譜機能を含む'},
       {title:'利用期間', value:'期間制限なし', desc:'購入後ずっと利用できます'},
@@ -1828,10 +1827,10 @@ function pointCopy(){
     trialTitle:'無料体験',
     trialPrice:'無料 · 決済なしで開始',
     trialItems:[
-      'MIDI編集が利用可能',
-      'AI変換の無料体験',
-      '変換・書き出しは最大1分',
-      'Full利用権購入後に全区間変換'
+      'MIDI編集を利用できます',
+      'ピアノの変換・書き出しは最大1分です',
+      '5分を超える曲は無料の1分変換を使えません',
+      'Full利用権はピアノ全区間を変換します。オーケストラはクレジットが必要です'
     ],
     trialBtnStart:'ログインして開始',
     trialBtnCurrent:'現在のプラン',
@@ -1841,25 +1840,25 @@ function pointCopy(){
       ['自動更新','なし']
     ],
     cardFeaturesPass:[
-      ['変換回数','制限なし'],
-      ['Full機能','利用可能'],
+      ['ピアノ変換','制限なし'],
+      ['オーケストラ','クレジット決済'],
       ['自動更新','なし']
     ],
     cardFeaturesLife:[
-      ['変換回数','制限なし'],
-      ['Full機能','利用可能'],
+      ['ピアノ変換','制限なし'],
+      ['オーケストラ','クレジット決済'],
       ['期間制限','なし'],
       ['自動更新','なし']
     ],
     compactNote:'',
     detailsToggle:'利用権の詳細',
     detailsItems:[
-      {title:'期間Full利用権', desc:'購入ページに表示された期間中、変換回数制限なしでFull機能を利用。自動更新なし'},
+      {title:'期間Full利用権', desc:'表示期間中、ピアノ変換は回数制限なし。オーケストラはクレジット決済。自動更新なし'},
       {title:'Lifetime Full', desc:'購入後ずっとFull利用'},
       {title:'MIDI編集・再生', desc:'Full利用に含まれます'},
       {title:'AIアシスタント', desc:'Full利用に含まれます'},
       {title:'楽譜変換・編集', desc:'Full利用に含まれます'},
-      {title:'Lifetime保有者', desc:'追加の期間利用権購入は不要です'}
+      {title:'Lifetime保有者', desc:'利用権の再購入は不要です。オーケストラ変換はクレジット決済が必要です'}
     ]
   };
   return {
@@ -1870,12 +1869,12 @@ function pointCopy(){
     perUseApprox:(price)=>price,
     save:(n)=>`약 ${n}% 절약`,
     unlimitedTitle:'Lifetime Full',
-    unlimitedUses:'AI 변환 무제한 · Full 기능',
+    unlimitedUses:'피아노 변환 무제한 · 오케스트라는 크레딧',
     unlimitedUnit:'영구 이용 · 1회 결제 · 자동결제 없음',
-    lifetimeOwnedHint:'Lifetime Full을 이용 중입니다. 추가 기간 이용권 구매가 필요하지 않습니다.',
+    lifetimeOwnedHint:'Lifetime Full을 이용 중입니다. 피아노 변환은 제한이 없습니다. 오케스트라 변환은 크레딧 결제가 필요합니다.',
     notes:[
-      '기간 Full 이용권: 변환 횟수 제한 없음 · Full 기능 이용 · 자동결제 없음',
-      'Lifetime Full: 구매 후 영구 Full 이용',
+      '기간 Full 이용권: 피아노 변환은 제한 없음 · 오케스트라는 크레딧 결제 · 자동결제 없음',
+      'Lifetime Full: 피아노 변환은 영구 이용. 오케스트라는 크레딧 결제',
       '자동결제는 없습니다'
     ],
     accountTitle:'Google 로그인 후 구매할 수 있습니다.',
@@ -1884,8 +1883,8 @@ function pointCopy(){
     serviceValue:'결제 완료 후 즉시 이용권 지급',
     noteTitle:'이용권 안내',
     licenseGuide:[
-      {title:'기간 Full 이용권',desc:'선택한 기간 동안 AI 변환 횟수 제한 없이 Full 기능을 이용합니다. 자동결제는 없습니다.'},
-      {title:'Lifetime Full',desc:'구매 후 영구 Full 이용. 추가 기간 이용권 구매가 필요하지 않습니다.'},
+      {title:'기간 Full 이용권',desc:'선택한 기간 동안 피아노 변환은 횟수 제한이 없습니다. 오케스트라 변환은 크레딧 결제가 필요합니다. 자동결제는 없습니다.'},
+      {title:'Lifetime Full',desc:'구매 후 피아노 변환은 영구 이용입니다. 오케스트라 변환은 크레딧 결제가 필요합니다.'},
       {title:'MIDI 편집 PRO',desc:'멀티트랙 피아노 롤에서 벨로시티·CC 등을 편집합니다.'},
       {title:'AI 어시스턴트',desc:'생성형 채보가 아니라 MIDI를 다듬는 보정·편곡 도구입니다.'},
       {title:'악보 기능',desc:'악보를 편집하고 MusicXML/PDF로 내보냅니다. PDF 악보 가져오기는 Beta입니다.'}
@@ -1904,30 +1903,30 @@ function pointCopy(){
     heroLead:'이용권·라이선스와 크레딧 충전은 별도 라인입니다. 용도에 맞게 선택하세요.',
     heroLeadOwned:'Lifetime Full을 이용 중입니다.',
     sectionLicenseTitle:'이용권 · 라이선스',
-    sectionLicenseLead:'기간제 Full과 Lifetime. 이용권 기간 동안 변환 횟수 제한이 없습니다.',
+    sectionLicenseLead:'피아노 변환은 이용권 기간 동안 횟수 제한이 없습니다. 오케스트라 변환은 라이선스가 있어도 크레딧 결제가 필요합니다.',
     sectionCreditsTitle:'크레딧 충전',
-    sectionCreditsLead:'크레딧은 라이선스와 별개입니다. 초당 과금 기능에 사용합니다.',
+    sectionCreditsLead:'피아노는 초당 2 크레딧이며, Full 이용권이면 차감되지 않습니다. 오케스트라(Mirelo 비즈니스)는 초당 4 크레딧이며 Full·Lifetime으로도 면제되지 않습니다.',
     comingSoon:'현재 구매할 수 없는 상품입니다.',
     ownedBannerTitle:'Lifetime Full 보유 중',
-    ownedBannerBody:'모든 AI 변환과 Full 기능을 제한 없이 이용할 수 있습니다.',
-    ownedBanner:'Lifetime Full 보유 중. 모든 AI 변환과 Full 기능을 제한 없이 이용할 수 있습니다.',
-    btnNoNeed:'추가 구매 불필요',
+    ownedBannerBody:'피아노와 Full 기능은 제한 없이 이용합니다. 오케스트라(Mirelo 비즈니스)는 크레딧이 필요합니다.',
+    ownedBanner:'Lifetime Full 보유 중. 피아노와 Full 기능은 제한 없이 이용합니다. 오케스트라(Mirelo 비즈니스)는 크레딧이 필요합니다.',
+    btnNoNeed:'이용권 보유 중',
     btnCurrentPlan:'현재 이용 중',
     ownedBadge:'현재 플랜',
     usageTitle:'이용권 안내',
     lifetimeUsageTitle:'Lifetime Full 이용 안내',
     cardFeaturesPass:[
-      ['변환 횟수','제한 없음'],
-      ['Full 기능','이용 가능'],
+      ['피아노 변환','제한 없음'],
+      ['오케스트라','크레딧 결제'],
       ['자동결제','없음']
     ],
     usageCredit:[
-      {title:'기간 Full 이용권', value:'이용 가능', desc:'선택한 기간 동안 변환 횟수 제한 없이 Full 기능 이용'},
-      {title:'Lifetime Full', value:'이용 가능', desc:'구매 후 영구 Full 이용'},
+      {title:'기간 Full 이용권', value:'이용 가능', desc:'선택한 기간 동안 피아노 변환은 횟수 제한 없음. 오케스트라는 크레딧 결제'},
+      {title:'Lifetime Full', value:'이용 가능', desc:'피아노 변환은 영구 이용. 오케스트라는 크레딧 결제'},
       {title:'자동결제', value:'없음', desc:'1회 결제'}
     ],
     usageLifetime:[
-      {title:'AI 변환', value:'무제한', desc:'YouTube·Audio·Piano·PDF 등 AI 변환'},
+      {title:'AI 변환', value:'피아노 무제한', desc:'피아노·YouTube·Audio·PDF는 이용권에 포함됩니다. 오케스트라(Mirelo 비즈니스)는 크레딧 결제가 필요합니다.'},
       {title:'Band / Orchestra Preview', value:'포함', desc:'스템을 나눈 뒤 각 스템을 MIDI로 채보합니다. 곡에 따라 품질이 달라질 수 있습니다.'},
       {title:'Full 기능', value:'이용 가능', desc:'편집·Assistant·악보 기능 포함'},
       {title:'이용기간', value:'기간 제한 없음', desc:'구매 후 계속 이용할 수 있습니다.'},
@@ -1966,10 +1965,10 @@ function pointCopy(){
     trialTitle:'무료 체험',
     trialPrice:'0원 · 결제 없이 시작',
     trialItems:[
-      'MIDI 편집 기능 이용 가능',
-      'AI 변환 무료 체험',
-      '변환·내보내기 최대 1분',
-      'Full 이용권 구매 후 전체 변환 가능'
+      'MIDI 편집 기능을 사용할 수 있습니다',
+      '피아노 변환·내보내기는 최대 1분입니다',
+      '5분을 넘는 곡은 무료 1분 변환을 할 수 없습니다',
+      'Full 이용권은 피아노 전체 구간을 변환합니다. 오케스트라는 크레딧이 필요합니다'
     ],
     trialBtnStart:'로그인하여 시작',
     trialBtnCurrent:'현재 플랜',
@@ -1979,20 +1978,20 @@ function pointCopy(){
       ['자동결제','없음']
     ],
     cardFeaturesLife:[
-      ['변환 횟수','제한 없음'],
-      ['Full 기능','이용 가능'],
+      ['피아노 변환','제한 없음'],
+      ['오케스트라','크레딧 결제'],
       ['기간 제한','없음'],
       ['자동결제','없음']
     ],
     compactNote:'',
     detailsToggle:'이용권 안내 자세히 보기',
     detailsItems:[
-      {title:'기간 Full 이용권', desc:'구매 페이지에 표시된 기간 동안 변환 횟수 제한 없이 Full 기능 이용 · 자동결제 없음'},
-      {title:'Lifetime Full', desc:'구매 후 영구 Full 이용'},
+      {title:'기간 Full 이용권', desc:'표시된 기간 동안 피아노 변환은 횟수 제한 없음. 오케스트라는 크레딧 결제 · 자동결제 없음'},
+      {title:'Lifetime Full', desc:'피아노 변환은 영구 이용. 오케스트라 변환은 크레딧 결제'},
       {title:'MIDI 편집/재생', desc:'Full 이용권에 포함'},
       {title:'AI Assistant', desc:'Full 이용권에 포함'},
       {title:'악보 변환·편집', desc:'Full 이용권에 포함'},
-      {title:'Lifetime 보유자', desc:'추가 기간 이용권 구매가 필요하지 않습니다'}
+      {title:'Lifetime 보유자', desc:'이용권은 다시 사지 않아도 됩니다. 오케스트라 변환은 크레딧 결제가 필요합니다'}
     ]
   };
 }
@@ -2047,7 +2046,7 @@ function renderPurchasePackCard(pack, { pt, sfUi, passFeatures, locked }){
     selected,
     locked,
     features: isCredit ? (sfUi.creditFeatures || []) : passFeatures,
-    buyLabel: locked ? (pt.btnNoNeed || '추가 구매 불필요') : pt.buy,
+    buyLabel: locked ? (pt.btnNoNeed || '이용권 보유 중') : pt.buy,
     ui: {
       recommended: pt.recommended || sfUi.recommended || '추천',
       buy: pt.buy,
@@ -2098,8 +2097,8 @@ function renderPurchasePlanGrid(){
   grid.classList.remove('is-catalog-loading');
   grid.removeAttribute('aria-busy');
   const passFeatures = pt.cardFeaturesPass || [
-    ['변환 횟수', '제한 없음'],
-    ['Full 기능', '이용 가능'],
+    ['피아노 변환', '제한 없음'],
+    ['오케스트라', '크레딧 결제'],
     ['자동결제', '없음']
   ];
   const sfUi = storefrontUiCopy(lang);
@@ -2144,7 +2143,7 @@ function renderPurchasePlanGrid(){
       }));
     }
   }
-  const creditCards = creditPacks.map((pack) => renderPurchasePackCard(pack, cardOpts));
+  const creditCards = creditPacks.map((pack) => renderPurchasePackCard(pack, { ...cardOpts, locked: false }));
   const licenseCols = purchasePlanGridCols(licenseCards.length);
   const creditCols = purchasePlanGridCols(creditCards.length);
   const licenseHtml = purchaseCatalogSectionHtml({
@@ -2228,19 +2227,20 @@ function applyPurchaseModeUi(){
     }
   }
   renderPurchaseUsageGuide();
-  if(locked) closePurchaseConfirmModal();
+  if(locked && !isPointCheckout()) closePurchaseConfirmModal();
   applyPurchaseLifetimeGate();
 }
 function selectPurchasePlan(id, opts={}){
-  if(purchaseActionsLocked()){
+  const raw = String(id || 'PASS_30D').trim().toUpperCase();
+  const next = normalizeCreditProductId(raw);
+  const creditPick = String(next).startsWith('CREDIT_') || String(next).startsWith('MIRELO_CREDIT_');
+  if(purchaseActionsLocked() && !creditPick){
     selectedPurchaseId = 'LIFETIME';
     purchaseMode = 'lifetime';
     syncPurchaseUrl();
     applyPurchaseModeUi();
     return;
   }
-  const raw = String(id || 'PASS_30D').trim().toUpperCase();
-  const next = normalizeCreditProductId(raw);
   if(isPassProductId(next) || next === 'PASS_30D' || isPassProductId(raw)){
     const pid = isPassProductId(next) ? next : (isPassProductId(raw) ? raw : 'PASS_30D');
     selectedPurchaseId = getPassProduct(pid)?.productId || pid;
@@ -2281,17 +2281,13 @@ function selectPurchasePlan(id, opts={}){
   if(opts.confirm) openPurchaseConfirmModal();
 }
 function setPurchaseMode(mode, packId){
-  if((mode === 'points' || mode === 'credits') && !purchaseActionsLocked()) selectPurchasePlan(packId || 'CREDIT_30');
+  if(mode === 'points' || mode === 'credits') selectPurchasePlan(packId || 'CREDIT_30');
   else selectPurchasePlan('LIFETIME');
 }
 function bindPurchaseModeUi(){
   if(!isPurchasePage || document.body.dataset.purchaseModeBound === '1') return;
   document.body.dataset.purchaseModeBound = '1';
   $('purchasePlanGrid')?.addEventListener('click', (e)=>{
-    if(purchaseActionsLocked()){
-      e.preventDefault();
-      return;
-    }
     const buy = e.target.closest('[data-purchase-buy]');
     if(buy){
       if(buy.disabled) return;
@@ -2403,7 +2399,7 @@ async function initPurchasePoints(){
   }
   markPurchaseStorefrontReady();
   rememberPassCatalogSession();
-  if(purchaseActionsLocked()){
+  if(purchaseActionsLocked() && !isPointCheckout()){
     selectedPurchaseId = 'LIFETIME';
     purchaseMode = 'lifetime';
     applyPurchaseModeUi();
@@ -2429,9 +2425,11 @@ function takePendingPurchase(){
   }
 }
 function resumePendingPurchase(){
-  if(!isPurchasePage || purchaseActionsLocked() || !currentUser) return;
+  if(!isPurchasePage || !currentUser) return;
   const id = takePendingPurchase();
   if(!id) return;
+  const creditPending = /^CREDIT_|^MIRELO_CREDIT_/i.test(id);
+  if(purchaseActionsLocked() && !creditPending) return;
   selectPurchasePlan(id, {confirm:true});
 }
 function renderPurchaseUsageGuide(){
@@ -2501,7 +2499,7 @@ function setPurchasePayBusy(busy){
   }
 }
 function openPurchaseConfirmModal(){
-  if(!isPurchasePage || purchaseActionsLocked()) return;
+  if(!isPurchasePage || (purchaseActionsLocked() && !isPointCheckout())) return;
   const wrap = ensurePurchaseModal();
   const body = $('purchaseModalBody');
   if(!body) return;
@@ -2765,7 +2763,7 @@ function updateBankTransferAmount(){
 }
 function applyPurchaseSellGate(){
   if(!isPurchasePage) return;
-  if(purchaseActionsLocked()){
+  if(purchaseActionsLocked() && !isPointCheckout()){
     const kakao = $('kakaoPayBtn');
     const paypal = $('paypalButtons');
     $('purchasePausedNote')?.remove();
@@ -2891,19 +2889,20 @@ function renderPurchaseOwnedNotice(){
   box.innerHTML = `
     <div class="purchase-owned-card">
       <h3>${esc(t.alreadyOwnedTitle || 'Lifetime 라이선스 보유')}</h3>
-      <p>${esc(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.')}</p>
+      <p>${esc(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 이용권은 다시 구매하지 않아도 됩니다. 오케스트라 변환은 크레딧 결제가 필요합니다.')}</p>
     </div>`;
 }
 
 function applyPurchaseLifetimeGate(){
   if(!isPurchasePage) return;
-  const locked = purchaseActionsLocked();
+  const ownsLifetime = purchaseActionsLocked();
+  const locked = ownsLifetime && !isPointCheckout();
   const kakaoBtn = $('kakaoPayBtn');
   const cardBtn = $('inicisCardPayBtn');
   const checkout = $('purchaseCheckout');
   const paypal = $('paypalButtons');
   const t = purchaseLocaleText();
-  document.body.classList.toggle('is-lifetime-owned', locked);
+  document.body.classList.toggle('is-lifetime-owned', ownsLifetime);
   if(checkout){
     checkout.classList.toggle('is-locked', locked);
     if(locked) checkout.setAttribute('aria-disabled', 'true');
@@ -2979,7 +2978,7 @@ function purchaseLocaleText(){
     kakaoComplete:'Payment and license registration complete.',
     kakaoCancel:'Payment was canceled.',
     kakaoVerifyFail:'Payment completed, but license confirmation is required. Please keep your payment ID.',
-    alreadyOwned:'You already have a Lifetime license. No additional payment is needed.',
+    alreadyOwned:'You already have a Lifetime license. You do not need another pass. Orchestra conversion still requires a credit payment.',
     alreadyOwnedTitle:'Lifetime license already owned',
     alreadyOwnedButton:'Already purchased',
     duplicateRefunded:'You already have a Lifetime license. The duplicate payment was automatically canceled and refunded.',
@@ -3032,7 +3031,7 @@ function purchaseLocaleText(){
     kakaoComplete:'決済とライセンス登録が完了しました。',
     kakaoCancel:'決済がキャンセルされました。',
     kakaoVerifyFail:'決済は完了しましたが、ライセンス確認が必要です。paymentIdを控えてください。',
-    alreadyOwned:'すでにLifetimeライセンスを保有しています。追加の決済は不要です。',
+    alreadyOwned:'すでにLifetimeライセンスを保有しています。利用権の再購入は不要です。オーケストラ変換はクレジット決済が必要です。',
     alreadyOwnedTitle:'Lifetimeライセンス保有中',
     alreadyOwnedButton:'購入済み',
     duplicateRefunded:'すでにLifetimeライセンスを保有しているため、重複決済は自動キャンセル（全額返金）されました。',
@@ -3085,7 +3084,7 @@ function purchaseLocaleText(){
     kakaoComplete:'결제 및 라이선스 등록이 완료되었습니다.',
     kakaoCancel:'결제가 취소되었습니다.',
     kakaoVerifyFail:'결제는 완료되었으나 라이선스 확인이 필요합니다. 주문번호를 보관해 주세요.',
-    alreadyOwned:'이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.',
+    alreadyOwned:'이미 Lifetime 라이선스를 보유하고 있습니다. 이용권은 다시 구매하지 않아도 됩니다. 오케스트라 변환은 크레딧 결제가 필요합니다.',
     alreadyOwnedTitle:'Lifetime 라이선스 보유',
     alreadyOwnedButton:'구매 완료',
     duplicateRefunded:'이미 Lifetime 라이선스를 보유하고 있어 중복 결제가 자동 취소(전액 환불)되었습니다.',
@@ -14913,11 +14912,6 @@ async function releaseKakaoPurchaseLock(paymentId){
 }
 
 async function requestKakaoPayPointPayment(){
-  if(purchaseActionsLocked()){
-    applyPurchaseLifetimeGate();
-    paypalStatus(purchaseLocaleText().alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.', 'ok');
-    return;
-  }
   if(!isCreditPurchaseEnabled()){
     paypalStatus(lang==='en' ? 'This product is not available for purchase.' : lang==='ja' ? 'この商品は現在購入できません。' : '현재 구매할 수 없는 상품입니다.', 'err');
     return;
@@ -15072,7 +15066,7 @@ async function requestKakaoPayPayment(){
   const t = purchaseLocaleText();
   if(currentLicenseLifetime){
     applyPurchaseLifetimeGate();
-    alert(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.');
+    alert(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 이용권은 다시 구매하지 않아도 됩니다. 오케스트라 변환은 크레딧 결제가 필요합니다.');
     return;
   }
   if(kakaoPayInFlight){
@@ -15282,7 +15276,7 @@ async function requestInicisCardPayment(){
   const t = purchaseLocaleText();
   if(currentLicenseLifetime){
     applyPurchaseLifetimeGate();
-    alert(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 추가 결제는 필요하지 않습니다.');
+    alert(t.alreadyOwned || '이미 Lifetime 라이선스를 보유하고 있습니다. 이용권은 다시 구매하지 않아도 됩니다. 오케스트라 변환은 크레딧 결제가 필요합니다.');
     return;
   }
   if(!CONFIG.portoneStoreId || String(CONFIG.portoneStoreId).startsWith('PASTE_')){

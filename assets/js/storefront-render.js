@@ -67,23 +67,23 @@ export function storefrontUiCopy(lang = 'ko') {
       archived: 'Archived — hidden on the real purchase page',
       btnPaused: 'Unavailable',
       passFeatures: [
-        ['Conversions', 'Unlimited'],
-        ['Full features', 'Included'],
+        ['Piano conversion', 'Unlimited'],
+        ['Orchestra', 'Credit payment'],
         ['Auto-renewal', 'None']
       ],
       lifeFeatures: [
-        ['AI conversion', 'Unlimited'],
-        ['Full features', 'Included'],
+        ['Piano conversion', 'Unlimited'],
+        ['Orchestra', 'Credit payment'],
         ['Term', 'No expiry'],
         ['Auto-renewal', 'None']
       ],
       unitPass: (days) => `${days}-day Full Pass · one-time`,
       unitLife: 'Lifetime Full · one-time',
-      unitCredit: '1 Credit = 1 Conversion',
+      unitCredit: 'Piano 2/s · Orchestra 4/s',
       creditFeatures: [
-        ['AI conversion', '1 Credit = 1 Conversion'],
-        ['Term', 'No expiry'],
-        ['Full pass', 'Not required']
+        ['Piano', '2/s · unlimited with Full'],
+        ['Orchestra', '4/s · not waived'],
+        ['Term', 'No expiry']
       ],
       hideToday: "Don't show again",
       close: 'Close',
@@ -98,23 +98,23 @@ export function storefrontUiCopy(lang = 'ko') {
       archived: '保管商品 — 実際の購入ページでは非表示',
       btnPaused: '販売停止',
       passFeatures: [
-        ['変換回数', '制限なし'],
-        ['Full機能', '利用可'],
+        ['ピアノ変換', '制限なし'],
+        ['オーケストラ', 'クレジット決済'],
         ['自動更新', 'なし']
       ],
       lifeFeatures: [
-        ['AI変換', '無制限'],
-        ['Full機能', '利用可'],
+        ['ピアノ変換', '制限なし'],
+        ['オーケストラ', 'クレジット決済'],
         ['利用期間', '期限なし'],
         ['自動更新', 'なし']
       ],
       unitPass: (days) => `${days}日 Full 利用権 · 1回払い`,
       unitLife: 'Lifetime Full · 1回払い',
-      unitCredit: '1クレジット = 1回変換',
+      unitCredit: 'ピアノ秒2 · オーケストラ秒4',
       creditFeatures: [
-        ['AI変換', '1クレジット = 1回変換'],
-        ['利用期間', '制限なし'],
-        ['Full利用権', '不要']
+        ['ピアノ', '秒2 · Fullなら無制限'],
+        ['オーケストラ', '秒4 · 免除なし'],
+        ['利用期間', '制限なし']
       ],
       hideToday: '表示しない',
       close: '閉じる',
@@ -128,23 +128,23 @@ export function storefrontUiCopy(lang = 'ko') {
     archived: '보관 상품 — 실제 구매 페이지에서는 숨겨짐',
     btnPaused: '판매중지',
     passFeatures: [
-      ['변환 횟수', '제한 없음'],
-      ['Full 기능', '이용 가능'],
+      ['피아노 변환', '제한 없음'],
+      ['오케스트라', '크레딧 결제'],
       ['자동결제', '없음']
     ],
     lifeFeatures: [
-      ['AI 변환', '무제한'],
-      ['Full 기능', '이용 가능'],
+      ['피아노 변환', '제한 없음'],
+      ['오케스트라', '크레딧 결제'],
       ['이용기간', '기간 제한 없음'],
       ['자동결제', '없음']
     ],
     unitPass: (days) => `${days}일 Full 이용권 · 1회 결제`,
     unitLife: 'Lifetime Full · 1회 결제',
-    unitCredit: '1 크레딧 = 1회 변환',
+    unitCredit: '피아노 초당 2 · 오케스트라 초당 4',
     creditFeatures: [
-      ['AI 변환', '1 크레딧 = 1회'],
-      ['사용 기간', '제한 없음'],
-      ['Full 이용권', '없이 사용 가능']
+      ['피아노', '초당 2 · Full이면 무제한'],
+      ['오케스트라', '초당 4 · 면제 없음'],
+      ['사용 기간', '제한 없음']
     ],
     hideToday: '다시 보지 않기',
     close: '닫기',
@@ -288,7 +288,7 @@ export function renderProductCard(view, options = {}) {
 
   const unit = isLife
     ? ui.unitLife
-    : (isCredit ? (ui.unitCredit || '1 Credit = 1 Conversion') : ui.unitPass(days || 0));
+    : (isCredit ? (ui.unitCredit || 'Piano 2/s · Orchestra 4/s') : ui.unitPass(days || 0));
   const features = options.features
     || (isLife ? ui.lifeFeatures : (isCredit ? (ui.creditFeatures || []) : ui.passFeatures));
   const btnLabel = options.buyLabel

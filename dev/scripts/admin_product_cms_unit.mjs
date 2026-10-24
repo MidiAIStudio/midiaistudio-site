@@ -713,7 +713,7 @@ check('preview_credit_card_matches_storefront', () => {
   assert.match(html, /Credit 10/);
   assert.match(html, /10 Credits/);
   assert.match(html, /7,900원/);
-  assert.match(html, /1 크레딧 = 1회 변환/);
+  assert.match(html, /피아노 초당 2 · 오케스트라 초당 4/);
   assert.match(html, /구매하기/);
   assert.doesNotMatch(html, /0일 Full/);
   assert.doesNotMatch(html, /변환 횟수 제한 없음/);
