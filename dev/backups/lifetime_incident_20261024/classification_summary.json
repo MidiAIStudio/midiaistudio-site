@@ -1,0 +1,64 @@
+{
+  "incidentWindow": "2026-10-24T14:40Z .. 15:10Z",
+  "totalUniqueTargets": 124,
+  "groupA_lifetimeVictims": 15,
+  "groupB_trialKeep": 102,
+  "groupC_review": 7,
+  "firstTs": "2026-10-24T14:45:52.992Z",
+  "lastTs": "2026-10-24T14:46:05.292Z",
+  "sampleA": [
+    {
+      "uid": "9X3f58CUafXklwYuCJgWgb4Z7Kt1",
+      "email": "sjen132@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "EWHGxMNRE5RYVG8IK6NFM9W9b423",
+      "email": "minjs0205@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "EzdgK27HRrMgOF7ekKkFvLylgRh2",
+      "email": "kantzz111@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "PYPA0MJssCPxHsbJaPkc7XklyT42",
+      "email": "umin031009@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "TegDgpheAbVosUQ0raKHPxANysI3",
+      "email": "yyjjhh9@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "Uj7OpfiJwVhGtEYN4ftrlj6S9KW2",
+      "email": "zzambu1004@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "WLrEy1MjCTbNdTMxCp5WEm9EvL52",
+      "email": "hi86710@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "WfZ9VHhkFmbU59zfKdYB2LzX4gv2",
+      "email": "show2452@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "WpDTbRnN9FZbOMHWXC2BQmqVqR13",
+      "email": "gksqufsla15917@gmail.com",
+      "summary": "lifetime → period · 3일"
+    },
+    {
+      "uid": "X1cQ1Bqc3DOoBZN8gjzrWQLLeWh1",
+      "email": "rytmaurus@gmail.com",
+      "summary": "lifetime → period · 3일"
+    }
+  ],
+  "cPlans": [
+    "period"
+  ]
+}

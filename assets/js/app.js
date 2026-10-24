@@ -10346,6 +10346,11 @@ async function adminBulkApplyLicenseToUid(uid, { plan, days=null, passProductId=
   const savePlan = String(plan || 'trial').toLowerCase();
   if(!['trial','lifetime','period'].includes(savePlan)) throw new Error('라이선스 유형이 올바르지 않습니다.');
   const prev = licenseForUid(uid);
+  const prevPlan = String(prev?.plan || '').toLowerCase();
+  // Never overwrite Lifetime with period/trial via bulk grant.
+  if(prevPlan === 'lifetime' && savePlan !== 'lifetime'){
+    return { skipped: true, reason: 'lifetime_protected', uid, beforePlan: prevPlan };
+  }
   const clearDates = savePlan === 'lifetime';
   const payload = {
     licensed: true,
@@ -10416,36 +10421,65 @@ async function adminBulkApplyLicenseToUid(uid, { plan, days=null, passProductId=
     result: 'success',
     summary: `${prev?.plan || '-'} → ${savePlan}${clearDates ? '' : ` · ${Number(days)||0}일`}`
   });
+  return { skipped: false, uid, beforePlan: prevPlan, afterPlan: savePlan };
 }
 async function runAdminBulkLicenseGrant(uids, { plan, days, passProductId, reason }){
+  // EMERGENCY LOCK (2026-10-24): keep period bulk disabled until ops explicitly re-enable.
+  // Lifetime/trial/credits paths remain available. Lifetime skip is also enforced in apply.
+  if(String(plan || '').toLowerCase() === 'period'){
+    alert('긴급 잠금: 기간제 일괄 지급이 일시 중단되었습니다.\nLifetime 복구·검증이 끝난 뒤 보호 로직과 함께 다시 활성화합니다.\n크레딧 일괄 지급은 사용 가능합니다.');
+    adminFlash('기간제 일괄 지급 잠금 중', { persist: true });
+    return;
+  }
   const label = plan === 'lifetime' ? '평생' : (plan === 'trial' ? '체험판' : '기간제');
   const dayNote = plan === 'lifetime' ? '무기한' : `${Math.max(1, Number(days)||1)}일`;
-  if(!confirm(`일괄 지급 확인\n\n${uids.length}명에게 ${label}(${dayNote})를 적용합니다.`)) return;
+  const savePlan = String(plan || '').toLowerCase();
+  let protectLifetime = 0;
+  if(savePlan !== 'lifetime'){
+    for(const uid of uids){
+      if(String(licenseForUid(uid)?.plan || '').toLowerCase() === 'lifetime') protectLifetime += 1;
+    }
+  }
+  const preview = `${uids.length}명에게 ${label}(${dayNote})를 적용합니다.`
+    + (protectLifetime ? `\n\nLifetime 보호: ${protectLifetime}명은 건너뜁니다(영구 권한 유지).` : '');
+  if(!confirm(`일괄 지급 확인\n\n${preview}`)) return;
   adminBulkBusy = true;
   adminFlash(`${uids.length}명 ${label} 일괄 지급 중…`, { persist: true });
   let ok = 0;
+  let skipped = 0;
   let fail = 0;
   const failures = [];
   try{
     for(const uid of uids){
       try{
-        await adminBulkApplyLicenseToUid(uid, { plan, days, passProductId, memo: reason });
-        ok += 1;
+        const res = await adminBulkApplyLicenseToUid(uid, { plan, days, passProductId, memo: reason });
+        if(res && res.skipped){
+          skipped += 1;
+          writeAdminAuditLog({
+            targetUserId: uid,
+            targetEmail: findAdminUserRow(uid)?.email || '',
+            category: 'license',
+            action: '일괄 지급 건너뜀',
+            before: { plan: res.beforePlan || 'lifetime' },
+            after: { plan: savePlan, skipped: true, reason: res.reason || 'lifetime_protected' },
+            result: 'skipped',
+            summary: `lifetime 보호 · ${savePlan} 지급 건너뜀`
+          });
+        } else {
+          ok += 1;
+        }
       }catch(err){
         fail += 1;
         failures.push({ uid, message: String(err?.message || err) });
         console.error('bulk license grant', uid, err);
       }
-      if((ok + fail) % 10 === 0){
-        adminFlash(`${label} 일괄 지급 중 · 성공 ${ok} · 실패 ${fail}`, { persist: true });
+      if((ok + skipped + fail) % 10 === 0){
+        adminFlash(`${label} 일괄 지급 중 · 성공 ${ok} · 건너뜀 ${skipped} · 실패 ${fail}`, { persist: true });
       }
     }
-    adminFlash(`${label} 일괄 지급 완료 · 성공 ${ok} · 실패 ${fail}`);
-    pushAdminCrmFeed(`${label} 일괄 지급`, `${ok}명 · ${dayNote}`, uids[0] || '');
-    if(fail){
-      const lines = failures.slice(0, 8).map((f)=>f.uid).join(', ');
-      alert(`${label} 일괄 지급 완료\n\n성공 ${ok}\n실패 ${fail}${lines ? '\n'+lines : ''}`);
-    }
+    adminFlash(`${label} 일괄 지급 완료 · 성공 ${ok} · 건너뜀 ${skipped} · 실패 ${fail}`);
+    pushAdminCrmFeed(`${label} 일괄 지급`, `${ok}성공/${skipped}건너뜀 · ${dayNote}`, uids[0] || '');
+    alert(`${label} 일괄 지급 완료\n\n성공 ${ok}\n건너뜀(Lifetime 보호) ${skipped}\n실패 ${fail}${failures.length ? '\n'+failures.slice(0,8).map((f)=>f.uid).join(', ') : ''}`);
     renderAdminUserTable({ keepOrder: true });
     if(selectedAdminUid) refreshAdminCrmDetail({ force:true });
   }finally{

@@ -1,0 +1,261 @@
+{
+  "A_allLifetime": true,
+  "A_lifetimeCount": 15,
+  "A_stillPeriod": 0,
+  "B_sample_stillPeriod3d": [
+    {
+      "email": "sph6739@gmail.com",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "a01066752883@gmail.com",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "tnskstleo89@gmail.com",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "syunggyu0324@gmail.com",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "jdy00930@gmail.com",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    }
+  ],
+  "C_untouched_current": [
+    {
+      "email": "jiangduojiangduo@qq.com",
+      "before": "period",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "sogksxp@gmail.com",
+      "before": "period",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "a01031981217@gmail.com",
+      "before": "period",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "pbm724@gmail.com",
+      "before": "period",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "cijusg0078@gmail.com",
+      "before": "period",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "pms7376123@gmail.com",
+      "before": "period",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    },
+    {
+      "email": "pure32karen@gmail.com",
+      "before": "period",
+      "plan": "period",
+      "method": "admin_bulk",
+      "licensed": true,
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "durationDays": null
+    }
+  ],
+  "A_detail": [
+    {
+      "email": "sjen132@gmail.com",
+      "plan": "lifetime",
+      "method": "kakaopay",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "minjs0205@gmail.com",
+      "plan": "lifetime",
+      "method": "manual",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "kantzz111@gmail.com",
+      "plan": "lifetime",
+      "method": "manual",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "umin031009@gmail.com",
+      "plan": "lifetime",
+      "method": "admin",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "yyjjhh9@gmail.com",
+      "plan": "lifetime",
+      "method": "admin",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "zzambu1004@gmail.com",
+      "plan": "lifetime",
+      "method": "admin",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "hi86710@gmail.com",
+      "plan": "lifetime",
+      "method": "kakaopay",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "show2452@gmail.com",
+      "plan": "lifetime",
+      "method": "kakaopay",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "gksqufsla15917@gmail.com",
+      "plan": "lifetime",
+      "method": "kakaopay",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "rytmaurus@gmail.com",
+      "plan": "lifetime",
+      "method": "kakaopay",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "chldlsqja12@gmail.com",
+      "plan": "lifetime",
+      "method": "admin",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "taewankim1004@gmail.com",
+      "plan": "lifetime",
+      "method": "manual",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "258581@gmail.com",
+      "plan": "lifetime",
+      "method": "kakaopay",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "rlaskgus0225@gmail.com",
+      "plan": "lifetime",
+      "method": "kakaopay",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    },
+    {
+      "email": "dbsdlsk9223@gmail.com",
+      "plan": "lifetime",
+      "method": "admin",
+      "licensed": true,
+      "expiresAt": null,
+      "passProductId": null,
+      "durationDays": null
+    }
+  ]
+}

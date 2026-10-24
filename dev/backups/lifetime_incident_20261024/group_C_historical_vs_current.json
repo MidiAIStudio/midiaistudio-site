@@ -1,0 +1,205 @@
+[
+  {
+    "uid": "2Ylgn6qyTSXBE3Brc7Dm9AXAlKo1",
+    "email": "jiangduojiangduo@qq.com",
+    "beforePass": "PASS_3D",
+    "historical": {
+      "status": 200,
+      "plan": "period",
+      "method": "welcome_signup",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-24T13:03:02.915Z",
+      "expiresAt": "2026-10-27T13:03:02.915Z",
+      "passProductId": "PASS_3D",
+      "memo": "신규 가입 3일 Full 이용권",
+      "hwid": null
+    },
+    "current": {
+      "status": 200,
+      "plan": "period",
+      "method": "admin_bulk",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "memo": "크레딧 정책 개편에 따른 기존 체험판 크레딧 회수 및 3일 Full 이용권 보상 지급",
+      "hwid": null
+    }
+  },
+  {
+    "uid": "COmw7Av1LARlGw9tAokc9PNuOmv1",
+    "email": "sogksxp@gmail.com",
+    "beforePass": "PASS_30D",
+    "historical": {
+      "status": 200,
+      "plan": "period",
+      "method": "kakaopay",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-09-28T00:36:21.127Z",
+      "expiresAt": "2026-10-28T00:36:21.127Z",
+      "passProductId": "PASS_30D",
+      "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-COmw7Av1-mukimtx1-29ebb8f7",
+      "hwid": "A779B91ACFFAE62F46A850FF4B2AC8182B7E5E3110BF139C63B4D66D345EAA45"
+    },
+    "current": {
+      "status": 200,
+      "plan": "period",
+      "method": "admin_bulk",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "memo": "크레딧 정책 개편에 따른 기존 체험판 크레딧 회수 및 3일 Full 이용권 보상 지급",
+      "hwid": "A779B91ACFFAE62F46A850FF4B2AC8182B7E5E3110BF139C63B4D66D345EAA45"
+    }
+  },
+  {
+    "uid": "DmecELS9bEeAj2DjyYuo5iABQID3",
+    "email": "a01031981217@gmail.com",
+    "beforePass": "PASS_30D",
+    "historical": {
+      "status": 200,
+      "plan": "period",
+      "method": "kakaopay",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-21T11:04:09.179Z",
+      "expiresAt": "2026-11-20T11:04:09.179Z",
+      "passProductId": "PASS_30D",
+      "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-DmecELS9-mvi0690w-0b82060f",
+      "hwid": "D6C281E4B22890CE39374A789BEA055E78858E1379901BBBAE8EDBBEC5133078"
+    },
+    "current": {
+      "status": 200,
+      "plan": "period",
+      "method": "admin_bulk",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "memo": "크레딧 정책 개편에 따른 기존 체험판 크레딧 회수 및 3일 Full 이용권 보상 지급",
+      "hwid": "D6C281E4B22890CE39374A789BEA055E78858E1379901BBBAE8EDBBEC5133078"
+    }
+  },
+  {
+    "uid": "Dnjgzjon3Lbm0R9O3VJ8UMJmxdA3",
+    "email": "pbm724@gmail.com",
+    "beforePass": null,
+    "historical": {
+      "status": 200,
+      "plan": "period",
+      "method": "manual",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-11-24T14:59:59.999Z",
+      "passProductId": null,
+      "memo": "",
+      "hwid": "D5BF63030675AE7FFC5402B7867775F9D3B0C77C52BCA79B3DEFED63C49196E6"
+    },
+    "current": {
+      "status": 200,
+      "plan": "period",
+      "method": "admin_bulk",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "memo": "크레딧 정책 개편에 따른 기존 체험판 크레딧 회수 및 3일 Full 이용권 보상 지급",
+      "hwid": "D5BF63030675AE7FFC5402B7867775F9D3B0C77C52BCA79B3DEFED63C49196E6"
+    }
+  },
+  {
+    "uid": "cqtuJfGYIAS4wLzR0bh22swI35q2",
+    "email": "cijusg0078@gmail.com",
+    "beforePass": null,
+    "historical": {
+      "status": 200,
+      "plan": "period",
+      "method": "manual",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-11-24T14:59:59.999Z",
+      "passProductId": null,
+      "memo": "",
+      "hwid": "9ADF25DB323D8EBEEF6C7F73F06581F613535EBB75E4A5995FF178EE9491F873"
+    },
+    "current": {
+      "status": 200,
+      "plan": "period",
+      "method": "admin_bulk",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "memo": "크레딧 정책 개편에 따른 기존 체험판 크레딧 회수 및 3일 Full 이용권 보상 지급",
+      "hwid": "9ADF25DB323D8EBEEF6C7F73F06581F613535EBB75E4A5995FF178EE9491F873"
+    }
+  },
+  {
+    "uid": "kn3Oz0G0ArcJEdWccfCQbAwsoiZ2",
+    "email": "pms7376123@gmail.com",
+    "beforePass": "PASS_30D",
+    "historical": {
+      "status": 200,
+      "plan": "period",
+      "method": "kakaopay",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-11T08:23:59.372Z",
+      "expiresAt": "2026-11-10T08:23:59.372Z",
+      "passProductId": "PASS_30D",
+      "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-kn3Oz0G0-mv3k2yt5-ca1fe986",
+      "hwid": "D0687EB1892F9433C686D945227BE910165351AF61D583CB58B417A7E39BFF32"
+    },
+    "current": {
+      "status": 200,
+      "plan": "period",
+      "method": "admin_bulk",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "memo": "크레딧 정책 개편에 따른 기존 체험판 크레딧 회수 및 3일 Full 이용권 보상 지급",
+      "hwid": "D0687EB1892F9433C686D945227BE910165351AF61D583CB58B417A7E39BFF32"
+    }
+  },
+  {
+    "uid": "qp0PKJfW19fjojcPIfwEQ8VFNfT2",
+    "email": "pure32karen@gmail.com",
+    "beforePass": null,
+    "historical": {
+      "status": 200,
+      "plan": "period",
+      "method": "manual",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-11-24T14:59:59.999Z",
+      "passProductId": null,
+      "memo": "",
+      "hwid": "81D1C2D047FC930309CBFDBC9F4BAE1A74FD8F2ED6781E104C432F6EB7C13692"
+    },
+    "current": {
+      "status": 200,
+      "plan": "period",
+      "method": "admin_bulk",
+      "statusLic": "active",
+      "licensed": true,
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-10-27T14:59:59.999Z",
+      "passProductId": "PASS_7D",
+      "memo": "크레딧 정책 개편에 따른 기존 체험판 크레딧 회수 및 3일 Full 이용권 보상 지급",
+      "hwid": "81D1C2D047FC930309CBFDBC9F4BAE1A74FD8F2ED6781E104C432F6EB7C13692"
+    }
+  }
+]

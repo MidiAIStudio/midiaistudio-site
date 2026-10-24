@@ -105,7 +105,14 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       // Trial provisioning is Cloud Functions only (Admin SDK).
       // Clients (including owners) must never create/update/delete licenses.
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin();
+      // Block bulk-grant path from downgrading Lifetime → period (2026-10-24 incident).
+      // Intentional admin edits use method != 'admin_bulk' (manual/admin/etc).
+      allow update: if isAdmin()
+        && !(resource.data.plan == 'lifetime'
+          && request.resource.data.plan != 'lifetime'
+          && request.resource.data.method == 'admin_bulk');
+      allow delete: if isAdmin();
     }
 
     match /orders/{orderId} {
