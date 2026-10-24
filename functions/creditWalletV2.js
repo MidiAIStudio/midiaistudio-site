@@ -3,8 +3,10 @@
 /**
  * Credit V2 wallet mutation — physically isolated from V1.
  *
- * AUTHORITATIVE: creditWalletsV2/{uid}.balance
- * LEDGER:        creditLedgerV2
+ * AUTHORITATIVE:
+ *   creditWalletsV2/{uid}.balance — single wallet (all conversions including Mirelo Business)
+ *   creditWalletsV2/{uid}.mireloBalance — legacy field (read-only; new writes use general)
+ * LEDGER: creditLedgerV2
  *
  * NEVER writes:
  *   creditWallets, creditWallets.creditBalance, users.creditBalance
@@ -12,6 +14,8 @@
 
 const CREDIT_SYSTEM_VERSION = 2;
 const SCHEMA_VERSION = 2;
+const WALLET_POOL_GENERAL = 'general';
+const WALLET_POOL_MIRELO = 'mirelo';
 
 function httpError(status, code, message) {
   const err = new Error(message);
@@ -25,6 +29,17 @@ function readBalanceV2(wd) {
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
 }
 
+function readMireloBalanceV2(wd) {
+  const n = Number(wd && wd.mireloBalance != null ? wd.mireloBalance : 0);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+function normalizePool(pool) {
+  // Unified wallet: all new deltas hit general balance. mirelo pool is legacy-only.
+  void pool;
+  return WALLET_POOL_GENERAL;
+}
+
 function writeWalletLedgerV2(tx, {
   walletRef,
   ledgerRef,
@@ -32,19 +47,22 @@ function writeWalletLedgerV2(tx, {
   prev,
   delta,
   FieldValue,
-  ledger
+  ledger,
+  walletPool
 }) {
   const next = prev + delta;
   if (next < 0) {
     throw httpError(400, 'INSUFFICIENT_CREDITS', '잔액이 부족합니다.');
   }
-  tx.set(walletRef, {
+  const pool = normalizePool(walletPool);
+  const patch = {
     uid,
-    balance: next,
     schemaVersion: SCHEMA_VERSION,
     creditSystemVersion: CREDIT_SYSTEM_VERSION,
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+    updatedAt: FieldValue.serverTimestamp(),
+    balance: next
+  };
+  tx.set(walletRef, patch, { merge: true });
   // Intentionally NO users.creditBalance / creditWallets V1 mirror.
   tx.set(ledgerRef, {
     uid,
@@ -52,6 +70,7 @@ function writeWalletLedgerV2(tx, {
     amount: delta,
     creditAmount: delta,
     creditSystemVersion: CREDIT_SYSTEM_VERSION,
+    walletPool: pool,
     ...(ledger || {}),
     balanceBefore: prev,
     balanceAfter: next
@@ -64,8 +83,10 @@ async function applyWalletCreditDeltaV2(db, FieldValue, {
   delta,
   ledger,
   ledgerId,
-  requireUserExists = true
+  requireUserExists = true,
+  walletPool = WALLET_POOL_GENERAL
 }) {
+  const pool = normalizePool(walletPool);
   const walletRef = db.collection('creditWalletsV2').doc(uid);
   const userRef = db.collection('users').doc(uid);
   const ledgerRef = ledgerId
@@ -87,6 +108,8 @@ async function applyWalletCreditDeltaV2(db, FieldValue, {
         return {
           prev,
           balance: prev,
+          mireloBalance: readMireloBalanceV2(wd),
+          walletPool: pool,
           alreadyApplied: true,
           ledgerId: ledgerRef.id,
           creditSystemVersion: CREDIT_SYSTEM_VERSION
@@ -100,11 +123,14 @@ async function applyWalletCreditDeltaV2(db, FieldValue, {
       prev,
       delta,
       FieldValue,
-      ledger
+      ledger: { ...(ledger || {}), walletPool: pool },
+      walletPool: pool
     });
     return {
       prev,
       balance: next,
+      mireloBalance: readMireloBalanceV2(wd),
+      walletPool: pool,
       alreadyApplied: false,
       ledgerId: ledgerRef.id,
       creditSystemVersion: CREDIT_SYSTEM_VERSION
@@ -115,7 +141,10 @@ async function applyWalletCreditDeltaV2(db, FieldValue, {
 module.exports = {
   CREDIT_SYSTEM_VERSION,
   SCHEMA_VERSION,
+  WALLET_POOL_GENERAL,
+  WALLET_POOL_MIRELO,
   readBalanceV2,
+  readMireloBalanceV2,
   writeWalletLedgerV2,
   applyWalletCreditDeltaV2
 };

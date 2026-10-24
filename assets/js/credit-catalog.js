@@ -81,6 +81,7 @@ export function normalizeCreditProductId(id) {
 export function isCreditPackId(id) {
   const key = normalizeCreditProductId(id);
   if (key === 'LIFETIME' || key.startsWith('PASS_') || key.startsWith('TEST_')) return false;
+  // Active sales: general CREDIT_* only (legacy MIRELO_CREDIT_* retired).
   return /^CREDIT_[1-9][0-9]{0,5}$/.test(key);
 }
 
@@ -89,6 +90,8 @@ function isOnSalePack(product) {
   if (status !== 'active') return false;
   if (product?.saleOk === false) return false;
   const type = String(product?.type || '');
+  const pid = normalizeCreditProductId(product?.productId);
+  if (/^MIRELO_CREDIT_/.test(pid) || type === 'mirelo_credit_pack') return false;
   return isCreditPackId(product?.productId) || type === 'credit_pack';
 }
 

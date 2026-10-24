@@ -3,6 +3,7 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const PASS_DURATION_DAYS = Object.freeze({
+  PASS_3D: 3,
   PASS_7D: 7,
   PASS_30D: 30,
   PASS_90D: 90

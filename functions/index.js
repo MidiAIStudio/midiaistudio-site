@@ -1147,10 +1147,21 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
     }
 
     const pid = catalogEngine.normalizeProductId(existing.productCanonicalId || existing.productId || 'LIFETIME');
-    const isCreditOrder = catalogEngine.isCreditProductId(pid)
+    const isMireloCreditOrder = catalogEngine.isMireloCreditProductId(pid)
+      || existing.productType === 'mirelo_credit_pack'
+      || String(existing.walletPool || '').toLowerCase() === 'mirelo';
+    if (isMireloCreditOrder) {
+      return res.status(403).json({
+        ok: false,
+        code: 'MIRELO_SALES_DISABLED',
+        message: 'Mirelo 전용 크레딧 상품은 판매 종료되었습니다. 일반 크레딧을 이용해 주세요.'
+      });
+    }
+    const isCreditOrder = catalogEngine.isAnyCreditProductId(pid)
       || Number(existing.creditAmount) > 0
       || existing.plan === 'credits'
-      || existing.productType === 'credit_pack';
+      || existing.productType === 'credit_pack'
+      || existing.productType === 'mirelo_credit_pack';
 
     if (isCreditOrder) {
       const creditAmount = Math.round(Number(existing.creditAmount || 0));
@@ -1168,7 +1179,8 @@ exports.capturePayPalOrder = functions.https.onRequest(async (req, res) => {
         email: user.email || existing.email || '',
         orderName: existing.productName || pid,
         paymentMethod: 'paypal',
-        provider: 'paypal'
+        provider: 'paypal',
+        walletPool: 'general'
       });
       try {
         await userNotify.notifyCreditGranted(db, admin.firestore.FieldValue, {

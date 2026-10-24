@@ -754,14 +754,18 @@
                   </section>
 
                   <section class="admin-welcome-card" aria-labelledby="welcomeCreditTitle">
-                    <h4 class="admin-welcome-card-title" id="welcomeCreditTitle">크레딧</h4>
-                    <label class="admin-welcome-field" for="welcomeCreditAmount">
-                      <span class="admin-welcome-field-label">지급 크레딧</span>
+                    <h4 class="admin-welcome-card-title" id="welcomeCreditTitle">가입 혜택</h4>
+                    <p class="muted small" id="welcomePassPolicy">
+                      활성화 시 신규 가입자에게 <strong>3일 Full 이용권(PASS_3D · 72시간)</strong>을 지급합니다.
+                      무료 크레딧은 지급하지 않습니다. 동일 기기 중복 수령은 기존과 같이 차단됩니다.
+                    </p>
+                    <label class="admin-welcome-field" for="welcomeCreditAmount" hidden>
+                      <span class="admin-welcome-field-label">지급 크레딧 (사용 안 함)</span>
                       <div class="admin-welcome-credit-row">
                         <input id="welcomeCreditAmount" type="number" min="0" step="1" value="0" inputmode="numeric" aria-describedby="welcomeCreditHint">
                         <span class="admin-welcome-credit-unit">Credits</span>
                       </div>
-                      <span class="admin-welcome-field-hint" id="welcomeCreditHint">최대 10000 · 0이면 크레딧은 지급하지 않습니다</span>
+                      <span class="admin-welcome-field-hint" id="welcomeCreditHint">레거시 필드 · 서버는 PASS_3D만 지급합니다</span>
                     </label>
                   </section>
 

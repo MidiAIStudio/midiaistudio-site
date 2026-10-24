@@ -97,11 +97,12 @@ function previewVars(form) {
 }
 
 function readForm() {
-  const creditRaw = String($('welcomeCreditAmount')?.value ?? '').trim();
-  const creditAmount = creditRaw === '' ? NaN : Number(creditRaw);
   return {
     enabled: !!$('welcomeBenefitEnabled')?.checked,
-    creditAmount,
+    // Credits retired — always 0; server grants PASS_3D when enabled.
+    creditAmount: 0,
+    passProductId: 'PASS_3D',
+    passDurationDays: 3,
     emailEnabled: !!$('welcomeEmailEnabled')?.checked,
     emailSubject: String($('welcomeEmailSubject')?.value || ''),
     emailBody: String($('welcomeEmailBody')?.value || '')
@@ -174,7 +175,7 @@ function scheduleLivePreview() {
 function applyForm(config, limits) {
   const c = config || {};
   if ($('welcomeBenefitEnabled')) $('welcomeBenefitEnabled').checked = !!c.enabled;
-  if ($('welcomeCreditAmount')) $('welcomeCreditAmount').value = String(c.creditAmount != null ? c.creditAmount : 0);
+  if ($('welcomeCreditAmount')) $('welcomeCreditAmount').value = '0';
   if ($('welcomeEmailEnabled')) $('welcomeEmailEnabled').checked = !!c.emailEnabled;
   if ($('welcomeEmailSubject')) $('welcomeEmailSubject').value = c.emailSubject || '';
   if ($('welcomeEmailBody')) $('welcomeEmailBody').value = c.emailBody || '';
@@ -184,10 +185,10 @@ function applyForm(config, limits) {
     const by = c.updatedByEmail || c.updatedBy || '';
     const hint = $('welcomeCreditHint');
     if (hint) {
-      const max = limits?.maxCredit || MAX_CREDIT;
-      hint.textContent = `최대 ${max} · 0이면 크레딧은 지급하지 않습니다`;
+      hint.textContent = '레거시 필드 · 서버는 PASS_3D(3일 Full)만 지급합니다';
     }
-    meta.textContent = [ver, by ? `최근 수정 ${by}` : '']
+    void limits;
+    meta.textContent = [ver, '혜택: 3일 Full (PASS_3D)', by ? `최근 수정 ${by}` : '']
       .filter(Boolean)
       .join(' · ');
   }
@@ -231,12 +232,6 @@ function insertVariable(token) {
 }
 
 function validateLocal(form) {
-  if (!Number.isInteger(form.creditAmount) || form.creditAmount < 0) {
-    return '크레딧 수량은 0 이상의 정수여야 합니다.';
-  }
-  if (form.creditAmount > MAX_CREDIT) {
-    return `최대 ${MAX_CREDIT} Credits까지 설정할 수 있습니다.`;
-  }
   if (form.emailEnabled) {
     if (!String(form.emailSubject || '').trim()) return '환영 메일 제목을 입력하세요.';
     if (!String(form.emailBody || '').trim()) return '환영 메일 본문을 입력하세요.';
@@ -265,10 +260,9 @@ async function saveWelcomeBenefitConfig() {
     flash(err, false);
     return;
   }
-  const confirmAt = LARGE_CONFIRM;
-  if (form.creditAmount >= confirmAt) {
+  if (form.enabled) {
     const ok = window.confirm(
-      `신규 가입자에게 ${form.creditAmount} Credits를 자동 지급합니다.\n계속할까요?`
+      '신규 가입자에게 3일 Full 이용권(PASS_3D · 72시간)을 자동 지급합니다.\n무료 크레딧은 지급하지 않습니다.\n계속할까요?'
     );
     if (!ok) return;
   }
@@ -276,7 +270,7 @@ async function saveWelcomeBenefitConfig() {
   try {
     const data = await callFn('saveWelcomeBenefitConfig', form);
     if (!data || !data.ok) throw new Error((data && data.message) || '저장 실패');
-    applyForm(data.config, { maxCredit: MAX_CREDIT, largeAmountConfirm: confirmAt });
+    applyForm(data.config, { maxCredit: MAX_CREDIT, largeAmountConfirm: LARGE_CONFIRM });
     flash('저장되었습니다. 새로고침 후에도 유지됩니다.', true);
   } catch (e) {
     console.error('saveWelcomeBenefitConfig', e);

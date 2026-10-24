@@ -8,14 +8,14 @@
  *   fingerprint = HMAC-SHA256(SIGNUP_BONUS_HMAC_SECRET, namespace+HWID) — never raw HWID,
  *   never client-supplied fingerprint
  * - Per-UID record: welcome_credit_grants/{uid} (email retry / idempotency)
- * - Authoritative credit: creditWalletsV2 + creditLedgerV2 (type=welcome_signup)
- * - Grant path: Auth onCreate writes the wallet immediately (no app open).
- *   A later HWID bind does not add a second grant for the same account.
- * - Same-PC blocking still applies only when the app has already bound that PC.
- * - Email failure never rolls back credit; CF retry may email-only
+ * - Active policy: grant PASS_3D (72h Full period) — not free credits.
+ * - Legacy creditAmount in config is ignored for grants (kept for email templates).
+ * - Grant path: Auth onCreate (no app open). Same-PC device claim still blocks repeats.
+ * - Email failure never rolls back the pass; CF retry may email-only
  */
 
 const creditWalletV2 = require('./creditWalletV2');
+const passEntitlement = require('./passEntitlement');
 const {
   normalizeHwid,
   isUsableHwid,
@@ -32,6 +32,8 @@ const CLAIM_COLLECTION = 'signupBonusClaims';
 const LEDGER_TYPE = 'welcome_signup';
 const LEDGER_ORIGIN = 'welcome_signup';
 const PRODUCT_NAME = 'MidiAI Studio';
+const WELCOME_PASS_PRODUCT_ID = 'PASS_3D';
+const WELCOME_PASS_DURATION_DAYS = 3;
 const MAX_CREDIT = 10000;
 const SUBJECT_MAX = 200;
 const BODY_MAX = 20000;
@@ -50,7 +52,10 @@ function httpError(status, code, message) {
 function defaultConfig() {
   return {
     enabled: false,
+    // Legacy field (unused for grants). Welcome benefit grants PASS_3D.
     creditAmount: 0,
+    passProductId: WELCOME_PASS_PRODUCT_ID,
+    passDurationDays: WELCOME_PASS_DURATION_DAYS,
     emailEnabled: false,
     emailSubject: '',
     emailBody: '',
@@ -69,10 +74,9 @@ function parseNonNegInt(value) {
 
 function normalizeConfigInput(body, { bumpVersion, prevVersion } = {}) {
   const src = body && typeof body === 'object' ? body : {};
-  const creditAmount = parseNonNegInt(src.creditAmount);
-  if (creditAmount == null) {
-    throw httpError(400, 'AMOUNT_INVALID', '크레딧 수량은 0 이상의 정수여야 합니다.');
-  }
+  // creditAmount is legacy (always 0 for grants). Accept missing → 0.
+  let creditAmount = parseNonNegInt(src.creditAmount);
+  if (creditAmount == null) creditAmount = 0;
   if (creditAmount > MAX_CREDIT) {
     throw httpError(400, 'AMOUNT_TOO_LARGE', `최대 ${MAX_CREDIT} Credits까지 설정할 수 있습니다.`);
   }
@@ -91,7 +95,10 @@ function normalizeConfigInput(body, { bumpVersion, prevVersion } = {}) {
     : Math.max(1, Number(src.configVersion || prevVersion || 1) || 1);
   return {
     enabled,
-    creditAmount,
+    // Credits no longer granted; keep field for admin/email backward compat.
+    creditAmount: creditAmount == null ? 0 : creditAmount,
+    passProductId: WELCOME_PASS_PRODUCT_ID,
+    passDurationDays: WELCOME_PASS_DURATION_DAYS,
     emailEnabled,
     emailSubject: brand.subject.slice(0, SUBJECT_MAX),
     emailBody: brand.body.slice(0, BODY_MAX),
@@ -107,6 +114,8 @@ function publicConfig(raw) {
     ...base,
     enabled: !!d.enabled,
     creditAmount: creditAmount == null ? 0 : creditAmount,
+    passProductId: WELCOME_PASS_PRODUCT_ID,
+    passDurationDays: WELCOME_PASS_DURATION_DAYS,
     emailEnabled: !!d.emailEnabled,
     emailSubject: String(d.emailSubject || '').slice(0, SUBJECT_MAX),
     emailBody: String(d.emailBody || '').slice(0, BODY_MAX),
@@ -241,7 +250,8 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
   deviceFingerprint,
   normalizedHwid,
   ipMasked,
-  legacyClaimant
+  legacyClaimant,
+  Timestamp: TimestampIn
 }) {
   const uidKey = String(uid || '').trim();
   const fingerprint = String(deviceFingerprint || '').trim();
@@ -252,7 +262,10 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
   const claimRef = db.collection(CLAIM_COLLECTION).doc(fingerprint);
   const userRef = db.collection('users').doc(uidKey);
   const licRef = db.collection('licenses').doc(uidKey);
-  const amount = Math.max(0, Number(config.creditAmount || 0) || 0);
+  // Policy: welcome benefit = PASS_3D (72h). Free credits are no longer granted.
+  const amount = 0;
+  const passProductId = WELCOME_PASS_PRODUCT_ID;
+  const passDurationDays = WELCOME_PASS_DURATION_DAYS;
   const emailEnabled = !!config.emailEnabled;
   const configVersion = Math.max(1, Number(config.configVersion || 1) || 1);
   const legacyUid = legacyClaimant && legacyClaimant.uid ? String(legacyClaimant.uid) : '';
@@ -437,40 +450,26 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
       };
     }
 
-    // First claim for this device (or claim already owned by this uid).
-    let balance = null;
-    let ledgerId = '';
-    const creditGranted = amount > 0;
-    if (creditGranted) {
-      const walletRef = db.collection('creditWalletsV2').doc(uidKey);
-      const ledRef = db.collection('creditLedgerV2').doc(ledgerIdForUid(uidKey));
-      const ledSnap = await tx.get(ledRef);
-      const walletSnap = await tx.get(walletRef);
-      const prev = creditWalletV2.readBalanceV2(walletSnap.exists ? walletSnap.data() : {});
-      if (ledSnap.exists) {
-        balance = prev;
-        ledgerId = ledRef.id;
-      } else {
-        balance = creditWalletV2.writeWalletLedgerV2(tx, {
-          walletRef,
-          ledgerRef: ledRef,
-          uid: uidKey,
-          prev,
-          delta: amount,
-          FieldValue,
-          ledger: {
-            type: LEDGER_TYPE,
-            source: LEDGER_ORIGIN,
-            reason: '신규 가입 혜택',
-            displayTitle: `신규 가입 혜택 (+${amount})`,
-            origin: LEDGER_ORIGIN,
-            configVersion,
-            deviceFingerprint: fingerprint
-          }
-        });
-        ledgerId = ledRef.id;
-      }
+    // First claim for this device (or claim already owned by this uid):
+    // grant PASS_3D Full period (replaces trial). No free credits.
+    if (!TimestampIn || typeof TimestampIn.fromDate !== 'function') {
+      throw httpError(500, 'TIMESTAMP_REQUIRED', 'Firestore Timestamp required for welcome pass');
     }
+    const passPayload = passEntitlement.buildPassLicensePayload({
+      user: { email: String(email || ''), displayName: String(displayName || '') },
+      passProductId,
+      durationDays: passDurationDays,
+      existingLicense: licData,
+      method: 'welcome_signup',
+      memo: '신규 가입 3일 Full 이용권',
+      FieldValue,
+      Timestamp: TimestampIn,
+      extra: {
+        passSource: LEDGER_ORIGIN,
+        welcomePass: true
+      }
+    });
+    tx.set(licRef, passPayload, { merge: true });
 
     if (!claimSnap.exists) {
       tx.set(claimRef, {
@@ -480,13 +479,15 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
         email: String(email || ''),
         deviceFingerprint: fingerprint,
         grantedAt: FieldValue.serverTimestamp(),
-        amount: creditGranted ? amount : 0,
-        creditGranted,
+        amount: 0,
+        creditGranted: false,
+        passGranted: true,
+        passProductId,
+        passDurationDays,
         source: LEDGER_ORIGIN,
         configVersion,
         creditSystemVersion: creditWalletV2.CREDIT_SYSTEM_VERSION,
         ipMasked: String(ipMasked || '')
-        // Intentionally no raw hwid field.
       });
     }
 
@@ -494,8 +495,11 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
       uid: uidKey,
       email: String(email || ''),
       displayName: String(displayName || ''),
-      amount: creditGranted ? amount : 0,
-      creditGranted,
+      amount: 0,
+      creditGranted: false,
+      passGranted: true,
+      passProductId,
+      passDurationDays,
       skippedDeviceClaimed: false,
       skippedExistingPaid: false,
       deviceFingerprint: fingerprint,
@@ -509,7 +513,7 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
       emailSent: false,
       emailSentAt: null,
       emailError: '',
-      ledgerId: ledgerId || (creditGranted ? ledgerIdForUid(uidKey) : ''),
+      ledgerId: '',
       creditSystemVersion: creditWalletV2.CREDIT_SYSTEM_VERSION,
       ipMasked: String(ipMasked || '')
     });
@@ -517,8 +521,10 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
     tx.set(userRef, {
       uid: uidKey,
       deviceFingerprint: fingerprint,
-      signupBonusStatus: creditGranted ? 'granted' : 'granted_zero',
-      signupBonusGranted: creditGranted,
+      signupBonusStatus: 'granted_pass',
+      signupBonusGranted: true,
+      signupBonusPassProductId: passProductId,
+      signupBonusPassDays: passDurationDays,
       signupBonusClaimedBy: uidKey,
       signupBonusCheckedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp()
@@ -529,14 +535,17 @@ async function grantWelcomeCreditOnce(db, FieldValue, {
       alreadyGranted: false,
       skippedDeviceClaimed: false,
       skippedExistingPaid: false,
-      amount: creditGranted ? amount : 0,
+      amount: 0,
+      passGranted: true,
+      passProductId,
+      passDurationDays,
       emailEnabled,
       emailSent: false,
       emailSubject: emailEnabled ? String(config.emailSubject || '') : '',
       emailBody: emailEnabled ? String(config.emailBody || '') : '',
       configVersion,
-      ledgerId,
-      balance,
+      ledgerId: '',
+      balance: null,
       deviceFingerprint: fingerprint,
       claimedByUid: uidKey
     };
@@ -673,6 +682,7 @@ async function processWelcomeForDevice(db, admin, {
   if (!uidKey) return { ok: false, code: 'UID_REQUIRED' };
 
   const FieldValue = admin.firestore.FieldValue;
+  const Timestamp = admin.firestore.Timestamp;
   const accountOnly = !!accountGrant && !isUsableHwid(hwid);
   const normalized = accountOnly ? '' : normalizeHwid(hwid);
   const fingerprint = accountOnly
@@ -785,7 +795,8 @@ async function processWelcomeForDevice(db, admin, {
     deviceFingerprint: fingerprint,
     normalizedHwid: normalized,
     ipMasked: masked,
-    legacyClaimant
+    legacyClaimant,
+    Timestamp
   });
 
   if (grant.granted) {
@@ -797,8 +808,8 @@ async function processWelcomeForDevice(db, admin, {
       claimedByUid: uidKey,
       ipMasked: masked,
       summary: accountOnly
-        ? `신규 가입 혜택 +${grant.amount} Credits (account)`
-        : `신규 가입 혜택 +${grant.amount} Credits (device)`
+        ? `신규 가입 혜택 PASS_3D (account)`
+        : `신규 가입 혜택 PASS_3D (device)`
     });
   } else if (grant.skippedDeviceClaimed) {
     await writeSignupBonusAudit(db, FieldValue, {
@@ -830,6 +841,9 @@ async function processWelcomeForDevice(db, admin, {
       skippedDeviceClaimed: !!grant.skippedDeviceClaimed,
       skippedExistingPaid: !!grant.skippedExistingPaid,
       amount: grant.amount,
+      passGranted: !!grant.passGranted,
+      passProductId: grant.passProductId || '',
+      passDurationDays: grant.passDurationDays || 0,
       emailSkipped: true,
       uid: uidKey,
       balance: grant.balance,
@@ -872,6 +886,9 @@ async function processWelcomeForDevice(db, admin, {
       alreadyGranted: grant.alreadyGranted,
       skippedDeviceClaimed: !!grant.skippedDeviceClaimed,
       amount: grant.amount,
+      passGranted: !!grant.passGranted,
+      passProductId: grant.passProductId || '',
+      passDurationDays: grant.passDurationDays || 0,
       emailSent: true,
       uid: uidKey,
       balance: grant.balance,
@@ -888,6 +905,9 @@ async function processWelcomeForDevice(db, admin, {
       alreadyGranted: grant.alreadyGranted,
       skippedDeviceClaimed: !!grant.skippedDeviceClaimed,
       amount: grant.amount,
+      passGranted: !!grant.passGranted,
+      passProductId: grant.passProductId || '',
+      passDurationDays: grant.passDurationDays || 0,
       emailSent: false,
       code,
       uid: uidKey,
@@ -1137,6 +1157,8 @@ module.exports = {
   CLAIM_COLLECTION,
   LEDGER_TYPE,
   LEDGER_ORIGIN,
+  WELCOME_PASS_PRODUCT_ID,
+  WELCOME_PASS_DURATION_DAYS,
   MAX_CREDIT,
   LARGE_AMOUNT_UI,
   PRODUCT_NAME,

@@ -6,9 +6,18 @@ export const QUOTE_TTL_MINUTES = 20;
 export const PRICE_CHANGE_WARN_RATIO = 0.30;
 export const CREDIT_CHANGE_WARN_RATIO = 5;
 export const LIFETIME_DOC_ID = 'lifetime';
-export const CANONICAL_IDS = ['CREDIT_5', 'CREDIT_30', 'CREDIT_100', 'PASS_7D', 'PASS_30D', 'PASS_90D', 'LIFETIME'];
-export const PASS_DURATION_DAYS = { PASS_7D: 7, PASS_30D: 30, PASS_90D: 90 };
+export const CANONICAL_IDS = [
+  'CREDIT_5', 'CREDIT_30', 'CREDIT_100',
+  'PASS_7D', 'PASS_30D', 'PASS_90D', 'LIFETIME'
+];
+/** Legacy archived SKUs — history only, not in active CANONICAL_IDS. */
+export const LEGACY_MIRELO_CREDIT_IDS = [
+  'MIRELO_CREDIT_180', 'MIRELO_CREDIT_900', 'MIRELO_CREDIT_2700'
+];
+export const PASS_DURATION_DAYS = { PASS_3D: 3, PASS_7D: 7, PASS_30D: 30, PASS_90D: 90 };
 export const PASS_PRODUCT_IDS = ['PASS_7D', 'PASS_30D', 'PASS_90D'];
+/** Welcome-only; not sold on storefront. */
+export const WELCOME_PASS_PRODUCT_ID = 'PASS_3D';
 
 let catalogFxRate = null;
 
@@ -113,6 +122,100 @@ export const SEED_PRODUCTS = [
     productVersion: 1,
     orderNameKo: 'MidiAI Studio 100 크레딧',
     orderNameEn: 'MidiAI Studio 100 Credits',
+    productDiscount: emptyDiscount()
+  },
+  // Legacy Mirelo-only SKUs — archived; not sold (history / admin lookup).
+  {
+    productId: 'MIRELO_CREDIT_180',
+    type: 'mirelo_credit_pack',
+    nameKo: 'Mirelo 180',
+    nameEn: 'Mirelo 180',
+    nameJa: 'Mirelo 180',
+    descriptionKo: '오케스트라 · 약 1분 · 초당 3 크레딧',
+    descriptionEn: 'Orchestra · ~1 min · 3 credits/sec',
+    descriptionJa: 'オーケストラ · 約1分 · 秒3クレジット',
+    creditAmount: 180,
+    entitlement: 'mirelo_credits',
+    walletPool: 'mirelo',
+    listPriceKrw: 18000,
+    listPriceUsd: null,
+    status: 'archived',
+    sortOrder: 11,
+    badge: '',
+    packSavePercent: null,
+    productVersion: 1,
+    orderNameKo: 'Mirelo 오케스트라 180 크레딧',
+    orderNameEn: 'Mirelo Orchestra 180 Credits',
+    productDiscount: emptyDiscount()
+  },
+  {
+    productId: 'MIRELO_CREDIT_900',
+    type: 'mirelo_credit_pack',
+    nameKo: 'Mirelo 900',
+    nameEn: 'Mirelo 900',
+    nameJa: 'Mirelo 900',
+    descriptionKo: '오케스트라 · 약 5분 · 추천',
+    descriptionEn: 'Orchestra · ~5 min · recommended',
+    descriptionJa: 'オーケストラ · 約5分 · おすすめ',
+    creditAmount: 900,
+    entitlement: 'mirelo_credits',
+    walletPool: 'mirelo',
+    listPriceKrw: 79000,
+    listPriceUsd: null,
+    status: 'archived',
+    sortOrder: 12,
+    badge: 'recommended',
+    packSavePercent: null,
+    productVersion: 1,
+    orderNameKo: 'Mirelo 오케스트라 900 크레딧',
+    orderNameEn: 'Mirelo Orchestra 900 Credits',
+    productDiscount: emptyDiscount()
+  },
+  {
+    productId: 'MIRELO_CREDIT_2700',
+    type: 'mirelo_credit_pack',
+    nameKo: 'Mirelo 2700',
+    nameEn: 'Mirelo 2700',
+    nameJa: 'Mirelo 2700',
+    descriptionKo: '오케스트라 · 약 15분 · 대량',
+    descriptionEn: 'Orchestra · ~15 min · bulk',
+    descriptionJa: 'オーケストラ · 約15分 · まとめ買い',
+    creditAmount: 2700,
+    entitlement: 'mirelo_credits',
+    walletPool: 'mirelo',
+    listPriceKrw: 210000,
+    listPriceUsd: null,
+    status: 'archived',
+    sortOrder: 13,
+    badge: 'best',
+    packSavePercent: 19,
+    productVersion: 1,
+    orderNameKo: 'Mirelo 오케스트라 2700 크레딧',
+    orderNameEn: 'Mirelo Orchestra 2700 Credits',
+    productDiscount: emptyDiscount()
+  },
+  {
+    productId: 'PASS_3D',
+    type: 'full_pass',
+    nameKo: '3일 Full (가입 혜택)',
+    nameEn: '3-Day Full Pass (Welcome)',
+    nameJa: '3日 Full（登録特典）',
+    descriptionKo: '신규 가입 시 제공 · 72시간 Full',
+    descriptionEn: 'Welcome gift · 72 hours Full',
+    descriptionJa: '新規登録特典 · 72時間Full',
+    creditAmount: 0,
+    entitlement: 'full_pass',
+    durationDays: 3,
+    listPriceKrw: 0,
+    listPriceUsd: null,
+    status: 'archived',
+    welcomeOnly: true,
+    sortOrder: 4,
+    badge: '',
+    packSavePercent: null,
+    productVersion: 1,
+    orderNameKo: 'MidiAI Studio 3일 Full 이용권 (가입 혜택)',
+    orderNameEn: 'MidiAI Studio 3-Day Full Pass (Welcome)',
     productDiscount: emptyDiscount()
   },
   {
@@ -252,6 +355,17 @@ export function isCreditProductId(productId) {
   return /^CREDIT_[1-9][0-9]{0,5}$/.test(pid);
 }
 
+/** Legacy Mirelo-only packs (retired). Not sold; id check for history only. */
+export function isMireloCreditProductId(productId) {
+  const pid = normalizeProductId(productId);
+  return /^MIRELO_CREDIT_[1-9][0-9]{0,5}$/.test(pid);
+}
+
+export function isAnyCreditProductId(productId) {
+  // Active sales: general CREDIT_* only. Legacy MIRELO_* excluded.
+  return isCreditProductId(productId);
+}
+
 /**
  * Products that belong on the public purchase grid.
  * Admin live preview uses this without CREDIT_PURCHASE_ENABLED.
@@ -261,6 +375,8 @@ export function isPurchaseCatalogProduct(product) {
   const pid = normalizeProductId(product.productId || product.id);
   const type = String(product.type || '');
   if (!pid && !type) return false;
+  if (isMireloCreditProductId(pid) || type === 'mirelo_credit_pack') return false;
+  if (product.welcomeOnly === true || pid === 'PASS_3D') return false;
   if (pid === 'LIFETIME' || type === 'lifetime') return true;
   if (isPassProductId(pid) || type === 'full_pass') return true;
   if (isCreditProductId(pid) || type === 'credit_pack') return true;

@@ -36,6 +36,7 @@ import {
   isPassProductId,
   isLicenseProductId,
   isCreditProductId,
+  isMireloCreditProductId,
   isStorefrontSellableProduct,
   normalizeProductId as normalizeCatalogProductId,
   setCatalogFxRate,
@@ -90,6 +91,10 @@ function isCreditSalesKilled(){
 function isCreditPurchaseEnabled(){
   return !isCreditSalesKilled();
 }
+/** Mirelo orchestra packs stay catalog-only until checkout is explicitly enabled. */
+function isMireloCreditPurchaseEnabled(){
+  return CONFIG.MIRELO_CREDIT_SALES_ENABLED === true || CONFIG.mireloCreditSalesEnabled === true;
+}
 function purchaseActionsLocked(){
   return !!currentLicenseLifetime;
 }
@@ -141,8 +146,17 @@ if(isPurchasePage){
   const packParam = normalizeCreditProductId(packRaw);
   if(isPassProductId(packRaw) || isPassProductId(packParam)){
     selectedPurchaseId = isPassProductId(packRaw) ? packRaw : packParam;
+  } else if(packParam.startsWith('MIRELO_CREDIT_')){
+    // Do not deep-link into Mirelo checkout until sales are enabled.
+    selectedPurchaseId = (isCreditPurchaseEnabled() && isMireloCreditPurchaseEnabled())
+      ? packParam
+      : 'PASS_30D';
   } else if(packParam.startsWith('CREDIT_') && isCreditPurchaseEnabled()){
     selectedPurchaseId = packParam;
+  } else if(productParam === 'mirelo' || productParam === 'mirelo_credits' || productParam === 'orchestra_mirelo'){
+    selectedPurchaseId = (isCreditPurchaseEnabled() && isMireloCreditPurchaseEnabled())
+      ? 'MIRELO_CREDIT_900'
+      : 'PASS_30D';
   } else if(productParam === 'credits' || productParam === 'credit' || productParam === 'points' || productParam === 'point' || packParam.startsWith('POINT_') || packParam.startsWith('CREDIT_')){
     selectedPurchaseId = 'PASS_30D';
   } else if(productParam === 'lifetime' || productParam === 'unlimited'){
@@ -150,7 +164,9 @@ if(isPurchasePage){
   } else if(productParam === 'pass' || productParam === 'period'){
     selectedPurchaseId = 'PASS_30D';
   }
-  purchaseMode = selectedPurchaseId.startsWith('CREDIT_') ? 'credits' : (isPassProductId(selectedPurchaseId) ? 'pass' : 'lifetime');
+  purchaseMode = selectedPurchaseId.startsWith('CREDIT_') || selectedPurchaseId.startsWith('MIRELO_CREDIT_')
+    ? 'credits'
+    : (isPassProductId(selectedPurchaseId) ? 'pass' : 'lifetime');
   if(purchaseMode === 'credits') selectedPointProductId = selectedPurchaseId;
 }
 
@@ -1518,7 +1534,9 @@ function purchaseCheckout(){
 function isPointCheckout(){
   if(purchaseActionsLocked()) return false;
   const id = normalizeCreditProductId(selectedPurchaseId);
-  return isPurchasePage && String(id || '').startsWith('CREDIT_');
+  return isPurchasePage && (
+    String(id || '').startsWith('CREDIT_') || String(id || '').startsWith('MIRELO_CREDIT_')
+  );
 }
 function isPassCheckout(){
   if(purchaseActionsLocked()) return false;
@@ -1997,7 +2015,8 @@ function renderPurchasePlanGrid(){
   });
   const cards = packs.map((pack)=>{
     const selected = !locked && selectedPurchaseId === pack.productId;
-    const isCredit = isCreditProductId(pack.productId) || pack.type === 'credit_pack';
+    const isCredit = isCreditProductId(pack.productId) || isMireloCreditProductId(pack.productId)
+      || pack.type === 'credit_pack' || pack.type === 'mirelo_credit_pack';
     return renderProductCard(pack, {
       lang,
       selected,
@@ -2148,6 +2167,15 @@ function selectPurchasePlan(id, opts={}){
   } else if(next === 'LIFETIME' || raw === 'LIFETIME' || raw === 'UNLIMITED'){
     selectedPurchaseId = 'LIFETIME';
     purchaseMode = 'lifetime';
+  } else if(String(next).startsWith('MIRELO_CREDIT_')){
+    if(isCreditPurchaseEnabled() && isMireloCreditPurchaseEnabled()){
+      selectedPurchaseId = next;
+      purchaseMode = 'credits';
+      selectedPointProductId = selectedPurchaseId;
+    } else {
+      selectedPurchaseId = 'PASS_30D';
+      purchaseMode = 'pass';
+    }
   } else if(String(next).startsWith('CREDIT_')){
     if(isCreditPurchaseEnabled()){
       selectedPurchaseId = next;
@@ -2535,8 +2563,15 @@ function openPurchaseConfirmModal(){
 }
 async function createUsdCheckoutQuote(pid){
   const id = String(pid || selectedPurchaseId || '');
+  const norm = normalizeCreditProductId(id);
+  if(String(norm || '').startsWith('MIRELO_CREDIT_') && !isMireloCreditPurchaseEnabled()){
+    throw Object.assign(
+      new Error(lang==='en' ? 'Mirelo credit purchase is not available yet.' : lang==='ja' ? 'Mireloクレジット購入はまだ利用できません。' : 'Mirelo 크레딧 결제는 아직 연결되지 않았습니다.'),
+      { code: 'MIRELO_SALES_DISABLED' }
+    );
+  }
   let quote;
-  if(isPointCheckout() || String(normalizeCreditProductId(id) || '').startsWith('CREDIT_')){
+  if(isPointCheckout() || String(norm || '').startsWith('CREDIT_') || String(norm || '').startsWith('MIRELO_CREDIT_')){
     quote = await callFunctionJsonFallback(['createCreditPurchaseQuote', 'createPurchaseQuote'], { productId: id, currency: 'USD' });
   } else {
     quote = await callFunctionJson('createPurchaseQuote', { productId: id, currency: 'USD' });
@@ -4705,7 +4740,10 @@ async function refreshPricingUi(){
     const pricing = getPricingCache();
     const all = pricing.products || [];
     const creditProducts = all.filter((p) => (
-      isCreditProductId(p.productId || p.id) || p.type === 'credit_pack'
+      isCreditProductId(p.productId || p.id)
+      || isMireloCreditProductId(p.productId || p.id)
+      || p.type === 'credit_pack'
+      || p.type === 'mirelo_credit_pack'
     ));
     const passProducts = all.filter((p) => {
       const id = String(p.productId || p.id || '').toUpperCase();
@@ -14563,6 +14601,11 @@ async function requestKakaoPayPointPayment(){
   const pack = selectedPointPack();
   if(!pack?.productId){
     paypalStatus(lang==='en' ? 'Please select a product.' : lang==='ja' ? '商品を選択してください。' : '상품을 선택해 주세요.', 'err');
+    return;
+  }
+  if((String(pack.productId || '').startsWith('MIRELO_CREDIT_') || pack.type === 'mirelo_credit_pack')
+      && !isMireloCreditPurchaseEnabled()){
+    paypalStatus(lang==='en' ? 'Mirelo credit purchase is not available yet.' : lang==='ja' ? 'Mireloクレジット購入はまだ利用できません。' : 'Mirelo 크레딧 결제는 아직 연결되지 않았습니다.', 'err');
     return;
   }
   if(!livePacks.some((p) => p.productId === pack.productId)){

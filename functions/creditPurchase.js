@@ -14,6 +14,11 @@ function creditSalesKillSwitchOn() {
   return v === 'true' || v === '1' || v === 'yes';
 }
 
+/** Mirelo-only packs retired — always off (unified general credits). */
+function mireloCreditSalesEnabled() {
+  return false;
+}
+
 function httpError(status, code, message) {
   const err = new Error(message);
   err.status = status;
@@ -54,8 +59,15 @@ function createHandlers({
     email,
     orderName,
     paymentMethod,
-    provider
+    provider,
+    walletPool
   }) {
+    // Mirelo-only SKUs retired; do not credit any wallet from those product ids.
+    if (catalogEngine.isMireloCreditProductId(productId)) {
+      throw httpError(403, 'MIRELO_SALES_DISABLED', 'Mirelo 전용 크레딧 상품은 판매 종료되었습니다. 일반 크레딧을 이용해 주세요.');
+    }
+    const pool = 'general';
+    void walletPool;
     const purchaseRef = db.collection('creditPurchases').doc(paymentId);
     const walletRef = db.collection('creditWalletsV2').doc(uid);
     const quoteRef = quoteId ? db.collection('purchaseQuotes').doc(quoteId) : null;
@@ -72,6 +84,8 @@ function createHandlers({
           return {
             alreadyCompleted: true,
             balance: Number(row.balanceAfter != null ? row.balanceAfter : 0),
+            mireloBalance: Number(row.mireloBalanceAfter != null ? row.mireloBalanceAfter : 0),
+            walletPool: row.walletPool || pool,
             creditAmount: Number(row.creditAmount || creditAmount),
             creditSystemVersion: 2
           };
@@ -84,8 +98,14 @@ function createHandlers({
           if (q.status === 'used' && String(q.paymentId || '') === String(paymentId)) {
             const walletSnap = await tx.get(walletRef);
             const wd = walletSnap.data() || {};
-            const bal = creditWalletV2.readBalanceV2(wd);
-            return { alreadyCompleted: true, balance: bal, creditAmount, creditSystemVersion: 2 };
+            return {
+              alreadyCompleted: true,
+              balance: creditWalletV2.readBalanceV2(wd),
+              mireloBalance: creditWalletV2.readMireloBalanceV2(wd),
+              walletPool: pool,
+              creditAmount,
+              creditSystemVersion: 2
+            };
           }
           if (q.status === 'used' && q.paymentId && String(q.paymentId) !== String(paymentId)) {
             throw httpError(409, 'QUOTE_USED', '이미 사용된 결제 견적입니다.');
@@ -102,14 +122,18 @@ function createHandlers({
         prev,
         delta: creditAmount,
         FieldValue,
+        walletPool: pool,
         ledger: {
           type: 'purchase',
           productId,
           paymentId,
           quoteId: quoteId || '',
+          walletPool: pool,
           displayTitle: `Credit 구매 +${creditAmount}`
         }
       });
+      const generalAfter = next;
+      const mireloAfter = creditWalletV2.readMireloBalanceV2(wd);
       const cur = String(currency || 'KRW').toUpperCase();
       const method = String(paymentMethod || '').trim()
         || (cur === 'USD' ? 'paypal' : 'kakaopay');
@@ -130,11 +154,13 @@ function createHandlers({
         provider: payProvider,
         plan: 'credits',
         productType: 'credit_pack',
+        walletPool: pool,
         status: 'credited',
         granted: true,
         creditsGranted: true,
         creditSystemVersion: 2,
-        balanceAfter: next,
+        balanceAfter: generalAfter,
+        mireloBalanceAfter: mireloAfter,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
       }, { merge: true });
@@ -145,7 +171,13 @@ function createHandlers({
           usedAt: FieldValue.serverTimestamp()
         }, { merge: true });
       }
-      return { alreadyCompleted: false, balance: next, creditAmount };
+      return {
+        alreadyCompleted: false,
+        balance: generalAfter,
+        mireloBalance: mireloAfter,
+        walletPool: pool,
+        creditAmount
+      };
     });
   }
 
@@ -157,11 +189,18 @@ function createHandlers({
       const user = await requireUser(req);
       const productKey = String((req.body || {}).productId || '');
       const pid = catalogEngine.normalizeProductId(productKey);
-      if (!catalogEngine.isCreditProductId(pid)) {
+      if (!catalogEngine.isAnyCreditProductId(pid)) {
         return res.status(400).json({
           ok: false,
           code: 'USE_LICENSE_QUOTE',
-          message: 'Credit 상품만 createCreditPurchaseQuote로 견적할 수 있습니다.'
+          message: 'Credit / Mirelo Credit 상품만 createCreditPurchaseQuote로 견적할 수 있습니다.'
+        });
+      }
+      if (catalogEngine.isMireloCreditProductId(pid)) {
+        return res.status(403).json({
+          ok: false,
+          code: 'MIRELO_SALES_DISABLED',
+          message: 'Mirelo 전용 크레딧 상품은 판매 종료되었습니다. 일반 크레딧을 이용해 주세요.'
         });
       }
       const docId = catalogEngine.firestoreDocId(pid);
@@ -218,6 +257,7 @@ function createHandlers({
         type: 'credit_pack',
         productType: 'credit_pack',
         plan: 'credits',
+        walletPool: 'general',
         productVersion: Number(product.pricingVersion || 1),
         pricingVersion: Number(product.pricingVersion || 1),
         basePrice: Number(isUsd ? product.listPrice : (product.listPrice || product.listPriceKrw || amount)),
@@ -292,8 +332,15 @@ function createHandlers({
         return res.status(403).json({ ok: false, code: 'QUOTE_UID_MISMATCH', message: '결제 견적 사용자가 일치하지 않습니다.' });
       }
       const pid = catalogEngine.normalizeProductId(quote.productId || requestedPid);
-      if (!catalogEngine.isCreditProductId(pid)) {
+      if (!catalogEngine.isAnyCreditProductId(pid)) {
         return res.status(400).json({ ok: false, code: 'NOT_CREDIT_PRODUCT', message: 'Credit 상품이 아닙니다.' });
+      }
+      if (catalogEngine.isMireloCreditProductId(pid)) {
+        return res.status(403).json({
+          ok: false,
+          code: 'MIRELO_SALES_DISABLED',
+          message: 'Mirelo 전용 크레딧 상품은 판매 종료되었습니다. 일반 크레딧을 이용해 주세요.'
+        });
       }
       if (requestedPid && requestedPid !== pid) {
         return res.status(400).json({ ok: false, code: 'PRODUCT_MISMATCH', message: '상품 정보가 일치하지 않습니다.' });
@@ -373,7 +420,8 @@ function createHandlers({
         email: user.email || '',
         orderName: quote.orderName || pid,
         paymentMethod: 'kakaopay',
-        provider: 'portone'
+        provider: 'portone',
+        walletPool: 'general'
       });
 
       if (!granted.alreadyCompleted) {
@@ -450,11 +498,13 @@ function createHandlers({
       const snap = await db.collection('creditWalletsV2').doc(user.uid).get();
       const data = snap.exists ? (snap.data() || {}) : {};
       const balance = creditWalletV2.readBalanceV2(data);
+      const mireloBalance = creditWalletV2.readMireloBalanceV2(data);
       return res.json({
         ok: true,
         uid: user.uid,
         balance,
         creditBalance: balance,
+        mireloBalance,
         impl: 'node-wallet-v2',
         creditSystemVersion: 2
       });

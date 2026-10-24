@@ -5,6 +5,7 @@ const fxRate = require('./fxRate');
 const LIFETIME_DOC_ID = 'lifetime';
 const QUOTE_TTL_MINUTES = 20;
 const PASS_DURATION_DAYS = {
+  PASS_3D: 3,
   PASS_7D: 7,
   PASS_30D: 30,
   PASS_90D: 90
@@ -51,6 +52,16 @@ function isLicenseProductId(productId) {
 function isCreditProductId(productId) {
   const pid = normalizeProductId(productId);
   return /^CREDIT_[1-9][0-9]{0,5}$/.test(pid);
+}
+
+/** Legacy Mirelo-only packs (retired; not sold). Kept for history / id checks. */
+function isMireloCreditProductId(productId) {
+  const pid = normalizeProductId(productId);
+  return /^MIRELO_CREDIT_[1-9][0-9]{0,5}$/.test(pid);
+}
+
+function isAnyCreditProductId(productId) {
+  return isCreditProductId(productId) || isMireloCreditProductId(productId);
 }
 
 function firstFiniteNumber(values, fallback = 0) {
@@ -223,6 +234,70 @@ function computeCharge(product, promotions = [], now = new Date(), currencyWante
 }
 
 const SEED_PRODUCTS = [
+  // Legacy Mirelo-only SKUs — archived (not sold). History / getProduct lookup only.
+  {
+    productId: 'MIRELO_CREDIT_180',
+    type: 'mirelo_credit_pack',
+    nameKo: 'Mirelo 180',
+    nameEn: 'Mirelo 180',
+    creditAmount: 180,
+    entitlement: 'mirelo_credits',
+    walletPool: 'mirelo',
+    listPriceKrw: 18000,
+    status: 'archived',
+    sortOrder: 11,
+    orderNameKo: 'Mirelo 오케스트라 180 크레딧',
+    orderNameEn: 'Mirelo Orchestra 180 Credits',
+    productDiscount: emptyDiscount()
+  },
+  {
+    productId: 'MIRELO_CREDIT_900',
+    type: 'mirelo_credit_pack',
+    nameKo: 'Mirelo 900',
+    nameEn: 'Mirelo 900',
+    creditAmount: 900,
+    entitlement: 'mirelo_credits',
+    walletPool: 'mirelo',
+    listPriceKrw: 79000,
+    status: 'archived',
+    sortOrder: 12,
+    badge: 'recommended',
+    orderNameKo: 'Mirelo 오케스트라 900 크레딧',
+    orderNameEn: 'Mirelo Orchestra 900 Credits',
+    productDiscount: emptyDiscount()
+  },
+  {
+    productId: 'MIRELO_CREDIT_2700',
+    type: 'mirelo_credit_pack',
+    nameKo: 'Mirelo 2700',
+    nameEn: 'Mirelo 2700',
+    creditAmount: 2700,
+    entitlement: 'mirelo_credits',
+    walletPool: 'mirelo',
+    listPriceKrw: 210000,
+    status: 'archived',
+    sortOrder: 13,
+    orderNameKo: 'Mirelo 오케스트라 2700 크레딧',
+    orderNameEn: 'Mirelo Orchestra 2700 Credits',
+    productDiscount: emptyDiscount()
+  },
+  {
+    productId: 'PASS_3D',
+    type: 'full_pass',
+    nameKo: '3일 Full (가입 혜택)',
+    nameEn: '3-Day Full Pass (Welcome)',
+    creditAmount: 0,
+    entitlement: 'full_pass',
+    durationDays: 3,
+    listPriceKrw: 0,
+    status: 'archived',
+    welcomeOnly: true,
+    sortOrder: 4,
+    badge: '',
+    orderNameKo: 'MidiAI Studio 3일 Full 이용권 (가입 혜택)',
+    orderNameEn: 'MidiAI Studio 3-Day Full Pass (Welcome)',
+    productDiscount: emptyDiscount()
+  },
   {
     productId: 'PASS_7D',
     type: 'full_pass',
@@ -304,8 +379,10 @@ function hydrateProduct(docId, data) {
   const regions = raw.regions || {};
   const kr = regions.KR || {};
   const glob = regions.Global || {};
-  const typeRaw = String(raw.type || seed.type || (pid === 'LIFETIME' ? 'lifetime' : (isPassProductId(pid) ? 'full_pass' : 'credit_pack')));
-  const type = (typeRaw === 'credit_pack' || typeRaw === 'credits') ? 'credit_pack' : typeRaw;
+  const typeRaw = String(raw.type || seed.type || (pid === 'LIFETIME' ? 'lifetime' : (isPassProductId(pid) ? 'full_pass' : (isMireloCreditProductId(pid) ? 'mirelo_credit_pack' : 'credit_pack'))));
+  const type = (typeRaw === 'credit_pack' || typeRaw === 'credits')
+    ? 'credit_pack'
+    : (typeRaw === 'mirelo_credit_pack' ? 'mirelo_credit_pack' : typeRaw);
   const listPriceKrwRaw = firstFiniteNumber([
     raw.listPriceKrw,
     raw.listPriceKrw,
@@ -365,6 +442,8 @@ module.exports = {
   isCanonicalPassProductId,
   isLicenseProductId,
   isCreditProductId,
+  isMireloCreditProductId,
+  isAnyCreditProductId,
   firestoreDocId,
   applyDiscount,
   computeCharge,

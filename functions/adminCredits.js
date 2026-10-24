@@ -117,8 +117,12 @@ async function applyCreditDelta(db, FieldValue, {
   adminUid,
   operationId,
   ledgerId,
-  origin
+  origin,
+  walletPool
 }) {
+  // Unified wallet: admin grants always hit general balance.
+  const pool = 'general';
+  void walletPool;
   const sign = amount > 0 ? '+' : '';
   const title = reason
     ? `${reason} (${sign}${amount})`
@@ -128,13 +132,15 @@ async function applyCreditDelta(db, FieldValue, {
     delta: amount,
     ledgerId,
     requireUserExists: true,
+    walletPool: pool,
     ledger: {
       type,
       reason: reason || '',
       adminUid: adminUid || '',
       operationId: operationId || '',
       displayTitle: title,
-      origin: origin || 'site_admin'
+      origin: origin || 'site_admin',
+      walletPool: pool
     }
   });
 }
@@ -215,6 +221,10 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       const targetUid = String(body.targetUid || body.uid || '').trim();
       const amount = parsePositiveInt(body.amount);
       const reason = String(body.reason || '').trim().slice(0, 200);
+      // general = web packs (piano/export); mirelo = Mirelo Business orchestra only
+      const walletPool = String(body.walletPool || body.pool || 'general').trim().toLowerCase() === 'mirelo'
+        ? 'mirelo'
+        : 'general';
       if (!targetUid) throw httpError(400, 'UID_REQUIRED', '대상 사용자가 없습니다.');
       if (amount == null) throw httpError(400, 'AMOUNT_INVALID', '지급/회수 수량은 1 이상의 정수여야 합니다.');
       if (amount > MAX_GRANT) throw httpError(400, 'AMOUNT_TOO_LARGE', `최대 ${MAX_GRANT} Credits까지 가능합니다.`);
@@ -226,11 +236,13 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
         type,
         reason,
         adminUid: adminUser.uid,
-        origin: 'site_admin'
+        origin: 'site_admin',
+        walletPool
       });
       const tTxn = Date.now();
       console.info('adminGrantCredits.timing', {
         sign,
+        walletPool,
         authMs: tAuth - t0,
         txnMs: tTxn - tAuth,
         totalMs: tTxn - t0
@@ -238,7 +250,9 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       res.json({
         ok: true,
         uid: targetUid,
+        walletPool,
         balance: result.balance,
+        mireloBalance: result.mireloBalance,
         amount: delta,
         ledgerId: result.ledgerId || ''
       });
@@ -277,6 +291,9 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
       const walletSnap = await db.collection('creditWalletsV2').doc(targetUid).get();
       const wd = walletSnap.exists ? (walletSnap.data() || {}) : {};
       const balance = creditWalletV2.readBalanceV2(wd);
+      const mireloBalance = creditWalletV2.readMireloBalanceV2
+        ? creditWalletV2.readMireloBalanceV2(wd)
+        : 0;
       const light = !!(body.light || body.balanceOnly);
       const ledgerLimit = Math.max(1, Math.min(Number(body.ledgerLimit || body.ledger_limit || 12) || 12, 200));
       const walletTotals = {
@@ -291,6 +308,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
           light: true,
           uid: targetUid,
           balance,
+          mireloBalance,
           ...walletTotals,
           ledger: [],
           purchases: [],
@@ -381,6 +399,7 @@ function createHandlers({ db, admin, cors, requireAdmin, userNotify }) {
         ok: true,
         uid: targetUid,
         balance,
+        mireloBalance,
         ...walletTotals,
         ledger: ledger.slice(0, ledgerLimit),
         purchases,

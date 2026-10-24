@@ -706,7 +706,8 @@ async function ensureSeed() {
   const snap = await getDocs(collection(db, 'products'));
   const existing = new Set(snap.docs.map((d) => normalizeProductId(d.id)));
   for (const seed of SEED_PRODUCTS) {
-    if (seed.type === 'credit_pack') continue;
+    // Do not seed retired Mirelo packs, credit_pack rows, or welcome-only PASS_3D.
+    if (seed.type === 'credit_pack' || seed.type === 'mirelo_credit_pack' || seed.welcomeOnly) continue;
     const pid = normalizeProductId(seed.productId);
     if (tombstones.has(pid)) continue;
     const docId = firestoreDocId(seed.productId);

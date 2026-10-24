@@ -133,12 +133,25 @@ function memoryDb() {
   };
 }
 
-const FieldValue = { serverTimestamp: () => new Date('2026-09-06T00:00:00.000Z') };
+const FieldValue = {
+  serverTimestamp: () => new Date('2026-09-06T00:00:00.000Z'),
+  delete: () => ({ __fv: 'delete' })
+};
+const Timestamp = {
+  fromDate: (d) => {
+    const date = d instanceof Date ? d : new Date(d);
+    return {
+      toDate: () => date,
+      toMillis: () => date.getTime(),
+      seconds: Math.floor(date.getTime() / 1000)
+    };
+  }
+};
 
 function makeAdmin(authUsers) {
   const users = authUsers || {};
   return {
-    firestore: { FieldValue },
+    firestore: { FieldValue, Timestamp },
     auth() {
       return {
         async getUser(uid) {
@@ -152,6 +165,23 @@ function makeAdmin(authUsers) {
       };
     }
   };
+}
+
+function licensePlan(db, uid) {
+  const v = db.store.get(`licenses/${uid}`);
+  return String((v && v.plan) || '');
+}
+
+function assertWelcomePass(db, uid) {
+  const g = grantDoc(db, uid);
+  assert.ok(g, 'welcome grant missing');
+  assert.strictEqual(g.passGranted, true);
+  assert.strictEqual(g.passProductId, 'PASS_3D');
+  assert.strictEqual(g.creditGranted, false);
+  assert.strictEqual(g.amount, 0);
+  assert.strictEqual(licensePlan(db, uid), 'period');
+  assert.strictEqual(walletBalance(db, uid), 0);
+  assert.strictEqual(countLedgers(db), 0);
 }
 
 function fakeHwid(seed) {
@@ -236,8 +266,9 @@ async function test2_new_pc_new_account_grants() {
   await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false, configVersion: 2 });
   const out = await welcomeDevice(db, 'u_new', hwid);
   assert.strictEqual(out.granted, true);
-  assert.strictEqual(out.amount, 5);
-  assert.strictEqual(walletBalance(db, 'u_new'), 5);
+  assert.strictEqual(out.amount, 0);
+  assert.strictEqual(out.passGranted, true);
+  assertWelcomePass(db, 'u_new');
   assert.ok(claimDoc(db, hwid));
   assert.strictEqual(claimDoc(db, hwid).uid, 'u_new');
   assert.ok(!Object.prototype.hasOwnProperty.call(claimDoc(db, hwid), 'hwid'));
@@ -255,9 +286,9 @@ async function test3_same_pc_other_account_zero() {
   assert.strictEqual(out.granted, false);
   assert.strictEqual(out.skippedDeviceClaimed, true);
   assert.strictEqual(out.amount, 0);
-  assert.strictEqual(walletBalance(db, 'u_a'), 5);
+  assertWelcomePass(db, 'u_a');
   assert.strictEqual(walletBalance(db, 'u_b'), 0);
-  assert.strictEqual(countLedgers(db), 1);
+  assert.strictEqual(licensePlan(db, 'u_b'), '');
   assert.ok(auditActions(db).includes(welcomeBenefit.ACTION_SKIPPED));
 }
 
@@ -269,8 +300,7 @@ async function test4_same_account_relogin_no_extra() {
   await welcomeDevice(db, user.uid, hwid, { email: user.email });
   const again = await welcomeDevice(db, user.uid, hwid, { email: user.email });
   assert.strictEqual(again.alreadyGranted, true);
-  assert.strictEqual(walletBalance(db, 'u_re'), 5);
-  assert.strictEqual(countLedgers(db), 1);
+  assertWelcomePass(db, 'u_re');
 }
 
 async function test5_concurrent_two_uids_one_grant() {
@@ -285,9 +315,9 @@ async function test5_concurrent_two_uids_one_grant() {
   const skipped = results.filter((r) => r.skippedDeviceClaimed || r.alreadyGranted);
   assert.strictEqual(granted.length, 1);
   assert.ok(skipped.length >= 1);
-  const total = walletBalance(db, 'u_race1') + walletBalance(db, 'u_race2');
-  assert.strictEqual(total, 5);
-  assert.strictEqual(countLedgers(db), 1);
+  const passCount = ['u_race1', 'u_race2'].filter((u) => licensePlan(db, u) === 'period').length;
+  assert.strictEqual(passCount, 1);
+  assert.strictEqual(walletBalance(db, 'u_race1') + walletBalance(db, 'u_race2'), 0);
 }
 
 async function test6_other_pc_new_account_grants() {
@@ -296,9 +326,8 @@ async function test6_other_pc_new_account_grants() {
   await welcomeDevice(db, 'u_pc1', fakeHwid('pc-1'));
   const out = await welcomeDevice(db, 'u_pc2', fakeHwid('pc-2'));
   assert.strictEqual(out.granted, true);
-  assert.strictEqual(walletBalance(db, 'u_pc1'), 5);
-  assert.strictEqual(walletBalance(db, 'u_pc2'), 5);
-  assert.strictEqual(countLedgers(db), 2);
+  assertWelcomePass(db, 'u_pc1');
+  assertWelcomePass(db, 'u_pc2');
 }
 
 async function test7_auth_oncreate_grants_without_app() {
@@ -311,8 +340,8 @@ async function test7_auth_oncreate_grants_without_app() {
     {}
   );
   assert.strictEqual(out.granted, true);
-  assert.strictEqual(out.amount, 5);
-  assert.strictEqual(walletBalance(db, 'u_auth'), 5);
+  assert.strictEqual(out.amount, 0);
+  assertWelcomePass(db, 'u_auth');
   const again = await welcomeBenefit.processWelcomeForAuthUser(
     db,
     makeAdmin(),
@@ -320,15 +349,14 @@ async function test7_auth_oncreate_grants_without_app() {
     {}
   );
   assert.strictEqual(again.alreadyGranted, true);
-  assert.strictEqual(walletBalance(db, 'u_auth'), 5);
+  assertWelcomePass(db, 'u_auth');
   const bound = await welcomeBenefit.processWelcomeOnLicenseHwidWrite(db, makeAdmin(), {
     uid: 'u_auth',
-    beforeData: { plan: 'trial', hwid: '' },
-    afterData: { plan: 'trial', hwid: fakeHwid('pc-after-signup') }
+    beforeData: { plan: 'period', hwid: '' },
+    afterData: { plan: 'period', hwid: fakeHwid('pc-after-signup') }
   });
   assert.strictEqual(bound.alreadyGranted, true);
-  assert.strictEqual(walletBalance(db, 'u_auth'), 5);
-  assert.strictEqual(countLedgers(db), 1);
+  assertWelcomePass(db, 'u_auth');
 }
 
 async function test8_license_hwid_write_grants() {
@@ -341,7 +369,7 @@ async function test8_license_hwid_write_grants() {
     afterData: { hwid }
   });
   assert.strictEqual(out.granted, true);
-  assert.strictEqual(walletBalance(db, 'u_bind'), 5);
+  assertWelcomePass(db, 'u_bind');
 }
 
 async function test9_credit_and_email() {
@@ -361,7 +389,7 @@ async function test9_credit_and_email() {
     sendMail: async (msg) => { sent.push(msg); }
   });
   assert.strictEqual(out.emailSent, true);
-  assert.strictEqual(walletBalance(db, 'u_mail'), 10);
+  assertWelcomePass(db, 'u_mail');
   assert.strictEqual(sent.length, 1);
   assert.ok(String(sent[0].subject).includes('Mina'));
 }
@@ -384,7 +412,8 @@ async function test10_smtp_fail_keeps_credit() {
     }
   });
   assert.strictEqual(out.emailSent, false);
-  assert.strictEqual(walletBalance(db, 'u_smtp'), 40);
+  // Pass grant must survive email failure (no credit wallet write).
+  assertWelcomePass(db, 'u_smtp');
 }
 
 async function test11_legacy_sibling_blocks_new() {
@@ -411,7 +440,9 @@ async function test12_existing_credits_not_reclaimed() {
   await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
   await db.collection('creditWalletsV2').doc('paid_user').set({ uid: 'paid_user', balance: 99 });
   await welcomeDevice(db, 'paid_user', hwid);
-  assert.strictEqual(walletBalance(db, 'paid_user'), 104);
+  // Welcome no longer adds credits; existing balance untouched + PASS_3D granted.
+  assert.strictEqual(walletBalance(db, 'paid_user'), 99);
+  assert.strictEqual(licensePlan(db, 'paid_user'), 'period');
 }
 
 async function test13_admin_config_ok() {
@@ -453,7 +484,7 @@ async function test14_claim_uses_bound_hwid() {
   // Bound HWID exists — empty body is OK (server uses licenses.hwid).
   assert.strictEqual(missing.out.statusCode, 200);
   assert.strictEqual(missing.out.body.granted, true);
-  assert.strictEqual(walletBalance(db, 'u_claim'), 5);
+  assertWelcomePass(db, 'u_claim');
 }
 
 async function test15_fingerprint_hmac_stable_no_raw() {
@@ -470,14 +501,15 @@ async function test15_fingerprint_hmac_stable_no_raw() {
 }
 
 async function test16_amount_change_applies_to_new_device_only() {
+  // Credit amounts no longer applied; both devices get PASS_3D once (no double).
   const db = memoryDb();
   await setConfig(db, { enabled: true, creditAmount: 10, emailEnabled: false, configVersion: 3 });
   await welcomeDevice(db, 'u_old_amt', fakeHwid('pc-old-amt'));
   await setConfig(db, { enabled: true, creditAmount: 99, emailEnabled: false, configVersion: 4 });
   await welcomeDevice(db, 'u_old_amt', fakeHwid('pc-old-amt'));
-  assert.strictEqual(walletBalance(db, 'u_old_amt'), 10);
+  assertWelcomePass(db, 'u_old_amt');
   await welcomeDevice(db, 'u_new_amt', fakeHwid('pc-new-amt'));
-  assert.strictEqual(walletBalance(db, 'u_new_amt'), 99);
+  assertWelcomePass(db, 'u_new_amt');
 }
 
 async function test17_template_vars() {
@@ -638,8 +670,8 @@ async function test23_license_and_claim_race_plus_five_once() {
     !!claimRes.out.body.granted
   ].filter(Boolean);
   assert.ok(grantedFlags.length <= 1);
-  assert.strictEqual(walletBalance(db, 'u_dual'), 5);
-  assert.strictEqual(countLedgers(db), 1);
+  assert.strictEqual(walletBalance(db, 'u_dual'), 0);
+  assert.strictEqual(licensePlan(db, 'u_dual'), 'period');
 }
 
 async function test24_txn_fail_then_retry_no_double() {
@@ -667,12 +699,11 @@ async function test24_txn_fail_then_retry_no_double() {
 
   const second = await welcomeDevice(db, 'u_retry', hwid);
   assert.strictEqual(second.granted, true);
-  assert.strictEqual(walletBalance(db, 'u_retry'), 5);
+  assertWelcomePass(db, 'u_retry');
 
   const third = await welcomeDevice(db, 'u_retry', hwid);
   assert.strictEqual(third.alreadyGranted, true);
-  assert.strictEqual(walletBalance(db, 'u_retry'), 5);
-  assert.strictEqual(countLedgers(db), 1);
+  assertWelcomePass(db, 'u_retry');
 }
 
 async function test25_lifetime_login_claim_no_credit_license_intact() {
@@ -825,6 +856,7 @@ async function test31_dry_run_no_writes_and_stats() {
 }
 
 async function test32_welcome_never_writes_license_keys() {
+  // Policy update: welcome now grants PASS_3D (period), replacing trial.
   const db = memoryDb();
   const hwid = fakeHwid('pc-keys');
   await setConfig(db, { enabled: true, creditAmount: 5, emailEnabled: false });
@@ -833,11 +865,11 @@ async function test32_welcome_never_writes_license_keys() {
   });
   await welcomeDevice(db, 'u_t', hwid);
   const lic = db.store.get('licenses/u_t');
-  assert.strictEqual(lic.plan, 'trial');
-  assert.strictEqual(lic.method, 'signup');
+  assert.strictEqual(lic.plan, 'period');
+  assert.strictEqual(lic.passProductId, 'PASS_3D');
+  assert.strictEqual(lic.method, 'welcome_signup');
   assert.strictEqual(lic.status, 'active');
-  // Only hwid was pre-set; welcome must not add plan/expires fields via overwrite.
-  assert.strictEqual(Object.prototype.hasOwnProperty.call(lic, 'expiresAt'), false);
+  assert.ok(lic.expiresAt);
 }
 
 async function main() {

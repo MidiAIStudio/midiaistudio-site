@@ -39,5 +39,8 @@ window.MIDIAI_CONFIG = {
   // true = hide/block ALL Credit sales regardless of catalog status.
   CREDIT_SALES_KILL_SWITCH: false,
   creditSalesKillSwitch: false,
+  // Legacy Mirelo-only packs retired — always false (unified general credits).
+  MIRELO_CREDIT_SALES_ENABLED: false,
+  mireloCreditSalesEnabled: false,
   supportDiscordUrl: ""
 };
