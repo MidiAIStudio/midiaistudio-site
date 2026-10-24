@@ -1635,8 +1635,12 @@ function pointCopy(){
     kakaoVerifyFail:'Payment completed, but confirmation is required. Please keep your payment ID.',
     verifying:'Verifying payment...',
     complete:'Payment complete. Your license is active.',
-    heroLead:'Choose from the passes, Lifetime license, and Credit options currently available.',
+    heroLead:'Choose a Full Pass / Lifetime license, or top up Credits separately below.',
     heroLeadOwned:'You are using a Lifetime Full license.',
+    sectionLicenseTitle:'Full Pass · License',
+    sectionLicenseLead:'Period Full Pass and Lifetime. Unlimited conversion while the license is active.',
+    sectionCreditsTitle:'Credit top-up',
+    sectionCreditsLead:'Credits are separate from licenses. Use them for usage that bills per second.',
     comingSoon:'This product is not available for purchase.',
     ownedBannerTitle:'Lifetime Full active',
     ownedBannerBody:'You can use all AI conversions and Full features without limits.',
@@ -1764,8 +1768,12 @@ function pointCopy(){
     kakaoVerifyFail:'決済は完了しましたが、確認が必要です。paymentIdを控えてください。',
     verifying:'決済を確認しています...',
     complete:'決済が完了しました。ライセンスが付与されました。',
-    heroLead:'現在販売中の利用券・ライセンス・Creditから選択してください。',
+    heroLead:'利用券・Lifetimeと、クレジットチャージは別ラインです。用途に合わせて選んでください。',
     heroLeadOwned:'Lifetime Fullをご利用中です。',
+    sectionLicenseTitle:'利用券 · ライセンス',
+    sectionLicenseLead:'期間 Full と Lifetime。有効期間中は変換回数の制限がありません。',
+    sectionCreditsTitle:'クレジットチャージ',
+    sectionCreditsLead:'クレジットはライセンスと別です。秒単位課金の機能に使います。',
     comingSoon:'この商品は現在購入できません。',
     ownedBannerTitle:'Lifetime Full保有中',
     ownedBannerBody:'すべてのAI変換とFull機能を制限なく利用できます。',
@@ -1893,8 +1901,12 @@ function pointCopy(){
     kakaoVerifyFail:'결제는 완료되었으나 확인이 필요합니다. 주문번호를 보관해 주세요.',
     verifying:'결제를 검증하는 중입니다...',
     complete:'결제가 완료되었습니다. 이용권이 지급되었습니다.',
-    heroLead:'현재 판매 중인 이용권·라이선스·Credit 상품을 선택하세요.',
+    heroLead:'이용권·라이선스와 크레딧 충전은 별도 라인입니다. 용도에 맞게 선택하세요.',
     heroLeadOwned:'Lifetime Full을 이용 중입니다.',
+    sectionLicenseTitle:'이용권 · 라이선스',
+    sectionLicenseLead:'기간제 Full과 Lifetime. 이용권 기간 동안 변환 횟수 제한이 없습니다.',
+    sectionCreditsTitle:'크레딧 충전',
+    sectionCreditsLead:'크레딧은 라이선스와 별개입니다. 초당 과금 기능에 사용합니다.',
     comingSoon:'현재 구매할 수 없는 상품입니다.',
     ownedBannerTitle:'Lifetime Full 보유 중',
     ownedBannerBody:'모든 AI 변환과 Full 기능을 제한 없이 이용할 수 있습니다.',
@@ -2019,16 +2031,66 @@ function purchasePlanGridCols(count){
   if(n === 4) return 4; // desktop: one row
   return 2; // 5+: two columns
 }
+function sortPurchasePacks(packs){
+  return [...(packs || [])].sort((a, b) => {
+    const so = Number(a.sortOrder || 0) - Number(b.sortOrder || 0);
+    if (so) return so;
+    return String(a.productId || '').localeCompare(String(b.productId || ''));
+  });
+}
+function renderPurchasePackCard(pack, { pt, sfUi, passFeatures, locked }){
+  const selected = !locked && selectedPurchaseId === pack.productId;
+  const isCredit = isCreditProductId(pack.productId) || isMireloCreditProductId(pack.productId)
+    || pack.type === 'credit_pack' || pack.type === 'mirelo_credit_pack';
+  return renderProductCard(pack, {
+    lang,
+    selected,
+    locked,
+    features: isCredit ? (sfUi.creditFeatures || []) : passFeatures,
+    buyLabel: locked ? (pt.btnNoNeed || '추가 구매 불필요') : pt.buy,
+    ui: {
+      recommended: pt.recommended || sfUi.recommended || '추천',
+      buy: pt.buy,
+      paused: '',
+      archived: '',
+      btnPaused: '',
+      passFeatures,
+      lifeFeatures: pt.cardFeaturesLife,
+      creditFeatures: sfUi.creditFeatures,
+      unitPass: (days) => (lang === 'en'
+        ? `${days}-day Full Pass · one-time`
+        : (lang === 'ja' ? `${days}日 Full 利用権 · 1回払い` : `${days}일 Full 이용권 · 1회 결제`)),
+      unitLife: pt.unlimitedUnit || 'Lifetime Full · 1회 결제',
+      unitCredit: sfUi.unitCredit,
+      hideToday: '',
+      close: '',
+      defaultCta: ''
+    }
+  });
+}
+function purchaseCatalogSectionHtml({ key, title, lead, cardsHtml, cols, hidden }){
+  if(hidden) return '';
+  return `<section class="purchase-catalog-section" data-purchase-section="${esc(key)}" aria-labelledby="purchaseSectionTitle-${esc(key)}">
+    <header class="purchase-catalog-head">
+      <h2 id="purchaseSectionTitle-${esc(key)}">${esc(title)}</h2>
+      ${lead ? `<p>${esc(lead)}</p>` : ''}
+    </header>
+    <div class="purchase-plan-grid" data-cols="${esc(String(cols))}" role="list">${cardsHtml}</div>
+  </section>`;
+}
 function renderPurchasePlanGrid(){
   const grid = $('purchasePlanGrid');
   if(!grid) return;
   const pt = pointCopy();
   const locked = purchaseActionsLocked();
+  // Outer wrapper holds two catalog lines (license vs credits) — not a single mixed grid.
+  grid.classList.add('purchase-catalog');
+  grid.classList.remove('purchase-plan-grid');
+  grid.removeAttribute('data-cols');
   // Compact loader only — never paint incomplete catalog (3 cards → 4 cards flash).
   if(!isPurchaseCatalogReady()){
     grid.setAttribute('aria-busy', 'true');
     grid.classList.add('is-catalog-loading');
-    grid.removeAttribute('data-cols');
     const loadingLabel = lang==='en' ? 'Loading prices…' : (lang==='ja' ? '価格を読み込み中…' : '가격 불러오는 중…');
     grid.innerHTML = `<p class="purchase-plan-loading" role="status">${esc(loadingLabel)}</p>`;
     return;
@@ -2041,43 +2103,10 @@ function renderPurchasePlanGrid(){
     ['자동결제', '없음']
   ];
   const sfUi = storefrontUiCopy(lang);
-  const creditPacks = isCreditPurchaseEnabled() ? getCreditProducts() : [];
-  const passPacks = getPassProducts();
-  const packs = [...creditPacks, ...passPacks].sort((a, b) => {
-    const so = Number(a.sortOrder || 0) - Number(b.sortOrder || 0);
-    if (so) return so;
-    return String(a.productId || '').localeCompare(String(b.productId || ''));
-  });
-  const cards = packs.map((pack)=>{
-    const selected = !locked && selectedPurchaseId === pack.productId;
-    const isCredit = isCreditProductId(pack.productId) || isMireloCreditProductId(pack.productId)
-      || pack.type === 'credit_pack' || pack.type === 'mirelo_credit_pack';
-    return renderProductCard(pack, {
-      lang,
-      selected,
-      locked,
-      features: isCredit ? (sfUi.creditFeatures || []) : passFeatures,
-      buyLabel: locked ? (pt.btnNoNeed || '추가 구매 불필요') : pt.buy,
-      ui: {
-        recommended: pt.recommended || sfUi.recommended || '추천',
-        buy: pt.buy,
-        paused: '',
-        archived: '',
-        btnPaused: '',
-        passFeatures,
-        lifeFeatures: pt.cardFeaturesLife,
-        creditFeatures: sfUi.creditFeatures,
-        unitPass: (days) => (lang === 'en'
-          ? `${days}-day Full Pass · one-time`
-          : (lang === 'ja' ? `${days}日 Full 利用権 · 1回払い` : `${days}일 Full 이용권 · 1회 결제`)),
-        unitLife: pt.unlimitedUnit || 'Lifetime Full · 1회 결제',
-        unitCredit: sfUi.unitCredit,
-        hideToday: '',
-        close: '',
-        defaultCta: ''
-      }
-    });
-  });
+  const creditPacks = sortPurchasePacks(isCreditPurchaseEnabled() ? getCreditProducts() : []);
+  const passPacks = sortPurchasePacks(getPassProducts());
+  const cardOpts = { pt, sfUi, passFeatures, locked };
+  const licenseCards = passPacks.map((pack) => renderPurchasePackCard(pack, cardOpts));
   const lifeSelected = locked || selectedPurchaseId === 'LIFETIME';
   const lifeBtn = locked ? (pt.btnCurrentPlan || '현재 이용 중') : pt.buy;
   const lifeView = buildPurchaseLifetimeView();
@@ -2089,9 +2118,9 @@ function renderPurchasePlanGrid(){
   else if(lifeView) showLifetime = lifeView.status !== 'archived' && lifeView.saleOk !== false;
   if(showLifetime){
     if(!lifeView){
-      cards.push(renderLifetimeLoadingCard(pt));
+      licenseCards.push(renderLifetimeLoadingCard(pt));
     } else {
-      cards.push(renderProductCard(lifeView, {
+      licenseCards.push(renderProductCard(lifeView, {
         lang,
         selected: lifeSelected,
         locked,
@@ -2115,9 +2144,26 @@ function renderPurchasePlanGrid(){
       }));
     }
   }
-  const cols = purchasePlanGridCols(cards.length);
-  grid.dataset.cols = String(cols);
-  grid.innerHTML = cards.join('');
+  const creditCards = creditPacks.map((pack) => renderPurchasePackCard(pack, cardOpts));
+  const licenseCols = purchasePlanGridCols(licenseCards.length);
+  const creditCols = purchasePlanGridCols(creditCards.length);
+  const licenseHtml = purchaseCatalogSectionHtml({
+    key: 'license',
+    title: pt.sectionLicenseTitle || '이용권 · 라이선스',
+    lead: pt.sectionLicenseLead || '',
+    cardsHtml: licenseCards.join(''),
+    cols: licenseCols,
+    hidden: !licenseCards.length
+  });
+  const creditHtml = purchaseCatalogSectionHtml({
+    key: 'credits',
+    title: pt.sectionCreditsTitle || '크레딧 충전',
+    lead: pt.sectionCreditsLead || '',
+    cardsHtml: creditCards.join(''),
+    cols: creditCols,
+    hidden: !creditCards.length
+  });
+  grid.innerHTML = `${licenseHtml}${creditHtml}` || `<p class="purchase-plan-loading" role="status">${esc(pt.comingSoon || '')}</p>`;
 }
 function renderPurchaseTrialRow(){
   const el = $('purchaseTrialRow');

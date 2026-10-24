@@ -3354,6 +3354,18 @@ body.topnav-layout #mainNav.top-nav .top-nav-item.active .top-nav-item-copy b{co
 @media(max-width:720px){.purchase-hero{padding-top:24px}.purchase-price-head,.purchase-checkout{padding-left:16px;padding-right:16px}.purchase-spec-grid{grid-template-columns:1fr}.purchase-spec-item{padding:14px 16px}.purchase-pro-card .purchase-final-price strong{font-size:38px!important}.purchase-side-card{padding:16px!important}.checkout-order-panel{padding:14px}.checkout-order-item{grid-template-columns:1fr;gap:6px;padding:12px}}
 
 .purchase-mode-tabs{display:none}
+.purchase-catalog{display:grid;gap:22px;margin:10px auto 16px}
+.purchase-catalog.is-catalog-loading{min-height:220px;place-items:center}
+.purchase-catalog-section{display:grid;gap:10px;margin:0;padding:0;border:0;background:transparent}
+.purchase-catalog-section[data-purchase-section="credits"]{
+  margin-top:4px;
+  padding-top:18px;
+  border-top:1px solid rgba(255,255,255,.1)
+}
+.purchase-catalog-head{display:grid;gap:4px;margin:0 0 2px}
+.purchase-catalog-head h2{margin:0;font-size:18px;font-weight:800;letter-spacing:-.03em;color:var(--text)}
+.purchase-catalog-head p{margin:0;max-width:52rem;color:var(--muted);font-size:13px;font-weight:600;line-height:1.45}
+.purchase-catalog .purchase-plan-grid{margin:0 auto}
 .purchase-plan-grid{
   display:grid;
   grid-template-columns:repeat(var(--purchase-cols, 4),minmax(0,1fr));
