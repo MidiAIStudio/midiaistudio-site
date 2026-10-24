@@ -381,7 +381,7 @@ Object.assign(I18N.en, {
   '버전별 변경점':'Changes by version',
   '운영·이벤트 안내':'News & events',
   '신규 가입 혜택':'Welcome Benefit',
-  '물리 기기(HWID)당 1회 크레딧을 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 동일 PC에서 여러 계정을 만들어도 무료 크레딧은 한 번만 지급됩니다. 다른 PC의 신규 계정은 정상 지급됩니다.':'Automatically grant credits once per physical device (HWID), with an optional welcome email. Extra accounts on the same PC do not receive free credits again. A new account on another PC still receives them.',
+  '물리 기기(HWID)당 1회 Full 기간제 이용권을 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 동일 PC에서 여러 계정을 만들어도 가입 혜택은 한 번만 지급됩니다. 다른 PC의 신규 계정은 정상 지급됩니다.':'Automatically grant a Full time-limited pass once per physical device (HWID), with an optional welcome email. Extra accounts on the same PC do not receive the welcome benefit again. A new account on another PC still receives it.',
   '자동 혜택 ON/OFF':'Auto benefit ON/OFF',
   '환영 메일 ON/OFF':'Welcome email ON/OFF',
   '지급 크레딧':'Credit amount',
@@ -460,7 +460,7 @@ Object.assign(I18N.ja, {
   '버전별 변경점':'バージョン別の変更',
   '운영·이벤트 안내':'運営・イベント案内',
   '신규 가입 혜택':'新規登録特典',
-  '물리 기기(HWID)당 1회 크레딧을 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 동일 PC에서 여러 계정을 만들어도 무료 크레딧은 한 번만 지급됩니다. 다른 PC의 신규 계정은 정상 지급됩니다.':'物理デバイス(HWID)ごとにクレジットを1回自動付与し、任意で歓迎メールを送ります。同一PCの複数アカウントには無料クレジットは重複付与されません。別PCの新規アカウントには付与されます。',
+  '물리 기기(HWID)당 1회 Full 기간제 이용권을 자동 지급하고, 선택적으로 환영 메일을 보냅니다. 동일 PC에서 여러 계정을 만들어도 가입 혜택은 한 번만 지급됩니다. 다른 PC의 신규 계정은 정상 지급됩니다.':'物理デバイス(HWID)ごとにFull期間パスを1回自動付与し、任意で歓迎メールを送ります。同一PCの複数アカウントには登録特典は重複付与されません。別PCの新規アカウントには付与されます。',
   '자동 혜택 ON/OFF':'自動特典 ON/OFF',
   '환영 메일 ON/OFF':'歓迎メール ON/OFF',
   '지급 크레딧':'付与クレジット',
@@ -863,7 +863,7 @@ function tr(k){
     credit_ledger_welcome:'신규 가입 혜택',
     admin_nav_welcome_benefit:'신규 가입 혜택',
     admin_welcome_title:'신규 가입 혜택',
-    admin_welcome_desc:'물리 기기(HWID)당 1회 크레딧을 자동 지급하고, 선택적으로 환영 메일을 보냅니다.',
+    admin_welcome_desc:'물리 기기(HWID)당 1회 Full 기간제 이용권을 자동 지급하고, 선택적으로 환영 메일을 보냅니다.',
     admin_welcome_auto:'자동 혜택 ON/OFF',
     admin_welcome_email:'환영 메일 ON/OFF',
     credit_col_date:'날짜', credit_col_item:'내용', credit_col_delta:'증감', credit_col_balance:'잔액',
@@ -900,7 +900,7 @@ function tr(k){
     credit_ledger_welcome:'Welcome benefit',
     admin_nav_welcome_benefit:'Welcome Benefit',
     admin_welcome_title:'Welcome Benefit',
-    admin_welcome_desc:'Automatically grant credits once per physical device (HWID), with an optional welcome email.',
+    admin_welcome_desc:'Automatically grant a Full time-limited pass once per physical device (HWID), with an optional welcome email.',
     admin_welcome_auto:'Auto benefit ON/OFF',
     admin_welcome_email:'Welcome email ON/OFF',
     credit_col_date:'Date', credit_col_item:'Details', credit_col_delta:'Change', credit_col_balance:'Balance',
@@ -937,7 +937,7 @@ function tr(k){
     credit_ledger_welcome:'新規登録特典',
     admin_nav_welcome_benefit:'新規登録特典',
     admin_welcome_title:'新規登録特典',
-    admin_welcome_desc:'物理デバイス(HWID)ごとにクレジットを1回自動付与し、任意で歓迎メールを送ります。',
+    admin_welcome_desc:'物理デバイス(HWID)ごとにFull期間パスを1回自動付与し、任意で歓迎メールを送ります。',
     admin_welcome_auto:'自動特典 ON/OFF',
     admin_welcome_email:'歓迎メール ON/OFF',
     credit_col_date:'日時', credit_col_item:'内容', credit_col_delta:'増減', credit_col_balance:'残高',
@@ -8717,7 +8717,7 @@ function adminSameDevicePeersHtml(user){
     <p class="muted small admin-same-device-hint">관리자 전용 · 무료 가입 보너스 기기 중복 여부 확인용 (자동 차단 없음)</p>
     <div class="admin-table-wrap admin-same-device-table-wrap">
       <table class="admin-table admin-same-device-table">
-        <thead><tr><th>UID</th><th>이메일</th><th>가입일</th><th>무료 크레딧</th></tr></thead>
+        <thead><tr><th>UID</th><th>이메일</th><th>가입일</th><th>가입 혜택</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>

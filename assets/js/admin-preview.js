@@ -29,7 +29,7 @@ const VIEW_LEADS = {
   home: '운영 현황을 한눈에 보고 주요 관리 화면으로 이동합니다.',
   payments: '주문자별로 묶어 주문·결제를 확인하고 삭제합니다.',
   tickets: '사용자 문의를 조회하고 답변 상태를 관리합니다.',
-  welcome: '물리 기기(HWID)당 1회 크레딧·환영 메일 자동 지급 설정을 관리합니다.',
+  welcome: '물리 기기(HWID)당 1회 Full 기간제 이용권·환영 메일 자동 지급 설정을 관리합니다.',
   logs: '사용자를 선택한 뒤 탭으로 관련 이력을 조회합니다.',
   pricing: '상품, Credit 지급량, 가격, 할인 및 프로모션을 관리합니다.',
   content: '공지·패치노트·FAQ·자유게시판을 한 화면에서 조회하고 관리합니다.',
@@ -161,7 +161,7 @@ function previewSameDeviceBlock(u) {
   return `<section class="admin-crm-dash-sec admin-same-device-sec">
     <header class="admin-crm-dash-head"><h3>동일 기기 계정 ${peers.length}개</h3></header>
     <div class="admin-table-wrap admin-same-device-table-wrap"><table class="admin-table admin-same-device-table">
-      <thead><tr><th>UID</th><th>이메일</th><th>가입일</th><th>무료 크레딧</th></tr></thead>
+      <thead><tr><th>UID</th><th>이메일</th><th>가입일</th><th>가입 혜택</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>
   </section>`;

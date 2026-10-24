@@ -1,0 +1,497 @@
+{
+  "generatedAt": "2026-10-24T12:57:05.972Z",
+  "targets": [
+    {
+      "uid": "cqtuJfGYIAS4wLzR0bh22swI35q2",
+      "balance": 18,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "fiuBR8ceFTTPNG8wLkHaZWPAf183",
+      "balance": 11,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "1Bq1tW7vEUVjLFX3OHGMLOmTkW93",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "20DEF2ex79cKVAfOexC8TnQJ2oq2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "2JQraoFNrVc9Yu6axRB7prUwiwf2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "8cbpy7qZ10fyHLCXvxzG4kHZ1Rq1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "9KPa0j1hEFYK3l9LMqOXwYjCkiG2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "9xyaU4w6ZQUuuFhoITvds0ku4xk2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "GmYE5zVsOhXlixgkNu4C3XzCDYB2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "Hcu65aXmdWXxP8tORzo1tjZeb0i1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "KBGEsyinWxPQ5JkybKBmgZAOX792",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "KfhweiY4lhSQE1aKn2CsL4Iis8Q2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "PWjiSbDSu5f5Qy4POgcSv2hnxSg1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "SZB4KhtdZmO7UriJBYzdD79CN1A2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "UJWVBFYOxQTcDD9nUiik3jAA1IT2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "UeDNqL9gv8hnqNa6yVyPKsREKIu1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "cfZYa75KwZPegigDkXFM1WzIcTg1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "gDmzMyuiNjZA1DKDkuE0XRQblL03",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "gQnIdN2XyqgKLIPznc7vdZKywS53",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "ggKHfprm6WUhOcloHQdQSkAPblA2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "imzyHloMM1OU6ZJ9eY8YrZgWLW52",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "iuOgKnxSRHcFM0Q3pFTDRcKaUE12",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "pTW3V8L62xhgN0uigcLkhrL937i1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "pxiKajQelJhM1vNSDCOgo7lVTrv1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "q4Bm4kSvtEcogMw4cdSYBxrUKcx2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "r8P8yohn9SWVW9i646vZsNoPdkm2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "wDTkBfac5kPiUW7CYFqIodQRLiD3",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "ylPa9PlZCsXDQKAt1K5zJx42Bf22",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "zKvG15ZXjZYyBZvKBs3ycDLW0wg1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "Dnjgzjon3Lbm0R9O3VJ8UMJmxdA3",
+      "balance": 9,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "90n28jfBSOTnNM1668lkt1I5lgb2",
+      "balance": 7,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "01k9N6rHRDNTOb4JhaXVsqMSIOs2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "0lJqBo2v89hbcbMTL78BtcVSzS73",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "0nLquV3lLTNKNI3GS89ldGcNc9r2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "0w2YLCKmtWdWqfnC0oNx9XBykDU2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "8hafqSh3EkQoZat5nINsoJfN4Ho1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "AcWuJRYzTsW4eY136jd3WcOIB1i1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "AqVR2k4Pz1hFehhJxfaBDDvmqYr1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "BM338QU4j9fX8f01oPPNyQC60wx1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "C4wHOVU4T0dj5s8TjuURjAjnS6K2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "EzdgK27HRrMgOF7ekKkFvLylgRh2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "F4gNK0ksrfXo3Gefwlemf6BpSUj1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "FykXrqbCGBdDTBwKIUh6pyb5o9n2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "Hza5pHNlz6duFPd9POCamoLGoY43",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "V73HYu3MqrP6oPVQB0b9C7qCoA43",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "WG2kdSsQZJX56kKQWM1gI6NIXj02",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "WLrEy1MjCTbNdTMxCp5WEm9EvL52",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "eT2YRncceabhDL6Xrvxxw55Icoa2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "fX3U8AeadTSZZQjxoi8f7NimZBx1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "fmf3QcGMIGMHzxlilMyA73WABGh2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "g8ENF4GvMfZQnSACiPKTLWdX5RN2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "gcRTEAuFXoS06nuNzIYxWIfuWtg2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "hAxfzUDGFCR0nLIVkMCg2Am6sQ63",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "iD2JTI5zK1g7zKDvWz0K221NCPI2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "iqOGptFa8xShnXJBeB9wbzthfHG3",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "kn3Oz0G0ArcJEdWccfCQbAwsoiZ2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "laz5wYGhIPZViG1jRkvponfqs9t2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "mXkw9Gq8BGQsTWPESJhH6d6kzIN2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "pPpPCIrmC4gTMuZkPhxrTCmAxLw2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "q67vCpXAvHR8HXIOmWvHoHWUDVU2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "t9NC2nIv6UU5wH4Wj7ayGMGrnXJ2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "vulirT9wepXUcgmrs0HIhGBHeO23",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "yMswWXH0McegyN9DcTO4FwBpM7j2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "z6cwv4dssbZvtYCKSmicRjmZQ233",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "zJIRIO37WFRu0QJba8wL8LdEBa43",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "zV9L5DHRgZgO42Gq8zyDXncRBRa2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "zpv4RgNQahaXncAa0VfalMPiFF52",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "7CXFOXBpVoW3csjzS5EZ2qcBa1B2",
+      "balance": 4,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "NZg4rn0ZKVWF8GUQOPIg8kUcXQ42",
+      "balance": 4,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "P0ZzI8Ape6RE9OnUWEt4YsBZUw53",
+      "balance": 4,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "S2qUghECXFbfxkc3rf4g6Bfu8Z02",
+      "balance": 4,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "XT5LBwfqpzTVJp1Zh96ywUbsL6y2",
+      "balance": 4,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "fD3JeJhimbMSS2jybsO9uOefGTB3",
+      "balance": 4,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "wnowIFMTEwX5mk5ALRNUymbtef63",
+      "balance": 4,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "4CKZGeGaJLNGQaftOrNpNh6u43a2",
+      "balance": 3,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "G3dypSOUUCRfP981CaYBiLhYeAa2",
+      "balance": 3,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "YvW9izyfkwf0milc7rZUOmjvmDi1",
+      "balance": 3,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "e4itlv6OzZQutfKgPvY3oabQol22",
+      "balance": 3,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "lj21CuEfAqZyiQxbaXi74QqeMPq2",
+      "balance": 3,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "Dvp0lwr5rPXujiRqLb0zXsLJVYJ3",
+      "balance": 2,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "oOB6nBlwhQYJndxnlDMwa2c5XKy2",
+      "balance": 2,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "qp0PKJfW19fjojcPIfwEQ8VFNfT2",
+      "balance": 1,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    }
+  ]
+}

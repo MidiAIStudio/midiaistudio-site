@@ -240,7 +240,7 @@ function applyForm(config, limits) {
   if (policy) {
     policy.innerHTML =
       `활성화 시 신규 가입자에게 관리자가 지정한 일수(<strong>현재 ${days}일</strong>)의 Full 기간제 이용권을 지급합니다. `
-      + '무료 크레딧은 지급하지 않습니다. 동일 기기 중복 수령은 기존과 같이 차단됩니다.';
+      + '크레딧이 아닌 Full 기간제만 지급합니다. 동일 기기 중복 수령은 기존과 같이 차단됩니다.';
   }
   syncEmailFields();
   renderLivePreview();
@@ -318,7 +318,7 @@ async function saveWelcomeBenefitConfig() {
   }
   if (form.enabled) {
     const ok = window.confirm(
-      `신규 가입자에게 ${form.passDurationDays}일 Full 이용권을 자동 지급합니다.\n무료 크레딧은 지급하지 않습니다.\n계속할까요?`
+      `신규 가입자에게 ${form.passDurationDays}일 Full 이용권을 자동 지급합니다.\n크레딧이 아닌 기간제만 지급됩니다.\n계속할까요?`
     );
     if (!ok) return;
   }

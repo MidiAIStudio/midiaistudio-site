@@ -1,0 +1,260 @@
+{
+  "ok": true,
+  "projectId": "midiaistudio",
+  "mode": "APPLY",
+  "operator": "kantzz111@gmail.com",
+  "scannedWallets": 95,
+  "alreadyZero": 13,
+  "toZero": 82,
+  "sumGeneralBefore": 543,
+  "sumMireloBefore": 0,
+  "reason": "credit_unification_zero_reset",
+  "topBalances": [
+    {
+      "uid": "cqtu…35q2",
+      "balance": 18,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "fiuB…f183",
+      "balance": 11,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "1Bq1…kW93",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "20DE…2oq2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "2JQr…iwf2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "8cbp…1Rq1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "9KPa…kiG2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "9xya…4xk2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "GmYE…DYB2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "Hcu6…b0i1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "KBGE…X792",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "Kfhw…s8Q2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "PWji…xSg1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "SZB4…N1A2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "UJWV…1IT2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "UeDN…KIu1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "cfZY…cTg1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "gDmz…lL03",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "gQnI…wS53",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "ggKH…blA2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "imzy…LW52",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "iuOg…UE12",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "pTW3…37i1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "pxiK…Trv1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "q4Bm…Kcx2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "r8P8…dkm2",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "wDTk…LiD3",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "ylPa…Bf22",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "zKvG…0wg1",
+      "balance": 10,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "Dnjg…xdA3",
+      "balance": 9,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "90n2…lgb2",
+      "balance": 7,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "01k9…IOs2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "0lJq…zS73",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "0nLq…c9r2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "0w2Y…kDU2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "8haf…4Ho1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "AcWu…B1i1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "AqVR…qYr1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "BM33…0wx1",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    },
+    {
+      "uid": "C4wH…S6K2",
+      "balance": 5,
+      "mireloBalance": 0,
+      "purchasedTotal": 0
+    }
+  ],
+  "applied": 82,
+  "failed": [],
+  "startedAt": "2026-10-24T12:57:05.615Z",
+  "nonzeroAfter": 0,
+  "sumAfter": 0,
+  "finishedAt": "2026-10-24T12:57:05.972Z"
+}
