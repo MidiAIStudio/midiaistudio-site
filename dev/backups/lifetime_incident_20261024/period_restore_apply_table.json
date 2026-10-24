@@ -1,0 +1,183 @@
+[
+  {
+    "email": "jiangduojiangduo@qq.com",
+    "evidence": "welcome_hist",
+    "before": {
+      "plan": "period",
+      "method": "admin_bulk",
+      "expires": "2026-10-27T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "welcome_signup",
+      "expires": "2026-10-27T13:03:02.915Z",
+      "pass": "PASS_3D"
+    },
+    "action": "restore",
+    "restoreTo": {
+      "plan": "period",
+      "method": "welcome_signup",
+      "startsAt": "2026-10-24T13:03:02.915Z",
+      "expiresAt": "2026-10-27T13:03:02.915Z",
+      "passProductId": "PASS_3D",
+      "memo": "신규 가입 3일 Full 이용권"
+    },
+    "reason": ""
+  },
+  {
+    "email": "sogksxp@gmail.com",
+    "evidence": "paid_order+hist",
+    "before": {
+      "plan": "period",
+      "method": "admin_bulk",
+      "expires": "2026-10-27T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "kakaopay",
+      "expires": "2026-10-28T00:36:21.127Z",
+      "pass": "PASS_30D"
+    },
+    "action": "restore",
+    "restoreTo": {
+      "plan": "period",
+      "method": "kakaopay",
+      "startsAt": "2026-09-28T00:36:21.127Z",
+      "expiresAt": "2026-10-28T00:36:21.127Z",
+      "passProductId": "PASS_30D",
+      "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-COmw7Av1-mukimtx1-29ebb8f7"
+    },
+    "reason": ""
+  },
+  {
+    "email": "a01031981217@gmail.com",
+    "evidence": "paid_order+hist",
+    "before": {
+      "plan": "period",
+      "method": "admin_bulk",
+      "expires": "2026-10-27T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "kakaopay",
+      "expires": "2026-11-20T11:04:09.179Z",
+      "pass": "PASS_30D"
+    },
+    "action": "restore",
+    "restoreTo": {
+      "plan": "period",
+      "method": "kakaopay",
+      "startsAt": "2026-10-21T11:04:09.179Z",
+      "expiresAt": "2026-11-20T11:04:09.179Z",
+      "passProductId": "PASS_30D",
+      "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-DmecELS9-mvi0690w-0b82060f"
+    },
+    "reason": ""
+  },
+  {
+    "email": "pbm724@gmail.com",
+    "evidence": "admin_manual_grant+hist",
+    "before": {
+      "plan": "period",
+      "method": "admin_bulk",
+      "expires": "2026-10-27T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z",
+      "pass": null
+    },
+    "action": "restore",
+    "restoreTo": {
+      "plan": "period",
+      "method": "manual",
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-11-24T14:59:59.999Z",
+      "passProductId": null,
+      "memo": null
+    },
+    "reason": ""
+  },
+  {
+    "email": "xuxrixn@gmail.com",
+    "evidence": "paid_period_expired_before_incident_hist_was_trial",
+    "before": {},
+    "hist": {
+      "method": "kakaopay",
+      "expires": null,
+      "pass": null
+    },
+    "action": "keep_current",
+    "restoreTo": null,
+    "reason": "hist_plan_trial_paid_30d_already_elapsed"
+  },
+  {
+    "email": "cijusg0078@gmail.com",
+    "evidence": "admin_manual_grant+hist",
+    "before": {
+      "plan": "period",
+      "method": "admin_bulk",
+      "expires": "2026-10-27T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z",
+      "pass": null
+    },
+    "action": "restore",
+    "restoreTo": {
+      "plan": "period",
+      "method": "manual",
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-11-24T14:59:59.999Z",
+      "passProductId": null,
+      "memo": null
+    },
+    "reason": ""
+  },
+  {
+    "email": "pms7376123@gmail.com",
+    "evidence": "paid_order+hist",
+    "before": {
+      "plan": "period",
+      "method": "admin_bulk",
+      "expires": "2026-10-27T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "kakaopay",
+      "expires": "2026-11-10T08:23:59.372Z",
+      "pass": "PASS_30D"
+    },
+    "action": "restore",
+    "restoreTo": {
+      "plan": "period",
+      "method": "kakaopay",
+      "startsAt": "2026-10-11T08:23:59.372Z",
+      "expiresAt": "2026-11-10T08:23:59.372Z",
+      "passProductId": "PASS_30D",
+      "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-kn3Oz0G0-mv3k2yt5-ca1fe986"
+    },
+    "reason": ""
+  },
+  {
+    "email": "pure32karen@gmail.com",
+    "evidence": "admin_manual_grant+hist",
+    "before": {
+      "plan": "period",
+      "method": "admin_bulk",
+      "expires": "2026-10-27T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z",
+      "pass": null
+    },
+    "action": "restore",
+    "restoreTo": {
+      "plan": "period",
+      "method": "manual",
+      "startsAt": "2026-10-23T15:00:00Z",
+      "expiresAt": "2026-11-24T14:59:59.999Z",
+      "passProductId": null,
+      "memo": null
+    },
+    "reason": ""
+  }
+]

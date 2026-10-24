@@ -1,0 +1,134 @@
+[
+  {
+    "email": "jiangduojiangduo@qq.com",
+    "evidence": "welcome_hist",
+    "before": {
+      "plan": "period",
+      "method": "welcome_signup",
+      "expires": "2026-10-27T13:03:02.915Z"
+    },
+    "hist": {
+      "method": "welcome_signup",
+      "expires": "2026-10-27T13:03:02.915Z",
+      "pass": "PASS_3D"
+    },
+    "action": "already_ok",
+    "restoreTo": null,
+    "reason": "already_matches_hist"
+  },
+  {
+    "email": "sogksxp@gmail.com",
+    "evidence": "paid_order+hist",
+    "before": {
+      "plan": "period",
+      "method": "kakaopay",
+      "expires": "2026-10-28T00:36:21.127Z"
+    },
+    "hist": {
+      "method": "kakaopay",
+      "expires": "2026-10-28T00:36:21.127Z",
+      "pass": "PASS_30D"
+    },
+    "action": "already_ok",
+    "restoreTo": null,
+    "reason": "already_matches_hist"
+  },
+  {
+    "email": "a01031981217@gmail.com",
+    "evidence": "paid_order+hist",
+    "before": {
+      "plan": "period",
+      "method": "kakaopay",
+      "expires": "2026-11-20T11:04:09.179Z"
+    },
+    "hist": {
+      "method": "kakaopay",
+      "expires": "2026-11-20T11:04:09.179Z",
+      "pass": "PASS_30D"
+    },
+    "action": "already_ok",
+    "restoreTo": null,
+    "reason": "already_matches_hist"
+  },
+  {
+    "email": "pbm724@gmail.com",
+    "evidence": "admin_manual_grant+hist",
+    "before": {
+      "plan": "period",
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z",
+      "pass": null
+    },
+    "action": "already_ok",
+    "restoreTo": null,
+    "reason": "already_matches_hist"
+  },
+  {
+    "email": "xuxrixn@gmail.com",
+    "evidence": "paid_period_expired_before_incident_hist_was_trial",
+    "before": {},
+    "hist": {
+      "method": "kakaopay",
+      "expires": null,
+      "pass": null
+    },
+    "action": "keep_current",
+    "restoreTo": null,
+    "reason": "hist_plan_trial_paid_30d_already_elapsed"
+  },
+  {
+    "email": "cijusg0078@gmail.com",
+    "evidence": "admin_manual_grant+hist",
+    "before": {
+      "plan": "period",
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z",
+      "pass": null
+    },
+    "action": "already_ok",
+    "restoreTo": null,
+    "reason": "already_matches_hist"
+  },
+  {
+    "email": "pms7376123@gmail.com",
+    "evidence": "paid_order+hist",
+    "before": {
+      "plan": "period",
+      "method": "kakaopay",
+      "expires": "2026-11-10T08:23:59.372Z"
+    },
+    "hist": {
+      "method": "kakaopay",
+      "expires": "2026-11-10T08:23:59.372Z",
+      "pass": "PASS_30D"
+    },
+    "action": "already_ok",
+    "restoreTo": null,
+    "reason": "already_matches_hist"
+  },
+  {
+    "email": "pure32karen@gmail.com",
+    "evidence": "admin_manual_grant+hist",
+    "before": {
+      "plan": "period",
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z"
+    },
+    "hist": {
+      "method": "manual",
+      "expires": "2026-11-24T14:59:59.999Z",
+      "pass": null
+    },
+    "action": "already_ok",
+    "restoreTo": null,
+    "reason": "already_matches_hist"
+  }
+]

@@ -1,0 +1,1132 @@
+{
+  "generatedAt": "2026-10-24T15:04:33.094Z",
+  "readTime": "2026-10-24T14:45:00Z",
+  "incidentStart": "2026-10-24T14:45:00Z",
+  "stats": {
+    "victims": 124,
+    "webPaidLifetimeUsers": 7,
+    "manualPaidLifetimeUsers": 7,
+    "webPaidPeriodUsers": 4,
+    "manualPaidPeriodUsers": 0,
+    "anyPaidLicenseUsers": 18,
+    "buckets": {
+      "B_TRIAL_OK": 101,
+      "C_PERIOD": 7,
+      "A_LIFETIME": 15,
+      "B_RECLASS_PAID_PERIOD": 1
+    },
+    "bReclass": [
+      {
+        "uid": "Hza5pHNlz6duFPd9POCamoLGoY43",
+        "email": "xuxrixn@gmail.com",
+        "incidentAudit": {
+          "beforePlan": "trial",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "trial → period · 3일",
+          "timestamp": "2026-10-24T14:45:57.875Z"
+        },
+        "histLicense": {
+          "plan": "trial",
+          "method": "kakaopay",
+          "startsAt": null,
+          "expiresAt": null,
+          "passProductId": null,
+          "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-Hza5pHNl-mu6t4nhx-c463bd1c",
+          "hwid": "60D8D49381E77CFF11A60E6D2F80B1703DFAE9417F8421132E6A5ECACE9F0BF5",
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": "60D8D49381E77CFF11A60E6D2F80B1703DFAE9417F8421132E6A5ECACE9F0BF5",
+          "updateTime": "2026-10-24T14:45:57.793455Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": true,
+          "hasAnyPaidLicense": true,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 1,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [
+            {
+              "id": "midiai-kakao-Hza5pHNl-mu6t4nhx-c463bd1c",
+              "productId": "PASS_30D",
+              "productName": "30일 Full",
+              "plan": "period",
+              "status": "completed",
+              "amount": 20930,
+              "currency": "KRW",
+              "method": "kakaopay",
+              "provider": "portone",
+              "source": "",
+              "licenseIssued": true,
+              "durationDays": 30,
+              "when": "2026-09-18T10:21:10.580Z",
+              "memo": "",
+              "manual": false,
+              "paidOk": true,
+              "refunded": false,
+              "kind": "period"
+            }
+          ],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "tRqJ04YGXHov8LyAhdQc",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "trial → period · 3일",
+              "timestamp": "2026-10-24T14:45:57.875Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "B_RECLASS_PAID_PERIOD",
+          "reason": "audit_trial_but_paid_period_orders"
+        }
+      }
+    ],
+    "reviewConflict": [],
+    "periodRestoreCandidates": [
+      {
+        "uid": "2Ylgn6qyTSXBE3Brc7Dm9AXAlKo1",
+        "email": "jiangduojiangduo@qq.com",
+        "incidentAudit": {
+          "beforePlan": "period",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "period → period · 3일",
+          "timestamp": "2026-10-24T14:45:55.323Z"
+        },
+        "histLicense": {
+          "plan": "period",
+          "method": "welcome_signup",
+          "startsAt": "2026-10-24T13:03:02.915Z",
+          "expiresAt": "2026-10-27T13:03:02.915Z",
+          "passProductId": "PASS_3D",
+          "memo": "신규 가입 3일 Full 이용권",
+          "hwid": null,
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": null,
+          "updateTime": "2026-10-24T14:45:55.247983Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": false,
+          "hasAnyPaidLicense": false,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 0,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "0ISiv8pS5pg9HfM7t4gA",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "period → period · 3일",
+              "timestamp": "2026-10-24T14:45:55.323Z",
+              "before": {
+                "plan": "period",
+                "startsAt": "2026-10-24T13:03:02.915Z",
+                "expiresAt": "2026-10-27T13:03:02.915Z",
+                "passProductId": "PASS_3D"
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "C_PERIOD",
+          "reason": "hist_or_audit_period"
+        }
+      },
+      {
+        "uid": "COmw7Av1LARlGw9tAokc9PNuOmv1",
+        "email": "sogksxp@gmail.com",
+        "incidentAudit": {
+          "beforePlan": "period",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "period → period · 3일",
+          "timestamp": "2026-10-24T14:45:56.703Z"
+        },
+        "histLicense": {
+          "plan": "period",
+          "method": "kakaopay",
+          "startsAt": "2026-09-28T00:36:21.127Z",
+          "expiresAt": "2026-10-28T00:36:21.127Z",
+          "passProductId": "PASS_30D",
+          "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-COmw7Av1-mukimtx1-29ebb8f7",
+          "hwid": "A779B91ACFFAE62F46A850FF4B2AC8182B7E5E3110BF139C63B4D66D345EAA45",
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": "A779B91ACFFAE62F46A850FF4B2AC8182B7E5E3110BF139C63B4D66D345EAA45",
+          "updateTime": "2026-10-24T14:45:56.624975Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": true,
+          "hasAnyPaidLicense": true,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 1,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [
+            {
+              "id": "midiai-kakao-COmw7Av1-mukimtx1-29ebb8f7",
+              "productId": "PASS_30D",
+              "productName": "30일 Full",
+              "plan": "period",
+              "status": "completed",
+              "amount": 20930,
+              "currency": "KRW",
+              "method": "kakaopay",
+              "provider": "portone",
+              "source": "",
+              "licenseIssued": true,
+              "durationDays": 30,
+              "when": "2026-09-28T00:36:21.405Z",
+              "memo": "",
+              "manual": false,
+              "paidOk": true,
+              "refunded": false,
+              "kind": "period"
+            }
+          ],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "5Da0oRqaz34gnZfcus9t",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "period → period · 3일",
+              "timestamp": "2026-10-24T14:45:56.703Z",
+              "before": {
+                "plan": "period",
+                "startsAt": "2026-09-28T00:36:21.127Z",
+                "expiresAt": "2026-10-28T00:36:21.127Z",
+                "passProductId": "PASS_30D"
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "C_PERIOD",
+          "reason": "paid_period_order"
+        }
+      },
+      {
+        "uid": "DmecELS9bEeAj2DjyYuo5iABQID3",
+        "email": "a01031981217@gmail.com",
+        "incidentAudit": {
+          "beforePlan": "period",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "period → period · 3일",
+          "timestamp": "2026-10-24T14:45:56.807Z"
+        },
+        "histLicense": {
+          "plan": "period",
+          "method": "kakaopay",
+          "startsAt": "2026-10-21T11:04:09.179Z",
+          "expiresAt": "2026-11-20T11:04:09.179Z",
+          "passProductId": "PASS_30D",
+          "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-DmecELS9-mvi0690w-0b82060f",
+          "hwid": "D6C281E4B22890CE39374A789BEA055E78858E1379901BBBAE8EDBBEC5133078",
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": "D6C281E4B22890CE39374A789BEA055E78858E1379901BBBAE8EDBBEC5133078",
+          "updateTime": "2026-10-24T14:45:56.726079Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": true,
+          "hasAnyPaidLicense": true,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 1,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [
+            {
+              "id": "midiai-kakao-DmecELS9-mvi0690w-0b82060f",
+              "productId": "PASS_30D",
+              "productName": "30일 Full",
+              "plan": "period",
+              "status": "completed",
+              "amount": 29900,
+              "currency": "KRW",
+              "method": "kakaopay",
+              "provider": "portone",
+              "source": "",
+              "licenseIssued": true,
+              "durationDays": 30,
+              "when": "2026-10-21T11:04:09.300Z",
+              "memo": "",
+              "manual": false,
+              "paidOk": true,
+              "refunded": false,
+              "kind": "period"
+            }
+          ],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "ERKbcAI65NI8SeghRZPa",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "period → period · 3일",
+              "timestamp": "2026-10-24T14:45:56.807Z",
+              "before": {
+                "plan": "period",
+                "startsAt": "2026-10-21T11:04:09.179Z",
+                "expiresAt": "2026-11-20T11:04:09.179Z",
+                "passProductId": "PASS_30D"
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "C_PERIOD",
+          "reason": "paid_period_order"
+        }
+      },
+      {
+        "uid": "Dnjgzjon3Lbm0R9O3VJ8UMJmxdA3",
+        "email": "pbm724@gmail.com",
+        "incidentAudit": {
+          "beforePlan": "period",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "period → period · 3일",
+          "timestamp": "2026-10-24T14:45:56.888Z"
+        },
+        "histLicense": {
+          "plan": "period",
+          "method": "manual",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-11-24T14:59:59.999Z",
+          "passProductId": null,
+          "memo": null,
+          "hwid": "D5BF63030675AE7FFC5402B7867775F9D3B0C77C52BCA79B3DEFED63C49196E6",
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": "D5BF63030675AE7FFC5402B7867775F9D3B0C77C52BCA79B3DEFED63C49196E6",
+          "updateTime": "2026-10-24T14:45:56.835455Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": false,
+          "hasAnyPaidLicense": false,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 0,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "wpL387DLm8zntu456UMP",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "period → period · 3일",
+              "timestamp": "2026-10-24T14:45:56.888Z",
+              "before": {
+                "plan": "period",
+                "startsAt": "2026-10-23T15:00:00Z",
+                "expiresAt": "2026-11-24T14:59:59.999Z",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            },
+            {
+              "id": "nwPQusK4TTSeSuO8psNK",
+              "action": "PASS_ADMIN_GRANTED",
+              "category": "license",
+              "summary": "trial → period",
+              "timestamp": "2026-10-24T13:00:44.033Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "startsAt": "2026-10-24",
+                "expiresAt": "2026-11-24",
+                "memo": "",
+                "method": "manual",
+                "passProductId": ""
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "C_PERIOD",
+          "reason": "hist_or_audit_period"
+        }
+      },
+      {
+        "uid": "Hza5pHNlz6duFPd9POCamoLGoY43",
+        "email": "xuxrixn@gmail.com",
+        "incidentAudit": {
+          "beforePlan": "trial",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "trial → period · 3일",
+          "timestamp": "2026-10-24T14:45:57.875Z"
+        },
+        "histLicense": {
+          "plan": "trial",
+          "method": "kakaopay",
+          "startsAt": null,
+          "expiresAt": null,
+          "passProductId": null,
+          "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-Hza5pHNl-mu6t4nhx-c463bd1c",
+          "hwid": "60D8D49381E77CFF11A60E6D2F80B1703DFAE9417F8421132E6A5ECACE9F0BF5",
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": "60D8D49381E77CFF11A60E6D2F80B1703DFAE9417F8421132E6A5ECACE9F0BF5",
+          "updateTime": "2026-10-24T14:45:57.793455Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": true,
+          "hasAnyPaidLicense": true,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 1,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [
+            {
+              "id": "midiai-kakao-Hza5pHNl-mu6t4nhx-c463bd1c",
+              "productId": "PASS_30D",
+              "productName": "30일 Full",
+              "plan": "period",
+              "status": "completed",
+              "amount": 20930,
+              "currency": "KRW",
+              "method": "kakaopay",
+              "provider": "portone",
+              "source": "",
+              "licenseIssued": true,
+              "durationDays": 30,
+              "when": "2026-09-18T10:21:10.580Z",
+              "memo": "",
+              "manual": false,
+              "paidOk": true,
+              "refunded": false,
+              "kind": "period"
+            }
+          ],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "tRqJ04YGXHov8LyAhdQc",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "trial → period · 3일",
+              "timestamp": "2026-10-24T14:45:57.875Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "B_RECLASS_PAID_PERIOD",
+          "reason": "audit_trial_but_paid_period_orders"
+        }
+      },
+      {
+        "uid": "cqtuJfGYIAS4wLzR0bh22swI35q2",
+        "email": "cijusg0078@gmail.com",
+        "incidentAudit": {
+          "beforePlan": "period",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "period → period · 3일",
+          "timestamp": "2026-10-24T14:46:00.385Z"
+        },
+        "histLicense": {
+          "plan": "period",
+          "method": "manual",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-11-24T14:59:59.999Z",
+          "passProductId": null,
+          "memo": null,
+          "hwid": "9ADF25DB323D8EBEEF6C7F73F06581F613535EBB75E4A5995FF178EE9491F873",
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": "9ADF25DB323D8EBEEF6C7F73F06581F613535EBB75E4A5995FF178EE9491F873",
+          "updateTime": "2026-10-24T14:46:00.339679Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": false,
+          "hasAnyPaidLicense": false,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 0,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "AF3GjuHiKP5eMD2m7u3A",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "period → period · 3일",
+              "timestamp": "2026-10-24T14:46:00.385Z",
+              "before": {
+                "plan": "period",
+                "startsAt": "2026-10-23T15:00:00Z",
+                "expiresAt": "2026-11-24T14:59:59.999Z",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            },
+            {
+              "id": "gJC7ojemYWpe65i2iKhv",
+              "action": "PASS_ADMIN_GRANTED",
+              "category": "license",
+              "summary": "trial → period",
+              "timestamp": "2026-10-24T13:01:41.224Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "startsAt": "2026-10-24",
+                "expiresAt": "2026-11-24",
+                "memo": "",
+                "method": "manual",
+                "passProductId": ""
+              },
+              "result": "success"
+            },
+            {
+              "id": "aM8DTSteTwPwSNTd3jIp",
+              "action": "라이선스 변경",
+              "category": "license",
+              "summary": "trial → trial",
+              "timestamp": "2026-10-24T13:01:28.357Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "trial",
+                "status": "active",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "method": "manual",
+                "passProductId": ""
+              },
+              "result": "success"
+            },
+            {
+              "id": "9Oz6o1XiLnu08TLhKbPl",
+              "action": "라이선스 변경",
+              "category": "license",
+              "summary": "trial → trial",
+              "timestamp": "2026-10-24T13:01:14.065Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "trial",
+                "status": "active",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "method": "manual",
+                "passProductId": ""
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "C_PERIOD",
+          "reason": "hist_or_audit_period"
+        }
+      },
+      {
+        "uid": "kn3Oz0G0ArcJEdWccfCQbAwsoiZ2",
+        "email": "pms7376123@gmail.com",
+        "incidentAudit": {
+          "beforePlan": "period",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "period → period · 3일",
+          "timestamp": "2026-10-24T14:46:02.375Z"
+        },
+        "histLicense": {
+          "plan": "period",
+          "method": "kakaopay",
+          "startsAt": "2026-10-11T08:23:59.372Z",
+          "expiresAt": "2026-11-10T08:23:59.372Z",
+          "passProductId": "PASS_30D",
+          "memo": "PASS_PURCHASE · KakaoPay · payment midiai-kakao-kn3Oz0G0-mv3k2yt5-ca1fe986",
+          "hwid": "D0687EB1892F9433C686D945227BE910165351AF61D583CB58B417A7E39BFF32",
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": "D0687EB1892F9433C686D945227BE910165351AF61D583CB58B417A7E39BFF32",
+          "updateTime": "2026-10-24T14:46:02.326047Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": true,
+          "hasAnyPaidLicense": true,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 1,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [
+            {
+              "id": "midiai-kakao-kn3Oz0G0-mv3k2yt5-ca1fe986",
+              "productId": "PASS_30D",
+              "productName": "30일 Full",
+              "plan": "period",
+              "status": "completed",
+              "amount": 29900,
+              "currency": "KRW",
+              "method": "kakaopay",
+              "provider": "portone",
+              "source": "",
+              "licenseIssued": true,
+              "durationDays": 30,
+              "when": "2026-10-11T08:23:59.482Z",
+              "memo": "",
+              "manual": false,
+              "paidOk": true,
+              "refunded": false,
+              "kind": "period"
+            }
+          ],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "0FcDUUZU9ToS5wnU8ecG",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "period → period · 3일",
+              "timestamp": "2026-10-24T14:46:02.375Z",
+              "before": {
+                "plan": "period",
+                "startsAt": "2026-10-11T08:23:59.372Z",
+                "expiresAt": "2026-11-10T08:23:59.372Z",
+                "passProductId": "PASS_30D"
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            },
+            {
+              "id": "xyAKKU0LnNkBmpvdywDP",
+              "action": "PASS_ADMIN_GRANTED",
+              "category": "license",
+              "summary": "trial → period",
+              "timestamp": "2026-09-12T06:54:35.234Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "startsAt": "2026-09-12",
+                "expiresAt": "2026-09-19",
+                "memo": "",
+                "method": "manual",
+                "passProductId": ""
+              },
+              "result": "success"
+            },
+            {
+              "id": "LRdYxbw5P7iPEjnr5FKR",
+              "action": "라이선스 변경",
+              "category": "license",
+              "summary": "trial → trial",
+              "timestamp": "2026-09-12T06:54:08.329Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "trial",
+                "status": "active",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "method": "manual",
+                "passProductId": ""
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "C_PERIOD",
+          "reason": "paid_period_order"
+        }
+      },
+      {
+        "uid": "qp0PKJfW19fjojcPIfwEQ8VFNfT2",
+        "email": "pure32karen@gmail.com",
+        "incidentAudit": {
+          "beforePlan": "period",
+          "afterPlan": "period",
+          "afterDays": 3,
+          "summary": "period → period · 3일",
+          "timestamp": "2026-10-24T14:46:03.603Z"
+        },
+        "histLicense": {
+          "plan": "period",
+          "method": "manual",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-11-24T14:59:59.999Z",
+          "passProductId": null,
+          "memo": null,
+          "hwid": "81D1C2D047FC930309CBFDBC9F4BAE1A74FD8F2ED6781E104C432F6EB7C13692",
+          "licensed": true,
+          "status": "active"
+        },
+        "currentLicense": {
+          "plan": "period",
+          "method": "admin_bulk",
+          "startsAt": "2026-10-23T15:00:00Z",
+          "expiresAt": "2026-10-27T14:59:59.999Z",
+          "passProductId": "PASS_7D",
+          "durationDays": null,
+          "hwid": "81D1C2D047FC930309CBFDBC9F4BAE1A74FD8F2ED6781E104C432F6EB7C13692",
+          "updateTime": "2026-10-24T14:46:03.557855Z"
+        },
+        "evidence": {
+          "hasPaidLifetime": false,
+          "hasPaidPeriod": false,
+          "hasAnyPaidLicense": false,
+          "webLifeCount": 0,
+          "manualLifetimeCount": 0,
+          "webPeriodCount": 0,
+          "manualPeriodCount": 0,
+          "paidLifetime": [],
+          "paidPeriod": [],
+          "refundedLicense": [],
+          "manualLicenseAudits": [
+            {
+              "id": "g1pzNc44pSzc0WIXI089",
+              "action": "기간제 일괄 지급",
+              "category": "license",
+              "summary": "period → period · 3일",
+              "timestamp": "2026-10-24T14:46:03.603Z",
+              "before": {
+                "plan": "period",
+                "startsAt": "2026-10-23T15:00:00Z",
+                "expiresAt": "2026-11-24T14:59:59.999Z",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "days": 3,
+                "passProductId": "PASS_7D",
+                "method": "admin_bulk"
+              },
+              "result": "success"
+            },
+            {
+              "id": "sEAnJ1W1Z3s1g2VlzeMs",
+              "action": "PASS_ADMIN_GRANTED",
+              "category": "license",
+              "summary": "trial → period",
+              "timestamp": "2026-10-24T13:00:58.052Z",
+              "before": {
+                "plan": "trial",
+                "startsAt": null,
+                "expiresAt": null,
+                "memo": "",
+                "passProductId": ""
+              },
+              "after": {
+                "plan": "period",
+                "status": "active",
+                "startsAt": "2026-10-24",
+                "expiresAt": "2026-11-24",
+                "memo": "",
+                "method": "manual",
+                "passProductId": ""
+              },
+              "result": "success"
+            }
+          ]
+        },
+        "decision": {
+          "bucket": "C_PERIOD",
+          "reason": "hist_or_audit_period"
+        }
+      }
+    ]
+  },
+  "bReclassEmails": [
+    {
+      "uid": "Hza5pHNlz6duFPd9POCamoLGoY43",
+      "email": "xuxrixn@gmail.com",
+      "reason": "audit_trial_but_paid_period_orders",
+      "paidPeriod": [
+        {
+          "id": "midiai-kakao-Hza5pHNl-mu6t4nhx-c463bd1c",
+          "productId": "PASS_30D",
+          "productName": "30일 Full",
+          "plan": "period",
+          "status": "completed",
+          "amount": 20930,
+          "currency": "KRW",
+          "method": "kakaopay",
+          "provider": "portone",
+          "source": "",
+          "licenseIssued": true,
+          "durationDays": 30,
+          "when": "2026-09-18T10:21:10.580Z",
+          "memo": "",
+          "manual": false,
+          "paidOk": true,
+          "refunded": false,
+          "kind": "period"
+        }
+      ]
+    }
+  ],
+  "reviewEmails": [],
+  "periodCandidates": [
+    {
+      "uid": "2Ylgn6qyTSXBE3Brc7Dm9AXAlKo1",
+      "email": "jiangduojiangduo@qq.com",
+      "bucket": "C_PERIOD",
+      "histExpires": "2026-10-27T13:03:02.915Z",
+      "histPass": "PASS_3D",
+      "histMethod": "welcome_signup",
+      "currentExpires": "2026-10-27T14:59:59.999Z",
+      "paidPeriod": []
+    },
+    {
+      "uid": "COmw7Av1LARlGw9tAokc9PNuOmv1",
+      "email": "sogksxp@gmail.com",
+      "bucket": "C_PERIOD",
+      "histExpires": "2026-10-28T00:36:21.127Z",
+      "histPass": "PASS_30D",
+      "histMethod": "kakaopay",
+      "currentExpires": "2026-10-27T14:59:59.999Z",
+      "paidPeriod": [
+        {
+          "id": "midiai-kakao-COmw7Av1-mukimtx1-29ebb8f7",
+          "productId": "PASS_30D",
+          "productName": "30일 Full",
+          "plan": "period",
+          "status": "completed",
+          "amount": 20930,
+          "currency": "KRW",
+          "method": "kakaopay",
+          "provider": "portone",
+          "source": "",
+          "licenseIssued": true,
+          "durationDays": 30,
+          "when": "2026-09-28T00:36:21.405Z",
+          "memo": "",
+          "manual": false,
+          "paidOk": true,
+          "refunded": false,
+          "kind": "period"
+        }
+      ]
+    },
+    {
+      "uid": "DmecELS9bEeAj2DjyYuo5iABQID3",
+      "email": "a01031981217@gmail.com",
+      "bucket": "C_PERIOD",
+      "histExpires": "2026-11-20T11:04:09.179Z",
+      "histPass": "PASS_30D",
+      "histMethod": "kakaopay",
+      "currentExpires": "2026-10-27T14:59:59.999Z",
+      "paidPeriod": [
+        {
+          "id": "midiai-kakao-DmecELS9-mvi0690w-0b82060f",
+          "productId": "PASS_30D",
+          "productName": "30일 Full",
+          "plan": "period",
+          "status": "completed",
+          "amount": 29900,
+          "currency": "KRW",
+          "method": "kakaopay",
+          "provider": "portone",
+          "source": "",
+          "licenseIssued": true,
+          "durationDays": 30,
+          "when": "2026-10-21T11:04:09.300Z",
+          "memo": "",
+          "manual": false,
+          "paidOk": true,
+          "refunded": false,
+          "kind": "period"
+        }
+      ]
+    },
+    {
+      "uid": "Dnjgzjon3Lbm0R9O3VJ8UMJmxdA3",
+      "email": "pbm724@gmail.com",
+      "bucket": "C_PERIOD",
+      "histExpires": "2026-11-24T14:59:59.999Z",
+      "histPass": null,
+      "histMethod": "manual",
+      "currentExpires": "2026-10-27T14:59:59.999Z",
+      "paidPeriod": []
+    },
+    {
+      "uid": "Hza5pHNlz6duFPd9POCamoLGoY43",
+      "email": "xuxrixn@gmail.com",
+      "bucket": "B_RECLASS_PAID_PERIOD",
+      "histExpires": null,
+      "histPass": null,
+      "histMethod": "kakaopay",
+      "currentExpires": "2026-10-27T14:59:59.999Z",
+      "paidPeriod": [
+        {
+          "id": "midiai-kakao-Hza5pHNl-mu6t4nhx-c463bd1c",
+          "productId": "PASS_30D",
+          "productName": "30일 Full",
+          "plan": "period",
+          "status": "completed",
+          "amount": 20930,
+          "currency": "KRW",
+          "method": "kakaopay",
+          "provider": "portone",
+          "source": "",
+          "licenseIssued": true,
+          "durationDays": 30,
+          "when": "2026-09-18T10:21:10.580Z",
+          "memo": "",
+          "manual": false,
+          "paidOk": true,
+          "refunded": false,
+          "kind": "period"
+        }
+      ]
+    },
+    {
+      "uid": "cqtuJfGYIAS4wLzR0bh22swI35q2",
+      "email": "cijusg0078@gmail.com",
+      "bucket": "C_PERIOD",
+      "histExpires": "2026-11-24T14:59:59.999Z",
+      "histPass": null,
+      "histMethod": "manual",
+      "currentExpires": "2026-10-27T14:59:59.999Z",
+      "paidPeriod": []
+    },
+    {
+      "uid": "kn3Oz0G0ArcJEdWccfCQbAwsoiZ2",
+      "email": "pms7376123@gmail.com",
+      "bucket": "C_PERIOD",
+      "histExpires": "2026-11-10T08:23:59.372Z",
+      "histPass": "PASS_30D",
+      "histMethod": "kakaopay",
+      "currentExpires": "2026-10-27T14:59:59.999Z",
+      "paidPeriod": [
+        {
+          "id": "midiai-kakao-kn3Oz0G0-mv3k2yt5-ca1fe986",
+          "productId": "PASS_30D",
+          "productName": "30일 Full",
+          "plan": "period",
+          "status": "completed",
+          "amount": 29900,
+          "currency": "KRW",
+          "method": "kakaopay",
+          "provider": "portone",
+          "source": "",
+          "licenseIssued": true,
+          "durationDays": 30,
+          "when": "2026-10-11T08:23:59.482Z",
+          "memo": "",
+          "manual": false,
+          "paidOk": true,
+          "refunded": false,
+          "kind": "period"
+        }
+      ]
+    },
+    {
+      "uid": "qp0PKJfW19fjojcPIfwEQ8VFNfT2",
+      "email": "pure32karen@gmail.com",
+      "bucket": "C_PERIOD",
+      "histExpires": "2026-11-24T14:59:59.999Z",
+      "histPass": null,
+      "histMethod": "manual",
+      "currentExpires": "2026-10-27T14:59:59.999Z",
+      "paidPeriod": []
+    }
+  ]
+}
