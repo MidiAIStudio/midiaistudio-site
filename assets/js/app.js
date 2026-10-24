@@ -562,7 +562,10 @@ function tt(ko){
   return d[key] || d[key.replace(/\s+/g,'')] || ko;
 }
 function hubNoticeHeadHtml(){
-  return `<div class="hub-list-head hub-notice-head"><span>${esc(tt('번호'))}</span><span>${esc(tt('제목'))}</span><span>${esc(tt('글쓴이'))}</span><span>${esc(tt('작성일'))}</span><span>${esc(tt('조회'))}</span></div>`;
+  return `<div class="hub-list-head hub-notice-head"><span>${esc(tt('번호'))}</span><span>${esc(tt('제목'))}</span><span>${esc(tt('글쓴이'))}</span><span>${esc(tt('작성일'))}</span></div>`;
+}
+function hubBoardHeadHtml(){
+  return `<div class="hub-list-head hub-notice-head hub-board-head"><span>${esc(tt('번호'))}</span><span>${esc(tt('제목'))}</span><span>${esc(tt('글쓴이'))}</span><span>${esc(tt('작성일'))}</span><span>${esc(tt('조회'))}</span></div>`;
 }
 function hubTicketHeadHtml(){
   return `<div class="hub-list-head hub-ticket-head"><span>${esc(tt('제목'))}</span><span>${esc(tt('유형'))}</span><span>${esc(tt('상태'))}</span><span>${esc(tt('작성일'))}</span></div>`;
@@ -1486,7 +1489,7 @@ function patchDetailHtml(d, nav=null){
       <div class="patch-head-main">
         <div class="patch-head-kicker">${patchKindBadgeHtml(d)}${version?patchBadgeHtml('version', `v${esc(version)}`):''}</div>
         <h1 class="patch-detail-title">${esc(d.title || '')}</h1>
-        <p class="patch-meta-line"><span>${esc(noticeAuthor(d))}</span><span>${esc(fmtListDate(d.createdAt))}</span><span>${esc(tt('조회'))} ${Number(d.viewCount || 0)}</span></p>
+        <p class="patch-meta-line"><span>${esc(noticeAuthor(d))}</span><span>${esc(fmtListDate(d.createdAt))}</span></p>
         ${toc}
       </div>
       <a class="primary patch-download-btn" href="./downloads.html">${esc(tr('download'))}</a>
@@ -5396,7 +5399,7 @@ function renderAnnouncements(rows, err){
     const no = x.pinned
       ? `<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`
       : `<div class="hub-col-no">${rowNo}</div>`;
-    return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
+    return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="./notice.html?id=${encodeURIComponent(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title)}</span></b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div></a>`;
   }).join('')}</div>${hubPagerHtml('notices', page, pages, total)}`;
   const pager = list.querySelector('[data-hub-pager="notices"]');
   if(pager){ pager.dataset.total = String(total); pager.dataset.pages = String(pages); }
@@ -5420,7 +5423,7 @@ function renderNoticeDetail(d,err){
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
   window.__lastNoticeDetail = d;
-  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span><span><em>${esc(tt('조회'))}</em><b>${Number(d.viewCount||0)}</b></span></div></div><div class="post-body-content">${mdBodyHtml(d.content)}</div>${hubAdminManageHtml('announcements', d.id)}</article>`;
+  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span></div></div><div class="post-body-content">${mdBodyHtml(d.content)}</div>${hubAdminManageHtml('announcements', d.id)}</article>`;
   bindMdIn(box);
   bindAdminPostActions(box);
 }
@@ -5460,7 +5463,7 @@ async function incrementNoticeViewOnce(id){
   if(!markContentViewOnce('notice', id)) return;
   try{ const {doc,updateDoc,increment}=firestoreApi; await updateDoc(doc(db,'announcements',id),{viewCount:increment(1)}); }catch(e){ console.warn('notice view increment failed',e); }
 }
-function listenNoticeDetail(){ const box=$('noticeDetail'); if(!box)return; const id=getParam('id'); if(!id){box.innerHTML=`<p class="muted">${tr('empty')}</p>`;return} incrementNoticeViewOnce(id); listenDoc('announcements',id,renderNoticeDetail); }
+function listenNoticeDetail(){ const box=$('noticeDetail'); if(!box)return; const id=getParam('id'); if(!id){box.innerHTML=`<p class="muted">${tr('empty')}</p>`;return} listenDoc('announcements',id,renderNoticeDetail); }
 function renderPatchNotes(rows,err){
   const list=$('patchList'); if(!list)return;
   if(err){ list.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
@@ -5477,7 +5480,7 @@ function renderPatchNotes(rows,err){
   const { page, pages, start, slice, total } = hubPaginate(filtered, 'patches');
   list.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${slice.map((x,i)=>{
     const no = filtered.length - (start + i);
-    return `<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no}</div><div class="hub-col-title"><b>${patchListTitleHtml(x)}</b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
+    return `<a class="hub-list-row hub-notice-row" href="./patch-note.html?id=${encodeURIComponent(x.id)}"><div class="hub-col-no">${no}</div><div class="hub-col-title"><b>${patchListTitleHtml(x)}</b></div>${authorCellHtml({...x, authorRole:'admin', displayName:noticeAuthor(x)})}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div></a>`;
   }).join('')}</div>${hubPagerHtml('patches', page, pages, total)}`;
   const pager = list.querySelector('[data-hub-pager="patches"]');
   if(pager){ pager.dataset.total = String(total); pager.dataset.pages = String(pages); }
@@ -5530,7 +5533,6 @@ function listenPatchDetail(){
   const box=$('patchDetail'); if(!box)return;
   const id=getParam('id');
   if(!id){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-  incrementPatchViewOnce(id);
   loadPatchNotesIndex().then(()=>listenDoc('patchNotes',id,renderPatchDetail));
 }
 function renderFaq(rows,err){
@@ -10302,23 +10304,120 @@ async function runAdminBulkAppMessage(){
     }
   });
 }
-async function runAdminBulkCredits(){
-  if(adminBulkBusy) return;
-  if(adminCrmMode()!=='license') return;
-  const uids = [...adminCrmSelected];
-  if(!uids.length){ adminFlash('지급/회수 대상이 없습니다'); return; }
-  const draft = await openEditModal(`크레딧 일괄 지급/회수 · ${uids.length}명`, [
-    { name:'mode', label:'모드', type:'segment', value:'grant', options:[{ value:'grant', label:'지급' }, { value:'deduct', label:'회수' }] },
-    { name:'amount', label:'지급 크레딧', type:'number', required:true, value:1 },
-    { name:'reason', label:'지급 사유', type:'text', value:'', placeholder:'이벤트/보상 사유 입력' }
-  ], {
-    submitLabel:'지급',
-    modalClass:'admin-bulk-compact admin-bulk-credit-modal',
-    onReady(form){
-      bindAdminBulkCreditModal(form);
+function adminBulkPassProductForDays(days){
+  const n = Math.max(1, Number(days) || 1);
+  if(n <= 7) return 'PASS_7D';
+  if(n <= 30) return 'PASS_30D';
+  if(n <= 90) return 'PASS_90D';
+  return 'PASS_90D';
+}
+async function adminBulkApplyLicenseToUid(uid, { plan, days=null, passProductId='', memo='' }){
+  const {doc,setDoc,serverTimestamp,Timestamp,deleteField}=firestoreApi;
+  const savePlan = String(plan || 'trial').toLowerCase();
+  if(!['trial','lifetime','period'].includes(savePlan)) throw new Error('라이선스 유형이 올바르지 않습니다.');
+  const prev = licenseForUid(uid);
+  const clearDates = savePlan === 'lifetime';
+  const payload = {
+    licensed: true,
+    plan: savePlan,
+    status: 'active',
+    method: 'admin_bulk',
+    updatedAt: serverTimestamp()
+  };
+  if(memo) payload.memo = String(memo).slice(0, 200);
+  if(clearDates){
+    payload.startsAt = deleteField();
+    payload.expiresAt = deleteField();
+    payload.passProductId = deleteField();
+  } else {
+    const n = Math.max(1, Number(days) || (savePlan === 'trial' ? 7 : 30));
+    const start = new Date(); start.setHours(0,0,0,0);
+    const end = new Date(start); end.setDate(end.getDate() + n); end.setHours(23,59,59,999);
+    payload.startsAt = Timestamp.fromDate(start);
+    payload.expiresAt = Timestamp.fromDate(end);
+    if(savePlan === 'period'){
+      const pid = String(passProductId || adminBulkPassProductForDays(n)).trim().toUpperCase();
+      payload.passProductId = pid || deleteField();
+    } else {
+      payload.passProductId = deleteField();
     }
+  }
+  await setDoc(doc(db,'licenses',uid), payload, { merge:true });
+  const cachePatch = {
+    licensed: true,
+    plan: savePlan,
+    status: 'active',
+    method: 'admin_bulk',
+    updatedAt: adminLicenseCacheNow()
+  };
+  if(memo) cachePatch.memo = String(memo).slice(0, 200);
+  if(clearDates){
+    cachePatch.startsAt = null;
+    cachePatch.expiresAt = null;
+    cachePatch.passProductId = '';
+  } else {
+    cachePatch.startsAt = payload.startsAt;
+    cachePatch.expiresAt = payload.expiresAt;
+    cachePatch.passProductId = savePlan === 'period'
+      ? String(passProductId || adminBulkPassProductForDays(days)).trim().toUpperCase()
+      : '';
+  }
+  patchAdminLicenseCache(uid, cachePatch);
+  try{ await notifyLicenseChange(uid, { plan:savePlan, status:'active' }); }catch(err){ console.error(err); }
+  writeAdminAuditLog({
+    targetUserId: uid,
+    targetEmail: findAdminUserRow(uid)?.email || '',
+    category: 'license',
+    action: savePlan === 'lifetime' ? 'Lifetime 일괄 지급'
+      : (savePlan === 'trial' ? '체험판 일괄 지급' : '기간제 일괄 지급'),
+    before: { plan: prev?.plan, startsAt: prev?.startsAt || null, expiresAt: prev?.expiresAt || null, passProductId: prev?.passProductId || '' },
+    after: {
+      plan: savePlan,
+      status: 'active',
+      days: clearDates ? null : (Number(days) || null),
+      passProductId: cachePatch.passProductId || '',
+      method: 'admin_bulk'
+    },
+    result: 'success',
+    summary: `${prev?.plan || '-'} → ${savePlan}${clearDates ? '' : ` · ${Number(days)||0}일`}`
   });
-  if(!draft) return;
+}
+async function runAdminBulkLicenseGrant(uids, { plan, days, passProductId, reason }){
+  const label = plan === 'lifetime' ? '평생' : (plan === 'trial' ? '체험판' : '기간제');
+  const dayNote = plan === 'lifetime' ? '무기한' : `${Math.max(1, Number(days)||1)}일`;
+  if(!confirm(`일괄 지급 확인\n\n${uids.length}명에게 ${label}(${dayNote})를 적용합니다.`)) return;
+  adminBulkBusy = true;
+  adminFlash(`${uids.length}명 ${label} 일괄 지급 중…`, { persist: true });
+  let ok = 0;
+  let fail = 0;
+  const failures = [];
+  try{
+    for(const uid of uids){
+      try{
+        await adminBulkApplyLicenseToUid(uid, { plan, days, passProductId, memo: reason });
+        ok += 1;
+      }catch(err){
+        fail += 1;
+        failures.push({ uid, message: String(err?.message || err) });
+        console.error('bulk license grant', uid, err);
+      }
+      if((ok + fail) % 10 === 0){
+        adminFlash(`${label} 일괄 지급 중 · 성공 ${ok} · 실패 ${fail}`, { persist: true });
+      }
+    }
+    adminFlash(`${label} 일괄 지급 완료 · 성공 ${ok} · 실패 ${fail}`);
+    pushAdminCrmFeed(`${label} 일괄 지급`, `${ok}명 · ${dayNote}`, uids[0] || '');
+    if(fail){
+      const lines = failures.slice(0, 8).map((f)=>f.uid).join(', ');
+      alert(`${label} 일괄 지급 완료\n\n성공 ${ok}\n실패 ${fail}${lines ? '\n'+lines : ''}`);
+    }
+    renderAdminUserTable({ keepOrder: true });
+    if(selectedAdminUid) refreshAdminCrmDetail({ force:true });
+  }finally{
+    adminBulkBusy = false;
+  }
+}
+async function runAdminBulkCreditsCore(uids, draft){
   const mode = String(draft.mode || 'grant') === 'deduct' ? 'deduct' : 'grant';
   const verb = mode === 'deduct' ? '회수' : '지급';
   const amount = Number(draft.amount);
@@ -10379,59 +10478,182 @@ async function runAdminBulkCredits(){
     adminBulkBusy = false;
   }
 }
-function bindAdminBulkCreditModal(form){
+async function runAdminBulkGrant(){
+  if(adminBulkBusy) return;
+  if(adminCrmMode()!=='license') return;
+  const uids = [...adminCrmSelected];
+  if(!uids.length){ adminFlash('지급 대상이 없습니다'); return; }
+  const draft = await openEditModal(`일괄 지급 · ${uids.length}명`, [
+    {
+      name:'kind',
+      label:'지급 유형',
+      type:'segment',
+      value:'period',
+      options:[
+        { value:'lifetime', label:'평생' },
+        { value:'period', label:'기간제' },
+        { value:'trial', label:'체험판' },
+        { value:'credits', label:'크레딧' }
+      ]
+    },
+    {
+      name:'periodDays',
+      label:'기간(일)',
+      type:'select',
+      value:'30',
+      options:[
+        { value:'7', label:'7일 (PASS_7D)' },
+        { value:'30', label:'30일 (PASS_30D)' },
+        { value:'90', label:'90일 (PASS_90D)' },
+        { value:'custom', label:'직접 입력' }
+      ],
+      showWhen:{ name:'kind', value:'period' }
+    },
+    {
+      name:'periodCustomDays',
+      label:'직접 일수',
+      type:'number',
+      value:30,
+      showWhen:{ name:'periodDays', value:'custom' }
+    },
+    {
+      name:'trialDays',
+      label:'체험 일수',
+      type:'number',
+      value:7,
+      required:true,
+      showWhen:{ name:'kind', value:'trial' }
+    },
+    {
+      name:'mode',
+      label:'모드',
+      type:'segment',
+      value:'grant',
+      options:[{ value:'grant', label:'지급' }, { value:'deduct', label:'회수' }],
+      showWhen:{ name:'kind', value:'credits' }
+    },
+    {
+      name:'amount',
+      label:'지급 크레딧',
+      type:'number',
+      value:1,
+      required:true,
+      showWhen:{ name:'kind', value:'credits' }
+    },
+    {
+      name:'reason',
+      label:'사유',
+      type:'text',
+      value:'',
+      placeholder:'이벤트/보상 사유 입력'
+    }
+  ], {
+    submitLabel:'지급',
+    modalClass:'admin-bulk-compact admin-bulk-grant-modal',
+    onReady(form){
+      bindAdminBulkGrantModal(form);
+    }
+  });
+  if(!draft) return;
+  const kind = String(draft.kind || 'period').toLowerCase();
+  if(kind === 'credits'){
+    await runAdminBulkCreditsCore(uids, draft);
+    return;
+  }
+  if(kind === 'lifetime'){
+    await runAdminBulkLicenseGrant(uids, { plan:'lifetime', reason: draft.reason });
+    return;
+  }
+  if(kind === 'trial'){
+    const days = Math.max(1, Math.floor(Number(draft.trialDays) || 7));
+    await runAdminBulkLicenseGrant(uids, { plan:'trial', days, reason: draft.reason });
+    return;
+  }
+  // period
+  let days = 30;
+  const sel = String(draft.periodDays || '30');
+  if(sel === 'custom') days = Math.max(1, Math.floor(Number(draft.periodCustomDays) || 30));
+  else days = Math.max(1, Math.floor(Number(sel) || 30));
+  await runAdminBulkLicenseGrant(uids, {
+    plan:'period',
+    days,
+    passProductId: adminBulkPassProductForDays(days),
+    reason: draft.reason
+  });
+}
+/** @deprecated use runAdminBulkGrant */
+async function runAdminBulkCredits(){
+  return runAdminBulkGrant();
+}
+function bindAdminBulkGrantModal(form){
   if(!form) return;
   const amountRow = form.querySelector('[data-field="amount"]');
   const amountInput = form.querySelector('[name="amount"]');
   const reasonRow = form.querySelector('[data-field="reason"]');
   const reasonInput = form.querySelector('[name="reason"]');
   const submit = form.querySelector('[type="submit"]');
-  const modeRow = form.querySelector('[data-field="mode"]');
-  const modeLabel = modeRow?.querySelector(':scope > span');
-  if(modeLabel) modeLabel.hidden = true;
-  if(!amountRow || form.querySelector('.admin-bulk-credit-quick')) return;
-  const quick = document.createElement('div');
-  quick.className = 'admin-bulk-credit-quick';
-  quick.innerHTML = `
-    <div class="admin-crm-points-quick" data-bulk-credit-quick="grant" role="group" aria-label="빠른 지급">
-      <button type="button" class="secondary mini-btn" data-bulk-credit-amount="1">+1</button>
-      <button type="button" class="secondary mini-btn" data-bulk-credit-amount="3">+3</button>
-      <button type="button" class="secondary mini-btn" data-bulk-credit-amount="5">+5</button>
-      <button type="button" class="secondary mini-btn" data-bulk-credit-amount="10">+10</button>
-    </div>
-    <div class="admin-crm-points-quick" data-bulk-credit-quick="deduct" hidden role="group" aria-label="빠른 회수">
-      <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="1">-1</button>
-      <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="3">-3</button>
-      <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="5">-5</button>
-      <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="10">-10</button>
-    </div>`;
-  amountRow.after(quick);
-  const amountLabel = amountRow.querySelector(':scope > span');
+  const kindOf = () => String(form.querySelector('[name="kind"]:checked')?.value || 'period');
+  const modeOf = () => String(form.querySelector('[name="mode"]:checked')?.value || 'grant');
+  let quick = form.querySelector('.admin-bulk-credit-quick');
+  if(amountRow && !quick){
+    quick = document.createElement('div');
+    quick.className = 'admin-bulk-credit-quick';
+    quick.hidden = true;
+    quick.innerHTML = `
+      <div class="admin-crm-points-quick" data-bulk-credit-quick="grant" role="group" aria-label="빠른 지급">
+        <button type="button" class="secondary mini-btn" data-bulk-credit-amount="1">+1</button>
+        <button type="button" class="secondary mini-btn" data-bulk-credit-amount="3">+3</button>
+        <button type="button" class="secondary mini-btn" data-bulk-credit-amount="5">+5</button>
+        <button type="button" class="secondary mini-btn" data-bulk-credit-amount="10">+10</button>
+      </div>
+      <div class="admin-crm-points-quick" data-bulk-credit-quick="deduct" hidden role="group" aria-label="빠른 회수">
+        <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="1">-1</button>
+        <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="3">-3</button>
+        <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="5">-5</button>
+        <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="10">-10</button>
+      </div>`;
+    amountRow.after(quick);
+    quick.addEventListener('click', (e)=>{
+      const btn = e.target.closest('[data-bulk-credit-amount]');
+      if(!btn) return;
+      e.preventDefault();
+      if(amountInput) amountInput.value = String(btn.getAttribute('data-bulk-credit-amount') || '1');
+    });
+  }
+  const amountLabel = amountRow?.querySelector(':scope > span');
   const reasonLabel = reasonRow?.querySelector(':scope > span');
-  const currentMode = () => String(form.querySelector('[name="mode"]:checked')?.value || 'grant');
-  const syncMode = () => {
-    const deduct = currentMode() === 'deduct';
+  const syncUi = () => {
+    const kind = kindOf();
+    const credits = kind === 'credits';
+    const deduct = credits && modeOf() === 'deduct';
     const verb = deduct ? '회수' : '지급';
+    const periodDaysVal = String(form.querySelector('[name="periodDays"]')?.value || '30');
+    const customRow = form.querySelector('[data-field="periodCustomDays"]');
+    if(customRow) customRow.classList.toggle('hidden', !(kind === 'period' && periodDaysVal === 'custom'));
+    if(quick){
+      quick.hidden = !credits;
+      quick.querySelector('[data-bulk-credit-quick="grant"]')?.toggleAttribute('hidden', !credits || deduct);
+      quick.querySelector('[data-bulk-credit-quick="deduct"]')?.toggleAttribute('hidden', !credits || !deduct);
+    }
     if(amountLabel) amountLabel.textContent = `${verb} 크레딧`;
-    if(reasonLabel) reasonLabel.textContent = `${verb} 사유`;
-    if(reasonInput) reasonInput.placeholder = deduct ? '회수 사유 입력' : '이벤트/보상 사유 입력';
+    if(reasonLabel) reasonLabel.textContent = credits ? `${verb} 사유` : '사유';
+    if(reasonInput){
+      reasonInput.placeholder = credits
+        ? (deduct ? '회수 사유 입력' : '이벤트/보상 사유 입력')
+        : '일괄 지급 사유(선택)';
+    }
     if(submit){
       submit.textContent = verb;
       submit.classList.toggle('danger-btn', deduct);
     }
-    quick.querySelector('[data-bulk-credit-quick="grant"]')?.toggleAttribute('hidden', deduct);
-    quick.querySelector('[data-bulk-credit-quick="deduct"]')?.toggleAttribute('hidden', !deduct);
   };
-  quick.addEventListener('click', (e)=>{
-    const btn = e.target.closest('[data-bulk-credit-amount]');
-    if(!btn) return;
-    e.preventDefault();
-    if(amountInput) amountInput.value = String(btn.getAttribute('data-bulk-credit-amount') || '1');
-  });
   form.addEventListener('change', (e)=>{
-    if(e.target?.name === 'mode') syncMode();
+    if(e.target?.name === 'mode' || e.target?.name === 'kind' || e.target?.name === 'periodDays') syncUi();
   });
-  syncMode();
+  syncUi();
+}
+function bindAdminBulkCreditModal(form){
+  bindAdminBulkGrantModal(form);
 }
 function syncAdminCrmBulkButtons(){
   const actions=$('adminCrmBulkActions'); if(!actions) return;
@@ -12204,15 +12426,15 @@ function bindAdminUserFilters(){
       }
       const uids=[...adminCrmSelected];
       const mode=adminCrmMode();
-      if(!uids.length && action!=='gmail' && action!=='credits') return;
+      if(!uids.length && action!=='gmail' && action!=='credits' && action!=='grant') return;
       if(action==='gmail'){
         if(mode!=='members') return;
         await runAdminBulkEmail();
         return;
       }
-      if(action==='credits'){
+      if(action==='grant' || action==='credits'){
         if(mode!=='license') return;
-        await runAdminBulkCredits();
+        await runAdminBulkGrant();
         return;
       }
       if(mode!=='members') return;
@@ -12979,13 +13201,13 @@ function renderBoardPosts(rows, err){
   const list=boardFilteredSorted(rows||[]);
   if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
   const { page, pages, start, slice, total } = hubPaginate(list, 'board');
-  box.innerHTML=`${hubNoticeHeadHtml()}<div class="hub-list-body">${slice.map((x,i)=>{
+  box.innerHTML=`${hubBoardHeadHtml()}<div class="hub-list-body">${slice.map((x,i)=>{
     const globalIndex = start + i;
     const rowNo = hubListRowNo(list, globalIndex, x);
     const no = x.pinned
       ? `<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`
       : `<div class="hub-col-no">${rowNo}</div>`;
-    return `<a class="hub-list-row hub-notice-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
+    return `<a class="hub-list-row hub-notice-row hub-board-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
   }).join('')}</div>${hubPagerHtml('board', page, pages, total)}`;
   const pager = box.querySelector('[data-hub-pager="board"]');
   if(pager){ pager.dataset.total = String(total); pager.dataset.pages = String(pages); }

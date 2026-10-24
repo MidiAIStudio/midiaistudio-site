@@ -270,30 +270,47 @@ function previewAdjustLicenseCredits(btn, sign) {
   renderCrmWork();
   previewNotice(`미리보기 — 크레딧 ${sign > 0 ? '지급' : '회수'} ${amount} (잔액 ${next}, 실제 데이터 변경 없음)`);
 }
-function openPreviewBulkCredits() {
+function openPreviewBulkGrant() {
   if (crmMode !== 'license') return;
   const uids = [...selected];
   if (!uids.length) {
-    previewNotice('지급/회수 대상이 없습니다');
+    previewNotice('지급 대상이 없습니다');
     return;
   }
   const overlay = document.createElement('div');
   overlay.className = 'edit-modal-backdrop';
-  overlay.innerHTML = `<form class="edit-modal admin-bulk-compact admin-bulk-credit-modal" novalidate>
+  overlay.innerHTML = `<form class="edit-modal admin-bulk-compact admin-bulk-grant-modal" novalidate>
     <div class="edit-modal-head">
-      <div class="edit-modal-head-copy"><h3>크레딧 일괄 지급/회수 · ${uids.length}명</h3></div>
+      <div class="edit-modal-head-copy"><h3>일괄 지급 · ${uids.length}명</h3></div>
       <button type="button" class="edit-modal-x" data-cancel aria-label="close">×</button>
     </div>
     <div class="edit-modal-body">
-      <div class="edit-field edit-field-segment" data-field="mode">
+      <div class="edit-field edit-field-segment" data-field="kind">
+        <span hidden>지급 유형</span>
+        <div class="edit-segment" role="radiogroup" aria-label="지급 유형">
+          <label class="edit-segment-opt"><input type="radio" name="kind" value="lifetime"><span>평생</span></label>
+          <label class="edit-segment-opt"><input type="radio" name="kind" value="period" checked><span>기간제</span></label>
+          <label class="edit-segment-opt"><input type="radio" name="kind" value="trial"><span>체험판</span></label>
+          <label class="edit-segment-opt"><input type="radio" name="kind" value="credits"><span>크레딧</span></label>
+        </div>
+      </div>
+      <label class="edit-field" data-field="periodDays"><span>기간(일)</span>
+        <select name="periodDays">
+          <option value="7">7일</option>
+          <option value="30" selected>30일</option>
+          <option value="90">90일</option>
+        </select>
+      </label>
+      <label class="edit-field hidden" data-field="trialDays"><span>체험 일수</span><input type="number" name="trialDays" min="1" step="1" value="7"></label>
+      <div class="edit-field edit-field-segment hidden" data-field="mode">
         <span hidden>모드</span>
         <div class="edit-segment" role="radiogroup" aria-label="지급/회수">
           <label class="edit-segment-opt"><input type="radio" name="mode" value="grant" checked><span>지급</span></label>
           <label class="edit-segment-opt"><input type="radio" name="mode" value="deduct"><span>회수</span></label>
         </div>
       </div>
-      <label class="edit-field" data-field="amount"><span>지급 크레딧</span><input type="number" name="amount" min="1" step="1" value="1" required></label>
-      <div class="admin-bulk-credit-quick">
+      <label class="edit-field hidden" data-field="amount"><span>지급 크레딧</span><input type="number" name="amount" min="1" step="1" value="1"></label>
+      <div class="admin-bulk-credit-quick" hidden>
         <div class="admin-crm-points-quick" data-bulk-credit-quick="grant" role="group" aria-label="빠른 지급">
           <button type="button" class="secondary mini-btn" data-bulk-credit-amount="1">+1</button>
           <button type="button" class="secondary mini-btn" data-bulk-credit-amount="3">+3</button>
@@ -307,7 +324,7 @@ function openPreviewBulkCredits() {
           <button type="button" class="secondary mini-btn danger-btn" data-bulk-credit-amount="10">-10</button>
         </div>
       </div>
-      <label class="edit-field" data-field="reason"><span>지급 사유</span><input type="text" name="reason" placeholder="이벤트/보상 사유 입력"></label>
+      <label class="edit-field" data-field="reason"><span>사유</span><input type="text" name="reason" placeholder="일괄 지급 사유(선택)"></label>
     </div>
     <div class="edit-modal-actions">
       <button type="button" class="secondary" data-cancel>취소</button>
@@ -320,19 +337,30 @@ function openPreviewBulkCredits() {
   const submit = form.querySelector('[type="submit"]');
   const amountLabel = form.querySelector('[data-field="amount"] > span');
   const reasonLabel = form.querySelector('[data-field="reason"] > span');
-  const currentMode = () => String(form.querySelector('[name="mode"]:checked')?.value || 'grant');
-  const syncMode = () => {
-    const deduct = currentMode() === 'deduct';
+  const kindOf = () => String(form.querySelector('[name="kind"]:checked')?.value || 'period');
+  const modeOf = () => String(form.querySelector('[name="mode"]:checked')?.value || 'grant');
+  const syncUi = () => {
+    const kind = kindOf();
+    const credits = kind === 'credits';
+    const deduct = credits && modeOf() === 'deduct';
     const verb = deduct ? '회수' : '지급';
+    form.querySelector('[data-field="periodDays"]')?.classList.toggle('hidden', kind !== 'period');
+    form.querySelector('[data-field="trialDays"]')?.classList.toggle('hidden', kind !== 'trial');
+    form.querySelector('[data-field="mode"]')?.classList.toggle('hidden', !credits);
+    form.querySelector('[data-field="amount"]')?.classList.toggle('hidden', !credits);
+    const quick = form.querySelector('.admin-bulk-credit-quick');
+    if (quick) {
+      quick.hidden = !credits;
+      quick.querySelector('[data-bulk-credit-quick="grant"]')?.toggleAttribute('hidden', !credits || deduct);
+      quick.querySelector('[data-bulk-credit-quick="deduct"]')?.toggleAttribute('hidden', !credits || !deduct);
+    }
     if (amountLabel) amountLabel.textContent = `${verb} 크레딧`;
-    if (reasonLabel) reasonLabel.textContent = `${verb} 사유`;
-    if (reasonInput) reasonInput.placeholder = deduct ? '회수 사유 입력' : '이벤트/보상 사유 입력';
+    if (reasonLabel) reasonLabel.textContent = credits ? `${verb} 사유` : '사유';
+    if (reasonInput) reasonInput.placeholder = credits ? (deduct ? '회수 사유 입력' : '이벤트/보상 사유 입력') : '일괄 지급 사유(선택)';
     if (submit) {
       submit.textContent = verb;
       submit.classList.toggle('danger-btn', deduct);
     }
-    form.querySelector('[data-bulk-credit-quick="grant"]')?.toggleAttribute('hidden', deduct);
-    form.querySelector('[data-bulk-credit-quick="deduct"]')?.toggleAttribute('hidden', !deduct);
   };
   const close = () => overlay.remove();
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
@@ -343,31 +371,75 @@ function openPreviewBulkCredits() {
     e.preventDefault();
     amountInput.value = String(btn.getAttribute('data-bulk-credit-amount') || '1');
   });
-  form.addEventListener('change', (e) => { if (e.target?.name === 'mode') syncMode(); });
+  form.addEventListener('change', (e) => {
+    if (e.target?.name === 'mode' || e.target?.name === 'kind') syncUi();
+  });
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const deduct = currentMode() === 'deduct';
-    const verb = deduct ? '회수' : '지급';
-    const amount = Number(amountInput.value || 0);
-    if (!Number.isInteger(amount) || amount <= 0) {
-      previewNotice(`${verb} 크레딧은 1 이상의 정수여야 합니다`);
+    const kind = kindOf();
+    let ok = 0;
+    if (kind === 'credits') {
+      const deduct = modeOf() === 'deduct';
+      const verb = deduct ? '회수' : '지급';
+      const amount = Number(amountInput.value || 0);
+      if (!Number.isInteger(amount) || amount <= 0) {
+        previewNotice(`${verb} 크레딧은 1 이상의 정수여야 합니다`);
+        return;
+      }
+      uids.forEach((uid) => {
+        const u = memberByUid(uid);
+        if (!u) return;
+        u.credits = Math.max(0, Number(u.credits || 0) + (deduct ? -amount : amount));
+        ok++;
+      });
+      close();
+      renderCrmWork();
+      previewNotice(`미리보기 — 크레딧 ${verb} ${amount} × ${ok}명 (실제 데이터 변경 없음)`);
       return;
     }
-    let ok = 0;
+    const days = kind === 'trial'
+      ? Math.max(1, Number(form.querySelector('[name="trialDays"]')?.value || 7))
+      : Math.max(1, Number(form.querySelector('[name="periodDays"]')?.value || 30));
+    const today = PREVIEW_TODAY;
+    const end = (() => {
+      const d = new Date(`${today}T00:00:00`);
+      d.setDate(d.getDate() + days);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    })();
     uids.forEach((uid) => {
       const u = memberByUid(uid);
       if (!u) return;
-      const next = Math.max(0, Number(u.credits || 0) + (deduct ? -amount : amount));
-      u.credits = next;
+      if (kind === 'lifetime') {
+        u.plan = 'lifetime';
+        u.licenseStatus = 'active';
+        u.startsAt = '';
+        u.expiresAt = '';
+      } else if (kind === 'trial') {
+        u.plan = 'trial';
+        u.licenseStatus = 'active';
+        u.startsAt = today;
+        u.expiresAt = end;
+      } else {
+        u.plan = 'period';
+        u.licenseStatus = 'active';
+        u.startsAt = today;
+        u.expiresAt = end;
+      }
+      u.issuedBy = '관리자';
+      u.changedAt = today.replace(/-/g, '.');
       ok++;
     });
+    const label = kind === 'lifetime' ? '평생' : (kind === 'trial' ? '체험판' : '기간제');
     close();
     renderCrmWork();
-    previewNotice(`미리보기 — 크레딧 ${verb} ${amount} × ${ok}명 (실제 데이터 변경 없음)`);
+    previewNotice(`미리보기 — ${label} 일괄 지급 × ${ok}명 (실제 데이터 변경 없음)`);
   });
   document.body.appendChild(overlay);
-  syncMode();
-  setTimeout(() => amountInput?.focus(), 40);
+  syncUi();
+}
+function openPreviewBulkCredits() {
+  openPreviewBulkGrant();
 }
 function roleBadge(role) {
   return `<span class="crm-role is-${role}">${role === 'admin' ? '관리자' : '사용자'}</span>`;
@@ -2157,8 +2229,8 @@ function bind() {
         applyPreviewLicense({ licenseStatus: 'active' }, { notice: '미리보기 — 라이선스 활성화 (실제 데이터 변경 없음)' });
       }
       else if (act === 'hwid-copy') previewNotice('미리보기 — 클립보드에 복사하지 않고 안내만 표시');
-      else if (act === 'credits') {
-        openPreviewBulkCredits();
+      else if (act === 'grant' || act === 'credits') {
+        openPreviewBulkGrant();
         return;
       }
       else if (['hwid-reset', 'delete', 'ban', 'app-message', 'posts-delete-selected', 'posts-delete-all'].includes(act)) {
