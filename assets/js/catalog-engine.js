@@ -361,6 +361,47 @@ export function isMireloCreditProductId(productId) {
   return /^MIRELO_CREDIT_[1-9][0-9]{0,5}$/.test(pid);
 }
 
+/**
+ * Canonical product type from productId + raw type aliases.
+ * CREDIT_* → credit_pack (unified wallet). MIRELO_CREDIT_* → mirelo_credit_pack (legacy).
+ */
+export function normalizeProductType(typeOrProduct, productId = '') {
+  const pid = normalizeProductId(
+    typeof typeOrProduct === 'object'
+      ? (typeOrProduct?.productId || productId)
+      : productId
+  );
+  const raw = String(
+    typeof typeOrProduct === 'object' ? (typeOrProduct?.type || '') : (typeOrProduct || '')
+  ).trim().toLowerCase().replace(/\s+/g, '_');
+
+  if (pid === 'LIFETIME' || raw === 'lifetime') return 'lifetime';
+  if (isPassProductId(pid) || raw === 'full_pass' || raw === 'pass') return 'full_pass';
+  if (isMireloCreditProductId(pid) || raw === 'mirelo_credit_pack' || raw === 'mirelo_credits') {
+    return 'mirelo_credit_pack';
+  }
+  if (
+    isCreditProductId(pid)
+    || raw === 'credit_pack'
+    || raw === 'credits'
+    || raw === 'credit'
+    || raw === 'creditpack'
+  ) {
+    return 'credit_pack';
+  }
+  return raw || '';
+}
+
+/** Entitlement string locked to product identity. */
+export function canonicalEntitlementForType(type, productId = '') {
+  const t = normalizeProductType(type, productId);
+  if (t === 'lifetime') return 'lifetime';
+  if (t === 'full_pass') return 'full_pass';
+  if (t === 'mirelo_credit_pack') return 'mirelo_credits';
+  if (t === 'credit_pack') return 'credits';
+  return '';
+}
+
 export function isAnyCreditProductId(productId) {
   // Active sales: general CREDIT_* only. Legacy MIRELO_* excluded.
   return isCreditProductId(productId);
@@ -959,24 +1000,37 @@ function validateDiscount(disc, basePrice) {
 
 export function validateProductFields(payload, { isNew = false } = {}) {
   const errors = [];
-  const pid = String(payload?.productId || '').trim();
+  const pid = normalizeProductId(payload?.productId || '');
   if (isNew) {
     if (!pid) errors.push('상품 ID가 필요합니다.');
-    else if (!PRODUCT_ID_RE.test(pid)) {
+    else if (isMireloCreditProductId(pid)) {
+      errors.push('신규 Mirelo 전용 크레딧 상품은 등록할 수 없습니다. CREDIT_* 통합 크레딧을 사용하세요.');
+    } else if (!PRODUCT_ID_RE.test(pid)) {
       errors.push('상품 ID는 CREDIT_숫자, PASS_*, TEST_*, 또는 LIFETIME 형식이어야 합니다.');
     }
   }
-  const ptype = String(payload?.type || '').trim();
+  const ptype = normalizeProductType(payload?.type || '', pid);
   const isPass = ptype === 'full_pass' || isPassProductId(pid);
   const isLife = ptype === 'lifetime' || pid === 'LIFETIME';
-  const isCredit = ptype === 'credit_pack';
+  const isMirelo = ptype === 'mirelo_credit_pack' || isMireloCreditProductId(pid);
+  const isCredit = ptype === 'credit_pack' || isCreditProductId(pid);
 
-  if (!isPass && !isLife && !isCredit) {
+  // New products: only unified credit_pack / full_pass / lifetime.
+  // Existing legacy mirelo_credit_pack rows may still be saved (status/price) without reuse as CREDIT_*.
+  if (isNew && isMirelo) {
+    errors.push('신규 Mirelo 전용 크레딧 상품은 등록할 수 없습니다. CREDIT_* 통합 크레딧을 사용하세요.');
+  } else if (!isPass && !isLife && !isCredit && !(isMirelo && !isNew)) {
     errors.push('상품 유형은 Credit Pack, 기간 이용권(full_pass) 또는 Lifetime만 가능합니다.');
   }
 
-  if (isCredit) {
-    if (!(Number(payload?.creditAmount) > 0)) errors.push('Credit 지급량은 1 이상 정수여야 합니다.');
+  if (isCredit || (isMirelo && !isNew)) {
+    const amt = Number(payload?.creditAmount);
+    const status = String(payload?.status || 'active').toLowerCase();
+    if (!(amt > 0) || amt !== Math.floor(amt)) {
+      if (status === 'active' || isCredit) {
+        errors.push('Credit 지급량은 1 이상 정수여야 합니다.');
+      }
+    }
     if (Number(payload?.durationDays || 0) > 0) errors.push('Credit 상품에는 이용 기간을 설정할 수 없습니다.');
   }
 
@@ -1333,7 +1387,16 @@ export function hydrateLegacyProduct(doc) {
   const regions = doc?.regions || {};
   const kr = regions.KR || {};
   const global = regions.Global || {};
-  let type = doc?.type || seed.type || (id === 'LIFETIME' ? 'lifetime' : (isPassProductId(id) ? 'full_pass' : 'credit_pack'));
+  let type = normalizeProductType(
+    doc?.type || seed.type || '',
+    id
+  );
+  if (!type) {
+    type = id === 'LIFETIME' ? 'lifetime' : (isPassProductId(id) ? 'full_pass' : 'credit_pack');
+  }
+  // Identity wins over stale Firestore type aliases (e.g. credits / mirelo on CREDIT_*).
+  if (isCreditProductId(id)) type = 'credit_pack';
+  if (isMireloCreditProductId(id)) type = 'mirelo_credit_pack';
   if (isPassProductId(id)) type = 'full_pass';
   if (id === 'LIFETIME') type = 'lifetime';
   const listPriceKrwRaw = (doc?.listPriceKrw != null && doc.listPriceKrw !== '')
@@ -1347,11 +1410,13 @@ export function hydrateLegacyProduct(doc) {
       ? doc.durationDays
       : (seed.durationDays != null ? seed.durationDays : (PASS_DURATION_DAYS[id] || 0))
   );
-  let entitlement = doc?.entitlement || seed.entitlement;
-  if (type === 'lifetime') entitlement = 'lifetime';
-  else if (type === 'full_pass') entitlement = 'full_pass';
-  else entitlement = entitlement || 'credits';
+  let entitlement = canonicalEntitlementForType(type, id)
+    || doc?.entitlement
+    || seed.entitlement
+    || '';
+  if (!entitlement) entitlement = type === 'credit_pack' ? 'credits' : '';
   const seedFallback = hasFirestoreDoc ? {} : seed;
+  const isCreditLike = type === 'credit_pack' || type === 'mirelo_credit_pack';
   return {
     ...seedFallback,
     ...doc,
@@ -1361,7 +1426,9 @@ export function hydrateLegacyProduct(doc) {
     nameKo: doc?.nameKo || (typeof doc?.name === 'string' ? doc.name : (hasFirestoreDoc ? '' : seed.nameKo)),
     nameEn: doc?.nameEn || (hasFirestoreDoc ? '' : seed.nameEn),
     nameJa: doc?.nameJa || (hasFirestoreDoc ? '' : seed.nameJa),
-    creditAmount: type === 'credit_pack' ? Number(doc?.creditAmount ?? (hasFirestoreDoc ? 0 : seed.creditAmount ?? 0)) : 0,
+    creditAmount: isCreditLike
+      ? Number(doc?.creditAmount ?? (hasFirestoreDoc ? 0 : seed.creditAmount ?? 0))
+      : 0,
     durationDays: type === 'full_pass' ? durationDays : 0,
     entitlement,
     listPriceKrw,
@@ -1381,10 +1448,11 @@ export function hydrateLegacyProduct(doc) {
 
 /** UI label for admin product type (not the raw internal type). */
 export function productTypeLabel(typeOrProduct) {
-  const raw = typeof typeOrProduct === 'string' ? typeOrProduct : (typeOrProduct?.type || '');
   const pid = typeof typeOrProduct === 'object' ? normalizeProductId(typeOrProduct?.productId || '') : '';
-  if (raw === 'lifetime' || pid === 'LIFETIME') return 'Lifetime';
-  if (raw === 'full_pass' || isPassProductId(pid)) return '기간 이용권';
+  const t = normalizeProductType(typeOrProduct, pid);
+  if (t === 'lifetime' || pid === 'LIFETIME') return 'Lifetime';
+  if (t === 'full_pass' || isPassProductId(pid)) return '기간 이용권';
+  if (t === 'mirelo_credit_pack' || isMireloCreditProductId(pid)) return 'Credit (Mirelo 레거시)';
   return 'Credit';
 }
 

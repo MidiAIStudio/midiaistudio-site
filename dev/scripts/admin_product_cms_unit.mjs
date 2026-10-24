@@ -776,6 +776,113 @@ check('firestore_lifetime_doc_id_unchanged', () => {
   assert.equal(browser.firestoreDocId('LIFETIME'), 'lifetime');
   assert.equal(browser.firestoreDocId('CREDIT_10'), 'CREDIT_10');
 });
+check('validate_accept_unified_credit_packs', () => {
+  for (const [productId, creditAmount, listPriceKrw] of [
+    ['CREDIT_2000', 2000, 2600],
+    ['CREDIT_5000', 5000, 6500],
+    ['CREDIT_10000', 10000, 13000]
+  ]) {
+    const errs = browser.validateProductFields({
+      productId,
+      type: 'credit_pack',
+      creditAmount,
+      listPriceKrw,
+      entitlement: 'credits',
+      status: 'active'
+    }, { isNew: true });
+    assert.deepEqual(errs, [], `${productId} should validate`);
+    assert.equal(browser.isCreditProductId(productId), true);
+    assert.equal(browser.normalizeProductType('credits', productId), 'credit_pack');
+    assert.equal(browser.canonicalEntitlementForType('credit_pack', productId), 'credits');
+  }
+});
+check('validate_reject_zero_credit_amount', () => {
+  const errs = browser.validateProductFields({
+    productId: 'CREDIT_2000',
+    type: 'credit_pack',
+    creditAmount: 0,
+    listPriceKrw: 2600,
+    status: 'active'
+  }, { isNew: true });
+  assert.ok(errs.some((e) => /지급량/.test(e)));
+});
+check('validate_reject_new_mirelo_sku', () => {
+  const errs = browser.validateProductFields({
+    productId: 'MIRELO_CREDIT_2700',
+    type: 'mirelo_credit_pack',
+    creditAmount: 2700,
+    listPriceKrw: 9900,
+    status: 'active'
+  }, { isNew: true });
+  assert.ok(errs.some((e) => /Mirelo|CREDIT_\*/.test(e)));
+});
+check('validate_allow_existing_mirelo_status_save', () => {
+  const errs = browser.validateProductFields({
+    productId: 'MIRELO_CREDIT_2700',
+    type: 'mirelo_credit_pack',
+    creditAmount: 2700,
+    listPriceKrw: 9900,
+    status: 'paused'
+  }, { isNew: false });
+  assert.deepEqual(errs, []);
+});
+check('hydrate_forces_credit_pack_on_CREDIT_star', () => {
+  const h = browser.hydrateLegacyProduct({
+    id: 'CREDIT_2000',
+    productId: 'CREDIT_2000',
+    type: 'credits',
+    entitlement: 'mirelo_credits',
+    creditAmount: 2000,
+    listPriceKrw: 2600,
+    status: 'active',
+    updatedAt: { seconds: 1 }
+  });
+  assert.equal(h.type, 'credit_pack');
+  assert.equal(h.entitlement, 'credits');
+  assert.equal(h.creditAmount, 2000);
+});
+check('hydrate_preserves_mirelo_legacy', () => {
+  const h = browser.hydrateLegacyProduct({
+    id: 'MIRELO_CREDIT_2700',
+    productId: 'MIRELO_CREDIT_2700',
+    type: 'mirelo_credit_pack',
+    entitlement: 'mirelo_credits',
+    creditAmount: 2700,
+    listPriceKrw: 9900,
+    status: 'paused',
+    updatedAt: { seconds: 1 }
+  });
+  assert.equal(h.type, 'mirelo_credit_pack');
+  assert.equal(h.entitlement, 'mirelo_credits');
+  assert.equal(h.creditAmount, 2700);
+  assert.equal(browser.isPurchaseCatalogProduct(h), false);
+});
+check('server_hydrate_CREDIT_identity_wins', () => {
+  const h = catalogEngine.hydrateProduct('CREDIT_5000', {
+    productId: 'CREDIT_5000',
+    type: 'mirelo_credit_pack',
+    creditAmount: 5000,
+    listPriceKrw: 6500,
+    status: 'active'
+  });
+  assert.equal(h.type, 'credit_pack');
+  assert.equal(h.creditAmount, 5000);
+});
+check('validate_pass_lifetime_unchanged', () => {
+  assert.deepEqual(browser.validateProductFields({
+    productId: 'PASS_30D',
+    type: 'full_pass',
+    durationDays: 30,
+    listPriceKrw: 29900,
+    creditAmount: 0
+  }, { isNew: false }), []);
+  assert.deepEqual(browser.validateProductFields({
+    productId: 'LIFETIME',
+    type: 'lifetime',
+    listPriceKrw: 129000,
+    creditAmount: 0
+  }, { isNew: false }), []);
+});
 
 const failed = checks.filter((c) => !c.pass);
 console.log(`\n${checks.length - failed.length}/${checks.length} PASS`);

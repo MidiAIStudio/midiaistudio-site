@@ -46,10 +46,13 @@ import {
   resolvePromotionProducts,
   promotionTargetIds,
   isCreditProductId,
+  isMireloCreditProductId,
+  normalizeProductType,
+  canonicalEntitlementForType,
   isPurchaseCatalogProduct,
   overlayCatalogDraft,
   starterUnitFromProducts
-} from './catalog-engine.js?v=admin-preview-draft-2';
+} from './catalog-engine.js?v=admin-credit-pack-fix-1';
 import {
   renderProductCard,
   renderPromotionPopupHtml,
@@ -1255,9 +1258,11 @@ function renderEditor() {
   if (!root || !draft) return;
   $('pricingEditorEmpty') && ($('pricingEditorEmpty').hidden = true);
   $('pricingEditorForm') && ($('pricingEditorForm').hidden = false);
+  draft.type = normalizeProductType(draft.type, draft.productId);
+  draft.entitlement = canonicalEntitlementForType(draft.type, draft.productId) || draft.entitlement;
   const isLife = draft.type === 'lifetime';
   const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
-  const isCredit = !isLife && !isPass;
+  const isCredit = isCreditType(draft);
   fill('draftProductId', draft.productId);
   fill('draftType', productTypeLabel(draft));
   fill('draftInternalType', draft.type || (isLife ? 'lifetime' : (isPass ? 'full_pass' : 'credit_pack')));
@@ -1367,18 +1372,18 @@ function syncDraftFromForm() {
   fill('draftNameKoDisplay', draft.nameKo);
   draft.nameEn = $('draftNameEn')?.value || '';
   draft.nameJa = $('draftNameJa')?.value || '';
+  draft.type = normalizeProductType(draft.type, draft.productId);
   const isLife = draft.type === 'lifetime';
   const isPass = draft.type === 'full_pass' || isPassProductId(draft.productId);
-  if (isCreditType(draft)) draft.creditAmount = Number($('draftCredits')?.value || 0);
+  const isMirelo = draft.type === 'mirelo_credit_pack' || isMireloCreditProductId(draft.productId);
+  if (isUnifiedCreditType(draft) || isMirelo) draft.creditAmount = Number($('draftCredits')?.value || 0);
   else draft.creditAmount = 0;
   if (isPass) {
     draft.durationDays = Number($('draftDurationDays')?.value || 0);
-    draft.entitlement = 'full_pass';
   } else {
     draft.durationDays = 0;
   }
-  if (isLife) draft.entitlement = 'lifetime';
-  if (isCreditType(draft)) draft.entitlement = 'credits';
+  draft.entitlement = canonicalEntitlementForType(draft.type, draft.productId);
   draft.listPriceKrw = Number($('draftPriceKrw')?.value || 0);
   draft.status = $('draftStatus')?.value || 'active';
   draft.badge = $('draftBadge')?.value || '';
@@ -1394,8 +1399,10 @@ function syncDraftFromForm() {
 
 function isCreditType(p) {
   if (!p) return false;
-  if (p.type === 'lifetime' || p.type === 'full_pass' || isPassProductId(p.productId)) return false;
-  return true;
+  const pid = normalizeProductId(p.productId);
+  const t = normalizeProductType(p.type, pid);
+  if (t === 'lifetime' || t === 'full_pass' || isPassProductId(pid)) return false;
+  return t === 'credit_pack' || t === 'mirelo_credit_pack' || isCreditProductId(pid) || isMireloCreditProductId(pid);
 }
 
 function renderPassSavingsCompare() {
@@ -1479,6 +1486,13 @@ async function saveDraft() {
   }
   selectedDocId = docId;
   selectedId = formProductId;
+  // Identity-locked type before validate (CREDIT_* / MIRELO_* / PASS / LIFETIME).
+  const lockedType = normalizeProductType(
+    draft.type || findCatalogProduct(products, docId)?.type || '',
+    formProductId
+  );
+  draft.type = lockedType;
+  draft.entitlement = canonicalEntitlementForType(lockedType, formProductId);
   const errors = validateProductFields(draft, { isNew: false });
   if (errors.length) throw new Error(`상품 저장 실패: ${errors[0]}`);
   const current = findCatalogProduct(products, docId) || {};
@@ -1489,12 +1503,12 @@ async function saveDraft() {
   const conflicts = findDiscountConflicts(nextProducts, promotions);
   if (conflicts.length) throw new Error(`CONFLICT: ${conflicts[0].productId}에 할인이 겹칩니다.`);
   const warnPrice = priceChangeWarning(current.listPriceKrw, draft.listPriceKrw);
-  const warnCredits = draft.type === 'credit_pack'
+  const warnCredits = (lockedType === 'credit_pack' || lockedType === 'mirelo_credit_pack')
     ? creditChangeWarning(current.creditAmount, draft.creditAmount)
     : '';
   const curDays = Number(current.durationDays || 0);
   const nextDays = Number(draft.durationDays || 0);
-  const warnDuration = (isPassProductId(draft.productId) || draft.type === 'full_pass')
+  const warnDuration = (isPassProductId(draft.productId) || lockedType === 'full_pass')
     && curDays > 0 && nextDays > 0 && curDays !== nextDays
     ? `이용 기간이 ${curDays}일 → ${nextDays}일로 변경됩니다.\n이미 구매한 사용자의 남은 기간은 변경되지 않으며, 이후 신규 구매에만 적용됩니다.`
     : '';
@@ -1503,15 +1517,13 @@ async function saveDraft() {
     flash('저장이 취소되었습니다.', false);
     return;
   }
-  // Type/entitlement locked from catalog row (or productId), not from editable name fields.
-  const lockedType = current.type
-    || (formProductId === 'LIFETIME' ? 'lifetime' : (isPassProductId(formProductId) ? 'full_pass' : 'credit_pack'));
-  draft.type = lockedType;
   const isPass = lockedType === 'full_pass' || isPassProductId(formProductId);
   const isLife = lockedType === 'lifetime' || formProductId === 'LIFETIME';
+  const isMirelo = lockedType === 'mirelo_credit_pack' || isMireloCreditProductId(formProductId);
+  const isCredit = lockedType === 'credit_pack' || isCreditProductId(formProductId);
   const version = bumpVersion(current, {
     priceChanged: Number(current.listPriceKrw) !== Number(draft.listPriceKrw),
-    creditsChanged: draft.type === 'credit_pack'
+    creditsChanged: (isCredit || isMirelo)
       && Number(current.creditAmount) !== Number(draft.creditAmount),
     durationChanged: isPass
       && Number(current.durationDays || 0) !== Number(draft.durationDays || 0),
@@ -1522,7 +1534,8 @@ async function saveDraft() {
   const { doc, setDoc, serverTimestamp } = fs;
   const payload = {
     productId: formProductId,
-    type: isPass ? 'full_pass' : (isLife ? 'lifetime' : 'credit_pack'),
+    // Preserve legacy mirelo_credit_pack; never rewrite MIRELO_* into unified credit_pack.
+    type: isPass ? 'full_pass' : (isLife ? 'lifetime' : (isMirelo ? 'mirelo_credit_pack' : 'credit_pack')),
     nameKo: draft.nameKo,
     nameEn: draft.nameEn,
     nameJa: draft.nameJa,
@@ -1532,7 +1545,9 @@ async function saveDraft() {
     descriptionJa: draft.descriptionJa,
     creditAmount: isPass || isLife ? 0 : Number(draft.creditAmount),
     durationDays: isPass ? Math.max(0, Math.floor(Number(draft.durationDays) || 0)) : 0,
-    entitlement: isLife ? 'lifetime' : (isPass ? 'full_pass' : 'credits'),
+    entitlement: isLife
+      ? 'lifetime'
+      : (isPass ? 'full_pass' : (isMirelo ? 'mirelo_credits' : 'credits')),
     listPriceKrw: Number(draft.listPriceKrw),
     status: draft.status,
     sortOrder: Number(draft.sortOrder),
@@ -1549,6 +1564,11 @@ async function saveDraft() {
     plan: isLife ? 'lifetime' : (isPass ? 'period' : 'credits'),
     updatedAt: serverTimestamp()
   };
+  if (isMirelo) {
+    payload.walletPool = 'mirelo';
+  } else if (isCredit) {
+    payload.walletPool = 'general';
+  }
   if (isLife || isPass) {
     const prevRegions = draft.regions || {};
     const prevKr = prevRegions.KR || {};
@@ -1639,14 +1659,17 @@ function closeAddModal() {
 }
 
 async function createProductFromModal() {
-  const type = $('newProductType')?.value || 'credit_pack';
   const productId = normalizeProductId($('newProductId')?.value || '');
+  const type = normalizeProductType($('newProductType')?.value || 'credit_pack', productId);
   const nameKo = $('newProductName')?.value || '';
   const credits = Number($('newProductCredits')?.value || 0);
   const durationDays = type === 'full_pass'
     ? Number($('newProductDuration')?.value || canonicalPassDurationDays(productId) || 0)
     : 0;
   const price = Number($('newProductPrice')?.value || 0);
+  if (isMireloCreditProductId(productId) || type === 'mirelo_credit_pack') {
+    throw new Error('신규 Mirelo 전용 크레딧 상품은 등록할 수 없습니다. CREDIT_* 통합 크레딧을 사용하세요.');
+  }
   const payload = {
     productId,
     type,
@@ -1655,15 +1678,19 @@ async function createProductFromModal() {
     nameJa: nameKo,
     creditAmount: type === 'credit_pack' ? credits : 0,
     durationDays: type === 'full_pass' ? durationDays : 0,
-    entitlement: type === 'lifetime' ? 'lifetime' : (type === 'full_pass' ? 'full_pass' : 'credits'),
+    entitlement: canonicalEntitlementForType(type, productId),
     listPriceKrw: price,
     status: 'active',
     sortOrder: nextProductSortOrder(products),
     badge: type === 'full_pass' && productId === 'PASS_30D' ? 'recommended' : '',
     productVersion: 1,
     productDiscount: emptyDiscount(),
-    plan: type === 'lifetime' ? 'lifetime' : (type === 'full_pass' ? 'period' : 'credits')
+    plan: type === 'lifetime' ? 'lifetime' : (type === 'full_pass' ? 'period' : 'credits'),
+    walletPool: type === 'credit_pack' ? 'general' : null
   };
+  if (type === 'credit_pack' && !(credits > 0)) {
+    throw new Error('Credit 지급량은 1 이상 정수여야 합니다.');
+  }
   if (type === 'full_pass' || type === 'lifetime') {
     payload.regions = {
       KR: {
@@ -1675,6 +1702,7 @@ async function createProductFromModal() {
         portoneProductId: type === 'lifetime' ? 'midiai-lifetime' : productId
       }
     };
+    delete payload.walletPool;
   }
   const errors = validateProductFields(payload, { isNew: true });
   if (products.some((p) => p.productId === productId)) errors.push('이미 존재하는 상품 ID입니다.');
@@ -1707,13 +1735,25 @@ function syncCreateModalFields() {
 
 async function cloneProduct() {
   if (!draft) return;
-  const nextId = window.prompt('복제할 새 상품 ID', `${draft.productId}_COPY`);
+  const suggested = isMireloCreditProductId(draft.productId)
+    ? 'CREDIT_2000'
+    : `${draft.productId}_COPY`;
+  const nextId = window.prompt('복제할 새 상품 ID', suggested);
   if (!nextId) return;
-  $('newProductType').value = draft.type;
+  // Never clone as mirelo_credit_pack — new SKUs must be unified credit_pack / pass / lifetime.
+  const srcType = normalizeProductType(draft.type, draft.productId);
+  const cloneType = (srcType === 'mirelo_credit_pack' || isCreditProductId(nextId))
+    ? 'credit_pack'
+    : (srcType === 'full_pass' || srcType === 'lifetime' ? srcType : 'credit_pack');
+  $('newProductType').value = cloneType;
   $('newProductId').value = nextId;
   $('newProductName').value = draft.nameKo;
   $('newProductCredits').value = draft.creditAmount;
   $('newProductPrice').value = draft.listPriceKrw;
+  if (cloneType === 'full_pass') {
+    $('newProductDuration').value = draft.durationDays || canonicalPassDurationDays(nextId) || 30;
+  }
+  syncCreateModalFields();
   await createProductFromModal();
 }
 

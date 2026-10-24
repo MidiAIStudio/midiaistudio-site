@@ -380,9 +380,14 @@ function hydrateProduct(docId, data) {
   const kr = regions.KR || {};
   const glob = regions.Global || {};
   const typeRaw = String(raw.type || seed.type || (pid === 'LIFETIME' ? 'lifetime' : (isPassProductId(pid) ? 'full_pass' : (isMireloCreditProductId(pid) ? 'mirelo_credit_pack' : 'credit_pack'))));
-  const type = (typeRaw === 'credit_pack' || typeRaw === 'credits')
+  let type = (typeRaw === 'credit_pack' || typeRaw === 'credits' || typeRaw === 'credit')
     ? 'credit_pack'
-    : (typeRaw === 'mirelo_credit_pack' ? 'mirelo_credit_pack' : typeRaw);
+    : (typeRaw === 'mirelo_credit_pack' || typeRaw === 'mirelo_credits' ? 'mirelo_credit_pack' : typeRaw);
+  // Product id identity wins over stale type aliases.
+  if (isCreditProductId(pid)) type = 'credit_pack';
+  else if (isMireloCreditProductId(pid)) type = 'mirelo_credit_pack';
+  else if (isPassProductId(pid)) type = 'full_pass';
+  else if (pid === 'LIFETIME') type = 'lifetime';
   const listPriceKrwRaw = firstFiniteNumber([
     raw.listPriceKrw,
     raw.listPriceKrw,
