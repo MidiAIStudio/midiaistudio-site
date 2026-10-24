@@ -79,9 +79,9 @@ export function storefrontUiCopy(lang = 'ko') {
       ],
       unitPass: (days) => `${days}-day Full Pass · one-time`,
       unitLife: 'Lifetime Full · one-time',
-      unitCredit: 'Piano 2/s · Orchestra 4/s',
+      unitCredit: 'Piano 1/s · Orchestra 4/s',
       creditFeatures: [
-        ['Piano', '2/s · unlimited with Full'],
+        ['Piano', '1/s · unlimited with Full'],
         ['Orchestra', '4/s · not waived'],
         ['Term', 'No expiry']
       ],
@@ -110,9 +110,9 @@ export function storefrontUiCopy(lang = 'ko') {
       ],
       unitPass: (days) => `${days}日 Full 利用権 · 1回払い`,
       unitLife: 'Lifetime Full · 1回払い',
-      unitCredit: 'ピアノ秒2 · オーケストラ秒4',
+      unitCredit: 'ピアノ秒1 · オーケストラ秒4',
       creditFeatures: [
-        ['ピアノ', '秒2 · Fullなら無制限'],
+        ['ピアノ', '秒1 · Fullなら無制限'],
         ['オーケストラ', '秒4 · 免除なし'],
         ['利用期間', '制限なし']
       ],
@@ -140,9 +140,9 @@ export function storefrontUiCopy(lang = 'ko') {
     ],
     unitPass: (days) => `${days}일 Full 이용권 · 1회 결제`,
     unitLife: 'Lifetime Full · 1회 결제',
-    unitCredit: '피아노 초당 2 · 오케스트라 초당 4',
+    unitCredit: '피아노 초당 1 · 오케스트라 초당 4',
     creditFeatures: [
-      ['피아노', '초당 2 · Full이면 무제한'],
+      ['피아노', '초당 1 · Full이면 무제한'],
       ['오케스트라', '초당 4 · 면제 없음'],
       ['사용 기간', '제한 없음']
     ],
@@ -288,7 +288,7 @@ export function renderProductCard(view, options = {}) {
 
   const unit = isLife
     ? ui.unitLife
-    : (isCredit ? (ui.unitCredit || 'Piano 2/s · Orchestra 4/s') : ui.unitPass(days || 0));
+    : (isCredit ? (ui.unitCredit || 'Piano 1/s · Orchestra 4/s') : ui.unitPass(days || 0));
   const features = options.features
     || (isLife ? ui.lifeFeatures : (isCredit ? (ui.creditFeatures || []) : ui.passFeatures));
   const btnLabel = options.buyLabel

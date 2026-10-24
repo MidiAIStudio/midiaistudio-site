@@ -63,7 +63,7 @@ import {
   resolvePromotionProducts,
   storefrontUiCopy,
   PROMO_POPUP_MAX_VISIBLE
-} from './storefront-render.js?v=purchase-license-orchestra-1';
+} from './storefront-render.js?v=piano-1-per-sec';
 import {
   renderMarkdown,
   renderMarkdownInto,
@@ -1639,7 +1639,7 @@ function pointCopy(){
     sectionLicenseTitle:'Full Pass · License',
     sectionLicenseLead:'Piano conversion is unlimited while the license is active. Orchestra conversion still requires a credit payment.',
     sectionCreditsTitle:'Credit top-up',
-    sectionCreditsLead:'Piano is 2 credits per second, and a Full pass is not charged. Orchestra (Mirelo Business) is 4 credits per second and is not waived by Full or Lifetime.',
+    sectionCreditsLead:'Piano is 1 credit per second, and a Full pass is not charged. Orchestra (Mirelo Business) is 4 credits per second and is not waived by Full or Lifetime.',
     comingSoon:'This product is not available for purchase.',
     ownedBannerTitle:'Lifetime Full active',
     ownedBannerBody:'Piano and Full features have no limit. Orchestra (Mirelo Business) still uses credits.',
@@ -1772,7 +1772,7 @@ function pointCopy(){
     sectionLicenseTitle:'利用券 · ライセンス',
     sectionLicenseLead:'ピアノ変換は有効期間中、回数制限がありません。オーケストラ変換はライセンスがあってもクレジット決済が必要です。',
     sectionCreditsTitle:'クレジットチャージ',
-    sectionCreditsLead:'ピアノは秒2クレジットで、Full利用権なら減りません。オーケストラ（Mireloビジネス）は秒4クレジットで、Full・Lifetimeでも免除されません。',
+    sectionCreditsLead:'ピアノは秒1クレジットで、Full利用権なら減りません。オーケストラ（Mireloビジネス）は秒4クレジットで、Full・Lifetimeでも免除されません。',
     comingSoon:'この商品は現在購入できません。',
     ownedBannerTitle:'Lifetime Full保有中',
     ownedBannerBody:'ピアノとFull機能は制限なく利用できます。オーケストラ（Mireloビジネス）はクレジットが必要です。',
@@ -1905,7 +1905,7 @@ function pointCopy(){
     sectionLicenseTitle:'이용권 · 라이선스',
     sectionLicenseLead:'피아노 변환은 이용권 기간 동안 횟수 제한이 없습니다. 오케스트라 변환은 라이선스가 있어도 크레딧 결제가 필요합니다.',
     sectionCreditsTitle:'크레딧 충전',
-    sectionCreditsLead:'피아노는 초당 2 크레딧이며, Full 이용권이면 차감되지 않습니다. 오케스트라(Mirelo 비즈니스)는 초당 4 크레딧이며 Full·Lifetime으로도 면제되지 않습니다.',
+    sectionCreditsLead:'피아노는 초당 1 크레딧이며, Full 이용권이면 차감되지 않습니다. 오케스트라(Mirelo 비즈니스)는 초당 4 크레딧이며 Full·Lifetime으로도 면제되지 않습니다.',
     comingSoon:'현재 구매할 수 없는 상품입니다.',
     ownedBannerTitle:'Lifetime Full 보유 중',
     ownedBannerBody:'피아노와 Full 기능은 제한 없이 이용합니다. 오케스트라(Mirelo 비즈니스)는 크레딧이 필요합니다.',
