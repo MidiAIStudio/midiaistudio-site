@@ -375,21 +375,32 @@ export function normalizeProductType(typeOrProduct, productId = '') {
     typeof typeOrProduct === 'object' ? (typeOrProduct?.type || '') : (typeOrProduct || '')
   ).trim().toLowerCase().replace(/\s+/g, '_');
 
-  if (pid === 'LIFETIME' || raw === 'lifetime') return 'lifetime';
-  if (isPassProductId(pid) || raw === 'full_pass' || raw === 'pass') return 'full_pass';
-  if (isMireloCreditProductId(pid) || raw === 'mirelo_credit_pack' || raw === 'mirelo_credits') {
-    return 'mirelo_credit_pack';
-  }
-  if (
-    isCreditProductId(pid)
-    || raw === 'credit_pack'
-    || raw === 'credits'
-    || raw === 'credit'
-    || raw === 'creditpack'
-  ) {
+  // Product id wins over a stale type string (CREDIT_* stays unified even if
+  // Firestore still says mirelo_credit_pack). Matches hydrateLegacyProduct.
+  if (pid === 'LIFETIME') return 'lifetime';
+  if (isPassProductId(pid)) return 'full_pass';
+  if (isMireloCreditProductId(pid)) return 'mirelo_credit_pack';
+  if (isCreditProductId(pid)) return 'credit_pack';
+
+  if (raw === 'lifetime') return 'lifetime';
+  if (raw === 'full_pass' || raw === 'pass') return 'full_pass';
+  if (raw === 'mirelo_credit_pack' || raw === 'mirelo_credits') return 'mirelo_credit_pack';
+  if (raw === 'credit_pack' || raw === 'credits' || raw === 'credit' || raw === 'creditpack') {
     return 'credit_pack';
   }
   return raw || '';
+}
+
+/**
+ * Unified MidiAI credit pack (creditWalletsV2 / walletPool general).
+ * CREDIT_* and type credit_pack. Legacy MIRELO_CREDIT_* is not included.
+ */
+export function isUnifiedCreditType(product) {
+  if (!product || typeof product !== 'object') return false;
+  const pid = normalizeProductId(product.productId || product.id || '');
+  if (!pid && !product.type) return false;
+  if (pid === 'LIFETIME' || isPassProductId(pid) || isMireloCreditProductId(pid)) return false;
+  return normalizeProductType(product, pid) === 'credit_pack';
 }
 
 /** Entitlement string locked to product identity. */

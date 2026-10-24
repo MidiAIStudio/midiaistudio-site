@@ -868,6 +868,54 @@ check('server_hydrate_CREDIT_identity_wins', () => {
   assert.equal(h.type, 'credit_pack');
   assert.equal(h.creditAmount, 5000);
 });
+check('isUnifiedCreditType_splits_catalog', () => {
+  const applyCredits = (product, input) => {
+    const draft = { ...product, type: browser.normalizeProductType(product.type, product.productId) };
+    const isMirelo = draft.type === 'mirelo_credit_pack' || browser.isMireloCreditProductId(draft.productId);
+    draft.creditAmount = (browser.isUnifiedCreditType(draft) || isMirelo) ? Number(input || 0) : 0;
+    draft.entitlement = browser.canonicalEntitlementForType(draft.type, draft.productId);
+    return draft;
+  };
+  const credit = applyCredits({
+    productId: 'CREDIT_2000', type: 'credit_pack', creditAmount: 2000, listPriceKrw: 2600
+  }, 2000);
+  assert.equal(browser.isUnifiedCreditType(credit), true);
+  assert.equal(credit.creditAmount, 2000);
+  assert.equal(credit.type, 'credit_pack');
+  assert.equal(credit.entitlement, 'credits');
+
+  const stale = applyCredits({
+    productId: 'CREDIT_2000', type: 'mirelo_credit_pack', creditAmount: 0, listPriceKrw: 2600
+  }, 2000);
+  assert.equal(stale.type, 'credit_pack');
+  assert.equal(browser.isUnifiedCreditType(stale), true);
+  assert.equal(stale.entitlement, 'credits');
+  assert.equal(stale.creditAmount, 2000);
+
+  const legacy = applyCredits({
+    productId: 'MIRELO_CREDIT_2700', type: 'mirelo_credit_pack', creditAmount: 2700, listPriceKrw: 9900
+  }, 2700);
+  assert.equal(browser.isUnifiedCreditType(legacy), false);
+  assert.equal(legacy.type, 'mirelo_credit_pack');
+  assert.equal(legacy.entitlement, 'mirelo_credits');
+  assert.equal(legacy.creditAmount, 2700);
+
+  const pass = applyCredits({
+    productId: 'PASS_30D', type: 'full_pass', durationDays: 30, creditAmount: 99, listPriceKrw: 29900
+  }, 99);
+  assert.equal(browser.isUnifiedCreditType(pass), false);
+  assert.equal(pass.type, 'full_pass');
+  assert.equal(pass.creditAmount, 0);
+  assert.equal(pass.entitlement, 'full_pass');
+
+  const life = applyCredits({
+    productId: 'LIFETIME', type: 'lifetime', creditAmount: 50, listPriceKrw: 129000
+  }, 50);
+  assert.equal(browser.isUnifiedCreditType(life), false);
+  assert.equal(life.type, 'lifetime');
+  assert.equal(life.creditAmount, 0);
+  assert.equal(life.entitlement, 'lifetime');
+});
 check('validate_pass_lifetime_unchanged', () => {
   assert.deepEqual(browser.validateProductFields({
     productId: 'PASS_30D',

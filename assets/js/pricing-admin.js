@@ -47,12 +47,13 @@ import {
   promotionTargetIds,
   isCreditProductId,
   isMireloCreditProductId,
+  isUnifiedCreditType,
   normalizeProductType,
   canonicalEntitlementForType,
   isPurchaseCatalogProduct,
   overlayCatalogDraft,
   starterUnitFromProducts
-} from './catalog-engine.js?v=admin-credit-pack-fix-1';
+} from './catalog-engine.js?v=admin-unified-credit-type-1';
 import {
   renderProductCard,
   renderPromotionPopupHtml,
