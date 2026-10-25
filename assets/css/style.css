@@ -4249,12 +4249,21 @@ a.guide-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18)
 .guide-faq-item{margin:0 0 10px;padding:14px 16px;border:1px solid var(--site-stroke);border-radius:14px;background:rgba(0,0,0,.18)}
 .guide-faq-item summary{cursor:pointer;font-weight:800}
 .guide-faq-item p{margin:8px 0 0;color:var(--muted);line-height:1.65}
-.guide-admin-meta{display:flex;flex-wrap:wrap;gap:12px 18px;margin:14px 0;padding:12px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);font-size:13px}
+#guideSeoFallback[hidden],
+.guide-seo-fallback[hidden],
+body.guide-cms-active #guideSeoFallback{display:none!important}
+.guide-admin-meta{display:block;margin:14px 0;padding:12px;border-radius:12px;border:1px dashed rgba(255,255,255,.18);font-size:13px}
 .guide-admin-meta label{display:flex;align-items:center;gap:8px}
 .guide-admin-meta input[type=number],.guide-yt-field input{width:min(360px,100%);padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--text)}
 .guide-item-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .guide-item-tools button,.guide-edit-row .guide-item-tools button{padding:4px 8px;font-size:11px;border-radius:8px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer}
 .guide-edit-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.guide-learn-step-head{display:flex;align-items:flex-start;gap:12px}
+.guide-learn-step-head-main{flex:1;min-width:0}
+.guide-inline-step-tools{flex:0 0 auto;margin:0;justify-content:flex-end}
+.guide-learn-shell.is-editing .guide-learn-step{outline:1px dashed rgba(255,255,255,.12);border-radius:16px;padding:12px}
+.guide-learn-shell.is-editing .guide-learn-step-media{min-height:160px}
+.guide-template-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:8px 0 24px}
 body.guide-cms-editing [contenteditable=true]{outline:1px dashed rgba(34,211,238,.45);outline-offset:3px;border-radius:4px;min-width:2ch}
 body.guide-cms-editing [contenteditable=true]:focus{outline-color:#22d3ee;background:rgba(34,211,238,.06)}
 .guide-related-picker{display:grid;gap:8px;margin-bottom:14px}

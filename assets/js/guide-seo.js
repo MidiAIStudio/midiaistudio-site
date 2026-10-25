@@ -127,7 +127,11 @@ export function applyGuideDocumentSeo(slug, liveTitle) {
 
 export function hideGuideSeoFallback() {
   const el = document.getElementById('guideSeoFallback');
-  if (el) el.hidden = true;
+  if (!el) return;
+  el.hidden = true;
+  el.setAttribute('hidden', '');
+  el.setAttribute('aria-hidden', 'true');
+  el.style.display = 'none';
 }
 
 export function mediaAltForGuide(g, section) {

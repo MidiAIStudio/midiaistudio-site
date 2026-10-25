@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Guide Visual CMS — list + detail read/edit against Firestore `guides`.
  * Self-contained Firebase init (shares app with app.js via getApps).
  */
@@ -32,7 +32,7 @@ import {
   hideGuideSeoFallback,
   mediaAltForGuide,
   guidePagePath
-} from './guide-seo.js?v=guide-404-1';
+} from './guide-seo.js?v=guide-unify-1';
 
 
 const CONFIG = window.MIDIAI_CONFIG || {};
@@ -1089,6 +1089,7 @@ function renderDetail(g) {
   currentGuide = g;
   const root = document.getElementById('guideDetail');
   if (!root || !g) return;
+  hideGuideSeoFallback();
   if (!isAdmin && g.published === false) {
     root.innerHTML = `<div class="empty-card">이 가이드는 아직 공개되지 않았습니다.</div>`;
     return;
@@ -1097,12 +1098,8 @@ function renderDetail(g) {
     try { learnSpyDisconnect(); } catch (_) {}
     learnSpyDisconnect = null;
   }
-  const editing = editMode && isAdmin;
-  if (editing) {
-    renderDetailEdit(root, g);
-    return;
-  }
-  renderDetailPublic(root, g);
+  // One screen for view + edit (no separate complex editor page).
+  renderDetailPublic(root, g, editMode && isAdmin);
 }
 
 function neighborGuides(g) {
@@ -1120,22 +1117,33 @@ function neighborGuides(g) {
   };
 }
 
-function renderDetailPublic(root, g) {
+function renderDetailPublic(root, g, editing = false) {
   const sections = getSections(g);
   currentGuide = { ...g, sections };
   const features = g.features || [];
   const toc = sectionTocItems(sections);
   const { prev, next, related } = neighborGuides(g);
   const workflow = GUIDE_PILLAR_MAP[g.slug];
-  const hasHeroMedia = !!(g.heroImage || g.heroVideo);
+  const hasHeroMedia = !!(g.heroImage || g.heroVideo) || editing;
   const hasVideo = g.heroVideoType === 'upload' || g.heroVideoType === 'youtube';
+  const ce = editing ? ' contenteditable="true"' : '';
   const metaBits = [];
-  if (g.category) metaBits.push(esc(g.category));
-  if (g.level) metaBits.push(esc(g.level));
-  if (g.duration) metaBits.push(esc(g.duration));
+  if (!editing && g.category) metaBits.push(esc(g.category));
+  if (!editing && g.level) metaBits.push(esc(g.level));
+  if (!editing && g.duration) metaBits.push(esc(g.duration));
   if (toc.length) metaBits.push(`${toc.length}단계`);
 
-  const stepRail = toc.length
+  const adminMeta = editing ? `<details class="guide-admin-meta">
+    <summary>게시 설정 <span class="muted small">공개 · 순서</span></summary>
+    <div class="guide-admin-meta-grid">
+      <label><input type="checkbox" id="guidePublished" ${g.published !== false ? 'checked' : ''}> 공개</label>
+      <label>순서 <input type="number" id="guideOrder" value="${esc(g.order ?? 0)}"></label>
+      <label>난이도 <input type="text" id="guideLevel" value="${esc(g.level || '')}" placeholder="초급"></label>
+      <label>소요 시간 <input type="text" id="guideDuration" value="${esc(g.duration || '')}" placeholder="3분"></label>
+    </div>
+  </details>` : '';
+
+  const stepRail = (!editing && toc.length)
     ? `<nav class="guide-step-rail" aria-label="단계 바로가기">
         ${toc.map((t, i) => `<a href="#${esc(t.id)}" data-step-link="${i}"><b>${padStep(i)}</b><span>${esc(t.label)}</span></a>`).join('<i aria-hidden="true"></i>')}
       </nav>`
@@ -1145,66 +1153,81 @@ function renderDetailPublic(root, g) {
       <p class="guide-learn-toc-title">${esc(g.title || 'Guide')}</p>
       <a href="#guide-intro" data-toc-link>소개</a>
       ${toc.map((t) => `<a href="#${esc(t.id)}" data-toc-link>${esc(t.label)}</a>`).join('')}
-      ${g.tips ? '<a href="#guide-tips" data-toc-link>팁</a>' : ''}
-      <a href="#guide-help" data-toc-link>도움말</a>
+      ${(g.tips || editing) ? '<a href="#guide-tips" data-toc-link>팁</a>' : ''}
+      ${editing ? '' : '<a href="#guide-help" data-toc-link>도움말</a>'}
     </nav>
     <details class="guide-learn-toc-mobile">
       <summary>목차</summary>
       <div class="guide-learn-toc-mobile-links">
         <a href="#guide-intro">소개</a>
         ${toc.map((t) => `<a href="#${esc(t.id)}">${esc(t.label)}</a>`).join('')}
-        ${g.tips ? '<a href="#guide-tips">팁</a>' : ''}
-        <a href="#guide-help">도움말</a>
+        ${(g.tips || editing) ? '<a href="#guide-tips">팁</a>' : ''}
+        ${editing ? '' : '<a href="#guide-help">도움말</a>'}
       </div>
     </details>`;
 
-  const featureItems = features.map((f) => `<li>${esc(f)}</li>`).join('');
+  const featureItems = editing
+    ? features.map((f, i) => `<li class="guide-edit-row"><span data-feature${ce}>${esc(f)}</span>
+        <span class="guide-item-tools">
+          <button type="button" class="ghost mini-btn" data-move="up" data-move-kind="features" data-move-idx="${i}">위로</button>
+          <button type="button" class="ghost mini-btn" data-move="down" data-move-kind="features" data-move-idx="${i}">아래로</button>
+          <button type="button" class="ghost mini-btn" data-remove="features" data-remove-idx="${i}">삭제</button>
+        </span></li>`).join('')
+    : features.map((f) => `<li>${esc(f)}</li>`).join('');
 
   const sectionShells = sections.map((s, i) => {
     const media = resolveSectionMedia(s);
-    const hasMedia = !!media;
+    const hasMedia = !!media || editing;
     const isVid = media?.mediaType === 'video' || media?.mediaType === 'youtube';
-    return `<section class="guide-learn-step${isVid ? ' has-video' : ''}" id="guide-step-${i}" data-guide-section="${i}" data-section-id="${esc(s.id)}">
+    const tools = editing ? `<div class="guide-item-tools guide-inline-step-tools">
+      <button type="button" class="ghost mini-btn" data-move="up" data-move-kind="sections" data-move-idx="${i}">위로</button>
+      <button type="button" class="ghost mini-btn" data-move="down" data-move-kind="sections" data-move-idx="${i}">아래로</button>
+      <button type="button" class="ghost mini-btn danger-btn" data-remove="sections" data-remove-idx="${i}">삭제</button>
+    </div>` : '';
+    return `<section class="guide-learn-step${isVid ? ' has-video' : ''}${editing ? ' is-editing' : ''}" id="guide-step-${i}" data-guide-section="${i}" data-section-id="${esc(s.id)}">
       <header class="guide-learn-step-head">
         <span class="guide-learn-step-num">${padStep(i)}</span>
-        <div>
-          ${s.category ? `<p class="guide-learn-badge">${esc(s.category)}</p>` : ''}
-          <h2 data-sec-title-slot>${esc(s.title || `단계 ${i + 1}`)}</h2>
+        <div class="guide-learn-step-head-main">
+          ${editing
+            ? `<div data-sec-cat class="guide-learn-badge-slot"></div><div data-sec-title></div>`
+            : `${s.category ? `<p class="guide-learn-badge">${esc(s.category)}</p>` : ''}<h2 data-sec-title-slot>${esc(s.title || `단계 ${i + 1}`)}</h2>`}
         </div>
+        ${tools}
       </header>
       <div class="guide-learn-step-grid${hasMedia ? '' : ' is-text-only'}">
         <div class="guide-learn-step-copy">
           <div data-sec-body></div>
           <div data-sec-features></div>
         </div>
-        ${hasMedia ? `<figure class="guide-learn-step-media" data-bound-media="${esc(media.mediaUrl)}">
+        ${hasMedia ? `<figure class="guide-learn-step-media" data-bound-media="${esc(media?.mediaUrl || '')}">
           <div data-sec-media class="product-feature-media" data-section-id="${esc(s.id)}"></div>
-          ${media.mediaCaption ? `<figcaption>${esc(media.mediaCaption)}</figcaption>` : (s.title ? `<figcaption>${esc(s.title)}</figcaption>` : '')}
+          ${!editing && media?.mediaCaption ? `<figcaption>${esc(media.mediaCaption)}</figcaption>` : (!editing && s.title ? `<figcaption>${esc(s.title)}</figcaption>` : '')}
         </figure>` : ''}
       </div>
     </section>`;
   }).join('');
 
-  const relatedHtml = related.length
+  const relatedHtml = (!editing && related.length)
     ? `<div class="guide-related-mini">${related.map((r) => `<a class="guide-learn-card" href="${guideHref(r.slug || r.id)}"><span>${esc(r.category || '관련')}</span><b>${esc(r.title || r.slug)}</b></a>`).join('')}</div>`
     : '';
 
   root.innerHTML = `
-    <div class="guide-learn-shell wrap">
+    <div class="guide-learn-shell wrap${editing ? ' is-editing' : ''}">
       <aside class="guide-learn-aside">${tocNav}</aside>
       <div class="guide-learn-main">
         <header class="guide-learn-hero" id="guide-intro">
-          <p class="pill portal-pill">${esc(g.category || 'Guide')}</p>
-          <h1>${esc(g.title || '')}</h1>
-          <p class="portal-lead">${esc(g.summary || '')}</p>
+          <p class="pill portal-pill" data-field="category"${ce}>${esc(g.category || 'Guide')}</p>
+          <h1 data-field="title"${ce}>${esc(g.title || '')}</h1>
+          <p class="portal-lead" data-field="summary"${ce}>${esc(g.summary || '')}</p>
+          ${adminMeta}
           ${metaBits.length ? `<div class="guide-learn-meta">${metaBits.map((b) => `<em>${b}</em>`).join('')}</div>` : ''}
           ${stepRail}
-          ${features.length ? `<ul class="product-points guide-learn-features">${featureItems}</ul>` : ''}
+          ${(features.length || editing) ? `<ul class="product-points guide-learn-features">${featureItems || ''}</ul>${editing ? '<button type="button" class="secondary mini-btn" data-add-feature>기능 추가</button>' : ''}` : ''}
         </header>
 
         ${hasHeroMedia ? `<section class="guide-learn-hero-media-wrap${hasVideo ? ' is-video' : ''}">
           <div class="guide-learn-hero-media" data-hero-media></div>
-          ${hasVideo ? `<div class="guide-learn-hero-side">
+          ${hasVideo && !editing ? `<div class="guide-learn-hero-side">
             <p class="guide-learn-badge">가이드 영상</p>
             <h2>${esc(g.title || '')}</h2>
             <p>${esc(g.summary || '화면을 따라 가며 기능을 확인하세요.')}</p>
@@ -1212,11 +1235,12 @@ function renderDetailPublic(root, g) {
           </div>` : ''}
         </section>` : '<div class="hidden" data-hero-media></div>'}
 
-        <div id="guideSections" class="guide-learn-steps">${sectionShells || '<p class="muted">등록된 단계가 없습니다.</p>'}</div>
+        <div id="guideSections" class="guide-learn-steps">${sectionShells || `<p class="muted">${editing ? '아래 + Step 추가로 단계를 만드세요.' : '등록된 단계가 없습니다.'}</p>`}</div>
+        ${editing ? `<div class="wrap guide-template-actions"><button type="button" class="primary mini-btn" data-cms-inline="add-section">+ Step 추가</button><span class="muted small">사진·영상은 각 Step 오른쪽(또는 아래) 칸에서 바로 넣습니다.</span></div>` : ''}
 
-        ${g.tips ? `<section class="guide-learn-tips" id="guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>` : ''}
+        ${(g.tips || editing) ? `<section class="guide-learn-tips" id="guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>` : ''}
 
-        <section class="guide-learn-help" id="guide-help">
+        ${editing ? '' : `<section class="guide-learn-help" id="guide-help">
           <h2>문제가 해결되지 않았나요?</h2>
           <p>사용 방법은 Guide에서, 자주 묻는 질문과 오류는 아래 메뉴를 이용하세요.</p>
           <div class="guide-learn-help-actions">
@@ -1224,27 +1248,33 @@ function renderDetailPublic(root, g) {
             <a class="guide-learn-btn" href="${pathBase()}faq.html">FAQ</a>
             ${workflow ? `<a class="guide-learn-btn" href="${pathBase()}${workflow.replace(/^\//, '')}">변환 가이드</a>` : ''}
           </div>
-        </section>
+        </section>`}
 
-        <nav class="guide-learn-pager" aria-label="이전 다음 가이드">
+        ${editing ? '' : `<nav class="guide-learn-pager" aria-label="이전 다음 가이드">
           ${prev ? `<a class="guide-learn-card guide-pager-prev" href="${guideHref(prev.slug || prev.id)}"><span>← 이전 가이드</span><b>${esc(prev.title || prev.slug)}</b></a>` : '<span></span>'}
           ${next ? `<a class="guide-learn-card guide-pager-next" href="${guideHref(next.slug || next.id)}"><span>다음 가이드 →</span><b>${esc(next.title || next.slug)}</b></a>` : '<span></span>'}
         </nav>
         ${relatedHtml}
-        <p class="guide-more-all"><a href="${pathBase()}guide/index.html">전체 Guide</a></p>
+        <p class="guide-more-all"><a href="${pathBase()}guide/index.html">전체 Guide</a></p>`}
       </div>
     </div>
   `;
 
   applyGuideDocumentSeo(g.slug || g.id, g.title);
   hideGuideSeoFallback();
-  mountHeroMedia(root, g, false);
-  // Mount section bodies/features/media without edit chrome
-  mountGuideSectionsPublic(root, sections);
-  mountGuideMarkdownFields(root, g, false);
-  bindGuideImageZoom(root);
-  bindChapterSeek(root);
-  learnSpyDisconnect = bindScrollSpy(root, '[data-toc-link], [data-step-link]');
+  mountHeroMedia(root, g, editing);
+  if (editing) {
+    bindEditable(root);
+    mountGuideSections(root, sections, true);
+    mountGuideMarkdownFields(root, g, true);
+    root.querySelector('[data-cms-inline="add-section"]')?.addEventListener('click', () => addSectionTemplate());
+  } else {
+    mountGuideSectionsPublic(root, sections);
+    mountGuideMarkdownFields(root, g, false);
+    bindGuideImageZoom(root);
+    bindChapterSeek(root);
+    learnSpyDisconnect = bindScrollSpy(root, '[data-toc-link], [data-step-link]');
+  }
 }
 
 function mountGuideSectionsPublic(root, sections) {
@@ -1301,134 +1331,6 @@ function bindChapterSeek(root) {
   });
 }
 
-function renderDetailEdit(root, g) {
-  const ce = ' contenteditable="true"';
-  const workflow = GUIDE_PILLAR_MAP[g.slug];
-  const updated = g.updatedAt?.toDate ? g.updatedAt.toDate() : (g.updatedAt?.seconds ? new Date(g.updatedAt.seconds * 1000) : null);
-  const features = g.features || [];
-  const sections = getSections(g);
-  currentGuide = { ...g, sections };
-  const faq = g.faq || [];
-
-  const adminMeta = `<details class="guide-admin-meta" open>
-    <summary>게시 · 설정 <span class="muted small">공개/순서/히어로 영상</span></summary>
-    <div class="guide-admin-meta-grid">
-      <label><input type="checkbox" id="guidePublished" ${g.published !== false ? 'checked' : ''}> 공개</label>
-      <label>순서 <input type="number" id="guideOrder" value="${esc(g.order ?? 0)}"></label>
-      <label>난이도 <input type="text" id="guideLevel" value="${esc(g.level || '')}" placeholder="초급 (선택)"></label>
-      <label>소요 시간 <input type="text" id="guideDuration" value="${esc(g.duration || '')}" placeholder="3분 (선택)"></label>
-      <label class="guide-yt-field">Hero YouTube URL <input type="url" id="guideHeroYoutube" value="${g.heroVideoType === 'youtube' ? esc(g.heroVideo || '') : ''}" placeholder="https://www.youtube.com/watch?v=..."></label>
-      <label class="guide-chapters-field">영상 챕터 (선택, 한 줄에 초:제목)<textarea id="guideChapters" rows="3" placeholder="0: 검색&#10;8: 미리듣기&#10;17: 구간 선택">${esc(chaptersToInput(g.chapters))}</textarea></label>
-    </div>
-  </details>`;
-
-  const featureItems = features.map((f, i) => `<li class="guide-edit-row"><span data-feature${ce}>${esc(f)}</span>
-        <span class="guide-item-tools">
-          <button type="button" data-move="up" data-move-kind="features" data-move-idx="${i}">↑</button>
-          <button type="button" data-move="down" data-move-kind="features" data-move-idx="${i}">↓</button>
-          <button type="button" data-remove="features" data-remove-idx="${i}">삭제</button>
-        </span></li>`).join('');
-
-  const sectionShells = sections.map((s, i) => {
-    const media = resolveSectionMedia(s);
-    const fileLabel = media ? mediaFileLabel(media.mediaUrl) : '';
-    const thumb = media?.mediaType === 'image'
-      ? `<img src="${esc(media.mediaUrl)}" alt="${esc(mediaAltForGuide(g, s))}" loading="lazy" decoding="async">`
-      : media?.mediaType === 'video'
-        ? `<video src="${esc(media.mediaUrl)}" muted playsinline preload="metadata"></video>`
-        : media?.mediaType === 'youtube'
-          ? `<span class="guide-step-media-yt">YouTube</span>`
-          : `<span class="guide-step-media-empty">미디어 없음</span>`;
-    const tools = `<div class="guide-item-tools vcms-card-settings">
-      <button type="button" class="ghost mini-btn" data-section-flip="${i}" title="미디어 좌우 위치 전환">좌우</button>
-      <button type="button" class="ghost mini-btn" data-move="up" data-move-kind="sections" data-move-idx="${i}" title="위로">위로</button>
-      <button type="button" class="ghost mini-btn" data-move="down" data-move-kind="sections" data-move-idx="${i}" title="아래로">아래로</button>
-      <button type="button" class="ghost mini-btn danger-btn" data-remove="sections" data-remove-idx="${i}" title="이 Step 삭제">삭제</button>
-    </div>`;
-    return `<section class="guide-step-editor wrap" data-guide-section="${i}" data-section-id="${esc(s.id)}">
-      <div class="guide-step-editor-head">
-        <span class="guide-learn-step-num">${padStep(i)}</span>
-        <div class="guide-step-editor-head-copy">
-          <strong>Step ${padStep(i)}</strong>
-          <span class="muted small">이 단계 텍스트·미디어를 바로 수정하세요</span>
-        </div>
-        ${tools}
-      </div>
-      <div class="guide-step-editor-grid">
-        <div class="guide-step-editor-copy">
-          <div data-sec-cat></div>
-          <div data-sec-title></div>
-          <div data-sec-body></div>
-          <div data-sec-features></div>
-          <label class="guide-caption-field muted small">이 단계 미디어 설명(선택)
-            <input type="text" data-sec-caption="${i}" value="${esc(s.mediaCaption || '')}" placeholder="캡션 — 이 Step에만 적용">
-          </label>
-        </div>
-        <div class="guide-step-media-panel">
-          <p class="guide-step-media-label">이 단계에 연결된 미디어</p>
-          <div class="guide-step-media-thumb" data-step-thumb="${esc(s.id)}">${thumb}</div>
-          <p class="guide-step-media-file muted small">${media ? `${esc(media.mediaType)} · ${esc(fileLabel)}` : '이미지/영상을 아래에서 이 Step에만 지정하세요.'}</p>
-          <div data-sec-media class="product-feature-media guide-step-media-slot" data-section-id="${esc(s.id)}"></div>
-        </div>
-      </div>
-    </section>`;
-  }).join('');
-
-  const dupes = findDuplicateMediaIds(sections);
-  const dupeWarn = dupes.length
-    ? `<div class="guide-media-dupe-warn wrap">⚠️ 서로 다른 Step이 같은 미디어 URL을 공유합니다: ${dupes.map((arr) => arr.map((i) => padStep(i)).join('=')).join(', ')}. 각 Step에는 고유 이미지를 지정하세요.</div>`
-    : '';
-
-  const faqBlocks = faq.map((item, i) => `<div class="guide-faq-item" data-faq>
-        <div class="guide-item-tools">
-          <button type="button" data-move="up" data-move-kind="faq" data-move-idx="${i}">↑</button>
-          <button type="button" data-move="down" data-move-kind="faq" data-move-idx="${i}">↓</button>
-          <button type="button" data-remove="faq" data-remove-idx="${i}">삭제</button>
-        </div>
-        <h3 data-faq-q${ce}>${esc(item.q || '')}</h3>
-        <div data-faq-a class="guide-md-slot"></div>
-      </div>`).join('');
-
-  root.innerHTML = `
-    <section class="wrap product-hero guide-hero">
-      <p class="pill portal-pill" data-field="category"${ce}>${esc(g.category || 'Guide')}</p>
-      <h1 data-field="title"${ce}>${esc(g.title || '')}</h1>
-      <p class="portal-lead" data-field="summary"${ce}>${esc(g.summary || '')}</p>
-      ${adminMeta}
-      <div class="guide-hero-media" data-hero-media></div>
-    </section>
-    <section class="wrap guide-features">
-      <h2>주요 기능</h2>
-      <ul class="product-points">${featureItems || '<li class="muted">기능 목록이 없습니다.</li>'}</ul>
-      <button type="button" class="secondary mini-btn" data-add-feature>기능 추가</button>
-    </section>
-    <div id="guideSections" class="guide-sections guide-sections-editor">${sectionShells || '<p class="wrap muted">제품형 카드 템플릿이 없습니다. [템플릿 추가]로 추가하세요.</p>'}</div>
-    ${dupeWarn}
-    <div class="wrap guide-template-actions">
-      <button type="button" class="primary mini-btn" data-cms-inline="add-section">+ Step 추가</button>
-      <span class="muted small">각 Step은 고유 id를 가지며, 이미지는 해당 Step에만 연결됩니다. 순서 변경 시 미디어 연결이 유지됩니다.</span>
-    </div>
-    <section class="wrap guide-tips"><h2>팁</h2><div data-field="tips" class="guide-md-slot"></div></section>
-    <section class="wrap guide-faq"><h2>FAQ (관리자 편집용 · 공개 화면에서는 문제해결/FAQ 링크로 연결)</h2>${faqBlocks}<button type="button" class="secondary mini-btn" data-add-faq>FAQ 추가</button></section>
-    ${workflow ? `<div class="wrap workflow-seo-cta"><a class="secondary" href="${pathBase()}${workflow.replace(/^\//, '')}">변환 가이드 보기</a></div>` : ''}
-    ${updated ? `<p class="wrap muted guide-updated">업데이트: ${updated.toLocaleDateString('ko-KR')}</p>` : ''}
-  `;
-
-  applyGuideDocumentSeo(g.slug || g.id, g.title);
-  mountHeroMedia(root, g, true);
-  bindEditable(root);
-  mountGuideSections(root, sections, true);
-  mountGuideMarkdownFields(root, g, true);
-  root.querySelector('[data-cms-inline="add-section"]')?.addEventListener('click', () => addSectionTemplate());
-  root.querySelectorAll('[data-sec-caption]').forEach((input) => {
-    input.addEventListener('input', () => {
-      const i = Number(input.getAttribute('data-sec-caption'));
-      if (!currentGuide?.sections?.[i]) return;
-      currentGuide.sections[i].mediaCaption = input.value;
-      scheduleSave();
-    });
-  });
-}
 
 function heroMediaState(g) {
   if (g.heroVideoType === 'youtube' && g.heroVideo) {
@@ -1760,8 +1662,15 @@ function bindCmsBar() {
   }
 }
 
+function bootDetailShell() {
+  if (!isGuideDetailPage()) return;
+  document.body.classList.add('guide-cms-active');
+  hideGuideSeoFallback();
+}
+
 export async function initGuideCms() {
   if (!isGuideListPage() && !isGuideDetailPage()) return;
+  bootDetailShell();
   bindCmsBar();
   try {
     await initFirebase();
@@ -1783,6 +1692,7 @@ export async function initGuideCms() {
     }
     const slug = guideSlugFromLocation();
     applyGuideDocumentSeo(slug);
+    hideGuideSeoFallback();
     if (!slug) {
       document.getElementById('guideDetail').innerHTML = `<div class="empty-card">slug가 없습니다. <a href="${pathBase()}guide/index.html">목록으로</a></div>`;
       return;
@@ -1801,6 +1711,7 @@ export async function initGuideCms() {
         setDirty(false);
         return;
       }
+      hideGuideSeoFallback();
       document.getElementById('guideDetail').innerHTML = `<div class="empty-card">가이드를 찾을 수 없습니다. <a href="${pathBase()}guide/index.html">목록으로</a></div>`;
       return;
     }
@@ -1814,11 +1725,13 @@ export async function initGuideCms() {
     setDirty(false);
   } catch (e) {
     console.error(e);
+    hideGuideSeoFallback();
     const el = document.getElementById('guideList') || document.getElementById('guideDetail');
     if (el) el.innerHTML = `<div class="empty-card">가이드를 불러오지 못했습니다. Firestore 규칙을 배포했는지 확인하세요.<br><span class="muted">${esc(e.message || e)}</span></div>`;
   }
 }
 
+bootDetailShell();
 if (isGuideListPage() || isGuideDetailPage()) {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => initGuideCms());
   else initGuideCms();
