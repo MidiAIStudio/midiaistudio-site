@@ -7548,7 +7548,7 @@ function renderAdminCmsView(body, kind, row){
     ? `<button type="button" class="secondary mini-btn" data-cms-act="pin" data-pin="${row.pinned?'0':'1'}">${row.pinned?'고정 해제':'고정'}</button>`
     : '';
   const guideOpen = kind==='guides'
-    ? `<a class="secondary mini-btn" href="${esc(guidePublicHref(row.slug||row.id))}" target="_blank" rel="noopener">페이지에서 편집</a>`
+    ? `<a class="primary mini-btn" href="${esc(guidePublicHref(row.slug||row.id))}?edit=1" target="_blank" rel="noopener">가이드 페이지에서 편집</a>`
     : '';
   const summaryHtml = kind==='guides' && row.summary
     ? `<p class="muted" style="margin:0 0 .75rem">${esc(row.summary)}</p>`

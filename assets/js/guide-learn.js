@@ -77,23 +77,30 @@ export function cardMetaBits(g) {
   return bits;
 }
 
-export function renderGuideCard(g, pathBase) {
-  const href = `${pathBase}${guidePagePath(g.slug || g.id)}`;
+export function renderGuideCard(g, pathBase, opts = {}) {
+  const slug = g.slug || g.id;
+  const href = `${pathBase}${guidePagePath(slug)}`;
   const thumb = guideThumb(g);
   const badge = g.published === false ? `<span class="guide-draft-badge">초안</span>` : '';
   const meta = cardMetaBits(g);
   const media = thumb.type === 'image'
     ? `<div class="guide-hub-card-media"><img src="${esc(thumb.url)}" alt="${esc(g.title || 'MidiAI Studio')} 가이드 미리보기" loading="lazy" decoding="async" width="640" height="360"></div>`
     : `<div class="guide-hub-card-media is-empty" aria-hidden="true"><span></span></div>`;
-  return `<a class="guide-hub-card" href="${esc(href)}" data-guide-slug="${esc(g.slug || g.id)}">
-    ${media}
-    <div class="guide-hub-card-body">
-      <span class="guide-card-cat">${esc(g.category || 'Guide')}</span>
-      <h3>${esc(g.title || g.slug)}${badge}</h3>
-      <p>${esc(g.summary || '')}</p>
-      ${meta.length ? `<div class="guide-hub-card-meta">${meta.map((b) => `<em>${b}</em>`).join('')}</div>` : ''}
-    </div>
-  </a>`;
+  const editBtn = opts.isAdmin
+    ? `<button type="button" class="guide-hub-card-edit" data-guide-edit="${esc(slug)}" title="이 가이드 편집">편집</button>`
+    : '';
+  return `<div class="guide-hub-card-wrap">
+    <a class="guide-hub-card" href="${esc(href)}" data-guide-slug="${esc(slug)}">
+      ${media}
+      <div class="guide-hub-card-body">
+        <span class="guide-card-cat">${esc(g.category || 'Guide')}</span>
+        <h3>${esc(g.title || g.slug)}${badge}</h3>
+        <p>${esc(g.summary || '')}</p>
+        ${meta.length ? `<div class="guide-hub-card-meta">${meta.map((b) => `<em>${b}</em>`).join('')}</div>` : ''}
+      </div>
+    </a>
+    ${editBtn}
+  </div>`;
 }
 
 export function sectionTocItems(sections) {

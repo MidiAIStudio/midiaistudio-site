@@ -25,7 +25,7 @@ import {
   chaptersHtml,
   bindScrollSpy,
   bindGuideImageZoom
-} from './guide-learn.js?v=guide-404-1';
+} from './guide-learn.js?v=guide-edit-ux-1';
 import {
   applyGuideDocumentSeo,
   guideSlugFromLocation,
@@ -315,10 +315,185 @@ async function initFirebase() {
 function setDirty(v) {
   dirty = !!v;
   const el = document.getElementById('guideCmsStatus');
+  if (el) {
+    el.textContent = dirty ? '● 저장되지 않음' : '✓ 저장 완료';
+    el.classList.toggle('is-dirty', dirty);
+    el.classList.toggle('is-saved', !dirty);
+  }
+  const saveBtn = document.querySelector('#guideCmsBar [data-cms="save"]');
+  if (saveBtn) {
+    saveBtn.disabled = !editMode;
+    saveBtn.textContent = dirty && editMode ? '저장 *' : '저장';
+    saveBtn.classList.toggle('is-dirty-save', !!(dirty && editMode));
+  }
+}
+
+function shouldStartEditing() {
+  try {
+    const q = new URLSearchParams(location.search || '');
+    if (q.get('edit') === '1') return true;
+  } catch (_) { /* ignore */ }
+  return location.hash === '#edit';
+}
+
+function clearEditQuery() {
+  try {
+    const url = new URL(location.href);
+    if (url.searchParams.get('edit') !== '1' && location.hash !== '#edit') return;
+    url.searchParams.delete('edit');
+    history.replaceState(null, '', url.pathname + url.search + (url.hash === '#edit' ? '' : url.hash));
+  } catch (_) { /* ignore */ }
+}
+
+function suggestSlug(title) {
+  const s = String(title || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[가-힣]+/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  return s || `guide-${Date.now().toString(36)}`;
+}
+
+function ensureGuideCreateDialog() {
+  let el = document.getElementById('guideCreateDialog');
+  if (el) return el;
+  el = document.createElement('div');
+  el.id = 'guideCreateDialog';
+  el.className = 'guide-create-dialog hidden';
+  el.innerHTML = `
+    <div class="guide-create-backdrop" data-create-close="1"></div>
+    <form class="guide-create-panel" novalidate>
+      <header class="guide-create-head">
+        <h3>가이드 추가</h3>
+        <button type="button" class="ghost mini-btn" data-create-close="1" aria-label="닫기">닫기</button>
+      </header>
+      <div class="guide-create-body">
+        <label>제목
+          <input name="title" type="text" required maxlength="80" placeholder="예: 라이브러리 사용법" autocomplete="off">
+        </label>
+        <label>메뉴 slug (영문-케밥)
+          <input name="slug" type="text" required maxlength="64" placeholder="예: library-tips" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" autocomplete="off">
+        </label>
+        <label>카테고리
+          <input name="category" type="text" maxlength="32" value="일반" placeholder="시작 / 변환 / 편집">
+        </label>
+        <label class="guide-create-check"><input name="template" type="checkbox"> 제품 카드(Step) 템플릿 2칸으로 시작</label>
+        <label class="guide-create-check"><input name="published" type="checkbox"> 바로 공개</label>
+        <p class="muted small">추가 후 상세 페이지에서 사진·영상·본문을 바로 편집합니다.</p>
+      </div>
+      <footer class="guide-create-foot">
+        <button type="button" class="ghost mini-btn" data-create-close="1">취소</button>
+        <button type="submit" class="primary mini-btn">만들고 편집</button>
+      </footer>
+    </form>`;
+  document.body.appendChild(el);
+  const form = el.querySelector('form');
+  const titleInput = form.querySelector('[name="title"]');
+  const slugInput = form.querySelector('[name="slug"]');
+  let slugTouched = false;
+  slugInput.addEventListener('input', () => { slugTouched = true; });
+  titleInput.addEventListener('input', () => {
+    if (!slugTouched || !slugInput.value.trim()) {
+      slugInput.value = suggestSlug(titleInput.value);
+      slugTouched = false;
+    }
+  });
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('[data-create-close]')) {
+      e.preventDefault();
+      closeGuideCreateDialog();
+    }
+  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const title = String(fd.get('title') || '').trim();
+    const slug = String(fd.get('slug') || '').trim().toLowerCase();
+    const category = String(fd.get('category') || '일반').trim() || '일반';
+    const template = !!form.elements.template?.checked;
+    const published = !!form.elements.published?.checked;
+    if (!title) { alert('제목을 입력하세요.'); return; }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      alert('slug 형식이 올바르지 않습니다. 예: getting-started');
+      return;
+    }
+    const submit = form.querySelector('[type="submit"]');
+    if (submit) submit.disabled = true;
+    try {
+      await createGuideDoc({ title, slug, category, template, published });
+      closeGuideCreateDialog();
+      location.href = `${guideHref(slug)}?edit=1`;
+    } catch (err) {
+      alert(err.message || err);
+    } finally {
+      if (submit) submit.disabled = false;
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !el.classList.contains('hidden')) closeGuideCreateDialog();
+  });
+  return el;
+}
+
+function openGuideCreateDialog(opts = {}) {
+  if (!isAdmin) return;
+  const el = ensureGuideCreateDialog();
+  const form = el.querySelector('form');
+  form.reset();
+  form.elements.category.value = '일반';
+  form.elements.template.checked = !!opts.template;
+  form.elements.published.checked = false;
+  form.elements.slug.value = '';
+  el.classList.remove('hidden');
+  document.body.classList.add('guide-create-open');
+  setTimeout(() => form.elements.title?.focus(), 30);
+}
+
+function closeGuideCreateDialog() {
+  const el = document.getElementById('guideCreateDialog');
   if (!el) return;
-  el.textContent = dirty ? '● 저장되지 않음' : '✓ 저장 완료';
-  el.classList.toggle('is-dirty', dirty);
-  el.classList.toggle('is-saved', !dirty);
+  el.classList.add('hidden');
+  document.body.classList.remove('guide-create-open');
+}
+
+async function createGuideDoc({ title, slug, category, template, published }) {
+  const { doc, getDoc, setDoc, serverTimestamp } = fs;
+  const ref = doc(db, COLLECTION, slug);
+  if ((await getDoc(ref)).exists()) throw new Error('이미 존재하는 slug입니다.');
+  const s1 = emptyProductSection('normal');
+  s1.category = category || 'Studio';
+  s1.title = title || '새 제목';
+  s1.body = '설명을 입력하세요.';
+  const sections = [s1];
+  if (template) {
+    const s2 = emptyProductSection('reverse');
+    s2.category = 'MIDI 편집 PRO';
+    s2.title = '멀티트랙 피아노 롤';
+    sections.push(s2);
+  }
+  await setDoc(ref, {
+    title,
+    category,
+    slug,
+    summary: '요약을 입력하세요.',
+    tips: '',
+    heroImage: '',
+    heroVideo: '',
+    heroVideoType: '',
+    heroOverlays: [],
+    features: template ? [] : ['기능 1'],
+    steps: sectionsToSteps(sections),
+    sections,
+    faq: template ? [] : [{ q: '질문', a: '답변' }],
+    relatedGuides: [],
+    published: !!published,
+    order: 999,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
 }
 
 /** Mark draft dirty only — persist happens on explicit Save. */
@@ -519,7 +694,18 @@ function renderList(guides) {
     root.innerHTML = `<div class="empty-card">조건에 맞는 가이드가 없습니다.</div>`;
     return;
   }
-  root.innerHTML = rows.map((g) => renderGuideCard(g, pathBase())).join('');
+  root.innerHTML = rows.map((g) => renderGuideCard(g, pathBase(), { isAdmin })).join('');
+  if (isAdmin && !root.dataset.editBound) {
+    root.dataset.editBound = '1';
+    root.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-guide-edit]');
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const slug = btn.getAttribute('data-guide-edit');
+      if (slug) location.href = `${guideHref(slug)}?edit=1`;
+    });
+  }
 }
 
 function bindHubChrome(guides) {
@@ -771,68 +957,11 @@ async function deleteGuide() {
 }
 
 async function addGuide() {
-  if (!isAdmin) return;
-  const slug = prompt('새 가이드 slug (영문-케밥):', 'new-guide');
-  if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) { alert('slug 형식이 올바르지 않습니다.'); return; }
-  const { doc, getDoc, setDoc, serverTimestamp } = fs;
-  const ref = doc(db, COLLECTION, slug);
-  if ((await getDoc(ref)).exists()) { alert('이미 존재하는 slug입니다.'); return; }
-  const section = emptyProductSection('normal');
-  await setDoc(ref, {
-    title: '새 가이드',
-    category: '일반',
-    slug,
-    summary: '요약을 입력하세요.',
-    tips: '',
-    heroImage: '',
-    heroVideo: '',
-    heroVideoType: '',
-    heroOverlays: [],
-    features: ['기능 1'],
-    steps: sectionsToSteps([section]),
-    sections: [section],
-    faq: [{ q: '질문', a: '답변' }],
-    relatedGuides: [],
-    published: false,
-    order: 999,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-  location.href = guideHref(slug);
+  openGuideCreateDialog({ template: false });
 }
 
 async function addProductTemplateGuide() {
-  if (!isAdmin) return;
-  const slug = prompt('제품형 가이드 slug (영문-케밥):', 'product-style-guide');
-  if (!slug || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) { alert('slug 형식이 올바르지 않습니다.'); return; }
-  const { doc, getDoc, setDoc, serverTimestamp } = fs;
-  const ref = doc(db, COLLECTION, slug);
-  if ((await getDoc(ref)).exists()) { alert('이미 존재하는 slug입니다.'); return; }
-  const s1 = emptyProductSection('normal');
-  const s2 = emptyProductSection('reverse');
-  s2.category = 'MIDI 편집 PRO';
-  s2.title = '멀티트랙 피아노 롤';
-  await setDoc(ref, {
-    title: '제품형 가이드',
-    category: '가이드',
-    slug,
-    summary: '제품 메뉴와 동일한 카드 템플릿으로 작성된 가이드입니다.',
-    tips: '',
-    heroImage: '',
-    heroVideo: '',
-    heroVideoType: '',
-    heroOverlays: [],
-    features: [],
-    sections: [s1, s2],
-    steps: sectionsToSteps([s1, s2]),
-    faq: [],
-    relatedGuides: [],
-    published: false,
-    order: 999,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-  location.href = guideHref(slug);
+  openGuideCreateDialog({ template: true });
 }
 
 function addSectionTemplate() {
@@ -1181,14 +1310,17 @@ function renderDetailEdit(root, g) {
   currentGuide = { ...g, sections };
   const faq = g.faq || [];
 
-  const adminMeta = `<div class="guide-admin-meta">
-    <label><input type="checkbox" id="guidePublished" ${g.published !== false ? 'checked' : ''}> 공개</label>
-    <label>순서 <input type="number" id="guideOrder" value="${esc(g.order ?? 0)}"></label>
-    <label>난이도 <input type="text" id="guideLevel" value="${esc(g.level || '')}" placeholder="초급 (선택)"></label>
-    <label>소요 시간 <input type="text" id="guideDuration" value="${esc(g.duration || '')}" placeholder="3분 (선택)"></label>
-    <label class="guide-yt-field">Hero YouTube URL <input type="url" id="guideHeroYoutube" value="${g.heroVideoType === 'youtube' ? esc(g.heroVideo || '') : ''}" placeholder="https://www.youtube.com/watch?v=..."></label>
-    <label class="guide-chapters-field">영상 챕터 (선택, 한 줄에 초:제목)<textarea id="guideChapters" rows="3" placeholder="0: 검색&#10;8: 미리듣기&#10;17: 구간 선택">${esc(chaptersToInput(g.chapters))}</textarea></label>
-  </div>`;
+  const adminMeta = `<details class="guide-admin-meta" open>
+    <summary>게시 · 설정 <span class="muted small">공개/순서/히어로 영상</span></summary>
+    <div class="guide-admin-meta-grid">
+      <label><input type="checkbox" id="guidePublished" ${g.published !== false ? 'checked' : ''}> 공개</label>
+      <label>순서 <input type="number" id="guideOrder" value="${esc(g.order ?? 0)}"></label>
+      <label>난이도 <input type="text" id="guideLevel" value="${esc(g.level || '')}" placeholder="초급 (선택)"></label>
+      <label>소요 시간 <input type="text" id="guideDuration" value="${esc(g.duration || '')}" placeholder="3분 (선택)"></label>
+      <label class="guide-yt-field">Hero YouTube URL <input type="url" id="guideHeroYoutube" value="${g.heroVideoType === 'youtube' ? esc(g.heroVideo || '') : ''}" placeholder="https://www.youtube.com/watch?v=..."></label>
+      <label class="guide-chapters-field">영상 챕터 (선택, 한 줄에 초:제목)<textarea id="guideChapters" rows="3" placeholder="0: 검색&#10;8: 미리듣기&#10;17: 구간 선택">${esc(chaptersToInput(g.chapters))}</textarea></label>
+    </div>
+  </details>`;
 
   const featureItems = features.map((f, i) => `<li class="guide-edit-row"><span data-feature${ce}>${esc(f)}</span>
         <span class="guide-item-tools">
@@ -1208,17 +1340,17 @@ function renderDetailEdit(root, g) {
           ? `<span class="guide-step-media-yt">YouTube</span>`
           : `<span class="guide-step-media-empty">미디어 없음</span>`;
     const tools = `<div class="guide-item-tools vcms-card-settings">
-      <button type="button" class="ghost mini-btn" data-section-flip="${i}">좌우 전환</button>
-      <button type="button" data-move="up" data-move-kind="sections" data-move-idx="${i}">↑</button>
-      <button type="button" data-move="down" data-move-kind="sections" data-move-idx="${i}">↓</button>
-      <button type="button" data-remove="sections" data-remove-idx="${i}">삭제</button>
+      <button type="button" class="ghost mini-btn" data-section-flip="${i}" title="미디어 좌우 위치 전환">좌우</button>
+      <button type="button" class="ghost mini-btn" data-move="up" data-move-kind="sections" data-move-idx="${i}" title="위로">위로</button>
+      <button type="button" class="ghost mini-btn" data-move="down" data-move-kind="sections" data-move-idx="${i}" title="아래로">아래로</button>
+      <button type="button" class="ghost mini-btn danger-btn" data-remove="sections" data-remove-idx="${i}" title="이 Step 삭제">삭제</button>
     </div>`;
     return `<section class="guide-step-editor wrap" data-guide-section="${i}" data-section-id="${esc(s.id)}">
       <div class="guide-step-editor-head">
         <span class="guide-learn-step-num">${padStep(i)}</span>
         <div class="guide-step-editor-head-copy">
           <strong>Step ${padStep(i)}</strong>
-          <span class="muted small">id: ${esc(s.id)}</span>
+          <span class="muted small">이 단계 텍스트·미디어를 바로 수정하세요</span>
         </div>
         ${tools}
       </div>
@@ -1563,16 +1695,36 @@ function bindCmsBar() {
   const bar = document.getElementById('guideCmsBar');
   if (!bar || bar.dataset.bound) return;
   bar.dataset.bound = '1';
+  // List page: keep one primary add action; template option lives in the dialog.
+  if (isGuideListPage()) {
+    const addTpl = bar.querySelector('[data-cms="add-template"]');
+    if (addTpl) addTpl.classList.add('hidden');
+    const addBtn = bar.querySelector('[data-cms="add"]');
+    if (addBtn) addBtn.textContent = '+ 가이드 추가';
+    if (!bar.querySelector('.guide-cms-hint')) {
+      const hint = document.createElement('span');
+      hint.className = 'guide-cms-hint muted small';
+      hint.textContent = '카드의 편집으로 바로 수정';
+      bar.appendChild(hint);
+    }
+  }
+  if (isGuideDetailPage() && !bar.querySelector('.guide-cms-hint')) {
+    const hint = document.createElement('span');
+    hint.className = 'guide-cms-hint muted small';
+    hint.textContent = 'Ctrl+S 저장';
+    bar.appendChild(hint);
+  }
   bar.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-cms]');
     if (!btn || !isAdmin) return;
     const act = btn.getAttribute('data-cms');
-    if (act === 'edit') { editMode = true; refreshAdminChrome(); if (currentGuide) renderDetail(currentGuide); }
+    if (act === 'edit') { editMode = true; refreshAdminChrome(); if (currentGuide) renderDetail(currentGuide); setDirty(dirty); }
     if (act === 'preview') {
       if (dirty) await saveGuide();
       editMode = false;
       refreshAdminChrome();
       if (currentGuide) renderDetail(currentGuide);
+      setDirty(false);
     }
     if (act === 'save') await saveGuide();
     if (act === 'delete') await deleteGuide();
@@ -1580,6 +1732,32 @@ function bindCmsBar() {
     if (act === 'add-template') await addProductTemplateGuide();
     if (act === 'add-section') addSectionTemplate();
   });
+  if (!document.documentElement.dataset.guideCmsKeys) {
+    document.documentElement.dataset.guideCmsKeys = '1';
+    document.addEventListener('keydown', (e) => {
+      if (!isAdmin) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && String(e.key || '').toLowerCase() === 's') {
+        if (!isGuideDetailPage() || !editMode) return;
+        e.preventDefault();
+        saveGuide();
+      }
+      if (mod && String(e.key || '').toLowerCase() === 'e') {
+        if (!isGuideDetailPage() || editMode || !currentGuide) return;
+        e.preventDefault();
+        editMode = true;
+        refreshAdminChrome();
+        renderDetail(currentGuide);
+        setDirty(dirty);
+      }
+    });
+    window.addEventListener('beforeunload', (e) => {
+      if (dirty && editMode) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+  }
 }
 
 export async function initGuideCms() {
@@ -1614,6 +1792,11 @@ export async function initGuideCms() {
       const seeded = SEED_GUIDES.find((x) => x.slug === slug);
       if (seeded) {
         renderDetail(seeded);
+        if (isAdmin && shouldStartEditing()) {
+          editMode = true;
+          clearEditQuery();
+          renderDetail(currentGuide || seeded);
+        }
         refreshAdminChrome();
         setDirty(false);
         return;
@@ -1622,6 +1805,11 @@ export async function initGuideCms() {
       return;
     }
     renderDetail(g);
+    if (isAdmin && shouldStartEditing()) {
+      editMode = true;
+      clearEditQuery();
+      renderDetail(currentGuide || g);
+    }
     refreshAdminChrome();
     setDirty(false);
   } catch (e) {
