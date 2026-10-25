@@ -1696,7 +1696,6 @@ function pointCopy(){
     trialItems:[
       'MIDI editing is available',
       'Piano convert and export up to 1 minute',
-      'Songs longer than 5 minutes cannot use the free 1-minute convert',
       'A Full pass converts the full piano length. Orchestra uses credits'
     ],
     trialBtnStart:'Sign in to start',
@@ -1829,7 +1828,6 @@ function pointCopy(){
     trialItems:[
       'MIDI編集を利用できます',
       'ピアノの変換・書き出しは最大1分です',
-      '5分を超える曲は無料の1分変換を使えません',
       'Full利用権はピアノ全区間を変換します。オーケストラはクレジットが必要です'
     ],
     trialBtnStart:'ログインして開始',
@@ -1967,7 +1965,6 @@ function pointCopy(){
     trialItems:[
       'MIDI 편집 기능을 사용할 수 있습니다',
       '피아노 변환·내보내기는 최대 1분입니다',
-      '5분을 넘는 곡은 무료 1분 변환을 할 수 없습니다',
       'Full 이용권은 피아노 전체 구간을 변환합니다. 오케스트라는 크레딧이 필요합니다'
     ],
     trialBtnStart:'로그인하여 시작',
