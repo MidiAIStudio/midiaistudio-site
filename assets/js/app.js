@@ -240,6 +240,7 @@ let adminRawOrderRows = [];
 let adminCreditPurchaseRows = [];
 let adminOrdersLoaded = false;
 let adminBoardRows = [];
+let adminGuideRows = [];
 let adminCmsTab = 'notices';
 let adminCmsStatusApplied = 'all';
 let adminCmsDrawerState = { mode:'view', kind:'notices', id:'' };
@@ -7233,22 +7234,38 @@ function normalizeAdminCmsTab(v){
   if(s==='patches'||s==='patch'||s==='patchnotes'||s==='patch-notes') return 'patches';
   if(s==='faq') return 'faq';
   if(s==='board'||s==='boardposts'||s==='posts') return 'board';
+  if(s==='guides'||s==='guide') return 'guides';
   return 'notices';
 }
 function adminCmsCollection(kind){
-  return ({notices:'announcements', patches:'patchNotes', faq:'faq', board:'boardPosts'})[kind] || 'announcements';
+  return ({notices:'announcements', patches:'patchNotes', faq:'faq', board:'boardPosts', guides:'guides'})[kind] || 'announcements';
 }
 function adminCmsKindFromCollection(name){
-  return ({announcements:'notices', patchNotes:'patches', faq:'faq', boardPosts:'board'})[name] || 'notices';
+  return ({announcements:'notices', patchNotes:'patches', faq:'faq', boardPosts:'board', guides:'guides'})[name] || 'notices';
 }
 function adminCmsTabLabel(kind){
-  return ({notices:'공지사항', patches:'패치노트', faq:'FAQ', board:'자유게시판'})[kind] || '콘텐츠';
+  return ({notices:'공지사항', patches:'패치노트', faq:'FAQ', board:'자유게시판', guides:'가이드'})[kind] || '콘텐츠';
 }
 function adminCmsRows(kind){
   if(kind==='patches') return adminPatchRows||[];
   if(kind==='faq') return adminFaqRows||[];
   if(kind==='board') return adminBoardRows||[];
+  if(kind==='guides') return adminGuideRows||[];
   return adminNoticeRows||[];
+}
+function normalizeGuideSlug(v){
+  return String(v||'').trim().toLowerCase();
+}
+function isValidGuideSlug(v){
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizeGuideSlug(v));
+}
+function guidePublicHref(slug){
+  const s=normalizeGuideSlug(slug);
+  if(!s) return './guide/index.html';
+  return `./guide/${encodeURIComponent(s)}/`;
+}
+function guideBodyMarkdown(d){
+  return pickMarkdownSource(d) || String(d?.tips||d?.summary||'').trim();
 }
 function adminCmsFind(kind, id){
   return adminCmsRows(kind).find(x=>x.id===id) || null;
@@ -7271,6 +7288,10 @@ function adminCmsTitleText(kind, x){
     const ver=patchNoteVersion(x);
     return `${type==='web'?'WEB':'APP'}${ver?` · v${ver}`:''} · ${x.title||'-'}`;
   }
+  if(kind==='guides'){
+    const slug=normalizeGuideSlug(x.slug||x.id);
+    return slug ? `${x.title||'-'} (${slug})` : (x.title || '-');
+  }
   return x.title || '-';
 }
 function adminCmsAuthorText(kind, x){
@@ -7278,6 +7299,12 @@ function adminCmsAuthorText(kind, x){
   return noticeAuthor(x);
 }
 function adminCmsStatusHtml(kind, x){
+  if(kind==='guides'){
+    const published=x.published!==false;
+    const bits=[published?'<span class="badge active">공개</span>':'<span class="badge closed">비공개</span>'];
+    if(x.category) bits.push(`<span class="badge pending">${esc(x.category)}</span>`);
+    return bits.join(' ');
+  }
   if(kind==='board'){
     const bits=[x.visible===false?'<span class="badge none">숨김</span>':'<span class="badge active">공개</span>'];
     if(x.pinned) bits.push('<span class="badge pending">고정</span>');
@@ -7291,18 +7318,18 @@ function getAdminCmsFilteredRows(){
   const status=adminCmsStatusApplied || 'all';
   const rows=adminCmsRows(kind).filter(x=>{
     if(kind==='board' && x.deleted===true) return false;
-    const visible=x.visible!==false;
+    const visible = kind==='guides' ? (x.published!==false) : (x.visible!==false);
     const statusOk = status==='all'
       || (status==='visible' && visible)
       || (status==='hidden' && !visible)
       || (status==='pinned' && !!x.pinned);
     const hay=[
       adminCmsTitleText(kind,x), x.title, x.question, x.answer, x.content, x.version,
-      x.displayName, x.email, x.uid, kind==='patches'?patchNoteType(x):''
+      x.displayName, x.email, x.uid, x.slug, x.category, x.summary, kind==='patches'?patchNoteType(x):''
     ].join(' ').toLowerCase();
     return statusOk && (!q || hay.includes(q));
   });
-  if(kind==='faq') rows.sort((a,b)=>Number(a.order||0)-Number(b.order||0) || adminTsSec(b.createdAt)-adminTsSec(a.createdAt));
+  if(kind==='faq' || kind==='guides') rows.sort((a,b)=>Number(a.order||0)-Number(b.order||0) || adminTsSec(b.updatedAt||b.createdAt)-adminTsSec(a.updatedAt||a.createdAt));
   else rows.sort((a,b)=>(b.pinned===true)-(a.pinned===true) || adminTsSec(b.createdAt)-adminTsSec(a.createdAt));
   return rows;
 }
@@ -7350,8 +7377,13 @@ function renderAdminCmsTable(){
   box.innerHTML = `<table class="admin-table admin-cms-table"><thead><tr>
     <th>제목</th><th>상태</th><th>작성자</th><th>작성일</th><th>수정일</th>${extra?'<th>조회</th><th>댓글</th>':''}<th>관리</th>
   </tr></thead><tbody>${rows.map(x=>{
-    const sub = extra ? `조회 ${Number(x.viewCount||0)} · 댓글 ${Number(x.commentCount||0)}` : (x.pinned && adminCmsTab!=='board' ? '상단 고정' : '');
-    return `<tr class="admin-cms-row${x.visible===false?' is-hidden':''}" data-cms-id="${esc(x.id)}">
+    const hiddenRow = adminCmsTab==='guides' ? (x.published===false) : (x.visible===false);
+    const sub = extra
+      ? `조회 ${Number(x.viewCount||0)} · 댓글 ${Number(x.commentCount||0)}`
+      : (adminCmsTab==='guides'
+        ? [x.category, normalizeGuideSlug(x.slug||x.id)].filter(Boolean).join(' · ')
+        : (x.pinned && adminCmsTab!=='board' ? '상단 고정' : ''));
+    return `<tr class="admin-cms-row${hiddenRow?' is-hidden':''}" data-cms-id="${esc(x.id)}">
       <td class="admin-cms-title"><b>${x.pinned?'📌 ':''}${esc(adminCmsTitleText(adminCmsTab,x))}</b>${sub?`<small>${esc(sub)}</small>`:''}</td>
       <td>${adminCmsStatusHtml(adminCmsTab,x)}</td>
       <td>${esc(adminCmsAuthorText(adminCmsTab,x))}</td>
@@ -7504,15 +7536,30 @@ function renderAdminCmsView(body, kind, row){
     meta.push(`<span>댓글 ${Number(row.commentCount||0)}</span>`);
   }
   if(kind==='faq' && row.order!=null) meta.push(`<span>순서 ${esc(String(row.order))}</span>`);
-  const src = row;
+  if(kind==='guides'){
+    if(row.order!=null) meta.push(`<span>순서 ${esc(String(row.order))}</span>`);
+    const slug=normalizeGuideSlug(row.slug||row.id);
+    if(slug) meta.push(`<span>slug ${esc(slug)}</span>`);
+  }
+  const src = kind==='guides'
+    ? { content: guideBodyMarkdown(row), contentMarkdown: guideBodyMarkdown(row) }
+    : row;
   const pinBtn = kind==='board'
     ? `<button type="button" class="secondary mini-btn" data-cms-act="pin" data-pin="${row.pinned?'0':'1'}">${row.pinned?'고정 해제':'고정'}</button>`
     : '';
+  const guideOpen = kind==='guides'
+    ? `<a class="secondary mini-btn" href="${esc(guidePublicHref(row.slug||row.id))}" target="_blank" rel="noopener">페이지에서 편집</a>`
+    : '';
+  const summaryHtml = kind==='guides' && row.summary
+    ? `<p class="muted" style="margin:0 0 .75rem">${esc(row.summary)}</p>`
+    : '';
   body.innerHTML = `<div class="admin-cms-view">
     <div class="admin-cms-view-meta">${meta.join('')}</div>
+    ${summaryHtml}
     <div class="admin-cms-view-body">${mdBodyHtml(src)}</div>
     <div class="admin-cms-view-actions">
       <button type="button" class="secondary mini-btn" data-cms-act="edit">수정</button>
+      ${guideOpen}
       ${pinBtn}
       <button type="button" class="secondary mini-btn danger-btn" data-cms-act="delete">삭제</button>
     </div>
@@ -7520,6 +7567,17 @@ function renderAdminCmsView(body, kind, row){
   bindMdIn(body);
 }
 function adminCmsFormFields(kind, d, isNew){
+  if(kind==='guides'){
+    return [
+      {name:'title', label:'제목', value:d?.title||'', required:true},
+      {name:'slug', label:isNew?'메뉴 slug (영문-케밥)':'메뉴 slug', value:normalizeGuideSlug(d?.slug||d?.id||''), required:true, readonly:!isNew},
+      {name:'category', label:'카테고리', value:d?.category||'일반'},
+      {name:'summary', label:'요약', type:'textarea', rows:3, value:d?.summary||''},
+      {name:'content', label:'내용', type:'markdown', value:isNew?'':guideBodyMarkdown(d), required:true, draftKey:isNew?'hub:guides:new':`hub:guides:${d.id}`},
+      {name:'order', label:'순서', type:'number', value:d?.order??100},
+      {name:'published', label:'공개', type:'checkbox', value:isNew?true:(d?.published!==false)}
+    ];
+  }
   if(kind==='notices'){
     return [
       {name:'title', label:'제목', value:d?.title||'', required:true},
@@ -7612,6 +7670,7 @@ async function renderAdminCmsEditor(container, kind, row){
     }
     input.name=f.name;
     if(f.required && !f.showWhen) input.required=true;
+    if(f.readonly) input.readOnly=true;
     rowEl.appendChild(input);
     body.appendChild(rowEl);
   }
@@ -7710,6 +7769,10 @@ async function saveAdminCmsDrawer(){
       data=normalizePatchNoteWrite(data);
       if(!data) return;
     }
+    if(kind==='guides'){
+      if(!String(data.title||'').trim()) return alert('제목을 입력하세요.');
+      if(!isValidGuideSlug(data.slug)) return alert('slug 형식이 올바르지 않습니다. 예: getting-started');
+    }
     if(!id){
       const newId=await adminCmsCreate(kind, data);
       if(newId){
@@ -7723,7 +7786,67 @@ async function saveAdminCmsDrawer(){
     openAdminCmsDrawer(kind, id, 'view');
   }catch(e){ alert(e.message||e); }
 }
+function buildGuideSectionFromBody(title, category, body, existing){
+  const base = existing && typeof existing==='object' ? { ...existing } : {};
+  return {
+    id: base.id || (typeof crypto!=='undefined' && crypto.randomUUID ? crypto.randomUUID() : `sec_${Date.now().toString(36)}`),
+    layout: base.layout || 'normal',
+    category: category || base.category || '가이드',
+    title: title || base.title || '안내',
+    body: body || '',
+    features: Array.isArray(base.features) ? base.features : [],
+    mediaType: base.mediaType || '',
+    mediaUrl: base.mediaUrl || '',
+    posterUrl: base.posterUrl || '',
+    mediaFit: base.mediaFit || 'cover',
+    mediaWidth: base.mediaWidth || 'full',
+    mediaWidthPct: base.mediaWidthPct ?? 100,
+    mediaAspect: base.mediaAspect ?? 1.6,
+    mediaOverlays: Array.isArray(base.mediaOverlays) ? base.mediaOverlays : [],
+    mediaCaption: base.mediaCaption || ''
+  };
+}
 async function adminCmsCreate(kind, data){
+  if(kind==='guides'){
+    const slug=normalizeGuideSlug(data.slug);
+    if(!isValidGuideSlug(slug)) throw new Error('slug 형식이 올바르지 않습니다. 예: getting-started');
+    const {doc,getDoc,setDoc,serverTimestamp}=firestoreApi;
+    const ref=doc(db,'guides',slug);
+    if((await getDoc(ref)).exists()) throw new Error('이미 존재하는 slug입니다.');
+    const body=String(data.content||'').trim();
+    if(!body) throw new Error('내용을 입력하세요.');
+    const title=String(data.title||'').trim();
+    const category=String(data.category||'일반').trim() || '일반';
+    const section=buildGuideSectionFromBody(title, category, body, null);
+    await setDoc(ref,{
+      title,
+      slug,
+      category,
+      summary:String(data.summary||'').trim(),
+      tips:body,
+      content:body,
+      contentMarkdown:body,
+      contentFormat:'markdown',
+      heroImage:'',
+      heroVideo:'',
+      heroVideoType:'',
+      heroOverlays:[],
+      features:[],
+      sections:[section],
+      steps:[{ title:section.title, body }],
+      faq:[],
+      relatedGuides:[],
+      published:data.published!==false,
+      order:Number(data.order||100),
+      email:currentUser?.email||'',
+      authorUid:currentUser?.uid||'',
+      authorRole:'admin',
+      displayName:BRAND_AUTHOR,
+      createdAt:serverTimestamp(),
+      updatedAt:serverTimestamp()
+    });
+    return slug;
+  }
   if(kind==='notices'){
     return adminAdd('announcements',{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', pinned:!!data.pinned, viewCount:0, email:currentUser?.email||''});
   }
@@ -7745,6 +7868,38 @@ async function adminCmsUpdate(kind, id, data){
   const {doc,updateDoc,setDoc,serverTimestamp}=firestoreApi;
   const collectionName=adminCmsCollection(kind);
   const ref=doc(db,collectionName,id);
+  if(kind==='guides'){
+    const slug=normalizeGuideSlug(data.slug||id);
+    if(!isValidGuideSlug(slug)) throw new Error('slug 형식이 올바르지 않습니다. 예: getting-started');
+    if(slug!==id) throw new Error('등록된 가이드 slug는 변경할 수 없습니다. 새 글로 등록하세요.');
+    const body=String(data.content||'').trim();
+    if(!body) throw new Error('내용을 입력하세요.');
+    const title=String(data.title||'').trim();
+    const category=String(data.category||'일반').trim() || '일반';
+    const existing=adminCmsFind('guides', id) || {};
+    const sections=Array.isArray(existing.sections) && existing.sections.length
+      ? existing.sections.map((sec,i)=> i===0 ? buildGuideSectionFromBody(title, category, body, sec) : sec)
+      : [buildGuideSectionFromBody(title, category, body, null)];
+    const steps=Array.isArray(existing.steps) && existing.steps.length
+      ? existing.steps.map((st,i)=> i===0 ? { ...st, title: title || st.title || '안내', body } : st)
+      : [{ title: title || '안내', body }];
+    await setDoc(ref,{
+      title,
+      slug,
+      category,
+      summary:String(data.summary||'').trim(),
+      tips:body,
+      content:body,
+      contentMarkdown:body,
+      contentFormat:'markdown',
+      sections,
+      steps,
+      published:data.published!==false,
+      order:Number(data.order||100),
+      updatedAt:serverTimestamp()
+    },{merge:true});
+    return;
+  }
   if(kind==='notices'){
     await updateDoc(ref,{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', visible:data.visible!==false, pinned:!!data.pinned, updatedAt:serverTimestamp()});
     return;
@@ -8193,6 +8348,11 @@ function listenAdminPostManager(){
   const {collection,onSnapshot,query,orderBy}=firestoreApi;
   const paint=()=>{ if($('adminCmsList')) renderAdminCmsTable(); };
   if($('adminCmsList') || $('adminNoticeList')) addUnsub(onSnapshot(query(collection(db,'announcements'),orderBy('createdAt','desc')), snap=>{ adminNoticeRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('notices'); paint(); }));
+  if($('adminCmsList')) addUnsub(onSnapshot(collection(db,'guides'), snap=>{
+    adminGuideRows=snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>Number(a.order||0)-Number(b.order||0) || adminTsSec(b.updatedAt||b.createdAt)-adminTsSec(a.updatedAt||a.createdAt));
+    paint();
+  }, err => console.error('guides cms', err)));
   if($('adminCmsList') || $('adminPatchList')) addUnsub(onSnapshot(query(collection(db,'patchNotes'),orderBy('createdAt','desc')), snap=>{ adminPatchRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('patches'); paint(); }));
   if($('adminCmsList') || $('adminFaqList')) addUnsub(onSnapshot(query(collection(db,'faq'),orderBy('order','asc')), snap=>{ adminFaqRows=snap.docs.map(d=>({id:d.id,...d.data()})); renderAdminPostTable('faq'); paint(); }));
 }
@@ -16006,7 +16166,7 @@ function buildMainNavHtml(base, purchaseHref){
   return [
     `<a class="top-nav-link" href="${localeHomeHref()}" data-nav="home"><span>홈</span></a>`,
     `<a class="top-nav-link" href="${base}product.html" data-nav="product"><span>제품</span></a>`,
-    `<div class="top-nav-group" data-nav-group="guides"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>가이드</span><span class="nav-soon-badge">준비중</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${guideHub}${guideItems}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="guides"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>가이드</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${guideHub}${guideItems}</div></div></div>`,
     `<div class="top-nav-group" data-nav-group="downloads"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>다운로드</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}downloads.html`, title:'Windows 다운로드', desc:'설치 파일 받기', icon:'download', attrs:'data-nav="downloads" data-hub="downloads"'})}${topNavMenuItem({href:`${base}patch-notes.html`, title:'업데이트 내역', desc:'버전별 변경점', icon:'history', attrs:'data-hub="patches"'})}</div></div></div>`,
     `<a class="top-nav-link is-purchase" href="${purchaseHref}" data-nav="purchase"><span>구매</span></a>`,
     `<div class="top-nav-group" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', desc:'운영·이벤트 안내', icon:'megaphone', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', desc:'회원 소통 공간', icon:'chat', attrs:'data-hub="board"'})}</div></div></div>`,

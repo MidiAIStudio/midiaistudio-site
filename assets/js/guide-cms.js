@@ -1594,6 +1594,10 @@ export async function initGuideCms() {
     allGuides = isAdmin
       ? await loadAllGuidesAdmin()
       : await loadPublishedGuides();
+    // Public list: if Firestore is empty or blocked, still show built-in menus.
+    if (!allGuides.length) {
+      allGuides = SEED_GUIDES.map((g) => ({ ...g, id: g.slug, published: true }));
+    }
     if (isGuideListPage()) {
       renderList(allGuides);
       refreshAdminChrome();
