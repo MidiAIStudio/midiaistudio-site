@@ -13,6 +13,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://midiaistudio.com/qa.html</loc>
+    <lastmod>2026-10-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://midiaistudio.com/business-info.html</loc>
     <lastmod>2026-08-16</lastmod>
     <changefreq>monthly</changefreq>

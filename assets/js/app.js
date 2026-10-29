@@ -327,7 +327,7 @@ const attrOriginals = new WeakMap();
 
 const I18N = {
   en: {
-    '번호':'No.','글쓴이':'Author','작성일':'Date','포털':'Portal','커뮤니티':'Community','고객지원':'Support','지원':'Support','계정':'Account','홈':'Home','제품':'Product','다운로드':'Downloads','구매':'Purchase','변환가이드':'Conversion Guides','전체 가이드':'All Guides','변환 가이드':'Conversion Guides','MIDI 변환 가이드':'MIDI Conversion Guides','변환 FAQ':'Conversion FAQ','가이드':'Guides','준비중':'Coming soon','소개':'About','회사·제작자':'Company / Creator','지원하는 워크플로':'Supported workflows','무엇을 MIDI로 변환할 수 있나요':'What you can convert to MIDI','제품 보기':'View product','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'From input to editing and scores — all in one MidiAI Studio app.','입력':'Input','코어':'Core','결과':'Output','피아노 커버·영상 링크를 분석해 MIDI로 변환':'Analyze piano covers and video links into MIDI','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'Convert MP3, WAV, and other audio with AI','악보 PDF를 인식해 편집 가능한 MIDI로':'Recognize score PDFs into editable MIDI','AI MIDI 변환':'AI MIDI conversion','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'The core engine that turns inputs into MIDI','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'Edit notes and velocity in a multi-track piano roll','MusicXML / PDF 악보':'MusicXML / PDF scores','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ score conversion and score workflows','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'Turn converted MIDI into printable PDF and MusicXML scores','라이브러리 저장':'Library save','변환·편집한 MIDI를 모아 다시 열어 작업':'Collect converted MIDI and reopen to keep working','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'Paste a YouTube URL or search for piano covers and performances. Pick a range on the waveform, then convert to MIDI with AI.','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'Upload local audio such as MP3 or WAV. Preview the range, then export MIDI for your chosen instrument.','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'Recognize scanned or print-ready score PDFs into editable MIDI. Extracted notes flow straight into MIDI editing and score workflows.','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'The core engine that turns YouTube, audio, and PDF inputs into MIDI. Choose instruments, set ranges, and track conversion in one place.','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'Edit converted MIDI right away in a multi-track piano roll — notes, velocity, CC, and quantize included.','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'Export converted MIDI as printable PDF scores and MusicXML, with score preview and save-to-results support.','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'Keep converted MIDI in the library and reopen later to continue editing or score conversion.','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'Practical conversion guides and in-depth articles for PDF, YouTube, MP3, Audio, MusicXML, and MIDI→PDF.','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'Practical conversion guides and in-depth articles for PDF, YouTube, MP3, Audio, and MusicXML.','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — practical guides and 50 in-depth articles matched to search intent.','공지사항':'Notices','패치노트 목록':'Patch notes list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','업데이트':'Updates','FAQ':'FAQ','자유게시판':'Free board','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout','문의 작성':'Create ticket','전체 보기':'View all',
+    '번호':'No.','글쓴이':'Author','작성일':'Date','포털':'Portal','커뮤니티':'Community','질문답변':'Q&A','고객지원':'Support','지원':'Support','계정':'Account','홈':'Home','제품':'Product','다운로드':'Downloads','구매':'Purchase','변환가이드':'Conversion Guides','전체 가이드':'All Guides','변환 가이드':'Conversion Guides','MIDI 변환 가이드':'MIDI Conversion Guides','변환 FAQ':'Conversion FAQ','가이드':'Guides','준비중':'Coming soon','소개':'About','회사·제작자':'Company / Creator','지원하는 워크플로':'Supported workflows','무엇을 MIDI로 변환할 수 있나요':'What you can convert to MIDI','제품 보기':'View product','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'From input to editing and scores — all in one MidiAI Studio app.','입력':'Input','코어':'Core','결과':'Output','피아노 커버·영상 링크를 분석해 MIDI로 변환':'Analyze piano covers and video links into MIDI','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'Convert MP3, WAV, and other audio with AI','악보 PDF를 인식해 편집 가능한 MIDI로':'Recognize score PDFs into editable MIDI','AI MIDI 변환':'AI MIDI conversion','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'The core engine that turns inputs into MIDI','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'Edit notes and velocity in a multi-track piano roll','MusicXML / PDF 악보':'MusicXML / PDF scores','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ score conversion and score workflows','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'Turn converted MIDI into printable PDF and MusicXML scores','라이브러리 저장':'Library save','변환·편집한 MIDI를 모아 다시 열어 작업':'Collect converted MIDI and reopen to keep working','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'Paste a YouTube URL or search for piano covers and performances. Pick a range on the waveform, then convert to MIDI with AI.','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'Upload local audio such as MP3 or WAV. Preview the range, then export MIDI for your chosen instrument.','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'Recognize scanned or print-ready score PDFs into editable MIDI. Extracted notes flow straight into MIDI editing and score workflows.','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'The core engine that turns YouTube, audio, and PDF inputs into MIDI. Choose instruments, set ranges, and track conversion in one place.','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'Edit converted MIDI right away in a multi-track piano roll — notes, velocity, CC, and quantize included.','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'Export converted MIDI as printable PDF scores and MusicXML, with score preview and save-to-results support.','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'Keep converted MIDI in the library and reopen later to continue editing or score conversion.','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'Practical conversion guides and in-depth articles for PDF, YouTube, MP3, Audio, MusicXML, and MIDI→PDF.','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'Practical conversion guides and in-depth articles for PDF, YouTube, MP3, Audio, and MusicXML.','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — practical guides and 50 in-depth articles matched to search intent.','공지사항':'Notices','패치노트 목록':'Patch notes list','운영 안내, 이벤트, 중요 공지를 확인합니다.':'Check service notices, events, and important updates.','패치노트':'Patch notes','업데이트':'Updates','FAQ':'FAQ','자유게시판':'Free board','질문답변':'Q&A','사용 질문과 답변':'Ask & answer about the product','글쓰기':'Write','댓글':'Comments','댓글 등록':'Post comment','답글':'Reply','추천':'Like','조회':'Views','1:1 문의':'Support','1:1 문의 작성':'Create ticket','나의 문의':'My tickets','내 계정':'Account','관리자':'Admin','로그아웃':'Logout','문의 작성':'Create ticket','전체 보기':'View all',
     '7월 31일까지 할인 진행중':'Discount available until July 31','피아노 커버를':'Piano covers','프로 MIDI':'pro MIDI','로':'into MIDI','MIDI로 바꾸는':'into MIDI','가장 쉬운 방법':'made easy','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'The easiest way to turn piano covers into MIDI','MidiAI Studio 공식 포털입니다.':'MidiAI Studio official portal.','구매, 다운로드, 공지사항, 패치노트, 1:1 문의를 이용할 수 있습니다.':'Use purchase, downloads, notices, patch notes, and 1:1 support.','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio official portal. The home page focuses on product, purchase, and downloads; notices, patch notes, and private support are separated into board-style pages.',
     '라이선스 구매하기':'Buy license','무료 체험 다운로드':'Download free trial','1:1 문의하기':'Contact support','Windows 지원':'Windows support','Google 계정 연동':'Google account linked','비공개 문의':'Private support','업데이트, 이벤트, 운영 안내를 확인합니다.':'Check updates, events, and service notices.','버전별 변경 사항을 확인합니다.':'Check changes by version.','비공개 문의를 작성하고 답변을 확인합니다.':'Create private tickets and check replies.','라이선스 상태와 로그인 정보를 확인합니다.':'Check license status and login details.','바로가기':'Open','문의하기':'Contact','확인하기':'View','최신 설치 파일':'Latest installer','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Shows the latest version from Firestore downloads/latest.','불러오는 중...':'Loading...','최신 설치 파일과 버전 정보를 확인합니다.':'Check the latest installer and version info.',
     'Google 로그인':'Sign in with Google','로그인 전':'Not signed in','Google 로그인으로 라이선스 확인 준비':'Sign in with Google to check your license','라이선스 확인 전':'License not checked',
@@ -346,7 +346,7 @@ const I18N = {
     '접속 정보':'Access information','국가':'Country','지역':'Region','최근 접속':'Last seen','IP':'IP','언어':'Language','접속 환경':'Client','국가 정보 없음':'Location unavailable','MidiAI Studio App':'MidiAI Studio App'
   },
   ja: {
-    '번호':'番号','글쓴이':'投稿者','작성일':'作成日','포털':'ポータル','커뮤니티':'コミュニティ','고객지원':'サポート','지원':'サポート','계정':'アカウント','홈':'ホーム','제품':'製品','다운로드':'ダウンロード','구매':'購入','변환가이드':'変換ガイド','전체 가이드':'ガイド一覧','변환 가이드':'変換ガイド','MIDI 변환 가이드':'MIDI変換ガイド','변환 FAQ':'変換FAQ','가이드':'ガイド','준비중':'準備中','소개':'紹介','회사·제작자':'会社・制作','지원하는 워크플로':'対応ワークフロー','무엇을 MIDI로 변환할 수 있나요':'MIDIに変換できるもの','제품 보기':'製品を見る','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'入力から編集・楽譜まで、MidiAI Studioひとつでつながります。','입력':'入力','코어':'コア','결과':'結果','피아노 커버·영상 링크를 분석해 MIDI로 변환':'ピアノカバーや動画リンクを解析してMIDIに変換','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'MP3・WAVなどのオーディオをAIで変換','악보 PDF를 인식해 편집 가능한 MIDI로':'楽譜PDFを認識して編集可能なMIDIに','AI MIDI 변환':'AI MIDI変換','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'入力をMIDIに変換するMidiAI Studioの中核エンジン','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'マルチトラックピアノロールでノート・ベロシティを編集','MusicXML / PDF 악보':'MusicXML / PDF楽譜','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ 楽譜変換と楽譜ワークフロー','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'変換したMIDIを印刷用PDF・MusicXML楽譜に','라이브러리 저장':'ライブラリ保存','변환·편집한 MIDI를 모아 다시 열어 작업':'変換・編集したMIDIをまとめて再度開いて作業','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'YouTubeのURLを貼るか検索してピアノカバー・演奏動画を読み込みます。波形で区間を選び、AIがMIDIに変換します。','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'MP3やWAVなどのローカル音声をアップロードして変換。プレビューで区間を確認し、希望の楽器でMIDIを取得できます。','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'スキャンや印刷用の楽譜PDFを認識して編集可能なMIDIに変換。抽出した音符はMIDI編集・楽譜ワークフローへそのまま続きます。','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'YouTube・音声・PDF入力をMIDIに変える中核エンジン。楽器選択、区間指定、変換進行を一か所で処理します。','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'変換したMIDIをマルチトラックピアノロールですぐ編集。ノート、ベロシティ、CC、クオンタイズまでプロ編集が可能です。','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'変換・編集したMIDIを印刷用PDF楽譜とMusicXMLで書き出します。楽譜プレビューと結果フォルダ保存に対応します。','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'変換・編集したMIDIをライブラリにまとめ、あとで再度開いて編集・楽譜変換を続けられます。','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXML・MIDI→PDFの変換ガイドと詳細記事をまとめています。','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXMLの変換ガイドと詳細記事をまとめています。','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI、YouTube to MIDI、MP3 to MIDI、Audio to MIDI、MusicXML — 検索意図に合わせた実践ガイドと50本の詳細記事。','공지사항':'お知らせ','패치노트 목록':'パッチノート一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','업데이트':'アップデート','FAQ':'FAQ','자유게시판':'自由掲示板','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト','문의 작성':'問い合わせ作成','전체 보기':'すべて見る',
+    '번호':'番号','글쓴이':'投稿者','작성일':'作成日','포털':'ポータル','커뮤니티':'コミュニティ','고객지원':'サポート','지원':'サポート','계정':'アカウント','홈':'ホーム','제품':'製品','다운로드':'ダウンロード','구매':'購入','변환가이드':'変換ガイド','전체 가이드':'ガイド一覧','변환 가이드':'変換ガイド','MIDI 변환 가이드':'MIDI変換ガイド','변환 FAQ':'変換FAQ','가이드':'ガイド','준비중':'準備中','소개':'紹介','회사·제작자':'会社・制作','지원하는 워크플로':'対応ワークフロー','무엇을 MIDI로 변환할 수 있나요':'MIDIに変換できるもの','제품 보기':'製品を見る','입력부터 편집·악보까지 MidiAI Studio 한 앱에서 이어집니다.':'入力から編集・楽譜まで、MidiAI Studioひとつでつながります。','입력':'入力','코어':'コア','결과':'結果','피아노 커버·영상 링크를 분석해 MIDI로 변환':'ピアノカバーや動画リンクを解析してMIDIに変換','MP3 / Audio → MIDI':'MP3 / Audio → MIDI','MP3·WAV 등 오디오 파일을 AI로 변환':'MP3・WAVなどのオーディオをAIで変換','악보 PDF를 인식해 편집 가능한 MIDI로':'楽譜PDFを認識して編集可能なMIDIに','AI MIDI 변환':'AI MIDI変換','MidiAI Studio가 입력을 MIDI로 변환하는 중심 엔진':'入力をMIDIに変換するMidiAI Studioの中核エンジン','멀티트랙 피아노 롤에서 노트·벨로시티 편집':'マルチトラックピアノロールでノート・ベロシティを編集','MusicXML / PDF 악보':'MusicXML / PDF楽譜','MIDI ↔ 악보 변환과 악보 워크플로':'MIDI ↔ 楽譜変換と楽譜ワークフロー','MIDI → PDF / MusicXML':'MIDI → PDF / MusicXML','변환된 MIDI를 인쇄용 PDF·MusicXML 악보로':'変換したMIDIを印刷用PDF・MusicXML楽譜に','라이브러리 저장':'ライブラリ保存','변환·편집한 MIDI를 모아 다시 열어 작업':'変換・編集したMIDIをまとめて再度開いて作業','YouTube URL을 붙여넣거나 검색해 피아노 커버·연주 영상을 불러옵니다. 웨이브폼으로 구간을 고른 뒤 AI가 MIDI로 변환합니다.':'YouTubeのURLを貼るか検索してピアノカバー・演奏動画を読み込みます。波形で区間を選び、AIがMIDIに変換します。','MP3, WAV 등 로컬 오디오를 업로드해 변환합니다. 미리듣기로 구간을 확인한 뒤 원하는 악기로 MIDI를 받을 수 있습니다.':'MP3やWAVなどのローカル音声をアップロードして変換。プレビューで区間を確認し、希望の楽器でMIDIを取得できます。','스캔·인쇄용 악보 PDF를 인식해 편집 가능한 MIDI로 바꿉니다. 추출된 음표는 MIDI 편집·악보 워크플로로 바로 이어집니다.':'スキャンや印刷用の楽譜PDFを認識して編集可能なMIDIに変換。抽出した音符はMIDI編集・楽譜ワークフローへそのまま続きます。','YouTube·오디오·PDF 입력을 MIDI로 바꾸는 중심 엔진입니다. 악기 선택, 구간 지정, 변환 진행을 한곳에서 처리합니다.':'YouTube・音声・PDF入力をMIDIに変える中核エンジン。楽器選択、区間指定、変換進行を一か所で処理します。','변환된 MIDI를 멀티트랙 피아노 롤에서 바로 편집합니다. 노트, 벨로시티, CC, 양자화까지 프로 편집이 가능합니다.':'変換したMIDIをマルチトラックピアノロールですぐ編集。ノート、ベロシティ、CC、クオンタイズまでプロ編集が可能です。','변환·편집한 MIDI를 인쇄용 PDF 악보와 MusicXML로 내보냅니다. 악보 미리보기와 결과 폴더 저장을 지원합니다.':'変換・編集したMIDIを印刷用PDF楽譜とMusicXMLで書き出します。楽譜プレビューと結果フォルダ保存に対応します。','변환·편집한 MIDI를 라이브러리에 모아 두고, 나중에 다시 열어 편집·악보 변환을 이어갈 수 있습니다.':'変換・編集したMIDIをライブラリにまとめ、あとで再度開いて編集・楽譜変換を続けられます。','PDF·YouTube·MP3·Audio·MusicXML·MIDI→PDF 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXML・MIDI→PDFの変換ガイドと詳細記事をまとめています。','PDF·YouTube·MP3·Audio·MusicXML 변환 가이드와 심화 아티클을 모았습니다.':'PDF・YouTube・MP3・Audio・MusicXMLの変換ガイドと詳細記事をまとめています。','PDF to MIDI, YouTube to MIDI, MP3 to MIDI, Audio to MIDI, MusicXML — 검색 의에 맞춘 실용 가이드와 50개 심화 아티클.':'PDF to MIDI、YouTube to MIDI、MP3 to MIDI、Audio to MIDI、MusicXML — 検索意図に合わせた実践ガイドと50本の詳細記事。','공지사항':'お知らせ','패치노트 목록':'パッチノート一覧','운영 안내, 이벤트, 중요 공지를 확인합니다.':'運営案内、イベント、重要なお知らせを確認できます。','패치노트':'パッチノート','업데이트':'アップデート','FAQ':'FAQ','자유게시판':'自由掲示板','질문답변':'Q&A','사용 질문과 답변':'製品の使い方を質問・回答','글쓰기':'投稿','댓글':'コメント','댓글 등록':'コメント投稿','답글':'返信','추천':'いいね','조회':'閲覧','1:1 문의':'お問い合わせ','1:1 문의 작성':'問い合わせ作成','나의 문의':'マイ問い合わせ','내 계정':'アカウント','관리자':'管理者','로그아웃':'ログアウト','문의 작성':'問い合わせ作成','전체 보기':'すべて見る',
     '7월 31일까지 할인 진행중':'7月31日まで割引中','피아노 커버를':'ピアノカバーを','프로 MIDI':'プロMIDI','로':'に','MIDI로 바꾸는':'MIDIに変える','가장 쉬운 방법':'一番簡単な方法','피아노 커버를MIDI로 바꾸는가장 쉬운 방법':'ピアノカバーをMIDIに変える一番簡単な方法','MidiAI Studio 공식 포털입니다.':'MidiAI Studio公式ポータルです。','구매, 다운로드, 공지사항, 패치노트, 1:1 문의를 이용할 수 있습니다.':'購入・ダウンロード・お知らせ・パッチノート・お問い合わせをご利用いただけます。','MidiAI Studio 공식 포털입니다. 메인 화면은 소개와 구매/다운로드 중심으로 두고, 공지사항·패치노트·1:1 문의는 별도 게시판처럼 분리했습니다.':'MidiAI Studio公式ポータルです。ホームは紹介・購入・ダウンロードを中心にし、お知らせ・パッチノート・非公開問い合わせは別ページに分けました。',
     '라이선스 구매하기':'ライセンス購入','무료 체험 다운로드':'無料体験ダウンロード','1:1 문의하기':'問い合わせる','Windows 지원':'Windows対応','Google 계정 연동':'Googleアカウント連携','비공개 문의':'非公開問い合わせ','업데이트, 이벤트, 운영 안내를 확인합니다.':'アップデート、イベント、運営案内を確認できます。','버전별 변경 사항을 확인합니다.':'バージョン別の変更内容を確認できます。','비공개 문의를 작성하고 답변을 확인합니다.':'非公開問い合わせを作成し、返信を確認できます。','라이선스 상태와 로그인 정보를 확인합니다.':'ライセンス状態とログイン情報を確認できます。','바로가기':'開く','문의하기':'問い合わせ','확인하기':'確認','최신 설치 파일':'最新インストーラー','Firestore downloads/latest 문서를 기준으로 최신 버전을 표시합니다.':'Firestore downloads/latest を基準に最新バージョンを表示します。','불러오는 중...':'読み込み中...','최신 설치 파일과 버전 정보를 확인합니다.':'最新インストーラーとバージョン情報を確認できます。',
     'Google 로그인':'Googleログイン','로그인 전':'未ログイン','Google 로그인으로 라이선스 확인 준비':'Googleログインでライセンス確認','라이선스 확인 전':'ライセンス未確認',
@@ -4506,7 +4506,7 @@ async function setAuthUiSignedIn(user){
   setNotifyBellVisible(true);
   if($('myTicketList')) listenMyTickets();
   if($('ticketDetail')) listenTicketDetail();
-  if (page==='board-write.html') initBoardPostEditor();
+  if (page==='board-write.html' || page==='qa-write.html') initBoardPostEditor();
   if (page==='board-post.html'){ refreshBoardPostActions(); maybeFocusBoardCommentFromQuery(); }
   if (isAdminConsolePage()) {
     if (isAdminUser) {
@@ -4521,7 +4521,7 @@ async function setAuthUiSignedIn(user){
   refreshDownloadCard(true);
   updatePurchaseAccountBox();
   updateSupportFormUi();
-  if(page==='board.html') applyBoardMineModeUi();
+  if(page==='board.html' || page==='qa.html') applyBoardMineModeUi();
   refreshOwnCredits({ freshToken:true, ledger: !!$('accountMeta'), reason:'signin' });
 }
 
@@ -4890,9 +4890,9 @@ function routeLoadPublic(){
   if(page==='patch-notes.html') listenPatchNotes();
   if(page==='patch-note.html') listenPatchDetail();
   if(page==='faq.html') listenFaq();
-  if(page==='board.html') listenBoardPosts();
+  if(page==='board.html' || page==='qa.html') listenBoardPosts();
   if(page==='board-post.html') listenBoardPostDetail();
-  if(page==='board-write.html') initBoardPostEditor();
+  if(page==='board-write.html' || page==='qa-write.html') initBoardPostEditor();
 }
 /**
  * Normalize installer download URLs for cross-browser attachment responses.
@@ -7944,7 +7944,7 @@ async function adminCmsCreate(kind, data){
   }
   return adminAdd('boardPosts',{
     title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown',
-    deleted:false, edited:false, category:'free', email:boardEmail(),
+    deleted:false, edited:false, category:'free', secret:false, email:boardEmail(),
     authorLicensed:false, pinned:!!data.pinned, commentCount:0, viewCount:0, likeCount:0, attachments:[]
   });
 }
@@ -13516,15 +13516,76 @@ function isOwnerRecord(x){ return !!(currentUser && x && (x.uid === currentUser.
 function canManageRecord(x){ return isAdminUser || isOwnerRecord(x); }
 function boardDisplayName(){ return isAdminUser ? BRAND_AUTHOR : (currentUser?.displayName || currentUser?.email || 'Google User'); }
 function boardEmail(){ return currentUser?.email || ''; }
-function boardPostUrl(id){ return `./board-post.html?id=${encodeURIComponent(id)}`; }
-function boardEditUrl(id){ return `./board-write.html?id=${encodeURIComponent(id)}`; }
+function normalizeBoardCategory(v){
+  const c = String(v || '').toLowerCase().trim();
+  if(c === 'qa' || c === 'qna' || c === 'question') return 'qa';
+  return 'free';
+}
+function boardCategoryLabel(cat){
+  const c = normalizeBoardCategory(cat);
+  if(c === 'qa'){
+    if(lang === 'en') return 'Q&A';
+    if(lang === 'ja') return 'Q&A';
+    return '질문답변';
+  }
+  if(lang === 'en') return 'Community';
+  if(lang === 'ja') return 'コミュニティ';
+  return '자유게시판';
+}
+function boardCategoryFromPage(){
+  if(page === 'qa.html' || page === 'qa-write.html') return 'qa';
+  if(page === 'board-post.html'){
+    const q = getParam('cat');
+    if(q) return normalizeBoardCategory(q);
+    if(activeBoardPost) return normalizeBoardCategory(activeBoardPost.category);
+  }
+  if(page === 'board-write.html'){
+    const q = getParam('cat');
+    if(q) return normalizeBoardCategory(q);
+  }
+  return 'free';
+}
+function boardRowCategory(row){
+  if(!row || row.category == null || row.category === '') return 'free';
+  return normalizeBoardCategory(row.category);
+}
+function boardListUrl(cat='free', opts={}){
+  const c = normalizeBoardCategory(cat);
+  let url = c === 'qa' ? './qa.html' : './board.html';
+  if(opts.mine) url += (url.includes('?') ? '&' : '?') + 'mine=1';
+  return url;
+}
+function boardWriteUrlFor(cat='free', id=''){
+  const c = normalizeBoardCategory(cat);
+  const base = c === 'qa' ? './qa-write.html' : './board-write.html';
+  return id ? `${base}?id=${encodeURIComponent(id)}` : base;
+}
+function boardPostUrl(id, cat){
+  const c = cat ? normalizeBoardCategory(cat) : '';
+  const qs = c === 'qa' ? `&cat=qa` : '';
+  return `./board-post.html?id=${encodeURIComponent(id)}${qs}`;
+}
+function boardEditUrl(id, cat){
+  return boardWriteUrlFor(cat || boardCategoryFromPage(), id);
+}
 function isBoardMineMode(){
   const v = String(getParam('mine')||'').toLowerCase();
   return v === '1' || v === 'true' || v === 'yes';
 }
+function isBoardSecretPost(x){
+  return !!(x && x.secret === true);
+}
+function canViewBoardPost(x){
+  if(!x || x.deleted===true) return false;
+  if(isBoardSecretPost(x)) return isAdminUser || isOwnerRecord(x);
+  return x.visible!==false;
+}
 function boardFilteredSorted(rows){
+  const cat = boardCategoryFromPage();
   const q=($('boardSearch')?.value||'').trim().toLowerCase();
-  let out=rows.filter(x=>x.visible!==false && x.deleted!==true).filter(x=>{
+  let out=rows.filter(x=>canViewBoardPost(x))
+    .filter(x=>boardRowCategory(x) === cat)
+    .filter(x=>{
     const hay=[x.title,x.content,x.displayName,x.email].join(' ').toLowerCase();
     return !q || hay.includes(q);
   });
@@ -13537,7 +13598,7 @@ function boardFilteredSorted(rows){
   return out;
 }
 function applyBoardMineModeUi(){
-  if(page !== 'board.html') return;
+  if(page !== 'board.html' && page !== 'qa.html') return;
   const mine = isBoardMineMode();
   const h1 = document.querySelector('.hub-topline h1');
   const desc = document.querySelector('.hub-topline .hub-desc');
@@ -13572,14 +13633,36 @@ function renderBoardPosts(rows, err){
     const no = x.pinned
       ? `<div class="hub-col-no is-pinned-no">${esc(tt('공지'))}</div>`
       : `<div class="hub-col-no">${rowNo}</div>`;
-    return `<a class="hub-list-row hub-notice-row hub-board-row ${x.pinned?'is-pinned':''}" href="${boardPostUrl(x.id)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
+    const cat = boardRowCategory(x);
+    const secretMark = isBoardSecretPost(x) ? '<span class="board-secret-badge" title="비밀글">🔒</span> ' : '';
+    return `<a class="hub-list-row hub-notice-row hub-board-row ${x.pinned?'is-pinned':''}${isBoardSecretPost(x)?' is-secret':''}" href="${boardPostUrl(x.id, cat)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}${secretMark}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
   }).join('')}</div>${hubPagerHtml('board', page, pages, total)}`;
   const pager = box.querySelector('[data-hub-pager="board"]');
   if(pager){ pager.dataset.total = String(total); pager.dataset.pages = String(pages); }
   bindHubPager(box, 'board', ()=>renderBoardPosts(window.__boardRows||[]));
 }
+function mergeBoardPostRows(...lists){
+  const map = new Map();
+  lists.flat().forEach((row)=>{
+    if(!row?.id) return;
+    map.set(row.id, row);
+  });
+  return [...map.values()];
+}
+function publishBoardRows(rows, err){
+  window.__boardRows = rows || [];
+  hubListPage.board = 1;
+  renderBoardPosts(window.__boardRows, err);
+  if(!err && rows?.length){
+    enrichRowsWithAuthorLicense(rows).then((enriched)=>{
+      window.__boardRows = enriched;
+      renderBoardPosts(window.__boardRows);
+    }).catch(()=>{});
+  }
+}
 function listenBoardPosts(){
-  if(!$('boardPostList')) return;
+  const box = $('boardPostList');
+  if(!box) return;
   applyBoardMineModeUi();
   const search=$('boardSearch');
   if(search && !search.dataset.boardBound){
@@ -13589,17 +13672,42 @@ function listenBoardPosts(){
       if(window.__boardRows) renderBoardPosts(window.__boardRows);
     });
   }
-  listenVisibleDocs('boardPosts',(rows,err)=>{
-    window.__boardRows=rows||[];
-    hubListPage.board = 1;
-    renderBoardPosts(window.__boardRows,err);
-    if(!err && rows?.length){
-      enrichRowsWithAuthorLicense(rows).then(enriched=>{
-        window.__boardRows=enriched;
-        renderBoardPosts(window.__boardRows);
-      }).catch(()=>{});
-    }
-  });
+  (box._boardUnsubs || []).forEach((fn)=>{ try{ fn(); }catch(_){ } });
+  box._boardUnsubs = [];
+  const track = (unsub)=>{
+    if(typeof unsub === 'function') box._boardUnsubs.push(unsub);
+    return unsub;
+  };
+  const {collection, query, where, orderBy, onSnapshot, getDocs} = firestoreApi;
+  const col = collection(db, 'boardPosts');
+  const state = { publicRows: [], secretRows: [] };
+  const emit = (err)=>{
+    publishBoardRows(mergeBoardPostRows(state.publicRows, state.secretRows), err);
+  };
+  const listenQ = (q, key)=>{
+    return track(addPublicUnsub(onSnapshot(q, (snap)=>{
+      state[key] = snap.docs.map((d)=>({ id:d.id, ...d.data() }));
+      emit();
+    }, async (err)=>{
+      console.warn('boardPosts realtime failed', err);
+      try{
+        const s = await getDocs(q);
+        state[key] = s.docs.map((d)=>({ id:d.id, ...d.data() }));
+        emit();
+      }catch(e){
+        console.error(e);
+        if(key === 'publicRows') emit(e);
+      }
+    })));
+  };
+  // Open posts: visible==true (legacy-safe). Secret posts are stored with visible:false
+  // so they never collide with the public query under Firestore security rules.
+  listenQ(query(col, where('visible','==',true), orderBy('createdAt','desc')), 'publicRows');
+  if(isAdminUser){
+    listenQ(query(col, where('secret','==',true), orderBy('createdAt','desc')), 'secretRows');
+  } else if(currentUser?.uid){
+    listenQ(query(col, where('uid','==',currentUser.uid), where('secret','==',true), orderBy('createdAt','desc')), 'secretRows');
+  }
 }
 
 const BOARD_MAX_ATTACHMENTS = 5;
@@ -14188,13 +14296,16 @@ async function initBoardPostEditor(){
           $('boardPostMsg').textContent=tr('no_permission');
           if(submitBtn) submitBtn.disabled=true;
         } else {
-          $('boardWriteHeading') && ($('boardWriteHeading').textContent='자유게시판 글 수정');
+          const editCat = boardRowCategory(d);
+          $('boardWriteHeading') && ($('boardWriteHeading').textContent = `${boardCategoryLabel(editCat)} 글 수정`);
           $('boardPostTitle').value=d.title||'';
           initialMd=liveMd || pickMarkdownSource(d);
           existingBoardAttachments = Array.isArray(d.attachments) ? d.attachments.filter(x=>x && x.url) : [];
           renderBoardAttachmentPreview();
           form._editingPost = d;
+          form.dataset.boardCategory = editCat;
           if(isAdminUser && $('boardPostPinned')) $('boardPostPinned').checked=!!d.pinned;
+          if($('boardPostSecret')) $('boardPostSecret').checked=!!d.secret;
           if(submitBtn) submitBtn.disabled=false;
           if($('boardPostMsg')) $('boardPostMsg').textContent='';
         }
@@ -14205,6 +14316,11 @@ async function initBoardPostEditor(){
     } else if(submitBtn){
       submitBtn.disabled=false;
       if($('boardPostMsg')) $('boardPostMsg').textContent='';
+      form.dataset.boardCategory = boardCategoryFromPage();
+      if($('boardWriteHeading') && !id){
+        const cat = boardCategoryFromPage();
+        if(cat === 'qa') $('boardWriteHeading').textContent = '질문답변 글쓰기';
+      }
     }
     if(editorHost){
       await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
@@ -14212,7 +14328,7 @@ async function initBoardPostEditor(){
       form._mdEditor=await mountMarkdownEditor(editorHost,{
         value: initialMd,
         height: 420,
-        draftKey: `board:${draftId}`,
+        draftKey: `board:${boardCategoryFromPage()}:${draftId}`,
         storagePrefix: `cms-md/${uid}/board`,
         showActions: false,
         preferToast: false,
@@ -14240,7 +14356,12 @@ async function initBoardPostEditor(){
       const title=$('boardPostTitle').value.trim();
       if(!title){ $('boardPostMsg').textContent='제목을 입력하세요.'; return; }
       if(!mdContent){ $('boardPostMsg').textContent='본문을 입력하세요.'; return; }
-      const data={title,content:mdContent,contentMarkdown:mdContent,contentFormat:'markdown',visible:true,deleted:false,edited:!!id,category:'free',updatedAt:serverTimestamp()};
+      const category = normalizeBoardCategory(
+        editing.category || form.dataset.boardCategory || boardCategoryFromPage()
+      );
+      const secret = !!$('boardPostSecret')?.checked;
+      // Secret posts stay out of the public visible==true feed (author/admin load via secret query).
+      const data={title,content:mdContent,contentMarkdown:mdContent,contentFormat:'markdown',visible:!secret,deleted:false,edited:!!id,category,secret,updatedAt:serverTimestamp()};
       if(!id){
         data.uid=currentUser.uid;
         data.email=boardEmail();
@@ -14266,8 +14387,9 @@ async function initBoardPostEditor(){
           const uploaded = await uploadBoardAttachments(postId);
           if(uploaded.length) await setDoc(doc(db,'boardPosts',postId),{attachments:uploaded,updatedAt:serverTimestamp()},{merge:true});
         }
+        clearDraft(`board:${category}:${draftId}`);
         clearDraft(`board:${draftId}`);
-        location.href=boardPostUrl(postId);
+        location.href=boardPostUrl(postId, category);
       }catch(err){
         const raw=String(err?.message||err||'');
         if(/storage\/unauthorized|does not have permission/i.test(raw)){
@@ -14283,21 +14405,39 @@ async function initBoardPostEditor(){
 }
 function renderBoardPost(d,err){
   const box=$('boardPostDetail'); if(!box)return;
-  if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
-  if(!d || d.visible===false || d.deleted===true){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  if(err){
+    const denied = /permission|insufficient|Missing or insufficient/i.test(String(err.message||err||''));
+    box.innerHTML=`<p class="muted">${esc(denied ? (lang==='en'?'This is a private post.':'이 글은 비밀글입니다. 작성자와 관리자만 볼 수 있습니다.') : (err.message||tr('check_failed')))}</p>`;
+    return;
+  }
+  if(!d || d.deleted===true){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  if(!canViewBoardPost(d)){
+    box.innerHTML=`<p class="muted">${esc(lang==='en'?'This is a private post.':'이 글은 비밀글입니다. 작성자와 관리자만 볼 수 있습니다.')}</p>`;
+    return;
+  }
   activeBoardPost=d;
   const manage=canManageRecord(d);
+  const cat = boardRowCategory(d);
+  const boardLabel = boardCategoryLabel(cat);
   const labels = lang==='en'
-    ? {board:'Community', pinned:'Pinned post', author:'Author', date:'Date', views:'Views', likes:'Likes', comments:'Comments', like:'Like', edit:'Edit', del:'Delete'}
+    ? {board:boardLabel, pinned:'Pinned post', secret:'Private post', author:'Author', date:'Date', views:'Views', likes:'Likes', comments:'Comments', like:'Like', edit:'Edit', del:'Delete'}
     : lang==='ja'
-    ? {board:'コミュニティ', pinned:'固定投稿', author:'投稿者', date:'作成日', views:'閲覧', likes:'いいね', comments:'コメント', like:'いいね', edit:'編集', del:'削除'}
-    : {board:'자유게시판', pinned:'고정 게시글', author:'작성자', date:'작성일', views:'조회', likes:'추천', comments:'댓글', like:'추천', edit:'수정', del:'삭제'};
+    ? {board:boardLabel, pinned:'固定投稿', secret:'非公開', author:'投稿者', date:'作成日', views:'閲覧', likes:'いいね', comments:'コメント', like:'いいね', edit:'編集', del:'削除'}
+    : {board:boardLabel, pinned:'고정 게시글', secret:'비밀글', author:'작성자', date:'작성일', views:'조회', likes:'추천', comments:'댓글', like:'추천', edit:'수정', del:'삭제'};
   const author = contentAuthor(d);
   const aKind = authorKind(d);
   const likeLabel = esc(labels.like);
   const editIcon = `<svg class="post-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`;
   const delIcon = `<svg class="post-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
-  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${d.pinned?'📌 '+labels.pinned:labels.board}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid is-unified"><span class="meta-author meta-author-badge"><span class="author-badge is-${aKind}" title="${esc(authorKindLabel(aKind))}" aria-label="${esc(authorKindLabel(aKind))}">${authorKindIcon(aKind)}</span><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${mdBodyHtml(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="like-btn" type="button" aria-pressed="false">${boardLikeBtnInner(likeLabel,false)}</button>${manage?`<a class="post-action-btn post-edit-btn" href="${boardEditUrl(d.id)}">${editIcon}<span>${esc(labels.edit)}</span></a><button id="postDeleteBtn" class="post-action-btn post-delete-btn" type="button">${delIcon}<span>${esc(labels.del)}</span></button>`:''}</div>`;
+  const kicker = d.pinned ? `📌 ${labels.pinned}` : (isBoardSecretPost(d) ? `🔒 ${labels.secret}` : labels.board);
+  box.innerHTML=`<div class="post-card-head final-post-head"><div class="post-kicker">${kicker}</div><h1>${esc(d.title||'')}</h1><div class="post-meta-grid final-meta-grid is-unified"><span class="meta-author meta-author-badge"><span class="author-badge is-${aKind}" title="${esc(authorKindLabel(aKind))}" aria-label="${esc(authorKindLabel(aKind))}">${authorKindIcon(aKind)}</span><em>${esc(labels.author)}</em><b>${esc(author)}</b></span><span class="meta-date"><i>🕒</i><em>${esc(labels.date)}</em><b>${esc(fmtShortDate(d.createdAt))}</b></span><span><i>👁</i><em>${esc(labels.views)}</em><b>${Number(d.viewCount||0)}</b></span><span><i>👍</i><em>${esc(labels.likes)}</em><b id="postLikeCount">${Number(d.likeCount||0)}</b></span><span><i>💬</i><em>${esc(labels.comments)}</em><b>${Number(d.commentCount||0)}</b></span></div></div><div class="post-body-content">${mdBodyHtml(d.content||'')}</div>${boardAttachmentsHtml(d.attachments)}<div class="post-actions community-post-actions"><button id="postLikeBtn" class="like-btn" type="button" aria-pressed="false">${boardLikeBtnInner(likeLabel,false)}</button>${manage?`<a class="post-action-btn post-edit-btn" href="${boardEditUrl(d.id, cat)}">${editIcon}<span>${esc(labels.edit)}</span></a><button id="postDeleteBtn" class="post-action-btn post-delete-btn" type="button">${delIcon}<span>${esc(labels.del)}</span></button>`:''}</div>`;
+  const listHref = boardListUrl(cat);
+  const writeHref = boardWriteUrlFor(cat);
+  document.querySelectorAll('.post-nav-row a').forEach((a)=>{
+    const t = (a.textContent||'').trim();
+    if(t.includes('목록')) a.setAttribute('href', listHref);
+    if(t.includes('글쓰기')) a.setAttribute('href', writeHref);
+  });
   bindMdIn(box);
   hydrateBoardMidiPlayers(box);
   refreshBoardPostActions();
@@ -14372,7 +14512,8 @@ async function toggleBoardLike(postId){
 }
 async function deleteBoardPost(postId){
   if(!confirm(tr('confirm_delete')))return;
-  try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',postId),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true}); location.href='./board.html'; }catch(e){ alert(e.message); }
+  const cat = boardRowCategory(activeBoardPost) || boardCategoryFromPage();
+  try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',postId),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true}); location.href=boardListUrl(cat); }catch(e){ alert(e.message); }
 }
 function listenBoardComments(postId){
   const {collection,onSnapshot,query,where}=firestoreApi;
@@ -16395,7 +16536,7 @@ function buildMainNavHtml(base, purchaseHref){
     `<div class="top-nav-group" data-nav-group="guides"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>가이드</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${guideHub}${guideItems}</div></div></div>`,
     `<div class="top-nav-group" data-nav-group="downloads"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>다운로드</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}downloads.html`, title:'Windows 다운로드', desc:'설치 파일 받기', icon:'download', attrs:'data-nav="downloads" data-hub="downloads"'})}${topNavMenuItem({href:`${base}patch-notes.html`, title:'업데이트 내역', desc:'버전별 변경점', icon:'history', attrs:'data-hub="patches"'})}</div></div></div>`,
     `<a class="top-nav-link is-purchase" href="${purchaseHref}" data-nav="purchase"><span>구매</span></a>`,
-    `<div class="top-nav-group" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', desc:'운영·이벤트 안내', icon:'megaphone', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', desc:'회원 소통 공간', icon:'chat', attrs:'data-hub="board"'})}</div></div></div>`,
+    `<div class="top-nav-group" data-nav-group="community"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>커뮤니티</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}notices.html`, title:'공지사항', desc:'운영·이벤트 안내', icon:'megaphone', attrs:'data-hub="notices"'})}${topNavMenuItem({href:`${base}board.html`, title:'자유게시판', desc:'회원 소통 공간', icon:'chat', attrs:'data-hub="board"'})}${topNavMenuItem({href:`${base}qa.html`, title:'질문답변', desc:'사용 질문과 답변', icon:'help', attrs:'data-hub="qa"'})}</div></div></div>`,
     `<div class="top-nav-group" data-nav-group="support"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>고객지원</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}faq.html`, title:'FAQ', desc:'자주 묻는 질문', icon:'help', attrs:'data-hub="faq"'})}${topNavMenuItem({href:`${base}support.html`, title:'1:1 문의', desc:'비공개 상담', icon:'support', attrs:'data-hub="support"'})}${topNavMenuItem({href:`${base}my-tickets.html`, title:'나의 문의', desc:'내 티켓 확인', icon:'inbox', attrs:'data-hub="tickets"'})}</div></div></div>`,
     `<div class="top-nav-group" data-nav-group="account"><button type="button" class="top-nav-trigger" aria-expanded="false" aria-haspopup="true"><span>계정</span></button><div class="top-nav-panel"><div class="top-nav-panel-inner" role="menu">${topNavMenuItem({href:`${base}account.html`, title:'내 계정', desc:'라이선스·로그인', icon:'user', attrs:'data-nav="account"'})}</div></div></div>`
   ].join('');
@@ -16545,7 +16686,7 @@ function bindSidebar(){
   }
 }
 function initSidebarNav(){
-  const parentPage={'notice.html':'notices.html','patch-note.html':'patch-notes.html','board-post.html':'board.html','board-write.html':'board.html','ticket.html':'my-tickets.html','guide.html':'guide/index.html'};
+  const parentPage={'notice.html':'notices.html','patch-note.html':'patch-notes.html','board-post.html':(getParam('cat')==='qa'||boardRowCategory(activeBoardPost)==='qa')?'qa.html':'board.html','board-write.html':'board.html','qa-write.html':'qa.html','ticket.html':'my-tickets.html','guide.html':'guide/index.html'};
   const rawPage=page||'index.html';
   const file=parentPage[rawPage]||rawPage;
   const fileKey=String(file).replace(/\.html$/i,'').toLowerCase() || 'index';

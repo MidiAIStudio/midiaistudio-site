@@ -538,6 +538,14 @@ nav a.active{color:var(--text)}
 .board-emoji-item:hover{background:rgba(255,255,255,.1)}
 .board-emoji-hint{margin:6px 0 0;font-size:11px;color:var(--muted);padding:6px 2px 0;border-top:1px solid rgba(255,255,255,.08)}
 
+/* Board secret posts */
+.hub-page .hub-form-card .check{
+  display:flex;align-items:center;gap:8px;margin:0;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer
+}
+.hub-page .hub-form-card .check input{width:auto;margin:0}
+.board-secret-badge{display:inline-block;margin-right:2px;font-size:12px;vertical-align:middle}
+.hub-board-row.is-secret .hub-col-title-text{opacity:.92}
+
 /* Hub notice/patch attachment picker (reuses board gallery styles) */
 .edit-field-attachments>span,
 .admin-cms-form .edit-field-attachments>span{margin-bottom:8px;display:block}

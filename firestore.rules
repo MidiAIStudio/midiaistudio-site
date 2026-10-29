@@ -372,8 +372,21 @@ service cloud.firestore {
       return commentOk || likeOk || viewOk;
     }
 
+    function boardPostDataReadable(data) {
+      return isAdmin()
+        || (data.visible == true && data.get('secret', false) != true)
+        || (
+          data.get('secret', false) == true
+          && signedIn()
+          && (
+            data.uid == request.auth.uid
+            || data.get('authorUid', '') == request.auth.uid
+          )
+        );
+    }
+
     match /boardPosts/{postId} {
-      allow read: if resource.data.visible == true || isAdmin();
+      allow read: if boardPostDataReadable(resource.data);
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid;
       allow update: if isAdmin()
@@ -383,9 +396,10 @@ service cloud.firestore {
         || (signedIn() && resource.data.uid == request.auth.uid);
 
       match /comments/{commentId} {
-        allow read: if get(/databases/$(database)/documents/boardPosts/$(postId)).data.visible == true || isAdmin();
+        allow read: if boardPostDataReadable(get(/databases/$(database)/documents/boardPosts/$(postId)).data);
         allow create: if signedIn()
-          && request.resource.data.uid == request.auth.uid;
+          && request.resource.data.uid == request.auth.uid
+          && boardPostDataReadable(get(/databases/$(database)/documents/boardPosts/$(postId)).data);
         allow update: if isAdmin()
           || (signedIn() && resource.data.uid == request.auth.uid);
         allow delete: if isAdmin()
