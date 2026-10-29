@@ -1549,8 +1549,24 @@ nav{gap:10px!important}nav a{padding:8px 8px;border-radius:10px;transition:.18s 
 .hub-page .hub-list-head,.hub-page .hub-list-row{grid-template-columns:minmax(220px,1fr) 120px 56px 56px 56px 130px}
 .hub-page .hub-notice-head,.hub-page .hub-notice-row{grid-template-columns:72px minmax(0,1fr) 120px 110px}
 .hub-page .hub-board-head,.hub-page .hub-board-row{grid-template-columns:72px minmax(0,1fr) 120px 110px 64px}
+.hub-page .hub-board-head.is-admin-select,
+.hub-page .hub-board-row.is-admin-select{grid-template-columns:36px 64px minmax(0,1fr) 120px 110px 64px}
+.hub-page .hub-col-check{display:flex;align-items:center;justify-content:center}
+.hub-page .hub-col-check input{width:16px;height:16px;margin:0;accent-color:var(--accent2);cursor:pointer}
+.hub-page .hub-board-row.is-admin-select .hub-col-title{color:inherit;text-decoration:none;min-width:0}
+.hub-page .hub-board-row.is-admin-select .hub-col-title:hover .hub-col-title-text{text-decoration:underline}
+.board-admin-bulk{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+  margin:0 0 10px;padding:10px 12px;border-radius:12px;
+  border:1px dashed rgba(255,255,255,.16);background:rgba(0,0,0,.18)
+}
+.board-admin-bulk-count{font-size:12px;font-weight:800;color:var(--muted);margin-right:4px}
 .hub-page .hub-notice-head span:nth-child(1),.hub-page .hub-notice-row .hub-col-no{text-align:center}
-.hub-page .hub-board-head span:nth-child(1),.hub-page .hub-board-head span:nth-child(5),.hub-page .hub-board-row .hub-col-no,.hub-page .hub-board-row .hub-col-views{text-align:center}
+.hub-page .hub-board-head:not(.is-admin-select) span:nth-child(1),
+.hub-page .hub-board-head:not(.is-admin-select) span:nth-child(5),
+.hub-page .hub-board-head.is-admin-select span:nth-child(2),
+.hub-page .hub-board-head.is-admin-select span:nth-child(6),
+.hub-page .hub-board-row .hub-col-no,.hub-page .hub-board-row .hub-col-views{text-align:center}
 .hub-page .hub-col-no{color:#c7cbe4;font-size:12px;font-weight:900}
 .hub-page .hub-col-no.is-pinned-no{color:#9af2ff}
 .hub-page .hub-col-views{color:#c7cbe4;font-size:12px}

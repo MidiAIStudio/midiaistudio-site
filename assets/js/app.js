@@ -566,7 +566,23 @@ function hubNoticeHeadHtml(){
   return `<div class="hub-list-head hub-notice-head"><span>${esc(tt('번호'))}</span><span>${esc(tt('제목'))}</span><span>${esc(tt('글쓴이'))}</span><span>${esc(tt('작성일'))}</span></div>`;
 }
 function hubBoardHeadHtml(){
-  return `<div class="hub-list-head hub-notice-head hub-board-head"><span>${esc(tt('번호'))}</span><span>${esc(tt('제목'))}</span><span>${esc(tt('글쓴이'))}</span><span>${esc(tt('작성일'))}</span><span>${esc(tt('조회'))}</span></div>`;
+  const admin = !!isAdminUser;
+  const check = admin
+    ? `<span class="hub-col-check"><input type="checkbox" id="boardSelectAll" title="전체 선택" aria-label="전체 선택"></span>`
+    : '';
+  return `<div class="hub-list-head hub-notice-head hub-board-head${admin?' is-admin-select':''}">${check}<span>${esc(tt('번호'))}</span><span>${esc(tt('제목'))}</span><span>${esc(tt('글쓴이'))}</span><span>${esc(tt('작성일'))}</span><span>${esc(tt('조회'))}</span></div>`;
+}
+function boardAdminBulkBarHtml(){
+  if(!isAdminUser) return '';
+  const cat = boardCategoryFromPage();
+  const moveBtn = cat === 'free'
+    ? `<button type="button" class="secondary mini-btn" data-board-bulk="move-qa">질문답변으로 이동</button>`
+    : `<button type="button" class="secondary mini-btn" data-board-bulk="move-free">자유게시판으로 이동</button>`;
+  return `<div class="board-admin-bulk" id="boardAdminBulk">
+    <span class="board-admin-bulk-count" id="boardBulkCount">0개 선택</span>
+    ${moveBtn}
+    <button type="button" class="secondary mini-btn danger-btn" data-board-bulk="delete">선택 삭제</button>
+  </div>`;
 }
 function hubTicketHeadHtml(){
   return `<div class="hub-list-head hub-ticket-head"><span>${esc(tt('제목'))}</span><span>${esc(tt('유형'))}</span><span>${esc(tt('상태'))}</span><span>${esc(tt('작성일'))}</span></div>`;
@@ -3371,6 +3387,9 @@ function syncBoardAdminUi(){
   if(page==='patch-note.html' && window.__lastPatchDetail) renderPatchDetail(window.__lastPatchDetail);
   if(page==='faq.html' && Array.isArray(window.__lastFaqRows)) renderFaq(window.__lastFaqRows);
   if(page==='board-post.html' && activeBoardPost) renderBoardPost(activeBoardPost);
+  if((page==='board.html' || page==='qa.html') && Array.isArray(window.__boardRows) && $('boardPostList')){
+    renderBoardPosts(window.__boardRows);
+  }
 
   // Re-bind manage buttons if detail/list already rendered
   bindAdminPostActions(document);
@@ -13625,13 +13644,95 @@ function applyBoardMineModeUi(){
     $('boardMineToggle')?.remove();
   }
 }
+function ensureBoardSelectedSet(){
+  if(!(window.__boardSelected instanceof Set)) window.__boardSelected = new Set();
+  return window.__boardSelected;
+}
+function selectedBoardIds(){
+  return [...ensureBoardSelectedSet()];
+}
+function syncBoardBulkCount(){
+  const n = ensureBoardSelectedSet().size;
+  const el = $('boardBulkCount');
+  if(el) el.textContent = `${n}개 선택`;
+  const all = $('boardSelectAll');
+  if(all){
+    const boxes = [...document.querySelectorAll('#boardPostList [data-board-select]')];
+    const checked = boxes.filter((b)=>b.checked).length;
+    all.checked = boxes.length > 0 && checked === boxes.length;
+    all.indeterminate = checked > 0 && checked < boxes.length;
+  }
+}
+function bindBoardAdminSelectUi(root){
+  if(!isAdminUser || !root) return;
+  const selected = ensureBoardSelectedSet();
+  root.querySelectorAll('[data-board-select]').forEach((input)=>{
+    if(input.dataset.bound) return;
+    input.dataset.bound = '1';
+    input.addEventListener('click', (e)=>e.stopPropagation());
+    input.addEventListener('change', ()=>{
+      const id = input.getAttribute('data-board-select');
+      if(!id) return;
+      if(input.checked) selected.add(id);
+      else selected.delete(id);
+      syncBoardBulkCount();
+    });
+  });
+  const all = root.querySelector('#boardSelectAll');
+  if(all && !all.dataset.bound){
+    all.dataset.bound = '1';
+    all.addEventListener('change', ()=>{
+      root.querySelectorAll('[data-board-select]').forEach((input)=>{
+        input.checked = all.checked;
+        const id = input.getAttribute('data-board-select');
+        if(!id) return;
+        if(all.checked) selected.add(id);
+        else selected.delete(id);
+      });
+      syncBoardBulkCount();
+    });
+  }
+  root.querySelectorAll('[data-board-bulk]').forEach((btn)=>{
+    if(btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', async ()=>{
+      const act = btn.getAttribute('data-board-bulk');
+      const ids = selectedBoardIds();
+      if(!ids.length) return alert('선택된 글이 없습니다.');
+      if(act === 'delete'){
+        await adminDeleteBoardPosts(ids);
+        ids.forEach((id)=>selected.delete(id));
+        syncBoardBulkCount();
+        return;
+      }
+      if(act === 'move-qa'){
+        await adminMoveBoardPosts(ids, 'qa');
+        ids.forEach((id)=>selected.delete(id));
+        syncBoardBulkCount();
+        return;
+      }
+      if(act === 'move-free'){
+        await adminMoveBoardPosts(ids, 'free');
+        ids.forEach((id)=>selected.delete(id));
+        syncBoardBulkCount();
+      }
+    });
+  });
+  syncBoardBulkCount();
+}
 function renderBoardPosts(rows, err){
   const box=$('boardPostList'); if(!box)return;
   if(err){ box.innerHTML=`<div class="empty-card">${esc(err.message||tr('check_failed'))}</div>`; return; }
   const list=boardFilteredSorted(rows||[]);
-  if(!list.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
+  if(!list.length){
+    box.innerHTML=`${isAdminUser?boardAdminBulkBarHtml():''}<div class="empty-card">${tr('empty')}</div>`;
+    bindBoardAdminSelectUi(box);
+    return;
+  }
   const { page, pages, start, slice, total } = hubPaginate(list, 'board');
-  box.innerHTML=`${hubBoardHeadHtml()}<div class="hub-list-body">${slice.map((x,i)=>{
+  const admin = !!isAdminUser;
+  const selected = ensureBoardSelectedSet();
+  box.innerHTML=`${boardAdminBulkBarHtml()}${hubBoardHeadHtml()}<div class="hub-list-body">${slice.map((x,i)=>{
     const globalIndex = start + i;
     const rowNo = hubListRowNo(list, globalIndex, x);
     const no = x.pinned
@@ -13639,11 +13740,18 @@ function renderBoardPosts(rows, err){
       : `<div class="hub-col-no">${rowNo}</div>`;
     const cat = boardRowCategory(x);
     const secretMark = isBoardSecretPost(x) ? '<span class="board-secret-badge" title="비밀글">🔒</span> ' : '';
-    return `<a class="hub-list-row hub-notice-row hub-board-row ${x.pinned?'is-pinned':''}${isBoardSecretPost(x)?' is-secret':''}" href="${boardPostUrl(x.id, cat)}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}${secretMark}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
+    const href = boardPostUrl(x.id, cat);
+    const titleHtml = `<a class="hub-col-title" href="${href}"><b>${x.pinned?'📌 ':''}${secretMark}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></a>`;
+    if(admin){
+      const checked = selected.has(x.id) ? ' checked' : '';
+      return `<div class="hub-list-row hub-notice-row hub-board-row is-admin-select ${x.pinned?'is-pinned':''}${isBoardSecretPost(x)?' is-secret':''}" data-board-row="${esc(x.id)}"><label class="hub-col-check"><input type="checkbox" data-board-select="${esc(x.id)}"${checked}></label>${no}${titleHtml}${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></div>`;
+    }
+    return `<a class="hub-list-row hub-notice-row hub-board-row ${x.pinned?'is-pinned':''}${isBoardSecretPost(x)?' is-secret':''}" href="${href}">${no}<div class="hub-col-title"><b>${x.pinned?'📌 ':''}${secretMark}<span class="hub-col-title-text">${esc(x.title||tt('(제목 없음)'))}</span></b></div>${authorCellHtml(x)}<div class="hub-col-date">${esc(fmtListDate(x.createdAt))}</div><div class="hub-col-views">${Number(x.viewCount||0)}</div></a>`;
   }).join('')}</div>${hubPagerHtml('board', page, pages, total)}`;
   const pager = box.querySelector('[data-hub-pager="board"]');
   if(pager){ pager.dataset.total = String(total); pager.dataset.pages = String(pages); }
   bindHubPager(box, 'board', ()=>renderBoardPosts(window.__boardRows||[]));
+  bindBoardAdminSelectUi(box);
 }
 function mergeBoardPostRows(...lists){
   const map = new Map();
@@ -15337,8 +15445,31 @@ async function adminDeleteBoardPosts(ids, confirmMsg, skipConfirm=false){
       await setDoc(doc(db,'boardPosts',id),{visible:false,deleted:true,updatedAt:serverTimestamp()},{merge:true});
       adminCrmPostSelected.delete(id);
     }
+    if(Array.isArray(window.__boardRows)){
+      window.__boardRows = window.__boardRows.map((r)=> list.includes(r.id) ? {...r, visible:false, deleted:true} : r);
+      if($('boardPostList')) renderBoardPosts(window.__boardRows);
+    }
     adminFlash(list.length===1 ? tr('deleted') : `삭제 완료 · ${list.length}건`);
-    pushAdminCrmFeed('작성글 삭제', `${list.length}건`, selectedAdminUid);
+    try{ pushAdminCrmFeed('작성글 삭제', `${list.length}건`, selectedAdminUid); }catch(_){}
+  }catch(e){ alert(e.message); }
+}
+async function adminMoveBoardPosts(ids, targetCategory){
+  if(!isAdminUser) return alert(tr('no_permission'));
+  const list=(ids||[]).filter(Boolean);
+  if(!list.length) return;
+  const cat = normalizeBoardCategory(targetCategory);
+  const label = boardCategoryLabel(cat);
+  if(!confirm(`선택한 ${list.length}개 글을 ${label}(으)로 이동할까요?`)) return;
+  try{
+    const {doc,setDoc,serverTimestamp}=firestoreApi;
+    for(const id of list){
+      await setDoc(doc(db,'boardPosts',id),{ category: cat, updatedAt:serverTimestamp() },{merge:true});
+    }
+    if(Array.isArray(window.__boardRows)){
+      window.__boardRows = window.__boardRows.map((r)=> list.includes(r.id) ? {...r, category: cat} : r);
+      if($('boardPostList')) renderBoardPosts(window.__boardRows);
+    }
+    adminFlash(`이동 완료 · ${list.length}건 → ${label}`);
   }catch(e){ alert(e.message); }
 }
 async function adminPinBoardPost(id,pinned){ try{ const {doc,setDoc,serverTimestamp}=firestoreApi; await setDoc(doc(db,'boardPosts',id),{pinned,updatedAt:serverTimestamp()},{merge:true}); }catch(e){ alert(e.message); } }
