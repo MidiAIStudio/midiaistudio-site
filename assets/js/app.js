@@ -4521,7 +4521,11 @@ async function setAuthUiSignedIn(user){
   refreshDownloadCard(true);
   updatePurchaseAccountBox();
   updateSupportFormUi();
-  if(page==='board.html' || page==='qa.html') applyBoardMineModeUi();
+  if(page==='board.html' || page==='qa.html'){
+    applyBoardMineModeUi();
+    // Rebind after auth — secret/own posts were skipped on the anonymous first listen.
+    listenBoardPosts();
+  }
   refreshOwnCredits({ freshToken:true, ledger: !!$('accountMeta'), reason:'signin' });
 }
 
@@ -13680,9 +13684,9 @@ function listenBoardPosts(){
   };
   const {collection, query, where, orderBy, onSnapshot, getDocs} = firestoreApi;
   const col = collection(db, 'boardPosts');
-  const state = { publicRows: [], secretRows: [] };
+  const state = { publicRows: [], ownRows: [] };
   const emit = (err)=>{
-    publishBoardRows(mergeBoardPostRows(state.publicRows, state.secretRows), err);
+    publishBoardRows(mergeBoardPostRows(state.publicRows, state.ownRows), err);
   };
   const sortByCreatedDesc = (rows)=>rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   const listenQ = (q, key, fallbackFactory)=>{
@@ -13702,24 +13706,27 @@ function listenBoardPosts(){
       }
     })));
   };
-  // Open posts: visible==true (legacy-safe). Secret posts are stored with visible:false
-  // so they never collide with the public query under Firestore security rules.
+  // Open posts: visible==true (legacy-safe). Secret posts use visible:false so they stay
+  // out of this query; owners/admins pick them up via the own/secret listeners below.
   listenQ(
     query(col, where('visible','==',true), orderBy('createdAt','desc')),
     'publicRows',
     ()=>query(col, where('visible','==',true))
   );
   if(isAdminUser){
+    // Admin: all secret posts (single-field secret filter; orderBy optional via fallback).
     listenQ(
       query(col, where('secret','==',true), orderBy('createdAt','desc')),
-      'secretRows',
+      'ownRows',
       ()=>query(col, where('secret','==',true))
     );
   } else if(currentUser?.uid){
+    // Author: all of my posts by uid (includes secret/visible:false). Avoids composite
+    // secret+uid index; duplicates with publicRows are merged by id.
     listenQ(
-      query(col, where('uid','==',currentUser.uid), where('secret','==',true), orderBy('createdAt','desc')),
-      'secretRows',
-      ()=>query(col, where('uid','==',currentUser.uid), where('secret','==',true))
+      query(col, where('uid','==',currentUser.uid), orderBy('createdAt','desc')),
+      'ownRows',
+      ()=>query(col, where('uid','==',currentUser.uid))
     );
   }
 }
