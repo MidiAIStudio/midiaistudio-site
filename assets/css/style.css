@@ -538,6 +538,15 @@ nav a.active{color:var(--text)}
 .board-emoji-item:hover{background:rgba(255,255,255,.1)}
 .board-emoji-hint{margin:6px 0 0;font-size:11px;color:var(--muted);padding:6px 2px 0;border-top:1px solid rgba(255,255,255,.08)}
 
+/* Hub notice/patch attachment picker (reuses board gallery styles) */
+.edit-field-attachments>span,
+.admin-cms-form .edit-field-attachments>span{margin-bottom:8px;display:block}
+.hub-attach-host .board-upload-box{margin-top:4px}
+.hub-attach-host .form-msg{min-height:1.2em;margin:6px 0 0;font-size:12px}
+.hub-post-detail .board-attachments,
+.patch-detail-body .board-attachments,
+.admin-cms-view-body .board-attachments{margin-top:18px}
+
 /* V22 Board media attachments */
 .board-upload-box{
  border:1px dashed rgba(255,255,255,.18);

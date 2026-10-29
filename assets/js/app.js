@@ -1510,6 +1510,7 @@ function patchDetailHtml(d, nav=null){
     bodyHtml = sections.length ? patchContentHtml(sections) : `<div class="patch-prose">${mdBodyHtml(d.content || '')}</div>`;
     toc = patchTocHtml(sections);
   }
+  const attachHtml = hubAttachmentsBlockHtml(d.attachments);
   return `<article class="hub-post-detail hub-patch-detail">
     <header class="patch-toolbar">
       <a class="patch-back-link" href="./patch-notes.html">← ${esc(tt('업데이트 내역'))}</a>
@@ -1527,7 +1528,7 @@ function patchDetailHtml(d, nav=null){
       </div>
       <a class="primary patch-download-btn" href="./downloads.html">${esc(tr('download'))}</a>
     </div>
-    <div class="patch-detail-body">${bodyHtml}</div>
+    <div class="patch-detail-body">${bodyHtml}${attachHtml}</div>
     <footer class="patch-detail-footer">
       <a class="patch-footer-link" href="./patch-notes.html">${esc(tt('전체 업데이트 내역'))}</a>
       <a class="patch-footer-link" href="./faq.html">FAQ</a>
@@ -3395,21 +3396,39 @@ async function createHubAdminPost(kind){
       data = await openEditModal(hubAdminLabels().writeNotice, [
         {name:'title', label:'제목', value:'', required:true},
         {name:'content', label:'내용', type:'markdown', value:'', required:true, draftKey:'hub:announcements:new'},
+        {name:'attachments', label:'첨부', type:'attachments', value:[]},
         {name:'pinned', label:'상단 고정', type:'checkbox', value:false}
       ]);
       if(!data) return;
-      const id = await adminAdd('announcements',{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', pinned:!!data.pinned, viewCount:0, email:currentUser?.email||''});
+      const id = await adminAdd('announcements',{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', pinned:!!data.pinned, viewCount:0, email:currentUser?.email||'', attachments:[]});
+      if(id){
+        const attachments = await resolveHubAttachments('announcements', id, data);
+        if(attachments.length){
+          const {doc,updateDoc,serverTimestamp}=firestoreApi;
+          await updateDoc(doc(db,'announcements',id),{attachments, updatedAt:serverTimestamp()});
+        }
+      }
       if(id && !openAdminCmsAfterWrite('notices', id)) location.href = `./notice.html?id=${encodeURIComponent(id)}`;
       return;
     }
     if(kind==='patchNotes'){
-      data = await openEditModal(hubAdminLabels().writePatch, patchNoteFormFields({type:'app', contentValue:'', draftKey:'hub:patchNotes:new'}));
+      data = await openEditModal(hubAdminLabels().writePatch, [
+        ...patchNoteFormFields({type:'app', contentValue:'', draftKey:'hub:patchNotes:new'}),
+        {name:'attachments', label:'첨부', type:'attachments', value:[]}
+      ]);
       if(!data) return;
       data = normalizePatchNoteWrite(data);
       if(!data) return;
-      const payload = {type:data.type, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||''};
+      const payload = {type:data.type, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||'', attachments:[]};
       if(data.type === 'app') payload.version = data.version;
       const id = await adminAdd('patchNotes', payload);
+      if(id){
+        const attachments = await resolveHubAttachments('patchNotes', id, data);
+        if(attachments.length){
+          const {doc,updateDoc,serverTimestamp}=firestoreApi;
+          await updateDoc(doc(db,'patchNotes',id),{attachments, updatedAt:serverTimestamp()});
+        }
+      }
       if(id && !openAdminCmsAfterWrite('patches', id)) location.href = `./patch-note.html?id=${encodeURIComponent(id)}`;
       return;
     }
@@ -5497,8 +5516,9 @@ function renderNoticeDetail(d,err){
   if(err){ box.innerHTML=`<p class="muted">${esc(err.message||tr('check_failed'))}</p>`; return; }
   if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
   window.__lastNoticeDetail = d;
-  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span></div></div><div class="post-body-content">${mdBodyHtml(d.content)}</div>${hubAdminManageHtml('announcements', d.id)}</article>`;
+  box.innerHTML=`<article class="hub-post-detail"><div class="post-nav-row"><a class="secondary mini-btn" href="./notices.html">${esc(tt('← 목록'))}</a></div><div class="post-card-head"><div class="post-kicker">${esc(tt('공지사항'))}</div><h1>${esc(d.title)}</h1><div class="post-meta-grid"><span><em>${esc(tt('글쓴이'))}</em><b>${esc(noticeAuthor(d))}</b></span><span><em>${esc(tt('작성일'))}</em><b>${fmtDate(d.createdAt)}</b></span></div></div><div class="post-body-content">${mdBodyHtml(d.content)}${hubAttachmentsBlockHtml(d.attachments)}</div>${hubAdminManageHtml('announcements', d.id)}</article>`;
   bindMdIn(box);
+  hydrateHubAttachments(box);
   bindAdminPostActions(box);
 }
 function markContentViewOnce(kind, id){
@@ -5597,6 +5617,7 @@ function renderPatchDetail(d,err){
   const nav=patchNeighbors(d.id);
   box.innerHTML = patchDetailHtml({...d,id:d.id}, nav);
   bindMdIn(box);
+  hydrateHubAttachments(box);
   bindPatchDetailActions(box);
 }
 async function incrementPatchViewOnce(id){
@@ -6844,11 +6865,13 @@ function openEditModal(title, fields, opts={}){
     const body = form.querySelector('.edit-modal-body');
     const mdHosts = {};
     const mdEditors = {};
+    const attachHosts = {};
+    const attachStates = {};
 
     // Build DOM first (including markdown hosts) — mount editors only after visible
     for (const f of fields) {
-      const row = document.createElement(f.type === 'markdown' || f.type === 'segment' || f.type === 'note' ? 'div' : 'label');
-      row.className = 'edit-field' + (f.type === 'markdown' ? ' edit-field-markdown' : '') + (f.type === 'segment' ? ' edit-field-segment' : '');
+      const row = document.createElement(f.type === 'markdown' || f.type === 'segment' || f.type === 'note' || f.type === 'attachments' ? 'div' : 'label');
+      row.className = 'edit-field' + (f.type === 'markdown' ? ' edit-field-markdown' : '') + (f.type === 'segment' ? ' edit-field-segment' : '') + (f.type === 'attachments' ? ' edit-field-attachments' : '');
       row.dataset.field = f.name;
       row.innerHTML = `<span>${esc(f.label || f.name)}</span>`;
       let input;
@@ -6860,6 +6883,14 @@ function openEditModal(title, fields, opts={}){
         note.innerHTML = f.html || '';
         row.appendChild(note);
         body.appendChild(row);
+        continue;
+      } else if (f.type === 'attachments') {
+        const host = document.createElement('div');
+        host.className = 'hub-attach-host';
+        host.dataset.attachField = f.name;
+        row.appendChild(host);
+        body.appendChild(row);
+        attachHosts[f.name] = { host, field: f };
         continue;
       } else if (f.type === 'markdown') {
         const host = document.createElement('div');
@@ -6974,6 +7005,11 @@ function openEditModal(title, fields, opts={}){
         alert('본문 편집기를 열 수 없습니다: ' + (e.message || e));
       }
     }
+    for (const name of Object.keys(attachHosts)) {
+      const { host, field } = attachHosts[name];
+      attachStates[name] = createHubAttachState(field.value);
+      mountHubAttachPicker(host, attachStates[name]);
+    }
 
     const close = (value) => {
       Object.values(mdEditors).forEach(ed => { try { ed.destroy(); } catch (_) {} });
@@ -6989,6 +7025,10 @@ function openEditModal(title, fields, opts={}){
           const ed = mdEditors[f.name];
           data[f.name] = String(ed?.getMarkdown?.() || ed?.getValue?.() || '').trim();
           data.contentMarkdown = data[f.name];
+          return;
+        }
+        if (f.type === 'attachments') {
+          Object.assign(data, collectHubAttachState(attachStates[f.name]));
           return;
         }
         if (f.type === 'note') return;
@@ -7553,10 +7593,13 @@ function renderAdminCmsView(body, kind, row){
   const summaryHtml = kind==='guides' && row.summary
     ? `<p class="muted" style="margin:0 0 .75rem">${esc(row.summary)}</p>`
     : '';
+  const attachHtml = (kind==='notices' || kind==='patches' || kind==='board')
+    ? hubAttachmentsBlockHtml(row.attachments)
+    : '';
   body.innerHTML = `<div class="admin-cms-view">
     <div class="admin-cms-view-meta">${meta.join('')}</div>
     ${summaryHtml}
-    <div class="admin-cms-view-body">${mdBodyHtml(src)}</div>
+    <div class="admin-cms-view-body">${mdBodyHtml(src)}${attachHtml}</div>
     <div class="admin-cms-view-actions">
       <button type="button" class="secondary mini-btn" data-cms-act="edit">수정</button>
       ${guideOpen}
@@ -7565,6 +7608,7 @@ function renderAdminCmsView(body, kind, row){
     </div>
   </div>`;
   bindMdIn(body);
+  if(attachHtml) hydrateHubAttachments(body);
 }
 function adminCmsFormFields(kind, d, isNew){
   if(kind==='guides'){
@@ -7582,18 +7626,22 @@ function adminCmsFormFields(kind, d, isNew){
     return [
       {name:'title', label:'제목', value:d?.title||'', required:true},
       {name:'content', label:'내용', type:'markdown', value:isNew?'':pickMarkdownSource(d), required:true, draftKey:isNew?'hub:announcements:new':`hub:announcements:${d.id}`},
+      {name:'attachments', label:'첨부', type:'attachments', value:Array.isArray(d?.attachments)?d.attachments:[]},
       ...(!isNew?[{name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}]:[]),
       {name:'pinned', label:'상단 고정', type:'checkbox', value:!!d?.pinned}
     ];
   }
   if(kind==='patches'){
-    return patchNoteFormFields({
-      type: d ? patchNoteType(d) : 'app',
-      version: d?.version||'',
-      title: d?.title||'',
-      contentValue: isNew?'':pickMarkdownSource(d),
-      draftKey: isNew?'hub:patchNotes:new':`hub:patchNotes:${d.id}`
-    }, isNew ? [] : [{name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}]);
+    return [
+      ...patchNoteFormFields({
+        type: d ? patchNoteType(d) : 'app',
+        version: d?.version||'',
+        title: d?.title||'',
+        contentValue: isNew?'':pickMarkdownSource(d),
+        draftKey: isNew?'hub:patchNotes:new':`hub:patchNotes:${d.id}`
+      }, isNew ? [] : [{name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}]),
+      {name:'attachments', label:'첨부', type:'attachments', value:Array.isArray(d?.attachments)?d.attachments:[]}
+    ];
   }
   if(kind==='faq'){
     return [
@@ -7625,11 +7673,21 @@ async function renderAdminCmsEditor(container, kind, row){
   const body=form.querySelector('.admin-cms-form-body');
   const mdHosts={};
   const mdEditors={};
+  const attachHosts={};
+  const attachStates={};
   for(const f of fields){
-    const rowEl=document.createElement(f.type==='markdown'||f.type==='segment'?'div':'label');
-    rowEl.className='edit-field'+(f.type==='markdown'?' edit-field-markdown':'')+(f.type==='segment'?' edit-field-segment':'');
+    const rowEl=document.createElement(f.type==='markdown'||f.type==='segment'||f.type==='attachments'?'div':'label');
+    rowEl.className='edit-field'+(f.type==='markdown'?' edit-field-markdown':'')+(f.type==='segment'?' edit-field-segment':'')+(f.type==='attachments'?' edit-field-attachments':'');
     rowEl.dataset.field=f.name;
     rowEl.innerHTML=`<span>${esc(f.label||f.name)}</span>`;
+    if(f.type==='attachments'){
+      const host=document.createElement('div');
+      host.className='hub-attach-host';
+      rowEl.appendChild(host);
+      body.appendChild(rowEl);
+      attachHosts[f.name]={host, field:f};
+      continue;
+    }
     if(f.type==='markdown'){
       const host=document.createElement('div');
       host.className='md-modal-editor-host';
@@ -7719,6 +7777,11 @@ async function renderAdminCmsEditor(container, kind, row){
       alert('본문 편집기를 열 수 없습니다: '+(e.message||e));
     }
   }
+  for(const name of Object.keys(attachHosts)){
+    const {host, field}=attachHosts[name];
+    attachStates[name]=createHubAttachState(field.value);
+    mountHubAttachPicker(host, attachStates[name]);
+  }
   const collect=()=>{
     const data={};
     fields.forEach(f=>{
@@ -7726,6 +7789,10 @@ async function renderAdminCmsEditor(container, kind, row){
         const ed=mdEditors[f.name];
         data[f.name]=String(ed?.getMarkdown?.()||ed?.getValue?.()||'').trim();
         data.contentMarkdown=data[f.name];
+        return;
+      }
+      if(f.type==='attachments'){
+        Object.assign(data, collectHubAttachState(attachStates[f.name]));
         return;
       }
       const input=form.elements[f.name];
@@ -7741,6 +7808,7 @@ async function renderAdminCmsEditor(container, kind, row){
     fields,
     collect,
     mdEditors,
+    attachStates,
     destroy(){ Object.values(mdEditors).forEach(ed=>{ try{ed.destroy();}catch(_){ } }); }
   };
   form.addEventListener('submit', e=>{
@@ -7848,12 +7916,28 @@ async function adminCmsCreate(kind, data){
     return slug;
   }
   if(kind==='notices'){
-    return adminAdd('announcements',{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', pinned:!!data.pinned, viewCount:0, email:currentUser?.email||''});
+    const id=await adminAdd('announcements',{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', pinned:!!data.pinned, viewCount:0, email:currentUser?.email||'', attachments:[]});
+    if(id){
+      const attachments=await resolveHubAttachments('announcements', id, data);
+      if(attachments.length){
+        const {doc,updateDoc,serverTimestamp}=firestoreApi;
+        await updateDoc(doc(db,'announcements',id),{attachments, updatedAt:serverTimestamp()});
+      }
+    }
+    return id;
   }
   if(kind==='patches'){
-    const payload={type:data.type, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||''};
+    const payload={type:data.type, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', viewCount:0, email:currentUser?.email||'', attachments:[]};
     if(data.type==='app') payload.version=data.version;
-    return adminAdd('patchNotes', payload);
+    const id=await adminAdd('patchNotes', payload);
+    if(id){
+      const attachments=await resolveHubAttachments('patchNotes', id, data);
+      if(attachments.length){
+        const {doc,updateDoc,serverTimestamp}=firestoreApi;
+        await updateDoc(doc(db,'patchNotes',id),{attachments, updatedAt:serverTimestamp()});
+      }
+    }
+    return id;
   }
   if(kind==='faq'){
     return adminAdd('faq',{question:data.question, answer:data.answer, contentMarkdown:data.answer, contentFormat:'markdown', order:Number(data.order||1)});
@@ -7901,11 +7985,13 @@ async function adminCmsUpdate(kind, id, data){
     return;
   }
   if(kind==='notices'){
-    await updateDoc(ref,{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', visible:data.visible!==false, pinned:!!data.pinned, updatedAt:serverTimestamp()});
+    const attachments=await resolveHubAttachments('announcements', id, data);
+    await updateDoc(ref,{title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', visible:data.visible!==false, pinned:!!data.pinned, attachments, updatedAt:serverTimestamp()});
     return;
   }
   if(kind==='patches'){
-    const patch={type:data.type, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', visible:data.visible!==false, updatedAt:serverTimestamp()};
+    const attachments=await resolveHubAttachments('patchNotes', id, data);
+    const patch={type:data.type, title:data.title, content:data.content, contentMarkdown:data.content, contentFormat:'markdown', visible:data.visible!==false, attachments, updatedAt:serverTimestamp()};
     if(data.type==='app') patch.version=data.version;
     await updateDoc(ref, patch);
     return;
@@ -8220,26 +8306,34 @@ async function editAdminPost(raw){
       data = await openEditModal('공지 수정', [
         {name:'title', label:'제목', value:d.title||'', required:true},
         {name:'content', label:'내용', type:'markdown', value:pickMarkdownSource(d), required:true, draftKey:`hub:announcements:${id}`},
+        {name:'attachments', label:'첨부', type:'attachments', value:Array.isArray(d.attachments)?d.attachments:[]},
         {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false},
         {name:'pinned', label:'상단 고정', type:'checkbox', value:!!d.pinned}
       ]);
       if(!data)return;
+      data.attachments = await resolveHubAttachments('announcements', id, data);
+      data = stripHubAttachTempFields(data);
       data.contentFormat='markdown';
       data.contentMarkdown=data.content;
       data.updatedAt=serverTimestamp();
     } else if(collectionName==='patchNotes'){
-      data = await openEditModal('패치노트 수정', patchNoteFormFields({
-        type:patchNoteType(d),
-        version:d.version||'',
-        title:d.title||'',
-        contentValue:pickMarkdownSource(d),
-        draftKey:`hub:patchNotes:${id}`
-      }, [
-        {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
-      ]));
+      data = await openEditModal('패치노트 수정', [
+        ...patchNoteFormFields({
+          type:patchNoteType(d),
+          version:d.version||'',
+          title:d.title||'',
+          contentValue:pickMarkdownSource(d),
+          draftKey:`hub:patchNotes:${id}`
+        }, [
+          {name:'visible', label:'공개', type:'checkbox', value:d.visible!==false}
+        ]),
+        {name:'attachments', label:'첨부', type:'attachments', value:Array.isArray(d.attachments)?d.attachments:[]}
+      ]);
       if(!data)return;
       data = normalizePatchNoteWrite(data);
       if(!data)return;
+      data.attachments = await resolveHubAttachments('patchNotes', id, data);
+      data = stripHubAttachTempFields(data);
       data.contentFormat='markdown';
       data.contentMarkdown=data.content;
       data.updatedAt=serverTimestamp();
@@ -13701,6 +13795,138 @@ function boardAttachmentsHtml(list){
   if(!arr.length) return '';
   return `<div class="board-attachments">${arr.map((a,i)=>boardAttachmentItemHtml(a,i,false)).join('')}</div>`;
 }
+
+/** Hub posts (notices / patch notes): photo & video gallery like free board */
+const HUB_ATTACH_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm';
+const HUB_ATTACH_MIME = /^(image\/(jpeg|jpg|png|webp|gif)|video\/(mp4|webm))$/i;
+function createHubAttachState(initial){
+  return {
+    existing: Array.isArray(initial) ? initial.filter(x => x && x.url) : [],
+    files: [],
+    msg: ''
+  };
+}
+function hubAttachAllowed(file){
+  return HUB_ATTACH_MIME.test(String(file?.type || ''));
+}
+function renderHubAttachPreview(host, state){
+  if(!host || !state) return;
+  const preview = host.querySelector('[data-hub-attach-preview]');
+  const msg = host.querySelector('[data-hub-attach-msg]');
+  if(msg) msg.textContent = state.msg || '';
+  if(!preview) return;
+  const existing = state.existing.map((a,i)=>boardAttachmentItemHtml(a,i,true)).join('');
+  const fresh = state.files.map((file,i)=>{
+    const type = boardFileType(file);
+    const icon = type === 'video' ? '🎥' : '🖼️';
+    return `<div class="board-file-chip"><span>${icon}</span><b>${esc(file.name)}</b><small>${Math.max(1, Math.ceil(file.size/1024/1024))}MB</small><button type="button" class="secondary mini-btn danger-btn" data-hub-remove-new="${i}">삭제</button></div>`;
+  }).join('');
+  preview.innerHTML = (existing || fresh)
+    ? `${existing}<div class="board-file-chip-list">${fresh}</div>`
+    : '<p class="muted">첨부한 파일이 없습니다.</p>';
+  preview.querySelectorAll('[data-remove-existing-attachment]').forEach(btn=>{
+    btn.onclick = ()=>{
+      state.existing.splice(Number(btn.dataset.removeExistingAttachment), 1);
+      state.msg = '';
+      renderHubAttachPreview(host, state);
+    };
+  });
+  preview.querySelectorAll('[data-hub-remove-new]').forEach(btn=>{
+    btn.onclick = ()=>{
+      state.files.splice(Number(btn.dataset.hubRemoveNew), 1);
+      const input = host.querySelector('[data-hub-attach-input]');
+      if(input) input.value = '';
+      state.msg = '';
+      renderHubAttachPreview(host, state);
+    };
+  });
+}
+function addHubAttachFiles(host, state, fileList){
+  const incoming = Array.from(fileList || []);
+  for(const file of incoming){
+    if(!hubAttachAllowed(file)){
+      state.msg = 'JPG/PNG/WEBP/GIF/MP4/WEBM만 업로드할 수 있어요.';
+      continue;
+    }
+    if(file.size > BOARD_MAX_FILE_SIZE){
+      state.msg = '파일당 최대 50MB까지 업로드할 수 있어요.';
+      continue;
+    }
+    if(state.existing.length + state.files.length >= BOARD_MAX_ATTACHMENTS){
+      state.msg = '게시글당 첨부는 최대 5개까지 가능합니다.';
+      break;
+    }
+    state.files.push(file);
+    state.msg = '';
+  }
+  renderHubAttachPreview(host, state);
+}
+function mountHubAttachPicker(host, state){
+  if(!host || !state) return state;
+  host.innerHTML = `<div class="board-upload-box hub-attach-box">
+    <label>사진/영상 첨부</label>
+    <input type="file" data-hub-attach-input accept="${HUB_ATTACH_ACCEPT}" multiple>
+    <p class="muted small-copy">JPG/PNG/WEBP/GIF/MP4/WEBM · 파일당 50MB · 최대 5개</p>
+    <div data-hub-attach-preview class="board-attachment-preview"><p class="muted">첨부한 파일이 없습니다.</p></div>
+    <p class="form-msg" data-hub-attach-msg></p>
+  </div>`;
+  const input = host.querySelector('[data-hub-attach-input]');
+  const drop = host.querySelector('.board-upload-box');
+  input?.addEventListener('change', ()=>addHubAttachFiles(host, state, input.files));
+  if(drop){
+    ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('dragover'); }));
+    ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('dragover'); }));
+    drop.addEventListener('drop', e=>addHubAttachFiles(host, state, e.dataTransfer?.files));
+  }
+  renderHubAttachPreview(host, state);
+  return state;
+}
+function collectHubAttachState(state){
+  return {
+    attachments: Array.isArray(state?.existing) ? state.existing.slice() : [],
+    _newAttachmentFiles: Array.isArray(state?.files) ? state.files.slice() : []
+  };
+}
+async function uploadHubAttachments(collectionName, docId, files, onProgress){
+  const list = Array.isArray(files) ? files : [];
+  if(!list.length) return [];
+  if(!storage || !storageApi?.ref) throw new Error('Firebase Storage 초기화에 실패했습니다.');
+  if(!currentUser?.uid) throw new Error('로그인이 필요합니다.');
+  const {ref, uploadBytes, getDownloadURL} = storageApi;
+  const uploaded = [];
+  for(let i=0;i<list.length;i++){
+    const file = list[i];
+    onProgress?.(i+1, list.length, file);
+    const safeName = boardSafeFilename(file.name);
+    const path = `cms-md/${currentUser.uid}/hub/${collectionName}/${docId}/${Date.now()}_${i}_${safeName}`;
+    const fileRef = ref(storage, path);
+    const contentType = file.type || 'application/octet-stream';
+    await uploadBytes(fileRef, file, { contentType });
+    const url = await getDownloadURL(fileRef);
+    uploaded.push({ type: boardFileType(file), mime: contentType, name: file.name, size: file.size, path, url });
+  }
+  return uploaded;
+}
+async function resolveHubAttachments(collectionName, docId, data, onProgress){
+  const existing = Array.isArray(data?.attachments) ? data.attachments.filter(x => x && x.url) : [];
+  const files = Array.isArray(data?._newAttachmentFiles) ? data._newAttachmentFiles : [];
+  const uploaded = await uploadHubAttachments(collectionName, docId, files, onProgress);
+  return [...existing, ...uploaded];
+}
+function stripHubAttachTempFields(data){
+  if(!data || typeof data !== 'object') return data;
+  const out = {...data};
+  delete out._newAttachmentFiles;
+  return out;
+}
+function hubAttachmentsBlockHtml(list){
+  return boardAttachmentsHtml(list);
+}
+function hydrateHubAttachments(root=document){
+  bindBoardLightbox();
+  hydrateBoardMidiPlayers(root);
+}
+
 async function prepareBoardMidiPreview(btn){
   const url = btn.getAttribute('data-midi-preview');
   const path = btn.getAttribute('data-midi-path') || boardStoragePathFromUrl(url);
