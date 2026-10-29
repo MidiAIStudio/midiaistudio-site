@@ -13684,15 +13684,17 @@ function listenBoardPosts(){
   const emit = (err)=>{
     publishBoardRows(mergeBoardPostRows(state.publicRows, state.secretRows), err);
   };
-  const listenQ = (q, key)=>{
+  const sortByCreatedDesc = (rows)=>rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  const listenQ = (q, key, fallbackFactory)=>{
     return track(addPublicUnsub(onSnapshot(q, (snap)=>{
       state[key] = snap.docs.map((d)=>({ id:d.id, ...d.data() }));
       emit();
     }, async (err)=>{
       console.warn('boardPosts realtime failed', err);
       try{
-        const s = await getDocs(q);
-        state[key] = s.docs.map((d)=>({ id:d.id, ...d.data() }));
+        const fb = typeof fallbackFactory === 'function' ? fallbackFactory() : q;
+        const s = await getDocs(fb);
+        state[key] = sortByCreatedDesc(s.docs.map((d)=>({ id:d.id, ...d.data() })));
         emit();
       }catch(e){
         console.error(e);
@@ -13702,11 +13704,23 @@ function listenBoardPosts(){
   };
   // Open posts: visible==true (legacy-safe). Secret posts are stored with visible:false
   // so they never collide with the public query under Firestore security rules.
-  listenQ(query(col, where('visible','==',true), orderBy('createdAt','desc')), 'publicRows');
+  listenQ(
+    query(col, where('visible','==',true), orderBy('createdAt','desc')),
+    'publicRows',
+    ()=>query(col, where('visible','==',true))
+  );
   if(isAdminUser){
-    listenQ(query(col, where('secret','==',true), orderBy('createdAt','desc')), 'secretRows');
+    listenQ(
+      query(col, where('secret','==',true), orderBy('createdAt','desc')),
+      'secretRows',
+      ()=>query(col, where('secret','==',true))
+    );
   } else if(currentUser?.uid){
-    listenQ(query(col, where('uid','==',currentUser.uid), where('secret','==',true), orderBy('createdAt','desc')), 'secretRows');
+    listenQ(
+      query(col, where('uid','==',currentUser.uid), where('secret','==',true), orderBy('createdAt','desc')),
+      'secretRows',
+      ()=>query(col, where('uid','==',currentUser.uid), where('secret','==',true))
+    );
   }
 }
 
