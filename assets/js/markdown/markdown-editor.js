@@ -374,7 +374,7 @@ export function splitMarkdownBlocks(md) {
   return text.split(/\n{2,}/).map((s) => s.trimEnd()).filter((s) => s.length);
 }
 
-function isImageOnlyBlock(block) {
+function isMarkdownImageOnlyBlock(block) {
   const t = String(block || '').trim();
   if (!t) return false;
   MD_IMAGE_RE.lastIndex = 0;
@@ -413,7 +413,7 @@ export function placeMarkdownImageAt(md, imageIndex, dropSlot) {
   }
   if (fromBlock < 0 || localHit < 0) return src;
 
-  if (isImageOnlyBlock(blocks[fromBlock])) {
+  if (isMarkdownImageOnlyBlock(blocks[fromBlock])) {
     blocks.splice(fromBlock, 1);
   } else {
     const local = listMarkdownImages(blocks[fromBlock])[localHit];
@@ -683,7 +683,7 @@ export async function mountMarkdownEditor(host, options = {}) {
       const wrap = document.createElement('div');
       wrap.innerHTML = html;
       const inner = wrap.firstElementChild || wrap;
-      if (isImageOnlyBlock(block) && imgCursor < images.length) {
+      if (isMarkdownImageOnlyBlock(block) && imgCursor < images.length) {
         const imgIdx = imgCursor;
         imgCursor += 1;
         inner.querySelectorAll('img, video.md-video-file').forEach((media) => {
