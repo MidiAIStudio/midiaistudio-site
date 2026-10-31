@@ -264,6 +264,33 @@
 .md-editor-shell.md-engine-wysiwyg .md-editor-status{
   color:#8be9c5;
 }
+.md-visual-editor{
+  min-height:280px;
+  padding:16px 18px;
+  outline:none;
+  color:#eef0ff;
+  background:rgba(0,0,0,.2);
+  line-height:1.65;
+  overflow:auto;
+  caret-color:#67e8f9;
+}
+.md-visual-editor:empty:before,
+.md-visual-editor .md-visual-prose:empty:before{
+  content:attr(data-placeholder);
+  color:rgba(169,174,200,.55);
+  pointer-events:none;
+}
+.md-visual-editor .md-visual-prose{min-height:1.2em}
+.md-visual-editor .md-visual-prose h1{font-size:1.85em;font-weight:900;letter-spacing:-.03em;margin:.7em 0 .35em}
+.md-visual-editor .md-visual-prose h2{font-size:1.45em;font-weight:900;letter-spacing:-.02em;margin:.85em 0 .35em}
+.md-visual-editor .md-visual-prose h3{font-size:1.2em;font-weight:800;margin:.75em 0 .3em}
+.md-visual-editor .md-visual-prose img,
+.md-visual-editor .md-visual-prose video{
+  max-width:100%;height:auto;border-radius:14px;display:block;margin:12px 0;
+  cursor:grab;box-shadow:0 8px 28px rgba(0,0,0,.35);
+}
+.md-visual-editor .md-visual-prose img:active{cursor:grabbing}
+.md-editor-shell.md-engine-visual .md-editor-toolbar-extra{border-bottom:1px solid rgba(255,255,255,.1)}
 
 /* Hide Toast Write/Preview tab only — do NOT zero-width the editor pane */
 .md-editor-shell.md-hide-toast-preview-tab .toastui-editor-md-tab-container,

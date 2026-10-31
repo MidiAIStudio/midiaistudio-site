@@ -24,11 +24,21 @@ import {
 } from './markdown-toolbar-extras.js';
 import { adminHoverToolbar, confirmDelete } from '../visual-cms.js';
 
-const TOAST_CSS = 'https://uicdn.toast.com/editor/3.2.2/toastui-editor.min.css';
-const TOAST_DARK = 'https://uicdn.toast.com/editor/3.2.2/theme/toastui-editor-dark.min.css';
-const TOAST_JS = 'https://uicdn.toast.com/editor/3.2.2/toastui-editor-all.min.js';
+const TOAST_CSS_CANDIDATES = [
+  'https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor.min.css',
+  'https://uicdn.toast.com/editor/3.2.2/toastui-editor.min.css'
+];
+const TOAST_DARK_CANDIDATES = [
+  'https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/theme/toastui-editor-dark.min.css',
+  'https://uicdn.toast.com/editor/3.2.2/theme/toastui-editor-dark.min.css'
+];
+const TOAST_JS_CANDIDATES = [
+  'https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor-all.min.js',
+  'https://uicdn.toast.com/editor/3.2.2/toastui-editor-all.min.js'
+];
 
 let _toastReady = null;
+let _turndownReady = null;
 const promptedDraftKeys = new Set();
 
 /** Normalize content fields from Firestore docs / forms */
@@ -55,13 +65,13 @@ function loadCss(href) {
   document.head.appendChild(link);
 }
 
-function loadScript(src) {
+function loadScript(src, marker = 'data-md-toast') {
   return new Promise((resolve, reject) => {
     if (window.toastui?.Editor) {
       resolve(window.toastui.Editor);
       return;
     }
-    const existing = document.querySelector(`script[data-md-toast="1"]`);
+    const existing = document.querySelector(`script[${marker}="1"]`);
     if (existing) {
       existing.addEventListener('load', () => resolve(window.toastui?.Editor || null));
       existing.addEventListener('error', () => reject(new Error('Toast UI script failed')));
@@ -71,7 +81,7 @@ function loadScript(src) {
     const s = document.createElement('script');
     s.src = src;
     s.async = true;
-    s.dataset.mdToast = '1';
+    s.setAttribute(marker, '1');
     s.onload = () => resolve(window.toastui?.Editor || null);
     s.onerror = () => reject(new Error('Toast UI script failed'));
     document.head.appendChild(s);
@@ -82,16 +92,124 @@ async function ensureToastEditor() {
   if (_toastReady) return _toastReady;
   _toastReady = (async () => {
     ensureMarkdownCss();
-    loadCss(TOAST_CSS);
-    loadCss(TOAST_DARK);
+    TOAST_CSS_CANDIDATES.forEach(loadCss);
+    TOAST_DARK_CANDIDATES.forEach(loadCss);
+    for (const src of TOAST_JS_CANDIDATES) {
+      try {
+        const Editor = await loadScript(src, 'data-md-toast');
+        if (Editor) return Editor;
+      } catch (e) {
+        console.warn('[MarkdownEditor] Toast UI CDN failed', src, e);
+        document.querySelectorAll('script[data-md-toast="1"]').forEach((el) => el.remove());
+      }
+    }
+    return null;
+  })();
+  return _toastReady;
+}
+
+async function ensureTurndown() {
+  if (_turndownReady) return _turndownReady;
+  _turndownReady = (async () => {
     try {
-      return await loadScript(TOAST_JS);
+      const mod = await import('https://esm.sh/turndown@7.2.0');
+      const TurndownService = mod.default || mod.TurndownService;
+      const td = new TurndownService({
+        headingStyle: 'atx',
+        codeBlockStyle: 'fenced',
+        bulletListMarker: '-'
+      });
+      td.addRule('keepImages', {
+        filter: 'img',
+        replacement: (_content, node) => {
+          const alt = node.getAttribute('alt') || 'image';
+          const src = node.getAttribute('src') || '';
+          if (!src) return '';
+          return `![${alt}](${src})`;
+        }
+      });
+      td.addRule('keepVideo', {
+        filter: (node) => node.nodeName === 'VIDEO',
+        replacement: (_content, node) => {
+          const src = node.getAttribute('src') || node.querySelector?.('source')?.getAttribute('src') || '';
+          if (!src) return '';
+          return `![video](${src})`;
+        }
+      });
+      return td;
     } catch (e) {
-      console.warn('[MarkdownEditor] Toast UI load failed', e);
+      console.warn('[MarkdownEditor] turndown load failed', e);
       return null;
     }
   })();
-  return _toastReady;
+  return _turndownReady;
+}
+
+function htmlToMarkdownSync(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  const parts = [];
+  const walk = (node) => {
+    if (node.nodeType === 3) {
+      const t = node.textContent || '';
+      if (t) parts.push(t);
+      return;
+    }
+    if (node.nodeType !== 1) return;
+    const tag = node.tagName.toLowerCase();
+    if (tag === 'img') {
+      parts.push(`![${node.getAttribute('alt') || 'image'}](${node.getAttribute('src') || ''})`);
+      return;
+    }
+    if (tag === 'video') {
+      parts.push(`![video](${node.getAttribute('src') || ''})`);
+      return;
+    }
+    if (/^h[1-6]$/.test(tag)) {
+      const level = Number(tag[1]);
+      parts.push(`\n${'#'.repeat(level)} ${String(node.textContent || '').trim()}\n`);
+      return;
+    }
+    if (tag === 'br') { parts.push('\n'); return; }
+    if (tag === 'li') {
+      parts.push(`\n- `);
+      node.childNodes.forEach(walk);
+      return;
+    }
+    if (tag === 'p' || tag === 'div' || tag === 'section') {
+      node.childNodes.forEach(walk);
+      parts.push('\n\n');
+      return;
+    }
+    node.childNodes.forEach(walk);
+  };
+  tmp.childNodes.forEach(walk);
+  return parts.join('').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+async function htmlToMarkdown(html) {
+  const td = await ensureTurndown();
+  if (td) {
+    try { return String(td.turndown(html || '') || '').trim(); } catch (_) { /* fall through */ }
+  }
+  return htmlToMarkdownSync(html);
+}
+
+function insertHtmlAtCursor(html) {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) return false;
+  const range = sel.getRangeAt(0);
+  range.deleteContents();
+  const frag = range.createContextualFragment(html);
+  const last = frag.lastChild;
+  range.insertNode(frag);
+  if (last) {
+    range.setStartAfter(last);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+  return true;
 }
 
 function esc(s) {
@@ -137,7 +255,20 @@ function toastIsHealthy(root) {
   const surface = cm || ta || ww;
   if (!surface) return false;
   const r = surface.getBoundingClientRect();
-  return r.height >= 40 && r.width >= 40;
+  return r.height >= 24 && r.width >= 24;
+}
+
+async function waitForToastSurface(root, timeoutMs = 2000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (toastIsHealthy(root)) return true;
+    await waitFrames(2);
+  }
+  return !!(
+    root?.querySelector('.ProseMirror')
+    || root?.querySelector('.toastui-editor-contents [contenteditable="true"]')
+    || root?.querySelector('.CodeMirror')
+  );
 }
 
 function buildBasicToolbar(onAction) {
@@ -332,6 +463,8 @@ export async function mountMarkdownEditor(host, options = {}) {
   const heightPx = resolveHeightPx(height);
   let toast = null;
   let ta = null;
+  let visualEl = null;
+  let visualMdCache = '';
   let destroyed = false;
   let history = [];
   let historyIdx = -1;
@@ -340,6 +473,10 @@ export async function mountMarkdownEditor(host, options = {}) {
     try {
       if (toast) return String(toast.getMarkdown() ?? '');
     } catch (_) { /* fall through */ }
+    if (visualEl) {
+      visualMdCache = htmlToMarkdownSync(visualEl.innerHTML);
+      return visualMdCache;
+    }
     return ta ? String(ta.value ?? '') : '';
   };
 
@@ -523,11 +660,30 @@ export async function mountMarkdownEditor(host, options = {}) {
     });
   };
 
+  const paintVisualFromMarkdown = (md) => {
+    if (!visualEl) return;
+    visualMdCache = String(md ?? '');
+    const html = renderMarkdown(visualMdCache, { className: 'md-prose md-visual-prose' });
+    visualEl.innerHTML = html || '<p><br></p>';
+    bindMarkdownInteractions(visualEl);
+    visualEl.querySelectorAll('img').forEach((img) => {
+      img.setAttribute('draggable', 'true');
+      img.title = '드래그해서 위치 이동';
+    });
+  };
+
+  const syncVisualMarkdown = async () => {
+    if (!visualEl) return visualMdCache;
+    visualMdCache = await htmlToMarkdown(visualEl.innerHTML);
+    return visualMdCache;
+  };
+
   const setValue = (v, { recordHistory = true } = {}) => {
     const s = String(v ?? '');
     if (toast) {
       try { toast.setMarkdown(s); } catch (e) { console.warn(e); }
     }
+    if (visualEl) paintVisualFromMarkdown(s);
     if (ta) ta.value = s;
     if (recordHistory) pushHistory(s);
     onChange?.(s);
@@ -544,6 +700,7 @@ export async function mountMarkdownEditor(host, options = {}) {
         cm?.CodeMirror?.focus?.();
         return;
       }
+      if (visualEl) { visualEl.focus(); return; }
       ta?.focus();
     } catch (_) { /* ignore */ }
   };
@@ -609,9 +766,9 @@ export async function mountMarkdownEditor(host, options = {}) {
 
   const insertMarkdown = (snippet) => {
     const raw = String(snippet ?? '');
+    const img = raw.trim().match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/);
     if (toast) {
       try {
-        const img = raw.trim().match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/);
         if (img && typeof toast.exec === 'function') {
           toast.focus();
           toast.exec('addImage', { imageUrl: img[2], altText: img[1] || 'image' });
@@ -620,13 +777,36 @@ export async function mountMarkdownEditor(host, options = {}) {
         }
         if (typeof toast.insertText === 'function') {
           toast.focus();
-          toast.insertText(raw.startsWith('\n') ? raw : raw);
+          toast.insertText(raw);
           scheduleLivePreview();
           return;
         }
       } catch (err) {
         console.warn('toast insert failed', err);
       }
+    }
+    if (visualEl) {
+      focus();
+      if (img) {
+        const ok = insertHtmlAtCursor(
+          `<p><img src="${esc(img[2])}" alt="${esc(img[1] || 'image')}"></p>`
+        );
+        if (!ok) {
+          visualEl.insertAdjacentHTML('beforeend', `<p><img src="${esc(img[2])}" alt="${esc(img[1] || 'image')}"></p>`);
+        }
+      } else {
+        const html = renderMarkdown(raw, { className: '' });
+        if (!insertHtmlAtCursor(html || `<p>${esc(raw)}</p>`)) {
+          visualEl.insertAdjacentHTML('beforeend', html || `<p>${esc(raw)}</p>`);
+        }
+      }
+      syncVisualMarkdown().then((md) => {
+        visualMdCache = md;
+        pushHistory(md);
+        onChange?.(md);
+        autosave.touch();
+      });
+      return;
     }
     insertAtCursor(getSelection, setSelection, raw);
     focus();
@@ -650,37 +830,60 @@ export async function mountMarkdownEditor(host, options = {}) {
     searchFn = (q) => searchInternalDocs({ db: fb.db, fs: fb.fs }, q);
   } catch (_) { /* optional */ }
 
-  if (!useWysiwyg) {
-    const basicBar = buildBasicToolbar((action) => {
-      const g = getSelection;
-      const s = setSelection;
-      if (action === 'bold') wrapSelection(g, s, '**', '**', '굵게');
-      else if (action === 'italic') wrapSelection(g, s, '*', '*', '기울임');
-      else if (action === 'strike') wrapSelection(g, s, '~~', '~~', '취소선');
-      else if (action === 'h2') insertAtCursor(g, s, '\n## ');
-      else if (action === 'ul') insertAtCursor(g, s, '\n- ');
-      else if (action === 'ol') insertAtCursor(g, s, '\n1. ');
-      else if (action === 'check') insertChecklist(g, s);
-      else if (action === 'code') wrapSelection(g, s, '`', '`', 'code');
-      else if (action === 'quote') insertAtCursor(g, s, '\n> ');
-      else if (action === 'link') {
-        const url = prompt('URL', 'https://');
-        if (url) wrapSelection(g, s, '[', `](${url})`, '링크');
-      } else if (action === 'undo') {
-        if (historyIdx > 0) {
-          historyIdx -= 1;
-          setValue(history[historyIdx], { recordHistory: false });
-        }
-      } else if (action === 'redo') {
-        if (historyIdx < history.length - 1) {
-          historyIdx += 1;
-          setValue(history[historyIdx], { recordHistory: false });
-        }
+  const basicBar = buildBasicToolbar((action) => {
+    const g = getSelection;
+    const s = setSelection;
+    const visualFriendly = !!(toast || visualEl);
+    if (action === 'bold') {
+      if (visualFriendly && visualEl && document.execCommand) document.execCommand('bold');
+      else wrapSelection(g, s, '**', '**', '굵게');
+    } else if (action === 'italic') {
+      if (visualFriendly && visualEl && document.execCommand) document.execCommand('italic');
+      else wrapSelection(g, s, '*', '*', '기울임');
+    } else if (action === 'strike') {
+      if (visualFriendly && visualEl && document.execCommand) document.execCommand('strikeThrough');
+      else wrapSelection(g, s, '~~', '~~', '취소선');
+    } else if (action === 'h2') {
+      if (visualFriendly) insertMarkdown('\n## 제목\n');
+      else insertAtCursor(g, s, '\n## ');
+    } else if (action === 'ul') {
+      if (visualFriendly && visualEl && document.execCommand) document.execCommand('insertUnorderedList');
+      else insertAtCursor(g, s, '\n- ');
+    } else if (action === 'ol') {
+      if (visualFriendly && visualEl && document.execCommand) document.execCommand('insertOrderedList');
+      else insertAtCursor(g, s, '\n1. ');
+    } else if (action === 'check') insertChecklist(g, s);
+    else if (action === 'code') wrapSelection(g, s, '`', '`', 'code');
+    else if (action === 'quote') {
+      if (visualFriendly) insertMarkdown('\n> 인용\n');
+      else insertAtCursor(g, s, '\n> ');
+    } else if (action === 'link') {
+      const url = prompt('URL', 'https://');
+      if (url) {
+        if (visualFriendly && visualEl && document.execCommand) document.execCommand('createLink', false, url);
+        else wrapSelection(g, s, '[', `](${url})`, '링크');
       }
-      focus();
-    });
-    host.appendChild(basicBar);
-  }
+    } else if (action === 'undo') {
+      if (historyIdx > 0) {
+        historyIdx -= 1;
+        setValue(history[historyIdx], { recordHistory: false });
+      }
+    } else if (action === 'redo') {
+      if (historyIdx < history.length - 1) {
+        historyIdx += 1;
+        setValue(history[historyIdx], { recordHistory: false });
+      }
+    }
+    if (visualEl) {
+      syncVisualMarkdown().then((md) => {
+        visualMdCache = md;
+        pushHistory(md);
+        onChange?.(md);
+      });
+    }
+    focus();
+  });
+  host.appendChild(basicBar);
 
   const extras = buildExtraToolbar(async (action) => {
     if (action === 'alert') {
@@ -756,6 +959,7 @@ export async function mountMarkdownEditor(host, options = {}) {
   const mountTextarea = (text) => {
     editorHost.innerHTML = '';
     toast = null;
+    visualEl = null;
     ta = document.createElement('textarea');
     ta.className = 'md-editor-fallback';
     ta.value = text;
@@ -771,19 +975,65 @@ export async function mountMarkdownEditor(host, options = {}) {
     });
     editorHost.appendChild(ta);
     host.classList.add('md-engine-textarea');
-    host.classList.remove('md-engine-toast');
+    host.classList.remove('md-engine-toast', 'md-engine-visual');
     statusEl.textContent = '';
     scheduleLivePreview();
+  };
+
+  const mountVisualWysiwyg = (text) => {
+    editorHost.innerHTML = '';
+    toast = null;
+    ta = null;
+    visualEl = document.createElement('div');
+    visualEl.className = 'md-visual-editor';
+    visualEl.contentEditable = 'true';
+    visualEl.setAttribute('role', 'textbox');
+    visualEl.setAttribute('aria-multiline', 'true');
+    visualEl.setAttribute('aria-label', '본문');
+    visualEl.dataset.placeholder = placeholder;
+    visualEl.style.minHeight = `${Math.max(280, heightPx - 48)}px`;
+    paintVisualFromMarkdown(text);
+    let syncTimer = 0;
+    const queueSync = () => {
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(async () => {
+        const md = await syncVisualMarkdown();
+        pushHistory(md);
+        onChange?.(md);
+        autosave.touch();
+      }, 180);
+    };
+    visualEl.addEventListener('input', queueSync);
+    visualEl.addEventListener('blur', queueSync);
+    visualEl.addEventListener('paste', (e) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) uploader.uploadAndInsert(file, 'image');
+          return;
+        }
+      }
+    });
+    editorHost.appendChild(visualEl);
+    host.classList.add('md-engine-visual', 'md-engine-wysiwyg');
+    host.classList.remove('md-engine-toast', 'md-engine-textarea');
+    statusEl.textContent = '시각 편집 · 사진과 제목이 본문에 바로 보입니다.';
+    ensureTurndown().catch(() => {});
   };
 
   const mountToast = async (text) => {
     const Editor = useToast ? await ensureToastEditor() : null;
     if (!Editor) {
-      mountTextarea(text);
+      if (useWysiwyg) mountVisualWysiwyg(text);
+      else mountTextarea(text);
       return false;
     }
     editorHost.innerHTML = '';
     ta = null;
+    visualEl = null;
     try {
       toast = new Editor({
         el: editorHost,
@@ -834,15 +1084,20 @@ export async function mountMarkdownEditor(host, options = {}) {
       host.classList.add('md-engine-toast');
       host.classList.toggle('md-hide-toast-preview-tab', !useWysiwyg);
       host.classList.toggle('md-engine-wysiwyg', useWysiwyg);
-      host.classList.remove('md-engine-textarea');
+      host.classList.remove('md-engine-textarea', 'md-engine-visual');
       await waitFrames(2);
       refreshLayout();
-      if (!toastIsHealthy(editorHost)) {
-        console.warn('[MarkdownEditor] Toast UI surface unhealthy — falling back to textarea');
+      const ok = await waitForToastSurface(editorHost, useWysiwyg ? 2500 : 1200);
+      if (!ok) {
+        console.warn('[MarkdownEditor] Toast UI surface unhealthy — using visual editor');
         try { toast.destroy(); } catch (_) { /* ignore */ }
         toast = null;
-        mountTextarea(text);
-        statusEl.textContent = '편집기를 안전 모드로 전환했습니다.';
+        if (useWysiwyg) {
+          mountVisualWysiwyg(text);
+        } else {
+          mountTextarea(text);
+          statusEl.textContent = '편집기를 안전 모드로 전환했습니다.';
+        }
         return false;
       }
       if (useWysiwyg) {
@@ -852,8 +1107,12 @@ export async function mountMarkdownEditor(host, options = {}) {
       return true;
     } catch (e) {
       console.error('[MarkdownEditor] Toast init failed', e);
-      mountTextarea(text);
-      statusEl.textContent = '편집기 로드 실패 — 안전 모드로 작성하세요.';
+      toast = null;
+      if (useWysiwyg) mountVisualWysiwyg(text);
+      else {
+        mountTextarea(text);
+        statusEl.textContent = '편집기 로드 실패 — 안전 모드로 작성하세요.';
+      }
       return false;
     }
   };
@@ -908,11 +1167,13 @@ export async function mountMarkdownEditor(host, options = {}) {
       try { toast?.destroy(); } catch (_) { /* ignore */ }
       toast = null;
       ta = null;
+      visualEl = null;
+      visualMdCache = '';
       previewEl = null;
       imageStripEl = null;
       host._mdApi = null;
       host.innerHTML = '';
-      host.classList.remove('md-editor-shell', 'md-engine-toast', 'md-engine-textarea', 'md-hide-toast-preview-tab', 'md-has-live-preview', 'md-engine-wysiwyg');
+      host.classList.remove('md-editor-shell', 'md-engine-toast', 'md-engine-textarea', 'md-hide-toast-preview-tab', 'md-has-live-preview', 'md-engine-wysiwyg', 'md-engine-visual');
     }
   };
   host._mdApi = api;

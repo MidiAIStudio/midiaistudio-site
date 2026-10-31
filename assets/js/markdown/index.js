@@ -16,7 +16,7 @@ export {
   removeMarkdownImage,
   placeMarkdownImageAt,
   splitMarkdownBlocks
-} from './markdown-editor.js?v=hub-md-wysiwyg-1';
+} from './markdown-editor.js?v=hub-md-visual-2';
 
 export {
   draftKey,
