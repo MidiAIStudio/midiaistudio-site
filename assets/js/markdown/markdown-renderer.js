@@ -97,6 +97,62 @@ const PURIFY_CFG = {
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
 };
 
+function isImageOnlyBlock(el) {
+  if (!el || el.nodeType !== 1) return false;
+  if (el.classList?.contains('md-img-row') || el.classList?.contains('md-img-cell')) return false;
+  if (/^(IMG|VIDEO)$/.test(el.tagName)) return true;
+  if (el.tagName === 'P') {
+    const kids = [...el.childNodes].filter((n) => !(n.nodeType === 3 && !String(n.textContent || '').trim()));
+    return kids.length === 1 && kids[0].nodeType === 1 && /^(IMG|VIDEO)$/.test(kids[0].tagName);
+  }
+  return false;
+}
+
+function extractBlockMedia(el) {
+  if (/^(IMG|VIDEO)$/.test(el.tagName)) return el;
+  return el.querySelector?.('img, video') || null;
+}
+
+/** Group consecutive standalone images into side-by-side rows (2 per row). */
+export function wrapAdjacentImages(root) {
+  if (!root) return;
+  const prose = root.classList?.contains('md-prose')
+    ? root
+    : (root.querySelector?.('.md-prose') || root);
+  const blocks = [...prose.children];
+  let i = 0;
+  while (i < blocks.length) {
+    if (!isImageOnlyBlock(blocks[i])) { i += 1; continue; }
+    const run = [];
+    let j = i;
+    while (j < blocks.length && isImageOnlyBlock(blocks[j])) {
+      run.push(blocks[j]);
+      j += 1;
+    }
+    if (run.length >= 2) {
+      for (let k = 0; k < run.length; k += 2) {
+        const pair = run.slice(k, k + 2);
+        if (pair.length < 2) break;
+        const row = document.createElement('div');
+        row.className = 'md-img-row';
+        pair[0].before(row);
+        pair.forEach((block) => {
+          const media = extractBlockMedia(block);
+          const cell = document.createElement('div');
+          cell.className = 'md-img-cell';
+          if (media) cell.appendChild(media);
+          row.appendChild(cell);
+          block.remove();
+        });
+      }
+      blocks.splice(0, blocks.length, ...prose.children);
+      i = 0;
+      continue;
+    }
+    i = j;
+  }
+}
+
 /** Ensure highlight + markdown CSS once */
 let _cssReady = false;
 export function ensureMarkdownCss() {
@@ -135,7 +191,10 @@ export function renderMarkdown(src, opts = {}) {
   }
   const clean = DOMPurify.sanitize(html, PURIFY_CFG);
   const cls = opts.className || 'md-prose';
-  return `<div class="${cls}">${clean}</div>`;
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `<div class="${cls}">${clean}</div>`;
+  wrapAdjacentImages(wrap.firstElementChild);
+  return wrap.innerHTML;
 }
 
 /** Bind interactive bits (spoiler reveal, tabs) inside a rendered root */
@@ -169,5 +228,6 @@ export function bindMarkdownInteractions(root) {
 export function renderMarkdownInto(el, src, opts) {
   if (!el) return;
   el.innerHTML = renderMarkdown(src, opts);
+  wrapAdjacentImages(el);
   bindMarkdownInteractions(el);
 }

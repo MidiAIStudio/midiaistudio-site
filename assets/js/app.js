@@ -73,7 +73,7 @@ import {
   ensureMarkdownCss,
   pickMarkdownSource,
   clearDraft
-} from './markdown/index.js?v=hub-md-visual-3';
+} from './markdown/index.js?v=hub-md-row-1';
 import { renderMidiPreviewWav as renderMidiPreviewEngine } from './board-midi-preview.js?v=gm-preview-1';
 import { patchNoteType, patchNoteVersion, patchNoteWriteFields } from './patch-note-type.js?v=patch-type-1';
 import {

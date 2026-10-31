@@ -2,8 +2,9 @@ export {
   renderMarkdown,
   renderMarkdownInto,
   bindMarkdownInteractions,
-  ensureMarkdownCss
-} from './markdown-renderer.js';
+  ensureMarkdownCss,
+  wrapAdjacentImages
+} from './markdown-renderer.js?v=hub-md-row-1';
 
 export {
   mountMarkdownEditor,
@@ -16,7 +17,7 @@ export {
   removeMarkdownImage,
   placeMarkdownImageAt,
   splitMarkdownBlocks
-} from './markdown-editor.js?v=hub-md-visual-3';
+} from './markdown-editor.js?v=hub-md-row-1';
 
 export {
   draftKey,

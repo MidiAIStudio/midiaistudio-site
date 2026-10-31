@@ -6,7 +6,8 @@ import {
   renderMarkdown,
   renderMarkdownInto,
   ensureMarkdownCss,
-  bindMarkdownInteractions
+  bindMarkdownInteractions,
+  wrapAdjacentImages
 } from './markdown-renderer.js';
 import { createDraftAutosave, loadDraft, clearDraft, saveDraft } from './markdown-draft.js';
 import { createMarkdownUploader } from './markdown-upload.js';
@@ -158,11 +159,20 @@ function htmlToMarkdownSync(html) {
     if (node.nodeType !== 1) return;
     const tag = node.tagName.toLowerCase();
     if (tag === 'img') {
-      parts.push(`![${node.getAttribute('alt') || 'image'}](${node.getAttribute('src') || ''})`);
+      parts.push(`![${node.getAttribute('alt') || 'image'}](${node.getAttribute('src') || ''})\n\n`);
       return;
     }
     if (tag === 'video') {
-      parts.push(`![video](${node.getAttribute('src') || ''})`);
+      parts.push(`![video](${node.getAttribute('src') || ''})\n\n`);
+      return;
+    }
+    if (tag === 'div' && node.classList?.contains('md-img-row')) {
+      node.querySelectorAll('img, video').forEach((m) => walk(m));
+      parts.push('\n');
+      return;
+    }
+    if (tag === 'div' && node.classList?.contains('md-img-cell')) {
+      node.childNodes.forEach(walk);
       return;
     }
     if (/^h[1-6]$/.test(tag)) {
@@ -506,22 +516,72 @@ export async function mountMarkdownEditor(host, options = {}) {
 
   const insertVisualImage = (url, alt = 'image') => {
     if (!visualEl || !url) return false;
-    const range = restoreVisualSelection();
-    const html = `<img src="${esc(url)}" alt="${esc(alt)}" draggable="true" title="드래그해서 위치 이동">`;
-    let ok = false;
-    try {
-      ok = document.execCommand('insertHTML', false, html);
-    } catch (_) { ok = false; }
-    if (!ok) ok = insertHtmlAtRange(html, range);
-    if (!ok) {
-      const prose = visualEl.querySelector('.md-visual-prose') || visualEl;
-      prose.insertAdjacentHTML('beforeend', `<p>${html}</p>`);
+    restoreVisualSelection();
+    const sel = window.getSelection();
+    const anchorEl = sel?.anchorNode?.nodeType === 1
+      ? sel.anchorNode
+      : sel?.anchorNode?.parentElement;
+    const prose = visualEl.querySelector('.md-visual-prose') || visualEl;
+    const existingRow = anchorEl?.closest?.('.md-img-row');
+
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = alt || 'image';
+    img.draggable = true;
+    img.title = '드래그해서 위치 이동';
+
+    if (existingRow) {
+      const cell = document.createElement('div');
+      cell.className = 'md-img-cell';
+      cell.appendChild(img);
+      existingRow.appendChild(cell);
+    } else {
+      // Prefer placing beside the previous standalone image (right side).
+      let prev = null;
+      if (anchorEl && prose.contains(anchorEl)) {
+        let n = anchorEl;
+        while (n && n !== prose && n.parentElement !== prose) n = n.parentElement;
+        prev = n?.previousElementSibling || null;
+      }
+      if (!prev) prev = prose.lastElementChild;
+      const prevIsImg = prev && (
+        /^(IMG|VIDEO)$/.test(prev.tagName)
+        || (prev.tagName === 'P' && prev.querySelector('img,video') && prev.childElementCount <= 1)
+        || prev.classList?.contains('md-img-row')
+      );
+      if (prevIsImg && prev.classList?.contains('md-img-row') && prev.querySelectorAll('.md-img-cell').length < 2) {
+        const cell = document.createElement('div');
+        cell.className = 'md-img-cell';
+        cell.appendChild(img);
+        prev.appendChild(cell);
+      } else if (prevIsImg && !prev.classList?.contains('md-img-row')) {
+        const row = document.createElement('div');
+        row.className = 'md-img-row';
+        const cell1 = document.createElement('div');
+        cell1.className = 'md-img-cell';
+        const media = /^(IMG|VIDEO)$/.test(prev.tagName) ? prev : prev.querySelector('img,video');
+        prev.replaceWith(row);
+        if (media) cell1.appendChild(media);
+        row.appendChild(cell1);
+        const cell2 = document.createElement('div');
+        cell2.className = 'md-img-cell';
+        cell2.appendChild(img);
+        row.appendChild(cell2);
+      } else {
+        const range = restoreVisualSelection();
+        let ok = false;
+        try { ok = document.execCommand('insertHTML', false, img.outerHTML); } catch (_) { ok = false; }
+        if (!ok) ok = insertHtmlAtRange(img.outerHTML, range);
+        if (!ok) prose.insertAdjacentHTML('beforeend', `<p>${img.outerHTML}</p>`);
+      }
     }
+    wrapAdjacentImages(prose);
     saveVisualSelection();
     visualMdCache = htmlToMarkdownSync(visualEl.innerHTML);
     pushHistory(visualMdCache);
     onChange?.(visualMdCache);
     scheduleLivePreview();
+    statusEl.textContent = '이미지 삽입 · 이어서 넣으면 오른쪽에 나란히 배치됩니다.';
     return true;
   };
 
@@ -721,6 +781,7 @@ export async function mountMarkdownEditor(host, options = {}) {
     visualMdCache = String(md ?? '');
     const html = renderMarkdown(visualMdCache, { className: 'md-prose md-visual-prose' });
     visualEl.innerHTML = html || '<p><br></p>';
+    wrapAdjacentImages(visualEl);
     bindMarkdownInteractions(visualEl);
     visualEl.querySelectorAll('img').forEach((img) => {
       img.setAttribute('draggable', 'true');
