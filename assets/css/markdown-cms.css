@@ -225,6 +225,46 @@
   min-height:240px !important;
 }
 .md-editor-host .CodeMirror-scroll{min-height:240px !important}
+
+/* WYSIWYG: write as you see — headings + images inline in the editor */
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-mode-switch,
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-md-tab-container,
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-md-container{
+  display:none !important;
+}
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-ww-container{
+  display:block !important;
+  width:100% !important;
+}
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-contents{
+  padding:18px 20px !important;
+}
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-contents h1,
+.md-editor-shell.md-engine-wysiwyg .ProseMirror h1{
+  font-size:1.85em !important;font-weight:900 !important;letter-spacing:-.03em;margin:0.7em 0 0.35em;
+}
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-contents h2,
+.md-editor-shell.md-engine-wysiwyg .ProseMirror h2{
+  font-size:1.45em !important;font-weight:900 !important;letter-spacing:-.02em;margin:0.85em 0 0.35em;
+}
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-contents h3,
+.md-editor-shell.md-engine-wysiwyg .ProseMirror h3{
+  font-size:1.2em !important;font-weight:800 !important;margin:0.75em 0 0.3em;
+}
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-contents img,
+.md-editor-shell.md-engine-wysiwyg .ProseMirror img{
+  max-width:100% !important;height:auto !important;border-radius:14px;
+  display:block;margin:12px 0;cursor:grab;
+  box-shadow:0 8px 28px rgba(0,0,0,.35);
+}
+.md-editor-shell.md-engine-wysiwyg .toastui-editor-contents img.ProseMirror-selectednode,
+.md-editor-shell.md-engine-wysiwyg .ProseMirror img.ProseMirror-selectednode{
+  outline:2px solid rgba(34,211,238,.75);cursor:grabbing;
+}
+.md-editor-shell.md-engine-wysiwyg .md-editor-status{
+  color:#8be9c5;
+}
+
 /* Hide Toast Write/Preview tab only — do NOT zero-width the editor pane */
 .md-editor-shell.md-hide-toast-preview-tab .toastui-editor-md-tab-container,
 .md-editor-shell.md-hide-toast-preview-tab .toastui-editor-mode-switch{display:none !important}
@@ -440,10 +480,11 @@
 .vcms-md-field .vcms-hover-tools{opacity:0;transition:opacity .15s}
 .vcms-md-field:hover .vcms-hover-tools,.vcms-md-field:focus-within .vcms-hover-tools{opacity:1}
 
-.edit-modal.md-edit-modal{width:min(1120px,98vw);max-width:none}
+.edit-modal.md-edit-modal{width:min(880px,96vw);max-width:none}
 .edit-modal.md-edit-modal .edit-modal-body{max-height:min(78vh,820px);overflow:auto}
-.edit-modal.md-edit-modal .md-editor-shell{min-height:360px}
+.edit-modal.md-edit-modal .md-editor-shell{min-height:420px}
 .edit-modal.md-edit-modal .md-editor-work.is-split{min-height:320px}
+.edit-modal.md-edit-modal .md-engine-wysiwyg .md-editor-host{min-height:380px}
 .edit-field-markdown{display:block}
 .edit-field-markdown > span{display:block;margin-bottom:8px}
 

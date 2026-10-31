@@ -308,8 +308,14 @@ export async function mountMarkdownEditor(host, options = {}) {
     preferToast = false,
     promptDraft = true,
     /** Show rendered preview beside/below editor so inline images can be positioned. */
-    livePreview = false
+    livePreview = false,
+    /** Visual (WYSIWYG) editing — images/headings render in the writing surface. */
+    wysiwyg = false
   } = options;
+
+  const useWysiwyg = !!wysiwyg;
+  const useLivePreview = !!livePreview && !useWysiwyg;
+  const useToast = !!preferToast || useWysiwyg;
 
   ensureMarkdownCss();
 
@@ -320,7 +326,8 @@ export async function mountMarkdownEditor(host, options = {}) {
   }
   host.innerHTML = '';
   host.classList.add('md-editor-shell');
-  host.classList.remove('md-no-split');
+  host.classList.remove('md-no-split', 'md-has-live-preview', 'md-engine-wysiwyg');
+  if (useWysiwyg) host.classList.add('md-engine-wysiwyg');
 
   const heightPx = resolveHeightPx(height);
   let toast = null;
@@ -415,7 +422,7 @@ export async function mountMarkdownEditor(host, options = {}) {
   };
 
   const paintLivePreview = () => {
-    if (!livePreview || !previewEl) return;
+    if (!useLivePreview || !previewEl) return;
     const md = getValue();
     const blocks = splitMarkdownBlocks(md);
     const images = listMarkdownImages(md);
@@ -462,7 +469,7 @@ export async function mountMarkdownEditor(host, options = {}) {
   };
 
   const scheduleLivePreview = () => {
-    if (!livePreview) return;
+    if (!useLivePreview) return;
     clearTimeout(previewTimer);
     previewTimer = setTimeout(paintLivePreview, 120);
   };
@@ -531,6 +538,8 @@ export async function mountMarkdownEditor(host, options = {}) {
     try {
       if (toast) {
         toast.focus();
+        const ww = host.querySelector('.ProseMirror, .toastui-editor-contents [contenteditable="true"]');
+        if (ww) { ww.focus(); return; }
         const cm = host.querySelector('.CodeMirror');
         cm?.CodeMirror?.focus?.();
         return;
@@ -599,7 +608,27 @@ export async function mountMarkdownEditor(host, options = {}) {
   };
 
   const insertMarkdown = (snippet) => {
-    insertAtCursor(getSelection, setSelection, snippet);
+    const raw = String(snippet ?? '');
+    if (toast) {
+      try {
+        const img = raw.trim().match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/);
+        if (img && typeof toast.exec === 'function') {
+          toast.focus();
+          toast.exec('addImage', { imageUrl: img[2], altText: img[1] || 'image' });
+          scheduleLivePreview();
+          return;
+        }
+        if (typeof toast.insertText === 'function') {
+          toast.focus();
+          toast.insertText(raw.startsWith('\n') ? raw : raw);
+          scheduleLivePreview();
+          return;
+        }
+      } catch (err) {
+        console.warn('toast insert failed', err);
+      }
+    }
+    insertAtCursor(getSelection, setSelection, raw);
     focus();
     scheduleLivePreview();
   };
@@ -621,35 +650,37 @@ export async function mountMarkdownEditor(host, options = {}) {
     searchFn = (q) => searchInternalDocs({ db: fb.db, fs: fb.fs }, q);
   } catch (_) { /* optional */ }
 
-  const basicBar = buildBasicToolbar((action) => {
-    const g = getSelection;
-    const s = setSelection;
-    if (action === 'bold') wrapSelection(g, s, '**', '**', '굵게');
-    else if (action === 'italic') wrapSelection(g, s, '*', '*', '기울임');
-    else if (action === 'strike') wrapSelection(g, s, '~~', '~~', '취소선');
-    else if (action === 'h2') insertAtCursor(g, s, '\n## ');
-    else if (action === 'ul') insertAtCursor(g, s, '\n- ');
-    else if (action === 'ol') insertAtCursor(g, s, '\n1. ');
-    else if (action === 'check') insertChecklist(g, s);
-    else if (action === 'code') wrapSelection(g, s, '`', '`', 'code');
-    else if (action === 'quote') insertAtCursor(g, s, '\n> ');
-    else if (action === 'link') {
-      const url = prompt('URL', 'https://');
-      if (url) wrapSelection(g, s, '[', `](${url})`, '링크');
-    } else if (action === 'undo') {
-      if (historyIdx > 0) {
-        historyIdx -= 1;
-        setValue(history[historyIdx], { recordHistory: false });
+  if (!useWysiwyg) {
+    const basicBar = buildBasicToolbar((action) => {
+      const g = getSelection;
+      const s = setSelection;
+      if (action === 'bold') wrapSelection(g, s, '**', '**', '굵게');
+      else if (action === 'italic') wrapSelection(g, s, '*', '*', '기울임');
+      else if (action === 'strike') wrapSelection(g, s, '~~', '~~', '취소선');
+      else if (action === 'h2') insertAtCursor(g, s, '\n## ');
+      else if (action === 'ul') insertAtCursor(g, s, '\n- ');
+      else if (action === 'ol') insertAtCursor(g, s, '\n1. ');
+      else if (action === 'check') insertChecklist(g, s);
+      else if (action === 'code') wrapSelection(g, s, '`', '`', 'code');
+      else if (action === 'quote') insertAtCursor(g, s, '\n> ');
+      else if (action === 'link') {
+        const url = prompt('URL', 'https://');
+        if (url) wrapSelection(g, s, '[', `](${url})`, '링크');
+      } else if (action === 'undo') {
+        if (historyIdx > 0) {
+          historyIdx -= 1;
+          setValue(history[historyIdx], { recordHistory: false });
+        }
+      } else if (action === 'redo') {
+        if (historyIdx < history.length - 1) {
+          historyIdx += 1;
+          setValue(history[historyIdx], { recordHistory: false });
+        }
       }
-    } else if (action === 'redo') {
-      if (historyIdx < history.length - 1) {
-        historyIdx += 1;
-        setValue(history[historyIdx], { recordHistory: false });
-      }
-    }
-    focus();
-  });
-  host.appendChild(basicBar);
+      focus();
+    });
+    host.appendChild(basicBar);
+  }
 
   const extras = buildExtraToolbar(async (action) => {
     if (action === 'alert') {
@@ -669,7 +700,7 @@ export async function mountMarkdownEditor(host, options = {}) {
   });
   host.appendChild(extras);
 
-  if (livePreview) {
+  if (useLivePreview) {
     imageStripEl = document.createElement('div');
     imageStripEl.className = 'md-image-strip';
     imageStripEl.hidden = true;
@@ -693,12 +724,12 @@ export async function mountMarkdownEditor(host, options = {}) {
   }
 
   const workArea = document.createElement('div');
-  workArea.className = livePreview ? 'md-editor-work is-split' : 'md-editor-work';
+  workArea.className = useLivePreview ? 'md-editor-work is-split' : 'md-editor-work';
   const editorHost = document.createElement('div');
   editorHost.className = 'md-editor-host';
   editorHost.style.minHeight = `${Math.max(260, heightPx - 40)}px`;
   workArea.appendChild(editorHost);
-  if (livePreview) {
+  if (useLivePreview) {
     const previewPane = document.createElement('div');
     previewPane.className = 'md-live-preview-pane';
     previewPane.innerHTML = `<div class="md-live-preview-label">미리보기 · 이미지를 드래그해 원하는 위치에 놓으세요</div><div class="md-live-preview-body post-body-content"></div>`;
@@ -746,7 +777,7 @@ export async function mountMarkdownEditor(host, options = {}) {
   };
 
   const mountToast = async (text) => {
-    const Editor = preferToast ? await ensureToastEditor() : null;
+    const Editor = useToast ? await ensureToastEditor() : null;
     if (!Editor) {
       mountTextarea(text);
       return false;
@@ -758,8 +789,8 @@ export async function mountMarkdownEditor(host, options = {}) {
         el: editorHost,
         height: `${heightPx}px`,
         initialValue: text,
-        initialEditType: 'markdown',
-        previewStyle: 'tab',
+        initialEditType: useWysiwyg ? 'wysiwyg' : 'markdown',
+        previewStyle: useWysiwyg ? 'vertical' : 'tab',
         hideModeSwitch: true,
         usageStatistics: false,
         placeholder,
@@ -769,7 +800,7 @@ export async function mountMarkdownEditor(host, options = {}) {
           ['heading', 'bold', 'italic', 'strike'],
           ['hr', 'quote'],
           ['ul', 'ol', 'task'],
-          ['table', 'link'],
+          ['table', 'image', 'link'],
           ['code', 'codeblock']
         ],
         hooks: {
@@ -780,9 +811,10 @@ export async function mountMarkdownEditor(host, options = {}) {
                 : new File([blob], `paste-${Date.now()}.png`, { type: blob.type || 'image/png' });
               const { uploadToStorage } = await import('../visual-cms.js');
               const doUpload = upload || uploadToStorage;
-              const path = `${storagePrefix.replace(/\/$/, '')}/${Date.now()}_paste.png`;
+              const safe = String(file.name || 'paste.png').replace(/[^\w.\-()+]+/g, '_').slice(0, 80);
+              const path = `${storagePrefix.replace(/\/$/, '')}/${Date.now()}_${safe}`;
               const url = await doUpload(path, file);
-              callback(url, 'image');
+              callback(url, file.name?.replace(/\.[^.]+$/, '') || 'image');
               statusEl.textContent = '업로드 완료';
             } catch (err) {
               console.error(err);
@@ -799,7 +831,9 @@ export async function mountMarkdownEditor(host, options = {}) {
           }
         }
       });
-      host.classList.add('md-engine-toast', 'md-hide-toast-preview-tab');
+      host.classList.add('md-engine-toast');
+      host.classList.toggle('md-hide-toast-preview-tab', !useWysiwyg);
+      host.classList.toggle('md-engine-wysiwyg', useWysiwyg);
       host.classList.remove('md-engine-textarea');
       await waitFrames(2);
       refreshLayout();
@@ -810,6 +844,9 @@ export async function mountMarkdownEditor(host, options = {}) {
         mountTextarea(text);
         statusEl.textContent = '편집기를 안전 모드로 전환했습니다.';
         return false;
+      }
+      if (useWysiwyg) {
+        statusEl.textContent = '시각 편집 · 사진/제목이 본문에 바로 보입니다. 이미지는 드래그로 옮길 수 있습니다.';
       }
       scheduleLivePreview();
       return true;
@@ -875,7 +912,7 @@ export async function mountMarkdownEditor(host, options = {}) {
       imageStripEl = null;
       host._mdApi = null;
       host.innerHTML = '';
-      host.classList.remove('md-editor-shell', 'md-engine-toast', 'md-engine-textarea', 'md-hide-toast-preview-tab', 'md-has-live-preview');
+      host.classList.remove('md-editor-shell', 'md-engine-toast', 'md-engine-textarea', 'md-hide-toast-preview-tab', 'md-has-live-preview', 'md-engine-wysiwyg');
     }
   };
   host._mdApi = api;

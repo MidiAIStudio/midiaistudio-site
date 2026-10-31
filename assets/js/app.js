@@ -73,7 +73,7 @@ import {
   ensureMarkdownCss,
   pickMarkdownSource,
   clearDraft
-} from './markdown/index.js?v=hub-md-dnd-1';
+} from './markdown/index.js?v=hub-md-wysiwyg-1';
 import { renderMidiPreviewWav as renderMidiPreviewEngine } from './board-midi-preview.js?v=gm-preview-1';
 import { patchNoteType, patchNoteVersion, patchNoteWriteFields } from './patch-note-type.js?v=patch-type-1';
 import {
@@ -7019,8 +7019,9 @@ function openEditModal(title, fields, opts={}){
           draftKey: field.draftKey || `modal:${name}`,
           storagePrefix: `cms-md/${uid}/hub`,
           showActions: false,
-          preferToast: false,
-          livePreview: true
+          preferToast: true,
+          wysiwyg: true,
+          livePreview: false
         });
         mdEditors[name].setMarkdown(pickMarkdownSource(field.value));
         mdEditors[name].refreshLayout();
@@ -7816,8 +7817,9 @@ async function renderAdminCmsEditor(container, kind, row){
         draftKey: field.draftKey || `cms:${kind}:${name}`,
         storagePrefix: `cms-md/${uid}/hub`,
         showActions: false,
-        preferToast: false,
-        livePreview: true
+        preferToast: true,
+        wysiwyg: true,
+        livePreview: false
       });
       mdEditors[name].setMarkdown(pickMarkdownSource(field.value));
       mdEditors[name].refreshLayout();
