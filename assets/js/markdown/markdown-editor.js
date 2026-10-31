@@ -25,7 +25,7 @@ import {
   searchInternalDocs,
   containerSnippet,
   wrapSelection
-} from './markdown-toolbar-extras.js?v=write-ux-1';
+} from './markdown-toolbar-extras.js?v=hub-md-list-2';
 import { adminHoverToolbar, confirmDelete } from '../visual-cms.js';
 
 const TOAST_CSS_CANDIDATES = [
@@ -223,18 +223,172 @@ function liInnerMarkdown(li) {
   return bits.join('').replace(/[ \t]{2,}/g, ' ').trim();
 }
 
+const LIST_ITEM_RE = /^[ \t]*(?:[-*+]|\d+\.)[ \t]+/;
+const LIST_MARKER_ONLY_RE = /^[ \t]*(?:[-*+]|\d+\.)[ \t]*$/;
+
+/**
+ * Ensure a non-list paragraph after a list starts its own block (blank line).
+ * Without this, markdown-it (breaks:true) absorbs "- a\\nText" into the last <li>.
+ */
+function separateListFromFollowingParagraph(md) {
+  const lines = String(md || '').split('\n');
+  const out = [];
+  const isBlank = (line) => /^\s*$/.test(line);
+  const isListLine = (line) => LIST_ITEM_RE.test(line) || LIST_MARKER_ONLY_RE.test(line);
+  const isIndentedCont = (line) => /^\s{2,}\S/.test(line);
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const prev = out.length ? out[out.length - 1] : null;
+    if (
+      prev != null &&
+      !isBlank(prev) &&
+      isListLine(prev) &&
+      !isBlank(line) &&
+      !isListLine(line) &&
+      !isIndentedCont(line)
+    ) {
+      out.push('');
+    }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
 /** Keep consecutive bullet/numbered items tight (no blank line between). */
 function normalizeMarkdownLists(md) {
   let out = String(md || '');
-  // Remove blank lines between list items: "\n\n- " / "\n\n1. "
+  // Fix broken "-\ntext" from contenteditable <br> after the marker — single newline only.
+  // Do NOT collapse across blank lines (that would swallow a following paragraph).
+  out = out.replace(/^([ \t]*[-*+] )[ \t]*\n(?!\n)[ \t]*/gm, '$1');
+  out = out.replace(/^([ \t]*\d+\. )[ \t]*\n(?!\n)[ \t]*/gm, '$1');
+  out = out.replace(/^([ \t]*[-*+])[ \t]*\n(?!\n)(?=\S)/gm, '$1 ');
+  // Paragraph after a list must be separated so it does not stay inside the last <li>.
+  out = separateListFromFollowingParagraph(out);
+  // Drop empty marker-only lines left before a following paragraph ("- \\n\\nText").
+  out = out.replace(/^[ \t]*(?:[-*+]|\d+\.)[ \t]*\n(?=[ \t]*\n)/gm, '');
+  // Remove blank lines between consecutive list items: "\n\n- " / "\n\n1. "
   out = out.replace(/\n[ \t]*\n+(\s*[-*+] )/g, '\n$1');
   out = out.replace(/\n[ \t]*\n+(\s*\d+\. )/g, '\n$1');
-  // Fix broken "-\ntext" / "- \ntext" caused by contenteditable <br> after the marker
-  out = out.replace(/^([ \t]*[-*+] )[ \t]*\n+[ \t]*/gm, '$1');
-  out = out.replace(/^([ \t]*\d+\. )[ \t]*\n+[ \t]*/gm, '$1');
-  // Avoid turning a lone dash line into a hard break before following text
-  out = out.replace(/^([ \t]*[-*+])[ \t]*\n+(?=\S)/gm, '$1 ');
   return out.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function isEffectivelyEmptyListItem(li) {
+  if (!li) return true;
+  const text = String(li.textContent || '').replace(/\u200B/g, '').trim();
+  if (text) return false;
+  if (li.querySelector('img, video, table, pre, hr')) return false;
+  return true;
+}
+
+function closestListItem(node, root) {
+  let n = node;
+  if (n && n.nodeType === 3) n = n.parentElement;
+  while (n && n !== root) {
+    if (n.nodeType === 1 && n.tagName === 'LI') return n;
+    n = n.parentElement;
+  }
+  return null;
+}
+
+function placeCaretIn(el, atStart = true) {
+  if (!el) return;
+  const range = document.createRange();
+  const sel = window.getSelection();
+  try {
+    if (atStart) range.setStart(el, 0);
+    else range.selectNodeContents(el);
+    range.collapse(atStart);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  } catch (_) { /* ignore */ }
+}
+
+/** Enter on an empty <li> exits the list into a new <p> below the <ul>/<ol>. */
+function exitListAtEmptyItem(li) {
+  const list = li?.parentElement;
+  if (!list || !/^(UL|OL)$/.test(list.tagName)) return false;
+  if (!isEffectivelyEmptyListItem(li)) return false;
+  li.remove();
+  const p = document.createElement('p');
+  p.appendChild(document.createElement('br'));
+  if (![...list.children].some((c) => c.tagName === 'LI')) {
+    list.replaceWith(p);
+  } else {
+    list.after(p);
+  }
+  placeCaretIn(p, true);
+  return true;
+}
+
+/**
+ * Contenteditable often keeps post-list text inside the last <li> after a <br> / <div>.
+ * Promote that trailing content to a sibling <p> after the list (last item only).
+ */
+function promoteTrailingBreakContentFromLists(root) {
+  if (!root) return;
+  root.querySelectorAll('ul, ol').forEach((list) => {
+    const items = [...list.children].filter((c) => c.tagName === 'LI');
+    const li = items[items.length - 1];
+    if (!li) return;
+
+    const nodes = [...li.childNodes];
+    let splitIdx = -1;
+    let seenContent = false;
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (n.nodeType === 3) {
+        if (String(n.textContent || '').replace(/\u200B/g, '').trim()) seenContent = true;
+        continue;
+      }
+      if (n.nodeType !== 1) continue;
+      if (n.tagName === 'BR') {
+        if (seenContent) {
+          splitIdx = i;
+          break;
+        }
+        continue;
+      }
+      if (/^(DIV|P)$/.test(n.tagName)) {
+        const t = String(n.textContent || '').replace(/\u200B/g, '').trim();
+        if (seenContent) {
+          splitIdx = i;
+          break;
+        }
+        if (t) seenContent = true;
+        continue;
+      }
+      if (String(n.textContent || '').replace(/\u200B/g, '').trim()) seenContent = true;
+    }
+    if (splitIdx < 0) return;
+
+    const slice = nodes.slice(splitIdx);
+    const skipBr = slice[0]?.nodeName === 'BR' ? 1 : 0;
+    const toMove = slice.slice(skipBr);
+    slice.forEach((n) => n.remove());
+    const movedText = toMove
+      .map((n) => String(n.textContent || ''))
+      .join('')
+      .replace(/\u200B/g, '')
+      .trim();
+    if (!movedText && !toMove.some((n) => n.nodeType === 1 && n.querySelector?.('img, video'))) {
+      return;
+    }
+    const p = document.createElement('p');
+    if (
+      toMove.length === 1 &&
+      toMove[0].nodeType === 1 &&
+      /^(DIV|P)$/.test(toMove[0].tagName)
+    ) {
+      const block = toMove[0];
+      while (block.firstChild) p.appendChild(block.firstChild);
+    } else {
+      toMove.forEach((n) => p.appendChild(n));
+    }
+    if (!String(p.textContent || '').replace(/\u200B/g, '').trim() && !p.querySelector('img, video')) {
+      p.innerHTML = '<br>';
+    }
+    list.after(p);
+  });
 }
 
 function htmlToMarkdownSync(html) {
@@ -719,6 +873,7 @@ export async function mountMarkdownEditor(host, options = {}) {
     } catch (_) { /* fall through */ }
     if (visualEl) {
       // Prefer turndown when warmed; sync path also normalizes tight lists.
+      promoteTrailingBreakContentFromLists(visualEl);
       visualMdCache = htmlToMarkdownNow(visualEl.innerHTML);
       return visualMdCache;
     }
@@ -921,6 +1076,7 @@ export async function mountMarkdownEditor(host, options = {}) {
 
   const syncVisualMarkdown = async () => {
     if (!visualEl) return visualMdCache;
+    promoteTrailingBreakContentFromLists(visualEl);
     visualMdCache = await htmlToMarkdown(visualEl.innerHTML);
     return visualMdCache;
   };
@@ -1287,6 +1443,19 @@ export async function mountMarkdownEditor(host, options = {}) {
       }, 180);
     };
     visualEl.addEventListener('input', () => { saveVisualSelection(); queueSync(); });
+    visualEl.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return;
+      const sel = window.getSelection();
+      if (!sel || !sel.rangeCount || !sel.isCollapsed) return;
+      const li = closestListItem(sel.anchorNode, visualEl);
+      if (!li || !visualEl.contains(li)) return;
+      if (!isEffectivelyEmptyListItem(li)) return;
+      e.preventDefault();
+      if (exitListAtEmptyItem(li)) {
+        saveVisualSelection();
+        queueSync();
+      }
+    });
     visualEl.addEventListener('keyup', saveVisualSelection);
     visualEl.addEventListener('mouseup', saveVisualSelection);
     visualEl.addEventListener('click', saveVisualSelection);

@@ -4,7 +4,7 @@ export {
   bindMarkdownInteractions,
   ensureMarkdownCss,
   wrapAdjacentImages
-} from './markdown-renderer.js?v=write-ux-1';
+} from './markdown-renderer.js?v=hub-md-list-2';
 
 export {
   mountMarkdownEditor,
@@ -17,7 +17,7 @@ export {
   removeMarkdownImage,
   placeMarkdownImageAt,
   splitMarkdownBlocks
-} from './markdown-editor.js?v=write-ux-1';
+} from './markdown-editor.js?v=hub-md-list-2';
 
 export {
   draftKey,
