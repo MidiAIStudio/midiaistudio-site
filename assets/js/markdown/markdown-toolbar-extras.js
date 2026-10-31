@@ -101,6 +101,7 @@ export function buildExtraToolbar(onAction) {
     ['checklist', '체크리스트'],
     ['table', '표'],
     ['image', '이미지'],
+    ['imagerow', '나란히'],
     ['video', '영상'],
     ['file', '파일'],
     ['internal', '내부링크'],

@@ -97,13 +97,14 @@ const PURIFY_CFG = {
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
 };
 
-function isImageOnlyBlock(el) {
+export function isImageOnlyBlock(el) {
   if (!el || el.nodeType !== 1) return false;
   if (el.classList?.contains('md-img-row') || el.classList?.contains('md-img-cell')) return false;
   if (/^(IMG|VIDEO)$/.test(el.tagName)) return true;
-  if (el.tagName === 'P') {
-    const kids = [...el.childNodes].filter((n) => !(n.nodeType === 3 && !String(n.textContent || '').trim()));
-    return kids.length === 1 && kids[0].nodeType === 1 && /^(IMG|VIDEO)$/.test(kids[0].tagName);
+  if (el.tagName === 'P' || el.tagName === 'DIV') {
+    const media = [...el.querySelectorAll(':scope > img, :scope > video')];
+    const text = String(el.textContent || '').trim();
+    return media.length >= 1 && !text;
   }
   return false;
 }
@@ -113,63 +114,139 @@ function extractBlockMedia(el) {
   return el.querySelector?.('img, video') || null;
 }
 
+function extractAllBlockMedia(el) {
+  if (/^(IMG|VIDEO)$/.test(el.tagName)) return [el];
+  return [...(el.querySelectorAll?.('img, video') || [])];
+}
+
+function makeImgCell(media) {
+  const cell = document.createElement('div');
+  cell.className = 'md-img-cell';
+  if (media) cell.appendChild(media);
+  return cell;
+}
+
+function makeImgRow(mediaList) {
+  const row = document.createElement('div');
+  row.className = 'md-img-row';
+  mediaList.forEach((m) => row.appendChild(makeImgCell(m)));
+  return row;
+}
+
+/** Last meaningful child: image / image-row, skipping empty paragraphs. */
+export function findLastImageAnchor(prose) {
+  if (!prose) return null;
+  for (let el = prose.lastElementChild; el; el = el.previousElementSibling) {
+    if (el.classList?.contains('md-img-row')) return el;
+    if (isImageOnlyBlock(el)) return el;
+    const empty = !String(el.textContent || '').trim() && !el.querySelector?.('img,video');
+    if (empty) continue;
+    return null;
+  }
+  return null;
+}
+
 /** Group consecutive standalone images into side-by-side rows (2 per row). */
 export function wrapAdjacentImages(root) {
   if (!root) return;
   const prose = root.classList?.contains('md-prose')
     ? root
     : (root.querySelector?.('.md-prose') || root);
-  const blocks = [...prose.children];
-  let i = 0;
-  while (i < blocks.length) {
-    if (!isImageOnlyBlock(blocks[i])) { i += 1; continue; }
-    const run = [];
-    let j = i;
-    while (j < blocks.length && isImageOnlyBlock(blocks[j])) {
-      run.push(blocks[j]);
-      j += 1;
-    }
-    if (run.length >= 2) {
+
+  // Split a single paragraph that contains multiple images into a row.
+  [...prose.querySelectorAll('p')].forEach((p) => {
+    const media = [...p.querySelectorAll(':scope > img, :scope > video')];
+    if (media.length < 2) return;
+    if (String(p.textContent || '').trim()) return;
+    const row = makeImgRow(media);
+    p.replaceWith(row);
+  });
+
+  let guard = 0;
+  while (guard++ < 50) {
+    const blocks = [...prose.children];
+    let changed = false;
+    for (let i = 0; i < blocks.length; i++) {
+      if (!isImageOnlyBlock(blocks[i])) continue;
+      const run = [];
+      let j = i;
+      while (j < blocks.length && isImageOnlyBlock(blocks[j])) {
+        run.push(blocks[j]);
+        j += 1;
+      }
+      if (run.length < 2) continue;
       for (let k = 0; k < run.length; k += 2) {
         const pair = run.slice(k, k + 2);
         if (pair.length < 2) break;
-        const row = document.createElement('div');
-        row.className = 'md-img-row';
+        const medias = pair.flatMap(extractAllBlockMedia);
+        if (medias.length < 2) continue;
+        const row = makeImgRow(medias.slice(0, 2));
         pair[0].before(row);
-        pair.forEach((block) => {
-          const media = extractBlockMedia(block);
-          const cell = document.createElement('div');
-          cell.className = 'md-img-cell';
-          if (media) cell.appendChild(media);
-          row.appendChild(cell);
-          block.remove();
-        });
+        pair.forEach((block) => block.remove());
+        changed = true;
       }
-      blocks.splice(0, blocks.length, ...prose.children);
-      i = 0;
-      continue;
+      break;
     }
-    i = j;
+    if (!changed) break;
   }
+}
+
+/** Force the last two images in the editor into one side-by-side row. */
+export function pairLastTwoImages(root) {
+  if (!root) return false;
+  const prose = root.classList?.contains('md-prose')
+    ? root
+    : (root.querySelector?.('.md-prose') || root);
+  wrapAdjacentImages(prose);
+  const imgs = [...prose.querySelectorAll('img, video')];
+  if (imgs.length < 2) return false;
+  const a = imgs[imgs.length - 2];
+  const b = imgs[imgs.length - 1];
+  const rowA = a.closest('.md-img-row');
+  const rowB = b.closest('.md-img-row');
+  if (rowA && rowA === rowB) return true;
+
+  const parentA = a.closest('p, .md-img-cell, .md-img-row');
+  const parentB = b.closest('p, .md-img-cell, .md-img-row');
+  const row = makeImgRow([a, b]);
+
+  if (parentB && parentB !== parentA) {
+    parentB.replaceWith(row);
+    if (parentA && parentA.isConnected && !parentA.querySelector('img,video') && !String(parentA.textContent || '').trim()) {
+      parentA.remove();
+    }
+  } else if (parentA) {
+    parentA.replaceWith(row);
+  } else {
+    b.before(row);
+  }
+  // remove emptied wrappers left behind
+  ;[parentA, parentB].forEach((p) => {
+    if (p && p.isConnected && !p.querySelector('img,video') && !String(p.textContent || '').trim() && p !== row) p.remove();
+  });
+  return true;
 }
 
 /** Ensure highlight + markdown CSS once */
 let _cssReady = false;
 export function ensureMarkdownCss() {
-  if (_cssReady) return;
-  _cssReady = true;
   const links = [
-    { id: 'md-cms-css', href: new URL('../../css/markdown-cms.css', import.meta.url).href },
+    { id: 'md-cms-css', href: `${new URL('../../css/markdown-cms.css', import.meta.url).href}?v=hub-md-row-2` },
     { id: 'md-hljs-css', href: 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/github-dark.min.css' }
   ];
   links.forEach(({ id, href }) => {
-    if (document.getElementById(id)) return;
+    const existing = document.getElementById(id);
+    if (existing) {
+      if (id === 'md-cms-css' && existing.getAttribute('href') !== href) existing.setAttribute('href', href);
+      return;
+    }
     const link = document.createElement('link');
     link.id = id;
     link.rel = 'stylesheet';
     link.href = href;
     document.head.appendChild(link);
   });
+  _cssReady = true;
 }
 
 /**

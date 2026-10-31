@@ -7,7 +7,10 @@ import {
   renderMarkdownInto,
   ensureMarkdownCss,
   bindMarkdownInteractions,
-  wrapAdjacentImages
+  wrapAdjacentImages,
+  findLastImageAnchor,
+  pairLastTwoImages,
+  isImageOnlyBlock
 } from './markdown-renderer.js';
 import { createDraftAutosave, loadDraft, clearDraft, saveDraft } from './markdown-draft.js';
 import { createMarkdownUploader } from './markdown-upload.js';
@@ -516,72 +519,61 @@ export async function mountMarkdownEditor(host, options = {}) {
 
   const insertVisualImage = (url, alt = 'image') => {
     if (!visualEl || !url) return false;
-    restoreVisualSelection();
-    const sel = window.getSelection();
-    const anchorEl = sel?.anchorNode?.nodeType === 1
-      ? sel.anchorNode
-      : sel?.anchorNode?.parentElement;
     const prose = visualEl.querySelector('.md-visual-prose') || visualEl;
-    const existingRow = anchorEl?.closest?.('.md-img-row');
-
     const img = document.createElement('img');
     img.src = url;
     img.alt = alt || 'image';
     img.draggable = true;
     img.title = '드래그해서 위치 이동';
 
-    if (existingRow) {
+    // Always place next to the last image in the document (right side),
+    // not "below" — this matches the expected hub-composer UX.
+    const anchor = findLastImageAnchor(prose);
+    if (anchor?.classList?.contains('md-img-row') && anchor.querySelectorAll('.md-img-cell').length === 1) {
       const cell = document.createElement('div');
       cell.className = 'md-img-cell';
       cell.appendChild(img);
-      existingRow.appendChild(cell);
+      anchor.appendChild(cell);
+    } else if (anchor && (isImageOnlyBlock(anchor) || /^(IMG|VIDEO)$/.test(anchor.tagName))) {
+      const media = /^(IMG|VIDEO)$/.test(anchor.tagName) ? anchor : anchor.querySelector('img,video');
+      const row = document.createElement('div');
+      row.className = 'md-img-row';
+      const c1 = document.createElement('div');
+      c1.className = 'md-img-cell';
+      const c2 = document.createElement('div');
+      c2.className = 'md-img-cell';
+      if (media) c1.appendChild(media);
+      c2.appendChild(img);
+      row.appendChild(c1);
+      row.appendChild(c2);
+      anchor.replaceWith(row);
+    } else if (anchor?.classList?.contains('md-img-row')) {
+      // Row already has 2 images → start a new image below as its own block,
+      // then pairLastTwoImages is NOT used (would steal from previous row).
+      const p = document.createElement('p');
+      p.appendChild(img);
+      anchor.after(p);
     } else {
-      // Prefer placing beside the previous standalone image (right side).
-      let prev = null;
-      if (anchorEl && prose.contains(anchorEl)) {
-        let n = anchorEl;
-        while (n && n !== prose && n.parentElement !== prose) n = n.parentElement;
-        prev = n?.previousElementSibling || null;
-      }
-      if (!prev) prev = prose.lastElementChild;
-      const prevIsImg = prev && (
-        /^(IMG|VIDEO)$/.test(prev.tagName)
-        || (prev.tagName === 'P' && prev.querySelector('img,video') && prev.childElementCount <= 1)
-        || prev.classList?.contains('md-img-row')
-      );
-      if (prevIsImg && prev.classList?.contains('md-img-row') && prev.querySelectorAll('.md-img-cell').length < 2) {
-        const cell = document.createElement('div');
-        cell.className = 'md-img-cell';
-        cell.appendChild(img);
-        prev.appendChild(cell);
-      } else if (prevIsImg && !prev.classList?.contains('md-img-row')) {
-        const row = document.createElement('div');
-        row.className = 'md-img-row';
-        const cell1 = document.createElement('div');
-        cell1.className = 'md-img-cell';
-        const media = /^(IMG|VIDEO)$/.test(prev.tagName) ? prev : prev.querySelector('img,video');
-        prev.replaceWith(row);
-        if (media) cell1.appendChild(media);
-        row.appendChild(cell1);
-        const cell2 = document.createElement('div');
-        cell2.className = 'md-img-cell';
-        cell2.appendChild(img);
-        row.appendChild(cell2);
-      } else {
-        const range = restoreVisualSelection();
-        let ok = false;
-        try { ok = document.execCommand('insertHTML', false, img.outerHTML); } catch (_) { ok = false; }
-        if (!ok) ok = insertHtmlAtRange(img.outerHTML, range);
-        if (!ok) prose.insertAdjacentHTML('beforeend', `<p>${img.outerHTML}</p>`);
-      }
+      const p = document.createElement('p');
+      p.appendChild(img);
+      prose.appendChild(p);
     }
+
     wrapAdjacentImages(prose);
+    // If two stacked images somehow remain, force them into one row.
+    const imgs = [...prose.querySelectorAll('img, video')];
+    if (imgs.length >= 2) {
+      const a = imgs[imgs.length - 2];
+      const b = imgs[imgs.length - 1];
+      if (a.closest('.md-img-row') !== b.closest('.md-img-row')) pairLastTwoImages(prose);
+    }
+
     saveVisualSelection();
     visualMdCache = htmlToMarkdownSync(visualEl.innerHTML);
     pushHistory(visualMdCache);
     onChange?.(visualMdCache);
     scheduleLivePreview();
-    statusEl.textContent = '이미지 삽입 · 이어서 넣으면 오른쪽에 나란히 배치됩니다.';
+    statusEl.textContent = '이미지 삽입 · 두 번째 이미지는 오른쪽에 붙습니다. (안되면 「나란히」 클릭)';
     return true;
   };
 
@@ -1030,7 +1022,21 @@ export async function mountMarkdownEditor(host, options = {}) {
     else if (action === 'checklist') insertChecklist(getSelection, setSelection);
     else if (action === 'table') insertTable(getSelection, setSelection);
     else if (action === 'image') await uploader.pickImage();
-    else if (action === 'video') await uploader.pickVideo();
+    else if (action === 'imagerow') {
+      if (!visualEl) {
+        alert('시각 편집기에서만 나란히 배치할 수 있습니다.');
+      } else {
+        const prose = visualEl.querySelector('.md-visual-prose') || visualEl;
+        const ok = pairLastTwoImages(prose);
+        if (!ok) alert('나란히 배치할 이미지가 2장 이상 필요합니다.');
+        else {
+          visualMdCache = htmlToMarkdownSync(visualEl.innerHTML);
+          pushHistory(visualMdCache);
+          onChange?.(visualMdCache);
+          statusEl.textContent = '마지막 두 이미지를 좌·우로 배치했습니다.';
+        }
+      }
+    } else if (action === 'video') await uploader.pickVideo();
     else if (action === 'file') await uploader.pickFileAttach();
     else if (action === 'internal') await promptInternalLink(getSelection, setSelection, searchFn);
     else if (action === 'step' || action === 'tip' || action === 'faq') {
