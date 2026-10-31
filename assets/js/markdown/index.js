@@ -13,8 +13,10 @@ export {
   pickMarkdownSource,
   listMarkdownImages,
   moveMarkdownImage,
-  removeMarkdownImage
-} from './markdown-editor.js?v=hub-md-preview-1';
+  removeMarkdownImage,
+  placeMarkdownImageAt,
+  splitMarkdownBlocks
+} from './markdown-editor.js?v=hub-md-dnd-1';
 
 export {
   draftKey,

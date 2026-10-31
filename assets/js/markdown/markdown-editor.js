@@ -220,6 +220,71 @@ export function removeMarkdownImage(md, index) {
   return rewriteMarkdownImages(md, next);
 }
 
+export function splitMarkdownBlocks(md) {
+  const text = String(md || '').replace(/\r\n/g, '\n').trim();
+  if (!text) return [];
+  return text.split(/\n{2,}/).map((s) => s.trimEnd()).filter((s) => s.length);
+}
+
+function isImageOnlyBlock(block) {
+  const t = String(block || '').trim();
+  if (!t) return false;
+  MD_IMAGE_RE.lastIndex = 0;
+  const m = MD_IMAGE_RE.exec(t);
+  if (!m || m.index !== 0) return false;
+  return t.slice(m[0].length).trim() === '';
+}
+
+/**
+ * Move one markdown image to dropSlot among blank-line blocks (0…blocks.length).
+ * Drop slots are indexed against the document BEFORE removal; slots after the
+ * source block are adjusted automatically.
+ */
+export function placeMarkdownImageAt(md, imageIndex, dropSlot) {
+  const src = String(md || '');
+  const images = listMarkdownImages(src);
+  const img = images[imageIndex];
+  if (!img) return src;
+
+  const blocks = splitMarkdownBlocks(src);
+  let globalImg = 0;
+  let fromBlock = -1;
+  let localHit = -1;
+
+  for (let i = 0; i < blocks.length; i++) {
+    const local = listMarkdownImages(blocks[i]);
+    for (let j = 0; j < local.length; j++) {
+      if (globalImg === imageIndex) {
+        fromBlock = i;
+        localHit = j;
+        break;
+      }
+      globalImg += 1;
+    }
+    if (fromBlock >= 0) break;
+  }
+  if (fromBlock < 0 || localHit < 0) return src;
+
+  if (isImageOnlyBlock(blocks[fromBlock])) {
+    blocks.splice(fromBlock, 1);
+  } else {
+    const local = listMarkdownImages(blocks[fromBlock])[localHit];
+    const b = blocks[fromBlock];
+    blocks[fromBlock] = `${b.slice(0, local.index)}${b.slice(local.end)}`
+      .replace(/[ \t]+\n/g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+    if (!blocks[fromBlock]) blocks.splice(fromBlock, 1);
+  }
+
+  let slot = Number(dropSlot);
+  if (Number.isNaN(slot)) slot = blocks.length;
+  if (fromBlock >= 0 && slot > fromBlock) slot -= 1;
+  slot = Math.max(0, Math.min(slot, blocks.length));
+  blocks.splice(slot, 0, img.full.trim());
+  return blocks.join('\n\n');
+}
+
 /**
  * Mount editor into a visible host element.
  * Call only after the host is in the DOM and displayed.
@@ -284,10 +349,115 @@ export async function mountMarkdownEditor(host, options = {}) {
   let imageStripEl = null;
   let previewTimer = 0;
 
+  let dragImgIndex = -1;
+
+  const clearDropHints = () => {
+    previewEl?.querySelectorAll('.md-drop-slot.is-active, .md-preview-block.is-drag-over').forEach((el) => {
+      el.classList.remove('is-active', 'is-drag-over');
+    });
+  };
+
+  const bindPreviewImageDnD = (md) => {
+    if (!previewEl) return;
+    const images = listMarkdownImages(md);
+    previewEl.querySelectorAll('[data-md-img]').forEach((el) => {
+      el.setAttribute('draggable', 'true');
+      el.classList.add('md-preview-draggable');
+      el.addEventListener('dragstart', (e) => {
+        dragImgIndex = Number(el.getAttribute('data-md-img'));
+        if (Number.isNaN(dragImgIndex) || !images[dragImgIndex]) {
+          dragImgIndex = -1;
+          e.preventDefault();
+          return;
+        }
+        el.classList.add('is-dragging');
+        previewEl.classList.add('is-dnd');
+        try {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(dragImgIndex));
+          e.dataTransfer.setData('application/x-md-image', String(dragImgIndex));
+        } catch (_) { /* ignore */ }
+      });
+      el.addEventListener('dragend', () => {
+        el.classList.remove('is-dragging');
+        previewEl.classList.remove('is-dnd');
+        clearDropHints();
+        dragImgIndex = -1;
+      });
+    });
+    const onDragOverSlot = (e, slotEl) => {
+      if (dragImgIndex < 0) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'move'; } catch (_) { /* ignore */ }
+      clearDropHints();
+      slotEl.classList.add('is-active');
+    };
+    previewEl.querySelectorAll('[data-md-drop]').forEach((slot) => {
+      slot.addEventListener('dragenter', (e) => onDragOverSlot(e, slot));
+      slot.addEventListener('dragover', (e) => onDragOverSlot(e, slot));
+      slot.addEventListener('dragleave', () => slot.classList.remove('is-active'));
+      slot.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const raw = e.dataTransfer?.getData('application/x-md-image')
+          || e.dataTransfer?.getData('text/plain')
+          || String(dragImgIndex);
+        const idx = Number(raw);
+        const slotIdx = Number(slot.getAttribute('data-md-drop'));
+        clearDropHints();
+        previewEl.classList.remove('is-dnd');
+        dragImgIndex = -1;
+        if (Number.isNaN(idx) || Number.isNaN(slotIdx)) return;
+        const next = placeMarkdownImageAt(getValue(), idx, slotIdx);
+        if (next !== getValue()) setValue(next);
+      });
+    });
+  };
+
   const paintLivePreview = () => {
     if (!livePreview || !previewEl) return;
     const md = getValue();
-    renderMarkdownInto(previewEl, md);
+    const blocks = splitMarkdownBlocks(md);
+    const images = listMarkdownImages(md);
+    if (!blocks.length) {
+      previewEl.innerHTML = `<div class="md-prose md-live-empty"><p class="muted">본문을 입력하면 미리보기가 나타납니다. 이미지는 드래그해서 원하는 위치로 옮길 수 있습니다.</p></div>`;
+      if (imageStripEl) paintImageStrip(md);
+      return;
+    }
+    // Map each image token index → which block it lives in (first match by url+offset order)
+    let imgCursor = 0;
+    const blockHtml = blocks.map((block, bi) => {
+      const html = renderMarkdown(block, { className: 'md-prose md-preview-block-inner' });
+      const wrap = document.createElement('div');
+      wrap.innerHTML = html;
+      const inner = wrap.firstElementChild || wrap;
+      if (isImageOnlyBlock(block) && imgCursor < images.length) {
+        const imgIdx = imgCursor;
+        imgCursor += 1;
+        inner.querySelectorAll('img, video.md-video-file').forEach((media) => {
+          media.setAttribute('data-md-img', String(imgIdx));
+          media.setAttribute('title', '드래그해서 위치 이동');
+        });
+        // If renderer wrapped oddly, still mark the block
+        inner.setAttribute('data-md-img-block', String(imgIdx));
+      } else {
+        // Inline images inside mixed blocks
+        inner.querySelectorAll('img, video.md-video-file').forEach((media) => {
+          const src = media.getAttribute('src') || '';
+          const hit = images.findIndex((im, i) => i >= imgCursor && im.url === src);
+          if (hit >= 0) {
+            media.setAttribute('data-md-img', String(hit));
+            media.setAttribute('title', '드래그해서 위치 이동');
+            imgCursor = Math.max(imgCursor, hit + 1);
+          }
+        });
+      }
+      return `<div class="md-drop-slot" data-md-drop="${bi}"><span>여기에 놓기</span></div>
+        <div class="md-preview-block" data-md-block="${bi}">${inner.outerHTML}</div>`;
+    }).join('');
+    previewEl.innerHTML = `${blockHtml}<div class="md-drop-slot" data-md-drop="${blocks.length}"><span>맨 아래에 놓기</span></div>`;
+    bindMarkdownInteractions(previewEl);
+    bindPreviewImageDnD(md);
     if (imageStripEl) paintImageStrip(md);
   };
 
@@ -306,13 +476,13 @@ export async function mountMarkdownEditor(host, options = {}) {
       return;
     }
     imageStripEl.hidden = false;
-    imageStripEl.innerHTML = `<div class="md-image-strip-head"><strong>본문 이미지</strong><span>미리보기에서 위치를 확인한 뒤 ↑↓로 옮기세요</span></div>
+    imageStripEl.innerHTML = `<div class="md-image-strip-head"><strong>본문 이미지</strong><span>미리보기에서 드래그&드롭으로 위치를 옮기세요</span></div>
       <div class="md-image-strip-list">${images.map((img, i) => {
         const isVideo = /\.(mp4|webm)(\?|$)/i.test(img.url) || /video/i.test(img.alt);
         const thumb = isVideo
           ? `<span class="md-image-strip-thumb is-video">🎥</span>`
-          : `<img class="md-image-strip-thumb" src="${esc(img.url)}" alt="${esc(img.alt || 'image')}" loading="lazy">`;
-        return `<div class="md-image-strip-item" data-md-img="${i}">
+          : `<img class="md-image-strip-thumb" src="${esc(img.url)}" alt="${esc(img.alt || 'image')}" loading="lazy" draggable="false">`;
+        return `<div class="md-image-strip-item" data-md-img="${i}" draggable="true" title="미리보기로 드래그">
           ${thumb}
           <span class="md-image-strip-name" title="${esc(img.alt || img.url)}">${esc(img.alt || '이미지')}</span>
           <div class="md-image-strip-actions">
@@ -322,6 +492,28 @@ export async function mountMarkdownEditor(host, options = {}) {
           </div>
         </div>`;
       }).join('')}</div>`;
+    imageStripEl.querySelectorAll('.md-image-strip-item[draggable="true"]').forEach((el) => {
+      el.addEventListener('dragstart', (e) => {
+        if (e.target.closest('button')) {
+          e.preventDefault();
+          return;
+        }
+        dragImgIndex = Number(el.getAttribute('data-md-img'));
+        el.classList.add('is-dragging');
+        previewEl?.classList.add('is-dnd');
+        try {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(dragImgIndex));
+          e.dataTransfer.setData('application/x-md-image', String(dragImgIndex));
+        } catch (_) { /* ignore */ }
+      });
+      el.addEventListener('dragend', () => {
+        el.classList.remove('is-dragging');
+        previewEl?.classList.remove('is-dnd');
+        clearDropHints();
+        dragImgIndex = -1;
+      });
+    });
   };
 
   const setValue = (v, { recordHistory = true } = {}) => {
@@ -509,7 +701,7 @@ export async function mountMarkdownEditor(host, options = {}) {
   if (livePreview) {
     const previewPane = document.createElement('div');
     previewPane.className = 'md-live-preview-pane';
-    previewPane.innerHTML = `<div class="md-live-preview-label">미리보기 · 이미지는 커서 위치에 삽입됩니다</div><div class="md-live-preview-body post-body-content"></div>`;
+    previewPane.innerHTML = `<div class="md-live-preview-label">미리보기 · 이미지를 드래그해 원하는 위치에 놓으세요</div><div class="md-live-preview-body post-body-content"></div>`;
     previewEl = previewPane.querySelector('.md-live-preview-body');
     workArea.appendChild(previewPane);
     host.classList.add('md-has-live-preview');
