@@ -195,21 +195,25 @@ async function htmlToMarkdown(html) {
   return htmlToMarkdownSync(html);
 }
 
-function insertHtmlAtCursor(html) {
-  const sel = window.getSelection();
-  if (!sel || !sel.rangeCount) return false;
-  const range = sel.getRangeAt(0);
-  range.deleteContents();
-  const frag = range.createContextualFragment(html);
-  const last = frag.lastChild;
-  range.insertNode(frag);
-  if (last) {
-    range.setStartAfter(last);
-    range.collapse(true);
-    sel.removeAllRanges();
-    sel.addRange(range);
+function insertHtmlAtRange(html, range) {
+  if (!range) return false;
+  try {
+    range.deleteContents();
+    const frag = range.createContextualFragment(html);
+    const last = frag.lastChild;
+    range.insertNode(frag);
+    if (last) {
+      const next = document.createRange();
+      next.setStartAfter(last);
+      next.collapse(true);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(next);
+    }
+    return true;
+  } catch (_) {
+    return false;
   }
-  return true;
 }
 
 function esc(s) {
@@ -465,9 +469,61 @@ export async function mountMarkdownEditor(host, options = {}) {
   let ta = null;
   let visualEl = null;
   let visualMdCache = '';
+  let savedRange = null;
   let destroyed = false;
   let history = [];
   let historyIdx = -1;
+
+  const saveVisualSelection = () => {
+    if (!visualEl) return;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount) return;
+    const anchor = sel.anchorNode;
+    if (!anchor || !visualEl.contains(anchor)) return;
+    try { savedRange = sel.getRangeAt(0).cloneRange(); } catch (_) { /* ignore */ }
+  };
+
+  const restoreVisualSelection = () => {
+    if (!visualEl) return null;
+    visualEl.focus();
+    const sel = window.getSelection();
+    if (!sel) return null;
+    sel.removeAllRanges();
+    let range = null;
+    if (savedRange) {
+      try {
+        if (visualEl.contains(savedRange.commonAncestorContainer)) range = savedRange.cloneRange();
+      } catch (_) { range = null; }
+    }
+    if (!range) {
+      range = document.createRange();
+      range.selectNodeContents(visualEl);
+      range.collapse(false);
+    }
+    try { sel.addRange(range); } catch (_) { /* ignore */ }
+    return range;
+  };
+
+  const insertVisualImage = (url, alt = 'image') => {
+    if (!visualEl || !url) return false;
+    const range = restoreVisualSelection();
+    const html = `<img src="${esc(url)}" alt="${esc(alt)}" draggable="true" title="드래그해서 위치 이동">`;
+    let ok = false;
+    try {
+      ok = document.execCommand('insertHTML', false, html);
+    } catch (_) { ok = false; }
+    if (!ok) ok = insertHtmlAtRange(html, range);
+    if (!ok) {
+      const prose = visualEl.querySelector('.md-visual-prose') || visualEl;
+      prose.insertAdjacentHTML('beforeend', `<p>${html}</p>`);
+    }
+    saveVisualSelection();
+    visualMdCache = htmlToMarkdownSync(visualEl.innerHTML);
+    pushHistory(visualMdCache);
+    onChange?.(visualMdCache);
+    scheduleLivePreview();
+    return true;
+  };
 
   const getValue = () => {
     try {
@@ -766,7 +822,13 @@ export async function mountMarkdownEditor(host, options = {}) {
 
   const insertMarkdown = (snippet) => {
     const raw = String(snippet ?? '');
-    const img = raw.trim().match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/);
+    const img = raw.trim().match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$/m);
+    // Prefer visual/photo insert — never dump raw markdown into the writing surface.
+    if (visualEl && img) {
+      insertVisualImage(img[2], img[1] || 'image');
+      try { autosave?.touch?.(); } catch (_) { /* ignore */ }
+      return;
+    }
     if (toast) {
       try {
         if (img && typeof toast.exec === 'function') {
@@ -786,26 +848,25 @@ export async function mountMarkdownEditor(host, options = {}) {
       }
     }
     if (visualEl) {
-      focus();
-      if (img) {
-        const ok = insertHtmlAtCursor(
-          `<p><img src="${esc(img[2])}" alt="${esc(img[1] || 'image')}"></p>`
-        );
-        if (!ok) {
-          visualEl.insertAdjacentHTML('beforeend', `<p><img src="${esc(img[2])}" alt="${esc(img[1] || 'image')}"></p>`);
-        }
-      } else {
-        const html = renderMarkdown(raw, { className: '' });
-        if (!insertHtmlAtCursor(html || `<p>${esc(raw)}</p>`)) {
-          visualEl.insertAdjacentHTML('beforeend', html || `<p>${esc(raw)}</p>`);
-        }
-      }
+      const range = restoreVisualSelection();
+      const html = renderMarkdown(raw, { className: '' }) || `<p>${esc(raw)}</p>`;
+      let ok = false;
+      try { ok = document.execCommand('insertHTML', false, html); } catch (_) { ok = false; }
+      if (!ok) ok = insertHtmlAtRange(html, range);
+      if (!ok) visualEl.insertAdjacentHTML('beforeend', html);
+      saveVisualSelection();
       syncVisualMarkdown().then((md) => {
         visualMdCache = md;
         pushHistory(md);
         onChange?.(md);
-        autosave.touch();
+        try { autosave?.touch?.(); } catch (_) { /* ignore */ }
       });
+      return;
+    }
+    // Last resort: if wysiwyg was requested but only textarea exists, remount visual with image.
+    if (useWysiwyg && img && ta) {
+      const next = `${String(ta.value || '').replace(/\s*$/, '')}\n\n${img[0]}\n`;
+      mountVisualWysiwyg(next);
       return;
     }
     insertAtCursor(getSelection, setSelection, raw);
@@ -820,7 +881,11 @@ export async function mountMarkdownEditor(host, options = {}) {
     storagePrefix,
     upload,
     insertMarkdown,
-    onStatus: (m) => { statusEl.textContent = m; }
+    onStatus: (m) => { statusEl.textContent = m; },
+    onBeforePick: () => {
+      saveVisualSelection();
+      try { toast?.focus?.(); } catch (_) { /* ignore */ }
+    }
   });
 
   let searchFn = async () => [];
@@ -885,6 +950,17 @@ export async function mountMarkdownEditor(host, options = {}) {
   });
   host.appendChild(basicBar);
 
+  // Keep caret inside the visual editor when pressing toolbar buttons
+  // (otherwise the file dialog / focus change drops the selection → image goes to the bottom).
+  const preserveCaretOnToolbar = (bar) => {
+    bar?.addEventListener('mousedown', (e) => {
+      if (!e.target.closest('button')) return;
+      saveVisualSelection();
+      e.preventDefault();
+    });
+  };
+  preserveCaretOnToolbar(basicBar);
+
   const extras = buildExtraToolbar(async (action) => {
     if (action === 'alert') {
       const kind = prompt('Alert 종류: NOTE / TIP / WARNING / IMPORTANT / CAUTION', 'NOTE') || 'NOTE';
@@ -902,6 +978,7 @@ export async function mountMarkdownEditor(host, options = {}) {
     focus();
   });
   host.appendChild(extras);
+  preserveCaretOnToolbar(extras);
 
   if (useLivePreview) {
     imageStripEl = document.createElement('div');
@@ -984,6 +1061,7 @@ export async function mountMarkdownEditor(host, options = {}) {
     editorHost.innerHTML = '';
     toast = null;
     ta = null;
+    savedRange = null;
     visualEl = document.createElement('div');
     visualEl.className = 'md-visual-editor';
     visualEl.contentEditable = 'true';
@@ -1003,9 +1081,13 @@ export async function mountMarkdownEditor(host, options = {}) {
         autosave.touch();
       }, 180);
     };
-    visualEl.addEventListener('input', queueSync);
-    visualEl.addEventListener('blur', queueSync);
+    visualEl.addEventListener('input', () => { saveVisualSelection(); queueSync(); });
+    visualEl.addEventListener('keyup', saveVisualSelection);
+    visualEl.addEventListener('mouseup', saveVisualSelection);
+    visualEl.addEventListener('click', saveVisualSelection);
+    visualEl.addEventListener('blur', () => { saveVisualSelection(); queueSync(); });
     visualEl.addEventListener('paste', (e) => {
+      saveVisualSelection();
       const items = e.clipboardData?.items;
       if (!items) return;
       for (const item of items) {
@@ -1020,8 +1102,12 @@ export async function mountMarkdownEditor(host, options = {}) {
     editorHost.appendChild(visualEl);
     host.classList.add('md-engine-visual', 'md-engine-wysiwyg');
     host.classList.remove('md-engine-toast', 'md-engine-textarea');
-    statusEl.textContent = '시각 편집 · 사진과 제목이 본문에 바로 보입니다.';
+    statusEl.textContent = '시각 편집 · 사진을 커서 위치에 바로 넣습니다. 드래그로 위치 이동 가능.';
     ensureTurndown().catch(() => {});
+    setTimeout(() => {
+      visualEl?.focus();
+      saveVisualSelection();
+    }, 60);
   };
 
   const mountToast = async (text) => {
@@ -1121,7 +1207,10 @@ export async function mountMarkdownEditor(host, options = {}) {
     console.warn('[MarkdownEditor] host not visible at mount — delaying');
   }
 
-  await mountToast(initial);
+  // Hub/visual composers: skip Toast CDN (often falls back to raw markdown textarea).
+  // Use the reliable contenteditable surface so images always appear as photos.
+  if (useWysiwyg) mountVisualWysiwyg(initial);
+  else await mountToast(initial);
 
   const unbindPaste = uploader.bindPasteDrop(host);
   host.appendChild(statusEl);

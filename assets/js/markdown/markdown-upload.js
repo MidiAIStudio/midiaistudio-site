@@ -10,12 +10,15 @@ function safeName(name) {
   return String(name || 'file').replace(/[^\w.\-()+]+/g, '_').slice(0, 120);
 }
 
-function pickFile(accept) {
+function pickFile(accept, onBeforeOpen) {
   return new Promise((resolve) => {
+    try { onBeforeOpen?.(); } catch (_) { /* ignore */ }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
     input.onchange = () => resolve(input.files?.[0] || null);
+    // Cancelled dialog still resolves null on focus return in most browsers
+    input.addEventListener('cancel', () => resolve(null));
     input.click();
   });
 }
@@ -36,7 +39,9 @@ export function createMarkdownUploader({
   storagePrefix = 'cms-md/anon',
   upload = defaultUpload,
   insertMarkdown,
-  onStatus
+  onStatus,
+  /** Called right before the OS file dialog opens (save caret / selection). */
+  onBeforePick
 }) {
   const status = (m) => onStatus?.(m);
 
@@ -67,11 +72,12 @@ export function createMarkdownUploader({
   }
 
   async function pickImage() {
-    const file = await pickFile('image/jpeg,image/png,image/webp,image/gif');
+    const file = await pickFile('image/jpeg,image/png,image/webp,image/gif', onBeforePick);
     if (file) await uploadAndInsert(file, 'image');
   }
 
   async function pickVideo() {
+    try { onBeforePick?.(); } catch (_) { /* ignore */ }
     const choice = prompt('1) YouTube URL 삽입\n2) 영상 파일 업로드\n번호를 입력하세요:', '1');
     if (choice === '1') {
       const url = prompt('YouTube URL:');
@@ -84,13 +90,13 @@ export function createMarkdownUploader({
       return;
     }
     if (choice === '2') {
-      const file = await pickFile('video/mp4,video/webm');
+      const file = await pickFile('video/mp4,video/webm', onBeforePick);
       if (file) await uploadAndInsert(file, 'video');
     }
   }
 
   async function pickFileAttach() {
-    const file = await pickFile('.zip,.pdf,.exe,.mid,.midi,application/pdf,application/zip');
+    const file = await pickFile('.zip,.pdf,.exe,.mid,.midi,application/pdf,application/zip', onBeforePick);
     if (file) await uploadAndInsert(file, 'file');
   }
 
