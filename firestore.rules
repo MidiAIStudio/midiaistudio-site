@@ -372,17 +372,19 @@ service cloud.firestore {
       return commentOk || likeOk || viewOk;
     }
 
+    // Owners must always be able to read their own docs (incl. secret + soft-deleted).
+    // Otherwise `where('uid'==auth.uid)` list queries fail entirely when any matching
+    // soft-deleted (visible:false, secret:false) post exists — hiding the author's secret posts too.
     function boardPostDataReadable(data) {
       return isAdmin()
-        || (data.visible == true && data.get('secret', false) != true)
         || (
-          data.get('secret', false) == true
-          && signedIn()
+          signedIn()
           && (
             data.uid == request.auth.uid
             || data.get('authorUid', '') == request.auth.uid
           )
-        );
+        )
+        || (data.visible == true && data.get('secret', false) != true);
     }
 
     match /boardPosts/{postId} {

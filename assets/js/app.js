@@ -73,7 +73,7 @@ import {
   ensureMarkdownCss,
   pickMarkdownSource,
   clearDraft
-} from './markdown/index.js?v=hub-md-fix-1';
+} from './markdown/index.js?v=board-secret-own-1';
 import { renderMidiPreviewWav as renderMidiPreviewEngine } from './board-midi-preview.js?v=gm-preview-1';
 import { patchNoteType, patchNoteVersion, patchNoteWriteFields } from './patch-note-type.js?v=patch-type-1';
 import {
@@ -13834,9 +13834,12 @@ function listenBoardPosts(){
   };
   const {collection, query, where, orderBy, onSnapshot, getDocs} = firestoreApi;
   const col = collection(db, 'boardPosts');
-  const state = { publicRows: [], ownRows: [] };
+  const state = { publicRows: [], ownRows: [], secretOwnRows: [] };
   const emit = (err)=>{
-    publishBoardRows(mergeBoardPostRows(state.publicRows, state.ownRows), err);
+    publishBoardRows(
+      mergeBoardPostRows(state.publicRows, state.ownRows, state.secretOwnRows),
+      err
+    );
   };
   const sortByCreatedDesc = (rows)=>rows.sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   const listenQ = (q, key, fallbackFactory)=>{
@@ -13871,12 +13874,18 @@ function listenBoardPosts(){
       ()=>query(col, where('secret','==',true))
     );
   } else if(currentUser?.uid){
-    // Author: all of my posts by uid (includes secret/visible:false). Avoids composite
-    // secret+uid index; duplicates with publicRows are merged by id.
+    const uid = currentUser.uid;
+    // Author: all of my posts by uid (includes secret/visible:false).
     listenQ(
-      query(col, where('uid','==',currentUser.uid), orderBy('createdAt','desc')),
+      query(col, where('uid','==',uid), orderBy('createdAt','desc')),
       'ownRows',
-      ()=>query(col, where('uid','==',currentUser.uid))
+      ()=>query(col, where('uid','==',uid))
+    );
+    // Safety net: dedicated secret+uid query (still works if broad uid query is denied).
+    listenQ(
+      query(col, where('secret','==',true), where('uid','==',uid)),
+      'secretOwnRows',
+      ()=>query(col, where('secret','==',true), where('uid','==',uid))
     );
   }
 }
