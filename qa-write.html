@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
@@ -40,9 +40,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/css/style.css?v=board-admin-bulk-1">
-  <link rel="stylesheet" href="assets/css/theme-light.css?v=light-text-contrast-2">
-  <link rel="stylesheet" href="./assets/css/markdown-cms.css?v=md-cms-3">
+  <link rel="stylesheet" href="./assets/css/style.css?v=write-ux-1">
+  <link rel="stylesheet" href="assets/css/theme-light.css?v=write-ux-1">
+  <link rel="stylesheet" href="./assets/css/markdown-cms.css?v=write-ux-1">
   <script defer src="./assets/js/analytics.js"></script>
 
 </head>
@@ -99,8 +99,8 @@
             <button type="button" id="boardEmojiBtn" class="board-emoji-btn" aria-label="이모티콘" aria-expanded="false" title="이모티콘">😊</button>
             <div id="boardEmojiPicker" class="board-emoji-picker hidden" role="dialog" aria-label="이모티콘 선택"></div>
           </div>
-          <div class="board-md-actions md-editor-actions" style="padding:0;border:0;background:transparent;justify-content:flex-start;margin:8px 0 12px">
-            <button type="button" class="secondary mini-btn" id="boardMdPreview">미리보기</button>
+          <div class="board-md-actions md-editor-actions">
+            <button type="button" class="secondary" id="boardMdPreview">미리보기</button>
           </div>
           <div class="board-upload-box">
             <label for="boardAttachments">사진/영상/MIDI 첨부</label>
@@ -110,8 +110,10 @@
           </div>
           <label class="check" id="boardSecretWrap"><input id="boardPostSecret" type="checkbox"> 비밀글 (작성자·관리자만 볼 수 있음)</label>
           <label class="check" id="boardPinnedWrap" hidden style="display:none"><input id="boardPostPinned" type="checkbox"> 상단 고정</label>
-          <button class="primary mini-btn" type="submit">저장</button>
-          <p id="boardPostMsg" class="form-msg"></p>
+          <div class="write-form-footer">
+            <p id="boardPostMsg" class="form-msg"></p>
+            <button class="primary write-submit" type="submit">저장</button>
+          </div>
         </form>
       </div>
     </section>
@@ -132,6 +134,6 @@
   </footer>
   <script>window.MIDIAI_BASE_PATH='./';</script>
   <script type="module" src="./assets/js/config.js?v=v72-midi-proxy-20260714"></script>
-  <script type="module" src="./assets/js/app.js?v=board-secret-own-1"></script>
+  <script type="module" src="./assets/js/app.js?v=write-ux-1"></script>
 </body>
 </html>

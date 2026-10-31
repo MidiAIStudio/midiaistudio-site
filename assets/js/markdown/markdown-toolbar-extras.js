@@ -96,23 +96,25 @@ export function buildExtraToolbar(onAction) {
   const bar = document.createElement('div');
   bar.className = 'md-editor-toolbar-extra';
   const buttons = [
-    ['alert', 'Alert'],
-    ['spoiler', 'Spoiler'],
-    ['checklist', '체크리스트'],
-    ['table', '표'],
-    ['image', '이미지'],
-    ['imagerow', '나란히'],
-    ['video', '영상'],
-    ['file', '파일'],
-    ['internal', '내부링크'],
-    ['step', ':::step'],
-    ['tip', ':::tip'],
-    ['faq', ':::faq']
+    ['alert', '알림', '알림 박스'],
+    ['spoiler', '스포일러', '스포일러'],
+    ['checklist', '체크리스트', '체크리스트'],
+    ['table', '표', '표 삽입'],
+    ['image', '이미지', '이미지 첨부'],
+    ['imagerow', '나란히', '이미지 나란히'],
+    ['video', '영상', '영상 첨부'],
+    ['file', '파일', '파일 첨부'],
+    ['internal', '내부링크', '내부 문서 링크'],
+    ['step', '단계', '단계 박스'],
+    ['tip', '팁', '팁 박스'],
+    ['faq', 'FAQ', 'FAQ 박스']
   ];
-  buttons.forEach(([action, label]) => {
+  buttons.forEach(([action, label, title]) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = label;
+    btn.title = title || label;
+    btn.setAttribute('aria-label', title || label);
     btn.dataset.mdAction = action;
     bar.appendChild(btn);
   });

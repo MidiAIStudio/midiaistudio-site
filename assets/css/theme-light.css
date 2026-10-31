@@ -4494,12 +4494,33 @@ html[data-theme='light'] .comment-head span:first-child {
   color: #152033 !important;
 }
 
+html[data-theme='light'] .write-compose,
+html[data-theme='light'] .hub-comments-panel .comment-form,
+html[data-theme='light'] .hub-comments-panel .community-comment-form,
+html[data-theme='light'] .hub-comments-panel .inline-reply,
+html[data-theme='light'] .comment-main > .inline-reply {
+  background: #f4f6fa !important;
+  border-color: rgba(36, 52, 78, 0.14) !important;
+}
+
 html[data-theme='light'] .comment-form textarea,
 html[data-theme='light'] .community-comment-form textarea,
-html[data-theme='light'] .inline-reply textarea {
+html[data-theme='light'] .inline-reply textarea,
+html[data-theme='light'] .write-compose textarea {
   background: #ffffff !important;
   color: #152033 !important;
   border-color: rgba(36, 52, 78, 0.16) !important;
+}
+
+html[data-theme='light'] .comment-actions .comment-action {
+  color: #5a6478 !important;
+}
+html[data-theme='light'] .comment-actions .comment-action:hover {
+  color: #152033 !important;
+  background: rgba(36, 52, 78, 0.06) !important;
+}
+html[data-theme='light'] .comment-actions .comment-action--danger {
+  color: #be123c !important;
 }
 
 html[data-theme='light'] .comment-form textarea::placeholder,

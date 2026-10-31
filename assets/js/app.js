@@ -73,7 +73,7 @@ import {
   ensureMarkdownCss,
   pickMarkdownSource,
   clearDraft
-} from './markdown/index.js?v=hub-md-fix-1';
+} from './markdown/index.js?v=write-ux-1';
 import { renderMidiPreviewWav as renderMidiPreviewEngine } from './board-midi-preview.js?v=gm-preview-1';
 import { patchNoteType, patchNoteVersion, patchNoteWriteFields } from './patch-note-type.js?v=patch-type-1';
 import {
@@ -14736,7 +14736,7 @@ function renderBoardComments(postId){
 }
 function renderCommentCard(postId,c,isReply){
   const manage=canManageRecord(c);
-  return `<div class="comment-card community-comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}" data-comment-id="${esc(c.id)}"><div class="comment-avatar">${esc(authorAvatarInitial(c))}</div><div class="comment-main"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(contentAuthor(c))}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button class="secondary mini-btn" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button class="secondary mini-btn" data-comment-edit="${esc(c.id)}">수정</button><button class="secondary mini-btn danger-btn" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div></div>`;
+  return `<div class="comment-card community-comment-card ${isReply?'reply-child':''}" id="comment-${esc(c.id)}" data-comment-id="${esc(c.id)}"><div class="comment-avatar">${esc(authorAvatarInitial(c))}</div><div class="comment-main"><div class="comment-head"><span>${isReply?'↳ ':''}${esc(contentAuthor(c))}</span><span>${esc(fmtDate(c.createdAt))}${c.edited?' · 수정됨':''}</span></div><div class="comment-body">${nl2br(c.content||'')}</div><div class="comment-actions"><button type="button" class="comment-action" data-comment-reply="${esc(c.parentId||c.id)}">답글</button>${manage?`<button type="button" class="comment-action" data-comment-edit="${esc(c.id)}">수정</button><button type="button" class="comment-action comment-action--danger" data-comment-delete="${esc(c.id)}">삭제</button>`:''}</div></div></div>`;
 }
 function bindCommentActions(postId,root){
   root.querySelectorAll('[data-comment-reply]').forEach(btn=>{ if(btn.dataset.bound)return; btn.dataset.bound='1'; btn.onclick=()=>openReplyBox(postId,btn.dataset.commentReply,btn.closest('.comment-card')); });
@@ -14745,10 +14745,16 @@ function bindCommentActions(postId,root){
 }
 function openReplyBox(postId,parentId,host){
   if(!currentUser)return alert(tr('need_login'));
-  host.querySelector('.inline-reply')?.remove();
-  const form=document.createElement('form'); form.className='inline-reply'; form.innerHTML=`<textarea rows="2" placeholder="답글을 입력하세요"></textarea><button class="primary" type="submit">답글 등록</button>`;
+  // Mount under .comment-main so the form is not trapped in the avatar grid column
+  // (.community-comment-card is display:grid; grid-template-columns:42px 1fr).
+  const mount=host.querySelector('.comment-main')||host;
+  host.querySelectorAll('.inline-reply').forEach(el=>el.remove());
+  const form=document.createElement('form');
+  form.className='inline-reply write-compose write-compose--reply';
+  form.innerHTML=`<textarea rows="3" placeholder="답글을 입력하세요" aria-label="답글"></textarea><button class="primary write-submit" type="submit">답글 등록</button>`;
   form.onsubmit=e=>createBoardComment(e,postId,parentId,form.querySelector('textarea'));
-  host.appendChild(form);
+  mount.appendChild(form);
+  form.querySelector('textarea')?.focus?.();
 }
 
 const NOTIFY_BELL_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0"/></svg>';

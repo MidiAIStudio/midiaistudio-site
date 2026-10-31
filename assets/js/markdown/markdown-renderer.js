@@ -231,7 +231,7 @@ export function pairLastTwoImages(root) {
 let _cssReady = false;
 export function ensureMarkdownCss() {
   const links = [
-    { id: 'md-cms-css', href: `${new URL('../../css/markdown-cms.css', import.meta.url).href}?v=hub-md-row-2` },
+    { id: 'md-cms-css', href: `${new URL('../../css/markdown-cms.css', import.meta.url).href}?v=write-ux-1` },
     { id: 'md-hljs-css', href: 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/github-dark.min.css' }
   ];
   links.forEach(({ id, href }) => {

@@ -25,7 +25,7 @@ import {
   searchInternalDocs,
   containerSnippet,
   wrapSelection
-} from './markdown-toolbar-extras.js';
+} from './markdown-toolbar-extras.js?v=write-ux-1';
 import { adminHoverToolbar, confirmDelete } from '../visual-cms.js';
 
 const TOAST_CSS_CANDIDATES = [
@@ -43,6 +43,7 @@ const TOAST_JS_CANDIDATES = [
 
 let _toastReady = null;
 let _turndownReady = null;
+let _turndownInstance = null;
 const promptedDraftKeys = new Set();
 
 /** Normalize content fields from Firestore docs / forms */
@@ -121,7 +122,8 @@ async function ensureTurndown() {
       const td = new TurndownService({
         headingStyle: 'atx',
         codeBlockStyle: 'fenced',
-        bulletListMarker: '-'
+        bulletListMarker: '-',
+        br: '  \n'
       });
       td.addRule('keepImages', {
         filter: 'img',
@@ -140,6 +142,21 @@ async function ensureTurndown() {
           return `![video](${src})`;
         }
       });
+      // Keep tight lists — blank lines between - items break editing round-trips.
+      td.addRule('tightLists', {
+        filter: ['ul', 'ol'],
+        replacement: (content, node) => {
+          const ordered = node.nodeName === 'OL';
+          const items = [...node.children].filter((el) => el.nodeName === 'LI');
+          if (!items.length) return content;
+          const body = items.map((li, i) => {
+            const inner = liInnerMarkdown(li);
+            return ordered ? `${i + 1}. ${inner}` : `- ${inner}`;
+          }).join('\n');
+          return `\n\n${body}\n\n`;
+        }
+      });
+      _turndownInstance = td;
       return td;
     } catch (e) {
       console.warn('[MarkdownEditor] turndown load failed', e);
@@ -149,14 +166,85 @@ async function ensureTurndown() {
   return _turndownReady;
 }
 
+/** Inline markdown for a list item — no blank lines that would split the list. */
+function liInnerMarkdown(li) {
+  const bits = [];
+  const walk = (node) => {
+    if (!node) return;
+    if (node.nodeType === 3) {
+      bits.push(String(node.textContent || '').replace(/\s+/g, ' '));
+      return;
+    }
+    if (node.nodeType !== 1) return;
+    const tag = node.tagName.toLowerCase();
+    if (tag === 'br') {
+      bits.push(' ');
+      return;
+    }
+    if (tag === 'strong' || tag === 'b') {
+      bits.push('**');
+      node.childNodes.forEach(walk);
+      bits.push('**');
+      return;
+    }
+    if (tag === 'em' || tag === 'i') {
+      bits.push('*');
+      node.childNodes.forEach(walk);
+      bits.push('*');
+      return;
+    }
+    if (tag === 'code') {
+      bits.push('`');
+      bits.push(String(node.textContent || ''));
+      bits.push('`');
+      return;
+    }
+    if (tag === 'a') {
+      const href = node.getAttribute('href') || '';
+      bits.push('[');
+      node.childNodes.forEach(walk);
+      bits.push(`](${href})`);
+      return;
+    }
+    if (tag === 'p' || tag === 'div' || tag === 'span') {
+      node.childNodes.forEach(walk);
+      return;
+    }
+    if (tag === 'ul' || tag === 'ol') {
+      // nested lists: flatten lightly
+      [...node.children].forEach((child) => {
+        if (child.nodeName === 'LI') bits.push(` ${String(child.textContent || '').trim()}`);
+      });
+      return;
+    }
+    node.childNodes.forEach(walk);
+  };
+  li.childNodes.forEach(walk);
+  return bits.join('').replace(/[ \t]{2,}/g, ' ').trim();
+}
+
+/** Keep consecutive bullet/numbered items tight (no blank line between). */
+function normalizeMarkdownLists(md) {
+  let out = String(md || '');
+  // Remove blank lines between list items: "\n\n- " / "\n\n1. "
+  out = out.replace(/\n[ \t]*\n+(\s*[-*+] )/g, '\n$1');
+  out = out.replace(/\n[ \t]*\n+(\s*\d+\. )/g, '\n$1');
+  // Fix broken "-\ntext" / "- \ntext" caused by contenteditable <br> after the marker
+  out = out.replace(/^([ \t]*[-*+] )[ \t]*\n+[ \t]*/gm, '$1');
+  out = out.replace(/^([ \t]*\d+\. )[ \t]*\n+[ \t]*/gm, '$1');
+  // Avoid turning a lone dash line into a hard break before following text
+  out = out.replace(/^([ \t]*[-*+])[ \t]*\n+(?=\S)/gm, '$1 ');
+  return out.replace(/\n{3,}/g, '\n\n').trim();
+}
+
 function htmlToMarkdownSync(html) {
   const tmp = document.createElement('div');
   tmp.innerHTML = html || '';
   const parts = [];
-  const walk = (node) => {
+  const walk = (node, ctx = { inList: false }) => {
     if (node.nodeType === 3) {
       const t = node.textContent || '';
-      if (t) parts.push(t);
+      if (t) parts.push(ctx.inList ? t.replace(/\s+/g, ' ') : t);
       return;
     }
     if (node.nodeType !== 1) return;
@@ -170,40 +258,79 @@ function htmlToMarkdownSync(html) {
       return;
     }
     if (tag === 'div' && node.classList?.contains('md-img-row')) {
-      node.querySelectorAll('img, video').forEach((m) => walk(m));
+      node.querySelectorAll('img, video').forEach((m) => walk(m, ctx));
       parts.push('\n');
       return;
     }
     if (tag === 'div' && node.classList?.contains('md-img-cell')) {
-      node.childNodes.forEach(walk);
+      node.childNodes.forEach((c) => walk(c, ctx));
       return;
     }
     if (/^h[1-6]$/.test(tag)) {
       const level = Number(tag[1]);
-      parts.push(`\n${'#'.repeat(level)} ${String(node.textContent || '').trim()}\n`);
+      parts.push(`\n\n${'#'.repeat(level)} ${String(node.textContent || '').trim()}\n\n`);
       return;
     }
-    if (tag === 'br') { parts.push('\n'); return; }
-    if (tag === 'li') {
-      parts.push(`\n- `);
-      node.childNodes.forEach(walk);
+    if (tag === 'br') {
+      parts.push(ctx.inList ? ' ' : '\n');
       return;
     }
-    if (tag === 'p' || tag === 'div' || tag === 'section') {
-      node.childNodes.forEach(walk);
+    if (tag === 'ul' || tag === 'ol') {
+      const ordered = tag === 'ol';
+      const items = [...node.children].filter((el) => el.nodeName === 'LI');
+      parts.push('\n');
+      items.forEach((li, i) => {
+        const marker = ordered ? `${i + 1}. ` : '- ';
+        parts.push(`\n${marker}${liInnerMarkdown(li)}`);
+      });
       parts.push('\n\n');
       return;
     }
-    node.childNodes.forEach(walk);
+    if (tag === 'li') {
+      parts.push(`\n- ${liInnerMarkdown(node)}`);
+      return;
+    }
+    if (tag === 'p' || tag === 'div' || tag === 'section') {
+      if (ctx.inList) {
+        node.childNodes.forEach((c) => walk(c, ctx));
+        return;
+      }
+      node.childNodes.forEach((c) => walk(c, ctx));
+      parts.push('\n\n');
+      return;
+    }
+    if (tag === 'strong' || tag === 'b') {
+      parts.push('**');
+      node.childNodes.forEach((c) => walk(c, ctx));
+      parts.push('**');
+      return;
+    }
+    if (tag === 'em' || tag === 'i') {
+      parts.push('*');
+      node.childNodes.forEach((c) => walk(c, ctx));
+      parts.push('*');
+      return;
+    }
+    node.childNodes.forEach((c) => walk(c, ctx));
   };
-  tmp.childNodes.forEach(walk);
-  return parts.join('').replace(/\n{3,}/g, '\n\n').trim();
+  tmp.childNodes.forEach((c) => walk(c));
+  return normalizeMarkdownLists(parts.join(''));
+}
+
+/** Prefer ready turndown when available (sync path for getValue / draft / submit). */
+function htmlToMarkdownNow(html) {
+  if (_turndownInstance) {
+    try {
+      return normalizeMarkdownLists(String(_turndownInstance.turndown(html || '') || ''));
+    } catch (_) { /* fall through */ }
+  }
+  return htmlToMarkdownSync(html);
 }
 
 async function htmlToMarkdown(html) {
   const td = await ensureTurndown();
   if (td) {
-    try { return String(td.turndown(html || '') || '').trim(); } catch (_) { /* fall through */ }
+    try { return normalizeMarkdownLists(String(td.turndown(html || '') || '')); } catch (_) { /* fall through */ }
   }
   return htmlToMarkdownSync(html);
 }
@@ -292,17 +419,26 @@ function buildBasicToolbar(onAction) {
   const bar = document.createElement('div');
   bar.className = 'md-editor-toolbar-basic';
   const items = [
-    ['bold', 'B'], ['italic', 'I'], ['strike', 'S'],
-    ['h2', 'H2'], ['ul', '•'], ['ol', '1.'],
-    ['check', '☑'], ['code', '</>'], ['quote', '“'],
-    ['link', '링크'], ['undo', '↩'], ['redo', '↪']
+    ['bold', 'B', '굵게'],
+    ['italic', 'I', '기울임'],
+    ['strike', 'S', '취소선'],
+    ['h2', 'H2', '제목'],
+    ['ul', '• 목록', '글머리 목록'],
+    ['ol', '1. 목록', '번호 목록'],
+    ['check', '☑', '체크리스트'],
+    ['code', '</>', '코드'],
+    ['quote', '인용', '인용문'],
+    ['link', '링크', '링크'],
+    ['undo', '↩', '실행 취소'],
+    ['redo', '↪', '다시 실행']
   ];
-  items.forEach(([action, label]) => {
+  items.forEach(([action, label, title]) => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.dataset.mdBasic = action;
     btn.textContent = label;
-    btn.title = action;
+    btn.title = title || action;
+    btn.setAttribute('aria-label', title || action);
     bar.appendChild(btn);
   });
   bar.addEventListener('click', (e) => {
@@ -569,7 +705,7 @@ export async function mountMarkdownEditor(host, options = {}) {
     }
 
     saveVisualSelection();
-    visualMdCache = htmlToMarkdownSync(visualEl.innerHTML);
+    visualMdCache = htmlToMarkdownNow(visualEl.innerHTML);
     pushHistory(visualMdCache);
     onChange?.(visualMdCache);
     scheduleLivePreview();
@@ -579,13 +715,14 @@ export async function mountMarkdownEditor(host, options = {}) {
 
   const getValue = () => {
     try {
-      if (toast) return String(toast.getMarkdown() ?? '');
+      if (toast) return normalizeMarkdownLists(String(toast.getMarkdown() ?? ''));
     } catch (_) { /* fall through */ }
     if (visualEl) {
-      visualMdCache = htmlToMarkdownSync(visualEl.innerHTML);
+      // Prefer turndown when warmed; sync path also normalizes tight lists.
+      visualMdCache = htmlToMarkdownNow(visualEl.innerHTML);
       return visualMdCache;
     }
-    return ta ? String(ta.value ?? '') : '';
+    return normalizeMarkdownLists(ta ? String(ta.value ?? '') : '');
   };
 
   const pushHistory = (v) => {
@@ -770,7 +907,8 @@ export async function mountMarkdownEditor(host, options = {}) {
 
   const paintVisualFromMarkdown = (md) => {
     if (!visualEl) return;
-    visualMdCache = String(md ?? '');
+    // Repair broken "-\\ntext" / blank-line lists so marked emits real <ul>/<li>.
+    visualMdCache = normalizeMarkdownLists(String(md ?? ''));
     const html = renderMarkdown(visualMdCache, { className: 'md-prose md-visual-prose' });
     visualEl.innerHTML = html || '<p><br></p>';
     wrapAdjacentImages(visualEl);
@@ -788,7 +926,7 @@ export async function mountMarkdownEditor(host, options = {}) {
   };
 
   const setValue = (v, { recordHistory = true } = {}) => {
-    const s = String(v ?? '');
+    const s = normalizeMarkdownLists(String(v ?? ''));
     if (toast) {
       try { toast.setMarkdown(s); } catch (e) { console.warn(e); }
     }
@@ -1030,7 +1168,7 @@ export async function mountMarkdownEditor(host, options = {}) {
         const ok = pairLastTwoImages(prose);
         if (!ok) alert('나란히 배치할 이미지가 2장 이상 필요합니다.');
         else {
-          visualMdCache = htmlToMarkdownSync(visualEl.innerHTML);
+          visualMdCache = htmlToMarkdownNow(visualEl.innerHTML);
           pushHistory(visualMdCache);
           onChange?.(visualMdCache);
           statusEl.textContent = '마지막 두 이미지를 좌·우로 배치했습니다.';
