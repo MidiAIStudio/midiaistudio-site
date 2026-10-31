@@ -10,8 +10,11 @@ export {
   openMarkdownEditorModal,
   openMarkdownPreview,
   mountMarkdownField,
-  pickMarkdownSource
-} from './markdown-editor.js?v=board-edit-1';
+  pickMarkdownSource,
+  listMarkdownImages,
+  moveMarkdownImage,
+  removeMarkdownImage
+} from './markdown-editor.js?v=hub-md-preview-1';
 
 export {
   draftKey,

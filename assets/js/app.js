@@ -73,7 +73,7 @@ import {
   ensureMarkdownCss,
   pickMarkdownSource,
   clearDraft
-} from './markdown/index.js?v=board-edit-1';
+} from './markdown/index.js?v=hub-md-preview-1';
 import { renderMidiPreviewWav as renderMidiPreviewEngine } from './board-midi-preview.js?v=gm-preview-1';
 import { patchNoteType, patchNoteVersion, patchNoteWriteFields } from './patch-note-type.js?v=patch-type-1';
 import {
@@ -7019,7 +7019,8 @@ function openEditModal(title, fields, opts={}){
           draftKey: field.draftKey || `modal:${name}`,
           storagePrefix: `cms-md/${uid}/hub`,
           showActions: false,
-          preferToast: false
+          preferToast: false,
+          livePreview: true
         });
         mdEditors[name].setMarkdown(pickMarkdownSource(field.value));
         mdEditors[name].refreshLayout();
@@ -7028,10 +7029,24 @@ function openEditModal(title, fields, opts={}){
         alert('본문 편집기를 열 수 없습니다: ' + (e.message || e));
       }
     }
+    const primaryMdEditor = () => Object.values(mdEditors)[0] || null;
     for (const name of Object.keys(attachHosts)) {
       const { host, field } = attachHosts[name];
       attachStates[name] = createHubAttachState(field.value);
-      mountHubAttachPicker(host, attachStates[name]);
+      mountHubAttachPicker(host, attachStates[name], {
+        onInsertIntoBody: (att) => {
+          const ed = primaryMdEditor();
+          if (!ed?.insertMarkdown || !att?.url) {
+            alert('본문 편집기가 준비되지 않았습니다. 툴바의 「이미지」로 삽입해 주세요.');
+            return;
+          }
+          const alt = String(att.name || att.fileName || att.alt || 'image').replace(/\.[^.]+$/, '');
+          const isVideo = String(att.type || '').includes('video') || /\.(mp4|webm)(\?|$)/i.test(att.url);
+          ed.insertMarkdown(isVideo ? `\n![${alt}](${att.url})\n` : `![${alt}](${att.url})`);
+          ed.refreshPreview?.();
+          ed.focus?.();
+        }
+      });
     }
 
     const close = (value) => {
@@ -7090,7 +7105,17 @@ function openEditModal(title, fields, opts={}){
       ed?.refreshLayout?.();
       ed?.focus?.();
     });
-    overlay.addEventListener('click', e => { if (e.target === overlay) close(null); });
+    // Markdown composers: never dismiss on backdrop click — leaving the textarea
+    // (or returning from a file picker) often lands a click on the dimmed overlay.
+    // Plain modals still require mousedown+mouseup both on the backdrop.
+    if (!hasMarkdown) {
+      let backdropDown = false;
+      overlay.addEventListener('mousedown', (e) => { backdropDown = e.target === overlay; });
+      overlay.addEventListener('mouseup', (e) => {
+        if (backdropDown && e.target === overlay) close(null);
+        backdropDown = false;
+      });
+    }
     modalEscapeClose(overlay, close);
     const first = form.querySelector('.edit-field:not(.hidden) input:not([type=checkbox]):not([type=radio]), .edit-field:not(.hidden) textarea, .edit-field:not(.hidden) select');
     if (first) setTimeout(() => first.focus(), 40);
@@ -7791,7 +7816,8 @@ async function renderAdminCmsEditor(container, kind, row){
         draftKey: field.draftKey || `cms:${kind}:${name}`,
         storagePrefix: `cms-md/${uid}/hub`,
         showActions: false,
-        preferToast: false
+        preferToast: false,
+        livePreview: true
       });
       mdEditors[name].setMarkdown(pickMarkdownSource(field.value));
       mdEditors[name].refreshLayout();
@@ -7800,10 +7826,24 @@ async function renderAdminCmsEditor(container, kind, row){
       alert('본문 편집기를 열 수 없습니다: '+(e.message||e));
     }
   }
+  const primaryCmsMd = () => Object.values(mdEditors)[0] || null;
   for(const name of Object.keys(attachHosts)){
     const {host, field}=attachHosts[name];
     attachStates[name]=createHubAttachState(field.value);
-    mountHubAttachPicker(host, attachStates[name]);
+    mountHubAttachPicker(host, attachStates[name], {
+      onInsertIntoBody: (att) => {
+        const ed = primaryCmsMd();
+        if (!ed?.insertMarkdown || !att?.url) {
+          alert('본문 편집기가 준비되지 않았습니다. 툴바의 「이미지」로 삽입해 주세요.');
+          return;
+        }
+        const alt = String(att.name || att.fileName || att.alt || 'image').replace(/\.[^.]+$/, '');
+        const isVideo = String(att.type || '').includes('video') || /\.(mp4|webm)(\?|$)/i.test(att.url);
+        ed.insertMarkdown(isVideo ? `\n![${alt}](${att.url})\n` : `![${alt}](${att.url})`);
+        ed.refreshPreview?.();
+        ed.focus?.();
+      }
+    });
   }
   const collect=()=>{
     const data={};
@@ -14046,26 +14086,35 @@ function createHubAttachState(initial){
 function hubAttachAllowed(file){
   return HUB_ATTACH_MIME.test(String(file?.type || ''));
 }
-function renderHubAttachPreview(host, state){
+function renderHubAttachPreview(host, state, opts={}){
   if(!host || !state) return;
   const preview = host.querySelector('[data-hub-attach-preview]');
   const msg = host.querySelector('[data-hub-attach-msg]');
   if(msg) msg.textContent = state.msg || '';
   if(!preview) return;
-  const existing = state.existing.map((a,i)=>boardAttachmentItemHtml(a,i,true)).join('');
+  const canInsert = typeof opts.onInsertIntoBody === 'function';
+  const existing = state.existing.map((a,i)=>{
+    const insertBtn = canInsert && a.url
+      ? `<button type="button" class="secondary mini-btn" data-hub-insert-existing="${i}">본문에 삽입</button>`
+      : '';
+    return `${boardAttachmentItemHtml(a,i,true)}${insertBtn ? `<div class="hub-attach-inline-actions">${insertBtn}</div>` : ''}`;
+  }).join('');
   const fresh = state.files.map((file,i)=>{
     const type = boardFileType(file);
     const icon = type === 'video' ? '🎥' : '🖼️';
-    return `<div class="board-file-chip"><span>${icon}</span><b>${esc(file.name)}</b><small>${Math.max(1, Math.ceil(file.size/1024/1024))}MB</small><button type="button" class="secondary mini-btn danger-btn" data-hub-remove-new="${i}">삭제</button></div>`;
+    const insertHint = canInsert
+      ? `<span class="muted small-copy">저장 전엔 툴바 「이미지」로 본문 삽입</span>`
+      : '';
+    return `<div class="board-file-chip"><span>${icon}</span><b>${esc(file.name)}</b><small>${Math.max(1, Math.ceil(file.size/1024/1024))}MB</small>${insertHint}<button type="button" class="secondary mini-btn danger-btn" data-hub-remove-new="${i}">삭제</button></div>`;
   }).join('');
   preview.innerHTML = (existing || fresh)
     ? `${existing}<div class="board-file-chip-list">${fresh}</div>`
-    : '<p class="muted">첨부한 파일이 없습니다.</p>';
+    : '<p class="muted">첨부한 파일이 없습니다. 본문 중간에 넣으려면 툴바의 「이미지」를 쓰세요.</p>';
   preview.querySelectorAll('[data-remove-existing-attachment]').forEach(btn=>{
     btn.onclick = ()=>{
       state.existing.splice(Number(btn.dataset.removeExistingAttachment), 1);
       state.msg = '';
-      renderHubAttachPreview(host, state);
+      renderHubAttachPreview(host, state, opts);
     };
   });
   preview.querySelectorAll('[data-hub-remove-new]').forEach(btn=>{
@@ -14074,12 +14123,19 @@ function renderHubAttachPreview(host, state){
       const input = host.querySelector('[data-hub-attach-input]');
       if(input) input.value = '';
       state.msg = '';
-      renderHubAttachPreview(host, state);
+      renderHubAttachPreview(host, state, opts);
+    };
+  });
+  preview.querySelectorAll('[data-hub-insert-existing]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const att = state.existing[Number(btn.dataset.hubInsertExisting)];
+      if(att) opts.onInsertIntoBody?.(att);
     };
   });
 }
-function addHubAttachFiles(host, state, fileList){
+function addHubAttachFiles(host, state, fileList, opts){
   const incoming = Array.from(fileList || []);
+  const options = opts || host?._hubAttachOpts || {};
   for(const file of incoming){
     if(!hubAttachAllowed(file)){
       state.msg = 'JPG/PNG/WEBP/GIF/MP4/WEBM만 업로드할 수 있어요.';
@@ -14096,26 +14152,27 @@ function addHubAttachFiles(host, state, fileList){
     state.files.push(file);
     state.msg = '';
   }
-  renderHubAttachPreview(host, state);
+  renderHubAttachPreview(host, state, options);
 }
-function mountHubAttachPicker(host, state){
+function mountHubAttachPicker(host, state, opts={}){
   if(!host || !state) return state;
+  host._hubAttachOpts = opts;
   host.innerHTML = `<div class="board-upload-box hub-attach-box">
-    <label>사진/영상 첨부</label>
+    <label>하단 갤러리 첨부 (선택)</label>
     <input type="file" data-hub-attach-input accept="${HUB_ATTACH_ACCEPT}" multiple>
-    <p class="muted small-copy">JPG/PNG/WEBP/GIF/MP4/WEBM · 파일당 50MB · 최대 5개</p>
+    <p class="muted small-copy">글 맨 아래에 붙는 첨부입니다. 본문 중간 배치는 툴바 「이미지」·미리보기를 사용하세요. JPG/PNG/WEBP/GIF/MP4/WEBM · 50MB · 최대 5개</p>
     <div data-hub-attach-preview class="board-attachment-preview"><p class="muted">첨부한 파일이 없습니다.</p></div>
     <p class="form-msg" data-hub-attach-msg></p>
   </div>`;
   const input = host.querySelector('[data-hub-attach-input]');
   const drop = host.querySelector('.board-upload-box');
-  input?.addEventListener('change', ()=>addHubAttachFiles(host, state, input.files));
+  input?.addEventListener('change', ()=>addHubAttachFiles(host, state, input.files, opts));
   if(drop){
     ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('dragover'); }));
     ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('dragover'); }));
-    drop.addEventListener('drop', e=>addHubAttachFiles(host, state, e.dataTransfer?.files));
+    drop.addEventListener('drop', e=>addHubAttachFiles(host, state, e.dataTransfer?.files, opts));
   }
-  renderHubAttachPreview(host, state);
+  renderHubAttachPreview(host, state, opts);
   return state;
 }
 function collectHubAttachState(state){

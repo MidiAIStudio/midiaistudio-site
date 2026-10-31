@@ -165,6 +165,61 @@ function buildBasicToolbar(onAction) {
   return bar;
 }
 
+/** Match markdown image / media embeds: ![alt](url) */
+const MD_IMAGE_RE = /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+
+export function listMarkdownImages(md) {
+  const out = [];
+  const src = String(md || '');
+  MD_IMAGE_RE.lastIndex = 0;
+  let m;
+  while ((m = MD_IMAGE_RE.exec(src))) {
+    out.push({
+      full: m[0],
+      alt: m[1] || '',
+      url: m[2] || '',
+      index: m.index,
+      end: m.index + m[0].length
+    });
+  }
+  return out;
+}
+
+function rewriteMarkdownImages(md, nextImages) {
+  const src = String(md || '');
+  const found = listMarkdownImages(src);
+  if (!found.length) return src;
+  let out = '';
+  let cursor = 0;
+  found.forEach((item, i) => {
+    out += src.slice(cursor, item.index);
+    const next = nextImages[i];
+    out += next ? next.full : '';
+    cursor = item.end;
+  });
+  out += src.slice(cursor);
+  return out;
+}
+
+export function moveMarkdownImage(md, index, dir) {
+  const images = listMarkdownImages(md);
+  const j = index + dir;
+  if (index < 0 || j < 0 || index >= images.length || j >= images.length) return String(md || '');
+  const next = images.slice();
+  const tmp = next[index];
+  next[index] = next[j];
+  next[j] = tmp;
+  return rewriteMarkdownImages(md, next);
+}
+
+export function removeMarkdownImage(md, index) {
+  const images = listMarkdownImages(md);
+  if (index < 0 || index >= images.length) return String(md || '');
+  const next = images.slice();
+  next[index] = null;
+  return rewriteMarkdownImages(md, next);
+}
+
 /**
  * Mount editor into a visible host element.
  * Call only after the host is in the DOM and displayed.
@@ -186,7 +241,9 @@ export async function mountMarkdownEditor(host, options = {}) {
     placeholder = '내용을 입력하세요.',
     // Default false: reliable textarea. Toast used when explicitly enabled + healthy.
     preferToast = false,
-    promptDraft = true
+    promptDraft = true,
+    /** Show rendered preview beside/below editor so inline images can be positioned. */
+    livePreview = false
   } = options;
 
   ensureMarkdownCss();
@@ -223,6 +280,50 @@ export async function mountMarkdownEditor(host, options = {}) {
     historyIdx = history.length - 1;
   };
 
+  let previewEl = null;
+  let imageStripEl = null;
+  let previewTimer = 0;
+
+  const paintLivePreview = () => {
+    if (!livePreview || !previewEl) return;
+    const md = getValue();
+    renderMarkdownInto(previewEl, md);
+    if (imageStripEl) paintImageStrip(md);
+  };
+
+  const scheduleLivePreview = () => {
+    if (!livePreview) return;
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(paintLivePreview, 120);
+  };
+
+  const paintImageStrip = (md) => {
+    if (!imageStripEl) return;
+    const images = listMarkdownImages(md);
+    if (!images.length) {
+      imageStripEl.hidden = true;
+      imageStripEl.innerHTML = '';
+      return;
+    }
+    imageStripEl.hidden = false;
+    imageStripEl.innerHTML = `<div class="md-image-strip-head"><strong>본문 이미지</strong><span>미리보기에서 위치를 확인한 뒤 ↑↓로 옮기세요</span></div>
+      <div class="md-image-strip-list">${images.map((img, i) => {
+        const isVideo = /\.(mp4|webm)(\?|$)/i.test(img.url) || /video/i.test(img.alt);
+        const thumb = isVideo
+          ? `<span class="md-image-strip-thumb is-video">🎥</span>`
+          : `<img class="md-image-strip-thumb" src="${esc(img.url)}" alt="${esc(img.alt || 'image')}" loading="lazy">`;
+        return `<div class="md-image-strip-item" data-md-img="${i}">
+          ${thumb}
+          <span class="md-image-strip-name" title="${esc(img.alt || img.url)}">${esc(img.alt || '이미지')}</span>
+          <div class="md-image-strip-actions">
+            <button type="button" class="secondary mini-btn" data-md-img-move="-1" ${i === 0 ? 'disabled' : ''} title="위로">↑</button>
+            <button type="button" class="secondary mini-btn" data-md-img-move="1" ${i === images.length - 1 ? 'disabled' : ''} title="아래로">↓</button>
+            <button type="button" class="secondary mini-btn danger-btn" data-md-img-remove title="삭제">삭제</button>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+  };
+
   const setValue = (v, { recordHistory = true } = {}) => {
     const s = String(v ?? '');
     if (toast) {
@@ -231,6 +332,7 @@ export async function mountMarkdownEditor(host, options = {}) {
     if (ta) ta.value = s;
     if (recordHistory) pushHistory(s);
     onChange?.(s);
+    scheduleLivePreview();
   };
 
   const focus = () => {
@@ -307,6 +409,7 @@ export async function mountMarkdownEditor(host, options = {}) {
   const insertMarkdown = (snippet) => {
     insertAtCursor(getSelection, setSelection, snippet);
     focus();
+    scheduleLivePreview();
   };
 
   const statusEl = document.createElement('div');
@@ -374,10 +477,44 @@ export async function mountMarkdownEditor(host, options = {}) {
   });
   host.appendChild(extras);
 
+  if (livePreview) {
+    imageStripEl = document.createElement('div');
+    imageStripEl.className = 'md-image-strip';
+    imageStripEl.hidden = true;
+    imageStripEl.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-md-img]');
+      if (!item) return;
+      const idx = Number(item.getAttribute('data-md-img'));
+      if (Number.isNaN(idx)) return;
+      const moveBtn = e.target.closest('[data-md-img-move]');
+      if (moveBtn) {
+        const dir = Number(moveBtn.getAttribute('data-md-img-move'));
+        setValue(moveMarkdownImage(getValue(), idx, dir));
+        return;
+      }
+      if (e.target.closest('[data-md-img-remove]')) {
+        if (!confirm('이 이미지를 본문에서 삭제할까요?')) return;
+        setValue(removeMarkdownImage(getValue(), idx));
+      }
+    });
+    host.appendChild(imageStripEl);
+  }
+
+  const workArea = document.createElement('div');
+  workArea.className = livePreview ? 'md-editor-work is-split' : 'md-editor-work';
   const editorHost = document.createElement('div');
   editorHost.className = 'md-editor-host';
   editorHost.style.minHeight = `${Math.max(260, heightPx - 40)}px`;
-  host.appendChild(editorHost);
+  workArea.appendChild(editorHost);
+  if (livePreview) {
+    const previewPane = document.createElement('div');
+    previewPane.className = 'md-live-preview-pane';
+    previewPane.innerHTML = `<div class="md-live-preview-label">미리보기 · 이미지는 커서 위치에 삽입됩니다</div><div class="md-live-preview-body post-body-content"></div>`;
+    previewEl = previewPane.querySelector('.md-live-preview-body');
+    workArea.appendChild(previewPane);
+    host.classList.add('md-has-live-preview');
+  }
+  host.appendChild(workArea);
 
   let initial = String(value ?? '');
   if (draftKey && promptDraft !== false) {
@@ -407,11 +544,13 @@ export async function mountMarkdownEditor(host, options = {}) {
       pushHistory(ta.value);
       onChange?.(ta.value);
       autosave.touch();
+      scheduleLivePreview();
     });
     editorHost.appendChild(ta);
     host.classList.add('md-engine-textarea');
     host.classList.remove('md-engine-toast');
     statusEl.textContent = '';
+    scheduleLivePreview();
   };
 
   const mountToast = async (text) => {
@@ -464,6 +603,7 @@ export async function mountMarkdownEditor(host, options = {}) {
           change: () => {
             onChange?.(getValue());
             autosave.touch();
+            scheduleLivePreview();
           }
         }
       });
@@ -479,6 +619,7 @@ export async function mountMarkdownEditor(host, options = {}) {
         statusEl.textContent = '편집기를 안전 모드로 전환했습니다.';
         return false;
       }
+      scheduleLivePreview();
       return true;
     } catch (e) {
       console.error('[MarkdownEditor] Toast init failed', e);
@@ -528,21 +669,25 @@ export async function mountMarkdownEditor(host, options = {}) {
     focus,
     refreshLayout,
     insertMarkdown,
+    refreshPreview: paintLivePreview,
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      clearTimeout(previewTimer);
       autosave.stop();
       unbindPaste?.();
       try { toast?.destroy(); } catch (_) { /* ignore */ }
       toast = null;
       ta = null;
+      previewEl = null;
+      imageStripEl = null;
       host._mdApi = null;
       host.innerHTML = '';
-      host.classList.remove('md-editor-shell', 'md-engine-toast', 'md-engine-textarea', 'md-hide-toast-preview-tab');
+      host.classList.remove('md-editor-shell', 'md-engine-toast', 'md-engine-textarea', 'md-hide-toast-preview-tab', 'md-has-live-preview');
     }
   };
   host._mdApi = api;
-  setTimeout(() => { refreshLayout(); focus(); }, 80);
+  setTimeout(() => { refreshLayout(); focus(); paintLivePreview(); }, 80);
   return api;
 }
 
