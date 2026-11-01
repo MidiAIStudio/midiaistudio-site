@@ -19,9 +19,12 @@ import {
 import { mountMarkdownField } from './markdown/index.js';
 
 const COLLECTION = 'productSections';
+/** Public-readable meta doc in the same collection; filtered out of rendered sections. */
+const META_DOC_ID = '_cmsMeta';
 const PAGE = (location.pathname.split('/').pop() || '') === 'product.html';
 /** Client overlay: older Firestore copy yields to this SEED until admin Save. */
 const SEED_REV = 20260825;
+const SEED_IDS = new Set(); // filled after SEED is defined
 
 /** Firestore rejects `undefined` field values. */
 function omitUndefined(obj) {
@@ -181,15 +184,29 @@ const SEED = [
   }
 ];
 
-function applySeedRevision(loaded) {
-  const byId = new Map((loaded || []).map((s) => [s.id, {
+SEED.forEach((s) => SEED_IDS.add(s.id));
+
+function isMetaSection(s) {
+  return !s || s.id === META_DOC_ID || s.kind === 'meta';
+}
+
+function applySeedRevision(loaded, removedIds) {
+  const removed = removedIds instanceof Set ? removedIds : new Set(removedIds || []);
+  const byId = new Map((loaded || []).filter((s) => !isMetaSection(s)).map((s) => [s.id, {
     ...s,
     features: [...(s.features || [])],
     mediaOverlays: Array.isArray(s.mediaOverlays) ? s.mediaOverlays.map((o) => ({ ...o })) : []
   }]));
+  // If Firestore already has current-rev seed siblings, a missing seed id is a
+  // deliberate delete (pre-meta saves) — do not resurrect it.
+  const hasCurrentSeedSibling = [...byId.values()].some(
+    (s) => SEED_IDS.has(s.id) && (Number(s.seedRevision) || 0) >= SEED_REV
+  );
   for (const seed of SEED) {
     const cur = byId.get(seed.id);
     if (!cur) {
+      // Respect intentional deletes — do not resurrect removed seed cards.
+      if (removed.has(seed.id) || hasCurrentSeedSibling) continue;
       byId.set(seed.id, { ...seed, features: [...(seed.features || [])], mediaOverlays: [] });
       continue;
     }
@@ -226,6 +243,8 @@ let sections = [];
 let draft = [];
 let pendingFiles = {}; // id -> { kind, file }
 let status;
+/** Seed ids the admin deleted + saved — honored by applySeedRevision. */
+let removedSeedIds = new Set();
 
 function cloneSections(rows) {
   return rows.map((s) => ({
@@ -266,11 +285,30 @@ async function loadSections() {
       snap = await getDocs(collection(db, COLLECTION));
     }
   }
-  const rows = snap.docs
-    .map((d) => ({ id: d.id, ...d.data() }))
+  const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const meta = all.find((s) => isMetaSection(s));
+  removedSeedIds = new Set(
+    Array.isArray(meta?.removedSeedIds) ? meta.removedSeedIds.map(String).filter(Boolean) : []
+  );
+  const rows = all
+    .filter((s) => !isMetaSection(s))
     .filter((s) => isAdmin || s.published !== false);
   rows.sort((a, b) => (a.order || 0) - (b.order || 0));
   return rows;
+}
+
+/** Resolve loaded rows + seed overlay without resurrecting deleted seed cards. */
+function hydrateSections(loaded) {
+  const rows = Array.isArray(loaded) ? loaded : [];
+  // Empty Firestore + no removal record → first paint from SEED.
+  // Empty Firestore + removals → intentional empty/partial delete; do not dump full SEED.
+  if (!rows.length && removedSeedIds.size === 0) return cloneSections(SEED);
+  return applySeedRevision(rows, removedSeedIds);
+}
+
+function computeRemovedSeedIds(draftRows) {
+  const keep = new Set((draftRows || []).map((s) => s.id));
+  return [...SEED_IDS].filter((id) => !keep.has(id));
 }
 
 function refreshChrome() {
@@ -548,9 +586,22 @@ async function saveAll() {
       await setDoc(doc(db, COLLECTION, sec.id), payload, { merge: true });
     }
 
-    // hard-delete removed cards
+    // Persist which seed cards were intentionally removed so applySeedRevision
+    // does not re-inject them on the next load (the previous bug).
+    const nextRemoved = computeRemovedSeedIds(draft);
+    removedSeedIds = new Set(nextRemoved);
+    await setDoc(doc(db, COLLECTION, META_DOC_ID), omitUndefined({
+      kind: 'meta',
+      published: true,
+      removedSeedIds: nextRemoved,
+      seedRevision: SEED_REV,
+      updatedAt: serverTimestamp()
+    }), { merge: true });
+
+    // hard-delete removed cards (never delete the meta doc)
     const snap = await getDocs(collection(db, COLLECTION));
     const keep = new Set(draft.map((s) => s.id));
+    keep.add(META_DOC_ID);
     for (const d of snap.docs) {
       if (!keep.has(d.id)) await deleteDoc(d.ref);
     }
@@ -694,9 +745,7 @@ async function initProductCms() {
     isAdmin = first.isAdmin;
     authUid = first.user?.uid || "anon";
     if (isAdmin) await ensureSeed();
-    let loaded = await loadSections();
-    if (!loaded.length) loaded = cloneSections(SEED);
-    loaded = applySeedRevision(loaded);
+    let loaded = hydrateSections(await loadSections());
     const prevFp = sectionsFingerprint(draft);
     sections = cloneSections(loaded);
     draft = cloneSections(sections);
@@ -709,9 +758,7 @@ async function initProductCms() {
       if (!admin) editMode = false;
       if (admin) {
         await ensureSeed();
-        sections = await loadSections();
-        if (!sections.length) sections = cloneSections(SEED);
-        sections = applySeedRevision(sections);
+        sections = hydrateSections(await loadSections());
         draft = cloneSections(sections);
       }
       refreshChrome();
