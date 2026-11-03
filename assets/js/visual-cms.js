@@ -69,6 +69,15 @@ export function adminHoverToolbar(buttons) {
   return wrap;
 }
 
+/** True when value is blank or a CMS placeholder sentinel (not real copy). */
+export function isEditablePlaceholderValue(value, placeholder = '') {
+  const trimmed = String(value ?? '').trim();
+  if (!trimmed) return true;
+  const ph = String(placeholder || '').trim();
+  if (ph && trimmed === ph) return true;
+  return /^(설명을\s*(입력|작성)하세요\.?|설명\s*작성|본문\s*작성|작성)$/.test(trimmed);
+}
+
 /**
  * Editable text slot. Keeps placeholder for admins when empty.
  * @param {object} opts
@@ -86,7 +95,8 @@ export function mountEditableText(container, {
 }) {
   container.innerHTML = '';
   container.classList.add('vcms-text-slot');
-  const empty = !String(value || '').trim();
+  const empty = isEditablePlaceholderValue(value, placeholder);
+  const displayValue = empty ? '' : String(value ?? '');
 
   if (!editMode || !isAdmin) {
     if (empty) {
@@ -97,8 +107,8 @@ export function mountEditableText(container, {
     container.hidden = false;
     const el = document.createElement(tag);
     if (className) el.className = className;
-    if (multiline) el.innerHTML = esc(value).replace(/\n/g, '<br>');
-    else el.textContent = value;
+    if (multiline) el.innerHTML = esc(displayValue).replace(/\n/g, '<br>');
+    else el.textContent = displayValue;
     container.appendChild(el);
     return;
   }
@@ -109,7 +119,7 @@ export function mountEditableText(container, {
   if (className) el.className = className;
   el.contentEditable = 'true';
   el.dataset.placeholder = placeholder;
-  el.textContent = value || '';
+  el.textContent = displayValue;
   if (empty) el.classList.add('vcms-placeholder-text');
 
   const tools = adminHoverToolbar([

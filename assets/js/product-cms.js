@@ -15,8 +15,7 @@ import {
   uploadToStorage,
   normalizeMediaWidthPct,
   normalizeMediaAspect
-} from './visual-cms.js?v=slot-scale-22';
-import { mountMarkdownField } from './markdown/index.js';
+} from './visual-cms.js?v=desc-edit-1';
 
 const COLLECTION = 'productSections';
 /** Public-readable meta doc in the same collection; filtered out of rendered sections. */
@@ -385,13 +384,13 @@ function featureSectionEl(sec, idx) {
     onChange: (v) => { draft[idx].title = v; markDirty(); },
     onClear: () => { draft[idx].title = ''; markDirty(); }
   });
-  mountMarkdownField(bodySlot, {
+  mountEditableText(bodySlot, {
+    tag: 'p',
+    className: 'product-feature-desc',
     value: sec.body || '',
-    placeholder: '설명 작성',
-    editMode,
-    isAdmin,
-    draftKey: `product:${sec.id || idx}:body`,
-    storagePrefix: `cms-md/${authUid}/product`,
+    placeholder: '설명을 입력하세요.',
+    editMode, isAdmin,
+    multiline: true,
     onChange: (v) => { draft[idx].body = v; markDirty(); },
     onClear: () => { draft[idx].body = ''; markDirty(); }
   });
@@ -484,13 +483,13 @@ function cardEl(sec, idx) {
     onChange: (v) => { draft[idx].title = v; markDirty(); },
     onClear: () => { draft[idx].title = ''; markDirty(); }
   });
-  mountMarkdownField(bodySlot, {
+  mountEditableText(bodySlot, {
+    tag: 'p',
+    className: 'product-card-desc',
     value: sec.body || '',
-    placeholder: '설명 작성',
-    editMode,
-    isAdmin,
-    draftKey: `product:${sec.id || idx}:body`,
-    storagePrefix: `cms-md/${authUid}/product`,
+    placeholder: '설명을 입력하세요.',
+    editMode, isAdmin,
+    multiline: true,
     onChange: (v) => { draft[idx].body = v; markDirty(); },
     onClear: () => { draft[idx].body = ''; markDirty(); }
   });
@@ -637,7 +636,7 @@ function addFeatureCard() {
     layout: 'normal',
     category: '새 카테고리',
     title: '새 제목',
-    body: '설명을 작성하세요.',
+    body: '',
     features: ['기능 1'],
     mediaType: '',
     mediaUrl: '',

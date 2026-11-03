@@ -550,8 +550,8 @@
   color:rgba(169,174,200,.65);
   font-style:italic;
 }
-.vcms-md-field .vcms-hover-tools{opacity:0;transition:opacity .15s}
-.vcms-md-field:hover .vcms-hover-tools,.vcms-md-field:focus-within .vcms-hover-tools{opacity:1}
+.vcms-md-field .vcms-hover-toolbar{opacity:1}
+.vcms-md-field.is-empty .vcms-md-preview{cursor:text;min-height:1.6em}
 
 .edit-modal.md-edit-modal{width:min(880px,96vw);max-width:none}
 .edit-modal.md-edit-modal .edit-modal-body{max-height:min(78vh,820px);overflow:auto}

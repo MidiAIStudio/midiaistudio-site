@@ -1835,6 +1835,26 @@ export function mountMarkdownField(container, {
   paint();
   container.appendChild(preview);
 
+  const openEditor = async () => {
+    let uid = 'anon';
+    try {
+      const { getFirebase } = await import('../visual-cms.js');
+      const fb = await getFirebase();
+      uid = fb.auth.currentUser?.uid || 'anon';
+    } catch (_) { /* ignore */ }
+    const md = await openMarkdownEditorModal({
+      title: placeholder,
+      value: current,
+      mode: current.trim() ? 'edit' : 'create',
+      draftKey: draftKey || `field:${placeholder}`,
+      storagePrefix: storagePrefix.includes('anon') ? `cms-md/${uid}/cms` : storagePrefix
+    });
+    if (md == null) return;
+    current = md;
+    paint();
+    onChange?.(current);
+  };
+
   const tools = adminHoverToolbar([
     { label: current.trim() ? '수정' : '작성', action: 'edit' },
     { label: '삭제', action: 'clear', danger: true }
@@ -1845,23 +1865,7 @@ export function mountMarkdownField(container, {
     e.preventDefault();
     e.stopPropagation();
     if (btn.dataset.action === 'edit') {
-      let uid = 'anon';
-      try {
-        const { getFirebase } = await import('../visual-cms.js');
-        const fb = await getFirebase();
-        uid = fb.auth.currentUser?.uid || 'anon';
-      } catch (_) { /* ignore */ }
-      const md = await openMarkdownEditorModal({
-        title: placeholder,
-        value: current,
-        mode: current.trim() ? 'edit' : 'create',
-        draftKey: draftKey || `field:${placeholder}`,
-        storagePrefix: storagePrefix.includes('anon') ? `cms-md/${uid}/cms` : storagePrefix
-      });
-      if (md == null) return;
-      current = md;
-      paint();
-      onChange?.(current);
+      await openEditor();
     }
     if (btn.dataset.action === 'clear') {
       if (!confirmDelete('이 본문을 비울까요? (슬롯은 유지됩니다)')) return;
@@ -1870,6 +1874,13 @@ export function mountMarkdownField(container, {
       onClear?.();
       onChange?.('');
     }
+  });
+  // Empty (or placeholder-only) preview: click opens the editor — toolbar alone is easy to miss.
+  preview.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action]')) return;
+    if (!container.classList.contains('is-empty') && current.trim()) return;
+    e.preventDefault();
+    openEditor();
   });
   container.appendChild(tools);
   return api;

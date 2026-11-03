@@ -12,8 +12,9 @@ import {
   mountEditableMedia,
   uploadToStorage,
   normalizeMediaWidthPct,
-  normalizeMediaAspect
-} from './visual-cms.js?v=slot-scale-22';
+  normalizeMediaAspect,
+  isEditablePlaceholderValue
+} from './visual-cms.js?v=desc-edit-1';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 import {
   buildCategoryChips,
@@ -69,13 +70,15 @@ function newSectionId() {
   return `sec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
+const SECTION_BODY_PLACEHOLDER = '설명을 입력하세요.';
+
 function emptyProductSection(layout = 'normal') {
   return {
     id: newSectionId(),
     layout,
     category: 'Studio',
     title: '새 제목',
-    body: '설명을 입력하세요.',
+    body: '',
     features: ['기능 1', '기능 2', '기능 3'],
     mediaType: '',
     mediaUrl: '',
@@ -134,7 +137,7 @@ function normalizeSection(s = {}, i = 0, fromStep = false) {
     layout: s.layout || (i % 2 ? 'reverse' : 'normal'),
     category: s.category || (fromStep ? `Step ${i + 1}` : ''),
     title: s.title || '',
-    body: s.body || '',
+    body: isEditablePlaceholderValue(s.body, SECTION_BODY_PLACEHOLDER) ? '' : (s.body || ''),
     features: Array.isArray(s.features) ? [...s.features] : [],
     mediaType,
     mediaUrl,
@@ -466,7 +469,6 @@ async function createGuideDoc({ title, slug, category, template, published }) {
   const s1 = emptyProductSection('normal');
   s1.category = category || 'Studio';
   s1.title = title || '새 제목';
-  s1.body = '설명을 입력하세요.';
   const sections = [s1];
   if (template) {
     const s2 = emptyProductSection('reverse');
@@ -1031,7 +1033,7 @@ function bindEditable(root) {
   });
   root.querySelector('[data-add-step]')?.addEventListener('click', () => {
     const data = collectFromDom();
-    data.steps = [...(data.steps || []), { title: '새 단계', body: '설명을 입력하세요.', image: '', video: '', videoType: '' }];
+    data.steps = [...(data.steps || []), { title: '새 단계', body: '', image: '', video: '', videoType: '' }];
     currentGuide = data;
     setDirty(true);
     renderDetail(data);
@@ -1285,8 +1287,15 @@ function mountGuideSectionsPublic(root, sections) {
     const feats = block.querySelector('[data-sec-features]');
     const media = block.querySelector('[data-sec-media]');
     if (body) {
-      if (sec.body) mountMarkdownField(body, { value: sec.body, editMode: false, isAdmin: false });
-      else body.innerHTML = '';
+      mountEditableText(body, {
+        tag: 'p',
+        className: 'guide-learn-step-desc',
+        value: sec.body || '',
+        placeholder: SECTION_BODY_PLACEHOLDER,
+        editMode: false,
+        isAdmin: false,
+        multiline: true
+      });
     }
     const fl = (sec.features || []).filter((f) => String(f || '').trim());
     if (feats) {
@@ -1492,8 +1501,15 @@ function mountGuideSections(root, sections, editing) {
       }
       if (title) title.innerHTML = sec.title ? `<h2>${esc(sec.title)}</h2>` : '';
       if (body) {
-        if (sec.body) mountMarkdownField(body, { value: sec.body, editMode: false, isAdmin: false });
-        else body.innerHTML = '';
+        mountEditableText(body, {
+          tag: 'p',
+          className: 'guide-learn-step-desc',
+          value: sec.body || '',
+          placeholder: SECTION_BODY_PLACEHOLDER,
+          editMode: false,
+          isAdmin: false,
+          multiline: true
+        });
       }
       const fl = (sec.features || []).filter((f) => String(f || '').trim());
       if (feats) {
@@ -1531,13 +1547,14 @@ function mountGuideSections(root, sections, editing) {
       onChange: (v) => { currentGuide.sections[i].title = v; scheduleSave(); },
       onClear: () => { currentGuide.sections[i].title = ''; scheduleSave(); }
     });
-    mountMarkdownField(body, {
+    mountEditableText(body, {
+      tag: 'p',
+      className: 'guide-learn-step-desc',
       value: sec.body || '',
-      placeholder: '설명 작성',
+      placeholder: SECTION_BODY_PLACEHOLDER,
       editMode: true,
       isAdmin: true,
-      draftKey: `guide:${currentGuide.id || currentGuide.slug}:sec:${sectionId}:body`,
-      storagePrefix: `cms-md/${(typeof auth !== 'undefined' && auth?.currentUser?.uid) || 'anon'}/guide/${currentGuide.slug || currentGuide.id || 'draft'}`,
+      multiline: true,
       onChange: (v) => { currentGuide.sections[i].body = v; scheduleSave(); },
       onClear: () => { currentGuide.sections[i].body = ''; scheduleSave(); }
     });

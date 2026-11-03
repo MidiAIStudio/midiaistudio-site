@@ -4531,7 +4531,7 @@ a.guide-hub-card:hover{border-color:rgba(34,211,238,.32);background:rgba(34,211,
 .vcms-text-slot,.vcms-feature-slot{position:relative}
 .vcms-text-slot.is-empty-public{display:none!important}
 .vcms-hover-toolbar{display:none;position:absolute;top:4px;right:4px;z-index:3;gap:4px;flex-wrap:wrap;padding:4px;border-radius:10px;background:rgba(8,10,18,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12)}
-.vcms-text-slot:hover>.vcms-hover-toolbar,.vcms-feature-row:hover>.vcms-hover-toolbar,.vcms-media-slot:hover>.vcms-media-overlay,.vcms-media-slot.is-empty>.vcms-media-overlay{display:flex}
+.vcms-text-slot:hover>.vcms-hover-toolbar,.vcms-feature-row:hover>.vcms-hover-toolbar,.vcms-md-field:hover>.vcms-hover-toolbar,.vcms-md-field:focus-within>.vcms-hover-toolbar,.vcms-media-slot:hover>.vcms-media-overlay,.vcms-media-slot.is-empty>.vcms-media-overlay{display:flex}
 .vcms-hover-btn{appearance:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#fff;font:inherit;font-size:11px;font-weight:800;padding:5px 8px;border-radius:8px;cursor:pointer;opacity:.92}
 .vcms-hover-btn:hover{background:rgba(34,211,238,.22);border-color:rgba(34,211,238,.4)}
 .vcms-hover-btn.is-danger:hover{background:rgba(248,113,113,.22);border-color:rgba(248,113,113,.45)}
@@ -4731,8 +4731,10 @@ body.vcms-annot-modal-open{overflow:hidden}
 .product-card-media-host .vcms-media-body img,.product-card-media-host .vcms-media-body video{aspect-ratio:16/10;object-fit:cover;object-position:center}
 .vcms-media-slot .vcms-media-body img,
 .vcms-media-slot .vcms-media-body video{object-position:center}
-body.vcms-editing .vcms-text-slot [contenteditable=true],body.vcms-editing .vcms-feature-row [contenteditable=true]{outline:1px dashed rgba(34,211,238,.4);outline-offset:2px;border-radius:4px;min-width:2ch}
+body.vcms-editing .vcms-text-slot [contenteditable=true],body.vcms-editing .vcms-feature-row [contenteditable=true]{outline:1px dashed rgba(34,211,238,.4);outline-offset:2px;border-radius:4px;min-width:2ch;min-height:1.35em}
 body.vcms-editing .vcms-text-slot [contenteditable=true]:focus,body.vcms-editing .vcms-feature-row [contenteditable=true]:focus{outline-color:#22d3ee;background:rgba(34,211,238,.06)}
+body.vcms-editing .vcms-md-field{outline:1px dashed rgba(34,211,238,.28);outline-offset:4px;border-radius:8px;cursor:text}
+body.vcms-editing .vcms-md-field.is-empty{min-height:2.2em}
 .guide-template-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:8px auto 24px}
 .guide-sections{display:grid;gap:0}
 
