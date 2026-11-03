@@ -250,12 +250,39 @@ function openMediaAnnotEditorUi({
     img.src = imageUrl;
     cropImg.src = imageUrl;
 
+    /**
+     * Keep the preview frame's *rendered* box equal to frameAspect.
+     * CSS max-height alone can squash height while width stays wide, so
+     * annotations (% of frame) no longer match the baked/page aspect.
+     */
     const applyWorkspaceAspect = () => {
-      workspace.style.aspectRatio = String(clamp(frameAspect, 0.45, 3.2));
+      const ar = clamp(frameAspect, 0.45, 3.2);
+      workspace.style.setProperty('--annot-ar', String(ar));
+      workspace.style.aspectRatio = String(ar);
+      workspace.style.maxWidth = 'min(920px, 100%)';
+      workspace.style.maxHeight = 'min(68vh, 720px)';
+      workspace.style.width = 'min(920px, 100%)';
+      workspace.style.height = 'auto';
+      const syncSize = () => {
+        const r = workspace.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const maxH = Math.min(window.innerHeight * 0.68, 720);
+        const idealH = r.width / ar;
+        if (idealH > maxH + 0.5) {
+          const w = maxH * ar;
+          workspace.style.width = `${w}px`;
+          workspace.style.height = `${maxH}px`;
+        } else {
+          workspace.style.height = '';
+        }
+      };
+      syncSize();
+      requestAnimationFrame(syncSize);
     };
     applyWorkspaceAspect();
 
     const onResize = () => {
+      applyWorkspaceAspect();
       layoutImage();
       layoutCrop();
     };
@@ -403,7 +430,8 @@ function openMediaAnnotEditorUi({
         const nextOverlays = uiMode === 'crop' ? [] : list.map((o) => ({ ...o }));
 
         // Lock framing into pixels so page object-fit:cover matches the editor.
-        // Annotations are % of frame and stay valid on the baked (or cover) view.
+        // Annotations are % of the *rendered* frame (same box the image fills).
+        // Persist measured aspect so public slot ratio === bake ratio (no cover crop drift).
         if (uiMode !== 'crop') {
           let outFile = bakeSourceFile || null;
           let outUrl = imageUrl;
@@ -421,10 +449,14 @@ function openMediaAnnotEditorUi({
             }
           }
 
+          let measuredAspect = frameAspect;
           if (natural.w && natural.h) {
             try {
+              applyWorkspaceAspect();
               const fr = frame.getBoundingClientRect();
               if (fr.width > 2 && fr.height > 2) {
+                measuredAspect = clamp(fr.width / fr.height, 0.45, 3.2);
+                frameAspect = measuredAspect;
                 const vis = visibleSourceRect(natural.w, natural.h, fr.width, fr.height, zoom, panX, panY);
                 const baked = await bakeToFile(
                   imageUrl,
@@ -447,7 +479,7 @@ function openMediaAnnotEditorUi({
             overlays: nextOverlays,
             file: outFile,
             imageUrl: outUrl,
-            frameAspect
+            frameAspect: measuredAspect
           });
           return;
         }
@@ -468,7 +500,7 @@ function openMediaAnnotEditorUi({
           overlays: nextOverlays,
           file: baked.file,
           imageUrl: baked.imageUrl,
-          frameAspect
+          frameAspect: clamp(outW / outH, 0.45, 3.2)
         });
       } catch (err) {
         console.error(err);

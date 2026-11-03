@@ -4304,6 +4304,15 @@ a.guide-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.18)
 .guide-cms-editing .guide-hero-media.vcms-media-slot.has-media>.vcms-annot-toolbar{display:flex}
 .guide-media{border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.25)}
 .guide-media img,.guide-media video,.guide-media iframe,.product-feature-media iframe{display:block;width:100%;aspect-ratio:16/9;border:0;object-fit:cover}
+/* CMS slots own aspect via --vcms-ar; do not force 16/9 on the inner media (breaks bubble alignment). */
+.guide-media.vcms-media-slot .vcms-media-body img,
+.guide-media.vcms-media-slot .vcms-media-body video,
+.guide-media.vcms-media-slot .vcms-media-body iframe,
+.product-feature-media.vcms-media-slot .vcms-media-body img,
+.product-feature-media.vcms-media-slot .vcms-media-body video,
+.product-feature-media.vcms-media-slot .vcms-media-body iframe{
+  aspect-ratio:auto!important;width:100%;height:100%;object-fit:cover
+}
 .guide-media-empty{display:grid;place-items:center;min-height:180px;aspect-ratio:16/9;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;border:1px dashed rgba(255,255,255,.2)}
 .guide-media-empty.dragover,.guide-hero-media.dragover{border-color:#22d3ee;background:rgba(34,211,238,.08)}
 .guide-features,.guide-tips,.guide-faq,.guide-related{margin:28px auto}
@@ -4542,7 +4551,9 @@ a.guide-hub-card:hover{border-color:rgba(34,211,238,.32);background:rgba(34,211,
 .vcms-media-slot{position:relative;min-height:120px;width:100%;aspect-ratio:16/10;overflow:hidden;justify-self:center}
 .vcms-media-slot:has(.vcms-annot-label),.vcms-media-slot:has(.vcms-annot-bubble){overflow:visible}
 .vcms-media-slot.is-free-size{max-width:100%}
-.vcms-media-body,.vcms-media-body img,.vcms-media-body video,.vcms-media-body iframe{display:block;width:100%;height:100%;min-height:120px}
+/* Media fills the slot box; annot layer is then pinned to the object-fit content rect in JS. */
+.vcms-media-body{position:absolute;inset:0;width:100%;height:100%;min-height:0;z-index:1}
+.vcms-media-body img,.vcms-media-body video,.vcms-media-body iframe{display:block;width:100%;height:100%;min-height:0;max-width:none;aspect-ratio:auto!important}
 .vcms-media-slot.fit-cover .vcms-media-body img,.vcms-media-slot.fit-cover .vcms-media-body video{object-fit:cover;object-position:center}
 .vcms-media-slot.fit-contain .vcms-media-body img,.vcms-media-slot.fit-contain .vcms-media-body video{object-fit:contain;object-position:center;background:rgba(0,0,0,.35)}
 .vcms-media-slot.fit-center .vcms-media-body img,.vcms-media-slot.fit-center .vcms-media-body video{object-fit:cover;object-position:center center}
@@ -4551,7 +4562,7 @@ a.guide-hub-card:hover{border-color:rgba(34,211,238,.32);background:rgba(34,211,
 .vcms-media-slot:hover>.vcms-media-overlay,.vcms-media-slot.is-empty>.vcms-media-overlay{pointer-events:auto}
 .vcms-media-overlay .vcms-hover-toolbar{position:static;display:flex;pointer-events:auto}
 .vcms-media-slot.dragover{outline:2px solid #22d3ee;outline-offset:-2px}
-.vcms-media-annots{position:absolute;inset:0;z-index:2;pointer-events:none}
+.vcms-media-annots{position:absolute;inset:0;z-index:2;pointer-events:none;box-sizing:border-box}
 .vcms-media-annots.is-editable{pointer-events:auto;cursor:crosshair}
 .vcms-media-slot.is-annotating .vcms-media-overlay{display:none!important}
 .vcms-annot{position:absolute;box-sizing:border-box;pointer-events:auto;overflow:visible}
@@ -4655,7 +4666,11 @@ body.vcms-annot-modal-open{overflow:hidden}
     radial-gradient(ellipse at 90% 100%,rgba(128,222,234,.08),transparent 40%),
     rgba(0,0,0,.28)
 }
-.vcms-annot-workspace{position:relative;width:min(920px,100%);aspect-ratio:16/10;max-height:min(68vh,720px)}
+/* Width is corrected in JS when max-height would otherwise break aspect-ratio. */
+.vcms-annot-workspace{
+  position:relative;width:min(920px,100%);aspect-ratio:var(--annot-ar,16/10);
+  max-width:min(920px,100%);max-height:min(68vh,720px);box-sizing:border-box
+}
 .vcms-annot-frame{
   position:relative;width:100%;height:100%;overflow:hidden;border-radius:10px;
   border:1px solid rgba(255,255,255,.16);box-shadow:0 12px 40px rgba(0,0,0,.35);

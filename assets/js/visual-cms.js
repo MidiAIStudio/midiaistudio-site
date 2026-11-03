@@ -311,6 +311,83 @@ export function normalizeMediaOverlays(list) {
   }).filter(Boolean);
 }
 
+/** Parse object-position keyword/percent into 0–1 focal weights. */
+function objectPositionWeights(value) {
+  const parts = String(value || '50% 50%').trim().split(/\s+/);
+  const map = { left: 0, center: 0.5, right: 1, top: 0, bottom: 1 };
+  const parse = (token, fallback) => {
+    if (token == null) return fallback;
+    if (map[token] != null) return map[token];
+    if (String(token).endsWith('%')) return Math.min(1, Math.max(0, parseFloat(token) / 100));
+    return fallback;
+  };
+  if (parts.length === 1) {
+    if (parts[0] === 'top' || parts[0] === 'bottom') return { x: 0.5, y: parse(parts[0], 0.5) };
+    return { x: parse(parts[0], 0.5), y: 0.5 };
+  }
+  return { x: parse(parts[0], 0.5), y: parse(parts[1], 0.5) };
+}
+
+/**
+ * Visible image content box inside an <img>/<video> element under object-fit.
+ * For cover the content fills the element; for contain it is letterboxed.
+ * Returned coords are relative to the element's border box.
+ */
+export function objectFitContentRect(mediaEl) {
+  const bw = mediaEl.clientWidth || 0;
+  const bh = mediaEl.clientHeight || 0;
+  const nw = mediaEl.naturalWidth || mediaEl.videoWidth || 0;
+  const nh = mediaEl.naturalHeight || mediaEl.videoHeight || 0;
+  if (!bw || !bh) return { x: 0, y: 0, width: bw, height: bh };
+  if (!nw || !nh) return { x: 0, y: 0, width: bw, height: bh };
+
+  const fit = (getComputedStyle(mediaEl).objectFit || 'fill').toLowerCase();
+  const pos = objectPositionWeights(getComputedStyle(mediaEl).objectPosition);
+  if (fit === 'fill' || fit === 'none') {
+    return { x: 0, y: 0, width: bw, height: bh };
+  }
+
+  let scale;
+  if (fit === 'contain' || fit === 'scale-down') {
+    scale = Math.min(bw / nw, bh / nh);
+    if (fit === 'scale-down') scale = Math.min(1, scale);
+  } else {
+    // cover (default for CMS slots): rendered pixels fill the element box
+    return { x: 0, y: 0, width: bw, height: bh };
+  }
+  const dw = nw * scale;
+  const dh = nh * scale;
+  const x = (bw - dw) * pos.x;
+  const y = (bh - dh) * pos.y;
+  return { x, y, width: dw, height: dh };
+}
+
+/**
+ * Pin the annotation layer to the media content box (not a shifting outer frame).
+ * Overlay x/y/w/h % then match the same space used in the photo editor.
+ */
+function syncAnnotLayerToMedia(container, annotLayer, body) {
+  const media = body?.querySelector('img, video');
+  if (!media) {
+    annotLayer.style.inset = '0';
+    annotLayer.style.left = '';
+    annotLayer.style.top = '';
+    annotLayer.style.width = '';
+    annotLayer.style.height = '';
+    return;
+  }
+  const slot = container.getBoundingClientRect();
+  const mediaBox = media.getBoundingClientRect();
+  const content = objectFitContentRect(media);
+  const left = mediaBox.left - slot.left + content.x;
+  const top = mediaBox.top - slot.top + content.y;
+  annotLayer.style.inset = 'auto';
+  annotLayer.style.left = `${left}px`;
+  annotLayer.style.top = `${top}px`;
+  annotLayer.style.width = `${Math.max(0, content.width)}px`;
+  annotLayer.style.height = `${Math.max(0, content.height)}px`;
+}
+
 function storagePathFromDownloadUrl(url) {
   try {
     const u = new URL(String(url || ''));
@@ -485,10 +562,39 @@ export function mountEditableMedia(container, {
       }
       annotLayer.appendChild(el);
     });
+    syncAnnotLayerToMedia(container, annotLayer, body);
   };
+
+  const resyncAnnotLayer = () => syncAnnotLayerToMedia(container, annotLayer, body);
 
   paintContent();
   paintOverlays();
+
+  // Keep bubbles glued when the slot or image finishes loading / resizes.
+  if (typeof container._vcmsMediaCleanup === 'function') {
+    try { container._vcmsMediaCleanup(); } catch (_) { /* ignore */ }
+  }
+  const mediaResizeObserver = typeof ResizeObserver !== 'undefined'
+    ? new ResizeObserver(() => resyncAnnotLayer())
+    : null;
+  mediaResizeObserver?.observe(container);
+  const bindMediaLoad = () => {
+    const media = body.querySelector('img, video');
+    if (!media) return;
+    if (media.tagName === 'IMG') {
+      if (media.complete) resyncAnnotLayer();
+      else media.addEventListener('load', resyncAnnotLayer, { once: true });
+    } else {
+      media.addEventListener('loadeddata', resyncAnnotLayer, { once: true });
+    }
+    mediaResizeObserver?.observe(media);
+  };
+  bindMediaLoad();
+  window.addEventListener('resize', resyncAnnotLayer);
+  container._vcmsMediaCleanup = () => {
+    mediaResizeObserver?.disconnect();
+    window.removeEventListener('resize', resyncAnnotLayer);
+  };
 
   if (!editMode || !isAdmin) return;
 
@@ -588,6 +694,7 @@ export function mountEditableMedia(container, {
     }
     paintContent();
     paintOverlays();
+    bindMediaLoad();
     applyChromeClasses();
     syncAnnotBar();
     emit();
@@ -596,7 +703,7 @@ export function mountEditableMedia(container, {
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
     let revokeHydrated = null;
     try {
-      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=annot-align-20');
+      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=bubble-align-1');
       const previewImg = body.querySelector('img');
       const pageSrc = previewImg?.currentSrc || previewImg?.getAttribute('src') || url;
       const resolved = await resolveImageSourceForEditor(pageSrc || url, file);

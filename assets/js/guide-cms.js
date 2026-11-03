@@ -14,7 +14,7 @@ import {
   normalizeMediaWidthPct,
   normalizeMediaAspect,
   isEditablePlaceholderValue
-} from './visual-cms.js?v=desc-edit-1';
+} from './visual-cms.js?v=bubble-align-1';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 import {
   buildCategoryChips,
