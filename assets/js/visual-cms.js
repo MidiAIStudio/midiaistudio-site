@@ -365,8 +365,9 @@ export function objectFitContentRect(mediaEl) {
 /**
  * Pin the annotation layer to the media content box (not a shifting outer frame).
  * Overlay x/y/w/h % then match the same space used in the photo editor.
+ * Also used by the public guide lightbox so enlarged photos keep 영역박스.
  */
-function syncAnnotLayerToMedia(container, annotLayer, body) {
+export function syncAnnotLayerToMedia(container, annotLayer, body) {
   const media = body?.querySelector('img, video');
   if (!media) {
     annotLayer.style.inset = '0';

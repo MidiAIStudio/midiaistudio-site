@@ -14,7 +14,7 @@ import {
   normalizeMediaWidthPct,
   normalizeMediaAspect,
   isEditablePlaceholderValue
-} from './visual-cms.js?v=zoom-glue-2';
+} from './visual-cms.js?v=lightbox-annot-1';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 import {
   buildCategoryChips,
@@ -26,7 +26,7 @@ import {
   chaptersHtml,
   bindScrollSpy,
   bindGuideImageZoom
-} from './guide-learn.js?v=guide-edit-ux-1';
+} from './guide-learn.js?v=lightbox-annot-1';
 import {
   applyGuideDocumentSeo,
   guideSlugFromLocation,

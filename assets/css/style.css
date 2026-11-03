@@ -4502,7 +4502,9 @@ a.guide-hub-card:hover{border-color:rgba(34,211,238,.32);background:rgba(34,211,
 .guide-learn-main .md-alert-caution .md-alert-label{color:#fecdd3;border-color:rgba(251,113,133,.3);background:rgba(251,113,133,.08)}
 .guide-lightbox{position:fixed;inset:0;z-index:80;display:grid;place-items:center;gap:10px;padding:24px;background:rgba(2,4,12,.86);backdrop-filter:blur(6px)}
 .guide-lightbox.hidden{display:none!important}
-.guide-lightbox img{max-width:min(1100px,96vw);max-height:78vh;border-radius:12px;border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.guide-lightbox-frame{position:relative;display:inline-block;max-width:min(1100px,96vw);max-height:78vh;line-height:0;overflow:visible}
+.guide-lightbox-frame>img,.guide-lightbox img{display:block;max-width:min(1100px,96vw);max-height:78vh;width:auto;height:auto;border-radius:12px;border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.guide-lightbox-frame .vcms-media-annots{z-index:3;overflow:visible}
 .guide-lightbox-cap{margin:0;color:#d7dceb;font-size:13px;max-width:70ch;text-align:center}
 .guide-lightbox-close{position:absolute;top:16px;right:18px;width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(0,0,0,.45);color:#fff;font-size:22px;cursor:pointer}
 .guide-chapters-field,.guide-caption-field{display:grid;gap:6px;width:100%}

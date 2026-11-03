@@ -4,7 +4,7 @@
  * Optional CMS fields used when present: level, duration, chapters[{title,start}], mediaCaption.
  */
 
-import { esc } from './visual-cms.js?v=slot-scale-22';
+import { esc, syncAnnotLayerToMedia } from './visual-cms.js?v=lightbox-annot-1';
 import { guidePagePath } from './guide-seo.js?v=guide-404-1';
 
 /** Preferential chip order for known product flows (matched by category/title/slug). */
@@ -129,6 +129,24 @@ export function chaptersHtml(chapters) {
   </div>`;
 }
 
+function lightboxCleanup(el) {
+  if (!el) return;
+  if (typeof el._lightboxCleanup === 'function') {
+    try { el._lightboxCleanup(); } catch (_) { /* ignore */ }
+    el._lightboxCleanup = null;
+  }
+  el.querySelector('.vcms-media-annots')?.remove();
+  const img = el.querySelector('.guide-lightbox-frame img');
+  if (img) img.src = '';
+}
+
+function closeLightbox(el) {
+  const root = el || document.getElementById('guideLightbox');
+  if (!root) return;
+  root.classList.add('hidden');
+  lightboxCleanup(root);
+}
+
 export function lightboxEnsure() {
   let el = document.getElementById('guideLightbox');
   if (el) return el;
@@ -136,28 +154,73 @@ export function lightboxEnsure() {
   el.id = 'guideLightbox';
   el.className = 'guide-lightbox hidden';
   el.innerHTML = `<button type="button" class="guide-lightbox-close" aria-label="닫기">×</button>
-    <img alt="" decoding="async">
+    <div class="guide-lightbox-frame">
+      <img alt="" decoding="async">
+    </div>
     <p class="guide-lightbox-cap"></p>`;
   document.body.appendChild(el);
   el.addEventListener('click', (e) => {
     if (e.target === el || e.target.classList.contains('guide-lightbox-close')) {
-      el.classList.add('hidden');
-      el.querySelector('img').src = '';
+      closeLightbox(el);
     }
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') el.classList.add('hidden');
+    if (e.key === 'Escape') closeLightbox(el);
   });
   return el;
 }
 
-export function openLightbox(src, caption) {
+/**
+ * Open guide image lightbox. When sourceImg sits in a .vcms-media-slot with
+ * .vcms-media-annots, those overlays are cloned and pinned to the enlarged image.
+ */
+export function openLightbox(src, caption, sourceImg = null) {
   const el = lightboxEnsure();
-  const img = el.querySelector('img');
+  lightboxCleanup(el);
+  const frame = el.querySelector('.guide-lightbox-frame');
+  const img = frame.querySelector('img');
   const cap = el.querySelector('.guide-lightbox-cap');
   img.src = src;
   cap.textContent = caption || '';
+
+  const slot = sourceImg?.closest?.('.vcms-media-slot');
+  const srcAnnots = slot?.querySelector?.('.vcms-media-annots');
+  let layer = null;
+  if (srcAnnots && srcAnnots.childElementCount) {
+    layer = srcAnnots.cloneNode(true);
+    layer.classList.remove('is-editable');
+    layer.style.inset = '0';
+    layer.style.left = '';
+    layer.style.top = '';
+    layer.style.width = '';
+    layer.style.height = '';
+    frame.appendChild(layer);
+  }
+
+  // Show before measuring — hidden lightbox yields zero rects
   el.classList.remove('hidden');
+
+  if (layer) {
+    const resync = () => syncAnnotLayerToMedia(frame, layer, frame);
+    const ro = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(() => resync())
+      : null;
+    ro?.observe(frame);
+    ro?.observe(img);
+    const onWin = () => resync();
+    window.addEventListener('resize', onWin);
+    const onLoad = () => resync();
+    if (img.complete && img.naturalWidth) resync();
+    else img.addEventListener('load', onLoad, { once: true });
+
+    el._lightboxCleanup = () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', onWin);
+      img.removeEventListener('load', onLoad);
+      layer.remove();
+    };
+    requestAnimationFrame(() => requestAnimationFrame(resync));
+  }
 }
 
 export function bindScrollSpy(root, linkSelector) {
@@ -200,6 +263,6 @@ export function bindGuideImageZoom(root) {
     const cap = img.closest('figure')?.querySelector('figcaption')?.textContent
       || img.getAttribute('alt')
       || '';
-    openLightbox(img.src, cap);
+    openLightbox(img.src, cap, img);
   });
 }
