@@ -4526,7 +4526,12 @@ async function setAuthUiSignedIn(user){
   if($('myTicketList')) listenMyTickets();
   if($('ticketDetail')) listenTicketDetail();
   if (page==='board-write.html' || page==='qa-write.html') initBoardPostEditor();
-  if (page==='board-post.html'){ refreshBoardPostActions(); maybeFocusBoardCommentFromQuery(); }
+  if (page==='board-post.html'){
+    // Rebind after auth — first listen often dies on permission-denied before role is known.
+    listenBoardPostDetail();
+    refreshBoardPostActions();
+    maybeFocusBoardCommentFromQuery();
+  }
   if (isAdminConsolePage()) {
     if (isAdminUser) {
       unlockAdminPanel();
@@ -12613,12 +12618,16 @@ function renderAdminCrmPosts(uid){
   [...adminCrmPostSelected].forEach(id=>{ if(!validIds.has(id)) adminCrmPostSelected.delete(id); });
   box.innerHTML = rows.map(p=>{
     const checked = adminCrmPostSelected.has(p.id) ? 'checked' : '';
-    const hidden = p.visible===false ? '<span class="badge none">숨김</span>' : '';
+    const secret = isBoardSecretPost(p);
+    const hidden = secret
+      ? '<span class="badge none">비밀글</span>'
+      : (p.visible===false ? '<span class="badge none">숨김</span>' : '');
     const pinned = p.pinned ? '<span class="crm-post-pin">📌</span>' : '';
+    const secretMark = secret ? '🔒 ' : '';
     return `<div class="admin-crm-post-row" data-post-id="${esc(p.id)}">
       <label class="admin-crm-check" onclick="event.stopPropagation()"><input type="checkbox" data-crm-post-check="${esc(p.id)}" ${checked}></label>
-      <a class="admin-crm-post-main" href="${boardPostUrl(p.id)}" target="_blank" rel="noopener">
-        <b class="crm-slide"><span class="crm-slide-text">${pinned}${esc(p.title||'(제목 없음)')}</span></b>
+      <a class="admin-crm-post-main" href="${boardPostUrl(p.id, boardRowCategory(p))}" target="_blank" rel="noopener">
+        <b class="crm-slide"><span class="crm-slide-text">${pinned}${secretMark}${esc(p.title||'(제목 없음)')}</span></b>
         <span class="admin-crm-post-meta">
           ${hidden}
           <small>조회 ${Number(p.viewCount||0)}</small>
@@ -13638,11 +13647,13 @@ function isBoardMineMode(){
   return v === '1' || v === 'true' || v === 'yes';
 }
 function isBoardSecretPost(x){
-  return !!(x && x.secret === true);
+  // Accept boolean true or legacy truthy values written by older clients.
+  return !!(x && (x.secret === true || x.secret === 'true' || x.secret === 1));
 }
+/** Author or admin may see secret posts; strangers must not (list title/body/detail). */
 function canViewBoardPost(x){
   if(!x || x.deleted===true) return false;
-  if(isBoardSecretPost(x)) return isAdminUser || isOwnerRecord(x);
+  if(isBoardSecretPost(x)) return !!(isAdminUser || isOwnerRecord(x));
   return x.visible!==false;
 }
 function boardFilteredSorted(rows){
@@ -13834,10 +13845,11 @@ function listenBoardPosts(){
   };
   const {collection, query, where, orderBy, onSnapshot, getDocs} = firestoreApi;
   const col = collection(db, 'boardPosts');
-  const state = { publicRows: [], ownRows: [], secretOwnRows: [] };
+  // publicRows: open feed. secretRows: admin-all or author-own secrets. ownRows: author uid dump.
+  const state = { publicRows: [], ownRows: [], secretRows: [] };
   const emit = (err)=>{
     publishBoardRows(
-      mergeBoardPostRows(state.publicRows, state.ownRows, state.secretOwnRows),
+      mergeBoardPostRows(state.publicRows, state.ownRows, state.secretRows),
       err
     );
   };
@@ -13847,15 +13859,17 @@ function listenBoardPosts(){
       state[key] = snap.docs.map((d)=>({ id:d.id, ...d.data() }));
       emit();
     }, async (err)=>{
-      console.warn('boardPosts realtime failed', err);
+      console.warn('boardPosts realtime failed', key, err);
       try{
         const fb = typeof fallbackFactory === 'function' ? fallbackFactory() : q;
         const s = await getDocs(fb);
         state[key] = sortByCreatedDesc(s.docs.map((d)=>({ id:d.id, ...d.data() })));
         emit();
       }catch(e){
-        console.error(e);
+        console.error('boardPosts fallback failed', key, e);
+        // Surface public failures; keep partial secret/own data when those queries fail.
         if(key === 'publicRows') emit(e);
+        else emit();
       }
     })));
   };
@@ -13867,10 +13881,11 @@ function listenBoardPosts(){
     ()=>query(col, where('visible','==',true))
   );
   if(isAdminUser){
-    // Admin: all secret posts (single-field secret filter; orderBy optional via fallback).
+    // Admin: every secret post (author+admin product rule). Prefer ordered query; fall back
+    // to equality-only if composite index is missing.
     listenQ(
       query(col, where('secret','==',true), orderBy('createdAt','desc')),
-      'ownRows',
+      'secretRows',
       ()=>query(col, where('secret','==',true))
     );
   } else if(currentUser?.uid){
@@ -13884,7 +13899,7 @@ function listenBoardPosts(){
     // Safety net: dedicated secret+uid query (still works if broad uid query is denied).
     listenQ(
       query(col, where('secret','==',true), where('uid','==',uid)),
-      'secretOwnRows',
+      'secretRows',
       ()=>query(col, where('secret','==',true), where('uid','==',uid))
     );
   }
@@ -14604,11 +14619,19 @@ function renderBoardPost(d,err){
   const box=$('boardPostDetail'); if(!box)return;
   if(err){
     const denied = /permission|insufficient|Missing or insufficient/i.test(String(err.message||err||''));
+    // While auth/role is still resolving, keep a pending state — signed-in admin/author will rebind.
+    if(denied && !authStateResolved){
+      box.innerHTML=`<p class="muted">${esc(tr('checking')||'확인 중…')}</p>`;
+      return;
+    }
     box.innerHTML=`<p class="muted">${esc(denied ? (lang==='en'?'This is a private post.':'이 글은 비밀글입니다. 작성자와 관리자만 볼 수 있습니다.') : (err.message||tr('check_failed')))}</p>`;
     return;
   }
-  if(!d || d.deleted===true){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
-  if(!canViewBoardPost(d)){
+  if(!d){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  if(d.deleted===true){
+    if(!isAdminUser){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+    // Admin may open soft-deleted posts from CRM; fall through to render.
+  } else if(!canViewBoardPost(d)){
     box.innerHTML=`<p class="muted">${esc(lang==='en'?'This is a private post.':'이 글은 비밀글입니다. 작성자와 관리자만 볼 수 있습니다.')}</p>`;
     return;
   }
@@ -14659,8 +14682,20 @@ async function incrementViewOnce(postId){
 function listenBoardPostDetail(){
   const id=getParam('id'); const box=$('boardPostDetail'); if(!box)return;
   if(!id){ box.innerHTML=`<p class="muted">${tr('empty')}</p>`; return; }
+  // Replace prior listener — first bind often fails before auth and Firestore stops it.
+  (box._boardDetailUnsubs || []).forEach((fn)=>{ try{ fn(); }catch(_){ } });
+  box._boardDetailUnsubs = [];
+  const track = (unsub)=>{
+    if(typeof unsub === 'function') box._boardDetailUnsubs.push(unsub);
+    return unsub;
+  };
   incrementViewOnce(id);
-  listenDoc('boardPosts',id,renderBoardPost);
+  const {doc,onSnapshot}=firestoreApi;
+  track(onSnapshot(
+    doc(db,'boardPosts',id),
+    (snap)=>renderBoardPost(snap.exists()?{id:snap.id,...snap.data()}:null),
+    (err)=>{ console.error('boardPosts detail', err); renderBoardPost(null, err); }
+  ));
   listenBoardComments(id);
   const form=$('commentForm');
   if(form&&!form.dataset.bound){ form.dataset.bound='1'; form.addEventListener('submit',e=>createBoardComment(e,id,null)); }
@@ -14715,7 +14750,19 @@ async function deleteBoardPost(postId){
 function listenBoardComments(postId){
   const {collection,onSnapshot,query,where}=firestoreApi;
   const q=query(collection(db,'boardPosts',postId,'comments'),where('visible','==',true));
-  addPublicUnsub(onSnapshot(q, snap=>{
+  // Prefer the detail box unsub bag so auth rebind replaces the prior comments listen.
+  const box=$('boardPostDetail');
+  const track=(unsub)=>{
+    if(typeof unsub!=='function') return unsub;
+    if(box){
+      box._boardDetailUnsubs = box._boardDetailUnsubs || [];
+      box._boardDetailUnsubs.push(unsub);
+    } else {
+      addPublicUnsub(unsub);
+    }
+    return unsub;
+  };
+  track(onSnapshot(q, snap=>{
     activeBoardComments=snap.docs.map(d=>({id:d.id,...d.data()}));
     renderBoardComments(postId);
     if(!boardCommentFocusDone && getParam('focus')==='comment'){
@@ -15489,11 +15536,27 @@ function renderAdminBoardTable(){
   if($('adminCmsList')){ renderAdminCmsTable(); return; }
   const box=$('adminBoardList'); if(!box||!isAdminUser)return;
   const q=($('adminBoardSearch')?.value||'').trim().toLowerCase(); const st=$('adminBoardStatus')?.value||'all';
-  let rows=(adminBoardRows||[]).filter(x=>x.deleted!==true).filter(x=>{ if(st==='visible'&&x.visible===false)return false; if(st==='hidden'&&x.visible!==false)return false; if(st==='pinned'&&x.pinned!==true)return false; const hay=[x.title,x.content,x.displayName,x.email,x.uid].join(' ').toLowerCase(); return !q||hay.includes(q); }).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  // Secret posts use visible:false by design — still show them to admins (not "hidden trash").
+  let rows=(adminBoardRows||[]).filter(x=>x.deleted!==true).filter(x=>{
+    const secret = isBoardSecretPost(x);
+    if(st==='visible' && x.visible===false && !secret) return false;
+    if(st==='hidden' && (x.visible!==false || secret)) return false;
+    if(st==='pinned' && x.pinned!==true) return false;
+    const hay=[x.title,x.content,x.displayName,x.email,x.uid].join(' ').toLowerCase();
+    return !q||hay.includes(q);
+  }).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   const activeCount=(adminBoardRows||[]).filter(x=>x.deleted!==true).length;
   $('adminBoardCount') && ($('adminBoardCount').textContent=`${rows.length} / ${activeCount}`);
   if(!rows.length){ box.innerHTML=`<div class="empty-card">${tr('empty')}</div>`; return; }
-  box.innerHTML=`<table class="admin-table"><thead><tr><th>제목</th><th>상태</th><th>작성자</th><th>통계</th><th>관리</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.visible===false?'board-admin-hidden':''}"><td><b>${x.pinned?'📌 ':''}${esc(x.title||'-')}</b><small>${esc(String(x.content||'').slice(0,80))}</small></td><td>${x.visible===false?'<span class="badge none">숨김</span>':'<span class="badge active">공개</span>'}</td><td>${esc(contentAuthor(x))}</td><td>조회 ${Number(x.viewCount||0)} · 추천 ${Number(x.likeCount||0)} · 댓글 ${Number(x.commentCount||0)}</td><td><div class="table-actions"><a class="secondary mini-btn" href="${boardPostUrl(x.id)}">보기</a><a class="secondary mini-btn" href="${boardEditUrl(x.id)}">수정</a><button class="secondary mini-btn" data-admin-board-pin="${esc(x.id)}:${x.pinned?'0':'1'}">${x.pinned?'고정해제':'고정'}</button><button class="secondary mini-btn danger-btn" data-admin-board-delete="${esc(x.id)}">${tr('del')}</button></div></td></tr>`).join('')}</tbody></table>`;
+  box.innerHTML=`<table class="admin-table"><thead><tr><th>제목</th><th>상태</th><th>작성자</th><th>통계</th><th>관리</th></tr></thead><tbody>${rows.map(x=>{
+    const secret = isBoardSecretPost(x);
+    const status = secret
+      ? '<span class="badge none">비밀글</span>'
+      : (x.visible===false ? '<span class="badge none">숨김</span>' : '<span class="badge active">공개</span>');
+    const rowClass = (x.visible===false && !secret) ? 'board-admin-hidden' : '';
+    const secretMark = secret ? '🔒 ' : '';
+    return `<tr class="${rowClass}"><td><b>${x.pinned?'📌 ':''}${secretMark}${esc(x.title||'-')}</b><small>${esc(String(x.content||'').slice(0,80))}</small></td><td>${status}</td><td>${esc(contentAuthor(x))}</td><td>조회 ${Number(x.viewCount||0)} · 추천 ${Number(x.likeCount||0)} · 댓글 ${Number(x.commentCount||0)}</td><td><div class="table-actions"><a class="secondary mini-btn" href="${boardPostUrl(x.id, boardRowCategory(x))}">보기</a><a class="secondary mini-btn" href="${boardEditUrl(x.id, boardRowCategory(x))}">수정</a><button class="secondary mini-btn" data-admin-board-pin="${esc(x.id)}:${x.pinned?'0':'1'}">${x.pinned?'고정해제':'고정'}</button><button class="secondary mini-btn danger-btn" data-admin-board-delete="${esc(x.id)}">${tr('del')}</button></div></td></tr>`;
+  }).join('')}</tbody></table>`;
   box.querySelectorAll('[data-admin-board-delete]').forEach(b=>{ if(b.dataset.bound)return; b.dataset.bound='1'; b.onclick=()=>adminDeleteBoardPost(b.dataset.adminBoardDelete); });
   box.querySelectorAll('[data-admin-board-pin]').forEach(b=>{ if(b.dataset.bound)return; b.dataset.bound='1'; b.onclick=()=>{ const [id,val]=b.dataset.adminBoardPin.split(':'); adminPinBoardPost(id,val==='1'); }; });
 }
