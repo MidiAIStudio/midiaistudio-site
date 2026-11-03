@@ -89,6 +89,61 @@ function visibleSourceRect(nw, nh, fw, fh, zoom, panX, panY) {
   return { sx, sy, sw, sh, left, top, dispW, dispH, scale };
 }
 
+/**
+ * Overlay % are saved relative to the visible frame (baked output).
+ * While editing, the annot layer matches the zoomed/panned image, so we
+ * convert between frame space and displayed-image space.
+ */
+function mapOverlaysFrameToImage(list, vis, fw, fh) {
+  const dispW = Math.max(1, vis.dispW);
+  const dispH = Math.max(1, vis.dispH);
+  return list.map((o) => {
+    const x = (((o.x / 100) * fw - vis.left) / dispW) * 100;
+    const y = (((o.y / 100) * fh - vis.top) / dispH) * 100;
+    if (o.type === 'rect') {
+      return {
+        ...o,
+        x,
+        y,
+        w: ((o.w / 100) * fw / dispW) * 100,
+        h: ((o.h / 100) * fh / dispH) * 100
+      };
+    }
+    return { ...o, x, y };
+  });
+}
+
+function mapOverlaysImageToFrame(list, vis, fw, fh) {
+  const dispW = Math.max(1, vis.dispW);
+  const dispH = Math.max(1, vis.dispH);
+  const outFw = Math.max(1, fw);
+  const outFh = Math.max(1, fh);
+  return list.map((o) => {
+    const x = ((vis.left + (o.x / 100) * dispW) / outFw) * 100;
+    const y = ((vis.top + (o.y / 100) * dispH) / outFh) * 100;
+    if (o.type === 'rect') {
+      const w = ((o.w / 100) * dispW / outFw) * 100;
+      const h = ((o.h / 100) * dispH / outFh) * 100;
+      // Drop rects fully outside the baked frame; keep if they still intersect.
+      if (x + w < 0 || y + h < 0 || x > 100 || y > 100) return null;
+      return {
+        ...o,
+        x: clamp(x, 0, 100),
+        y: clamp(y, 0, 100),
+        w: clamp(w, 2, 100),
+        h: clamp(h, 2, 100)
+      };
+    }
+    // Bubbles slightly past the edge stay (clamp); far off-frame ones drop.
+    if (x < -8 || x > 108 || y < -8 || y > 108) return null;
+    return {
+      ...o,
+      x: clamp(x, 0, 100),
+      y: clamp(y, 0, 100)
+    };
+  }).filter(Boolean);
+}
+
 async function sourceBitmap(sourceUrl, sourceFile = null) {
   if (sourceFile instanceof Blob) {
     return createImageBitmap(sourceFile);
@@ -182,6 +237,8 @@ function openMediaAnnotEditorUi({
     let natural = { w: 0, h: 0 };
     let frameAspect = clamp(Number(seedAspect) || 1.6, 0.45, 3.2);
     let bakeSourceFile = sourceFile instanceof Blob ? sourceFile : null;
+    // Incoming overlays are frame%; after first layout they live in image display %.
+    let overlaysInImageSpace = false;
 
     const root = document.createElement('div');
     root.className = 'vcms-annot-modal';
@@ -309,6 +366,28 @@ function openMediaAnnotEditorUi({
       img.style.height = `${vis.dispH}px`;
       img.style.left = `${vis.left}px`;
       img.style.top = `${vis.top}px`;
+      // Glue annot layer to the same box as the photo so zoom/pan keeps
+      // bubbles stuck to image points (frame overflow clips off-screen ones).
+      layer.style.inset = 'auto';
+      layer.style.left = `${vis.left}px`;
+      layer.style.top = `${vis.top}px`;
+      layer.style.width = `${vis.dispW}px`;
+      layer.style.height = `${vis.dispH}px`;
+      if (!overlaysInImageSpace) {
+        list = mapOverlaysFrameToImage(list, vis, fw, fh);
+        overlaysInImageSpace = true;
+      }
+    };
+
+    const overlaysForApply = () => {
+      if (uiMode === 'crop') return [];
+      if (!overlaysInImageSpace || !natural.w) {
+        return list.map((o) => ({ ...o }));
+      }
+      const fr = frame.getBoundingClientRect();
+      if (fr.width < 2 || fr.height < 2) return list.map((o) => ({ ...o }));
+      const vis = visibleSourceRect(natural.w, natural.h, fr.width, fr.height, zoom, panX, panY);
+      return normalizeMediaOverlays(mapOverlaysImageToFrame(list, vis, fr.width, fr.height));
     };
 
     const layoutCrop = () => {
@@ -427,8 +506,6 @@ function openMediaAnnotEditorUi({
         applyBtn.textContent = '적용 중…';
       }
       try {
-        const nextOverlays = uiMode === 'crop' ? [] : list.map((o) => ({ ...o }));
-
         // Lock framing into pixels so page object-fit:cover matches the editor.
         // Annotations are % of the *rendered* frame (same box the image fills).
         // Persist measured aspect so public slot ratio === bake ratio (no cover crop drift).
@@ -453,6 +530,7 @@ function openMediaAnnotEditorUi({
           if (natural.w && natural.h) {
             try {
               applyWorkspaceAspect();
+              layoutImage();
               const fr = frame.getBoundingClientRect();
               if (fr.width > 2 && fr.height > 2) {
                 measuredAspect = clamp(fr.width / fr.height, 0.45, 3.2);
@@ -475,8 +553,9 @@ function openMediaAnnotEditorUi({
               }
             }
           }
+          // Remap after layout so frame % matches the baked/visible crop.
           finish({
-            overlays: nextOverlays,
+            overlays: overlaysForApply(),
             file: outFile,
             imageUrl: outUrl,
             frameAspect: measuredAspect
@@ -497,7 +576,7 @@ function openMediaAnnotEditorUi({
         const outH = Math.min(1600, Math.max(2, Math.round(region.sh)));
         const baked = await bakeToFile(imageUrl, region, outW, outH, bakeSourceFile);
         finish({
-          overlays: nextOverlays,
+          overlays: [],
           file: baked.file,
           imageUrl: baked.imageUrl,
           frameAspect: clamp(outW / outH, 0.45, 3.2)

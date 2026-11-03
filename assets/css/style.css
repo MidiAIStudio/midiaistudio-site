@@ -4681,7 +4681,8 @@ body.vcms-annot-modal-open{overflow:hidden}
   position:absolute;display:block;max-width:none;max-height:none;width:auto;height:auto;
   user-select:none;-webkit-user-drag:none;cursor:grab;border-radius:0;pointer-events:none
 }
-.vcms-annot-frame .vcms-media-annots{inset:0;z-index:2}
+/* JS pins left/top/width/height to the zoomed image; inset:0 is the pre-layout fallback. */
+.vcms-annot-frame .vcms-media-annots{inset:0;z-index:2;overflow:visible}
 .vcms-annot-modal.is-panning-mode .vcms-annot-frame .vcms-media-annots{cursor:grab}
 .vcms-annot-modal.is-panning-mode .vcms-annot-frame.is-panning .vcms-media-annots,
 .vcms-annot-frame.is-panning{cursor:grabbing!important}

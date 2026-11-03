@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Guide Visual CMS — list + detail read/edit against Firestore `guides`.
  * Self-contained Firebase init (shares app with app.js via getApps).
  */
@@ -14,7 +14,7 @@ import {
   normalizeMediaWidthPct,
   normalizeMediaAspect,
   isEditablePlaceholderValue
-} from './visual-cms.js?v=bubble-align-1';
+} from './visual-cms.js?v=zoom-glue-1';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 import {
   buildCategoryChips,

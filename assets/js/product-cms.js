@@ -15,7 +15,7 @@ import {
   uploadToStorage,
   normalizeMediaWidthPct,
   normalizeMediaAspect
-} from './visual-cms.js?v=bubble-align-1';
+} from './visual-cms.js?v=zoom-glue-1';
 
 const COLLECTION = 'productSections';
 /** Public-readable meta doc in the same collection; filtered out of rendered sections. */
