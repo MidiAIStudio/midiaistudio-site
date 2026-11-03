@@ -91,8 +91,9 @@ function visibleSourceRect(nw, nh, fw, fh, zoom, panX, panY) {
 
 /**
  * Overlay % are saved relative to the visible frame (baked output).
- * While editing, the annot layer matches the zoomed/panned image, so we
- * convert between frame space and displayed-image space.
+ * While editing, session coords live in displayed-image %; the annot layer
+ * stays frame-sized and we project image→frame on every paint so zoom/pan
+ * cannot desync (or clip) boxes via a glued oversized layer.
  */
 function mapOverlaysFrameToImage(list, vis, fw, fh) {
   const dispW = Math.max(1, vis.dispW);
@@ -113,31 +114,55 @@ function mapOverlaysFrameToImage(list, vis, fw, fh) {
   });
 }
 
-function mapOverlaysImageToFrame(list, vis, fw, fh) {
+/** Live editor paint: project image % → frame % (no drop/clamp; frame clips). */
+function projectOverlayImageToFrame(o, vis, fw, fh) {
   const dispW = Math.max(1, vis.dispW);
   const dispH = Math.max(1, vis.dispH);
   const outFw = Math.max(1, fw);
   const outFh = Math.max(1, fh);
+  const x = ((vis.left + (o.x / 100) * dispW) / outFw) * 100;
+  const y = ((vis.top + (o.y / 100) * dispH) / outFh) * 100;
+  if (o.type === 'rect') {
+    return {
+      ...o,
+      x,
+      y,
+      w: ((o.w / 100) * dispW / outFw) * 100,
+      h: ((o.h / 100) * dispH / outFh) * 100
+    };
+  }
+  return { ...o, x, y };
+}
+
+function framePctToImagePct(p, vis, fw, fh) {
+  const dispW = Math.max(1, vis.dispW);
+  const dispH = Math.max(1, vis.dispH);
+  return {
+    x: (((p.x / 100) * fw - vis.left) / dispW) * 100,
+    y: (((p.y / 100) * fh - vis.top) / dispH) * 100
+  };
+}
+
+function mapOverlaysImageToFrame(list, vis, fw, fh) {
   return list.map((o) => {
-    const x = ((vis.left + (o.x / 100) * dispW) / outFw) * 100;
-    const y = ((vis.top + (o.y / 100) * dispH) / outFh) * 100;
-    if (o.type === 'rect') {
-      const w = ((o.w / 100) * dispW / outFw) * 100;
-      const h = ((o.h / 100) * dispH / outFh) * 100;
+    const mapped = projectOverlayImageToFrame(o, vis, fw, fh);
+    if (mapped.type === 'rect') {
+      const { x, y, w, h } = mapped;
       // Drop rects fully outside the baked frame; keep if they still intersect.
       if (x + w < 0 || y + h < 0 || x > 100 || y > 100) return null;
       return {
-        ...o,
+        ...mapped,
         x: clamp(x, 0, 100),
         y: clamp(y, 0, 100),
         w: clamp(w, 2, 100),
         h: clamp(h, 2, 100)
       };
     }
+    const { x, y } = mapped;
     // Bubbles slightly past the edge stay (clamp); far off-frame ones drop.
     if (x < -8 || x > 108 || y < -8 || y > 108) return null;
     return {
-      ...o,
+      ...mapped,
       x: clamp(x, 0, 100),
       y: clamp(y, 0, 100)
     };
@@ -251,7 +276,7 @@ function openMediaAnnotEditorUi({
           <div>
             <p class="eyebrow">Image editor</p>
             <h3>사진 편집</h3>
-            <p class="muted small">우하단으로 미리보기 창·사진 크기를 조절하고, 잘라내기는 기본 크롭 스킨으로 영역을 잡은 뒤 적용하세요. (저장은 페이지 저장 버튼)</p>
+            <p class="muted small">+/− 로 사진을 확대·축소하고, 드래그로 위치를 옮기며, 우하단으로 미리보기 창 크기를 조절하세요. 잘라내기는 크롭 스킨으로 영역을 잡은 뒤 적용하세요. (저장은 페이지 저장 버튼)</p>
           </div>
           <button type="button" class="ghost mini-btn" data-editor="cancel">취소</button>
         </header>
@@ -260,7 +285,7 @@ function openMediaAnnotEditorUi({
             <div class="vcms-annot-frame" data-frame>
               <img class="vcms-annot-source" alt="${esc('편집 이미지')}" draggable="false">
               <div class="vcms-media-annots is-editable" data-annots></div>
-              <i class="vcms-annot-frame-se" data-se title="창·사진 크기"></i>
+              <i class="vcms-annot-frame-se" data-se title="창 크기"></i>
             </div>
             <div class="vcms-annot-crop-layer" data-crop-layer hidden>
               <img class="vcms-annot-crop-source" alt="" draggable="false">
@@ -286,6 +311,11 @@ function openMediaAnnotEditorUi({
           <button type="button" class="vcms-hover-btn" data-editor="side" hidden>꼬리: 좌</button>
           <button type="button" class="vcms-hover-btn" data-editor="edit-text" hidden>텍스트 수정</button>
           <button type="button" class="vcms-hover-btn is-danger" data-editor="delete" hidden>주석 삭제</button>
+          <span class="vcms-annot-zoom-group" data-zoom-group>
+            <button type="button" class="vcms-hover-btn vcms-annot-zoom-btn" data-editor="zoom-out" title="축소">−</button>
+            <span class="vcms-annot-zoom-label" data-zoom-label>100%</span>
+            <button type="button" class="vcms-hover-btn vcms-annot-zoom-btn" data-editor="zoom-in" title="확대">+</button>
+          </span>
           <span class="vcms-annot-modal-spacer"></span>
           <button type="button" class="secondary mini-btn" data-editor="cancel">취소</button>
           <button type="button" class="primary mini-btn" data-editor="apply">적용</button>
@@ -355,28 +385,53 @@ function openMediaAnnotEditorUi({
       resolve(value);
     };
 
+    const currentVis = () => {
+      const fr = frame.getBoundingClientRect();
+      if (!natural.w || fr.width < 2 || fr.height < 2) return null;
+      return {
+        fr,
+        fw: fr.width,
+        fh: fr.height,
+        vis: visibleSourceRect(natural.w, natural.h, fr.width, fr.height, zoom, panX, panY)
+      };
+    };
+
+    const syncZoomLabel = () => {
+      const el = bar.querySelector('[data-zoom-label]');
+      if (el) el.textContent = `${Math.round(zoom * 100)}%`;
+      const zin = bar.querySelector('[data-editor="zoom-in"]');
+      const zout = bar.querySelector('[data-editor="zoom-out"]');
+      if (zin) zin.disabled = zoom >= 5 - 1e-6;
+      if (zout) zout.disabled = zoom <= 1 + 1e-6;
+    };
+
     const layoutImage = () => {
       if (!natural.w || uiMode === 'crop') return;
-      const fr = frame.getBoundingClientRect();
-      const fw = fr.width;
-      const fh = fr.height;
-      if (!fw || !fh) return;
-      const vis = visibleSourceRect(natural.w, natural.h, fw, fh, zoom, panX, panY);
+      const ctx = currentVis();
+      if (!ctx) return;
+      const { fw, fh, vis } = ctx;
       img.style.width = `${vis.dispW}px`;
       img.style.height = `${vis.dispH}px`;
       img.style.left = `${vis.left}px`;
       img.style.top = `${vis.top}px`;
-      // Glue annot layer to the same box as the photo so zoom/pan keeps
-      // bubbles stuck to image points (frame overflow clips off-screen ones).
-      layer.style.inset = 'auto';
-      layer.style.left = `${vis.left}px`;
-      layer.style.top = `${vis.top}px`;
-      layer.style.width = `${vis.dispW}px`;
-      layer.style.height = `${vis.dispH}px`;
+      // Keep annot layer frame-sized (inset:0). Image% → frame% on paint.
+      layer.style.inset = '';
+      layer.style.left = '';
+      layer.style.top = '';
+      layer.style.width = '';
+      layer.style.height = '';
       if (!overlaysInImageSpace) {
         list = mapOverlaysFrameToImage(list, vis, fw, fh);
         overlaysInImageSpace = true;
       }
+      syncZoomLabel();
+    };
+
+    const setZoom = (next, { repaint = true } = {}) => {
+      zoom = clamp(next, 1, 5);
+      layoutImage();
+      if (repaint) paintAnnots();
+      else syncZoomLabel();
     };
 
     const overlaysForApply = () => {
@@ -415,6 +470,8 @@ function openMediaAnnotEditorUi({
       frame.hidden = cropping;
       cropLayer.hidden = !cropping;
       se.hidden = cropping || !!tool;
+      const zoomGroup = bar.querySelector('[data-zoom-group]');
+      if (zoomGroup) zoomGroup.hidden = cropping;
       root.classList.toggle('is-cropping', cropping);
       root.classList.toggle('is-annotating', !!tool && !cropping);
       root.classList.toggle('is-panning-mode', uiMode === 'transform' && !tool && !cropping);
@@ -447,15 +504,24 @@ function openMediaAnnotEditorUi({
         syncBar();
         return;
       }
+      const ctx = currentVis();
+      // Ensure image-space conversion before projecting for display.
+      if (ctx && !overlaysInImageSpace) {
+        list = mapOverlaysFrameToImage(list, ctx.vis, ctx.fw, ctx.fh);
+        overlaysInImageSpace = true;
+      }
       list.forEach((ov) => {
+        const disp = ctx
+          ? projectOverlayImageToFrame(ov, ctx.vis, ctx.fw, ctx.fh)
+          : ov;
         const el = document.createElement('div');
         el.className = `vcms-annot vcms-annot-${ov.type}${selectedId === ov.id ? ' is-selected' : ''}`;
         el.dataset.id = ov.id;
         if (ov.type === 'rect') {
-          el.style.left = `${ov.x}%`;
-          el.style.top = `${ov.y}%`;
-          el.style.width = `${ov.w}%`;
-          el.style.height = `${ov.h}%`;
+          el.style.left = `${disp.x}%`;
+          el.style.top = `${disp.y}%`;
+          el.style.width = `${disp.w}%`;
+          el.style.height = `${disp.h}%`;
           if (ov.label) {
             const lab = document.createElement('span');
             lab.className = 'vcms-annot-label';
@@ -472,8 +538,8 @@ function openMediaAnnotEditorUi({
           }
         } else {
           el.classList.add(ov.side === 'right' ? 'side-right' : 'side-left');
-          el.style.left = `${ov.x}%`;
-          el.style.top = `${ov.y}%`;
+          el.style.left = `${disp.x}%`;
+          el.style.top = `${disp.y}%`;
           const bubble = document.createElement('div');
           bubble.className = 'vcms-bubble-text';
           bubble.textContent = ov.text || '말풍선';
@@ -482,6 +548,14 @@ function openMediaAnnotEditorUi({
         layer.appendChild(el);
       });
       syncBar();
+    };
+
+    /** Frame-local pointer % → image % (session storage space). */
+    const pointerImagePct = (e) => {
+      const frameP = pctFromEl(layer, e);
+      const ctx = currentVis();
+      if (!ctx || !overlaysInImageSpace) return frameP;
+      return framePctToImagePct(frameP, ctx.vis, ctx.fw, ctx.fh);
     };
 
     const editText = () => {
@@ -630,6 +704,19 @@ function openMediaAnnotEditorUi({
         list = list.filter((o) => o.id !== selectedId);
         selectedId = null;
         paintAnnots();
+        return;
+      }
+      if (act === 'zoom-in') {
+        uiMode = 'transform';
+        tool = null;
+        setZoom(zoom + 0.25);
+        return;
+      }
+      if (act === 'zoom-out') {
+        uiMode = 'transform';
+        tool = null;
+        setZoom(zoom - 0.25);
+        return;
       }
     });
 
@@ -645,7 +732,11 @@ function openMediaAnnotEditorUi({
       const fr = frame.getBoundingClientRect();
       const vis = visibleSourceRect(natural.w, natural.h, fr.width, fr.height, zoom, panX, panY);
       // Allow a little pan even near cover by ensuring zoom headroom.
-      if (zoom < 1.02) zoom = 1.08;
+      if (zoom < 1.02) {
+        zoom = 1.08;
+        layoutImage();
+        paintAnnots();
+      }
       const dispW = Math.max(1, vis.dispW);
       const dispH = Math.max(1, vis.dispH);
       frame.classList.add('is-panning');
@@ -655,6 +746,7 @@ function openMediaAnnotEditorUi({
         panX = clamp(origPanX - dx / dispW, 0, 1);
         panY = clamp(origPanY - dy / dispH, 0, 1);
         layoutImage();
+        paintAnnots();
       };
       const onUp = () => {
         frame.classList.remove('is-panning');
@@ -672,7 +764,7 @@ function openMediaAnnotEditorUi({
       beginPan(e);
     });
 
-    // SE: free window aspect + image zoom
+    // SE: free window aspect (photo zoom is via +/- buttons; light zoom still tracks drag)
     se.addEventListener('mousedown', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -695,6 +787,7 @@ function openMediaAnnotEditorUi({
         }
         applyWorkspaceAspect();
         layoutImage();
+        paintAnnots();
       };
       const onUp = () => {
         window.removeEventListener('mousemove', onMove);
@@ -783,7 +876,7 @@ function openMediaAnnotEditorUi({
         const orig = { x: ov.x, y: ov.y, w: ov.w, h: ov.h };
         const corner = handle.dataset.handle;
         const onMove = (ev) => {
-          const p = pctFromEl(layer, ev);
+          const p = pointerImagePct(ev);
           let x1 = orig.x;
           let y1 = orig.y;
           let x2 = orig.x + orig.w;
@@ -815,11 +908,11 @@ function openMediaAnnotEditorUi({
         if (!ov) return;
         selectedId = ov.id;
         tool = null;
-        const start = pctFromEl(layer, e);
+        const start = pointerImagePct(e);
         const origX = ov.x;
         const origY = ov.y;
         const onMove = (ev) => {
-          const p = pctFromEl(layer, ev);
+          const p = pointerImagePct(ev);
           const dx = p.x - start.x;
           const dy = p.y - start.y;
           if (ov.type === 'rect') {
@@ -843,12 +936,12 @@ function openMediaAnnotEditorUi({
 
       if (tool === 'rect') {
         e.preventDefault();
-        const start = pctFromEl(layer, e);
+        const start = pointerImagePct(e);
         const draft = { id: newOverlayId(), type: 'rect', x: start.x, y: start.y, w: 2, h: 2, label: '' };
         list = [...list, draft];
         selectedId = draft.id;
         const onMove = (ev) => {
-          const p = pctFromEl(layer, ev);
+          const p = pointerImagePct(ev);
           draft.x = Math.min(start.x, p.x);
           draft.y = Math.min(start.y, p.y);
           draft.w = Math.max(2, Math.abs(p.x - start.x));
@@ -874,7 +967,7 @@ function openMediaAnnotEditorUi({
 
       if (tool === 'bubble') {
         e.preventDefault();
-        const p = pctFromEl(layer, e);
+        const p = pointerImagePct(e);
         const text = prompt('말풍선 텍스트', '여기');
         if (text == null) return;
         list = [...list, {

@@ -14,7 +14,7 @@ import {
   normalizeMediaWidthPct,
   normalizeMediaAspect,
   isEditablePlaceholderValue
-} from './visual-cms.js?v=zoom-glue-1';
+} from './visual-cms.js?v=zoom-glue-2';
 import { mountMarkdownField, ensureMarkdownCss } from './markdown/index.js';
 import {
   buildCategoryChips,

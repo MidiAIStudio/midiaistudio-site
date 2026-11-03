@@ -703,7 +703,7 @@ export function mountEditableMedia(container, {
   const openImageEditor = async (url, file = null, seedOverlays = overlays) => {
     let revokeHydrated = null;
     try {
-      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=zoom-glue-1');
+      const { openMediaAnnotEditor } = await import('./media-annot-editor.js?v=zoom-glue-2');
       const previewImg = body.querySelector('img');
       const pageSrc = previewImg?.currentSrc || previewImg?.getAttribute('src') || url;
       const resolved = await resolveImageSourceForEditor(pageSrc || url, file);

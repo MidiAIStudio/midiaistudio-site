@@ -4681,8 +4681,12 @@ body.vcms-annot-modal-open{overflow:hidden}
   position:absolute;display:block;max-width:none;max-height:none;width:auto;height:auto;
   user-select:none;-webkit-user-drag:none;cursor:grab;border-radius:0;pointer-events:none
 }
-/* JS pins left/top/width/height to the zoomed image; inset:0 is the pre-layout fallback. */
+/* Annot layer stays frame-sized (inset:0); JS projects image% → frame% on paint. */
 .vcms-annot-frame .vcms-media-annots{inset:0;z-index:2;overflow:visible}
+.vcms-annot-zoom-group{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
+.vcms-annot-zoom-btn{min-width:36px;font-size:16px;font-weight:800;line-height:1}
+.vcms-annot-zoom-label{min-width:3.2em;text-align:center;font-size:12px;font-weight:800;color:#c7cbe4}
+.vcms-annot-zoom-btn:disabled{opacity:.35;cursor:default}
 .vcms-annot-modal.is-panning-mode .vcms-annot-frame .vcms-media-annots{cursor:grab}
 .vcms-annot-modal.is-panning-mode .vcms-annot-frame.is-panning .vcms-media-annots,
 .vcms-annot-frame.is-panning{cursor:grabbing!important}
