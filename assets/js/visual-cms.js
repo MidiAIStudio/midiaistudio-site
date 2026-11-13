@@ -6,7 +6,7 @@ import {
   renderMarkdownInline,
   bindMarkdownInteractions,
   ensureMarkdownCss
-} from './markdown/markdown-renderer.js?v=guide-body-md-1';
+} from './markdown/markdown-renderer.js?v=guide-hljs-1';
 
 const CONFIG = window.MIDIAI_CONFIG || {};
 const FB = 'https://www.gstatic.com/firebasejs/10.12.5';
@@ -949,6 +949,6 @@ export async function uploadToStorage(path, file) {
 
 /** Long-body Markdown field (hybrid Visual CMS). Lazy-loaded to avoid cycles. */
 export async function mountMarkdownField(container, options) {
-  const { mountMarkdownField: mount } = await import('./markdown/markdown-editor.js');
+  const { mountMarkdownField: mount } = await import('./markdown/markdown-editor.js?v=guide-hljs-1');
   return mount(container, options);
 }

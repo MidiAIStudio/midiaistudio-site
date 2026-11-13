@@ -6,7 +6,7 @@ export {
   bindMarkdownInteractions,
   ensureMarkdownCss,
   wrapAdjacentImages
-} from './markdown-renderer.js?v=guide-body-md-1';
+} from './markdown-renderer.js?v=guide-hljs-1';
 
 export {
   mountMarkdownEditor,
@@ -19,7 +19,7 @@ export {
   removeMarkdownImage,
   placeMarkdownImageAt,
   splitMarkdownBlocks
-} from './markdown-editor.js?v=guide-body-md-1';
+} from './markdown-editor.js?v=guide-hljs-1';
 
 export {
   draftKey,

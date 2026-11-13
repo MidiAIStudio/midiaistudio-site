@@ -4,9 +4,21 @@
  * Optional CMS fields used when present: level, duration, chapters[{title,start}], mediaCaption.
  */
 
-import { esc, syncAnnotLayerToMedia } from './visual-cms.js?v=video-card-1';
-import { plainTextFromMarkdown } from './markdown/index.js';
+import { esc, syncAnnotLayerToMedia } from './visual-cms.js?v=guide-hljs-1';
 import { guidePagePath } from './guide-seo.js?v=guide-404-1';
+
+/** Local strip for card previews — keep guide-learn off the markdown/hljs boot path. */
+function plainTextFromMarkdown(src) {
+  return String(src ?? '')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)]\([^)]*\)/g, '$1')
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/[`*_~>#]+/g, ' ')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 /** Preferential chip order for known product flows (matched by category/title/slug). */
 export const GUIDE_CHIP_PRESETS = [

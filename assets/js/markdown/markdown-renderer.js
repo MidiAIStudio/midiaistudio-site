@@ -3,7 +3,9 @@
  */
 import MarkdownIt from 'https://esm.sh/markdown-it@14.1.0?target=es2020';
 import DOMPurify from 'https://esm.sh/dompurify@3.1.6?target=es2020';
-import hljs from 'https://esm.sh/highlight.js@11.9.0?target=es2020';
+// Single-file build — esm.sh's default highlight.js entry fans out ~190 language modules
+// and blocks guide/hub boot until every request finishes (looks stuck on "불러오는 중").
+import hljs from 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/es/highlight.min.js';
 import { applyAllPlugins } from './markdown-plugins.js';
 
 let _md = null;
@@ -233,7 +235,7 @@ export function pairLastTwoImages(root) {
 let _cssReady = false;
 export function ensureMarkdownCss() {
   const links = [
-    { id: 'md-cms-css', href: `${new URL('../../css/markdown-cms.css', import.meta.url).href}?v=guide-body-md-1` },
+    { id: 'md-cms-css', href: `${new URL('../../css/markdown-cms.css', import.meta.url).href}?v=guide-hljs-1` },
     { id: 'md-hljs-css', href: 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/github-dark.min.css' }
   ];
   links.forEach(({ id, href }) => {

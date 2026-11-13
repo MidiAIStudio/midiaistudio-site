@@ -15,8 +15,8 @@ import {
   normalizeMediaAspect,
   isEditablePlaceholderValue,
   readEditablePlain
-} from './visual-cms.js?v=video-card-1';
-import { mountMarkdownField, ensureMarkdownCss, renderMarkdown, bindMarkdownInteractions } from './markdown/index.js';
+} from './visual-cms.js?v=guide-hljs-1';
+import { mountMarkdownField, ensureMarkdownCss, renderMarkdown, bindMarkdownInteractions } from './markdown/index.js?v=guide-hljs-1';
 import {
   buildCategoryChips,
   renderGuideCard,
@@ -27,7 +27,7 @@ import {
   chaptersHtml,
   bindScrollSpy,
   bindGuideImageZoom
-} from './guide-learn.js?v=video-card-1';
+} from './guide-learn.js?v=guide-hljs-1';
 import {
   applyGuideDocumentSeo,
   guideSlugFromLocation,
@@ -1871,6 +1871,16 @@ export async function initGuideCms() {
 
 bootDetailShell();
 if (isGuideListPage() || isGuideDetailPage()) {
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => initGuideCms());
-  else initGuideCms();
+  // If the module graph stalls (CDN), surface a recoverable message instead of infinite "불러오는 중".
+  const bootWatch = window.setTimeout(() => {
+    const el = document.getElementById('guideList') || document.getElementById('guideDetail');
+    if (!el) return;
+    if (!/불러오는 중/.test(el.textContent || '')) return;
+    el.innerHTML = `<div class="empty-card">가이드 로딩이 지연되고 있습니다. <button type="button" class="secondary mini-btn" onclick="location.reload()">새로고침</button></div>`;
+  }, 12000);
+  const run = () => {
+    Promise.resolve(initGuideCms()).finally(() => window.clearTimeout(bootWatch));
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
 }

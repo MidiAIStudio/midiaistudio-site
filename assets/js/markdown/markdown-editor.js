@@ -11,7 +11,7 @@ import {
   findLastImageAnchor,
   pairLastTwoImages,
   isImageOnlyBlock
-} from './markdown-renderer.js';
+} from './markdown-renderer.js?v=guide-hljs-1';
 import { createDraftAutosave, loadDraft, clearDraft, saveDraft } from './markdown-draft.js';
 import { createMarkdownUploader } from './markdown-upload.js';
 import {
@@ -26,7 +26,7 @@ import {
   containerSnippet,
   wrapSelection
 } from './markdown-toolbar-extras.js?v=hub-md-list-2';
-import { adminHoverToolbar, confirmDelete } from '../visual-cms.js';
+import { adminHoverToolbar, confirmDelete } from '../visual-cms.js?v=guide-hljs-1';
 
 const TOAST_CSS_CANDIDATES = [
   'https://cdn.jsdelivr.net/npm/@toast-ui/editor@3.2.2/dist/toastui-editor.min.css',
