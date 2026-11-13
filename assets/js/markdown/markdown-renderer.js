@@ -56,7 +56,9 @@ function createMd() {
   md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
     const href = tokens[idx].attrGet('href') || '';
     const isExternal = /^https?:\/\//i.test(href) && !/midiaistudio\.com/i.test(href);
-    if (isExternal) {
+    const isDownload = /\/download(\/|$|\?)/i.test(href)
+      || /\.(zip|exe|msi|dmg|pkg|7z|rar|apk)(\?|$)/i.test(href);
+    if (isExternal || isDownload) {
       tokens[idx].attrSet('target', '_blank');
       tokens[idx].attrSet('rel', 'noopener noreferrer');
     }
@@ -231,7 +233,7 @@ export function pairLastTwoImages(root) {
 let _cssReady = false;
 export function ensureMarkdownCss() {
   const links = [
-    { id: 'md-cms-css', href: `${new URL('../../css/markdown-cms.css', import.meta.url).href}?v=hub-md-list-2` },
+    { id: 'md-cms-css', href: `${new URL('../../css/markdown-cms.css', import.meta.url).href}?v=guide-body-md-1` },
     { id: 'md-hljs-css', href: 'https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/github-dark.min.css' }
   ];
   links.forEach(({ id, href }) => {
@@ -307,4 +309,36 @@ export function renderMarkdownInto(el, src, opts) {
   el.innerHTML = renderMarkdown(src, opts);
   wrapAdjacentImages(el);
   bindMarkdownInteractions(el);
+}
+
+/**
+ * Inline markdown (links, bold, code) without wrapping block tags.
+ * Safe for feature bullets / one-line slots.
+ */
+export function renderMarkdownInline(src) {
+  ensureMarkdownCss();
+  const raw = String(src ?? '');
+  if (!raw.trim()) return '';
+  const md = getMd();
+  let html;
+  try {
+    html = md.renderInline(raw);
+  } catch (e) {
+    console.error('markdown inline render failed', e);
+    html = md.utils.escapeHtml(raw);
+  }
+  return DOMPurify.sanitize(html, PURIFY_CFG);
+}
+
+/** Strip markdown/link noise for clamped card previews (plain text only). */
+export function plainTextFromMarkdown(src) {
+  return String(src ?? '')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]*)]\([^)]*\)/g, '$1')
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/[`*_~>#]+/g, ' ')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

@@ -4384,7 +4384,7 @@ a.guide-hub-card:hover{border-color:rgba(34,211,238,.32);background:rgba(34,211,
 .guide-hub-card-media.is-empty span{width:28px;height:28px;border-radius:8px;border:1px solid rgba(34,211,238,.28);background:linear-gradient(135deg,rgba(34,211,238,.16),rgba(139,92,246,.12))}
 .guide-hub-card-body{display:grid;gap:6px;padding:12px 14px 14px;align-content:start}
 .guide-hub-card-body h3{margin:0;font-size:16px;letter-spacing:-.02em;line-height:1.3}
-.guide-hub-card-body p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.guide-hub-card-body p{margin:0;color:var(--muted);font-size:13px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3}
 .guide-hub-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .guide-hub-card-meta em{font-style:normal;font-size:11px;font-weight:800;color:#9af2ff;padding:3px 7px;border-radius:999px;border:1px solid rgba(34,211,238,.22);background:rgba(34,211,238,.08)}
 @media(max-width:980px){.guide-hub-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -4407,7 +4407,21 @@ a.guide-hub-card:hover{border-color:rgba(34,211,238,.32);background:rgba(34,211,
 .guide-learn-main{min-width:0;max-width:760px}
 .guide-learn-hero{margin:0 0 18px}
 .guide-learn-hero h1{margin:6px 0 8px;font-size:clamp(26px,3.2vw,36px);letter-spacing:-.04em}
-.guide-learn-hero .portal-lead{margin:0 0 10px}
+.guide-learn-hero .portal-lead{margin:0 0 10px;color:var(--muted);font-size:15px;line-height:1.7;max-width:min(900px,100%);word-break:keep-all;overflow-wrap:break-word}
+.guide-learn-hero .portal-lead .md-prose,
+.guide-learn-hero .portal-lead .portal-lead-body,
+.guide-learn-hero .portal-lead .vcms-multiline{margin:0;color:inherit;font-size:inherit;line-height:1.7;max-width:none}
+.guide-learn-hero .portal-lead .md-prose p{margin:.55em 0;color:inherit}
+.guide-learn-hero .portal-lead .md-prose p:first-child{margin-top:0}
+.guide-learn-hero .portal-lead .md-prose p:last-child{margin-bottom:0}
+.guide-learn-hero-side-md{font-size:13px;line-height:1.55;color:var(--muted)}
+.guide-learn-hero-side-md p{margin:.4em 0}
+.guide-learn-step-copy .md-prose,
+.vcms-slot-body .md-prose{font-size:14px;line-height:1.7;color:#e7e9fb}
+.vcms-multiline{white-space:pre-wrap;word-break:break-word;min-height:1.4em}
+.vcms-md-hint{margin:6px 0 0;font-size:11px;line-height:1.4;opacity:.8}
+.product-points a,.guide-learn-features a{color:#67e8f9;text-decoration:underline;text-underline-offset:2px}
+.product-points a:hover,.guide-learn-features a:hover{color:#a5f3fc}
 .guide-learn-meta{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
 .guide-learn-meta em,
 .guide-learn-badge{
@@ -4452,9 +4466,23 @@ a.guide-hub-card:hover{border-color:rgba(34,211,238,.32);background:rgba(34,211,
 .guide-learn-step-head .guide-learn-badge{margin:0 0 6px}
 .guide-learn-step-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}
 .guide-learn-step-grid.is-text-only{grid-template-columns:1fr}
+.guide-learn-step-grid.is-video-stack{grid-template-columns:1fr;gap:16px}
 .guide-learn-step-copy{min-width:0}
 .guide-learn-step-media{margin:0;min-width:0}
 .guide-learn-step-media .product-feature-media,.guide-learn-step-media .vcms-media-slot{border-radius:12px;border:1px solid rgba(255,255,255,.10);overflow:hidden;cursor:zoom-in}
+.guide-learn-step.is-video-card .guide-learn-step-media .product-feature-media,
+.guide-learn-step.is-video-card .guide-learn-step-media .vcms-media-slot{
+  width:100%;min-height:220px;aspect-ratio:16/9
+}
+.guide-learn-step.is-video-card .guide-learn-step-copy{
+  display:grid;gap:10px;padding:2px 2px 0
+}
+.guide-learn-step.is-video-card .guide-learn-step-desc{
+  font-size:14px;line-height:1.7;max-width:72ch
+}
+.guide-learn-step.is-video-card .product-points{
+  margin:0;max-width:72ch
+}
 .guide-learn-step-media figcaption{margin-top:8px;color:var(--muted);font-size:12px;line-height:1.45}
 .guide-learn-tips{margin:22px 0;padding:14px 16px;border-radius:12px;border:1px solid rgba(34,211,238,.20);background:rgba(34,211,238,.05)}
 .guide-learn-tips h2{

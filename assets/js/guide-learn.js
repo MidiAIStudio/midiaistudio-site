@@ -4,7 +4,8 @@
  * Optional CMS fields used when present: level, duration, chapters[{title,start}], mediaCaption.
  */
 
-import { esc, syncAnnotLayerToMedia } from './visual-cms.js?v=lightbox-annot-1';
+import { esc, syncAnnotLayerToMedia } from './visual-cms.js?v=video-card-1';
+import { plainTextFromMarkdown } from './markdown/index.js';
 import { guidePagePath } from './guide-seo.js?v=guide-404-1';
 
 /** Preferential chip order for known product flows (matched by category/title/slug). */
@@ -95,7 +96,7 @@ export function renderGuideCard(g, pathBase, opts = {}) {
       <div class="guide-hub-card-body">
         <span class="guide-card-cat">${esc(g.category || 'Guide')}</span>
         <h3>${esc(g.title || g.slug)}${badge}</h3>
-        <p>${esc(g.summary || '')}</p>
+        <p>${esc(plainTextFromMarkdown(g.summary || ''))}</p>
         ${meta.length ? `<div class="guide-hub-card-meta">${meta.map((b) => `<em>${b}</em>`).join('')}</div>` : ''}
       </div>
     </a>

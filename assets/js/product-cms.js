@@ -15,7 +15,7 @@ import {
   uploadToStorage,
   normalizeMediaWidthPct,
   normalizeMediaAspect
-} from './visual-cms.js?v=zoom-glue-2';
+} from './visual-cms.js?v=guide-body-md-1';
 
 const COLLECTION = 'productSections';
 /** Public-readable meta doc in the same collection; filtered out of rendered sections. */

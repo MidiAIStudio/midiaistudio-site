@@ -19,7 +19,10 @@ service firebase.storage {
 
     function isVideo() {
       return request.resource.contentType.matches('video/.*')
-        || request.resource.contentType == 'application/octet-stream';
+        || request.resource.contentType in [
+          'application/octet-stream',
+          'application/mp4'
+        ];
     }
 
     match /board/{userId}/{allPaths=**} {
@@ -64,11 +67,15 @@ service firebase.storage {
         && isImage();
     }
 
+    // Path shape matches guide-cms.js: guide-videos/{slug}/section-{id}_{ts}.mp4
+    // Use signedIn (not firestore isAdmin) — same pattern as guide-images.
+    // Publishing still requires Firestore guides write (isAdmin only).
     match /guide-videos/{slug}/{fileName} {
       allow read: if true;
-      allow write: if signedIn()
+      allow create, update: if signedIn()
         && request.resource.size < 80 * 1024 * 1024
         && isVideo();
+      allow delete: if signedIn();
     }
 
     match /product-images/{sectionId}/{fileName} {
@@ -80,9 +87,10 @@ service firebase.storage {
 
     match /product-videos/{sectionId}/{fileName} {
       allow read: if true;
-      allow write: if signedIn()
+      allow create, update: if signedIn()
         && request.resource.size < 80 * 1024 * 1024
         && isVideo();
+      allow delete: if signedIn();
     }
 
     // Markdown CMS media (images / videos / attachments)

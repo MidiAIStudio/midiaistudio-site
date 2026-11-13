@@ -1,12 +1,27 @@
 /**
  * Shared Visual CMS primitives for Guide + Product pages.
  */
+import {
+  renderMarkdown,
+  renderMarkdownInline,
+  bindMarkdownInteractions,
+  ensureMarkdownCss
+} from './markdown/markdown-renderer.js?v=guide-body-md-1';
+
 const CONFIG = window.MIDIAI_CONFIG || {};
 const FB = 'https://www.gstatic.com/firebasejs/10.12.5';
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
 }[c]));
+
+/** Read plain text from contenteditable, preserving Enter as real newlines. */
+export function readEditablePlain(el) {
+  if (!el) return '';
+  return String(el.innerText ?? el.textContent ?? '')
+    .replace(/\r\n?/g, '\n')
+    .replace(/\u00a0/g, ' ');
+}
 
 export function youtubeId(url) {
   const m = String(url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
@@ -80,6 +95,7 @@ export function isEditablePlaceholderValue(value, placeholder = '') {
 
 /**
  * Editable text slot. Keeps placeholder for admins when empty.
+ * Multiline public view renders markdown (breaks, lists, links) safely.
  * @param {object} opts
  */
 export function mountEditableText(container, {
@@ -105,10 +121,16 @@ export function mountEditableText(container, {
       return;
     }
     container.hidden = false;
+    if (multiline) {
+      ensureMarkdownCss();
+      const mdClass = ['md-prose', 'vcms-md-body', className].filter(Boolean).join(' ');
+      container.innerHTML = renderMarkdown(displayValue, { className: mdClass });
+      bindMarkdownInteractions(container);
+      return;
+    }
     const el = document.createElement(tag);
     if (className) el.className = className;
-    if (multiline) el.innerHTML = esc(displayValue).replace(/\n/g, '<br>');
-    else el.textContent = displayValue;
+    el.textContent = displayValue;
     container.appendChild(el);
     return;
   }
@@ -119,6 +141,11 @@ export function mountEditableText(container, {
   if (className) el.className = className;
   el.contentEditable = 'true';
   el.dataset.placeholder = placeholder;
+  if (multiline) {
+    el.classList.add('vcms-multiline');
+    el.dataset.mdHint = '1';
+    el.title = '줄바꿈·목록(- / 1.)·링크 [텍스트](url) 또는 https://… 지원';
+  }
   el.textContent = displayValue;
   if (empty) el.classList.add('vcms-placeholder-text');
 
@@ -149,18 +176,38 @@ export function mountEditableText(container, {
     }
   });
 
-  el.addEventListener('focus', () => el.classList.remove('vcms-placeholder-text'));
-  el.addEventListener('input', () => {
-    const v = el.textContent || '';
+  const emitValue = () => {
+    const v = readEditablePlain(el);
     container.classList.toggle('is-empty', !v.trim());
     onChange?.(v);
-  });
+  };
+
+  el.addEventListener('focus', () => el.classList.remove('vcms-placeholder-text'));
+  el.addEventListener('input', emitValue);
+  if (multiline) {
+    el.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.isComposing) return;
+      e.preventDefault();
+      document.execCommand('insertText', false, '\n');
+    });
+    el.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const text = e.clipboardData?.getData('text/plain') || '';
+      document.execCommand('insertText', false, text.replace(/\r\n?/g, '\n'));
+    });
+  }
   el.addEventListener('blur', () => {
-    if (!(el.textContent || '').trim()) el.classList.add('vcms-placeholder-text');
+    if (!readEditablePlain(el).trim()) el.classList.add('vcms-placeholder-text');
   });
 
   container.appendChild(el);
   container.appendChild(tools);
+  if (multiline) {
+    const hint = document.createElement('p');
+    hint.className = 'vcms-md-hint muted small';
+    hint.textContent = '마크다운: 줄바꿈, - 목록, [다운로드](https://…) 링크';
+    container.appendChild(hint);
+  }
 }
 
 export function mountEditableFeatureList(container, {
@@ -183,12 +230,14 @@ export function mountEditableFeatureList(container, {
       return;
     }
     container.hidden = false;
+    ensureMarkdownCss();
     visible.forEach((f) => {
       const li = document.createElement('li');
-      li.textContent = f;
+      li.innerHTML = renderMarkdownInline(f);
       list.appendChild(li);
     });
     container.appendChild(list);
+    bindMarkdownInteractions(container);
     return;
   }
 
@@ -204,6 +253,7 @@ export function mountEditableFeatureList(container, {
       const text = document.createElement('span');
       text.contentEditable = 'true';
       text.dataset.placeholder = '기능 항목';
+      text.title = '링크: [다운로드](https://…) 또는 https://…';
       text.textContent = f;
       if (!String(f || '').trim()) text.classList.add('vcms-placeholder-text');
       text.addEventListener('input', () => {
@@ -451,6 +501,7 @@ export function mountEditableMedia(container, {
   mediaOverlays = [],
   editMode = false,
   isAdmin = false,
+  preferVideo = false,
   videoClass = 'product-video',
   mediaAlt = '',
   onChange,
@@ -529,7 +580,8 @@ export function mountEditableMedia(container, {
       img.loading = 'lazy';
       body.appendChild(img);
     } else {
-      body.innerHTML = `<div class="vcms-media-placeholder"><span>${editMode && isAdmin ? '사진 또는 영상 추가' : ''}</span></div>`;
+      const emptyHint = preferVideo ? '영상 추가' : '사진 또는 영상 추가';
+      body.innerHTML = `<div class="vcms-media-placeholder"><span>${editMode && isAdmin ? emptyHint : ''}</span></div>`;
     }
     container.classList.toggle('is-empty', !mediaUrl);
   };
@@ -649,12 +701,19 @@ export function mountEditableMedia(container, {
   const overlay = document.createElement('div');
   overlay.className = 'vcms-media-overlay';
   const empty = !mediaUrl;
-  const buttons = empty
+  const emptyButtons = preferVideo
     ? [
+      { label: '영상 추가', action: 'add-video' },
+      { label: 'YouTube', action: 'add-youtube' },
+      { label: '사진 추가', action: 'add-image' }
+    ]
+    : [
       { label: '사진 추가', action: 'add-image' },
       { label: '영상 추가', action: 'add-video' },
       { label: 'YouTube', action: 'add-youtube' }
-    ]
+    ];
+  const buttons = empty
+    ? emptyButtons
     : mediaType === 'image'
       ? [
         { label: '사진 변경', action: 'add-image' },
